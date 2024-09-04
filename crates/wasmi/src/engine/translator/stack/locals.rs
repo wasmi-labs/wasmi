@@ -270,7 +270,7 @@ mod tests {
     use super::*;
 
     fn reg(index: i16) -> Reg {
-        Reg::from_i16(index)
+        Reg::from(index)
     }
 
     #[test]

@@ -17,7 +17,7 @@ fn no_params_reg() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_call_indirect_0(SignatureIdx::from(0)),
-            Instruction::call_indirect_params(Reg::from_i16(0), TableIdx::from(0)),
+            Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
         ])
         .run();
 }
@@ -69,7 +69,7 @@ fn one_reg_param_reg() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_call_indirect(SignatureIdx::from(0)),
-            Instruction::call_indirect_params(Reg::from_i16(0), TableIdx::from(0)),
+            Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
             Instruction::register(1),
         ])
         .run();
@@ -128,7 +128,7 @@ fn one_reg_param_imm() {
             .expect_func(
                 ExpectedFunc::new([
                     Instruction::return_call_indirect(SignatureIdx::from(0)),
-                    Instruction::call_indirect_params(Reg::from_i16(-1), TableIdx::from(0)),
+                    Instruction::call_indirect_params(Reg::from(-1), TableIdx::from(0)),
                     Instruction::register(1),
                 ])
                 .consts([index]),
@@ -159,7 +159,7 @@ fn one_imm_param_reg() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_indirect(SignatureIdx::from(0)),
-                Instruction::call_indirect_params(Reg::from_i16(0), TableIdx::from(0)),
+                Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
                 Instruction::register(-1),
             ])
             .consts([10_i32]),
@@ -223,7 +223,7 @@ fn one_imm_param_imm() {
             .expect_func(
                 ExpectedFunc::new([
                     Instruction::return_call_indirect(SignatureIdx::from(0)),
-                    Instruction::call_indirect_params(Reg::from_i16(-1), TableIdx::from(0)),
+                    Instruction::call_indirect_params(Reg::from(-1), TableIdx::from(0)),
                     Instruction::register(-2),
                 ])
                 .consts([index as i32, 10]),
@@ -251,7 +251,7 @@ fn two_reg_params_reg() {
             )
         )
     "#;
-    let elem_index = Reg::from_i16(0);
+    let elem_index = Reg::from(0);
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_call_indirect(SignatureIdx::from(0)),
@@ -276,7 +276,7 @@ fn two_reg_params_reg_rev() {
             )
         )
     "#;
-    let elem_index = Reg::from_i16(0);
+    let elem_index = Reg::from(0);
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_call_indirect(SignatureIdx::from(0)),
@@ -301,7 +301,7 @@ fn two_imm_params_reg() {
             )
         )
     "#;
-    let elem_index = Reg::from_i16(0);
+    let elem_index = Reg::from(0);
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
@@ -435,7 +435,7 @@ fn three_reg_params_reg() {
             )
         )
     "#;
-    let elem_index = Reg::from_i16(0);
+    let elem_index = Reg::from(0);
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_call_indirect(SignatureIdx::from(0)),
@@ -461,7 +461,7 @@ fn three_reg_params_reg_rev() {
             )
         )
     "#;
-    let elem_index = Reg::from_i16(0);
+    let elem_index = Reg::from(0);
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_call_indirect(SignatureIdx::from(0)),
@@ -487,7 +487,7 @@ fn three_imm_params_reg() {
             )
         )
     "#;
-    let elem_index = Reg::from_i16(0);
+    let elem_index = Reg::from(0);
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
@@ -561,7 +561,7 @@ fn params7_reg_index_local() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_call_indirect(SignatureIdx::from(0)),
-            Instruction::call_indirect_params(Reg::from_i16(0), TableIdx::from(0)),
+            Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
             Instruction::register_list(1, 2, 3),
             Instruction::register_list(4, 5, 6),
             Instruction::register(7),
@@ -593,7 +593,7 @@ fn params7_imm_index_local() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_indirect(SignatureIdx::from(0)),
-                Instruction::call_indirect_params(Reg::from_i16(0), TableIdx::from(0)),
+                Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
                 Instruction::register_list(-1, -2, -3),
                 Instruction::register_list(-4, -5, -6),
                 Instruction::register(-7),
@@ -627,7 +627,7 @@ fn params8_reg_index_local() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_call_indirect(SignatureIdx::from(0)),
-            Instruction::call_indirect_params(Reg::from_i16(0), TableIdx::from(0)),
+            Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
             Instruction::register_list(1, 2, 3),
             Instruction::register_list(4, 5, 6),
             Instruction::register2(7, 8),
@@ -660,7 +660,7 @@ fn params8_imm_index_local() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_indirect(SignatureIdx::from(0)),
-                Instruction::call_indirect_params(Reg::from_i16(0), TableIdx::from(0)),
+                Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
                 Instruction::register_list(-1, -2, -3),
                 Instruction::register_list(-4, -5, -6),
                 Instruction::register2(-7, -8),
@@ -695,7 +695,7 @@ fn params9_reg_index_local() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_call_indirect(SignatureIdx::from(0)),
-            Instruction::call_indirect_params(Reg::from_i16(0), TableIdx::from(0)),
+            Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
             Instruction::register_list(1, 2, 3),
             Instruction::register_list(4, 5, 6),
             Instruction::register3(7, 8, 9),
@@ -729,7 +729,7 @@ fn params9_imm_index_local() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_indirect(SignatureIdx::from(0)),
-                Instruction::call_indirect_params(Reg::from_i16(0), TableIdx::from(0)),
+                Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
                 Instruction::register_list(-1, -2, -3),
                 Instruction::register_list(-4, -5, -6),
                 Instruction::register3(-7, -8, -9),
@@ -762,9 +762,9 @@ fn test_imm_params_dynamic_index() {
         .expect_func_instrs([Instruction::return_imm32(0_i32)])
         .expect_func(
             ExpectedFunc::new([
-                Instruction::global_get(Reg::from_i16(0), GlobalIdx::from(0)),
+                Instruction::global_get(Reg::from(0), GlobalIdx::from(0)),
                 Instruction::return_call_indirect(SignatureIdx::from(0)),
-                Instruction::call_indirect_params(Reg::from_i16(0), TableIdx::from(0)),
+                Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
                 Instruction::register2(-1, -2),
             ])
             .consts([10_i32, 20_i32]),
@@ -796,10 +796,10 @@ fn regression_issue_768() {
         .expect_func_instrs([Instruction::return_imm32(0_i32)])
         .expect_func(
             ExpectedFunc::new([
-                Instruction::global_get(Reg::from_i16(0), GlobalIdx::from(0)),
-                Instruction::global_get(Reg::from_i16(1), GlobalIdx::from(1)),
+                Instruction::global_get(Reg::from(0), GlobalIdx::from(0)),
+                Instruction::global_get(Reg::from(1), GlobalIdx::from(1)),
                 Instruction::return_call_indirect(SignatureIdx::from(0)),
-                Instruction::call_indirect_params(Reg::from_i16(1), TableIdx::from(0)),
+                Instruction::call_indirect_params(Reg::from(1), TableIdx::from(0)),
                 Instruction::register2(0, -1),
             ])
             .consts([20_i32]),

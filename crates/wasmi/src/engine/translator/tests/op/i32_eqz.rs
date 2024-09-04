@@ -17,7 +17,7 @@ fn binop_i32_eqz() {
         );
         TranslationTest::from_wat(wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from_i16(2), Reg::from_i16(0), Reg::from_i16(1)),
+                expect_instr(Reg::from(2), Reg::from(0), Reg::from(1)),
                 Instruction::return_reg(2),
             ])
             .run()
@@ -47,7 +47,7 @@ fn binop_imm_i32_eqz() {
         );
         TranslationTest::from_wat(wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from_i16(2), Reg::from_i16(0), Const16::from(1)),
+                expect_instr(Reg::from(2), Reg::from(0), Const16::from(1)),
                 Instruction::return_reg(2),
             ])
             .run()

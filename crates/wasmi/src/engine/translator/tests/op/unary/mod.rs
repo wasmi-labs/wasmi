@@ -39,7 +39,7 @@ where
     O: WasmTy,
 {
     let expected = [
-        make_instr(Reg::from_i16(1), Reg::from_i16(0)),
+        make_instr(Reg::from(1), Reg::from(0)),
         Instruction::return_reg(1),
     ];
     conversion_reg_with::<I, O, _>(wasm_op, expected)

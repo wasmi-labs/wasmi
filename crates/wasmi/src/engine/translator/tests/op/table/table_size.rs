@@ -14,8 +14,8 @@ fn test_reg(ty: ValType) {
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            Instruction::table_size(Reg::from_i16(0), 0),
-            Instruction::return_reg(Reg::from_i16(0)),
+            Instruction::table_size(Reg::from(0), 0),
+            Instruction::return_reg(Reg::from(0)),
         ])
         .run();
 }

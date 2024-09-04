@@ -15,7 +15,13 @@ pub struct Reg(i16);
 
 impl From<i16> for Reg {
     fn from(index: i16) -> Self {
-        Self::from_i16(index)
+        Self(index)
+    }
+}
+
+impl From<Reg> for i16 {
+    fn from(reg: Reg) -> Self {
+        reg.0
     }
 }
 
@@ -25,21 +31,11 @@ impl TryFrom<u32> for Reg {
     fn try_from(local_index: u32) -> Result<Self, Self::Error> {
         let index = i16::try_from(local_index)
             .map_err(|_| Error::from(TranslationError::RegisterOutOfBounds))?;
-        Ok(Self::from_i16(index))
+        Ok(Self::from(index))
     }
 }
 
 impl Reg {
-    /// Create a [`Reg`] from the given `u16` index.
-    pub fn from_i16(index: i16) -> Self {
-        Self(index)
-    }
-
-    /// Returns the index of the [`Reg`] as `u16` value.
-    pub fn to_i16(self) -> i16 {
-        self.0
-    }
-
     /// Returns `true` if this [`Reg`] refers to a function local constant value.
     pub fn is_const(self) -> bool {
         self.0.is_negative()
@@ -111,7 +107,7 @@ pub struct RegSpanIter {
 impl RegSpanIter {
     /// Creates a [`RegSpanIter`] from then given raw `start` and `end` [`Reg`].
     pub fn from_raw_parts(start: Reg, end: Reg) -> Self {
-        debug_assert!(start.to_i16() <= end.to_i16());
+        debug_assert!(i16::from(start) <= i16::from(end));
         Self {
             next: start,
             last: end,

@@ -271,7 +271,7 @@ impl ValueStack {
     pub fn push_local(&mut self, local_index: u32) -> Result<Reg, Error> {
         let reg = i16::try_from(local_index)
             .ok()
-            .map(Reg::from_i16)
+            .map(Reg::from)
             .filter(|reg| self.reg_alloc.is_local(*reg))
             .ok_or_else(|| Error::from(TranslationError::RegisterOutOfBounds))?;
         self.providers.push_local(reg);

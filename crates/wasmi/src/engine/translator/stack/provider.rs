@@ -101,7 +101,7 @@ impl ProviderStack {
         }
         self.sync_local_refs();
         let local = i16::try_from(preserve_index)
-            .map(Reg::from_i16)
+            .map(Reg::from)
             .unwrap_or_else(|_| {
                 panic!("encountered invalid local register index: {preserve_index}")
             });

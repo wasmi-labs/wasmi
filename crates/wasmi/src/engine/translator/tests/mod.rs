@@ -189,7 +189,7 @@ fn test_binary_reg_reg(
     "#,
     );
     let expected = [
-        make_instr(Reg::from_i16(2), Reg::from_i16(0), Reg::from_i16(1)),
+        make_instr(Reg::from(2), Reg::from(0), Reg::from(1)),
         Instruction::return_reg(2),
     ];
     assert_func_bodies(&wasm, [expected]);
@@ -251,7 +251,7 @@ fn test_binary_reg_imm16<T>(
         .try_into()
         .unwrap_or_else(|_| panic!("failed to convert {} to Const16", DisplayWasm::from(value)));
     let expected = [
-        make_instr(Reg::from_i16(1), Reg::from_i16(0), immediate),
+        make_instr(Reg::from(1), Reg::from(0), immediate),
         Instruction::return_reg(1),
     ];
     test_binary_reg_imm_with(wasm_op, value, expected).run()
@@ -270,7 +270,7 @@ fn test_binary_reg_imm16_rev<T>(
         .try_into()
         .unwrap_or_else(|_| panic!("failed to convert {} to Const16", DisplayWasm::from(value)));
     let expected = [
-        make_instr(Reg::from_i16(1), immediate, Reg::from_i16(0)),
+        make_instr(Reg::from(1), immediate, Reg::from(0)),
         Instruction::return_reg(1),
     ];
     test_binary_reg_imm_rev_with(wasm_op, value, expected).run()
@@ -285,7 +285,7 @@ fn test_binary_reg_imm32<T>(
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(Reg::from_i16(1), Reg::from_i16(0), Reg::from_i16(-1)),
+        make_instr(Reg::from(1), Reg::from(0), Reg::from(-1)),
         Instruction::return_reg(1),
     ];
     let mut testcase = testcase_binary_reg_imm(wasm_op, value);
@@ -303,7 +303,7 @@ fn test_binary_reg_imm32_rev<T>(
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(Reg::from_i16(1), Reg::from_i16(-1), Reg::from_i16(0)),
+        make_instr(Reg::from(1), Reg::from(-1), Reg::from(0)),
         Instruction::return_reg(1),
     ];
     let mut testcase = testcase_binary_imm_reg(wasm_op, value);
@@ -321,7 +321,7 @@ fn test_binary_reg_imm32_rev_commutative<T>(
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(Reg::from_i16(1), Reg::from_i16(0), Reg::from_i16(-1)),
+        make_instr(Reg::from(1), Reg::from(0), Reg::from(-1)),
         Instruction::return_reg(1),
     ];
     let mut testcase = testcase_binary_imm_reg(wasm_op, value);

@@ -250,7 +250,7 @@ impl RegisterAlloc {
         if self.next_dynamic == self.min_preserve {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         }
-        let reg = Reg::from_i16(self.next_dynamic);
+        let reg = Reg::from(self.next_dynamic);
         self.next_dynamic += 1;
         self.max_dynamic = max(self.max_dynamic, self.next_dynamic);
         Ok(reg)
@@ -272,7 +272,7 @@ impl RegisterAlloc {
             if next_dynamic >= this.min_preserve {
                 return None;
             }
-            let register = RegSpan::new(Reg::from_i16(this.next_dynamic));
+            let register = RegSpan::new(Reg::from(this.next_dynamic));
             this.next_dynamic += n;
             this.max_dynamic = max(this.max_dynamic, this.next_dynamic);
             Some(register)
@@ -406,7 +406,7 @@ impl RegisterAlloc {
 
     /// Updates the minimum preservation [`Reg`] index if needed.
     fn update_min_preserved(&mut self, register: Reg) -> Result<(), Error> {
-        self.min_preserve = min(self.min_preserve, register.to_i16());
+        self.min_preserve = min(self.min_preserve, i16::from(register));
         if self.next_dynamic == self.min_preserve {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         }
@@ -415,7 +415,7 @@ impl RegisterAlloc {
 
     /// Converts a preservation [`Reg`] into a [`StashKey`].
     fn reg2key(register: Reg) -> StashKey {
-        let reg_index = Self::INITIAL_PRESERVATION_INDEX - register.to_i16();
+        let reg_index = Self::INITIAL_PRESERVATION_INDEX - i16::from(register);
         let key_index = usize::try_from(reg_index).unwrap_or_else(|error| {
             panic!("reg_index ({reg_index}) must be convertible to usize: {error}")
         });
@@ -431,17 +431,17 @@ impl RegisterAlloc {
                     "key_index ({key_index}) must be convertible to positive i16 integer: {error}"
                 )
             });
-        Reg::from_i16(reg_index)
+        Reg::from(reg_index)
     }
 
     /// Returns `true` if the [`Reg`] is allocated in the [`RegisterSpace::Local`].
     pub fn is_local(&self, reg: Reg) -> bool {
-        !reg.is_const() && reg.to_i16() < self.min_dynamic()
+        !reg.is_const() && i16::from(reg) < self.min_dynamic()
     }
 
     /// Returns `true` if the [`Reg`] is allocated in the [`RegisterSpace::Preserve`].
     fn is_preserved(&self, reg: Reg) -> bool {
-        self.min_preserve < reg.to_i16()
+        self.min_preserve < i16::from(reg)
     }
 
     /// Finalizes register allocation and allows to defragment the register space.
@@ -458,7 +458,7 @@ impl RegisterAlloc {
             // Only registers allocated to the preservation space need defragmentation.
             return register;
         }
-        Reg::from_i16(register.to_i16() - self.defrag_offset)
+        Reg::from(i16::from(register) - self.defrag_offset)
     }
 
     /// Increase preservation [`Reg`] usage.
