@@ -422,6 +422,6 @@ impl FrameRegisters {
 
     /// Returns the underlying pointer offset by the [`Reg`] index.
     unsafe fn register_offset(&self, register: Reg) -> *mut UntypedVal {
-        unsafe { self.ptr.offset(register.to_i16() as isize) }
+        unsafe { self.ptr.offset(isize::from(i16::from(register))) }
     }
 }

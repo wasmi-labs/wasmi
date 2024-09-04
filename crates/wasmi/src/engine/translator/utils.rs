@@ -148,7 +148,7 @@ impl RegSpanIter {
         /// Returns the `i16` [`Reg`] index if the [`TypedProvider`] is a [`Reg`].
         fn register_index(provider: &TypedProvider) -> Option<i16> {
             match provider {
-                TypedProvider::Register(index) => Some(index.to_i16()),
+                TypedProvider::Register(index) => Some(i16::from(*index)),
                 TypedProvider::Const(_) => None,
             }
         }

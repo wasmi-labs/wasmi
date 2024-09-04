@@ -819,7 +819,7 @@ impl FuncTranslator {
             // At the time of this writing the author was not sure if all result registers
             // of all preserved locals are always continuous so this can be understood as
             // a safety guard.
-            (b.preserved.to_i16() - a.preserved.to_i16()) == 1
+            (i16::from(b.preserved) - i16::from(a.preserved)) == 1
         });
         for copy_group in copy_groups {
             let len = copy_group.len();

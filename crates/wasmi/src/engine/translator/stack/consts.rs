@@ -89,7 +89,7 @@ impl FuncLocalConsts {
         if !register.is_const() {
             return None;
         }
-        let index = register.to_i16().wrapping_add(1).unsigned_abs() as usize;
+        let index = i16::from(register).wrapping_add(1).unsigned_abs() as usize;
         self.idx2const.get(index).copied()
     }
 
