@@ -1027,39 +1027,111 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// Followed `len_targets` times by either [`Instruction::Branch`] or [`Instruction::Return`].
-            #[snake_name(branch_table)]
-            BranchTable {
+            /// Followed `len_target` times by
+            ///
+            /// - [`Instruction::Branch`]
+            /// - [`Instruction::Return`]
+            #[snake_name(branch_table_0)]
+            BranchTable0 {
                 /// The register holding the index of the instruction.
                 index: Reg,
                 /// The number of branch table targets including the default target.
                 len_targets: u32,
             },
-            /// A Wasm `br_table` equivalent Wasmi instruction that copies or returns values upon taking a branch.
+            /// A Wasm `br_table` equivalent Wasmi instruction.
             ///
             /// # Encoding
             ///
-            /// 1. Followed `len_targets` times by either [`Instruction::Branch`] or [`Instruction::Return`].
-            /// 1. Followed by one of the copy instructions:
+            /// 1. Followed by one of
             ///
-            /// - [`Instruction::Copy`]
-            /// - [`Instruction::Copy2`]
-            /// - [`Instruction::CopyImm32`]
-            /// - [`Instruction::CopyI64Imm32`]
-            /// - [`Instruction::CopyF64Imm32`]
-            /// - [`Instruction::CopySpan`]
-            /// - [`Instruction::CopySpanNonOverlapping`]
-            /// - [`Instruction::CopyMany`]
-            /// - [`Instruction::CopyManyNonOverlapping`]
+            /// - [`Instruction::Register`]
+            /// - [`Instruction::Const32`]
+            /// - [`Instruction::I64Const32`]
+            /// - [`Instruction::F64Const32`]
+            ///
+            /// 2. Followed `len_target` times by
+            ///
+            /// - [`Instruction::BranchTableTarget`]
+            /// - [`Instruction::ReturnReg`]
+            /// - [`Instruction::ReturnImm32`]
+            /// - [`Instruction::ReturnI64Imm32`]
+            /// - [`Instruction::ReturnF64Imm32`]
+            #[snake_name(branch_table_1)]
+            BranchTable1 {
+                /// The register holding the index of the instruction.
+                index: Reg,
+                /// The number of branch table targets including the default target.
+                len_targets: u32,
+            },
+            /// A Wasm `br_table` equivalent Wasmi instruction.
+            ///
+            /// # Encoding
+            ///
+            /// 1. Followed by [`Instruction::Register2`].
+            /// 2. Followed `len_target` times by
+            ///
+            /// - [`Instruction::BranchTableTarget`]
+            /// - [`Instruction::ReturnReg2`]
+            #[snake_name(branch_table_2)]
+            BranchTable2 {
+                /// The register holding the index of the instruction.
+                index: Reg,
+                /// The number of branch table targets including the default target.
+                len_targets: u32,
+            },
+            /// A Wasm `br_table` equivalent Wasmi instruction.
+            ///
+            /// # Encoding
+            ///
+            /// 1. Followed by [`Instruction::Register3`].
+            /// 2. Followed `len_target` times by
+            ///
+            /// - [`Instruction::BranchTableTarget`]
+            /// - [`Instruction::ReturnReg3`]
+            #[snake_name(branch_table_3)]
+            BranchTable3 {
+                /// The register holding the index of the instruction.
+                index: Reg,
+                /// The number of branch table targets including the default target.
+                len_targets: u32,
+            },
+            /// A Wasm `br_table` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// - The copy instruction encodes the inputs for all table targets
-            ///   and the result registers for the table targets that branch.
-            /// - The copy instruction itself is never going to be excuted and is
-            ///   instead just used as information storage.
-            #[snake_name(branch_table_copy)]
-            BranchTableCopy {
+            /// All branch table targets must share the same destination registers.
+            ///
+            /// # Encoding
+            ///
+            /// 1. Followed by one of [`Instruction::RegisterSpan`].
+            /// 2. Followed `len_target` times by
+            ///
+            /// - [`Instruction::BranchTableTarget`]
+            /// - [`Instruction::BranchTableTargetNonOverlapping`]
+            /// - [`Instruction::ReturnSpan`]
+            #[snake_name(branch_table_span)]
+            BranchTableSpan {
+                /// The register holding the index of the instruction.
+                index: Reg,
+                /// The number of branch table targets including the default target.
+                len_targets: u32,
+            },
+            /// A Wasm `br_table` equivalent Wasmi instruction.
+            ///
+            /// # Note
+            ///
+            /// All branch table targets must share the same destination registers.
+            ///
+            /// # Encoding
+            ///
+            /// 1. Followed by [`Instruction::RegisterList`] encoding.
+            /// 2. Followed `len_target` times by
+            ///
+            /// - [`Instruction::BranchTableTarget`]
+            /// - [`Instruction::BranchTableTargetNonOverlapping`]
+            /// - [`Instruction::Return`]
+            #[snake_name(branch_table_many)]
+            BranchTableMany {
                 /// The register holding the index of the instruction.
                 index: Reg,
                 /// The number of branch table targets including the default target.
@@ -5493,6 +5565,38 @@ macro_rules! for_each_op {
             F64Const32 {
                 value: Const32<f64>
             },
+            /// A Wasm `br_table` branching target which copies values before branching.
+            ///
+            /// # Encoding
+            ///
+            /// This always follows
+            ///
+            /// - [`Instruction::BranchTable1`]
+            /// - [`Instruction::BranchTable2`]
+            /// - [`Instruction::BranchTableSpan`]
+            /// - [`Instruction::BranchTableMany`]
+            #[snake_name(branch_table_target)]
+            BranchTableTarget {
+                /// The registers where the values are going to be copied.
+                results: RegSpan,
+                /// The branching offset of the branch table target.
+                offset: BranchOffset,
+            },
+            /// A Wasm `br_table` branching target which copies overlapping values before branching.
+            ///
+            /// # Encoding
+            ///
+            /// This always follows
+            ///
+            /// - [`Instruction::BranchTableSpan`]
+            /// - [`Instruction::BranchTableMany`]
+            #[snake_name(branch_table_target_non_overlapping)]
+            BranchTableTargetNonOverlapping {
+                /// The registers where the values are going to be copied.
+                results: RegSpan,
+                /// The branching offset of the branch table target.
+                offset: BranchOffset,
+            },
             /// An instruction parameter with a [`Reg`] and a 32-bit immediate value.
             #[snake_name(register_and_imm32)]
             RegisterAndImm32 {
@@ -5505,6 +5609,9 @@ macro_rules! for_each_op {
                 /// The 32-bit immediate value.
                 imm: AnyConst32,
             },
+            /// A [`RegSpanIter`] instruction parameter.
+            #[snake_name(register_span)]
+            RegisterSpan { span: RegSpanIter },
             /// A [`Reg`] instruction parameter.
             ///
             /// # Note
