@@ -4,8 +4,6 @@ use super::{
     BinInstr,
     BinInstrImm,
     BinInstrImm16,
-    BranchBinOpInstr,
-    BranchBinOpInstrImm16,
     BranchOffset,
     CallIndirectParams,
     Const16,
@@ -1730,8 +1728,8 @@ macro_rules! constructor_for_branch_cmp_instrs {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> Self {
-                    Self::$op_code(BranchBinOpInstr::new(lhs, rhs, offset))
+                pub fn $name(lhs: impl Into<Reg>, rhs: impl Into<Reg>, offset: BranchOffset16) -> Self {
+                    Self::$op_code { lhs: lhs.into(), rhs: rhs.into(), offset }
                 }
             )*
         }
@@ -1786,8 +1784,8 @@ macro_rules! constructor_for_branch_cmp_imm_instrs {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(lhs: Reg, rhs: impl Into<Const16<$ty>>, offset: BranchOffset16) -> Self {
-                    Self::$op_code(BranchBinOpInstrImm16::new(lhs, rhs.into(), offset))
+                pub fn $name(lhs: impl Into<Reg>, rhs: impl Into<Const16<$ty>>, offset: BranchOffset16) -> Self {
+                    Self::$op_code { lhs: lhs.into(), rhs: rhs.into(), offset }
                 }
             )*
         }

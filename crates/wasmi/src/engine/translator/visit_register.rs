@@ -1,8 +1,6 @@
 use crate::engine::bytecode::{
     BinInstr,
     BinInstrImm,
-    BranchBinOpInstr,
-    BranchBinOpInstrImm,
     Const16,
     Instruction,
     LoadAtInstr,
@@ -90,70 +88,70 @@ impl VisitInputRegisters for Instruction {
             Instruction::BranchTableMany { index, .. } => f(index),
 
             Instruction::BranchCmpFallback { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
-            Instruction::BranchI32And(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32AndImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32Or(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32OrImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32Xor(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32XorImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32AndEqz(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32AndEqzImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32OrEqz(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32OrEqzImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32XorEqz(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32XorEqzImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32Eq(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32EqImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32Ne(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32NeImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32LtS(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32LtSImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32LtU(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32LtUImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32LeS(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32LeSImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32LeU(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32LeUImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32GtS(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32GtSImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32GtU(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32GtUImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32GeS(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32GeSImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32GeU(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI32GeUImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64Eq(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64EqImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64Ne(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64NeImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64LtS(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64LtSImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64LtU(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64LtUImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64LeS(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64LeSImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64LeU(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64LeUImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64GtS(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64GtSImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64GtU(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64GtUImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64GeS(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64GeSImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64GeU(instr) => instr.visit_input_registers(f),
-            Instruction::BranchI64GeUImm(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF32Eq(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF32Ne(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF32Lt(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF32Le(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF32Gt(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF32Ge(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF64Eq(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF64Ne(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF64Lt(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF64Le(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF64Gt(instr) => instr.visit_input_registers(f),
-            Instruction::BranchF64Ge(instr) => instr.visit_input_registers(f),
+            Instruction::BranchI32And { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32AndImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32Or { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32OrImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32Xor { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32XorImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32AndEqz { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32AndEqzImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32OrEqz { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32OrEqzImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32XorEqz { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32XorEqzImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32Eq { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32EqImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32Ne { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32NeImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32LtS { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32LtSImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32LtU { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32LtUImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32LeS { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32LeSImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32LeU { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32LeUImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32GtS { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32GtSImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32GtU { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32GtUImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32GeS { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32GeSImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI32GeU { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI32GeUImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI64Eq { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI64EqImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI64Ne { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI64NeImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI64LtS { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI64LtSImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI64LtU { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI64LtUImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI64LeS { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI64LeSImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI64LeU { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI64LeUImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI64GtS { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI64GtSImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI64GtU { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI64GtUImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI64GeS { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI64GeSImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchI64GeU { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::BranchI64GeUImm { lhs, .. } => visit_registers!(f, lhs),
+            Instruction::BranchF32Eq { lhs, rhs, .. } |
+            Instruction::BranchF32Ne { lhs, rhs, .. } |
+            Instruction::BranchF32Lt { lhs, rhs, .. } |
+            Instruction::BranchF32Le { lhs, rhs, .. } |
+            Instruction::BranchF32Gt { lhs, rhs, .. } |
+            Instruction::BranchF32Ge { lhs, rhs, .. } |
+            Instruction::BranchF64Eq { lhs, rhs, .. } |
+            Instruction::BranchF64Ne { lhs, rhs, .. } |
+            Instruction::BranchF64Lt { lhs, rhs, .. } |
+            Instruction::BranchF64Le { lhs, rhs, .. } |
+            Instruction::BranchF64Gt { lhs, rhs, .. } |
+            Instruction::BranchF64Ge { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
 
             Instruction::Copy { result, value } => {
                 // Note: for copy instructions unlike all other instructions
@@ -599,18 +597,6 @@ impl LoadAtInstr {
 impl LoadOffset16Instr {
     fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.ptr)
-    }
-}
-
-impl BranchBinOpInstr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        visit_registers!(f, &mut self.lhs, &mut self.rhs);
-    }
-}
-
-impl<T> BranchBinOpInstrImm<T> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        f(&mut self.lhs)
     }
 }
 

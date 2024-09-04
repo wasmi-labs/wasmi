@@ -68,76 +68,76 @@ impl Instruction {
             | I::ReturnNezMany { .. }
             | I::Branch { .. }
             | I::BranchCmpFallback { .. }
-            | I::BranchI32And(_)
-            | I::BranchI32AndImm(_)
-            | I::BranchI32Or(_)
-            | I::BranchI32OrImm(_)
-            | I::BranchI32Xor(_)
-            | I::BranchI32XorImm(_)
-            | I::BranchI32AndEqz(_)
-            | I::BranchI32AndEqzImm(_)
-            | I::BranchI32OrEqz(_)
-            | I::BranchI32OrEqzImm(_)
-            | I::BranchI32XorEqz(_)
-            | I::BranchI32XorEqzImm(_)
+            | I::BranchI32And { .. }
+            | I::BranchI32AndImm { .. }
+            | I::BranchI32Or { .. }
+            | I::BranchI32OrImm { .. }
+            | I::BranchI32Xor { .. }
+            | I::BranchI32XorImm { .. }
+            | I::BranchI32AndEqz { .. }
+            | I::BranchI32AndEqzImm { .. }
+            | I::BranchI32OrEqz { .. }
+            | I::BranchI32OrEqzImm { .. }
+            | I::BranchI32XorEqz { .. }
+            | I::BranchI32XorEqzImm { .. }
             | I::BranchTable0 { .. }
             | I::BranchTable1 { .. }
             | I::BranchTable2 { .. }
             | I::BranchTable3 { .. }
             | I::BranchTableSpan { .. }
             | I::BranchTableMany { .. }
-            | I::BranchI32Eq(_)
-            | I::BranchI32EqImm(_)
-            | I::BranchI32Ne(_)
-            | I::BranchI32NeImm(_)
-            | I::BranchI32LtS(_)
-            | I::BranchI32LtSImm(_)
-            | I::BranchI32LtU(_)
-            | I::BranchI32LtUImm(_)
-            | I::BranchI32LeS(_)
-            | I::BranchI32LeSImm(_)
-            | I::BranchI32LeU(_)
-            | I::BranchI32LeUImm(_)
-            | I::BranchI32GtS(_)
-            | I::BranchI32GtSImm(_)
-            | I::BranchI32GtU(_)
-            | I::BranchI32GtUImm(_)
-            | I::BranchI32GeS(_)
-            | I::BranchI32GeSImm(_)
-            | I::BranchI32GeU(_)
-            | I::BranchI32GeUImm(_)
-            | I::BranchI64Eq(_)
-            | I::BranchI64EqImm(_)
-            | I::BranchI64Ne(_)
-            | I::BranchI64NeImm(_)
-            | I::BranchI64LtS(_)
-            | I::BranchI64LtSImm(_)
-            | I::BranchI64LtU(_)
-            | I::BranchI64LtUImm(_)
-            | I::BranchI64LeS(_)
-            | I::BranchI64LeSImm(_)
-            | I::BranchI64LeU(_)
-            | I::BranchI64LeUImm(_)
-            | I::BranchI64GtS(_)
-            | I::BranchI64GtSImm(_)
-            | I::BranchI64GtU(_)
-            | I::BranchI64GtUImm(_)
-            | I::BranchI64GeS(_)
-            | I::BranchI64GeSImm(_)
-            | I::BranchI64GeU(_)
-            | I::BranchI64GeUImm(_)
-            | I::BranchF32Eq(_)
-            | I::BranchF32Ne(_)
-            | I::BranchF32Lt(_)
-            | I::BranchF32Le(_)
-            | I::BranchF32Gt(_)
-            | I::BranchF32Ge(_)
-            | I::BranchF64Eq(_)
-            | I::BranchF64Ne(_)
-            | I::BranchF64Lt(_)
-            | I::BranchF64Le(_)
-            | I::BranchF64Gt(_)
-            | I::BranchF64Ge(_) => Ok(false),
+            | I::BranchI32Eq { .. }
+            | I::BranchI32EqImm { .. }
+            | I::BranchI32Ne { .. }
+            | I::BranchI32NeImm { .. }
+            | I::BranchI32LtS { .. }
+            | I::BranchI32LtSImm { .. }
+            | I::BranchI32LtU { .. }
+            | I::BranchI32LtUImm { .. }
+            | I::BranchI32LeS { .. }
+            | I::BranchI32LeSImm { .. }
+            | I::BranchI32LeU { .. }
+            | I::BranchI32LeUImm { .. }
+            | I::BranchI32GtS { .. }
+            | I::BranchI32GtSImm { .. }
+            | I::BranchI32GtU { .. }
+            | I::BranchI32GtUImm { .. }
+            | I::BranchI32GeS { .. }
+            | I::BranchI32GeSImm { .. }
+            | I::BranchI32GeU { .. }
+            | I::BranchI32GeUImm { .. }
+            | I::BranchI64Eq { .. }
+            | I::BranchI64EqImm { .. }
+            | I::BranchI64Ne { .. }
+            | I::BranchI64NeImm { .. }
+            | I::BranchI64LtS { .. }
+            | I::BranchI64LtSImm { .. }
+            | I::BranchI64LtU { .. }
+            | I::BranchI64LtUImm { .. }
+            | I::BranchI64LeS { .. }
+            | I::BranchI64LeSImm { .. }
+            | I::BranchI64LeU { .. }
+            | I::BranchI64LeUImm { .. }
+            | I::BranchI64GtS { .. }
+            | I::BranchI64GtSImm { .. }
+            | I::BranchI64GtU { .. }
+            | I::BranchI64GtUImm { .. }
+            | I::BranchI64GeS { .. }
+            | I::BranchI64GeSImm { .. }
+            | I::BranchI64GeU { .. }
+            | I::BranchI64GeUImm { .. }
+            | I::BranchF32Eq { .. }
+            | I::BranchF32Ne { .. }
+            | I::BranchF32Lt { .. }
+            | I::BranchF32Le { .. }
+            | I::BranchF32Gt { .. }
+            | I::BranchF32Ge { .. }
+            | I::BranchF64Eq { .. }
+            | I::BranchF64Ne { .. }
+            | I::BranchF64Lt { .. }
+            | I::BranchF64Le { .. }
+            | I::BranchF64Gt { .. }
+            | I::BranchF64Ge { .. } => Ok(false),
             I::Copy { result, .. }
             | I::CopyImm32 { result, .. }
             | I::CopyI64Imm32 { result, .. }
