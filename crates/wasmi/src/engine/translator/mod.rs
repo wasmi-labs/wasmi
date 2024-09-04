@@ -2478,6 +2478,7 @@ impl FuncTranslator {
         Ok(buffer)
     }
 
+    /// Convenience method to allow inspecting the provider buffer while manipulating `self` circumventing the borrow checker.
     fn apply_providers_buffer<R>(&mut self, f: impl FnOnce(&mut Self, &[TypedProvider]) -> R) -> R {
         let values = core::mem::take(&mut self.alloc.buffer.providers);
         let result = f(self, &values[..]);
@@ -2531,10 +2532,15 @@ impl FuncTranslator {
         }
     }
 
+    /// Translates the branching targets of a Wasm `br_table` instruction for simple cases without value copying.
     fn translate_br_table_targets_simple(&mut self, values: &[TypedProvider]) -> Result<(), Error> {
         self.translate_br_table_targets(values, |_, _| unreachable!())
     }
 
+    /// Translates the branching targets of a Wasm `br_table` instruction.
+    ///
+    /// The `make_target` closure allows to define the branch table target instruction being used
+    /// for each branch that copies 4 or more values to the destination.
     fn translate_br_table_targets(
         &mut self,
         values: &[TypedProvider],
@@ -2571,6 +2577,7 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translates a Wasm `br_table` instruction without inputs.
     fn translate_br_table_0(&mut self, index: Register) -> Result<(), Error> {
         let targets = &self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
@@ -2584,6 +2591,7 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translates a Wasm `br_table` instruction with a single input.
     fn translate_br_table_1(&mut self, index: Register) -> Result<(), Error> {
         let targets = &self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
@@ -2625,6 +2633,7 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translates a Wasm `br_table` instruction with exactly two inputs.
     fn translate_br_table_2(&mut self, index: Register) -> Result<(), Error> {
         let targets = &self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
@@ -2647,6 +2656,7 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translates a Wasm `br_table` instruction with exactly three inputs.
     fn translate_br_table_3(&mut self, index: Register) -> Result<(), Error> {
         let targets = &self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
@@ -2670,6 +2680,7 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs.
     fn translate_br_table_n(&mut self, index: Register, len_values: usize) -> Result<(), Error> {
         debug_assert!(len_values > 3);
         let values = &mut self.alloc.buffer.providers;
@@ -2680,6 +2691,7 @@ impl FuncTranslator {
         }
     }
 
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs that form a [`RegisterSpan`].
     fn translate_br_table_span(
         &mut self,
         index: Register,
@@ -2715,6 +2727,7 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs that cannot form a [`RegisterSpan`].
     fn translate_br_table_many(&mut self, index: Register) -> Result<(), Error> {
         let targets = &mut self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
