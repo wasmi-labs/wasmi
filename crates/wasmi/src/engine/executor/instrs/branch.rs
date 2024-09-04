@@ -10,7 +10,7 @@ use crate::{
         ComparatorOffsetParam,
         Const16,
         Instruction,
-        Register,
+        Reg,
     },
 };
 use core::cmp;
@@ -42,7 +42,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
-    fn fetch_branch_table_offset(&self, index: Register, len_targets: u32) -> usize {
+    fn fetch_branch_table_offset(&self, index: Reg, len_targets: u32) -> usize {
         let index: u32 = self.get_register_as(index);
         // The index of the default target which is the last target of the slice.
         let max_index = len_targets - 1;
@@ -51,13 +51,13 @@ impl<'engine> Executor<'engine> {
     }
 
     #[inline(always)]
-    pub fn execute_branch_table_0(&mut self, index: Register, len_targets: u32) {
+    pub fn execute_branch_table_0(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(offset);
     }
 
     #[inline(always)]
-    pub fn execute_branch_table_1(&mut self, index: Register, len_targets: u32) {
+    pub fn execute_branch_table_1(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let value = match *self.ip.get() {
@@ -77,7 +77,7 @@ impl<'engine> Executor<'engine> {
     }
 
     #[inline(always)]
-    pub fn execute_branch_table_2(&mut self, index: Register, len_targets: u32) {
+    pub fn execute_branch_table_2(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let Instruction::Register2(values) = *self.ip.get() else {
@@ -97,7 +97,7 @@ impl<'engine> Executor<'engine> {
     }
 
     #[inline(always)]
-    pub fn execute_branch_table_3(&mut self, index: Register, len_targets: u32) {
+    pub fn execute_branch_table_3(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let Instruction::Register3(values) = *self.ip.get() else {
@@ -117,7 +117,7 @@ impl<'engine> Executor<'engine> {
     }
 
     #[inline(always)]
-    pub fn execute_branch_table_span(&mut self, index: Register, len_targets: u32) {
+    pub fn execute_branch_table_span(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let Instruction::RegisterSpan(values) = *self.ip.get() else {
@@ -142,7 +142,7 @@ impl<'engine> Executor<'engine> {
     }
 
     #[inline(always)]
-    pub fn execute_branch_table_many(&mut self, index: Register, len_targets: u32) {
+    pub fn execute_branch_table_many(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(offset);
         let ip_list = self.ip;
@@ -181,8 +181,8 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_branch_binop_raw<T>(
         &mut self,
-        lhs: Register,
-        rhs: Register,
+        lhs: Reg,
+        rhs: Reg,
         offset: impl Into<BranchOffset>,
         f: fn(T, T) -> bool,
     ) where
@@ -379,7 +379,7 @@ impl_execute_branch_binop_imm! {
 
 impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::BranchCmpFallback`].
-    pub fn execute_branch_cmp_fallback(&mut self, lhs: Register, rhs: Register, params: Register) {
+    pub fn execute_branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
         use BranchComparator as C;
         let params = self.get_register(params);
         let Some(params) = ComparatorOffsetParam::from_untyped(params) else {

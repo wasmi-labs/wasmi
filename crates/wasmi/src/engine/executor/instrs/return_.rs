@@ -2,15 +2,7 @@ use super::Executor;
 use crate::{
     core::UntypedVal,
     engine::{
-        bytecode::{
-            AnyConst32,
-            Const32,
-            Instruction,
-            InstructionPtr,
-            Register,
-            RegisterSpan,
-            RegisterSpanIter,
-        },
+        bytecode::{AnyConst32, Const32, Instruction, InstructionPtr, Reg, RegSpan, RegSpanIter},
         executor::stack::FrameRegisters,
     },
     store::StoreInner,
@@ -63,11 +55,11 @@ impl<'engine> Executor<'engine> {
         self.return_impl(store)
     }
 
-    /// Returns the [`FrameRegisters`] of the caller and the [`RegisterSpan`] of the results.
+    /// Returns the [`FrameRegisters`] of the caller and the [`RegSpan`] of the results.
     ///
-    /// The returned [`FrameRegisters`] is valid for all [`Register`] in the returned [`RegisterSpan`].
+    /// The returned [`FrameRegisters`] is valid for all [`Reg`] in the returned [`RegSpan`].
     #[inline(always)]
-    fn return_caller_results(&mut self) -> (FrameRegisters, RegisterSpan) {
+    fn return_caller_results(&mut self) -> (FrameRegisters, RegSpan) {
         let (callee, caller) = self
             .stack
             .calls
@@ -92,7 +84,7 @@ impl<'engine> Executor<'engine> {
                 // In this case we transfer the single return `value` to the root
                 // register span of the entire value stack which is simply its zero index.
                 let dst_sp = self.stack.values.root_stack_ptr();
-                let results = RegisterSpan::new(Register::from_i16(0));
+                let results = RegSpan::new(Reg::from_i16(0));
                 (dst_sp, results)
             }
         }
@@ -116,28 +108,28 @@ impl<'engine> Executor<'engine> {
         self.return_impl(store)
     }
 
-    /// Execute an [`Instruction::ReturnReg`] returning a single [`Register`] value.
+    /// Execute an [`Instruction::ReturnReg`] returning a single [`Reg`] value.
     #[inline(always)]
-    pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Register) -> ReturnOutcome {
+    pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Reg) -> ReturnOutcome {
         self.execute_return_value(store, value, Self::get_register)
     }
 
-    /// Execute an [`Instruction::ReturnReg2`] returning two [`Register`] values.
+    /// Execute an [`Instruction::ReturnReg2`] returning two [`Reg`] values.
     #[inline(always)]
     pub fn execute_return_reg2(
         &mut self,
         store: &mut StoreInner,
-        values: [Register; 2],
+        values: [Reg; 2],
     ) -> ReturnOutcome {
         self.execute_return_reg_n_impl::<2>(store, values)
     }
 
-    /// Execute an [`Instruction::ReturnReg3`] returning three [`Register`] values.
+    /// Execute an [`Instruction::ReturnReg3`] returning three [`Reg`] values.
     #[inline(always)]
     pub fn execute_return_reg3(
         &mut self,
         store: &mut StoreInner,
-        values: [Register; 3],
+        values: [Reg; 3],
     ) -> ReturnOutcome {
         self.execute_return_reg_n_impl::<3>(store, values)
     }
@@ -147,7 +139,7 @@ impl<'engine> Executor<'engine> {
     fn execute_return_reg_n_impl<const N: usize>(
         &mut self,
         store: &mut StoreInner,
-        values: [Register; N],
+        values: [Reg; N],
     ) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
         debug_assert!(u16::try_from(N).is_ok());
@@ -197,7 +189,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_span(
         &mut self,
         store: &mut StoreInner,
-        values: RegisterSpanIter,
+        values: RegSpanIter,
     ) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
         let results = results.iter(values.len());
@@ -217,7 +209,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_many(
         &mut self,
         store: &mut StoreInner,
-        values: [Register; 3],
+        values: [Reg; 3],
     ) -> ReturnOutcome {
         self.ip.add(1);
         self.copy_many_return_values(self.ip, &values);
@@ -233,10 +225,10 @@ impl<'engine> Executor<'engine> {
     /// - [`Instruction::ReturnMany`]
     /// - [`Instruction::ReturnNezMany`]
     /// - [`Instruction::BranchTableMany`]
-    pub fn copy_many_return_values(&mut self, ip: InstructionPtr, values: &[Register]) {
+    pub fn copy_many_return_values(&mut self, ip: InstructionPtr, values: &[Reg]) {
         let (mut caller_sp, results) = self.return_caller_results();
         let mut result = results.head();
-        let mut copy_results = |values: &[Register]| {
+        let mut copy_results = |values: &[Reg]| {
             for value in values {
                 let value = self.get_register(*value);
                 // Safety: The `callee.results()` always refer to a span of valid
@@ -267,7 +259,7 @@ impl<'engine> Executor<'engine> {
     fn execute_return_nez_impl<T>(
         &mut self,
         store: &mut StoreInner,
-        condition: Register,
+        condition: Reg,
         value: T,
         f: fn(&mut Self, &mut StoreInner, T) -> ReturnOutcome,
     ) -> ReturnOutcome {
@@ -283,34 +275,30 @@ impl<'engine> Executor<'engine> {
 
     /// Execute an [`Instruction::Return`].
     #[inline(always)]
-    pub fn execute_return_nez(
-        &mut self,
-        store: &mut StoreInner,
-        condition: Register,
-    ) -> ReturnOutcome {
+    pub fn execute_return_nez(&mut self, store: &mut StoreInner, condition: Reg) -> ReturnOutcome {
         self.execute_return_nez_impl(store, condition, (), |this, store, _| {
             this.execute_return(store)
         })
     }
 
-    /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Register`] value.
+    /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Reg`] value.
     #[inline(always)]
     pub fn execute_return_nez_reg(
         &mut self,
         store: &mut StoreInner,
-        condition: Register,
-        value: Register,
+        condition: Reg,
+        value: Reg,
     ) -> ReturnOutcome {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg)
     }
 
-    /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Register`] value.
+    /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Reg`] value.
     #[inline(always)]
     pub fn execute_return_nez_reg2(
         &mut self,
         store: &mut StoreInner,
-        condition: Register,
-        value: [Register; 2],
+        condition: Reg,
+        value: [Reg; 2],
     ) -> ReturnOutcome {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg2)
     }
@@ -320,7 +308,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_nez_imm32(
         &mut self,
         store: &mut StoreInner,
-        condition: Register,
+        condition: Reg,
         value: AnyConst32,
     ) -> ReturnOutcome {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_imm32)
@@ -331,7 +319,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_nez_i64imm32(
         &mut self,
         store: &mut StoreInner,
-        condition: Register,
+        condition: Reg,
         value: Const32<i64>,
     ) -> ReturnOutcome {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_i64imm32)
@@ -342,7 +330,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_nez_f64imm32(
         &mut self,
         store: &mut StoreInner,
-        condition: Register,
+        condition: Reg,
         value: Const32<f64>,
     ) -> ReturnOutcome {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_f64imm32)
@@ -353,8 +341,8 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_nez_span(
         &mut self,
         store: &mut StoreInner,
-        condition: Register,
-        values: RegisterSpanIter,
+        condition: Reg,
+        values: RegSpanIter,
     ) -> ReturnOutcome {
         self.execute_return_nez_impl(store, condition, values, Self::execute_return_span)
     }
@@ -364,8 +352,8 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_nez_many(
         &mut self,
         store: &mut StoreInner,
-        condition: Register,
-        values: [Register; 2],
+        condition: Reg,
+        values: [Reg; 2],
     ) -> ReturnOutcome {
         let condition = self.get_register(condition);
         self.ip.add(1);

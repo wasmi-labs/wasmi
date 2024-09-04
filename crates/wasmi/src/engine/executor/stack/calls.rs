@@ -2,7 +2,7 @@ use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
     collections::HeadVec,
     core::TrapCode,
-    engine::bytecode::{InstructionPtr, RegisterSpan},
+    engine::bytecode::{InstructionPtr, RegSpan},
     Instance,
 };
 use std::vec::Vec;
@@ -10,7 +10,7 @@ use std::vec::Vec;
 #[cfg(doc)]
 use crate::{
     engine::bytecode::Instruction,
-    engine::bytecode::Register,
+    engine::bytecode::Reg,
     engine::executor::stack::ValueStack,
     engine::EngineFunc,
     Global,
@@ -198,7 +198,7 @@ pub struct CallFrame {
     /// Offsets of the [`CallFrame`] into the [`ValueStack`].
     offsets: StackOffsets,
     /// Span of registers were the caller expects them in its [`CallFrame`].
-    results: RegisterSpan,
+    results: RegSpan,
     /// Is `true` if this [`CallFrame`] changed the currently used [`Instance`].
     ///
     /// - This flag is an optimization to reduce the amount of accesses on the
@@ -211,7 +211,7 @@ pub struct CallFrame {
 
 impl CallFrame {
     /// Creates a new [`CallFrame`].
-    pub fn new(instr_ptr: InstructionPtr, offsets: StackOffsets, results: RegisterSpan) -> Self {
+    pub fn new(instr_ptr: InstructionPtr, offsets: StackOffsets, results: RegSpan) -> Self {
         Self {
             instr_ptr,
             offsets,
@@ -253,13 +253,13 @@ impl CallFrame {
         self.offsets.base
     }
 
-    /// Returns the [`RegisterSpan`] of the [`CallFrame`].
+    /// Returns the [`RegSpan`] of the [`CallFrame`].
     ///
     /// # Note
     ///
-    /// The registers yielded by the returned [`RegisterSpan`]
+    /// The registers yielded by the returned [`RegSpan`]
     /// refer to the [`CallFrame`] of the caller of this [`CallFrame`].
-    pub fn results(&self) -> RegisterSpan {
+    pub fn results(&self) -> RegSpan {
         self.results
     }
 }

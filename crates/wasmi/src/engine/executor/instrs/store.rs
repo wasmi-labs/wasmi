@@ -5,7 +5,7 @@ use crate::{
         Const16,
         Instruction,
         InstructionPtr,
-        Register,
+        Reg,
         StoreAtInstr,
         StoreInstr,
         StoreOffset16Instr,
@@ -23,7 +23,7 @@ type WasmStoreOp = fn(
 
 impl<'engine> Executor<'engine> {
     /// Returns the [`Instruction::Register`] parameter for an [`Instruction`].
-    fn fetch_store_value(&self, offset: usize) -> Register {
+    fn fetch_store_value(&self, offset: usize) -> Reg {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
@@ -72,7 +72,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_store_offset16(
         &mut self,
-        instr: StoreOffset16Instr<Register>,
+        instr: StoreOffset16Instr<Reg>,
         store_op: WasmStoreOp,
     ) -> Result<(), Error> {
         self.execute_store_wrap(
@@ -105,7 +105,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_store_at(
         &mut self,
-        instr: StoreAtInstr<Register>,
+        instr: StoreAtInstr<Reg>,
         store_op: WasmStoreOp,
     ) -> Result<(), Error> {
         self.execute_store_wrap(
@@ -159,7 +159,7 @@ macro_rules! impl_execute_istore {
             #[inline(always)]
             pub fn $fn_store_off16(
                 &mut self,
-                instr: StoreOffset16Instr<Register>,
+                instr: StoreOffset16Instr<Reg>,
             ) -> Result<(), Error> {
                 self.execute_store_offset16(instr, $impl_fn)
             }
@@ -175,7 +175,7 @@ macro_rules! impl_execute_istore {
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
             #[inline(always)]
-            pub fn $fn_store_at(&mut self,instr: StoreAtInstr<Register>) -> Result<(), Error> {
+            pub fn $fn_store_at(&mut self,instr: StoreAtInstr<Reg>) -> Result<(), Error> {
                 self.execute_store_at(instr, $impl_fn)
             }
 
@@ -278,14 +278,14 @@ macro_rules! impl_execute_fstore {
             #[inline(always)]
             pub fn $fn_store_off16(
                 &mut self,
-                instr: StoreOffset16Instr<Register>,
+                instr: StoreOffset16Instr<Reg>,
             ) -> Result<(), Error> {
                 self.execute_store_offset16(instr, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
             #[inline(always)]
-            pub fn $fn_store_at(&mut self, instr: StoreAtInstr<Register>) -> Result<(), Error> {
+            pub fn $fn_store_at(&mut self, instr: StoreAtInstr<Reg>) -> Result<(), Error> {
                 self.execute_store_at(instr, $impl_fn)
             }
         )*

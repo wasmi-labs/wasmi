@@ -19,9 +19,9 @@ use crate::{
             Const32,
             Instruction,
             Provider,
-            Register,
-            RegisterSpan,
-            RegisterSpanIter,
+            Reg,
+            RegSpan,
+            RegSpanIter,
         },
         translator::{stack::RegisterSpace, ValueStack},
         FuelCosts,
@@ -212,7 +212,7 @@ impl InstrEncoder {
     /// # Note
     ///
     /// The `last_instr` information is used for an optimization with `local.set`
-    /// and `local.tee` translation to replace the result [`Register`] of the
+    /// and `local.tee` translation to replace the result [`Reg`] of the
     /// last created [`Instruction`] instead of creating another copy [`Instruction`].
     ///
     /// Whenever ending a control block during Wasm translation the `last_instr`
@@ -345,7 +345,7 @@ impl InstrEncoder {
     ///
     /// - Returns `None` if merging of the copy instruction was not possible.
     /// - Returns the `Instr` of the merged `copy2` instruction if merging was successful.
-    fn merge_copy_instrs(&mut self, result: Register, value: TypedProvider) -> Option<Instr> {
+    fn merge_copy_instrs(&mut self, result: Reg, value: TypedProvider) -> Option<Instr> {
         let TypedProvider::Register(mut value) = value else {
             // Case: cannot merge copies with immediate values at the moment.
             //
@@ -381,7 +381,7 @@ impl InstrEncoder {
             (result, value, last_value)
         };
 
-        let merged_copy = Instruction::copy2(RegisterSpan::new(merged_result), value0, value1);
+        let merged_copy = Instruction::copy2(RegSpan::new(merged_result), value0, value1);
         *self.instrs.get_mut(last_instr) = merged_copy;
         Some(last_instr)
     }
@@ -395,14 +395,14 @@ impl InstrEncoder {
     pub fn encode_copy(
         &mut self,
         stack: &mut ValueStack,
-        result: Register,
+        result: Reg,
         value: TypedProvider,
         fuel_info: FuelInfo,
     ) -> Result<Option<Instr>, Error> {
         /// Convenience to create an [`Instruction::Copy`] to copy a constant value.
         fn copy_imm(
             stack: &mut ValueStack,
-            result: Register,
+            result: Reg,
             value: impl Into<UntypedVal>,
         ) -> Result<Instruction, Error> {
             let cref = stack.alloc_const(value.into())?;
@@ -448,7 +448,7 @@ impl InstrEncoder {
     pub fn encode_copies(
         &mut self,
         stack: &mut ValueStack,
-        mut results: RegisterSpanIter,
+        mut results: RegSpanIter,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
     ) -> Result<Option<Instr>, Error> {
@@ -490,7 +490,7 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(values) = RegisterSpanIter::from_providers(values) {
+                if let Some(values) = RegSpanIter::from_providers(values) {
                     let make_instr = match Self::has_overlapping_copy_spans(
                         results.span(),
                         values.span(),
@@ -527,12 +527,8 @@ impl InstrEncoder {
     /// - `[ 1 <- 0 ]`: single element never overlaps
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
-    pub fn has_overlapping_copy_spans(
-        results: RegisterSpan,
-        values: RegisterSpan,
-        len: usize,
-    ) -> bool {
-        RegisterSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
+    pub fn has_overlapping_copy_spans(results: RegSpan, values: RegSpan, len: usize) -> bool {
+        RegSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 
     /// Returns `true` if the `copy results <- values` instruction has overlaps.
@@ -544,7 +540,7 @@ impl InstrEncoder {
     ///   is written to in the first copy but read from in the next.
     /// - The sequence `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since register `3`
     ///   is written to in the first copy but read from in the third.
-    pub fn has_overlapping_copies(results: RegisterSpanIter, values: &[TypedProvider]) -> bool {
+    pub fn has_overlapping_copies(results: RegSpanIter, values: &[TypedProvider]) -> bool {
         debug_assert_eq!(results.len(), values.len());
         if results.is_empty() {
             // Note: An empty set of copies can never have overlapping copies.
@@ -630,7 +626,7 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(span) = RegisterSpanIter::from_providers(values) {
+                if let Some(span) = RegSpanIter::from_providers(values) {
                     self.push_instr(Instruction::return_span(span))?;
                     return Ok(());
                 }
@@ -651,7 +647,7 @@ impl InstrEncoder {
     pub fn encode_return_nez(
         &mut self,
         stack: &mut ValueStack,
-        condition: Register,
+        condition: Reg,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
     ) -> Result<(), Error> {
@@ -692,7 +688,7 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(span) = RegisterSpanIter::from_providers(values) {
+                if let Some(span) = RegSpanIter::from_providers(values) {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
                     return Ok(());
                 }
@@ -708,7 +704,7 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Encode the given slice of [`TypedProvider`] as a list of [`Register`].
+    /// Encode the given slice of [`TypedProvider`] as a list of [`Reg`].
     ///
     /// # Note
     ///
@@ -760,29 +756,29 @@ impl InstrEncoder {
     /// Encode a `local.set` or `local.tee` instruction.
     ///
     /// This also applies an optimization in that the previous instruction
-    /// result is replaced with the `local` [`Register`] instead of encoding
+    /// result is replaced with the `local` [`Reg`] instead of encoding
     /// another `copy` instruction if the `local.set` or `local.tee` belongs
     /// to the same basic block.
     ///
     /// # Note
     ///
-    /// - If `value` is a [`Register`] it usually is equal to the
-    ///   result [`Register`] of the previous instruction.
+    /// - If `value` is a [`Reg`] it usually is equal to the
+    ///   result [`Reg`] of the previous instruction.
     pub fn encode_local_set(
         &mut self,
         stack: &mut ValueStack,
         res: &ModuleHeader,
-        local: Register,
+        local: Reg,
         value: TypedProvider,
-        preserved: Option<Register>,
+        preserved: Option<Reg>,
         fuel_info: FuelInfo,
     ) -> Result<(), Error> {
         fn fallback_case(
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
-            local: Register,
+            local: Reg,
             value: TypedProvider,
-            preserved: Option<Register>,
+            preserved: Option<Reg>,
             fuel_info: FuelInfo,
         ) -> Result<(), Error> {
             if let Some(preserved) = preserved {
@@ -978,18 +974,18 @@ impl InstrEncoder {
     pub fn encode_branch_eqz(
         &mut self,
         stack: &mut ValueStack,
-        condition: Register,
+        condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        type BranchCmpConstructor = fn(Register, Register, BranchOffset16) -> Instruction;
-        type BranchCmpImmConstructor<T> = fn(Register, Const16<T>, BranchOffset16) -> Instruction;
+        type BranchCmpConstructor = fn(Reg, Reg, BranchOffset16) -> Instruction;
+        type BranchCmpImmConstructor<T> = fn(Reg, Const16<T>, BranchOffset16) -> Instruction;
 
         /// Create an [`Instruction::BranchCmpFallback`].
         fn make_branch_cmp_fallback(
             stack: &mut ValueStack,
             cmp: BranchComparator,
-            lhs: Register,
-            rhs: Register,
+            lhs: Reg,
+            rhs: Reg,
             offset: BranchOffset,
         ) -> Result<Instruction, Error> {
             let params = stack.alloc_const(ComparatorOffsetParam::new(cmp, offset))?;
@@ -1002,7 +998,7 @@ impl InstrEncoder {
         fn encode_branch_eqz_fallback(
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
-            condition: Register,
+            condition: Reg,
             label: LabelRef,
         ) -> Result<(), Error> {
             let offset = this.try_resolve_label(label)?;
@@ -1031,7 +1027,7 @@ impl InstrEncoder {
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
             last_instr: Instr,
-            condition: Register,
+            condition: Reg,
             instr: BinInstr,
             label: LabelRef,
             cmp: BranchComparator,
@@ -1064,7 +1060,7 @@ impl InstrEncoder {
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
             last_instr: Instr,
-            condition: Register,
+            condition: Reg,
             instr: BinInstrImm16<T>,
             label: LabelRef,
             cmp: BranchComparator,
@@ -1171,18 +1167,18 @@ impl InstrEncoder {
     pub fn encode_branch_nez(
         &mut self,
         stack: &mut ValueStack,
-        condition: Register,
+        condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        type BranchCmpConstructor = fn(Register, Register, BranchOffset16) -> Instruction;
-        type BranchCmpImmConstructor<T> = fn(Register, Const16<T>, BranchOffset16) -> Instruction;
+        type BranchCmpConstructor = fn(Reg, Reg, BranchOffset16) -> Instruction;
+        type BranchCmpImmConstructor<T> = fn(Reg, Const16<T>, BranchOffset16) -> Instruction;
 
         /// Create an [`Instruction::BranchCmpFallback`].
         fn make_branch_cmp_fallback(
             stack: &mut ValueStack,
             cmp: BranchComparator,
-            lhs: Register,
-            rhs: Register,
+            lhs: Reg,
+            rhs: Reg,
             offset: BranchOffset,
         ) -> Result<Instruction, Error> {
             let params = stack.alloc_const(ComparatorOffsetParam::new(cmp, offset))?;
@@ -1195,7 +1191,7 @@ impl InstrEncoder {
         fn encode_branch_nez_fallback(
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
-            condition: Register,
+            condition: Reg,
             label: LabelRef,
         ) -> Result<(), Error> {
             let offset = this.try_resolve_label(label)?;
@@ -1224,7 +1220,7 @@ impl InstrEncoder {
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
             last_instr: Instr,
-            condition: Register,
+            condition: Reg,
             instr: BinInstr,
             label: LabelRef,
             cmp: BranchComparator,
@@ -1257,7 +1253,7 @@ impl InstrEncoder {
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
             last_instr: Instr,
-            condition: Register,
+            condition: Reg,
             instr: BinInstrImm16<T>,
             label: LabelRef,
             cmp: BranchComparator,
@@ -1488,33 +1484,33 @@ mod tests {
     #[test]
     fn has_overlapping_copies_works() {
         assert!(!InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(0)).iter(0),
+            RegSpan::new(Reg::from_i16(0)).iter(0),
             &[],
         ));
         assert!(!InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            RegSpan::new(Reg::from_i16(0)).iter(2),
             &[TypedProvider::register(0), TypedProvider::register(1),],
         ));
         assert!(!InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            RegSpan::new(Reg::from_i16(0)).iter(2),
             &[
                 TypedProvider::Const(TypedVal::from(10_i32)),
                 TypedProvider::Const(TypedVal::from(20_i32)),
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            RegSpan::new(Reg::from_i16(0)).iter(2),
             &[
                 TypedProvider::Const(TypedVal::from(10_i32)),
                 TypedProvider::register(0),
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            RegSpan::new(Reg::from_i16(0)).iter(2),
             &[TypedProvider::register(0), TypedProvider::register(0),],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(3)).iter(3),
+            RegSpan::new(Reg::from_i16(3)).iter(3),
             &[
                 TypedProvider::register(2),
                 TypedProvider::register(3),
@@ -1522,7 +1518,7 @@ mod tests {
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(3)).iter(4),
+            RegSpan::new(Reg::from_i16(3)).iter(4),
             &[
                 TypedProvider::register(-1),
                 TypedProvider::register(10),

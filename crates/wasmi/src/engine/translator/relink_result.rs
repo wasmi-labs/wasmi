@@ -8,8 +8,8 @@ use crate::{
             LoadAtInstr,
             LoadInstr,
             LoadOffset16Instr,
-            Register,
-            RegisterSpan,
+            Reg,
+            RegSpan,
             SignatureIdx,
             UnaryInstr,
         },
@@ -26,8 +26,8 @@ impl Instruction {
     pub fn relink_result(
         &mut self,
         module: &ModuleHeader,
-        new_result: Register,
-        old_result: Register,
+        new_result: Reg,
+        old_result: Reg,
     ) -> Result<bool, Error> {
         use Instruction as I;
         match self {
@@ -537,11 +537,7 @@ impl Instruction {
     }
 }
 
-fn relink_simple<T>(
-    result: &mut T,
-    new_result: Register,
-    old_result: Register,
-) -> Result<bool, Error>
+fn relink_simple<T>(result: &mut T, new_result: Reg, old_result: Reg) -> Result<bool, Error>
 where
     T: ResultMut,
 {
@@ -565,11 +561,11 @@ fn get_engine(module: &ModuleHeader) -> Engine {
 }
 
 fn relink_call_internal(
-    results: &mut RegisterSpan,
+    results: &mut RegSpan,
     func: EngineFunc,
     module: &ModuleHeader,
-    new_result: Register,
-    old_result: Register,
+    new_result: Reg,
+    old_result: Reg,
 ) -> Result<bool, Error> {
     let Some(module_func) = module.get_func_index(func) else {
         panic!("missing module func for compiled func: {func:?}")
@@ -584,11 +580,11 @@ fn relink_call_internal(
 }
 
 fn relink_call_imported(
-    results: &mut RegisterSpan,
+    results: &mut RegSpan,
     func: FuncIdx,
     module: &ModuleHeader,
-    new_result: Register,
-    old_result: Register,
+    new_result: Reg,
+    old_result: Reg,
 ) -> Result<bool, Error> {
     let engine = get_engine(module);
     let func_idx = u32::from(func).into();
@@ -601,11 +597,11 @@ fn relink_call_imported(
 }
 
 fn relink_call_indirect(
-    results: &mut RegisterSpan,
+    results: &mut RegSpan,
     func_type: SignatureIdx,
     module: &ModuleHeader,
-    new_result: Register,
-    old_result: Register,
+    new_result: Reg,
+    old_result: Reg,
 ) -> Result<bool, Error> {
     let engine = get_engine(module);
     let func_type_idx = u32::from(func_type).into();
@@ -618,47 +614,47 @@ fn relink_call_indirect(
 }
 
 trait ResultMut {
-    fn result_mut(&mut self) -> &mut Register;
+    fn result_mut(&mut self) -> &mut Reg;
 }
 
-impl ResultMut for Register {
-    fn result_mut(&mut self) -> &mut Register {
+impl ResultMut for Reg {
+    fn result_mut(&mut self) -> &mut Reg {
         self
     }
 }
 
 impl ResultMut for LoadInstr {
-    fn result_mut(&mut self) -> &mut Register {
+    fn result_mut(&mut self) -> &mut Reg {
         &mut self.result
     }
 }
 
 impl ResultMut for LoadAtInstr {
-    fn result_mut(&mut self) -> &mut Register {
+    fn result_mut(&mut self) -> &mut Reg {
         &mut self.result
     }
 }
 
 impl ResultMut for LoadOffset16Instr {
-    fn result_mut(&mut self) -> &mut Register {
+    fn result_mut(&mut self) -> &mut Reg {
         &mut self.result
     }
 }
 
 impl ResultMut for UnaryInstr {
-    fn result_mut(&mut self) -> &mut Register {
+    fn result_mut(&mut self) -> &mut Reg {
         &mut self.result
     }
 }
 
 impl ResultMut for BinInstr {
-    fn result_mut(&mut self) -> &mut Register {
+    fn result_mut(&mut self) -> &mut Reg {
         &mut self.result
     }
 }
 
 impl<T> ResultMut for BinInstrImm<T> {
-    fn result_mut(&mut self) -> &mut Register {
+    fn result_mut(&mut self) -> &mut Reg {
         &mut self.result
     }
 }

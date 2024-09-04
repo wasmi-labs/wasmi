@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::bytecode::{LoadAtInstr, LoadInstr, LoadOffset16Instr, Register},
+    engine::bytecode::{LoadAtInstr, LoadInstr, LoadOffset16Instr, Reg},
     Error,
 };
 
@@ -29,7 +29,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_load_extend(
         &mut self,
-        result: Register,
+        result: Reg,
         address: UntypedVal,
         offset: u32,
         load_extend: WasmLoadOp,

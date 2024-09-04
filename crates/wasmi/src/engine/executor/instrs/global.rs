@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{hint, UntypedVal},
-    engine::bytecode::{Const16, GlobalIdx, Register},
+    engine::bytecode::{Const16, GlobalIdx, Reg},
     store::StoreInner,
 };
 
@@ -11,7 +11,7 @@ use crate::engine::bytecode::Instruction;
 impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::GlobalGet`].
     #[inline(always)]
-    pub fn execute_global_get(&mut self, store: &StoreInner, result: Register, global: GlobalIdx) {
+    pub fn execute_global_get(&mut self, store: &StoreInner, result: Reg, global: GlobalIdx) {
         let value = match u32::from(global) {
             0 => unsafe { self.cache.global.get() },
             _ => {
@@ -26,12 +26,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::GlobalSet`].
     #[inline(always)]
-    pub fn execute_global_set(
-        &mut self,
-        store: &mut StoreInner,
-        global: GlobalIdx,
-        input: Register,
-    ) {
+    pub fn execute_global_set(&mut self, store: &mut StoreInner, global: GlobalIdx, input: Reg) {
         let input = self.get_register(input);
         self.execute_global_set_impl(store, global, input)
     }

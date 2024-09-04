@@ -16,13 +16,9 @@ fn test_reg(ty: ValType) {
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            Instruction::table_grow(
-                Register::from_i16(2),
-                Register::from_i16(1),
-                Register::from_i16(0),
-            ),
+            Instruction::table_grow(Reg::from_i16(2), Reg::from_i16(1), Reg::from_i16(0)),
             Instruction::table_idx(0),
-            Instruction::return_reg(Register::from_i16(2)),
+            Instruction::return_reg(Reg::from_i16(2)),
         ])
         .run();
 }
@@ -49,13 +45,9 @@ fn test_imm16(ty: ValType, delta: u32) {
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            Instruction::table_grow_imm(
-                Register::from_i16(1),
-                u32imm16(delta),
-                Register::from_i16(0),
-            ),
+            Instruction::table_grow_imm(Reg::from_i16(1), u32imm16(delta), Reg::from_i16(0)),
             Instruction::table_idx(0),
-            Instruction::return_reg(Register::from_i16(1)),
+            Instruction::return_reg(Reg::from_i16(1)),
         ])
         .run();
 }
@@ -88,8 +80,8 @@ fn test_imm_zero(ty: ValType) {
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            Instruction::table_size(Register::from_i16(1), 0),
-            Instruction::return_reg(Register::from_i16(1)),
+            Instruction::table_size(Reg::from_i16(1), 0),
+            Instruction::return_reg(Reg::from_i16(1)),
         ])
         .run();
 }
@@ -121,8 +113,8 @@ fn test_imm_value_and_zero(ty: ValType) {
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            Instruction::table_size(Register::from_i16(1), 0),
-            Instruction::return_reg(Register::from_i16(1)),
+            Instruction::table_size(Reg::from_i16(1), 0),
+            Instruction::return_reg(Reg::from_i16(1)),
         ])
         .run();
 }
@@ -150,13 +142,9 @@ fn test_imm(ty: ValType, delta: u32) {
     TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::table_grow(
-                    Register::from_i16(1),
-                    Register::from_i16(-1),
-                    Register::from_i16(0),
-                ),
+                Instruction::table_grow(Reg::from_i16(1), Reg::from_i16(-1), Reg::from_i16(0)),
                 Instruction::table_idx(0),
-                Instruction::return_reg(Register::from_i16(1)),
+                Instruction::return_reg(Reg::from_i16(1)),
             ])
             .consts([delta]),
         )

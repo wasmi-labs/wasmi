@@ -2,15 +2,7 @@ use super::Executor;
 use crate::{
     core::TrapCode,
     engine::{
-        bytecode::{
-            FuncIdx,
-            Instruction,
-            InstructionPtr,
-            Register,
-            RegisterSpan,
-            SignatureIdx,
-            TableIdx,
-        },
+        bytecode::{FuncIdx, Instruction, InstructionPtr, Reg, RegSpan, SignatureIdx, TableIdx},
         code_map::CompiledFuncRef,
         executor::stack::{CallFrame, FrameParams, ValueStack},
         EngineFunc,
@@ -82,7 +74,7 @@ pub struct ResumableHostError {
     /// The host function that returned the error.
     host_func: Func,
     /// The result registers of the caller of the host function.
-    caller_results: RegisterSpan,
+    caller_results: RegSpan,
 }
 
 #[cfg(feature = "std")]
@@ -97,7 +89,7 @@ impl fmt::Display for ResumableHostError {
 impl ResumableHostError {
     /// Creates a new [`ResumableHostError`].
     #[cold]
-    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: RegisterSpan) -> Self {
+    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: RegSpan) -> Self {
         Self {
             host_error,
             host_func,
@@ -115,8 +107,8 @@ impl ResumableHostError {
         &self.host_func
     }
 
-    /// Returns the caller results [`RegisterSpan`] of the [`ResumableHostError`].
-    pub(crate) fn caller_results(&self) -> &RegisterSpan {
+    /// Returns the caller results [`RegSpan`] of the [`ResumableHostError`].
+    pub(crate) fn caller_results(&self) -> &RegSpan {
         &self.caller_results
     }
 }
@@ -230,7 +222,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn dispatch_compiled_func<C: CallContext>(
         &mut self,
-        results: RegisterSpan,
+        results: RegSpan,
         func: CompiledFuncRef,
     ) -> Result<CallFrame, Error> {
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
@@ -281,9 +273,9 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Copies an array of [`Register`] to the `dst` [`Register`] span.
+    /// Copies an array of [`Reg`] to the `dst` [`Reg`] span.
     #[inline(always)]
-    fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Register; N]) {
+    fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Reg; N]) {
         for value in regs {
             let value = self.get_register(*value);
             // Safety: The `callee.results()` always refer to a span of valid
@@ -294,7 +286,7 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Copies a list of [`Instruction::RegisterList`] to the `dst` [`Register`] span.
+    /// Copies a list of [`Instruction::RegisterList`] to the `dst` [`Reg`] span.
     /// Copies the parameters from `src` for the called [`CallFrame`].
     ///
     /// This will make the [`InstructionPtr`] point to the [`Instruction`] following the
@@ -313,7 +305,7 @@ impl<'engine> Executor<'engine> {
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
-        results: RegisterSpan,
+        results: RegSpan,
         func: EngineFunc,
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
@@ -376,7 +368,7 @@ impl<'engine> Executor<'engine> {
         self.prepare_compiled_func_call::<C>(store, results, func, None)
     }
 
-    /// Returns the `results` [`RegisterSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
+    /// Returns the `results` [`RegSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
     ///
     /// # Note
     ///
@@ -384,7 +376,7 @@ impl<'engine> Executor<'engine> {
     /// tail call instructions for which the top-most [`CallFrame`] is the caller.
     ///
     /// [`CallStack`]: crate::engine::executor::stack::CallStack
-    fn caller_results(&self) -> RegisterSpan {
+    fn caller_results(&self) -> RegSpan {
         self.stack
             .calls
             .peek()
@@ -397,7 +389,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_call_internal_0(
         &mut self,
         store: &mut StoreInner,
-        results: RegisterSpan,
+        results: RegSpan,
         func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func, None)
@@ -408,7 +400,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_call_internal(
         &mut self,
         store: &mut StoreInner,
-        results: RegisterSpan,
+        results: RegSpan,
         func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func, None)
@@ -450,7 +442,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_call_imported_0<T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func: FuncIdx,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
@@ -462,7 +454,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_call_imported<T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func: FuncIdx,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
@@ -473,7 +465,7 @@ impl<'engine> Executor<'engine> {
     fn execute_call_imported_impl<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func: &Func,
     ) -> Result<(), Error> {
         match store.inner.resolve_func(func) {
@@ -515,7 +507,7 @@ impl<'engine> Executor<'engine> {
     fn execute_host_func<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
@@ -635,7 +627,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_call_indirect_0<T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func_type: SignatureIdx,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
@@ -649,7 +641,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_call_indirect_0_imm16<T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func_type: SignatureIdx,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
@@ -663,7 +655,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_call_indirect<T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func_type: SignatureIdx,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
@@ -677,7 +669,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_call_indirect_imm16<T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func_type: SignatureIdx,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
@@ -690,7 +682,7 @@ impl<'engine> Executor<'engine> {
     fn execute_call_indirect_impl<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func_type: SignatureIdx,
         index: u32,
         table: TableIdx,

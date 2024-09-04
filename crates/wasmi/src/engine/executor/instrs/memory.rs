@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::TrapCode,
-    engine::bytecode::{Const16, DataSegmentIdx, Instruction, InstructionPtr, Register},
+    engine::bytecode::{Const16, DataSegmentIdx, Instruction, InstructionPtr, Reg},
     error::EntityGrowError,
     store::{ResourceLimiterRef, StoreInner},
     Error,
@@ -29,7 +29,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::MemorySize`].
     #[inline(always)]
-    pub fn execute_memory_size(&mut self, store: &StoreInner, result: Register) {
+    pub fn execute_memory_size(&mut self, store: &StoreInner, result: Reg) {
         let memory = self.get_default_memory();
         let size = store.resolve_memory(&memory).size();
         self.set_register(result, size);
@@ -41,8 +41,8 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_grow<T>(
         &mut self,
         store: &mut Store<T>,
-        result: Register,
-        delta: Register,
+        result: Reg,
+        delta: Reg,
     ) -> Result<(), Error> {
         let delta: u32 = self.get_register_as(delta);
         let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
@@ -54,7 +54,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_grow_by<T>(
         &mut self,
         store: &mut Store<T>,
-        result: Register,
+        result: Reg,
         delta: Const16<u32>,
     ) -> Result<(), Error> {
         let delta: u32 = delta.into();
@@ -66,7 +66,7 @@ impl<'engine> Executor<'engine> {
     fn execute_memory_grow_impl<'store>(
         &mut self,
         store: &'store mut StoreInner,
-        result: Register,
+        result: Reg,
         delta: u32,
         resource_limiter: &mut ResourceLimiterRef<'store>,
     ) -> Result<(), Error> {
@@ -102,9 +102,9 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_copy(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        src: Register,
-        len: Register,
+        dst: Reg,
+        src: Reg,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
@@ -118,8 +118,8 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        src: Register,
-        len: Register,
+        src: Reg,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
@@ -132,9 +132,9 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_copy_from(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         src: Const16<u32>,
-        len: Register,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
@@ -149,7 +149,7 @@ impl<'engine> Executor<'engine> {
         store: &mut StoreInner,
         dst: Const16<u32>,
         src: Const16<u32>,
-        len: Register,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
@@ -162,8 +162,8 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_copy_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        src: Register,
+        dst: Reg,
+        src: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
@@ -178,7 +178,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        src: Register,
+        src: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
@@ -192,7 +192,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_copy_from_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         src: Const16<u32>,
         len: Const16<u32>,
     ) -> Result<(), Error> {
@@ -253,9 +253,9 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_fill(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        value: Register,
-        len: Register,
+        dst: Reg,
+        value: Reg,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let value: u8 = self.get_register_as(value);
@@ -269,8 +269,8 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        value: Register,
-        len: Register,
+        value: Reg,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let value: u8 = self.get_register_as(value);
@@ -283,9 +283,9 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_fill_imm(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         value: u8,
-        len: Register,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let len: u32 = self.get_register_as(len);
@@ -299,7 +299,7 @@ impl<'engine> Executor<'engine> {
         store: &mut StoreInner,
         dst: Const16<u32>,
         value: u8,
-        len: Register,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let len: u32 = self.get_register_as(len);
@@ -311,8 +311,8 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_fill_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        value: Register,
+        dst: Reg,
+        value: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
@@ -327,7 +327,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        value: Register,
+        value: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
@@ -341,7 +341,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_fill_imm_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         value: u8,
         len: Const16<u32>,
     ) -> Result<(), Error> {
@@ -395,9 +395,9 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_init(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        src: Register,
-        len: Register,
+        dst: Reg,
+        src: Reg,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
@@ -411,8 +411,8 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        src: Register,
-        len: Register,
+        src: Reg,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
@@ -425,9 +425,9 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_init_from(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         src: Const16<u32>,
-        len: Register,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
@@ -442,7 +442,7 @@ impl<'engine> Executor<'engine> {
         store: &mut StoreInner,
         dst: Const16<u32>,
         src: Const16<u32>,
-        len: Register,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
@@ -455,8 +455,8 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_init_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        src: Register,
+        dst: Reg,
+        src: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
@@ -471,7 +471,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        src: Register,
+        src: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
@@ -485,7 +485,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_memory_init_from_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         src: Const16<u32>,
         len: Const16<u32>,
     ) -> Result<(), Error> {

@@ -19,9 +19,9 @@ use super::{
     LoadAtInstr,
     LoadInstr,
     LoadOffset16Instr,
-    Register,
-    RegisterSpan,
-    RegisterSpanIter,
+    Reg,
+    RegSpan,
+    RegSpanIter,
     SignatureIdx,
     StoreAtInstr,
     StoreInstr,
@@ -47,26 +47,22 @@ impl Instruction {
         Self::F64Const32(value.into())
     }
 
-    /// Creates a new [`Instruction::ReturnReg`] from the given [`Register`] index.
-    pub fn return_reg(index: impl Into<Register>) -> Self {
+    /// Creates a new [`Instruction::ReturnReg`] from the given [`Reg`] index.
+    pub fn return_reg(index: impl Into<Reg>) -> Self {
         Self::ReturnReg {
             value: index.into(),
         }
     }
 
-    /// Creates a new [`Instruction::ReturnReg2`] for the given [`Register`] indices.
-    pub fn return_reg2(reg0: impl Into<Register>, reg1: impl Into<Register>) -> Self {
+    /// Creates a new [`Instruction::ReturnReg2`] for the given [`Reg`] indices.
+    pub fn return_reg2(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
         Self::ReturnReg2 {
             values: [reg0.into(), reg1.into()],
         }
     }
 
-    /// Creates a new [`Instruction::ReturnReg3`] for the given [`Register`] indices.
-    pub fn return_reg3(
-        reg0: impl Into<Register>,
-        reg1: impl Into<Register>,
-        reg2: impl Into<Register>,
-    ) -> Self {
+    /// Creates a new [`Instruction::ReturnReg3`] for the given [`Reg`] indices.
+    pub fn return_reg3(reg0: impl Into<Reg>, reg1: impl Into<Reg>, reg2: impl Into<Reg>) -> Self {
         Self::ReturnReg3 {
             values: [reg0.into(), reg1.into(), reg2.into()],
         }
@@ -94,30 +90,26 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnSpan`] from the given `values`.
-    pub fn return_span(values: RegisterSpanIter) -> Self {
+    pub fn return_span(values: RegSpanIter) -> Self {
         Self::ReturnSpan { values }
     }
 
-    /// Creates a new [`Instruction::ReturnMany`] for the given [`Register`] indices.
-    pub fn return_many(
-        reg0: impl Into<Register>,
-        reg1: impl Into<Register>,
-        reg2: impl Into<Register>,
-    ) -> Self {
+    /// Creates a new [`Instruction::ReturnMany`] for the given [`Reg`] indices.
+    pub fn return_many(reg0: impl Into<Reg>, reg1: impl Into<Reg>, reg2: impl Into<Reg>) -> Self {
         Self::ReturnMany {
             values: [reg0.into(), reg1.into(), reg2.into()],
         }
     }
 
     /// Creates a new [`Instruction::ReturnNez`] for the given `condition`.
-    pub fn return_nez(condition: impl Into<Register>) -> Self {
+    pub fn return_nez(condition: impl Into<Reg>) -> Self {
         Self::ReturnNez {
             condition: condition.into(),
         }
     }
 
     /// Creates a new [`Instruction::ReturnNezReg`] for the given `condition` and `value`.
-    pub fn return_nez_reg(condition: impl Into<Register>, value: impl Into<Register>) -> Self {
+    pub fn return_nez_reg(condition: impl Into<Reg>, value: impl Into<Reg>) -> Self {
         Self::ReturnNezReg {
             condition: condition.into(),
             value: value.into(),
@@ -126,9 +118,9 @@ impl Instruction {
 
     /// Creates a new [`Instruction::ReturnNezReg2`] for the given `condition` and `value`.
     pub fn return_nez_reg2(
-        condition: impl Into<Register>,
-        value0: impl Into<Register>,
-        value1: impl Into<Register>,
+        condition: impl Into<Reg>,
+        value0: impl Into<Reg>,
+        value1: impl Into<Reg>,
     ) -> Self {
         Self::ReturnNezReg2 {
             condition: condition.into(),
@@ -137,7 +129,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezImm32`] for the given `condition` and `value`.
-    pub fn return_nez_imm32(condition: Register, value: impl Into<AnyConst32>) -> Self {
+    pub fn return_nez_imm32(condition: Reg, value: impl Into<AnyConst32>) -> Self {
         Self::ReturnNezImm32 {
             condition,
             value: value.into(),
@@ -145,7 +137,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezI64Imm32`] for the given `condition` and `value`.
-    pub fn return_nez_i64imm32(condition: Register, value: impl Into<Const32<i64>>) -> Self {
+    pub fn return_nez_i64imm32(condition: Reg, value: impl Into<Const32<i64>>) -> Self {
         Self::ReturnNezI64Imm32 {
             condition,
             value: value.into(),
@@ -153,7 +145,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezI64Imm32`] for the given `condition` and `value`.
-    pub fn return_nez_f64imm32(condition: Register, value: impl Into<Const32<f64>>) -> Self {
+    pub fn return_nez_f64imm32(condition: Reg, value: impl Into<Const32<f64>>) -> Self {
         Self::ReturnNezF64Imm32 {
             condition,
             value: value.into(),
@@ -161,15 +153,15 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `values`.
-    pub fn return_nez_span(condition: Register, values: RegisterSpanIter) -> Self {
+    pub fn return_nez_span(condition: Reg, values: RegSpanIter) -> Self {
         Self::ReturnNezSpan { condition, values }
     }
 
     /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `value`.
     pub fn return_nez_many(
-        condition: impl Into<Register>,
-        head0: impl Into<Register>,
-        head1: impl Into<Register>,
+        condition: impl Into<Reg>,
+        head0: impl Into<Reg>,
+        head1: impl Into<Reg>,
     ) -> Self {
         Self::ReturnNezMany {
             condition: condition.into(),
@@ -183,27 +175,27 @@ impl Instruction {
     }
 
     /// Convenience constructor to create a new [`Instruction::BranchI32EqImm`] with a zero immediate value.
-    pub fn branch_i32_eqz(condition: Register, offset: BranchOffset16) -> Self {
+    pub fn branch_i32_eqz(condition: Reg, offset: BranchOffset16) -> Self {
         Self::branch_i32_eq_imm(condition, 0_i16, offset)
     }
 
     /// Convenience constructor to create a new [`Instruction::BranchI32NeImm`] with a zero immediate value.
-    pub fn branch_i32_nez(condition: Register, offset: BranchOffset16) -> Self {
+    pub fn branch_i32_nez(condition: Reg, offset: BranchOffset16) -> Self {
         Self::branch_i32_ne_imm(condition, 0_i16, offset)
     }
 
     /// Convenience constructor to create a new [`Instruction::BranchI64EqImm`] with a zero immediate value.
-    pub fn branch_i64_eqz(condition: Register, offset: BranchOffset16) -> Self {
+    pub fn branch_i64_eqz(condition: Reg, offset: BranchOffset16) -> Self {
         Self::branch_i64_eq_imm(condition, 0_i16, offset)
     }
 
     /// Convenience constructor to create a new [`Instruction::BranchI64NeImm`] with a zero immediate value.
-    pub fn branch_i64_nez(condition: Register, offset: BranchOffset16) -> Self {
+    pub fn branch_i64_nez(condition: Reg, offset: BranchOffset16) -> Self {
         Self::branch_i64_ne_imm(condition, 0_i16, offset)
     }
 
     /// Creates a new [`Instruction::BranchTable0`] for the given `index` and `len_targets`.
-    pub fn branch_table_0(index: impl Into<Register>, len_targets: u32) -> Self {
+    pub fn branch_table_0(index: impl Into<Reg>, len_targets: u32) -> Self {
         Self::BranchTable0 {
             index: index.into(),
             len_targets,
@@ -211,7 +203,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::BranchTable1`] for the given `index` and `len_targets`.
-    pub fn branch_table_1(index: impl Into<Register>, len_targets: u32) -> Self {
+    pub fn branch_table_1(index: impl Into<Reg>, len_targets: u32) -> Self {
         Self::BranchTable1 {
             index: index.into(),
             len_targets,
@@ -219,7 +211,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::BranchTable2`] for the given `index` and `len_targets`.
-    pub fn branch_table_2(index: impl Into<Register>, len_targets: u32) -> Self {
+    pub fn branch_table_2(index: impl Into<Reg>, len_targets: u32) -> Self {
         Self::BranchTable2 {
             index: index.into(),
             len_targets,
@@ -227,7 +219,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::BranchTable3`] for the given `index` and `len_targets`.
-    pub fn branch_table_3(index: impl Into<Register>, len_targets: u32) -> Self {
+    pub fn branch_table_3(index: impl Into<Reg>, len_targets: u32) -> Self {
         Self::BranchTable3 {
             index: index.into(),
             len_targets,
@@ -235,7 +227,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::BranchTableSpan`] for the given `index` and `len_targets`.
-    pub fn branch_table_span(index: impl Into<Register>, len_targets: u32) -> Self {
+    pub fn branch_table_span(index: impl Into<Reg>, len_targets: u32) -> Self {
         Self::BranchTableSpan {
             index: index.into(),
             len_targets,
@@ -243,7 +235,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::BranchTableMany`] for the given `index` and `len_targets`.
-    pub fn branch_table_many(index: impl Into<Register>, len_targets: u32) -> Self {
+    pub fn branch_table_many(index: impl Into<Reg>, len_targets: u32) -> Self {
         Self::BranchTableMany {
             index: index.into(),
             len_targets,
@@ -251,20 +243,17 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::BranchTableTarget`] for the given `index` and `len_targets`.
-    pub fn branch_table_target(results: RegisterSpan, offset: BranchOffset) -> Self {
+    pub fn branch_table_target(results: RegSpan, offset: BranchOffset) -> Self {
         Self::BranchTableTarget { results, offset }
     }
 
     /// Creates a new [`Instruction::BranchTableTargetNonOverlapping`] for the given `index` and `len_targets`.
-    pub fn branch_table_target_non_overlapping(
-        results: RegisterSpan,
-        offset: BranchOffset,
-    ) -> Self {
+    pub fn branch_table_target_non_overlapping(results: RegSpan, offset: BranchOffset) -> Self {
         Self::BranchTableTargetNonOverlapping { results, offset }
     }
 
     /// Creates a new [`Instruction::Copy`].
-    pub fn copy(result: impl Into<Register>, value: impl Into<Register>) -> Self {
+    pub fn copy(result: impl Into<Reg>, value: impl Into<Reg>) -> Self {
         Self::Copy {
             result: result.into(),
             value: value.into(),
@@ -272,11 +261,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::Copy2`].
-    pub fn copy2(
-        results: RegisterSpan,
-        value0: impl Into<Register>,
-        value1: impl Into<Register>,
-    ) -> Self {
+    pub fn copy2(results: RegSpan, value0: impl Into<Reg>, value1: impl Into<Reg>) -> Self {
         Self::Copy2 {
             results,
             values: [value0.into(), value1.into()],
@@ -284,7 +269,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CopyImm32`].
-    pub fn copy_imm32(result: Register, value: impl Into<AnyConst32>) -> Self {
+    pub fn copy_imm32(result: Reg, value: impl Into<AnyConst32>) -> Self {
         Self::CopyImm32 {
             result,
             value: value.into(),
@@ -292,7 +277,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CopyI64Imm32`].
-    pub fn copy_i64imm32(result: Register, value: impl Into<Const32<i64>>) -> Self {
+    pub fn copy_i64imm32(result: Reg, value: impl Into<Const32<i64>>) -> Self {
         Self::CopyI64Imm32 {
             result,
             value: value.into(),
@@ -300,7 +285,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CopyF64Imm32`].
-    pub fn copy_f64imm32(result: Register, value: impl Into<Const32<f64>>) -> Self {
+    pub fn copy_f64imm32(result: Reg, value: impl Into<Const32<f64>>) -> Self {
         Self::CopyF64Imm32 {
             result,
             value: value.into(),
@@ -308,8 +293,8 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CopySpan`] copying multiple consecutive values.
-    pub fn copy_span(results: RegisterSpan, values: RegisterSpan, len: u16) -> Self {
-        debug_assert!(RegisterSpanIter::has_overlapping_copies(
+    pub fn copy_span(results: RegSpan, values: RegSpan, len: u16) -> Self {
+        debug_assert!(RegSpanIter::has_overlapping_copies(
             results.iter_u16(len),
             values.iter_u16(len)
         ));
@@ -321,12 +306,8 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CopySpanNonOverlapping`] copying multiple consecutive values.
-    pub fn copy_span_non_overlapping(
-        results: RegisterSpan,
-        values: RegisterSpan,
-        len: u16,
-    ) -> Self {
-        debug_assert!(!RegisterSpanIter::has_overlapping_copies(
+    pub fn copy_span_non_overlapping(results: RegSpan, values: RegSpan, len: u16) -> Self {
+        debug_assert!(!RegSpanIter::has_overlapping_copies(
             results.iter_u16(len),
             values.iter_u16(len)
         ));
@@ -338,11 +319,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CopyMany`].
-    pub fn copy_many(
-        results: RegisterSpan,
-        head0: impl Into<Register>,
-        head1: impl Into<Register>,
-    ) -> Self {
+    pub fn copy_many(results: RegSpan, head0: impl Into<Reg>, head1: impl Into<Reg>) -> Self {
         Self::CopyMany {
             results,
             values: [head0.into(), head1.into()],
@@ -351,9 +328,9 @@ impl Instruction {
 
     /// Creates a new [`Instruction::CopyManyNonOverlapping`].
     pub fn copy_many_non_overlapping(
-        results: RegisterSpan,
-        head0: impl Into<Register>,
-        head1: impl Into<Register>,
+        results: RegSpan,
+        head0: impl Into<Reg>,
+        head1: impl Into<Reg>,
     ) -> Self {
         Self::CopyManyNonOverlapping {
             results,
@@ -362,12 +339,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::GlobalGet`].
-    pub fn global_get(result: Register, global: GlobalIdx) -> Self {
+    pub fn global_get(result: Reg, global: GlobalIdx) -> Self {
         Self::GlobalGet { result, global }
     }
 
     /// Creates a new [`Instruction::GlobalSet`].
-    pub fn global_set(global: GlobalIdx, input: Register) -> Self {
+    pub fn global_set(global: GlobalIdx, input: Reg) -> Self {
         Self::GlobalSet { global, input }
     }
 
@@ -388,17 +365,17 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::F32CopysignImm`] instruction.
-    pub fn f32_copysign_imm(result: Register, lhs: Register, rhs: Sign) -> Self {
+    pub fn f32_copysign_imm(result: Reg, lhs: Reg, rhs: Sign) -> Self {
         Self::F32CopysignImm(BinInstrImm::new(result, lhs, rhs))
     }
 
     /// Creates a new [`Instruction::F64CopysignImm`] instruction.
-    pub fn f64_copysign_imm(result: Register, lhs: Register, rhs: Sign) -> Self {
+    pub fn f64_copysign_imm(result: Reg, lhs: Reg, rhs: Sign) -> Self {
         Self::F64CopysignImm(BinInstrImm::new(result, lhs, rhs))
     }
 
     /// Creates a new [`Instruction::RegisterAndImm32`].
-    pub fn register_and_imm32(reg: impl Into<Register>, imm: impl Into<AnyConst32>) -> Self {
+    pub fn register_and_imm32(reg: impl Into<Reg>, imm: impl Into<AnyConst32>) -> Self {
         Self::RegisterAndImm32 {
             reg: reg.into(),
             imm: imm.into(),
@@ -406,7 +383,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::Select`].
-    pub fn select(result: impl Into<Register>, lhs: impl Into<Register>) -> Self {
+    pub fn select(result: impl Into<Reg>, lhs: impl Into<Reg>) -> Self {
         Self::Select {
             result: result.into(),
             lhs: lhs.into(),
@@ -414,7 +391,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::SelectImm32Rhs`].
-    pub fn select_imm32_rhs(result: impl Into<Register>, lhs: impl Into<Register>) -> Self {
+    pub fn select_imm32_rhs(result: impl Into<Reg>, lhs: impl Into<Reg>) -> Self {
         Self::SelectImm32Rhs {
             result: result.into(),
             lhs: lhs.into(),
@@ -422,7 +399,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::SelectImm32Lhs`].
-    pub fn select_imm32_lhs(result: impl Into<Register>, lhs: impl Into<AnyConst32>) -> Self {
+    pub fn select_imm32_lhs(result: impl Into<Reg>, lhs: impl Into<AnyConst32>) -> Self {
         Self::SelectImm32Lhs {
             result: result.into(),
             lhs: lhs.into(),
@@ -430,7 +407,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::SelectImm32`].
-    pub fn select_imm32(result: impl Into<Register>, lhs: impl Into<AnyConst32>) -> Self {
+    pub fn select_imm32(result: impl Into<Reg>, lhs: impl Into<AnyConst32>) -> Self {
         Self::SelectImm32 {
             result: result.into(),
             lhs: lhs.into(),
@@ -438,7 +415,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::SelectI64Imm32Rhs`].
-    pub fn select_i64imm32_rhs(result: impl Into<Register>, lhs: impl Into<Register>) -> Self {
+    pub fn select_i64imm32_rhs(result: impl Into<Reg>, lhs: impl Into<Reg>) -> Self {
         Self::SelectI64Imm32Rhs {
             result: result.into(),
             lhs: lhs.into(),
@@ -446,7 +423,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::SelectI64Imm32Lhs`].
-    pub fn select_i64imm32_lhs(result: impl Into<Register>, lhs: impl Into<Const32<i64>>) -> Self {
+    pub fn select_i64imm32_lhs(result: impl Into<Reg>, lhs: impl Into<Const32<i64>>) -> Self {
         Self::SelectI64Imm32Lhs {
             result: result.into(),
             lhs: lhs.into(),
@@ -454,7 +431,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::SelectI64Imm32`].
-    pub fn select_i64imm32(result: impl Into<Register>, lhs: impl Into<Const32<i64>>) -> Self {
+    pub fn select_i64imm32(result: impl Into<Reg>, lhs: impl Into<Const32<i64>>) -> Self {
         Self::SelectI64Imm32 {
             result: result.into(),
             lhs: lhs.into(),
@@ -462,7 +439,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::SelectF64Imm32Rhs`].
-    pub fn select_f64imm32_rhs(result: impl Into<Register>, lhs: impl Into<Register>) -> Self {
+    pub fn select_f64imm32_rhs(result: impl Into<Reg>, lhs: impl Into<Reg>) -> Self {
         Self::SelectF64Imm32Rhs {
             result: result.into(),
             lhs: lhs.into(),
@@ -470,7 +447,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::SelectF64Imm32Lhs`].
-    pub fn select_f64imm32_lhs(result: impl Into<Register>, lhs: impl Into<Const32<f64>>) -> Self {
+    pub fn select_f64imm32_lhs(result: impl Into<Reg>, lhs: impl Into<Const32<f64>>) -> Self {
         Self::SelectF64Imm32Lhs {
             result: result.into(),
             lhs: lhs.into(),
@@ -478,7 +455,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::SelectF64Imm32`].
-    pub fn select_f64imm32(result: impl Into<Register>, lhs: impl Into<Const32<f64>>) -> Self {
+    pub fn select_f64imm32(result: impl Into<Reg>, lhs: impl Into<Const32<f64>>) -> Self {
         Self::SelectF64Imm32 {
             result: result.into(),
             lhs: lhs.into(),
@@ -486,7 +463,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::RefFunc`] with the given `result` and `func`.
-    pub fn ref_func(result: Register, func: impl Into<FuncIdx>) -> Self {
+    pub fn ref_func(result: Reg, func: impl Into<FuncIdx>) -> Self {
         Self::RefFunc {
             result,
             func: func.into(),
@@ -509,12 +486,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableGet`] with the given `result` and `index`.
-    pub fn table_get(result: Register, index: Register) -> Self {
+    pub fn table_get(result: Reg, index: Reg) -> Self {
         Self::TableGet { result, index }
     }
 
     /// Creates a new [`Instruction::TableGetImm`] with the given `result` and `index`.
-    pub fn table_get_imm(result: Register, index: impl Into<Const32<u32>>) -> Self {
+    pub fn table_get_imm(result: Reg, index: impl Into<Const32<u32>>) -> Self {
         Self::TableGetImm {
             result,
             index: index.into(),
@@ -522,7 +499,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableSize`] with the given `result` and `table`.
-    pub fn table_size(result: Register, table: impl Into<TableIdx>) -> Self {
+    pub fn table_size(result: Reg, table: impl Into<TableIdx>) -> Self {
         Self::TableSize {
             result,
             table: table.into(),
@@ -530,12 +507,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableSet`] with the given `index` and `value`.
-    pub fn table_set(index: Register, value: Register) -> Self {
+    pub fn table_set(index: Reg, value: Reg) -> Self {
         Self::TableSet { index, value }
     }
 
     /// Creates a new [`Instruction::TableSetAt`] with the given `index` and `value`.
-    pub fn table_set_at(index: impl Into<Const32<u32>>, value: Register) -> Self {
+    pub fn table_set_at(index: impl Into<Const32<u32>>, value: Reg) -> Self {
         Self::TableSetAt {
             index: index.into(),
             value,
@@ -543,12 +520,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableCopy`] with the given `dst`, `src` and `len`.
-    pub fn table_copy(dst: Register, src: Register, len: Register) -> Self {
+    pub fn table_copy(dst: Reg, src: Reg, len: Reg) -> Self {
         Self::TableCopy { dst, src, len }
     }
 
     /// Creates a new [`Instruction::TableCopyTo`] with the given `dst`, `src` and `len`.
-    pub fn table_copy_to(dst: impl Into<Const16<u32>>, src: Register, len: Register) -> Self {
+    pub fn table_copy_to(dst: impl Into<Const16<u32>>, src: Reg, len: Reg) -> Self {
         Self::TableCopyTo {
             dst: dst.into(),
             src,
@@ -557,7 +534,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableCopyFrom`] with the given `dst`, `src` and `len`.
-    pub fn table_copy_from(dst: Register, src: impl Into<Const16<u32>>, len: Register) -> Self {
+    pub fn table_copy_from(dst: Reg, src: impl Into<Const16<u32>>, len: Reg) -> Self {
         Self::TableCopyFrom {
             dst,
             src: src.into(),
@@ -569,7 +546,7 @@ impl Instruction {
     pub fn table_copy_from_to(
         dst: impl Into<Const16<u32>>,
         src: impl Into<Const16<u32>>,
-        len: Register,
+        len: Reg,
     ) -> Self {
         Self::TableCopyFromTo {
             dst: dst.into(),
@@ -579,7 +556,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableCopyExact`] with the given `dst`, `src` and `len`.
-    pub fn table_copy_exact(dst: Register, src: Register, len: impl Into<Const16<u32>>) -> Self {
+    pub fn table_copy_exact(dst: Reg, src: Reg, len: impl Into<Const16<u32>>) -> Self {
         Self::TableCopyExact {
             dst,
             src,
@@ -590,7 +567,7 @@ impl Instruction {
     /// Creates a new [`Instruction::TableCopyToExact`] with the given `dst`, `src` and `len`.
     pub fn table_copy_to_exact(
         dst: impl Into<Const16<u32>>,
-        src: Register,
+        src: Reg,
         len: impl Into<Const16<u32>>,
     ) -> Self {
         Self::TableCopyToExact {
@@ -602,7 +579,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::TableCopyFromExact`] with the given `dst`, `src` and `len`.
     pub fn table_copy_from_exact(
-        dst: Register,
+        dst: Reg,
         src: impl Into<Const16<u32>>,
         len: impl Into<Const16<u32>>,
     ) -> Self {
@@ -627,12 +604,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableInit`] with the given `dst`, `src` and `len`.
-    pub fn table_init(dst: Register, src: Register, len: Register) -> Self {
+    pub fn table_init(dst: Reg, src: Reg, len: Reg) -> Self {
         Self::TableInit { dst, src, len }
     }
 
     /// Creates a new [`Instruction::TableInitTo`] with the given `dst`, `src` and `len`.
-    pub fn table_init_to(dst: impl Into<Const16<u32>>, src: Register, len: Register) -> Self {
+    pub fn table_init_to(dst: impl Into<Const16<u32>>, src: Reg, len: Reg) -> Self {
         Self::TableInitTo {
             dst: dst.into(),
             src,
@@ -641,7 +618,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableInitFrom`] with the given `dst`, `src` and `len`.
-    pub fn table_init_from(dst: Register, src: impl Into<Const16<u32>>, len: Register) -> Self {
+    pub fn table_init_from(dst: Reg, src: impl Into<Const16<u32>>, len: Reg) -> Self {
         Self::TableInitFrom {
             dst,
             src: src.into(),
@@ -653,7 +630,7 @@ impl Instruction {
     pub fn table_init_from_to(
         dst: impl Into<Const16<u32>>,
         src: impl Into<Const16<u32>>,
-        len: Register,
+        len: Reg,
     ) -> Self {
         Self::TableInitFromTo {
             dst: dst.into(),
@@ -663,7 +640,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableInitExact`] with the given `dst`, `src` and `len`.
-    pub fn table_init_exact(dst: Register, src: Register, len: impl Into<Const16<u32>>) -> Self {
+    pub fn table_init_exact(dst: Reg, src: Reg, len: impl Into<Const16<u32>>) -> Self {
         Self::TableInitExact {
             dst,
             src,
@@ -674,7 +651,7 @@ impl Instruction {
     /// Creates a new [`Instruction::TableInitToExact`] with the given `dst`, `src` and `len`.
     pub fn table_init_to_exact(
         dst: impl Into<Const16<u32>>,
-        src: Register,
+        src: Reg,
         len: impl Into<Const16<u32>>,
     ) -> Self {
         Self::TableInitToExact {
@@ -686,7 +663,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::TableInitFromExact`] with the given `dst`, `src` and `len`.
     pub fn table_init_from_exact(
-        dst: Register,
+        dst: Reg,
         src: impl Into<Const16<u32>>,
         len: impl Into<Const16<u32>>,
     ) -> Self {
@@ -711,12 +688,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableFill`] with the given `dst`, `len` and `value`.
-    pub fn table_fill(dst: Register, len: Register, value: Register) -> Self {
+    pub fn table_fill(dst: Reg, len: Reg, value: Reg) -> Self {
         Self::TableFill { dst, len, value }
     }
 
     /// Creates a new [`Instruction::TableFillAt`] with the given `dst`, `len` and `value`.
-    pub fn table_fill_at(dst: impl Into<Const16<u32>>, len: Register, value: Register) -> Self {
+    pub fn table_fill_at(dst: impl Into<Const16<u32>>, len: Reg, value: Reg) -> Self {
         Self::TableFillAt {
             dst: dst.into(),
             len,
@@ -725,7 +702,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableFillExact`] with the given `dst`, `len` and `value`.
-    pub fn table_fill_exact(dst: Register, len: impl Into<Const16<u32>>, value: Register) -> Self {
+    pub fn table_fill_exact(dst: Reg, len: impl Into<Const16<u32>>, value: Reg) -> Self {
         Self::TableFillExact {
             dst,
             len: len.into(),
@@ -737,7 +714,7 @@ impl Instruction {
     pub fn table_fill_at_exact(
         dst: impl Into<Const16<u32>>,
         len: impl Into<Const16<u32>>,
-        value: Register,
+        value: Reg,
     ) -> Self {
         Self::TableFillAtExact {
             dst: dst.into(),
@@ -747,7 +724,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableGrow`] with the given `result`, `delta` and `value`.
-    pub fn table_grow(result: Register, delta: Register, value: Register) -> Self {
+    pub fn table_grow(result: Reg, delta: Reg, value: Reg) -> Self {
         Self::TableGrow {
             result,
             delta,
@@ -756,11 +733,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableGrowImm`] with the given `result`, `delta` and `value`.
-    pub fn table_grow_imm(
-        result: Register,
-        delta: impl Into<Const16<u32>>,
-        value: Register,
-    ) -> Self {
+    pub fn table_grow_imm(result: Reg, delta: impl Into<Const16<u32>>, value: Reg) -> Self {
         Self::TableGrowImm {
             result,
             delta: delta.into(),
@@ -769,17 +742,17 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemorySize`] with the given `result`.
-    pub fn memory_size(result: Register) -> Self {
+    pub fn memory_size(result: Reg) -> Self {
         Self::MemorySize { result }
     }
 
     /// Creates a new [`Instruction::MemoryGrow`] with the given `result`, `delta`.
-    pub fn memory_grow(result: Register, delta: Register) -> Self {
+    pub fn memory_grow(result: Reg, delta: Reg) -> Self {
         Self::MemoryGrow { result, delta }
     }
 
     /// Creates a new [`Instruction::MemoryGrowBy`] with the given `result`, `delta` and `value`.
-    pub fn memory_grow_by(result: Register, delta: impl Into<Const16<u32>>) -> Self {
+    pub fn memory_grow_by(result: Reg, delta: impl Into<Const16<u32>>) -> Self {
         Self::MemoryGrowBy {
             result,
             delta: delta.into(),
@@ -787,12 +760,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemoryCopy`] with the given `dst`, `src` and `len`.
-    pub fn memory_copy(dst: Register, src: Register, len: Register) -> Self {
+    pub fn memory_copy(dst: Reg, src: Reg, len: Reg) -> Self {
         Self::MemoryCopy { dst, src, len }
     }
 
     /// Creates a new [`Instruction::MemoryCopyTo`] with the given `dst`, `src` and `len`.
-    pub fn memory_copy_to(dst: impl Into<Const16<u32>>, src: Register, len: Register) -> Self {
+    pub fn memory_copy_to(dst: impl Into<Const16<u32>>, src: Reg, len: Reg) -> Self {
         Self::MemoryCopyTo {
             dst: dst.into(),
             src,
@@ -801,7 +774,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemoryCopyFrom`] with the given `dst`, `src` and `len`.
-    pub fn memory_copy_from(dst: Register, src: impl Into<Const16<u32>>, len: Register) -> Self {
+    pub fn memory_copy_from(dst: Reg, src: impl Into<Const16<u32>>, len: Reg) -> Self {
         Self::MemoryCopyFrom {
             dst,
             src: src.into(),
@@ -813,7 +786,7 @@ impl Instruction {
     pub fn memory_copy_from_to(
         dst: impl Into<Const16<u32>>,
         src: impl Into<Const16<u32>>,
-        len: Register,
+        len: Reg,
     ) -> Self {
         Self::MemoryCopyFromTo {
             dst: dst.into(),
@@ -823,7 +796,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemoryCopyExact`] with the given `dst`, `src` and `len`.
-    pub fn memory_copy_exact(dst: Register, src: Register, len: impl Into<Const16<u32>>) -> Self {
+    pub fn memory_copy_exact(dst: Reg, src: Reg, len: impl Into<Const16<u32>>) -> Self {
         Self::MemoryCopyExact {
             dst,
             src,
@@ -834,7 +807,7 @@ impl Instruction {
     /// Creates a new [`Instruction::MemoryCopyToExact`] with the given `dst`, `src` and `len`.
     pub fn memory_copy_to_exact(
         dst: impl Into<Const16<u32>>,
-        src: Register,
+        src: Reg,
         len: impl Into<Const16<u32>>,
     ) -> Self {
         Self::MemoryCopyToExact {
@@ -846,7 +819,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::MemoryCopyFromExact`] with the given `dst`, `src` and `len`.
     pub fn memory_copy_from_exact(
-        dst: Register,
+        dst: Reg,
         src: impl Into<Const16<u32>>,
         len: impl Into<Const16<u32>>,
     ) -> Self {
@@ -871,12 +844,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemoryInit`] with the given `dst`, `src` and `len`.
-    pub fn memory_init(dst: Register, src: Register, len: Register) -> Self {
+    pub fn memory_init(dst: Reg, src: Reg, len: Reg) -> Self {
         Self::MemoryInit { dst, src, len }
     }
 
     /// Creates a new [`Instruction::MemoryInitTo`] with the given `dst`, `src` and `len`.
-    pub fn memory_init_to(dst: impl Into<Const16<u32>>, src: Register, len: Register) -> Self {
+    pub fn memory_init_to(dst: impl Into<Const16<u32>>, src: Reg, len: Reg) -> Self {
         Self::MemoryInitTo {
             dst: dst.into(),
             src,
@@ -885,7 +858,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemoryInitFrom`] with the given `dst`, `src` and `len`.
-    pub fn memory_init_from(dst: Register, src: impl Into<Const16<u32>>, len: Register) -> Self {
+    pub fn memory_init_from(dst: Reg, src: impl Into<Const16<u32>>, len: Reg) -> Self {
         Self::MemoryInitFrom {
             dst,
             src: src.into(),
@@ -897,7 +870,7 @@ impl Instruction {
     pub fn memory_init_from_to(
         dst: impl Into<Const16<u32>>,
         src: impl Into<Const16<u32>>,
-        len: Register,
+        len: Reg,
     ) -> Self {
         Self::MemoryInitFromTo {
             dst: dst.into(),
@@ -907,7 +880,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemoryInitExact`] with the given `dst`, `src` and `len`.
-    pub fn memory_init_exact(dst: Register, src: Register, len: impl Into<Const16<u32>>) -> Self {
+    pub fn memory_init_exact(dst: Reg, src: Reg, len: impl Into<Const16<u32>>) -> Self {
         Self::MemoryInitExact {
             dst,
             src,
@@ -918,7 +891,7 @@ impl Instruction {
     /// Creates a new [`Instruction::MemoryInitToExact`] with the given `dst`, `src` and `len`.
     pub fn memory_init_to_exact(
         dst: impl Into<Const16<u32>>,
-        src: Register,
+        src: Reg,
         len: impl Into<Const16<u32>>,
     ) -> Self {
         Self::MemoryInitToExact {
@@ -930,7 +903,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::MemoryInitFromExact`] with the given `dst`, `src` and `len`.
     pub fn memory_init_from_exact(
-        dst: Register,
+        dst: Reg,
         src: impl Into<Const16<u32>>,
         len: impl Into<Const16<u32>>,
     ) -> Self {
@@ -955,12 +928,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemoryFill`] with the given `dst`, `value` and `len`.
-    pub fn memory_fill(dst: Register, value: Register, len: Register) -> Self {
+    pub fn memory_fill(dst: Reg, value: Reg, len: Reg) -> Self {
         Self::MemoryFill { dst, value, len }
     }
 
     /// Creates a new [`Instruction::MemoryFillAt`] with the given `dst`, `value` and `len`.
-    pub fn memory_fill_at(dst: impl Into<Const16<u32>>, value: Register, len: Register) -> Self {
+    pub fn memory_fill_at(dst: impl Into<Const16<u32>>, value: Reg, len: Reg) -> Self {
         Self::MemoryFillAt {
             dst: dst.into(),
             value,
@@ -969,12 +942,12 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemoryFillImm`] with the given `dst`, `value` and `len`.
-    pub fn memory_fill_imm(dst: Register, value: u8, len: Register) -> Self {
+    pub fn memory_fill_imm(dst: Reg, value: u8, len: Reg) -> Self {
         Self::MemoryFillImm { dst, value, len }
     }
 
     /// Creates a new [`Instruction::MemoryFillExact`] with the given `dst`, `value` and `len`.
-    pub fn memory_fill_exact(dst: Register, value: Register, len: impl Into<Const16<u32>>) -> Self {
+    pub fn memory_fill_exact(dst: Reg, value: Reg, len: impl Into<Const16<u32>>) -> Self {
         Self::MemoryFillExact {
             dst,
             value,
@@ -983,7 +956,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemoryFillAtImm`] with the given `dst`, `value` and `len`.
-    pub fn memory_fill_at_imm(dst: impl Into<Const16<u32>>, value: u8, len: Register) -> Self {
+    pub fn memory_fill_at_imm(dst: impl Into<Const16<u32>>, value: u8, len: Reg) -> Self {
         Self::MemoryFillAtImm {
             dst: dst.into(),
             value,
@@ -994,7 +967,7 @@ impl Instruction {
     /// Creates a new [`Instruction::MemoryFillAtExact`] with the given `dst`, `value` and `len`.
     pub fn memory_fill_at_exact(
         dst: impl Into<Const16<u32>>,
-        value: Register,
+        value: Reg,
         len: impl Into<Const16<u32>>,
     ) -> Self {
         Self::MemoryFillAtExact {
@@ -1005,7 +978,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::MemoryFillImmExact`] with the given `dst`, `value` and `len`.
-    pub fn memory_fill_imm_exact(dst: Register, value: u8, len: impl Into<Const16<u32>>) -> Self {
+    pub fn memory_fill_imm_exact(dst: Reg, value: u8, len: impl Into<Const16<u32>>) -> Self {
         Self::MemoryFillImmExact {
             dst,
             value,
@@ -1027,40 +1000,32 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::Register`] instruction parameter.
-    pub fn register(reg: impl Into<Register>) -> Self {
+    pub fn register(reg: impl Into<Reg>) -> Self {
         Self::Register(reg.into())
     }
 
     /// Creates a new [`Instruction::Register2`] instruction parameter.
-    pub fn register2(reg0: impl Into<Register>, reg1: impl Into<Register>) -> Self {
+    pub fn register2(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
         Self::Register2([reg0.into(), reg1.into()])
     }
 
     /// Creates a new [`Instruction::Register3`] instruction parameter.
-    pub fn register3(
-        reg0: impl Into<Register>,
-        reg1: impl Into<Register>,
-        reg2: impl Into<Register>,
-    ) -> Self {
+    pub fn register3(reg0: impl Into<Reg>, reg1: impl Into<Reg>, reg2: impl Into<Reg>) -> Self {
         Self::Register3([reg0.into(), reg1.into(), reg2.into()])
     }
 
     /// Creates a new [`Instruction::RegisterList`] instruction parameter.
-    pub fn register_list(
-        reg0: impl Into<Register>,
-        reg1: impl Into<Register>,
-        reg2: impl Into<Register>,
-    ) -> Self {
+    pub fn register_list(reg0: impl Into<Reg>, reg1: impl Into<Reg>, reg2: impl Into<Reg>) -> Self {
         Self::RegisterList([reg0.into(), reg1.into(), reg2.into()])
     }
 
     /// Creates a new [`Instruction::RegisterSpan`].
-    pub fn register_span(span: RegisterSpanIter) -> Self {
+    pub fn register_span(span: RegSpanIter) -> Self {
         Self::RegisterSpan(span)
     }
 
     /// Creates a new [`Instruction::CallIndirectParams`] for the given `index` and `table`.
-    pub fn call_indirect_params(index: Register, table: impl Into<TableIdx>) -> Self {
+    pub fn call_indirect_params(index: Reg, table: impl Into<TableIdx>) -> Self {
         Self::CallIndirectParams(CallIndirectParams {
             index,
             table: table.into(),
@@ -1127,17 +1092,17 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallInternal0`] for the given `func`.
-    pub fn call_internal_0(results: RegisterSpan, func: EngineFunc) -> Self {
+    pub fn call_internal_0(results: RegSpan, func: EngineFunc) -> Self {
         Self::CallInternal0 { results, func }
     }
 
     /// Creates a new [`Instruction::CallInternal`] for the given `func`.
-    pub fn call_internal(results: RegisterSpan, func: EngineFunc) -> Self {
+    pub fn call_internal(results: RegSpan, func: EngineFunc) -> Self {
         Self::CallInternal { results, func }
     }
 
     /// Creates a new [`Instruction::CallImported0`] for the given `func`.
-    pub fn call_imported_0(results: RegisterSpan, func: impl Into<FuncIdx>) -> Self {
+    pub fn call_imported_0(results: RegSpan, func: impl Into<FuncIdx>) -> Self {
         Self::CallImported0 {
             results,
             func: func.into(),
@@ -1145,7 +1110,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallImported`] for the given `func`.
-    pub fn call_imported(results: RegisterSpan, func: impl Into<FuncIdx>) -> Self {
+    pub fn call_imported(results: RegSpan, func: impl Into<FuncIdx>) -> Self {
         Self::CallImported {
             results,
             func: func.into(),
@@ -1153,7 +1118,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallIndirect0`] for the given `func`.
-    pub fn call_indirect_0(results: RegisterSpan, func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn call_indirect_0(results: RegSpan, func_type: impl Into<SignatureIdx>) -> Self {
         Self::CallIndirect0 {
             results,
             func_type: func_type.into(),
@@ -1161,10 +1126,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallIndirect0Imm16`] for the given `func`.
-    pub fn call_indirect_0_imm16(
-        results: RegisterSpan,
-        func_type: impl Into<SignatureIdx>,
-    ) -> Self {
+    pub fn call_indirect_0_imm16(results: RegSpan, func_type: impl Into<SignatureIdx>) -> Self {
         Self::CallIndirect0Imm16 {
             results,
             func_type: func_type.into(),
@@ -1172,7 +1134,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallIndirect`] for the given `func`.
-    pub fn call_indirect(results: RegisterSpan, func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn call_indirect(results: RegSpan, func_type: impl Into<SignatureIdx>) -> Self {
         Self::CallIndirect {
             results,
             func_type: func_type.into(),
@@ -1180,7 +1142,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallIndirectImm16`] for the given `func`.
-    pub fn call_indirect_imm16(results: RegisterSpan, func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn call_indirect_imm16(results: RegSpan, func_type: impl Into<SignatureIdx>) -> Self {
         Self::CallIndirectImm16 {
             results,
             func_type: func_type.into(),
@@ -1204,55 +1166,55 @@ macro_rules! constructor_for_binary_instrs {
     };
     ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: Register) -> Self {
+        pub fn $fn_name(result: Reg, lhs: Reg, rhs: Reg) -> Self {
             Self::$op_code(BinInstr::new(result, lhs, rhs))
         }
     };
     ( @impl fn $fn_name:ident({i32.binary_imm<i16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<i32>>) -> Self {
+        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<i32>>) -> Self {
             Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
         }
     };
     ( @impl fn $fn_name:ident({i32.binary_imm<u16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<u32>>) -> Self {
+        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<u32>>) -> Self {
             Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
         }
     };
     ( @impl fn $fn_name:ident({i64.binary_imm<i16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<i64>>) -> Self {
+        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<i64>>) -> Self {
             Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
         }
     };
     ( @impl fn $fn_name:ident({i64.binary_imm<u16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Register, rhs: impl Into<Const16<u64>>) -> Self {
+        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<u64>>) -> Self {
             Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
         }
     };
     ( @impl fn $fn_name:ident({i32.binary_imm_rev<i16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: impl Into<Const16<i32>>, rhs: Register) -> Self {
+        pub fn $fn_name(result: Reg, lhs: impl Into<Const16<i32>>, rhs: Reg) -> Self {
             Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
         }
     };
     ( @impl fn $fn_name:ident({i32.binary_imm_rev<u16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: impl Into<Const16<u32>>, rhs: Register) -> Self {
+        pub fn $fn_name(result: Reg, lhs: impl Into<Const16<u32>>, rhs: Reg) -> Self {
             Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
         }
     };
     ( @impl fn $fn_name:ident({i64.binary_imm_rev<i16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: impl Into<Const16<i64>>, rhs: Register) -> Self {
+        pub fn $fn_name(result: Reg, lhs: impl Into<Const16<i64>>, rhs: Reg) -> Self {
             Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
         }
     };
     ( @impl fn $fn_name:ident({i64.binary_imm_rev<u16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, lhs: Const16<u64>, rhs: Register) -> Self {
+        pub fn $fn_name(result: Reg, lhs: Const16<u64>, rhs: Reg) -> Self {
             Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
         }
     };
@@ -1472,7 +1434,7 @@ macro_rules! constructor_for_unary_instrs {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($instr_name), "`].")]
-                pub fn $constructor_name(result: Register, input: Register) -> Self {
+                pub fn $constructor_name(result: Reg, input: Reg) -> Self {
                     Self::$instr_name(UnaryInstr::new(result, input))
                 }
             )*
@@ -1568,19 +1530,19 @@ macro_rules! constructor_for_load_instrs {
     };
     ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, ptr: Register) -> Self {
+        pub fn $fn_name(result: Reg, ptr: Reg) -> Self {
             Self::$op_code(LoadInstr::new(result, ptr))
         }
     };
     ( @impl fn $fn_name:ident(at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, address: Const32<u32>) -> Self {
+        pub fn $fn_name(result: Reg, address: Const32<u32>) -> Self {
             Self::$op_code(LoadAtInstr::new(result, address))
         }
     };
     ( @impl fn $fn_name:ident(offset16) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Register, ptr: Register, offset: Const16<u32>) -> Self {
+        pub fn $fn_name(result: Reg, ptr: Reg, offset: Const16<u32>) -> Self {
             Self::$op_code(LoadOffset16Instr::new(result, ptr, offset))
         }
     };
@@ -1657,31 +1619,31 @@ macro_rules! constructor_for_store_instrs {
     };
     ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: Const32<u32>) -> Self {
+        pub fn $fn_name(ptr: Reg, offset: Const32<u32>) -> Self {
             Self::$op_code(StoreInstr::new(ptr, offset))
         }
     };
     ( @impl fn $fn_name:ident(at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32<u32>, value: Register) -> Self {
+        pub fn $fn_name(address: Const32<u32>, value: Reg) -> Self {
             Self::$op_code(StoreAtInstr::new(address, value))
         }
     };
     ( @impl fn $fn_name:ident(offset16) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: u16, value: Register) -> Self {
+        pub fn $fn_name(ptr: Reg, offset: u16, value: Reg) -> Self {
             Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value))
         }
     };
     ( @impl fn $fn_name:ident({offset16_imm<i8>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: u16, value: i8) -> Self {
+        pub fn $fn_name(ptr: Reg, offset: u16, value: i8) -> Self {
             Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
         }
     };
     ( @impl fn $fn_name:ident({offset16_imm<i16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Register, offset: u16, value: i16) -> Self {
+        pub fn $fn_name(ptr: Reg, offset: u16, value: i16) -> Self {
             Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
         }
     };
@@ -1752,7 +1714,7 @@ constructor_for_store_instrs! {
 
 impl Instruction {
     /// Creates a new [`Instruction::BranchCmpFallback`].
-    pub fn branch_cmp_fallback(lhs: Register, rhs: Register, params: Register) -> Self {
+    pub fn branch_cmp_fallback(lhs: Reg, rhs: Reg, params: Reg) -> Self {
         Self::BranchCmpFallback { lhs, rhs, params }
     }
 }
@@ -1762,7 +1724,7 @@ macro_rules! constructor_for_branch_cmp_instrs {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(lhs: Register, rhs: Register, offset: BranchOffset16) -> Self {
+                pub fn $name(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> Self {
                     Self::$op_code(BranchBinOpInstr::new(lhs, rhs, offset))
                 }
             )*
@@ -1818,7 +1780,7 @@ macro_rules! constructor_for_branch_cmp_imm_instrs {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(lhs: Register, rhs: impl Into<Const16<$ty>>, offset: BranchOffset16) -> Self {
+                pub fn $name(lhs: Reg, rhs: impl Into<Const16<$ty>>, offset: BranchOffset16) -> Self {
                     Self::$op_code(BranchBinOpInstrImm16::new(lhs, rhs.into(), offset))
                 }
             )*
@@ -1860,7 +1822,7 @@ macro_rules! constructor_for_divrem_imm_instrs {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(result: Register, lhs: Register, rhs: impl Into<Const16<$ty>>) -> Self {
+                pub fn $name(result: Reg, lhs: Reg, rhs: impl Into<Const16<$ty>>) -> Self {
                     Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
                 }
             )*

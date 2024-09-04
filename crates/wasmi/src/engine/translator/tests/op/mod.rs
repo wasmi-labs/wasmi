@@ -46,7 +46,7 @@ use super::{
     Const32,
     DisplayWasm,
     Instruction,
-    Register,
+    Reg,
     TranslationTest,
     WasmOp,
     WasmType,
@@ -114,7 +114,7 @@ fn return_i64imm32_instr(value: i64) -> Instruction {
 ///
 /// If the `value` cannot be converted into `i32` losslessly.
 #[track_caller]
-fn return_nez_i64imm32_instr(condition: Register, value: i64) -> Instruction {
+fn return_nez_i64imm32_instr(condition: Reg, value: i64) -> Instruction {
     Instruction::return_nez_i64imm32(condition, i64imm32(value))
 }
 
@@ -134,6 +134,6 @@ fn return_f64imm32_instr(value: f64) -> Instruction {
 ///
 /// If the `value` cannot be converted into `f32` losslessly.
 #[track_caller]
-fn return_nez_f64imm32_instr(condition: Register, value: f64) -> Instruction {
+fn return_nez_f64imm32_instr(condition: Reg, value: f64) -> Instruction {
     Instruction::return_nez_f64imm32(condition, f64imm32(value))
 }

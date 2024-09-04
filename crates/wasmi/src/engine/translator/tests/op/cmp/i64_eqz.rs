@@ -17,8 +17,8 @@ fn reg() {
     TranslationTest::new(wasm)
         .expect_func([
             Instruction::i64_eq_imm16(
-                Register::from_u16(1),
-                Register::from_u16(0),
+                Reg::from_u16(1),
+                Reg::from_u16(0),
                 Const16::from_i16(0),
             ),
             Instruction::return_reg(1),
