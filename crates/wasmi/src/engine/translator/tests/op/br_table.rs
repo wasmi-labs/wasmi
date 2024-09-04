@@ -505,3 +505,229 @@ fn imm_params_0() {
     test_with(3);
     test_with(1000);
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn all_same_targets_0() {
+    fn test_for(same: u32, value: i32) {
+        let wasm = &format!(
+            r"
+            (module
+                (func (param i32) (result i32)
+                    (block
+                        (block
+                            (block
+                                (br_table {same} {same} {same} (local.get 0))
+                            )
+                            (return (i32.const 10))
+                        )
+                        (return (i32.const 20))
+                    )
+                    (return (i32.const 30))
+                )
+            )",
+        );
+        TranslationTest::from_wat(wasm)
+            .expect_func_instrs([
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::return_imm32(value),
+            ])
+            .run()
+    }
+    test_for(0, 10);
+    test_for(1, 20);
+    test_for(2, 30);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn all_same_targets_1() {
+    fn test_for(same: u32, value: i16) {
+        let wasm = &format!(
+            r"
+            (module
+                (func (param i32 i32) (result i32)
+                    (block (result i32)
+                        (block (result i32)
+                            (block (result i32)
+                                (local.get 1)
+                                (br_table {same} {same} {same} (local.get 0))
+                            )
+                            (return (i32.add (i32.const 10)))
+                        )
+                        (return (i32.add (i32.const 20)))
+                    )
+                    (return (i32.add (i32.const 30)))
+                )
+            )",
+        );
+        TranslationTest::from_wat(wasm)
+            .expect_func_instrs([
+                Instruction::copy(2, 1),
+                Instruction::branch(BranchOffset::from(1)),
+                Instruction::i32_add_imm16(Register::from(2), Register::from(2), value),
+                Instruction::return_reg(Register::from(2)),
+            ])
+            .run()
+    }
+    test_for(0, 10);
+    test_for(1, 20);
+    test_for(2, 30);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn reg_params_3() {
+    let wasm = &format!(
+        r"
+        (module
+            (func (param i32 i32 i32 i32) (result i32 i32 i32)
+                (block (result i32 i32 i32)
+                    (block (result i32 i32 i32)
+                        (block (result i32 i32 i32)
+                            (local.get 0)
+                            (local.get 1)
+                            (local.get 2)
+                            (br_table 2 3 1 0 (local.get 3))
+                        )
+                        (return (i32.add (i32.const 10)))
+                    )
+                    (return (i32.add (i32.const 20)))
+                )
+                (return (i32.add (i32.const 30)))
+            )
+        )",
+    );
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::branch_table_3(3, 4),
+            Instruction::register3(0, 1, 2),
+            Instruction::branch_table_target(
+                RegisterSpan::new(Register::from(4)),
+                BranchOffset::from(8),
+            ),
+            Instruction::return_reg3(0, 1, 2),
+            Instruction::branch_table_target(
+                RegisterSpan::new(Register::from(4)),
+                BranchOffset::from(4),
+            ),
+            Instruction::branch_table_target(
+                RegisterSpan::new(Register::from(4)),
+                BranchOffset::from(1),
+            ),
+            Instruction::i32_add_imm16(Register::from(6), Register::from(6), 10_i16),
+            Instruction::return_reg3(4, 5, 6),
+            Instruction::i32_add_imm16(Register::from(6), Register::from(6), 20_i16),
+            Instruction::return_reg3(4, 5, 6),
+            Instruction::i32_add_imm16(Register::from(6), Register::from(6), 30_i16),
+            Instruction::return_reg3(4, 5, 6),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn reg_params_4_span() {
+    let wasm = &format!(
+        r"
+        (module
+            (func (param i32 i32 i32 i32 i32) (result i32 i32 i32 i32)
+                (block (result i32 i32 i32 i32)
+                    (block (result i32 i32 i32 i32)
+                        (i32.popcnt (local.get 0)) ;; used to offset the branch params of one branch target
+                        (block (result i32 i32 i32 i32)
+                            (local.get 0)
+                            (local.get 1)
+                            (local.get 2)
+                            (local.get 3)
+                            (br_table 2 3 1 0 (local.get 4))
+                        )
+                        (return (i32.add (i32.const 10)))
+                    )
+                    (return (i32.add (i32.const 20)))
+                )
+                (return (i32.add (i32.const 30)))
+            )
+        )",
+    );
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::i32_popcnt(Register::from(5), Register::from(0)),
+            Instruction::branch_table_span(4, 4),
+            Instruction::register_span(RegisterSpan::new(Register::from(0)).iter(4)),
+            Instruction::branch_table_target_non_overlapping(
+                RegisterSpan::new(Register::from(5)),
+                BranchOffset::from(8),
+            ),
+            Instruction::return_span(RegisterSpan::new(Register::from(0)).iter(4)),
+            Instruction::branch_table_target_non_overlapping(
+                RegisterSpan::new(Register::from(5)),
+                BranchOffset::from(4),
+            ),
+            Instruction::branch_table_target_non_overlapping(
+                RegisterSpan::new(Register::from(6)),
+                BranchOffset::from(1),
+            ),
+            Instruction::i32_add_imm16(Register::from(9), Register::from(9), 10_i16),
+            Instruction::return_span(RegisterSpan::new(Register::from(6)).iter(4)),
+            Instruction::i32_add_imm16(Register::from(8), Register::from(8), 20_i16),
+            Instruction::return_span(RegisterSpan::new(Register::from(5)).iter(4)),
+            Instruction::i32_add_imm16(Register::from(8), Register::from(8), 30_i16),
+            Instruction::return_span(RegisterSpan::new(Register::from(5)).iter(4)),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn reg_params_4_many() {
+    let wasm = &format!(
+        r"
+        (module
+            (func (param i32 i32 i32 i32 i32) (result i32 i32 i32 i32)
+                (block (result i32 i32 i32 i32)
+                    (block (result i32 i32 i32 i32)
+                        (i32.popcnt (local.get 0)) ;; used to offset the branch params of one branch target
+                        (block (result i32 i32 i32 i32)
+                            (local.get 3)
+                            (local.get 2)
+                            (local.get 1)
+                            (local.get 0)
+                            (br_table 2 3 1 0 (local.get 4))
+                        )
+                        (return (i32.add (i32.const 10)))
+                    )
+                    (return (i32.add (i32.const 20)))
+                )
+                (return (i32.add (i32.const 30)))
+            )
+        )",
+    );
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::i32_popcnt(Register::from(5), Register::from(0)),
+            Instruction::branch_table_many(4, 4),
+            Instruction::register_list(3, 2, 1),
+            Instruction::register(0),
+            Instruction::branch_table_target_non_overlapping(
+                RegisterSpan::new(Register::from(5)),
+                BranchOffset::from(8),
+            ),
+            Instruction::Return,
+            Instruction::branch_table_target_non_overlapping(
+                RegisterSpan::new(Register::from(5)),
+                BranchOffset::from(4),
+            ),
+            Instruction::branch_table_target_non_overlapping(
+                RegisterSpan::new(Register::from(6)),
+                BranchOffset::from(1),
+            ),
+            Instruction::i32_add_imm16(Register::from(9), Register::from(9), 10_i16),
+            Instruction::return_span(RegisterSpan::new(Register::from(6)).iter(4)),
+            Instruction::i32_add_imm16(Register::from(8), Register::from(8), 20_i16),
+            Instruction::return_span(RegisterSpan::new(Register::from(5)).iter(4)),
+            Instruction::i32_add_imm16(Register::from(8), Register::from(8), 30_i16),
+            Instruction::return_span(RegisterSpan::new(Register::from(5)).iter(4)),
+        ])
+        .run()
+}
