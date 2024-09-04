@@ -1,12 +1,12 @@
 use super::Executor;
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{AnyConst32, Const32, Instruction, InstructionPtr, Register},
+    engine::bytecode::{AnyConst32, Const32, Instruction, InstructionPtr, Reg},
 };
 
 impl<'engine> Executor<'engine> {
-    /// Fetches two [`Register`]s.
-    fn fetch_register_2(&self) -> (Register, Register) {
+    /// Fetches two [`Reg`]s.
+    fn fetch_register_2(&self) -> (Reg, Reg) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
@@ -17,8 +17,8 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Fetches a [`Register`] and a 32-bit immediate value of type `T`.
-    fn fetch_register_and_imm32<T>(&self) -> (Register, T)
+    /// Fetches a [`Reg`] and a 32-bit immediate value of type `T`.
+    fn fetch_register_and_imm32<T>(&self) -> (Reg, T)
     where
         T: From<AnyConst32>,
     {
@@ -35,8 +35,8 @@ impl<'engine> Executor<'engine> {
     /// Executes a `select` instruction generically.
     fn execute_select_impl<L, R>(
         &mut self,
-        result: Register,
-        condition: Register,
+        result: Reg,
+        condition: Reg,
         lhs: impl FnOnce(&Self) -> L,
         rhs: impl FnOnce(&Self) -> R,
     ) where
@@ -53,7 +53,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::Select`].
-    pub fn execute_select(&mut self, result: Register, lhs: Register) {
+    pub fn execute_select(&mut self, result: Reg, lhs: Reg) {
         let (condition, rhs) = self.fetch_register_2();
         self.execute_select_impl(
             result,
@@ -64,7 +64,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::SelectImm32Rhs`].
-    pub fn execute_select_imm32_rhs(&mut self, result: Register, lhs: Register) {
+    pub fn execute_select_imm32_rhs(&mut self, result: Reg, lhs: Reg) {
         let (condition, rhs) = self.fetch_register_and_imm32::<AnyConst32>();
         self.execute_select_impl(
             result,
@@ -75,7 +75,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::SelectImm32Lhs`].
-    pub fn execute_select_imm32_lhs(&mut self, result: Register, lhs: AnyConst32) {
+    pub fn execute_select_imm32_lhs(&mut self, result: Reg, lhs: AnyConst32) {
         let (condition, rhs) = self.fetch_register_2();
         self.execute_select_impl(
             result,
@@ -86,13 +86,13 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::SelectImm32`].
-    pub fn execute_select_imm32(&mut self, result: Register, lhs: AnyConst32) {
+    pub fn execute_select_imm32(&mut self, result: Reg, lhs: AnyConst32) {
         let (condition, rhs) = self.fetch_register_and_imm32::<AnyConst32>();
         self.execute_select_impl(result, condition, |_| u32::from(lhs), |_| u32::from(rhs))
     }
 
     /// Executes an [`Instruction::SelectI64Imm32Rhs`].
-    pub fn execute_select_i64imm32_rhs(&mut self, result: Register, lhs: Register) {
+    pub fn execute_select_i64imm32_rhs(&mut self, result: Reg, lhs: Reg) {
         let (condition, rhs) = self.fetch_register_and_imm32::<i32>();
         self.execute_select_impl(
             result,
@@ -103,7 +103,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::SelectI64Imm32Lhs`].
-    pub fn execute_select_i64imm32_lhs(&mut self, result: Register, lhs: Const32<i64>) {
+    pub fn execute_select_i64imm32_lhs(&mut self, result: Reg, lhs: Const32<i64>) {
         let (condition, rhs) = self.fetch_register_2();
         self.execute_select_impl(
             result,
@@ -114,13 +114,13 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::SelectI64Imm32`].
-    pub fn execute_select_i64imm32(&mut self, result: Register, lhs: Const32<i64>) {
+    pub fn execute_select_i64imm32(&mut self, result: Reg, lhs: Const32<i64>) {
         let (condition, rhs) = self.fetch_register_and_imm32::<i32>();
         self.execute_select_impl(result, condition, |_| i64::from(lhs), |_| i64::from(rhs))
     }
 
     /// Executes an [`Instruction::SelectF64Imm32Rhs`].
-    pub fn execute_select_f64imm32_rhs(&mut self, result: Register, lhs: Register) {
+    pub fn execute_select_f64imm32_rhs(&mut self, result: Reg, lhs: Reg) {
         let (condition, rhs) = self.fetch_register_and_imm32::<f32>();
         self.execute_select_impl(
             result,
@@ -131,7 +131,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::SelectF64Imm32Lhs`].
-    pub fn execute_select_f64imm32_lhs(&mut self, result: Register, lhs: Const32<f64>) {
+    pub fn execute_select_f64imm32_lhs(&mut self, result: Reg, lhs: Const32<f64>) {
         let (condition, rhs) = self.fetch_register_2();
         self.execute_select_impl(
             result,
@@ -142,7 +142,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::SelectF64Imm32`].
-    pub fn execute_select_f64imm32(&mut self, result: Register, lhs: Const32<f64>) {
+    pub fn execute_select_f64imm32(&mut self, result: Reg, lhs: Const32<f64>) {
         let (condition, rhs) = self.fetch_register_and_imm32::<f32>();
         self.execute_select_impl(result, condition, |_| f64::from(lhs), |_| f64::from(rhs))
     }

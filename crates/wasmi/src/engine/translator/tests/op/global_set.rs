@@ -24,7 +24,7 @@ where
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            Instruction::global_set(GlobalIdx::from(0), Register::from_i16(0)),
+            Instruction::global_set(GlobalIdx::from(0), Reg::from_i16(0)),
             Instruction::Return,
         ])
         .run()
@@ -60,7 +60,7 @@ where
     TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::global_set(GlobalIdx::from(0), Register::from_i16(-1)),
+                Instruction::global_set(GlobalIdx::from(0), Reg::from_i16(-1)),
                 Instruction::Return,
             ])
             .consts([value]),

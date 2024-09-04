@@ -1,4 +1,4 @@
-use super::{bytecode::RegisterSpan, Func};
+use super::{bytecode::RegSpan, Func};
 use crate::{engine::Stack, func::CallResultsTuple, AsContextMut, Engine, Error, Val, WasmResults};
 use core::{fmt, marker::PhantomData, mem::replace, ops::Deref};
 
@@ -80,7 +80,7 @@ pub struct ResumableInvocation {
     /// # Note
     ///
     /// This is only needed for the register-machine Wasmi engine backend.
-    caller_results: RegisterSpan,
+    caller_results: RegSpan,
     /// The value and call stack in use by the [`ResumableInvocation`].
     ///
     /// # Note
@@ -115,7 +115,7 @@ impl ResumableInvocation {
         func: Func,
         host_func: Func,
         host_error: Error,
-        caller_results: RegisterSpan,
+        caller_results: RegSpan,
         stack: Stack,
     ) -> Self {
         Self {
@@ -138,12 +138,7 @@ impl ResumableInvocation {
     /// # Note
     ///
     /// This should only be called from the register-machine Wasmi engine backend.
-    pub(super) fn update(
-        &mut self,
-        host_func: Func,
-        host_error: Error,
-        caller_results: RegisterSpan,
-    ) {
+    pub(super) fn update(&mut self, host_func: Func, host_error: Error, caller_results: RegSpan) {
         self.host_func = host_func;
         self.host_error = host_error;
         self.caller_results = caller_results;
@@ -179,12 +174,12 @@ impl ResumableInvocation {
         &self.host_error
     }
 
-    /// Returns the caller results [`RegisterSpan`].
+    /// Returns the caller results [`RegSpan`].
     ///
     /// # Note
     ///
     /// This is `Some` only for [`ResumableInvocation`] originating from the register-machine Wasmi engine.
-    pub(crate) fn caller_results(&self) -> RegisterSpan {
+    pub(crate) fn caller_results(&self) -> RegSpan {
         self.caller_results
     }
 

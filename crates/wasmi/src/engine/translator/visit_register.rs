@@ -8,9 +8,9 @@ use crate::engine::bytecode::{
     LoadAtInstr,
     LoadInstr,
     LoadOffset16Instr,
-    Register,
-    RegisterSpan,
-    RegisterSpanIter,
+    Reg,
+    RegSpan,
+    RegSpanIter,
     StoreAtInstr,
     StoreInstr,
     StoreOffset16Instr,
@@ -25,15 +25,15 @@ macro_rules! visit_registers {
     }};
 }
 
-/// Trait implemented by types that allow to visit their [`Register`] fields.
+/// Trait implemented by types that allow to visit their [`Reg`] fields.
 pub trait VisitInputRegisters {
-    /// Calls `f` on all input [`Register`].
-    fn visit_input_registers(&mut self, f: impl FnMut(&mut Register));
+    /// Calls `f` on all input [`Reg`].
+    fn visit_input_registers(&mut self, f: impl FnMut(&mut Reg));
 }
 
 impl VisitInputRegisters for Instruction {
     #[rustfmt::skip]
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         match self {
             Instruction::TableIdx(_) |
             Instruction::DataSegmentIdx(_) |
@@ -576,8 +576,8 @@ impl VisitInputRegisters for Instruction {
     }
 }
 
-impl<const N: usize> VisitInputRegisters for [Register; N] {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+impl<const N: usize> VisitInputRegisters for [Reg; N] {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         for register in self {
             f(register);
         }
@@ -585,127 +585,127 @@ impl<const N: usize> VisitInputRegisters for [Register; N] {
 }
 
 impl LoadInstr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.ptr);
     }
 }
 
 impl LoadAtInstr {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Reg)) {
         // Nothing to do.
     }
 }
 
 impl LoadOffset16Instr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.ptr)
     }
 }
 
 impl BranchBinOpInstr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         visit_registers!(f, &mut self.lhs, &mut self.rhs);
     }
 }
 
 impl<T> BranchBinOpInstrImm<T> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.lhs)
     }
 }
 
 impl VisitInputRegisters for StoreInstr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.ptr);
     }
 }
 
-impl VisitInputRegisters for StoreAtInstr<Register> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+impl VisitInputRegisters for StoreAtInstr<Reg> {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.value);
     }
 }
 
 impl VisitInputRegisters for StoreAtInstr<i8> {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Reg)) {
         // Nothing to do.
     }
 }
 
 impl VisitInputRegisters for StoreAtInstr<i16> {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Reg)) {
         // Nothing to do.
     }
 }
 
 impl VisitInputRegisters for StoreAtInstr<Const16<i32>> {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Reg)) {
         // Nothing to do.
     }
 }
 
 impl VisitInputRegisters for StoreAtInstr<Const16<i64>> {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Reg)) {
         // Nothing to do.
     }
 }
 
-impl VisitInputRegisters for StoreOffset16Instr<Register> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+impl VisitInputRegisters for StoreOffset16Instr<Reg> {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         visit_registers!(f, &mut self.ptr, &mut self.value)
     }
 }
 
 impl VisitInputRegisters for StoreOffset16Instr<i8> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.ptr)
     }
 }
 
 impl VisitInputRegisters for StoreOffset16Instr<i16> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.ptr)
     }
 }
 
 impl VisitInputRegisters for StoreOffset16Instr<Const16<i32>> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.ptr)
     }
 }
 
 impl VisitInputRegisters for StoreOffset16Instr<Const16<i64>> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.ptr)
     }
 }
 
 impl VisitInputRegisters for UnaryInstr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.input)
     }
 }
 
 impl VisitInputRegisters for BinInstr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         visit_registers!(f, &mut self.lhs, &mut self.rhs)
     }
 }
 
 impl<T> VisitInputRegisters for BinInstrImm<T> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.reg_in)
     }
 }
 
-impl VisitInputRegisters for RegisterSpan {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+impl VisitInputRegisters for RegSpan {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(self.head_mut())
     }
 }
 
-impl VisitInputRegisters for RegisterSpanIter {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Register)) {
+impl VisitInputRegisters for RegSpanIter {
+    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         let len = self.len_as_u16();
         let mut span = self.span();
         f(span.head_mut());

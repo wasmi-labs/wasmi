@@ -12,7 +12,7 @@ use self::{
 };
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{AnyConst32, Const16, Const32, Instruction, Register},
+    engine::bytecode::{AnyConst32, Const16, Const32, Instruction, Reg},
     Config,
     Engine,
     Module,
@@ -32,9 +32,7 @@ fn create_module(config: &Config, bytes: &[u8]) -> Module {
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
 macro_rules! swap_ops {
     ($fn_name:path) => {
-        |result: Register, lhs: Const16<_>, rhs: Register| -> Instruction {
-            $fn_name(result, rhs, lhs)
-        }
+        |result: Reg, lhs: Const16<_>, rhs: Reg| -> Instruction { $fn_name(result, rhs, lhs) }
     };
 }
 use swap_ops;
@@ -175,7 +173,7 @@ impl Display for WasmType {
 
 fn test_binary_reg_reg(
     wasm_op: WasmOp,
-    make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+    make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
 ) {
     let param_ty = wasm_op.param_ty();
     let result_ty = wasm_op.result_ty();
@@ -191,11 +189,7 @@ fn test_binary_reg_reg(
     "#,
     );
     let expected = [
-        make_instr(
-            Register::from_i16(2),
-            Register::from_i16(0),
-            Register::from_i16(1),
-        ),
+        make_instr(Reg::from_i16(2), Reg::from_i16(0), Reg::from_i16(1)),
         Instruction::return_reg(2),
     ];
     assert_func_bodies(&wasm, [expected]);
@@ -248,7 +242,7 @@ where
 fn test_binary_reg_imm16<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
+    make_instr: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
 ) where
     T: Copy + TryInto<Const16<T>>,
     DisplayWasm<T>: Display,
@@ -257,7 +251,7 @@ fn test_binary_reg_imm16<T>(
         .try_into()
         .unwrap_or_else(|_| panic!("failed to convert {} to Const16", DisplayWasm::from(value)));
     let expected = [
-        make_instr(Register::from_i16(1), Register::from_i16(0), immediate),
+        make_instr(Reg::from_i16(1), Reg::from_i16(0), immediate),
         Instruction::return_reg(1),
     ];
     test_binary_reg_imm_with(wasm_op, value, expected).run()
@@ -267,7 +261,7 @@ fn test_binary_reg_imm16<T>(
 fn test_binary_reg_imm16_rev<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
+    make_instr: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
 ) where
     T: Copy + TryInto<Const16<T>>,
     DisplayWasm<T>: Display,
@@ -276,7 +270,7 @@ fn test_binary_reg_imm16_rev<T>(
         .try_into()
         .unwrap_or_else(|_| panic!("failed to convert {} to Const16", DisplayWasm::from(value)));
     let expected = [
-        make_instr(Register::from_i16(1), immediate, Register::from_i16(0)),
+        make_instr(Reg::from_i16(1), immediate, Reg::from_i16(0)),
         Instruction::return_reg(1),
     ];
     test_binary_reg_imm_rev_with(wasm_op, value, expected).run()
@@ -285,17 +279,13 @@ fn test_binary_reg_imm16_rev<T>(
 fn test_binary_reg_imm32<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+    make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(
-            Register::from_i16(1),
-            Register::from_i16(0),
-            Register::from_i16(-1),
-        ),
+        make_instr(Reg::from_i16(1), Reg::from_i16(0), Reg::from_i16(-1)),
         Instruction::return_reg(1),
     ];
     let mut testcase = testcase_binary_reg_imm(wasm_op, value);
@@ -307,17 +297,13 @@ fn test_binary_reg_imm32<T>(
 fn test_binary_reg_imm32_rev<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+    make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(
-            Register::from_i16(1),
-            Register::from_i16(-1),
-            Register::from_i16(0),
-        ),
+        make_instr(Reg::from_i16(1), Reg::from_i16(-1), Reg::from_i16(0)),
         Instruction::return_reg(1),
     ];
     let mut testcase = testcase_binary_imm_reg(wasm_op, value);
@@ -329,17 +315,13 @@ fn test_binary_reg_imm32_rev<T>(
 fn test_binary_reg_imm32_rev_commutative<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+    make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
     let expected = [
-        make_instr(
-            Register::from_i16(1),
-            Register::from_i16(0),
-            Register::from_i16(-1),
-        ),
+        make_instr(Reg::from_i16(1), Reg::from_i16(0), Reg::from_i16(-1)),
         Instruction::return_reg(1),
     ];
     let mut testcase = testcase_binary_imm_reg(wasm_op, value);

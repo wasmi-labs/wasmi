@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::{bytecode::RegisterSpan, translator::tests::wasm_type::WasmTy};
+use crate::engine::{bytecode::RegSpan, translator::tests::wasm_type::WasmTy};
 use core::fmt::Display;
 
 #[test]
@@ -27,7 +27,7 @@ fn return_1() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
+        .expect_func_instrs([Instruction::return_reg(Reg::from_i16(0))])
         .run()
 }
 
@@ -52,7 +52,7 @@ fn return_1_imm() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func(
-                ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))])
+                ExpectedFunc::new([Instruction::return_reg(Reg::from_i16(-1))])
                     .consts([value.into()]),
             )
             .run()
@@ -266,7 +266,7 @@ fn return_4_span() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(4),
+            RegSpan::new(Reg::from_i16(0)).iter(4),
         )])
         .run()
 }
@@ -305,7 +305,7 @@ fn return_5_span() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(5),
+            RegSpan::new(Reg::from_i16(0)).iter(5),
         )])
         .run()
 }

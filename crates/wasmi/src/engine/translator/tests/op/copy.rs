@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::bytecode::RegisterSpan;
+use crate::engine::bytecode::RegSpan;
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -14,9 +14,9 @@ fn merge_2_copy_instrs_0() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(
-                RegisterSpan::new(Register::from_i16(0)),
-                Register::from_i16(2),
-                Register::from_i16(4),
+                RegSpan::new(Reg::from_i16(0)),
+                Reg::from_i16(2),
+                Reg::from_i16(4),
             ),
             Instruction::Return,
         ])
@@ -36,9 +36,9 @@ fn merge_2_copy_instrs_1() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(
-                RegisterSpan::new(Register::from_i16(0)),
-                Register::from_i16(4),
-                Register::from_i16(2),
+                RegSpan::new(Reg::from_i16(0)),
+                Reg::from_i16(4),
+                Reg::from_i16(2),
             ),
             Instruction::Return,
         ])
@@ -58,9 +58,9 @@ fn merge_2_copy_instrs_2() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy2(
-                RegisterSpan::new(Register::from_i16(0)),
-                Register::from_i16(2),
-                Register::from_i16(4),
+                RegSpan::new(Reg::from_i16(0)),
+                Reg::from_i16(2),
+                Reg::from_i16(4),
             ),
             Instruction::Return,
         ])

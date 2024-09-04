@@ -16,7 +16,7 @@ use crate::{
             GlobalIdx,
             Instruction,
             InstructionPtr,
-            Register,
+            Reg,
             SignatureIdx,
             TableIdx,
             UnaryInstr,
@@ -938,8 +938,8 @@ impl<'engine> Executor<'engine> {
         self.get_memory(DEFAULT_MEMORY_INDEX)
     }
 
-    /// Returns the [`Register`] value.
-    fn get_register(&self, register: Register) -> UntypedVal {
+    /// Returns the [`Reg`] value.
+    fn get_register(&self, register: Reg) -> UntypedVal {
         // Safety: - It is the responsibility of the `Executor`
         //           implementation to keep the `sp` pointer valid
         //           whenever this method is accessed.
@@ -948,16 +948,16 @@ impl<'engine> Executor<'engine> {
         unsafe { self.sp.get(register) }
     }
 
-    /// Returns the [`Register`] value.
-    fn get_register_as<T>(&self, register: Register) -> T
+    /// Returns the [`Reg`] value.
+    fn get_register_as<T>(&self, register: Reg) -> T
     where
         T: From<UntypedVal>,
     {
         T::from(self.get_register(register))
     }
 
-    /// Sets the [`Register`] value to `value`.
-    fn set_register(&mut self, register: Register, value: impl Into<UntypedVal>) {
+    /// Sets the [`Reg`] value to `value`.
+    fn set_register(&mut self, register: Reg, value: impl Into<UntypedVal>) {
         // Safety: - It is the responsibility of the `Executor`
         //           implementation to keep the `sp` pointer valid
         //           whenever this method is accessed.
@@ -1230,7 +1230,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::RefFunc`].
     #[inline(always)]
-    fn execute_ref_func(&mut self, result: Register, func_index: FuncIdx) {
+    fn execute_ref_func(&mut self, result: Reg, func_index: FuncIdx) {
         let func = self.get_func(func_index);
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);

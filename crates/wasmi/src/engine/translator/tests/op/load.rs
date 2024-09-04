@@ -3,11 +3,7 @@
 use super::*;
 use crate::core::TrapCode;
 
-fn test_load(
-    wasm_op: WasmOp,
-    offset: u32,
-    make_instr: fn(result: Register, ptr: Register) -> Instruction,
-) {
+fn test_load(wasm_op: WasmOp, offset: u32, make_instr: fn(result: Reg, ptr: Reg) -> Instruction) {
     assert!(
         offset > u32::from(u16::MAX),
         "offset must not be 16-bit encodable in this testcase"
@@ -26,9 +22,9 @@ fn test_load(
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            make_instr(Register::from_i16(1), Register::from_i16(0)),
+            make_instr(Reg::from_i16(1), Reg::from_i16(0)),
             Instruction::const32(offset),
-            Instruction::return_reg(Register::from_i16(1)),
+            Instruction::return_reg(Reg::from_i16(1)),
         ])
         .run();
 }
@@ -36,7 +32,7 @@ fn test_load(
 fn test_load_offset16(
     wasm_op: WasmOp,
     offset: u16,
-    make_instr_offset16: fn(result: Register, ptr: Register, offset: Const16<u32>) -> Instruction,
+    make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Const16<u32>) -> Instruction,
 ) {
     let result_ty = wasm_op.result_ty();
     let wasm = format!(
@@ -53,11 +49,11 @@ fn test_load_offset16(
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             make_instr_offset16(
-                Register::from_i16(1),
-                Register::from_i16(0),
+                Reg::from_i16(1),
+                Reg::from_i16(0),
                 <Const16<u32>>::from(offset),
             ),
-            Instruction::return_reg(Register::from_i16(1)),
+            Instruction::return_reg(Reg::from_i16(1)),
         ])
         .run();
 }
@@ -66,7 +62,7 @@ fn test_load_at(
     wasm_op: WasmOp,
     ptr: u32,
     offset: u32,
-    make_instr_at: fn(result: Register, address: Const32<u32>) -> Instruction,
+    make_instr_at: fn(result: Reg, address: Const32<u32>) -> Instruction,
 ) {
     let result_ty = wasm_op.result_ty();
     let wasm = format!(
@@ -85,8 +81,8 @@ fn test_load_at(
         .expect("ptr+offset must be valid in this testcase");
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            make_instr_at(Register::from_i16(0), Const32::from(address)),
-            Instruction::return_reg(Register::from_i16(0)),
+            make_instr_at(Reg::from_i16(0), Const32::from(address)),
+            Instruction::return_reg(Reg::from_i16(0)),
         ])
         .run();
 }

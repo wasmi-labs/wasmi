@@ -6,7 +6,7 @@ use self::{
 };
 use crate::{
     engine::{
-        bytecode::{InstructionPtr, Register, RegisterSpan},
+        bytecode::{InstructionPtr, Reg, RegSpan},
         CallParams,
         CallResults,
         EngineInner,
@@ -216,7 +216,7 @@ impl<'engine> EngineExecutor<'engine> {
                     CallFrame::new(
                         InstructionPtr::new(compiled_func.instrs().as_ptr()),
                         offsets,
-                        RegisterSpan::new(Register::from_i16(0)),
+                        RegSpan::new(Reg::from_i16(0)),
                     ),
                     Some(instance),
                 )?;
@@ -261,7 +261,7 @@ impl<'engine> EngineExecutor<'engine> {
         store: &mut Store<T>,
         _host_func: Func,
         params: impl CallParams,
-        caller_results: RegisterSpan,
+        caller_results: RegSpan,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Error>
     where

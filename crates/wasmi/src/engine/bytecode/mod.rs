@@ -31,9 +31,9 @@ pub(crate) use self::{
         LoadAtInstr,
         LoadInstr,
         LoadOffset16Instr,
-        Register,
-        RegisterSpan,
-        RegisterSpanIter,
+        Reg,
+        RegSpan,
+        RegSpanIter,
         Sign,
         SignatureIdx,
         StoreAtInstr,
@@ -99,7 +99,7 @@ pub enum Instruction {
     /// Returns a single value stored in a register.
     ReturnReg {
         /// The returned value.
-        value: Register,
+        value: Reg,
     },
     /// A Wasm `return` instruction.
     ///
@@ -108,7 +108,7 @@ pub enum Instruction {
     /// Returns two values stored in registers.
     ReturnReg2 {
         /// The returned values.
-        values: [Register; 2],
+        values: [Reg; 2],
     },
     /// A Wasm `return` instruction.
     ///
@@ -117,7 +117,7 @@ pub enum Instruction {
     /// Returns three values stored in registers.
     ReturnReg3 {
         /// The returned values.
-        values: [Register; 3],
+        values: [Reg; 3],
     },
     /// A Wasm `return` instruction.
     ///
@@ -150,10 +150,10 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Returns values as stored in the [`RegisterSpanIter`].
+    /// Returns values as stored in the [`RegSpanIter`].
     ReturnSpan {
         /// Identifier for a [`Provider`] slice.
-        values: RegisterSpanIter,
+        values: RegSpanIter,
     },
     /// A Wasm `return` instruction.
     ///
@@ -172,7 +172,7 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     ReturnMany {
         /// The first three returned values.
-        values: [Register; 3],
+        values: [Reg; 3],
     },
 
     /// A conditional `return` instruction.
@@ -183,31 +183,31 @@ pub enum Instruction {
     /// Returns back to the caller if and only if the `condition` value is non zero.
     ReturnNez {
         /// The register holding the condition to evaluate against zero.
-        condition: Register,
+        condition: Reg,
     },
     /// A conditional `return` instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::ReturnNez`] returning a single
-    /// [`Register`] value if the `condition` evaluates to `true`.
+    /// [`Reg`] value if the `condition` evaluates to `true`.
     ReturnNezReg {
         /// The register holding the condition to evaluate against zero.
-        condition: Register,
+        condition: Reg,
         /// The returned value.
-        value: Register,
+        value: Reg,
     },
     /// A conditional `return` instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::ReturnNez`] returning two
-    /// [`Register`] value if the `condition` evaluates to `true`.
+    /// [`Reg`] value if the `condition` evaluates to `true`.
     ReturnNezReg2 {
         /// The register holding the condition to evaluate against zero.
-        condition: Register,
+        condition: Reg,
         /// The returned value.
-        values: [Register; 2],
+        values: [Reg; 2],
     },
     /// A conditional `return` instruction.
     ///
@@ -217,7 +217,7 @@ pub enum Instruction {
     /// [`AnyConst32`] value if the `condition` evaluates to `true`.
     ReturnNezImm32 {
         /// The register holding the condition to evaluate against zero.
-        condition: Register,
+        condition: Reg,
         /// The returned value.
         value: AnyConst32,
     },
@@ -229,7 +229,7 @@ pub enum Instruction {
     /// 32-bit encoded [`i64`] value if the `condition` evaluates to `true`.
     ReturnNezI64Imm32 {
         /// The register holding the condition to evaluate against zero.
-        condition: Register,
+        condition: Reg,
         /// The returned value.
         value: Const32<i64>,
     },
@@ -241,7 +241,7 @@ pub enum Instruction {
     /// 32-bit encoded [`f64`] value if the `condition` evaluates to `true`.
     ReturnNezF64Imm32 {
         /// The register holding the condition to evaluate against zero.
-        condition: Register,
+        condition: Reg,
         /// The returned value.
         value: Const32<f64>,
     },
@@ -252,9 +252,9 @@ pub enum Instruction {
     /// Variant of [`Instruction::ReturnNez`] returning two or more values.
     ReturnNezSpan {
         /// The register holding the condition to evaluate against zero.
-        condition: Register,
+        condition: Reg,
         /// The returned values.
-        values: RegisterSpanIter,
+        values: RegSpanIter,
     },
     /// A conditional `return` instruction.
     ///
@@ -273,9 +273,9 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     ReturnNezMany {
         /// The register holding the condition to evaluate against zero.
-        condition: Register,
+        condition: Reg,
         /// The first returned value.
-        values: [Register; 2],
+        values: [Reg; 2],
     },
 
     /// A Wasm `br` instruction.
@@ -293,14 +293,14 @@ pub enum Instruction {
     /// and used whenever a branch offset of a cmp+branch instruction cannot be 16-bit encoded.
     BranchCmpFallback {
         /// The left-hand side value for the comparison.
-        lhs: Register,
+        lhs: Reg,
         /// The right-hand side value for the comparison.
         ///
         /// # Note
         ///
         /// We allocate constant values as function local constant values and use
         /// their register to only require a single fallback instruction variant.
-        rhs: Register,
+        rhs: Reg,
         /// The register that stores the [`ComparatorOffsetParam`] of this instruction.
         ///
         /// # Note
@@ -308,7 +308,7 @@ pub enum Instruction {
         /// The [`ComparatorOffsetParam`] is loaded from register as `u64` value and
         /// decoded into a [`ComparatorOffsetParam`] before access its comparator
         /// and 32-bit branch offset fields.
-        params: Register,
+        params: Reg,
     },
     /// A fused [`Instruction::I32And`] and Wasm branch instruction.
     BranchI32And(BranchBinOpInstr),
@@ -562,7 +562,7 @@ pub enum Instruction {
     /// - [`Instruction::Return`]
     BranchTable0 {
         /// The register holding the index of the instruction.
-        index: Register,
+        index: Reg,
         /// The number of branch table targets including the default target.
         len_targets: u32,
     },
@@ -586,7 +586,7 @@ pub enum Instruction {
     /// - [`Instruction::ReturnF64Imm32`]
     BranchTable1 {
         /// The register holding the index of the instruction.
-        index: Register,
+        index: Reg,
         /// The number of branch table targets including the default target.
         len_targets: u32,
     },
@@ -601,7 +601,7 @@ pub enum Instruction {
     /// - [`Instruction::ReturnReg2`]
     BranchTable2 {
         /// The register holding the index of the instruction.
-        index: Register,
+        index: Reg,
         /// The number of branch table targets including the default target.
         len_targets: u32,
     },
@@ -616,7 +616,7 @@ pub enum Instruction {
     /// - [`Instruction::ReturnReg3`]
     BranchTable3 {
         /// The register holding the index of the instruction.
-        index: Register,
+        index: Reg,
         /// The number of branch table targets including the default target.
         len_targets: u32,
     },
@@ -636,7 +636,7 @@ pub enum Instruction {
     /// - [`Instruction::ReturnSpan`]
     BranchTableSpan {
         /// The register holding the index of the instruction.
-        index: Register,
+        index: Reg,
         /// The number of branch table targets including the default target.
         len_targets: u32,
     },
@@ -656,7 +656,7 @@ pub enum Instruction {
     /// - [`Instruction::Return`]
     BranchTableMany {
         /// The register holding the index of the instruction.
-        index: Register,
+        index: Reg,
         /// The number of branch table targets including the default target.
         len_targets: u32,
     },
@@ -668,20 +668,20 @@ pub enum Instruction {
     /// This is a Wasmi utility instruction used to translate Wasm control flow.
     Copy {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the value to copy.
-        value: Register,
+        value: Reg,
     },
-    /// Copies two [`Register`] values to `results`.
+    /// Copies two [`Reg`] values to `results`.
     ///
     /// # Note
     ///
     /// This is a Wasmi utility instruction used to translate Wasm control flow.
     Copy2 {
         /// The registers holding the result of the instruction.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The registers holding the values to copy.
-        values: [Register; 2],
+        values: [Reg; 2],
     },
     /// Copies the 32-bit immediate `value` to `result`.
     ///
@@ -691,7 +691,7 @@ pub enum Instruction {
     /// Read [`Instruction::Copy`] for more information about this instruction.
     CopyImm32 {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The 32-bit encoded immediate value to copy.
         value: AnyConst32,
     },
@@ -704,7 +704,7 @@ pub enum Instruction {
     /// - Read [`Instruction::Copy`] for more information about this instruction.
     CopyI64Imm32 {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The 32-bit encoded `i64` immediate value to copy.
         value: Const32<i64>,
     },
@@ -717,11 +717,11 @@ pub enum Instruction {
     /// - Read [`Instruction::Copy`] for more information about this instruction.
     CopyF64Imm32 {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The 32-bit encoded `i64` immediate value to copy.
         value: Const32<f64>,
     },
-    /// Copies `len` contiguous `values` [`RegisterSpan`] into `results` [`RegisterSpan`].
+    /// Copies `len` contiguous `values` [`RegSpan`] into `results` [`RegSpan`].
     ///
     /// Copies registers: `registers[results..results+len] <- registers[values..values+len]`
     ///
@@ -731,22 +731,22 @@ pub enum Instruction {
     /// to copy whole spans instead of many individual register values bit by bit.
     CopySpan {
         /// The registers holding the result of this instruction.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The contiguous registers holding the inputs of this instruction.
-        values: RegisterSpan,
+        values: RegSpan,
         /// The amount of copied registers.
         len: u16,
     },
     /// Variant of [`Instruction::CopySpan`] that assumes that `results` and `values` span do not overlap.
     CopySpanNonOverlapping {
         /// The registers holding the result of this instruction.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The contiguous registers holding the inputs of this instruction.
-        values: RegisterSpan,
+        values: RegSpan,
         /// The amount of copied registers.
         len: u16,
     },
-    /// Copies some [`Register`] values into `results` [`RegisterSpan`].
+    /// Copies some [`Reg`] values into `results` [`RegSpan`].
     ///
     /// # Encoding
     ///
@@ -759,9 +759,9 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     CopyMany {
         /// The registers holding the result of this instruction.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The first two input registers to copy.
-        values: [Register; 2],
+        values: [Reg; 2],
     },
     /// Variant of [`Instruction::CopyMany`] that assumes that `results` and `values` do not overlap.
     ///
@@ -774,9 +774,9 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     CopyManyNonOverlapping {
         /// The registers holding the result of this instruction.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The first two input registers to copy.
-        values: [Register; 2],
+        values: [Reg; 2],
     },
 
     /// Wasm `return_call` equivalent Wasmi instruction.
@@ -911,7 +911,7 @@ pub enum Instruction {
     /// Used for calling internally compiled Wasm functions without parameters.
     CallInternal0 {
         /// The registers storing the results of the call.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The called internal function.
         func: EngineFunc,
     },
@@ -932,7 +932,7 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     CallInternal {
         /// The registers storing the results of the call.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The called internal function.
         func: EngineFunc,
     },
@@ -944,7 +944,7 @@ pub enum Instruction {
     /// Used for calling imported Wasm functions without parameters.
     CallImported0 {
         /// The registers storing the results of the call.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The called imported function.
         func: FuncIdx,
     },
@@ -965,7 +965,7 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     CallImported {
         /// The registers storing the results of the call.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The called imported function.
         func: FuncIdx,
     },
@@ -981,7 +981,7 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::CallIndirectParams`] encoding `table` and `index`.
     CallIndirect0 {
         /// The registers storing the results of the call.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The called internal function.
         func_type: SignatureIdx,
     },
@@ -996,7 +996,7 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::CallIndirectParamsImm16`] encoding `table` and 16-bit constant `index`.
     CallIndirect0Imm16 {
         /// The registers storing the results of the call.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The called internal function.
         func_type: SignatureIdx,
     },
@@ -1016,7 +1016,7 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     CallIndirect {
         /// The registers storing the results of the call.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The called internal function.
         func_type: SignatureIdx,
     },
@@ -1038,7 +1038,7 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     CallIndirectImm16 {
         /// The registers storing the results of the call.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The called internal function.
         func_type: SignatureIdx,
     },
@@ -1050,9 +1050,9 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
     Select {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the left-hand side value.
-        lhs: Register,
+        lhs: Reg,
     },
     /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `rhs` value.
     ///
@@ -1061,9 +1061,9 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
     SelectImm32Rhs {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the left-hand side value.
-        lhs: Register,
+        lhs: Reg,
     },
     /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `lhs` value.
     ///
@@ -1072,7 +1072,7 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register2`] to encode `condition` and `lhs`.
     SelectImm32Lhs {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the left-hand side value.
         lhs: AnyConst32,
     },
@@ -1083,7 +1083,7 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
     SelectImm32 {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the left-hand side value.
         lhs: AnyConst32,
     },
@@ -1094,9 +1094,9 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
     SelectI64Imm32Rhs {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the left-hand side value.
-        lhs: Register,
+        lhs: Reg,
     },
     /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` value.
     ///
@@ -1105,7 +1105,7 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
     SelectI64Imm32Lhs {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the left-hand side value.
         lhs: Const32<i64>,
     },
@@ -1116,7 +1116,7 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
     SelectI64Imm32 {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the left-hand side value.
         lhs: Const32<i64>,
     },
@@ -1127,9 +1127,9 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
     SelectF64Imm32Rhs {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the left-hand side value.
-        lhs: Register,
+        lhs: Reg,
     },
     /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `lhs` value.
     ///
@@ -1138,7 +1138,7 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
     SelectF64Imm32Lhs {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the left-hand side value.
         lhs: Const32<f64>,
     },
@@ -1149,7 +1149,7 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
     SelectF64Imm32 {
         /// The register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register holding the left-hand side value.
         lhs: Const32<f64>,
     },
@@ -1157,7 +1157,7 @@ pub enum Instruction {
     /// A Wasm `ref.func` equivalent Wasmi instruction.
     RefFunc {
         /// The register storing the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The index of the referenced function.
         func: FuncIdx,
     },
@@ -1165,7 +1165,7 @@ pub enum Instruction {
     /// Wasm `global.get` equivalent Wasmi instruction.
     GlobalGet {
         /// The register storing the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The index identifying the global variable for the `global.get` instruction.
         global: GlobalIdx,
     },
@@ -1174,7 +1174,7 @@ pub enum Instruction {
         /// The index identifying the global variable for the `global.set` instruction.
         global: GlobalIdx,
         /// The register holding the value to be stored in the global variable.
-        input: Register,
+        input: Reg,
     },
     /// Wasm `global.set` equivalent Wasmi instruction.
     ///
@@ -1486,11 +1486,11 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register`] to encode `value`.
     I32Store(StoreInstr),
     /// Variant of [`Instruction::I32Store`] for 16-bit `offset`.
-    I32StoreOffset16(StoreOffset16Instr<Register>),
+    I32StoreOffset16(StoreOffset16Instr<Reg>),
     /// Variant of [`Instruction::I32StoreOffset16`] for constant 16-bit `value`.
     I32StoreOffset16Imm16(StoreOffset16Instr<Const16<i32>>),
     /// Variant of [`Instruction::I32Store`] for constant `address`.
-    I32StoreAt(StoreAtInstr<Register>),
+    I32StoreAt(StoreAtInstr<Reg>),
     /// Variant of [`Instruction::I32StoreAt`] for constant 16-bit `value`.
     I32StoreAtImm16(StoreAtInstr<Const16<i32>>),
 
@@ -1501,11 +1501,11 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register`] to encode `value`.
     I32Store8(StoreInstr),
     /// Variant of [`Instruction::I32Store8`] for 16-bit `offset`.
-    I32Store8Offset16(StoreOffset16Instr<Register>),
+    I32Store8Offset16(StoreOffset16Instr<Reg>),
     /// Variant of [`Instruction::I32Store8Offset16`] for constant `value`.
     I32Store8Offset16Imm(StoreOffset16Instr<i8>),
     /// Variant of [`Instruction::I32Store8`] for constant `address`.
-    I32Store8At(StoreAtInstr<Register>),
+    I32Store8At(StoreAtInstr<Reg>),
     /// Variant of [`Instruction::I32Store8At`] for constant `value`.
     I32Store8AtImm(StoreAtInstr<i8>),
 
@@ -1516,11 +1516,11 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register`] to encode `value`.
     I32Store16(StoreInstr),
     /// Variant of [`Instruction::I32Store16`] for 16-bit `offset`.
-    I32Store16Offset16(StoreOffset16Instr<Register>),
+    I32Store16Offset16(StoreOffset16Instr<Reg>),
     /// Variant of [`Instruction::I32Store16Offset16`] for constant `value`.
     I32Store16Offset16Imm(StoreOffset16Instr<i16>),
     /// Variant of [`Instruction::I32Store16`] for constant `address`.
-    I32Store16At(StoreAtInstr<Register>),
+    I32Store16At(StoreAtInstr<Reg>),
     /// Variant of [`Instruction::I32Store16At`] for constant `value`.
     I32Store16AtImm(StoreAtInstr<i16>),
 
@@ -1531,11 +1531,11 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register`] to encode `value`.
     I64Store(StoreInstr),
     /// Variant of [`Instruction::I64Store`] for 16-bit `offset`.
-    I64StoreOffset16(StoreOffset16Instr<Register>),
+    I64StoreOffset16(StoreOffset16Instr<Reg>),
     /// Variant of [`Instruction::I64StoreOffset16`] for constant 16-bit `value`.
     I64StoreOffset16Imm16(StoreOffset16Instr<Const16<i64>>),
     /// Variant of [`Instruction::I64Store`] for constant `address`.
-    I64StoreAt(StoreAtInstr<Register>),
+    I64StoreAt(StoreAtInstr<Reg>),
     /// Variant of [`Instruction::I64StoreAt`] for 16-bit `value`.
     I64StoreAtImm16(StoreAtInstr<Const16<i64>>),
 
@@ -1546,11 +1546,11 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register`] to encode `value`.
     I64Store8(StoreInstr),
     /// Variant of [`Instruction::I64Store8`] for 16-bit `offset`.
-    I64Store8Offset16(StoreOffset16Instr<Register>),
+    I64Store8Offset16(StoreOffset16Instr<Reg>),
     /// Variant of [`Instruction::I64Store8Offset16`] for constant `value`.
     I64Store8Offset16Imm(StoreOffset16Instr<i8>),
     /// Variant of [`Instruction::I64Store8`] for constant `address`.
-    I64Store8At(StoreAtInstr<Register>),
+    I64Store8At(StoreAtInstr<Reg>),
     /// Variant of [`Instruction::I64Store8At`] for constant `value`.
     I64Store8AtImm(StoreAtInstr<i8>),
 
@@ -1561,11 +1561,11 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register`] to encode `value`.
     I64Store16(StoreInstr),
     /// Variant of [`Instruction::I64Store16`] for 16-bit `offset`.
-    I64Store16Offset16(StoreOffset16Instr<Register>),
+    I64Store16Offset16(StoreOffset16Instr<Reg>),
     /// Variant of [`Instruction::I64Store16Offset16`] for constant `value`.
     I64Store16Offset16Imm(StoreOffset16Instr<i16>),
     /// Variant of [`Instruction::I64Store16`] for constant `address`.
-    I64Store16At(StoreAtInstr<Register>),
+    I64Store16At(StoreAtInstr<Reg>),
     /// Variant of [`Instruction::I64Store16At`] for constant `value`.
     I64Store16AtImm(StoreAtInstr<i16>),
 
@@ -1576,11 +1576,11 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::Register`] to encode `value`.
     I64Store32(StoreInstr),
     /// Variant of [`Instruction::I64Store32`] for 16-bit `offset`.
-    I64Store32Offset16(StoreOffset16Instr<Register>),
+    I64Store32Offset16(StoreOffset16Instr<Reg>),
     /// Variant of [`Instruction::I64Store32Offset16`] for constant 16-bit `value`.
     I64Store32Offset16Imm16(StoreOffset16Instr<Const16<i32>>),
     /// Variant of [`Instruction::I64Store32`] for constant `address`.
-    I64Store32At(StoreAtInstr<Register>),
+    I64Store32At(StoreAtInstr<Reg>),
     /// Variant of [`Instruction::I64Store32At`] for constant 16-bit `value`.
     I64Store32AtImm16(StoreAtInstr<Const16<i32>>),
 
@@ -1591,9 +1591,9 @@ pub enum Instruction {
     /// Must be followed by an [`Instruction::Register`] to encode `value`.
     F32Store(StoreInstr),
     /// Variant of [`Instruction::F32Store`] for 16-bit `offset`.
-    F32StoreOffset16(StoreOffset16Instr<Register>),
+    F32StoreOffset16(StoreOffset16Instr<Reg>),
     /// Variant of [`Instruction::F32Store`] for constant `address`.
-    F32StoreAt(StoreAtInstr<Register>),
+    F32StoreAt(StoreAtInstr<Reg>),
 
     /// Wasm `f32.store` equivalent Wasmi instruction.
     ///
@@ -1602,9 +1602,9 @@ pub enum Instruction {
     /// Must be followed by an [`Instruction::Register`] to encode `value`.
     F64Store(StoreInstr),
     /// Variant of [`Instruction::F32Store`] for 16-bit `offset`.
-    F64StoreOffset16(StoreOffset16Instr<Register>),
+    F64StoreOffset16(StoreOffset16Instr<Reg>),
     /// Variant of [`Instruction::F32Store`] for constant `address`.
-    F64StoreAt(StoreAtInstr<Register>),
+    F64StoreAt(StoreAtInstr<Reg>),
 
     /// `i32` equality comparison instruction: `r0 = r1 == r2`
     I32Eq(BinInstr),
@@ -2475,9 +2475,9 @@ pub enum Instruction {
     /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
     TableGet {
         /// The register storing the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The register storing the index of the table element to get.
-        index: Register,
+        index: Reg,
     },
     /// Variant of [`Instruction::TableGet`] with constant `index` value.
     ///
@@ -2486,7 +2486,7 @@ pub enum Instruction {
     /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
     TableGetImm {
         /// The register storing the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The constant `index` value of the table element to get.
         index: Const32<u32>,
     },
@@ -2494,7 +2494,7 @@ pub enum Instruction {
     /// A Wasm `table.size` instruction.
     TableSize {
         /// The register storing the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The index identifying the table for the instruction.
         table: TableIdx,
     },
@@ -2506,9 +2506,9 @@ pub enum Instruction {
     /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
     TableSet {
         /// The register holding the `index` of the instruction.
-        index: Register,
+        index: Reg,
         /// The register holding the `value` of the instruction.
-        value: Register,
+        value: Reg,
     },
     /// Variant of [`Instruction::TableSet`] with constant `index` value.
     ///
@@ -2519,7 +2519,7 @@ pub enum Instruction {
         /// The constant `index` of the instruction.
         index: Const32<u32>,
         /// The register holding the `value` of the instruction.
-        value: Register,
+        value: Reg,
     },
 
     /// Wasm `table.copy <dst> <src>` instruction.
@@ -2534,11 +2534,11 @@ pub enum Instruction {
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopy {
         /// The start index of the `dst` table.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` table.
-        src: Register,
+        src: Reg,
         /// The number of copied elements.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `dst` index.
     ///
@@ -2552,9 +2552,9 @@ pub enum Instruction {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
         /// The start index of the `src` table.
-        src: Register,
+        src: Reg,
         /// The number of copied elements.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `src` index.
     ///
@@ -2566,11 +2566,11 @@ pub enum Instruction {
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyFrom {
         /// The start index of the `dst` table.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` table.
         src: Const16<u32>,
         /// The number of copied elements.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `dst` and `src` indices.
     ///
@@ -2586,7 +2586,7 @@ pub enum Instruction {
         /// The start index of the `src` table.
         src: Const16<u32>,
         /// The number of copied elements.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` field.
     ///
@@ -2602,9 +2602,9 @@ pub enum Instruction {
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyExact {
         /// The start index of the `dst` table.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` table.
-        src: Register,
+        src: Reg,
         /// The number of copied elements.
         len: Const16<u32>,
     },
@@ -2624,7 +2624,7 @@ pub enum Instruction {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
         /// The start index of the `src` table.
-        src: Register,
+        src: Reg,
         /// The number of copied elements.
         len: Const16<u32>,
     },
@@ -2642,7 +2642,7 @@ pub enum Instruction {
     /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
     TableCopyFromExact {
         /// The start index of the `dst` table.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` table.
         src: Const16<u32>,
         /// The number of copied elements.
@@ -2681,11 +2681,11 @@ pub enum Instruction {
     /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
     TableInit {
         /// The start index of the `dst` table.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` table.
-        src: Register,
+        src: Reg,
         /// The number of copied elements.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::TableInit`] with a constant 16-bit `dst` index.
     ///
@@ -2699,9 +2699,9 @@ pub enum Instruction {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
         /// The start index of the `src` table.
-        src: Register,
+        src: Reg,
         /// The number of copied elements.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::TableInit`] with a constant 16-bit `src` index.
     ///
@@ -2713,11 +2713,11 @@ pub enum Instruction {
     /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
     TableInitFrom {
         /// The start index of the `dst` table.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` table.
         src: Const16<u32>,
         /// The number of copied elements.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::TableInit`] with a constant 16-bit `dst` and `src` indices.
     ///
@@ -2733,7 +2733,7 @@ pub enum Instruction {
         /// The start index of the `src` table.
         src: Const16<u32>,
         /// The number of copied elements.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` field.
     ///
@@ -2749,9 +2749,9 @@ pub enum Instruction {
     /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
     TableInitExact {
         /// The start index of the `dst` table.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` table.
-        src: Register,
+        src: Reg,
         /// The number of copied elements.
         len: Const16<u32>,
     },
@@ -2771,7 +2771,7 @@ pub enum Instruction {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
         /// The start index of the `src` table.
-        src: Register,
+        src: Reg,
         /// The number of copied elements.
         len: Const16<u32>,
     },
@@ -2789,7 +2789,7 @@ pub enum Instruction {
     /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
     TableInitFromExact {
         /// The start index of the `dst` table.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` table.
         src: Const16<u32>,
         /// The number of copied elements.
@@ -2825,11 +2825,11 @@ pub enum Instruction {
     /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
     TableFill {
         /// The start index of the table to fill.
-        dst: Register,
+        dst: Reg,
         /// The number of elements to fill.
-        len: Register,
+        len: Reg,
         /// The value of the filled elements.
-        value: Register,
+        value: Reg,
     },
     /// Variant of [`Instruction::TableFill`] with 16-bit constant `dst` index.
     ///
@@ -2842,9 +2842,9 @@ pub enum Instruction {
         /// The start index of the table to fill.
         dst: Const16<u32>,
         /// The number of elements to fill.
-        len: Register,
+        len: Reg,
         /// The value of the filled elements.
-        value: Register,
+        value: Reg,
     },
     /// Variant of [`Instruction::TableFill`] with 16-bit constant `len` index.
     ///
@@ -2855,11 +2855,11 @@ pub enum Instruction {
     /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
     TableFillExact {
         /// The start index of the table to fill.
-        dst: Register,
+        dst: Reg,
         /// The number of elements to fill.
         len: Const16<u32>,
         /// The value of the filled elements.
-        value: Register,
+        value: Reg,
     },
     /// Variant of [`Instruction::TableFill`] with 16-bit constant `dst` and `len` fields.
     ///
@@ -2874,7 +2874,7 @@ pub enum Instruction {
         /// The number of elements to fill.
         len: Const16<u32>,
         /// The value of the filled elements.
-        value: Register,
+        value: Reg,
     },
 
     /// Wasm `table.grow <table>` instruction.
@@ -2886,11 +2886,11 @@ pub enum Instruction {
     /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
     TableGrow {
         /// Register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The number of elements to add to the table.
-        delta: Register,
+        delta: Reg,
         /// The value that is used to fill up the new cells.
-        value: Register,
+        value: Reg,
     },
     /// Variant of [`Instruction::TableGrow`] with 16-bit constant `delta`.
     ///
@@ -2901,11 +2901,11 @@ pub enum Instruction {
     /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
     TableGrowImm {
         /// Register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The number of elements to add to the table.
         delta: Const16<u32>,
         /// The value that is used to fill up the new cells.
-        value: Register,
+        value: Reg,
     },
 
     /// A Wasm `elem.drop` equalivalent Wasmi instruction.
@@ -2916,20 +2916,20 @@ pub enum Instruction {
     /// Wasm `memory.size` instruction.
     MemorySize {
         /// Register holding the result of the instruction.
-        result: Register,
+        result: Reg,
     },
 
     /// Wasm `memory.grow` instruction.
     MemoryGrow {
         /// Register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The number of pages to add to the memory.
-        delta: Register,
+        delta: Reg,
     },
     /// Variant of [`Instruction::MemoryGrow`] with 16-bit constant `delta`.
     MemoryGrowBy {
         /// Register holding the result of the instruction.
-        result: Register,
+        result: Reg,
         /// The number of pages to add to the memory.
         delta: Const16<u32>,
     },
@@ -2939,29 +2939,29 @@ pub enum Instruction {
     /// Copies elements from `memory[src..src+len]` to `memory[dst..dst+len]`.
     MemoryCopy {
         /// The start index of the `dst` memory.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` memory.
-        src: Register,
+        src: Reg,
         /// The number of copied bytes.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` index.
     MemoryCopyTo {
         /// The start index of the `dst` memory.
         dst: Const16<u32>,
         /// The start index of the `src` memory.
-        src: Register,
+        src: Reg,
         /// The number of copied bytes.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `src` index.
     MemoryCopyFrom {
         /// The start index of the `dst` memory.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` memory.
         src: Const16<u32>,
         /// The number of copied bytes.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` and `src` indices.
     MemoryCopyFromTo {
@@ -2970,7 +2970,7 @@ pub enum Instruction {
         /// The start index of the `src` memory.
         src: Const16<u32>,
         /// The number of copied bytes.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` field.
     ///
@@ -2979,9 +2979,9 @@ pub enum Instruction {
     /// This instruction copies _exactly_ `len` elements between the memories.
     MemoryCopyExact {
         /// The start index of the `dst` memory.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` memory.
-        src: Register,
+        src: Reg,
         /// The number of copied bytes.
         len: Const16<u32>,
     },
@@ -2994,7 +2994,7 @@ pub enum Instruction {
         /// The start index of the `dst` memory.
         dst: Const16<u32>,
         /// The start index of the `src` memory.
-        src: Register,
+        src: Reg,
         /// The number of copied bytes.
         len: Const16<u32>,
     },
@@ -3005,7 +3005,7 @@ pub enum Instruction {
     /// This instruction copies _exactly_ `len` elements between the memories.
     MemoryCopyFromExact {
         /// The start index of the `dst` memory.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` memory.
         src: Const16<u32>,
         /// The number of copied bytes.
@@ -3030,36 +3030,36 @@ pub enum Instruction {
     /// Sets bytes of `memory[dst..dst+len]` to `value`.
     MemoryFill {
         /// The start index of the memory to fill.
-        dst: Register,
+        dst: Reg,
         /// The byte value used to fill the memory.
-        value: Register,
+        value: Reg,
         /// The number of bytes to fill.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `dst` index.
     MemoryFillAt {
         /// The start index of the memory to fill.
         dst: Const16<u32>,
         /// The byte value used to fill the memory.
-        value: Register,
+        value: Reg,
         /// The number of bytes to fill.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryFill`] with constant fill `value`.
     MemoryFillImm {
         /// The start index of the memory to fill.
-        dst: Register,
+        dst: Reg,
         /// The byte value used to fill the memory.
         value: u8,
         /// The number of bytes to fill.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `len` value.
     MemoryFillExact {
         /// The start index of the memory to fill.
-        dst: Register,
+        dst: Reg,
         /// The byte value used to fill the memory.
-        value: Register,
+        value: Reg,
         /// The number of bytes to fill.
         len: Const16<u32>,
     },
@@ -3070,21 +3070,21 @@ pub enum Instruction {
         /// The byte value used to fill the memory.
         value: u8,
         /// The number of bytes to fill.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `len`.
     MemoryFillAtExact {
         /// The start index of the memory to fill.
         dst: Const16<u32>,
         /// The byte value used to fill the memory.
-        value: Register,
+        value: Reg,
         /// The number of bytes to fill.
         len: Const16<u32>,
     },
     /// Variant of [`Instruction::MemoryFill`] with constant fill `value` and `len`.
     MemoryFillImmExact {
         /// The start index of the memory to fill.
-        dst: Register,
+        dst: Reg,
         /// The byte value used to fill the memory.
         value: u8,
         /// The number of bytes to fill.
@@ -3111,11 +3111,11 @@ pub enum Instruction {
     /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
     MemoryInit {
         /// The start index of the `dst` memory.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` data segment.
-        src: Register,
+        src: Reg,
         /// The number of bytes to initialize.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `dst` index.
     ///
@@ -3128,9 +3128,9 @@ pub enum Instruction {
         /// The start index of the `dst` memory.
         dst: Const16<u32>,
         /// The start index of the `src` data segment.
-        src: Register,
+        src: Reg,
         /// The number of initialized bytes.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `src` index.
     ///
@@ -3141,11 +3141,11 @@ pub enum Instruction {
     /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
     MemoryInitFrom {
         /// The start index of the `dst` memory.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` data segment.
         src: Const16<u32>,
         /// The number of initialized bytes.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `dst` and `src` indices.
     ///
@@ -3160,7 +3160,7 @@ pub enum Instruction {
         /// The start index of the `src` data segment.
         src: Const16<u32>,
         /// The number of initialized bytes.
-        len: Register,
+        len: Reg,
     },
     /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` field.
     ///
@@ -3171,9 +3171,9 @@ pub enum Instruction {
     /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
     MemoryInitExact {
         /// The start index of the `dst` memory.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` data segment.
-        src: Register,
+        src: Reg,
         /// The number of initialized bytes.
         len: Const16<u32>,
     },
@@ -3188,7 +3188,7 @@ pub enum Instruction {
         /// The start index of the `dst` memory.
         dst: Const16<u32>,
         /// The start index of the `src` data segment.
-        src: Register,
+        src: Reg,
         /// The number of initialized bytes.
         len: Const16<u32>,
     },
@@ -3201,7 +3201,7 @@ pub enum Instruction {
     /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
     MemoryInitFromExact {
         /// The start index of the `dst` memory.
-        dst: Register,
+        dst: Reg,
         /// The start index of the `src` data segment.
         src: Const16<u32>,
         /// The number of initialized bytes.
@@ -3277,7 +3277,7 @@ pub enum Instruction {
     /// - [`Instruction::BranchTableMany`]
     BranchTableTarget {
         /// The registers where the values are going to be copied.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The branching offset of the branch table target.
         offset: BranchOffset,
     },
@@ -3291,45 +3291,45 @@ pub enum Instruction {
     /// - [`Instruction::BranchTableMany`]
     BranchTableTargetNonOverlapping {
         /// The registers where the values are going to be copied.
-        results: RegisterSpan,
+        results: RegSpan,
         /// The branching offset of the branch table target.
         offset: BranchOffset,
     },
-    /// An instruction parameter with a [`Register`] and a 32-bit immediate value.
+    /// An instruction parameter with a [`Reg`] and a 32-bit immediate value.
     RegisterAndImm32 {
-        /// The [`Register`] parameter value.
+        /// The [`Reg`] parameter value.
         ///
         /// # Note
         ///
         /// This also serves as utility to align `imm` to 4-bytes.
-        reg: Register,
+        reg: Reg,
         /// The 32-bit immediate value.
         imm: AnyConst32,
     },
-    /// A [`RegisterSpanIter`] instruction parameter.
-    RegisterSpan(RegisterSpanIter),
-    /// A [`Register`] instruction parameter.
+    /// A [`RegSpanIter`] instruction parameter.
+    RegisterSpan(RegSpanIter),
+    /// A [`Reg`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Register(Register),
-    /// Two [`Register`] instruction parameters.
+    Register(Reg),
+    /// Two [`Reg`] instruction parameters.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Register2([Register; 2]),
-    /// Three [`Register`] instruction parameters.
+    Register2([Reg; 2]),
+    /// Three [`Reg`] instruction parameters.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Register3([Register; 3]),
-    /// [`Register`] slice parameters.
+    Register3([Reg; 3]),
+    /// [`Reg`] slice parameters.
     ///
     /// # Note
     ///
@@ -3343,9 +3343,9 @@ pub enum Instruction {
     /// - [`Instruction::Register`]
     /// - [`Instruction::Register2`]
     /// - [`Instruction::Register3`]
-    RegisterList([Register; 3]),
+    RegisterList([Reg; 3]),
     /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
-    CallIndirectParams(CallIndirectParams<Register>),
+    CallIndirectParams(CallIndirectParams<Reg>),
     /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
     CallIndirectParamsImm16(CallIndirectParams<Const16<u32>>),
 }

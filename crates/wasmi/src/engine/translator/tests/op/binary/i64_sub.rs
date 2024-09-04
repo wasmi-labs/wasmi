@@ -24,7 +24,7 @@ fn reg_imm16() {
         WASM_OP,
         i64::from(value),
         [
-            Instruction::i64_add_imm16(Register::from_i16(1), Register::from_i16(0), rhs),
+            Instruction::i64_add_imm16(Reg::from_i16(1), Reg::from_i16(0), rhs),
             Instruction::return_reg(1),
         ],
     )
@@ -52,12 +52,8 @@ fn test_reg_imm(value: i64) {
     let mut testcase = testcase_binary_reg_imm(WASM_OP, value);
     testcase.expect_func(
         ExpectedFunc::new([
-            Instruction::i64_add(
-                Register::from_i16(1),
-                Register::from_i16(0),
-                Register::from_i16(-1),
-            ),
-            Instruction::return_reg(Register::from_i16(1)),
+            Instruction::i64_add(Reg::from_i16(1), Reg::from_i16(0), Reg::from_i16(-1)),
+            Instruction::return_reg(Reg::from_i16(1)),
         ])
         .consts([value.wrapping_neg()]),
     );

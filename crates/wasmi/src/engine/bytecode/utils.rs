@@ -11,15 +11,15 @@ use super::Instruction;
 
 /// An index into a register.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Register(i16);
+pub struct Reg(i16);
 
-impl From<i16> for Register {
+impl From<i16> for Reg {
     fn from(index: i16) -> Self {
         Self::from_i16(index)
     }
 }
 
-impl TryFrom<u32> for Register {
+impl TryFrom<u32> for Reg {
     type Error = Error;
 
     fn try_from(local_index: u32) -> Result<Self, Self::Error> {
@@ -29,88 +29,88 @@ impl TryFrom<u32> for Register {
     }
 }
 
-impl Register {
-    /// Create a [`Register`] from the given `u16` index.
+impl Reg {
+    /// Create a [`Reg`] from the given `u16` index.
     pub fn from_i16(index: i16) -> Self {
         Self(index)
     }
 
-    /// Returns the index of the [`Register`] as `u16` value.
+    /// Returns the index of the [`Reg`] as `u16` value.
     pub fn to_i16(self) -> i16 {
         self.0
     }
 
-    /// Returns `true` if this [`Register`] refers to a function local constant value.
+    /// Returns `true` if this [`Reg`] refers to a function local constant value.
     pub fn is_const(self) -> bool {
         self.0.is_negative()
     }
 
-    /// Returns the [`Register`] with the next contiguous index.
-    pub fn next(self) -> Register {
+    /// Returns the [`Reg`] with the next contiguous index.
+    pub fn next(self) -> Reg {
         Self(self.0.wrapping_add(1))
     }
 
-    /// Returns the [`Register`] with the previous contiguous index.
-    pub fn prev(self) -> Register {
+    /// Returns the [`Reg`] with the previous contiguous index.
+    pub fn prev(self) -> Reg {
         Self(self.0.wrapping_sub(1))
     }
 }
 
-/// A [`RegisterSpan`] of contiguous [`Register`] indices.
+/// A [`RegSpan`] of contiguous [`Reg`] indices.
 ///
 /// # Note
 ///
-/// - Represents an amount of contiguous [`Register`] indices.
-/// - For the sake of space efficiency the actual number of [`Register`]
-///   of the [`RegisterSpan`] is stored externally and provided in
-///   [`RegisterSpan::iter`] when there is a need to iterate over
-///   the [`Register`] of the [`RegisterSpan`].
+/// - Represents an amount of contiguous [`Reg`] indices.
+/// - For the sake of space efficiency the actual number of [`Reg`]
+///   of the [`RegSpan`] is stored externally and provided in
+///   [`RegSpan::iter`] when there is a need to iterate over
+///   the [`Reg`] of the [`RegSpan`].
 ///
 /// The caller is responsible for providing the correct length.
 /// Due to Wasm validation guided bytecode construction we assert
 /// that the externally stored length is valid.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct RegisterSpan(Register);
+pub struct RegSpan(Reg);
 
-impl RegisterSpan {
-    /// Creates a new [`RegisterSpan`] starting with the given `start` [`Register`].
-    pub fn new(start: Register) -> Self {
+impl RegSpan {
+    /// Creates a new [`RegSpan`] starting with the given `start` [`Reg`].
+    pub fn new(start: Reg) -> Self {
         Self(start)
     }
 
-    /// Returns a [`RegisterSpanIter`] yielding `len` [`Register`].
-    pub fn iter(self, len: usize) -> RegisterSpanIter {
-        RegisterSpanIter::new(self.0, len)
+    /// Returns a [`RegSpanIter`] yielding `len` [`Reg`].
+    pub fn iter(self, len: usize) -> RegSpanIter {
+        RegSpanIter::new(self.0, len)
     }
 
-    /// Returns a [`RegisterSpanIter`] yielding `len` [`Register`].
-    pub fn iter_u16(self, len: u16) -> RegisterSpanIter {
-        RegisterSpanIter::new_u16(self.0, len)
+    /// Returns a [`RegSpanIter`] yielding `len` [`Reg`].
+    pub fn iter_u16(self, len: u16) -> RegSpanIter {
+        RegSpanIter::new_u16(self.0, len)
     }
 
-    /// Returns the head [`Register`] of the [`RegisterSpan`].
-    pub fn head(self) -> Register {
+    /// Returns the head [`Reg`] of the [`RegSpan`].
+    pub fn head(self) -> Reg {
         self.0
     }
 
-    /// Returns an exclusive reference to the head [`Register`] of the [`RegisterSpan`].
-    pub fn head_mut(&mut self) -> &mut Register {
+    /// Returns an exclusive reference to the head [`Reg`] of the [`RegSpan`].
+    pub fn head_mut(&mut self) -> &mut Reg {
         &mut self.0
     }
 }
 
-/// A [`RegisterSpanIter`] iterator yielding contiguous [`Register`].
+/// A [`RegSpanIter`] iterator yielding contiguous [`Reg`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct RegisterSpanIter {
-    /// The next [`Register`] in the [`RegisterSpanIter`].
-    next: Register,
-    /// The last [`Register`] in the [`RegisterSpanIter`].
-    last: Register,
+pub struct RegSpanIter {
+    /// The next [`Reg`] in the [`RegSpanIter`].
+    next: Reg,
+    /// The last [`Reg`] in the [`RegSpanIter`].
+    last: Reg,
 }
 
-impl RegisterSpanIter {
-    /// Creates a [`RegisterSpanIter`] from then given raw `start` and `end` [`Register`].
-    pub fn from_raw_parts(start: Register, end: Register) -> Self {
+impl RegSpanIter {
+    /// Creates a [`RegSpanIter`] from then given raw `start` and `end` [`Reg`].
+    pub fn from_raw_parts(start: Reg, end: Reg) -> Self {
         debug_assert!(start.to_i16() <= end.to_i16());
         Self {
             next: start,
@@ -118,65 +118,65 @@ impl RegisterSpanIter {
         }
     }
 
-    /// Creates a new [`RegisterSpanIter`] for the given `start` [`Register`] and length `len`.
+    /// Creates a new [`RegSpanIter`] for the given `start` [`Reg`] and length `len`.
     ///
     /// # Panics
     ///
-    /// If the `start..end` [`Register`] span indices are out of bounds.
-    fn new(start: Register, len: usize) -> Self {
+    /// If the `start..end` [`Reg`] span indices are out of bounds.
+    fn new(start: Reg, len: usize) -> Self {
         let len = u16::try_from(len)
             .unwrap_or_else(|_| panic!("out of bounds length for register span: {len}"));
         Self::new_u16(start, len)
     }
 
-    /// Creates a new [`RegisterSpanIter`] for the given `start` [`Register`] and length `len`.
+    /// Creates a new [`RegSpanIter`] for the given `start` [`Reg`] and length `len`.
     ///
     /// # Panics
     ///
-    /// If the `start..end` [`Register`] span indices are out of bounds.
-    fn new_u16(start: Register, len: u16) -> Self {
+    /// If the `start..end` [`Reg`] span indices are out of bounds.
+    fn new_u16(start: Reg, len: u16) -> Self {
         let next = start;
         let last = start
             .0
             .checked_add_unsigned(len)
-            .map(Register)
+            .map(Reg)
             .expect("overflowing register index for register span");
         Self::from_raw_parts(next, last)
     }
 
-    /// Creates a [`RegisterSpan`] from this [`RegisterSpanIter`].
-    pub fn span(self) -> RegisterSpan {
-        RegisterSpan(self.next)
+    /// Creates a [`RegSpan`] from this [`RegSpanIter`].
+    pub fn span(self) -> RegSpan {
+        RegSpan(self.next)
     }
 
-    /// Returns the remaining length of the [`RegisterSpanIter`] as `u16`.
+    /// Returns the remaining length of the [`RegSpanIter`] as `u16`.
     pub fn len_as_u16(self) -> u16 {
         self.last.0.abs_diff(self.next.0)
     }
 
-    /// Returns `true` if the [`RegisterSpanIter`] is empty.
+    /// Returns `true` if the [`RegSpanIter`] is empty.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    /// Returns the [`Register`] with the minimum index of the [`RegisterSpanIter`].
-    fn min_register(&self) -> Register {
+    /// Returns the [`Reg`] with the minimum index of the [`RegSpanIter`].
+    fn min_register(&self) -> Reg {
         self.span().head()
     }
 
-    /// Returns the [`Register`] with the maximum index of the [`RegisterSpanIter`].
+    /// Returns the [`Reg`] with the maximum index of the [`RegSpanIter`].
     ///
     /// # Note
     ///
-    /// - Returns [`Self::min_register`] in case the [`RegisterSpanIter`] is empty.
-    fn max_register(&self) -> Register {
+    /// - Returns [`Self::min_register`] in case the [`RegSpanIter`] is empty.
+    fn max_register(&self) -> Reg {
         self.clone()
             .next_back()
             .unwrap_or_else(|| self.min_register())
     }
 
-    /// Returns `true` if the [`Register`] is contains in the [`RegisterSpanIter`].
-    pub fn contains(&self, register: Register) -> bool {
+    /// Returns `true` if the [`Reg`] is contains in the [`RegSpanIter`].
+    pub fn contains(&self, register: Reg) -> bool {
         if self.is_empty() {
             return false;
         }
@@ -218,8 +218,8 @@ impl RegisterSpanIter {
     }
 }
 
-impl Iterator for RegisterSpanIter {
-    type Item = Register;
+impl Iterator for RegSpanIter {
+    type Item = Reg;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.next == self.last {
@@ -236,7 +236,7 @@ impl Iterator for RegisterSpanIter {
     }
 }
 
-impl DoubleEndedIterator for RegisterSpanIter {
+impl DoubleEndedIterator for RegSpanIter {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.next == self.last {
             return None;
@@ -246,26 +246,26 @@ impl DoubleEndedIterator for RegisterSpanIter {
     }
 }
 
-impl ExactSizeIterator for RegisterSpanIter {
+impl ExactSizeIterator for RegSpanIter {
     fn len(&self) -> usize {
         usize::from(self.len_as_u16())
     }
 }
 
-/// A binary [`Register`] based instruction.
+/// A binary [`Reg`] based instruction.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BinInstr {
     /// The register storing the result of the computation.
-    pub result: Register,
+    pub result: Reg,
     /// The register holding the left-hand side value.
-    pub lhs: Register,
+    pub lhs: Reg,
     /// The register holding the right-hand side value.
-    pub rhs: Register,
+    pub rhs: Reg,
 }
 
 impl BinInstr {
     /// Creates a new [`BinInstr`].
-    pub fn new(result: Register, lhs: Register, rhs: Register) -> Self {
+    pub fn new(result: Reg, lhs: Reg, rhs: Reg) -> Self {
         Self { result, lhs, rhs }
     }
 }
@@ -281,14 +281,14 @@ pub type BinInstrImm16<T> = BinInstrImm<Const16<T>>;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BinInstrImm<T> {
     /// The register storing the result of the computation.
-    pub result: Register,
+    pub result: Reg,
     /// The register holding one of the operands.
     ///
     /// # Note
     ///
     /// The instruction decides if this operand is the left-hand or
     /// right-hand operand for the computation.
-    pub reg_in: Register,
+    pub reg_in: Reg,
     /// The 16-bit immediate value.
     ///
     /// # Note
@@ -300,7 +300,7 @@ pub struct BinInstrImm<T> {
 
 impl<T> BinInstrImm<T> {
     /// Creates a new [`BinInstrImm16`].
-    pub fn new(result: Register, reg_in: Register, imm_in: T) -> Self {
+    pub fn new(result: Reg, reg_in: Reg, imm_in: T) -> Self {
         Self {
             result,
             reg_in,
@@ -313,14 +313,14 @@ impl<T> BinInstrImm<T> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct UnaryInstr {
     /// The register storing the result of the instruction.
-    pub result: Register,
+    pub result: Reg,
     /// The register holding the input of the instruction.
-    pub input: Register,
+    pub input: Reg,
 }
 
 impl UnaryInstr {
     /// Creates a new [`UnaryInstr`].
-    pub fn new(result: Register, input: Register) -> Self {
+    pub fn new(result: Reg, input: Reg) -> Self {
         Self { result, input }
     }
 }
@@ -336,14 +336,14 @@ impl UnaryInstr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LoadInstr {
     /// The register storing the result of the `load` instruction.
-    pub result: Register,
+    pub result: Reg,
     /// The register storing the pointer of the `load` instruction.
-    pub ptr: Register,
+    pub ptr: Reg,
 }
 
 impl LoadInstr {
     /// Create a new [`LoadInstr`].
-    pub fn new(result: Register, ptr: Register) -> Self {
+    pub fn new(result: Reg, ptr: Reg) -> Self {
         Self { result, ptr }
     }
 }
@@ -352,14 +352,14 @@ impl LoadInstr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LoadAtInstr {
     /// The register storing the result of the `load` instruction.
-    pub result: Register,
+    pub result: Reg,
     /// The `ptr+offset` address of the `load` instruction.
     pub address: Const32<u32>,
 }
 
 impl LoadAtInstr {
     /// Create a new [`LoadAtInstr`].
-    pub fn new(result: Register, address: Const32<u32>) -> Self {
+    pub fn new(result: Reg, address: Const32<u32>) -> Self {
         Self { result, address }
     }
 }
@@ -373,16 +373,16 @@ impl LoadAtInstr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct LoadOffset16Instr {
     /// The register storing the result of the `load` instruction.
-    pub result: Register,
+    pub result: Reg,
     /// The register storing the pointer of the `load` instruction.
-    pub ptr: Register,
+    pub ptr: Reg,
     /// The 16-bit encoded offset of the `load` instruction.
     pub offset: Const16<u32>,
 }
 
 impl LoadOffset16Instr {
     /// Create a new [`LoadOffset16Instr`].
-    pub fn new(result: Register, ptr: Register, offset: Const16<u32>) -> Self {
+    pub fn new(result: Reg, ptr: Reg, offset: Const16<u32>) -> Self {
         Self {
             result,
             ptr,
@@ -399,14 +399,14 @@ impl LoadOffset16Instr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreInstr {
     /// The register storing the pointer of the `store` instruction.
-    pub ptr: Register,
+    pub ptr: Reg,
     /// The register storing the pointer offset of the `store` instruction.
     pub offset: Const32<u32>,
 }
 
 impl StoreInstr {
     /// Creates a new [`StoreInstr`].
-    pub fn new(ptr: Register, offset: Const32<u32>) -> Self {
+    pub fn new(ptr: Reg, offset: Const32<u32>) -> Self {
         Self { ptr, offset }
     }
 }
@@ -424,7 +424,7 @@ impl StoreInstr {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct StoreOffset16Instr<T> {
     /// The register storing the pointer of the `store` instruction.
-    pub ptr: Register,
+    pub ptr: Reg,
     /// The register storing the pointer offset of the `store` instruction.
     pub offset: Const16<u32>,
     /// The value to be stored.
@@ -433,7 +433,7 @@ pub struct StoreOffset16Instr<T> {
 
 impl<T> StoreOffset16Instr<T> {
     /// Creates a new [`StoreOffset16Instr`].
-    pub fn new(ptr: Register, offset: Const16<u32>, value: T) -> Self {
+    pub fn new(ptr: Reg, offset: Const16<u32>, value: T) -> Self {
         Self { ptr, offset, value }
     }
 }
@@ -564,16 +564,16 @@ impl BranchOffset16 {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BranchBinOpInstr {
     /// The left-hand side operand to the conditional operator.
-    pub lhs: Register,
+    pub lhs: Reg,
     /// The right-hand side operand to the conditional operator.
-    pub rhs: Register,
+    pub rhs: Reg,
     /// The 16-bit encoded branch offset.
     pub offset: BranchOffset16,
 }
 
 impl BranchBinOpInstr {
     /// Creates a new [`BranchBinOpInstr`].
-    pub fn new(lhs: Register, rhs: Register, offset: BranchOffset16) -> Self {
+    pub fn new(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> Self {
         Self { lhs, rhs, offset }
     }
 }
@@ -585,7 +585,7 @@ pub type BranchBinOpInstrImm16<T> = BranchBinOpInstrImm<Const16<T>>;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BranchBinOpInstrImm<T> {
     /// The left-hand side operand to the conditional operator.
-    pub lhs: Register,
+    pub lhs: Reg,
     /// The right-hand side operand to the conditional operator.
     pub rhs: T,
     /// The 16-bit encoded branch offset.
@@ -594,7 +594,7 @@ pub struct BranchBinOpInstrImm<T> {
 
 impl<T> BranchBinOpInstrImm<T> {
     /// Creates a new [`BranchBinOpInstr`].
-    pub fn new(lhs: Register, rhs: T, offset: BranchOffset16) -> Self {
+    pub fn new(lhs: Reg, rhs: T, offset: BranchOffset16) -> Self {
         Self { lhs, rhs, offset }
     }
 }

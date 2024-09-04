@@ -1,6 +1,6 @@
 use super::{stack::ValueStack, TypedProvider, TypedVal};
 use crate::{
-    engine::bytecode::{AnyConst16, Const16, Provider, Register, RegisterSpanIter, Sign},
+    engine::bytecode::{AnyConst16, Const16, Provider, Reg, RegSpanIter, Sign},
     Error,
 };
 
@@ -137,15 +137,15 @@ impl Provider<Const16<u32>> {
     }
 }
 
-impl RegisterSpanIter {
-    /// Creates a [`RegisterSpanIter`] from the given slice of [`TypedProvider`] if possible.
+impl RegSpanIter {
+    /// Creates a [`RegSpanIter`] from the given slice of [`TypedProvider`] if possible.
     ///
-    /// All [`TypedProvider`] must be [`Register`] and have
+    /// All [`TypedProvider`] must be [`Reg`] and have
     /// contiguous indices for the conversion to succeed.
     ///
     /// Returns `None` if the `providers` slice is empty.
     pub fn from_providers(providers: &[TypedProvider]) -> Option<Self> {
-        /// Returns the `i16` [`Register`] index if the [`TypedProvider`] is a [`Register`].
+        /// Returns the `i16` [`Reg`] index if the [`TypedProvider`] is a [`Reg`].
         fn register_index(provider: &TypedProvider) -> Option<i16> {
             match provider {
                 TypedProvider::Register(index) => Some(index.to_i16()),
@@ -164,8 +164,8 @@ impl RegisterSpanIter {
         }
         let end_index = prev_index.checked_add(1)?;
         Some(Self::from_raw_parts(
-            Register::from_i16(first_index),
-            Register::from_i16(end_index),
+            Reg::from_i16(first_index),
+            Reg::from_i16(end_index),
         ))
     }
 }

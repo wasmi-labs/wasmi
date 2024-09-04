@@ -15,11 +15,7 @@ fn copy() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::memory_copy(
-                Register::from_i16(0),
-                Register::from_i16(1),
-                Register::from_i16(2),
-            ),
+            Instruction::memory_copy(Reg::from_i16(0), Reg::from_i16(1), Reg::from_i16(2)),
             Instruction::Return,
         ])
         .run()
@@ -44,11 +40,7 @@ fn testcase_copy_exact(len: u32) -> TranslationTest {
 fn test_copy_exact16(len: u32) {
     testcase_copy_exact(len)
         .expect_func_instrs([
-            Instruction::memory_copy_exact(
-                Register::from_i16(0),
-                Register::from_i16(1),
-                u32imm16(len),
-            ),
+            Instruction::memory_copy_exact(Reg::from_i16(0), Reg::from_i16(1), u32imm16(len)),
             Instruction::Return,
         ])
         .run()
@@ -67,11 +59,7 @@ fn test_copy_exact(len: u32) {
     testcase_copy_exact(len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(0),
-                    Register::from_i16(1),
-                    Register::from_i16(-1),
-                ),
+                Instruction::memory_copy(Reg::from_i16(0), Reg::from_i16(1), Reg::from_i16(-1)),
                 Instruction::Return,
             ])
             .consts([len]),
@@ -105,11 +93,7 @@ fn testcase_copy_from(src: u32) -> TranslationTest {
 fn test_copy_from16(src: u32) {
     testcase_copy_from(src)
         .expect_func_instrs([
-            Instruction::memory_copy_from(
-                Register::from_i16(0),
-                u32imm16(src),
-                Register::from_i16(1),
-            ),
+            Instruction::memory_copy_from(Reg::from_i16(0), u32imm16(src), Reg::from_i16(1)),
             Instruction::Return,
         ])
         .run()
@@ -126,11 +110,7 @@ fn test_copy_from(src: u32) {
     testcase_copy_from(src)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(0),
-                    Register::from_i16(-1),
-                    Register::from_i16(1),
-                ),
+                Instruction::memory_copy(Reg::from_i16(0), Reg::from_i16(-1), Reg::from_i16(1)),
                 Instruction::Return,
             ])
             .consts([src]),
@@ -164,11 +144,7 @@ fn testcase_copy_to(dst: u32) -> TranslationTest {
 fn test_copy_to16(dst: u32) {
     testcase_copy_to(dst)
         .expect_func_instrs([
-            Instruction::memory_copy_to(
-                u32imm16(dst),
-                Register::from_i16(0),
-                Register::from_i16(1),
-            ),
+            Instruction::memory_copy_to(u32imm16(dst), Reg::from_i16(0), Reg::from_i16(1)),
             Instruction::Return,
         ])
         .run()
@@ -185,11 +161,7 @@ fn test_copy_to(dst: u32) {
     testcase_copy_to(dst)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(-1),
-                    Register::from_i16(0),
-                    Register::from_i16(1),
-                ),
+                Instruction::memory_copy(Reg::from_i16(-1), Reg::from_i16(0), Reg::from_i16(1)),
                 Instruction::Return,
             ])
             .consts([dst]),
@@ -223,7 +195,7 @@ fn testcase_copy_from_to(dst: u32, src: u32) -> TranslationTest {
 fn test_copy_from_to16(dst: u32, src: u32) {
     testcase_copy_from_to(dst, src)
         .expect_func_instrs([
-            Instruction::memory_copy_from_to(u32imm16(dst), u32imm16(src), Register::from_i16(0)),
+            Instruction::memory_copy_from_to(u32imm16(dst), u32imm16(src), Reg::from_i16(0)),
             Instruction::Return,
         ])
         .run()
@@ -244,11 +216,7 @@ fn test_copy_from_to(dst: u32, src: u32) {
     testcase_copy_from_to(dst, src)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(-1),
-                    Register::from_i16(-2),
-                    Register::from_i16(0),
-                ),
+                Instruction::memory_copy(Reg::from_i16(-1), Reg::from_i16(-2), Reg::from_i16(0)),
                 Instruction::Return,
             ])
             .consts([dst, src]),
@@ -293,7 +261,7 @@ fn testcase_copy_to_exact(dst: u32, len: u32) -> TranslationTest {
 fn test_copy_to_exact16(dst: u32, len: u32) {
     testcase_copy_to_exact(dst, len)
         .expect_func_instrs([
-            Instruction::memory_copy_to_exact(u32imm16(dst), Register::from_i16(0), u32imm16(len)),
+            Instruction::memory_copy_to_exact(u32imm16(dst), Reg::from_i16(0), u32imm16(len)),
             Instruction::Return,
         ])
         .run()
@@ -314,11 +282,7 @@ fn test_copy_to_exact(dst: u32, len: u32) {
     testcase_copy_to_exact(dst, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(-1),
-                    Register::from_i16(0),
-                    Register::from_i16(-2),
-                ),
+                Instruction::memory_copy(Reg::from_i16(-1), Reg::from_i16(0), Reg::from_i16(-2)),
                 Instruction::Return,
             ])
             .consts([dst, len]),
@@ -363,11 +327,7 @@ fn testcase_copy_from_exact(src: u32, len: u32) -> TranslationTest {
 fn test_copy_from_exact16(src: u32, len: u32) {
     testcase_copy_from_exact(src, len)
         .expect_func_instrs([
-            Instruction::memory_copy_from_exact(
-                Register::from_i16(0),
-                u32imm16(src),
-                u32imm16(len),
-            ),
+            Instruction::memory_copy_from_exact(Reg::from_i16(0), u32imm16(src), u32imm16(len)),
             Instruction::Return,
         ])
         .run()
@@ -388,11 +348,7 @@ fn test_copy_from_exact(src: u32, len: u32) {
     testcase_copy_from_exact(src, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(0),
-                    Register::from_i16(-1),
-                    Register::from_i16(-2),
-                ),
+                Instruction::memory_copy(Reg::from_i16(0), Reg::from_i16(-1), Reg::from_i16(-2)),
                 Instruction::Return,
             ])
             .consts([src, len]),
@@ -460,11 +416,7 @@ fn test_copy_from_to_exact(dst: u32, src: u32, len: u32) {
     testcase_copy_from_to_exact(dst, src, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(-1),
-                    Register::from_i16(-2),
-                    Register::from_i16(-3),
-                ),
+                Instruction::memory_copy(Reg::from_i16(-1), Reg::from_i16(-2), Reg::from_i16(-3)),
                 Instruction::Return,
             ])
             .consts([dst, src, len]),

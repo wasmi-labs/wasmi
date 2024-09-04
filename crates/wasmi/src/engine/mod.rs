@@ -16,7 +16,7 @@ mod translator;
 mod tests;
 
 #[cfg(test)]
-use self::bytecode::RegisterSpan;
+use self::bytecode::RegSpan;
 
 #[cfg(test)]
 use code_map::CompiledFuncRef;
