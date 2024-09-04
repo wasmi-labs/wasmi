@@ -1,15 +1,7 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::bytecode::{
-        Const16,
-        Instruction,
-        InstructionPtr,
-        Reg,
-        StoreAtInstr,
-        StoreInstr,
-        StoreOffset16Instr,
-    },
+    engine::bytecode::{Const16, Instruction, InstructionPtr, Reg},
     Error,
 };
 
@@ -58,11 +50,11 @@ impl<'engine> Executor<'engine> {
     }
 
     #[inline(always)]
-    fn execute_store(&mut self, instr: StoreInstr, store_op: WasmStoreOp) -> Result<(), Error> {
+    fn execute_store(&mut self, ptr: Reg, offset: u32, store_op: WasmStoreOp) -> Result<(), Error> {
         let value = self.fetch_store_value(1);
         self.execute_store_wrap(
-            self.get_register(instr.ptr),
-            u32::from(instr.offset),
+            self.get_register(ptr),
+            offset,
             self.get_register(value),
             store_op,
         )?;
@@ -72,13 +64,15 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_store_offset16(
         &mut self,
-        instr: StoreOffset16Instr<Reg>,
+        ptr: Reg,
+        offset: Const16<u32>,
+        value: Reg,
         store_op: WasmStoreOp,
     ) -> Result<(), Error> {
         self.execute_store_wrap(
-            self.get_register(instr.ptr),
-            u32::from(instr.offset),
-            self.get_register(instr.value),
+            self.get_register(ptr),
+            u32::from(offset),
+            self.get_register(value),
             store_op,
         )?;
         self.try_next_instr()
@@ -87,16 +81,18 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_store_offset16_imm16<T, V>(
         &mut self,
-        instr: StoreOffset16Instr<V>,
+        ptr: Reg,
+        offset: Const16<u32>,
+        value: V,
         store_op: WasmStoreOp,
     ) -> Result<(), Error>
     where
         T: From<V> + Into<UntypedVal>,
     {
         self.execute_store_wrap(
-            self.get_register(instr.ptr),
-            u32::from(instr.offset),
-            T::from(instr.value).into(),
+            self.get_register(ptr),
+            u32::from(offset),
+            T::from(value).into(),
             store_op,
         )?;
         self.try_next_instr()
@@ -105,13 +101,14 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_store_at(
         &mut self,
-        instr: StoreAtInstr<Reg>,
+        address: u32,
+        value: Reg,
         store_op: WasmStoreOp,
     ) -> Result<(), Error> {
         self.execute_store_wrap(
             UntypedVal::from(0u32),
-            u32::from(instr.address),
-            self.get_register(instr.value),
+            address,
+            self.get_register(value),
             store_op,
         )?;
         self.try_next_instr()
@@ -120,7 +117,8 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_store_at_imm16<T, V>(
         &mut self,
-        instr: StoreAtInstr<V>,
+        address: u32,
+        value: V,
         store_op: WasmStoreOp,
     ) -> Result<(), Error>
     where
@@ -128,8 +126,8 @@ impl<'engine> Executor<'engine> {
     {
         self.execute_store_wrap(
             UntypedVal::from(0u32),
-            u32::from(instr.address),
-            T::from(instr.value).into(),
+            address,
+            T::from(value).into(),
             store_op,
         )?;
         self.try_next_instr()
@@ -151,41 +149,46 @@ macro_rules! impl_execute_istore {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
             #[inline(always)]
-            pub fn $fn_store(&mut self,  instr: StoreInstr) -> Result<(), Error> {
-                self.execute_store(instr, $impl_fn)
+            pub fn $fn_store(&mut self, ptr: Reg, offset: u32) -> Result<(), Error> {
+                self.execute_store(ptr, offset, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
             #[inline(always)]
             pub fn $fn_store_off16(
                 &mut self,
-                instr: StoreOffset16Instr<Reg>,
+                ptr: Reg,
+                offset: Const16<u32>,
+                value: Reg,
             ) -> Result<(), Error> {
-                self.execute_store_offset16(instr, $impl_fn)
+                self.execute_store_offset16(ptr, offset, value, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16_imm16), "`].")]
             #[inline(always)]
             pub fn $fn_store_off16_imm16(
                 &mut self,
-                instr: StoreOffset16Instr<$from_ty>,
+                ptr: Reg,
+                offset: Const16<u32>,
+                value: $from_ty,
             ) -> Result<(), Error> {
-                self.execute_store_offset16_imm16::<$to_ty, _>(instr, $impl_fn)
+                self.execute_store_offset16_imm16::<$to_ty, _>(ptr, offset, value, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
             #[inline(always)]
-            pub fn $fn_store_at(&mut self,instr: StoreAtInstr<Reg>) -> Result<(), Error> {
-                self.execute_store_at(instr, $impl_fn)
+            pub fn $fn_store_at(&mut self, address: u32, value: Reg) -> Result<(), Error> {
+                self.execute_store_at(address, value, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at_imm16), "`].")]
             #[inline(always)]
             pub fn $fn_store_at_imm16(
                 &mut self,
-                instr: StoreAtInstr<$from_ty>,
+                address: u32,
+                value: $from_ty,
             ) -> Result<(), Error> {
-                self.execute_store_at_imm16::<$to_ty, _>(instr, $impl_fn)
+                self.execute_store_at_imm16::<$to_ty, _>(address, value, $impl_fn)
             }
         )*
     };
@@ -270,23 +273,25 @@ macro_rules! impl_execute_fstore {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
             #[inline(always)]
-            pub fn $fn_store(&mut self, instr: StoreInstr) -> Result<(), Error> {
-                self.execute_store(instr, $impl_fn)
+            pub fn $fn_store(&mut self, ptr: Reg, offset: u32) -> Result<(), Error> {
+                self.execute_store(ptr, offset, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
             #[inline(always)]
             pub fn $fn_store_off16(
                 &mut self,
-                instr: StoreOffset16Instr<Reg>,
+                ptr: Reg,
+                offset: Const16<u32>,
+                value: Reg,
             ) -> Result<(), Error> {
-                self.execute_store_offset16(instr, $impl_fn)
+                self.execute_store_offset16(ptr, offset, value, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
             #[inline(always)]
-            pub fn $fn_store_at(&mut self, instr: StoreAtInstr<Reg>) -> Result<(), Error> {
-                self.execute_store_at(instr, $impl_fn)
+            pub fn $fn_store_at(&mut self, address: u32, value: Reg) -> Result<(), Error> {
+                self.execute_store_at(address, value, $impl_fn)
             }
         )*
     }
