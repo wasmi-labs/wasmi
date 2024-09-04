@@ -236,7 +236,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::BranchTableSpan`] for the given `index` and `len_targets`.
     pub fn branch_table_span(index: impl Into<Register>, len_targets: u32) -> Self {
-        Self::BranchTable1 {
+        Self::BranchTableSpan {
             index: index.into(),
             len_targets,
         }
@@ -244,7 +244,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::BranchTableMany`] for the given `index` and `len_targets`.
     pub fn branch_table_many(index: impl Into<Register>, len_targets: u32) -> Self {
-        Self::BranchTable1 {
+        Self::BranchTableMany {
             index: index.into(),
             len_targets,
         }
