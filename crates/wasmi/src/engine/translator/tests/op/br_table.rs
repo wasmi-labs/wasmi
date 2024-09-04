@@ -578,8 +578,7 @@ fn all_same_targets_1() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_params_3() {
-    let wasm = &format!(
-        r"
+    let wasm = r"
         (module
             (func (param i32 i32 i32 i32) (result i32 i32 i32)
                 (block (result i32 i32 i32)
@@ -596,8 +595,7 @@ fn reg_params_3() {
                 )
                 (return (i32.add (i32.const 30)))
             )
-        )",
-    );
+        )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_table_3(3, 4),
@@ -628,8 +626,7 @@ fn reg_params_3() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_params_4_span() {
-    let wasm = &format!(
-        r"
+    let wasm = r"
         (module
             (func (param i32 i32 i32 i32 i32) (result i32 i32 i32 i32)
                 (block (result i32 i32 i32 i32)
@@ -648,8 +645,7 @@ fn reg_params_4_span() {
                 )
                 (return (i32.add (i32.const 30)))
             )
-        )",
-    );
+        )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::i32_popcnt(Register::from(5), Register::from(0)),
@@ -681,8 +677,7 @@ fn reg_params_4_span() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_params_4_many() {
-    let wasm = &format!(
-        r"
+    let wasm = r"
         (module
             (func (param i32 i32 i32 i32 i32) (result i32 i32 i32 i32)
                 (block (result i32 i32 i32 i32)
@@ -701,8 +696,7 @@ fn reg_params_4_many() {
                 )
                 (return (i32.add (i32.const 30)))
             )
-        )",
-    );
+        )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::i32_popcnt(Register::from(5), Register::from(0)),
