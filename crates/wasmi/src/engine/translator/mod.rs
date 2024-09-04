@@ -660,7 +660,7 @@ impl FuncTranslator {
         //
         // We can do this since the branch parameters of the function enclosing block
         // are never used due to optimizations to directly return to the caller instead.
-        let branch_params = RegSpan::new(Reg::from_i16(0));
+        let branch_params = RegSpan::new(Reg::from(0));
         let block_frame = BlockControlFrame::new(
             block_type,
             end_label,

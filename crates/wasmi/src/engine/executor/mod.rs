@@ -216,7 +216,7 @@ impl<'engine> EngineExecutor<'engine> {
                     CallFrame::new(
                         InstructionPtr::new(compiled_func.instrs().as_ptr()),
                         offsets,
-                        RegSpan::new(Reg::from_i16(0)),
+                        RegSpan::new(Reg::from(0)),
                     ),
                     Some(instance),
                 )?;

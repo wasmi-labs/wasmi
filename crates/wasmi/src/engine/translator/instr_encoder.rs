@@ -1484,33 +1484,33 @@ mod tests {
     #[test]
     fn has_overlapping_copies_works() {
         assert!(!InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from_i16(0)).iter(0),
+            RegSpan::new(Reg::from(0)).iter(0),
             &[],
         ));
         assert!(!InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from_i16(0)).iter(2),
+            RegSpan::new(Reg::from(0)).iter(2),
             &[TypedProvider::register(0), TypedProvider::register(1),],
         ));
         assert!(!InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from_i16(0)).iter(2),
+            RegSpan::new(Reg::from(0)).iter(2),
             &[
                 TypedProvider::Const(TypedVal::from(10_i32)),
                 TypedProvider::Const(TypedVal::from(20_i32)),
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from_i16(0)).iter(2),
+            RegSpan::new(Reg::from(0)).iter(2),
             &[
                 TypedProvider::Const(TypedVal::from(10_i32)),
                 TypedProvider::register(0),
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from_i16(0)).iter(2),
+            RegSpan::new(Reg::from(0)).iter(2),
             &[TypedProvider::register(0), TypedProvider::register(0),],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from_i16(3)).iter(3),
+            RegSpan::new(Reg::from(3)).iter(3),
             &[
                 TypedProvider::register(2),
                 TypedProvider::register(3),
@@ -1518,7 +1518,7 @@ mod tests {
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from_i16(3)).iter(4),
+            RegSpan::new(Reg::from(3)).iter(4),
             &[
                 TypedProvider::register(-1),
                 TypedProvider::register(10),

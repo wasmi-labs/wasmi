@@ -6,7 +6,7 @@ const WASM_OP: WasmOp = WasmOp::cmp(WasmType::F64, "le");
 #[cfg_attr(miri, ignore)]
 fn same_reg() {
     let expected = [
-        Instruction::f64_le(Reg::from_i16(1), Reg::from_i16(0), Reg::from_i16(0)),
+        Instruction::f64_le(Reg::from(1), Reg::from(0), Reg::from(0)),
         Instruction::return_reg(1),
     ];
     test_binary_same_reg(WASM_OP, expected)

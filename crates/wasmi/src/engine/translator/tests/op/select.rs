@@ -59,10 +59,10 @@ fn reg() {
             )
         "#,
         );
-        let condition = Reg::from_i16(0);
-        let lhs = Reg::from_i16(1);
-        let rhs = Reg::from_i16(2);
-        let result = Reg::from_i16(3);
+        let condition = Reg::from(0);
+        let lhs = Reg::from(1);
+        let rhs = Reg::from(2);
+        let result = Reg::from(3);
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 Instruction::select(result, lhs),
@@ -102,7 +102,7 @@ fn same_reg() {
         "#,
         );
         TranslationTest::from_wat(&wasm)
-            .expect_func_instrs([Instruction::return_reg(Reg::from_i16(1))])
+            .expect_func_instrs([Instruction::return_reg(Reg::from(1))])
             .run();
     }
     fn test_for(kind: SelectKind) {
@@ -237,7 +237,7 @@ fn same_imm() {
         T: WasmTy,
         DisplayWasm<T>: Display,
     {
-        let instrs = [Instruction::return_reg(Reg::from_i16(-1))];
+        let instrs = [Instruction::return_reg(Reg::from(-1))];
         let expected = ExpectedFunc::new(instrs).consts([value]);
         test_same_imm(SelectKind::Select, value)
             .expect_func(expected.clone())
@@ -295,9 +295,9 @@ fn reg_imm32() {
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
-        let result = Reg::from_i16(2);
-        let condition = Reg::from_i16(0);
-        let lhs = Reg::from_i16(1);
+        let result = Reg::from(2);
+        let condition = Reg::from(0);
+        let lhs = Reg::from(1);
         let expected = [
             Instruction::select_imm32_rhs(result, lhs),
             Instruction::register_and_imm32(condition, value),
@@ -345,12 +345,12 @@ fn reg_imm() {
         T: WasmTy,
         DisplayWasm<T>: Display,
     {
-        let result = Reg::from_i16(2);
-        let condition = Reg::from_i16(0);
-        let lhs = Reg::from_i16(1);
+        let result = Reg::from(2);
+        let condition = Reg::from(0);
+        let lhs = Reg::from(1);
         let instrs = [
             Instruction::select(result, lhs),
-            Instruction::register2(condition, Reg::from_i16(-1)),
+            Instruction::register2(condition, Reg::from(-1)),
             Instruction::return_reg(result),
         ];
         let expected = ExpectedFunc::new(instrs).consts([value]);
@@ -385,9 +385,9 @@ fn reg_imm() {
 #[cfg_attr(miri, ignore)]
 fn reg_i64imm32() {
     fn test_for_kind(kind: SelectKind, value: i64) {
-        let result = Reg::from_i16(2);
-        let condition = Reg::from_i16(0);
-        let lhs = Reg::from_i16(1);
+        let result = Reg::from(2);
+        let condition = Reg::from(0);
+        let lhs = Reg::from(1);
         let expected = [
             Instruction::select_i64imm32_rhs(result, lhs),
             Instruction::register_and_imm32(condition, i32::try_from(value).unwrap()),
@@ -414,9 +414,9 @@ fn reg_i64imm32() {
 #[cfg_attr(miri, ignore)]
 fn reg_f64imm32() {
     fn test_for_kind(kind: SelectKind, value: f64) {
-        let result = Reg::from_i16(2);
-        let condition = Reg::from_i16(0);
-        let lhs = Reg::from_i16(1);
+        let result = Reg::from(2);
+        let condition = Reg::from(0);
+        let lhs = Reg::from(1);
         let expected = [
             Instruction::select_f64imm32_rhs(result, lhs),
             Instruction::register_and_imm32(condition, value as f32),
@@ -474,9 +474,9 @@ fn imm32_reg() {
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
-        let result = Reg::from_i16(2);
-        let condition = Reg::from_i16(0);
-        let lhs = Reg::from_i16(1);
+        let result = Reg::from(2);
+        let condition = Reg::from(0);
+        let lhs = Reg::from(1);
         let expected = [
             Instruction::select_imm32_lhs(result, value),
             Instruction::register2(condition, lhs),
@@ -524,11 +524,11 @@ fn imm_reg() {
         T: WasmTy,
         DisplayWasm<T>: Display,
     {
-        let result = Reg::from_i16(2);
-        let condition = Reg::from_i16(0);
-        let lhs = Reg::from_i16(1);
+        let result = Reg::from(2);
+        let condition = Reg::from(0);
+        let lhs = Reg::from(1);
         let instrs = [
-            Instruction::select(result, Reg::from_i16(-1)),
+            Instruction::select(result, Reg::from(-1)),
             Instruction::register2(condition, lhs),
             Instruction::return_reg(result),
         ];
@@ -564,9 +564,9 @@ fn imm_reg() {
 #[cfg_attr(miri, ignore)]
 fn i64imm32_reg() {
     fn test_for_kind(kind: SelectKind, value: i64) {
-        let result = Reg::from_i16(2);
-        let condition = Reg::from_i16(0);
-        let lhs = Reg::from_i16(1);
+        let result = Reg::from(2);
+        let condition = Reg::from(0);
+        let lhs = Reg::from(1);
         let expected = [
             Instruction::select_i64imm32_lhs(result, i32::try_from(value).unwrap()),
             Instruction::register2(condition, lhs),
@@ -593,9 +593,9 @@ fn i64imm32_reg() {
 #[cfg_attr(miri, ignore)]
 fn f64imm32_reg() {
     fn test_for_kind(kind: SelectKind, value: f64) {
-        let result = Reg::from_i16(2);
-        let condition = Reg::from_i16(0);
-        let lhs = Reg::from_i16(1);
+        let result = Reg::from(2);
+        let condition = Reg::from(0);
+        let lhs = Reg::from(1);
         let expected = [
             Instruction::select_f64imm32_lhs(result, value as f32),
             Instruction::register2(condition, lhs),
@@ -654,8 +654,8 @@ fn both_imm32() {
         DisplayWasm<T>: Display,
         AnyConst32: From<T>,
     {
-        let result = Reg::from_i16(1);
-        let condition = Reg::from_i16(0);
+        let result = Reg::from(1);
+        let condition = Reg::from(0);
         let lhs32 = AnyConst32::from(lhs);
         let rhs32 = AnyConst32::from(rhs);
         let expected = [
@@ -699,10 +699,10 @@ fn both_imm() {
         T: WasmTy,
         DisplayWasm<T>: Display,
     {
-        let result = Reg::from_i16(1);
-        let condition = Reg::from_i16(0);
-        let lhs_reg = Reg::from_i16(-1);
-        let rhs_reg = Reg::from_i16(-2);
+        let result = Reg::from(1);
+        let condition = Reg::from(0);
+        let lhs_reg = Reg::from(-1);
+        let rhs_reg = Reg::from(-2);
         let instrs = [
             Instruction::select(result, lhs_reg),
             Instruction::register2(condition, rhs_reg),
@@ -735,8 +735,8 @@ fn both_imm() {
 #[cfg_attr(miri, ignore)]
 fn both_i64imm32() {
     fn test_for_kind(kind: SelectKind, lhs: i64, rhs: i64) {
-        let result = Reg::from_i16(1);
-        let condition = Reg::from_i16(0);
+        let result = Reg::from(1);
+        let condition = Reg::from(0);
         let lhs32 = i64imm32(lhs);
         let rhs32 = i64imm32(rhs);
         let expected = [
@@ -766,8 +766,8 @@ fn both_i64imm32() {
 #[cfg_attr(miri, ignore)]
 fn both_f64imm32() {
     fn test_for_kind(kind: SelectKind, lhs: f64, rhs: f64) {
-        let result = Reg::from_i16(1);
-        let condition = Reg::from_i16(0);
+        let result = Reg::from(1);
+        let condition = Reg::from(0);
         let lhs32 = f64imm32(lhs);
         let rhs32 = f64imm32(rhs);
         let expected = [

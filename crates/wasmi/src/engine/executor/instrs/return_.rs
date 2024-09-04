@@ -84,7 +84,7 @@ impl<'engine> Executor<'engine> {
                 // In this case we transfer the single return `value` to the root
                 // register span of the entire value stack which is simply its zero index.
                 let dst_sp = self.stack.values.root_stack_ptr();
-                let results = RegSpan::new(Reg::from_i16(0));
+                let results = RegSpan::new(Reg::from(0));
                 (dst_sp, results)
             }
         }

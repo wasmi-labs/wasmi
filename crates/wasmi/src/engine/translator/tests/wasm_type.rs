@@ -38,7 +38,7 @@ impl WasmTy for u64 {
     fn return_imm_instr(&self) -> Instruction {
         match <Const32<i64>>::try_from(*self as i64).ok() {
             Some(value) => Instruction::return_i64imm32(value),
-            None => Instruction::return_reg(Reg::from_i16(-1)),
+            None => Instruction::return_reg(Reg::from(-1)),
         }
     }
 }
@@ -50,7 +50,7 @@ impl WasmTy for i64 {
     fn return_imm_instr(&self) -> Instruction {
         match <Const32<i64>>::try_from(*self).ok() {
             Some(value) => Instruction::return_i64imm32(value),
-            None => Instruction::return_reg(Reg::from_i16(-1)),
+            None => Instruction::return_reg(Reg::from(-1)),
         }
     }
 }
@@ -71,7 +71,7 @@ impl WasmTy for f64 {
     fn return_imm_instr(&self) -> Instruction {
         match <Const32<f64>>::try_from(*self).ok() {
             Some(value) => Instruction::return_f64imm32(value),
-            None => Instruction::return_reg(Reg::from_i16(-1)),
+            None => Instruction::return_reg(Reg::from(-1)),
         }
     }
 }

@@ -40,8 +40,8 @@ fn test_store_for(
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            make_instr(Reg::from_i16(0), Const32::from(offset)),
-            Instruction::Register(Reg::from_i16(1)),
+            make_instr(Reg::from(0), Const32::from(offset)),
+            Instruction::Register(Reg::from(1)),
             Instruction::Return,
         ])
         .run();
@@ -73,7 +73,7 @@ fn test_store_offset16_for(
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            make_instr(Reg::from_i16(0), offset, Reg::from_i16(1)),
+            make_instr(Reg::from(0), offset, Reg::from(1)),
             Instruction::Return,
         ])
         .run();
@@ -114,7 +114,7 @@ fn test_store_offset16_imm_for<T>(
     TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                make_instr(Reg::from_i16(0), offset, Reg::from_i16(-1)),
+                make_instr(Reg::from(0), offset, Reg::from(-1)),
                 Instruction::Return,
             ])
             .consts([value]),
@@ -159,10 +159,7 @@ fn test_store_offset16_imm16_for<T>(
     "#
     );
     TranslationTest::from_wat(&wasm)
-        .expect_func_instrs([
-            make_instr(Reg::from_i16(0), offset, value),
-            Instruction::Return,
-        ])
+        .expect_func_instrs([make_instr(Reg::from(0), offset, value), Instruction::Return])
         .run();
 }
 
@@ -209,7 +206,7 @@ fn test_store_imm_for<T>(
     TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                make_instr(Reg::from_i16(0), Const32::from(offset)),
+                make_instr(Reg::from(0), Const32::from(offset)),
                 Instruction::Register(Reg::from(-1)),
                 Instruction::Return,
             ])
@@ -255,7 +252,7 @@ fn test_store_at_for(
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            make_instr(Const32::from(address), Reg::from_i16(0)),
+            make_instr(Const32::from(address), Reg::from(0)),
             Instruction::Return,
         ])
         .run();
@@ -335,7 +332,7 @@ fn test_store_at_imm_for<T>(
     TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                make_instr(Const32::from(address), Reg::from_i16(-1)),
+                make_instr(Const32::from(address), Reg::from(-1)),
                 Instruction::Return,
             ])
             .consts([value]),

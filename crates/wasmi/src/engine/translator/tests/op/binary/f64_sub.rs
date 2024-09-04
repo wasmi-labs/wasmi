@@ -41,7 +41,7 @@ fn nan_reg() {
 fn reg_zero() {
     // We cannot optimize `x - 0` -> `x` because `-0 - 0` -> `0` according to IEEE.
     let expected = [
-        Instruction::f64_sub(Reg::from_i16(1), Reg::from_i16(0), Reg::from_i16(-1)),
+        Instruction::f64_sub(Reg::from(1), Reg::from(0), Reg::from(-1)),
         Instruction::return_reg(1),
     ];
     testcase_binary_reg_imm(WASM_OP, 0.0_f64)

@@ -25,7 +25,7 @@ fn loop_backward() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from_i16(0), Reg::from_i16(1), BranchOffset16::from(0)),
+                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(0)),
                 Instruction::Return,
             ])
             .run()
@@ -101,7 +101,7 @@ fn loop_backward_imm() {
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
                 expect_instr(
-                    Reg::from_i16(0),
+                    Reg::from(0),
                     <Const16<T>>::try_from(value).ok().unwrap(),
                     BranchOffset16::from(0),
                 ),
@@ -155,7 +155,7 @@ fn loop_backward_imm_eqz() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from_i16(0), BranchOffset16::from(0_i16)),
+                expect_instr(Reg::from(0), BranchOffset16::from(0_i16)),
                 Instruction::Return,
             ])
             .run()
@@ -184,7 +184,7 @@ fn block_forward() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from_i16(0), Reg::from_i16(1), BranchOffset16::from(1)),
+                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
             ])
             .run()
@@ -254,9 +254,9 @@ fn block_forward_nop_copy() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                Instruction::global_get(Reg::from_i16(2), GlobalIdx::from(0)),
-                expect_instr(Reg::from_i16(0), Reg::from_i16(1), BranchOffset16::from(2)),
-                Instruction::copy(Reg::from_i16(2), Reg::from_i16(0)),
+                Instruction::global_get(Reg::from(2), GlobalIdx::from(0)),
+                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(2)),
+                Instruction::copy(Reg::from(2), Reg::from(0)),
                 Instruction::return_reg(2),
             ])
             .run()
@@ -325,10 +325,10 @@ fn if_forward_multi_value() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from_i16(0), Reg::from_i16(1), BranchOffset16::from(3)),
-                Instruction::copy(Reg::from_i16(2), Reg::from_i16(0)),
+                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(3)),
+                Instruction::copy(Reg::from(2), Reg::from(0)),
                 Instruction::branch(BranchOffset::from(2)),
-                Instruction::copy(Reg::from_i16(2), Reg::from_i16(1)),
+                Instruction::copy(Reg::from(2), Reg::from(1)),
                 Instruction::return_reg(2),
             ])
             .run()
@@ -381,7 +381,7 @@ fn if_forward() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from_i16(0), Reg::from_i16(1), BranchOffset16::from(1)),
+                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
             ])
             .run()
@@ -433,7 +433,7 @@ fn block_i32_eqz_fuse() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from_i16(0), Reg::from_i16(1), BranchOffset16::from(1)),
+                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
             ])
             .run()
@@ -461,7 +461,7 @@ fn if_i32_eqz_fuse() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from_i16(0), Reg::from_i16(1), BranchOffset16::from(1)),
+                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
             ])
             .run()
@@ -486,7 +486,7 @@ fn block_i64_eqz_fuse() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_eqz(Reg::from_i16(0), BranchOffset16::from(1)),
+            Instruction::branch_i64_eqz(Reg::from(0), BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -506,7 +506,7 @@ fn if_i64_eqz_fuse() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_nez(Reg::from_i16(0), BranchOffset16::from(1)),
+            Instruction::branch_i64_nez(Reg::from(0), BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()

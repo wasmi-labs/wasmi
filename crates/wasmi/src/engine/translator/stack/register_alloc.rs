@@ -250,7 +250,7 @@ impl RegisterAlloc {
         if self.next_dynamic == self.min_preserve {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         }
-        let reg = Reg::from_i16(self.next_dynamic);
+        let reg = Reg::from(self.next_dynamic);
         self.next_dynamic += 1;
         self.max_dynamic = max(self.max_dynamic, self.next_dynamic);
         Ok(reg)
@@ -272,7 +272,7 @@ impl RegisterAlloc {
             if next_dynamic >= this.min_preserve {
                 return None;
             }
-            let register = RegSpan::new(Reg::from_i16(this.next_dynamic));
+            let register = RegSpan::new(Reg::from(this.next_dynamic));
             this.next_dynamic += n;
             this.max_dynamic = max(this.max_dynamic, this.next_dynamic);
             Some(register)
@@ -431,7 +431,7 @@ impl RegisterAlloc {
                     "key_index ({key_index}) must be convertible to positive i16 integer: {error}"
                 )
             });
-        Reg::from_i16(reg_index)
+        Reg::from(reg_index)
     }
 
     /// Returns `true` if the [`Reg`] is allocated in the [`RegisterSpace::Local`].
@@ -458,7 +458,7 @@ impl RegisterAlloc {
             // Only registers allocated to the preservation space need defragmentation.
             return register;
         }
-        Reg::from_i16(register.to_i16() - self.defrag_offset)
+        Reg::from(register.to_i16() - self.defrag_offset)
     }
 
     /// Increase preservation [`Reg`] usage.

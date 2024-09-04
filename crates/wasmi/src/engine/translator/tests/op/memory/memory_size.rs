@@ -12,8 +12,8 @@ fn reg() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::memory_size(Reg::from_i16(0)),
-            Instruction::return_reg(Reg::from_i16(0)),
+            Instruction::memory_size(Reg::from(0)),
+            Instruction::return_reg(Reg::from(0)),
         ])
         .run();
 }

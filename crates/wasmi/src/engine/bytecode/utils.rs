@@ -15,7 +15,7 @@ pub struct Reg(i16);
 
 impl From<i16> for Reg {
     fn from(index: i16) -> Self {
-        Self::from_i16(index)
+        Self(index)
     }
 }
 
@@ -25,16 +25,11 @@ impl TryFrom<u32> for Reg {
     fn try_from(local_index: u32) -> Result<Self, Self::Error> {
         let index = i16::try_from(local_index)
             .map_err(|_| Error::from(TranslationError::RegisterOutOfBounds))?;
-        Ok(Self::from_i16(index))
+        Ok(Self::from(index))
     }
 }
 
 impl Reg {
-    /// Create a [`Reg`] from the given `u16` index.
-    pub fn from_i16(index: i16) -> Self {
-        Self(index)
-    }
-
     /// Returns the index of the [`Reg`] as `u16` value.
     pub fn to_i16(self) -> i16 {
         self.0

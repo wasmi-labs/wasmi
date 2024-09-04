@@ -164,8 +164,8 @@ impl RegSpanIter {
         }
         let end_index = prev_index.checked_add(1)?;
         Some(Self::from_raw_parts(
-            Reg::from_i16(first_index),
-            Reg::from_i16(end_index),
+            Reg::from(first_index),
+            Reg::from(end_index),
         ))
     }
 }
