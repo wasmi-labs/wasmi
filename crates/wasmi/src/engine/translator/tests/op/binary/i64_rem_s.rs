@@ -47,7 +47,7 @@ fn reg_imm_rev() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_zero() {
-    let expected = [Instruction::Trap(TrapCode::IntegerDivisionByZero)];
+    let expected = [Instruction::trap(TrapCode::IntegerDivisionByZero)];
     test_binary_reg_imm_with(WASM_OP, 0_i64, expected).run()
 }
 
@@ -90,6 +90,6 @@ fn consteval_div_by_zero() {
         WASM_OP,
         lhs,
         rhs,
-        [Instruction::Trap(TrapCode::IntegerDivisionByZero)],
+        [Instruction::trap(TrapCode::IntegerDivisionByZero)],
     )
 }

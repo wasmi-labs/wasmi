@@ -1378,21 +1378,21 @@ impl Instruction {
         /// 
         /// If `new_offset` cannot be encoded as 16-bit offset `self` is replaced with a fallback instruction.
         macro_rules! init_offset {
-            ($instr:expr, $new_offset:expr, $cmp:expr) => {{
-                if let Err(_) = $instr.offset.init($new_offset) {
+            ($lhs:expr, $rhs:expr, $offset:expr, $new_offset:expr, $cmp:expr) => {{
+                if let Err(_) = $offset.init($new_offset) {
                     let params = stack.alloc_const(ComparatorOffsetParam::new($cmp, $new_offset))?;
-                    *self = Instruction::branch_cmp_fallback($instr.lhs, $instr.rhs, params);
+                    *self = Instruction::branch_cmp_fallback(*$lhs, *$rhs, params);
                 }
                 Ok(())
             }}
         }
 
         macro_rules! init_offset_imm {
-            ($ty:ty, $instr:expr, $new_offset:expr, $cmp:expr) => {{
-                if let Err(_) = $instr.offset.init($new_offset) {
-                    let rhs = stack.alloc_const(<$ty>::from($instr.rhs))?;
+            ($ty:ty, $lhs:expr, $rhs:expr, $offset:expr, $new_offset:expr, $cmp:expr) => {{
+                if let Err(_) = $offset.init($new_offset) {
+                    let rhs = stack.alloc_const(<$ty>::from(*$rhs))?;
                     let params = stack.alloc_const(ComparatorOffsetParam::new($cmp, $new_offset))?;
-                    *self = Instruction::branch_cmp_fallback($instr.lhs, rhs, params);
+                    *self = Instruction::branch_cmp_fallback(*$lhs, rhs, params);
                 }
                 Ok(())
             }};
@@ -1407,70 +1407,70 @@ impl Instruction {
                 offset.init(new_offset);
                 Ok(())
             }
-            I::BranchI32And(instr) => init_offset!(instr, new_offset, Cmp::I32And),
-            I::BranchI32Or(instr) => init_offset!(instr, new_offset, Cmp::I32Or),
-            I::BranchI32Xor(instr) => init_offset!(instr, new_offset, Cmp::I32Xor),
-            I::BranchI32AndEqz(instr) => init_offset!(instr, new_offset, Cmp::I32AndEqz),
-            I::BranchI32OrEqz(instr) => init_offset!(instr, new_offset, Cmp::I32OrEqz),
-            I::BranchI32XorEqz(instr) => init_offset!(instr, new_offset, Cmp::I32XorEqz),
-            I::BranchI32Eq(instr) => init_offset!(instr, new_offset, Cmp::I32Eq),
-            I::BranchI32Ne(instr) => init_offset!(instr, new_offset, Cmp::I32Ne),
-            I::BranchI32LtS(instr) => init_offset!(instr, new_offset, Cmp::I32LtS),
-            I::BranchI32LtU(instr) => init_offset!(instr, new_offset, Cmp::I32LtU),
-            I::BranchI32LeS(instr) => init_offset!(instr, new_offset, Cmp::I32LeS),
-            I::BranchI32LeU(instr) => init_offset!(instr, new_offset, Cmp::I32LeU),
-            I::BranchI32GtS(instr) => init_offset!(instr, new_offset, Cmp::I32GtS),
-            I::BranchI32GtU(instr) => init_offset!(instr, new_offset, Cmp::I32GtU),
-            I::BranchI32GeS(instr) => init_offset!(instr, new_offset, Cmp::I32GeS),
-            I::BranchI32GeU(instr) => init_offset!(instr, new_offset, Cmp::I32GeU),
-            I::BranchI64Eq(instr) => init_offset!(instr, new_offset, Cmp::I64Eq),
-            I::BranchI64Ne(instr) => init_offset!(instr, new_offset, Cmp::I64Ne),
-            I::BranchI64LtS(instr) => init_offset!(instr, new_offset, Cmp::I64LtS),
-            I::BranchI64LtU(instr) => init_offset!(instr, new_offset, Cmp::I64LtU),
-            I::BranchI64LeS(instr) => init_offset!(instr, new_offset, Cmp::I64LeS),
-            I::BranchI64LeU(instr) => init_offset!(instr, new_offset, Cmp::I64LeU),
-            I::BranchI64GtS(instr) => init_offset!(instr, new_offset, Cmp::I64GtS),
-            I::BranchI64GtU(instr) => init_offset!(instr, new_offset, Cmp::I64GtU),
-            I::BranchI64GeS(instr) => init_offset!(instr, new_offset, Cmp::I64GeS),
-            I::BranchI64GeU(instr) => init_offset!(instr, new_offset, Cmp::I64GeU),
-            I::BranchF32Eq(instr) => init_offset!(instr, new_offset, Cmp::F32Eq),
-            I::BranchF32Ne(instr) => init_offset!(instr, new_offset, Cmp::F32Ne),
-            I::BranchF32Lt(instr) => init_offset!(instr, new_offset, Cmp::F32Lt),
-            I::BranchF32Le(instr) => init_offset!(instr, new_offset, Cmp::F32Le),
-            I::BranchF32Gt(instr) => init_offset!(instr, new_offset, Cmp::F32Gt),
-            I::BranchF32Ge(instr) => init_offset!(instr, new_offset, Cmp::F32Ge),
-            I::BranchF64Eq(instr) => init_offset!(instr, new_offset, Cmp::F64Eq),
-            I::BranchF64Ne(instr) => init_offset!(instr, new_offset, Cmp::F64Ne),
-            I::BranchF64Lt(instr) => init_offset!(instr, new_offset, Cmp::F64Lt),
-            I::BranchF64Le(instr) => init_offset!(instr, new_offset, Cmp::F64Le),
-            I::BranchF64Gt(instr) => init_offset!(instr, new_offset, Cmp::F64Gt),
-            I::BranchF64Ge(instr) => init_offset!(instr, new_offset, Cmp::F64Ge),
-            I::BranchI32AndImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32And),
-            I::BranchI32OrImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Or),
-            I::BranchI32XorImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Xor),
-            I::BranchI32AndEqzImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32AndEqz),
-            I::BranchI32OrEqzImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32OrEqz),
-            I::BranchI32XorEqzImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32XorEqz),
-            I::BranchI32EqImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Eq),
-            I::BranchI32NeImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Ne),
-            I::BranchI32LtSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32LtS),
-            I::BranchI32LeSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32LeS),
-            I::BranchI32GtSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32GtS),
-            I::BranchI32GeSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32GeS),
-            I::BranchI32LtUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32LtU),
-            I::BranchI32LeUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32LeU),
-            I::BranchI32GtUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32GtU),
-            I::BranchI32GeUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32GeU),
-            I::BranchI64EqImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64Eq),
-            I::BranchI64NeImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64Ne),
-            I::BranchI64LtSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64LtS),
-            I::BranchI64LeSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64LeS),
-            I::BranchI64GtSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64GtS),
-            I::BranchI64GeSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64GeS),
-            I::BranchI64LtUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64LtU),
-            I::BranchI64LeUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64LeU),
-            I::BranchI64GtUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64GtU),
-            I::BranchI64GeUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64GeU),
+            I::BranchI32And { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32And),
+            I::BranchI32Or { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32Or),
+            I::BranchI32Xor { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32Xor),
+            I::BranchI32AndEqz { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32AndEqz),
+            I::BranchI32OrEqz { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32OrEqz),
+            I::BranchI32XorEqz { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32XorEqz),
+            I::BranchI32Eq { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32Eq),
+            I::BranchI32Ne { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32Ne),
+            I::BranchI32LtS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32LtS),
+            I::BranchI32LtU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32LtU),
+            I::BranchI32LeS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32LeS),
+            I::BranchI32LeU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32LeU),
+            I::BranchI32GtS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32GtS),
+            I::BranchI32GtU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32GtU),
+            I::BranchI32GeS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32GeS),
+            I::BranchI32GeU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32GeU),
+            I::BranchI64Eq { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64Eq),
+            I::BranchI64Ne { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64Ne),
+            I::BranchI64LtS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64LtS),
+            I::BranchI64LtU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64LtU),
+            I::BranchI64LeS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64LeS),
+            I::BranchI64LeU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64LeU),
+            I::BranchI64GtS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64GtS),
+            I::BranchI64GtU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64GtU),
+            I::BranchI64GeS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64GeS),
+            I::BranchI64GeU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64GeU),
+            I::BranchF32Eq { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Eq),
+            I::BranchF32Ne { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Ne),
+            I::BranchF32Lt { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Lt),
+            I::BranchF32Le { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Le),
+            I::BranchF32Gt { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Gt),
+            I::BranchF32Ge { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Ge),
+            I::BranchF64Eq { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Eq),
+            I::BranchF64Ne { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Ne),
+            I::BranchF64Lt { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Lt),
+            I::BranchF64Le { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Le),
+            I::BranchF64Gt { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Gt),
+            I::BranchF64Ge { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Ge),
+            I::BranchI32AndImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32And),
+            I::BranchI32OrImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32Or),
+            I::BranchI32XorImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32Xor),
+            I::BranchI32AndEqzImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32AndEqz),
+            I::BranchI32OrEqzImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32OrEqz),
+            I::BranchI32XorEqzImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32XorEqz),
+            I::BranchI32EqImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32Eq),
+            I::BranchI32NeImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32Ne),
+            I::BranchI32LtSImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32LtS),
+            I::BranchI32LeSImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32LeS),
+            I::BranchI32GtSImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32GtS),
+            I::BranchI32GeSImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32GeS),
+            I::BranchI32LtUImm { lhs, rhs, offset } => init_offset_imm!(u32, lhs, rhs, offset, new_offset, Cmp::I32LtU),
+            I::BranchI32LeUImm { lhs, rhs, offset } => init_offset_imm!(u32, lhs, rhs, offset, new_offset, Cmp::I32LeU),
+            I::BranchI32GtUImm { lhs, rhs, offset } => init_offset_imm!(u32, lhs, rhs, offset, new_offset, Cmp::I32GtU),
+            I::BranchI32GeUImm { lhs, rhs, offset } => init_offset_imm!(u32, lhs, rhs, offset, new_offset, Cmp::I32GeU),
+            I::BranchI64EqImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64Eq),
+            I::BranchI64NeImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64Ne),
+            I::BranchI64LtSImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64LtS),
+            I::BranchI64LeSImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64LeS),
+            I::BranchI64GtSImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64GtS),
+            I::BranchI64GeSImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64GeS),
+            I::BranchI64LtUImm { lhs, rhs, offset } => init_offset_imm!(u64, lhs, rhs, offset, new_offset, Cmp::I64LtU),
+            I::BranchI64LeUImm { lhs, rhs, offset } => init_offset_imm!(u64, lhs, rhs, offset, new_offset, Cmp::I64LeU),
+            I::BranchI64GtUImm { lhs, rhs, offset } => init_offset_imm!(u64, lhs, rhs, offset, new_offset, Cmp::I64GtU),
+            I::BranchI64GeUImm { lhs, rhs, offset } => init_offset_imm!(u64, lhs, rhs, offset, new_offset, Cmp::I64GeU),
             _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
         }
     }

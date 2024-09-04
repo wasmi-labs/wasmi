@@ -328,7 +328,7 @@ fn const_condition_trap_then() {
             .expect_func_instrs(instrs)
             .run()
     }
-    test_for(true, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
+    test_for(true, [Instruction::trap(TrapCode::UnreachableCodeReached)]);
     test_for(
         false,
         [
@@ -375,7 +375,7 @@ fn const_condition_trap_else() {
             Instruction::return_reg(Reg::from(2)),
         ],
     );
-    test_for(false, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
+    test_for(false, [Instruction::trap(TrapCode::UnreachableCodeReached)]);
 }
 
 #[test]
@@ -409,12 +409,12 @@ fn const_condition_br_if_then() {
             .expect_func_instrs(instrs)
             .run()
     }
-    test_for(true, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
+    test_for(true, [Instruction::trap(TrapCode::UnreachableCodeReached)]);
     test_for(
         false,
         [
             Instruction::branch_i32_nez(Reg::from(0), BranchOffset16::from(2)),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
             Instruction::return_imm32(AnyConst32::from(1_i32)),
         ],
     );
@@ -455,11 +455,11 @@ fn const_condition_br_if_else() {
         true,
         [
             Instruction::branch_i32_nez(Reg::from(0), BranchOffset16::from(2)),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
             Instruction::return_imm32(AnyConst32::from(1_i32)),
         ],
     );
-    test_for(false, [Instruction::Trap(TrapCode::UnreachableCodeReached)]);
+    test_for(false, [Instruction::trap(TrapCode::UnreachableCodeReached)]);
 }
 
 #[test]

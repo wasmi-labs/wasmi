@@ -16,9 +16,6 @@ pub(crate) use self::{
         BinInstrImm,
         BinInstrImm16,
         BlockFuel,
-        BranchBinOpInstr,
-        BranchBinOpInstrImm,
-        BranchBinOpInstrImm16,
         BranchComparator,
         BranchOffset,
         BranchOffset16,
@@ -78,13 +75,13 @@ pub enum Instruction {
     /// as well as code paths that are determined to always
     /// lead to traps during execution. For example division
     /// by constant zero.
-    Trap(TrapCode),
+    Trap { trap_code: TrapCode },
     /// Instruction generated to consume fuel for its associated basic block.
     ///
     /// # Note
     ///
     /// These instructions are only generated if fuel metering is enabled.
-    ConsumeFuel(BlockFuel),
+    ConsumeFuel { block_fuel: BlockFuel },
 
     /// A Wasm `return` instruction.
     ///
@@ -311,247 +308,694 @@ pub enum Instruction {
         params: Reg,
     },
     /// A fused [`Instruction::I32And`] and Wasm branch instruction.
-    BranchI32And(BranchBinOpInstr),
+    BranchI32And {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32And`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32And`] with 16-bit encoded constant `rhs`.
-    BranchI32AndImm(BranchBinOpInstrImm16<i32>),
+    BranchI32AndImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32Or`] and Wasm branch instruction.
-    BranchI32Or(BranchBinOpInstr),
+    BranchI32Or {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32Or`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32Or`] with 16-bit encoded constant `rhs`.
-    BranchI32OrImm(BranchBinOpInstrImm16<i32>),
+    BranchI32OrImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32Xor`] and Wasm branch instruction.
-    BranchI32Xor(BranchBinOpInstr),
+    BranchI32Xor {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32Xor`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32Xor`] with 16-bit encoded constant `rhs`.
-    BranchI32XorImm(BranchBinOpInstrImm16<i32>),
+    BranchI32XorImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
 
     /// A fused not-[`Instruction::I32And`] and Wasm branch instruction.
-    BranchI32AndEqz(BranchBinOpInstr),
+    BranchI32AndEqz {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused not-[`Instruction::I32And`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32AndEqz`] with 16-bit encoded constant `rhs`.
-    BranchI32AndEqzImm(BranchBinOpInstrImm16<i32>),
+    BranchI32AndEqzImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused not-[`Instruction::I32Or`] and Wasm branch instruction.
-    BranchI32OrEqz(BranchBinOpInstr),
+    BranchI32OrEqz {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused not-[`Instruction::I32Or`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32OrEqz`] with 16-bit encoded constant `rhs`.
-    BranchI32OrEqzImm(BranchBinOpInstrImm16<i32>),
+    BranchI32OrEqzImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused not-[`Instruction::I32Xor`] and Wasm branch instruction.
-    BranchI32XorEqz(BranchBinOpInstr),
+    BranchI32XorEqz {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused not-[`Instruction::I32Xor`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32XorEqz`] with 16-bit encoded constant `rhs`.
-    BranchI32XorEqzImm(BranchBinOpInstrImm16<i32>),
+    BranchI32XorEqzImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
 
     /// A fused [`Instruction::I32Eq`] and Wasm branch instruction.
-    BranchI32Eq(BranchBinOpInstr),
+    BranchI32Eq {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32Eq`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32Eq`] with 16-bit encoded constant `rhs`.
-    BranchI32EqImm(BranchBinOpInstrImm16<i32>),
+    BranchI32EqImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32Ne`] and Wasm branch instruction.
-    BranchI32Ne(BranchBinOpInstr),
+    BranchI32Ne {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32Ne`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32Ne`] with 16-bit encoded constant `rhs`.
-    BranchI32NeImm(BranchBinOpInstrImm16<i32>),
+    BranchI32NeImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
 
     /// A fused [`Instruction::I32LtS`] and Wasm branch instruction.
-    BranchI32LtS(BranchBinOpInstr),
+    BranchI32LtS {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32LtS`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32LtS`] with 16-bit encoded constant `rhs`.
-    BranchI32LtSImm(BranchBinOpInstrImm16<i32>),
+    BranchI32LtSImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32LtU`] and Wasm branch instruction.
-    BranchI32LtU(BranchBinOpInstr),
+    BranchI32LtU {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32LtU`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32LtU`] with 16-bit encoded constant `rhs`.
-    BranchI32LtUImm(BranchBinOpInstrImm16<u32>),
+    BranchI32LtUImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<u32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32LeS`] and Wasm branch instruction.
-    BranchI32LeS(BranchBinOpInstr),
+    BranchI32LeS {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32LeS`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32LeS`] with 16-bit encoded constant `rhs`.
-    BranchI32LeSImm(BranchBinOpInstrImm16<i32>),
+    BranchI32LeSImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32LeU`] and Wasm branch instruction.
-    BranchI32LeU(BranchBinOpInstr),
+    BranchI32LeU {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32LeU`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32LeU`] with 16-bit encoded constant `rhs`.
-    BranchI32LeUImm(BranchBinOpInstrImm16<u32>),
+    BranchI32LeUImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<u32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32GtS`] and Wasm branch instruction.
-    BranchI32GtS(BranchBinOpInstr),
+    BranchI32GtS {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32GtS`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32GtS`] with 16-bit encoded constant `rhs`.
-    BranchI32GtSImm(BranchBinOpInstrImm16<i32>),
+    BranchI32GtSImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32GtU`] and Wasm branch instruction.
-    BranchI32GtU(BranchBinOpInstr),
+    BranchI32GtU {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32GtU`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32GtU`] with 16-bit encoded constant `rhs`.
-    BranchI32GtUImm(BranchBinOpInstrImm16<u32>),
+    BranchI32GtUImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<u32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32GeS`] and Wasm branch instruction.
-    BranchI32GeS(BranchBinOpInstr),
+    BranchI32GeS {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32GeS`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32GeS`] with 16-bit encoded constant `rhs`.
-    BranchI32GeSImm(BranchBinOpInstrImm16<i32>),
+    BranchI32GeSImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32GeU`] and Wasm branch instruction.
-    BranchI32GeU(BranchBinOpInstr),
+    BranchI32GeU {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I32GeU`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI32GeU`] with 16-bit encoded constant `rhs`.
-    BranchI32GeUImm(BranchBinOpInstrImm16<u32>),
+    BranchI32GeUImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<u32>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
 
     /// A fused [`Instruction::I64Eq`] and Wasm branch instruction.
-    BranchI64Eq(BranchBinOpInstr),
+    BranchI64Eq {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64Eq`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64Eq`] with 16-bit encoded constant `rhs`.
-    BranchI64EqImm(BranchBinOpInstrImm16<i64>),
+    BranchI64EqImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i64>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64Ne`] and Wasm branch instruction.
-    BranchI64Ne(BranchBinOpInstr),
+    BranchI64Ne {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64Ne`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64Ne`] with 16-bit encoded constant `rhs`.
-    BranchI64NeImm(BranchBinOpInstrImm16<i64>),
+    BranchI64NeImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i64>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
 
     /// A fused [`Instruction::I64LtS`] and Wasm branch instruction.
-    BranchI64LtS(BranchBinOpInstr),
+    BranchI64LtS {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64LtS`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64LtS`] with 16-bit encoded constant `rhs`.
-    BranchI64LtSImm(BranchBinOpInstrImm16<i64>),
+    BranchI64LtSImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i64>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64LtU`] and Wasm branch instruction.
-    BranchI64LtU(BranchBinOpInstr),
+    BranchI64LtU {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64LtU`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64LtU`] with 16-bit encoded constant `rhs`.
-    BranchI64LtUImm(BranchBinOpInstrImm16<u64>),
+    BranchI64LtUImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<u64>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64LeS`] and Wasm branch instruction.
-    BranchI64LeS(BranchBinOpInstr),
+    BranchI64LeS {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64LeS`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64LeS`] with 16-bit encoded constant `rhs`.
-    BranchI64LeSImm(BranchBinOpInstrImm16<i64>),
+    BranchI64LeSImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i64>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64LeU`] and Wasm branch instruction.
-    BranchI64LeU(BranchBinOpInstr),
+    BranchI64LeU {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64LeU`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64LeU`] with 16-bit encoded constant `rhs`.
-    BranchI64LeUImm(BranchBinOpInstrImm16<u64>),
+    BranchI64LeUImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<u64>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64GtS`] and Wasm branch instruction.
-    BranchI64GtS(BranchBinOpInstr),
+    BranchI64GtS {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64GtS`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64GtS`] with 16-bit encoded constant `rhs`.
-    BranchI64GtSImm(BranchBinOpInstrImm16<i64>),
+    BranchI64GtSImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i64>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64GtU`] and Wasm branch instruction.
-    BranchI64GtU(BranchBinOpInstr),
+    BranchI64GtU {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64GtU`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64GtU`] with 16-bit encoded constant `rhs`.
-    BranchI64GtUImm(BranchBinOpInstrImm16<u64>),
+    BranchI64GtUImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<u64>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64GeS`] and Wasm branch instruction.
-    BranchI64GeS(BranchBinOpInstr),
+    BranchI64GeS {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64GeS`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64GeS`] with 16-bit encoded constant `rhs`.
-    BranchI64GeSImm(BranchBinOpInstrImm16<i64>),
+    BranchI64GeSImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<i64>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64GeU`] and Wasm branch instruction.
-    BranchI64GeU(BranchBinOpInstr),
+    BranchI64GeU {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::I64GeU`] and Wasm branch instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::BranchI64GeU`] with 16-bit encoded constant `rhs`.
-    BranchI64GeUImm(BranchBinOpInstrImm16<u64>),
+    BranchI64GeUImm {
+        /// The left-hand side operand to the conditional operator.
+        lhs: Reg,
+        /// The right-hand side operand to the conditional operator.
+        rhs: Const16<u64>,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
 
     /// A fused [`Instruction::F32Eq`] and Wasm branch instruction.
-    BranchF32Eq(BranchBinOpInstr),
+    BranchF32Eq {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::F32Ne`] and Wasm branch instruction.
-    BranchF32Ne(BranchBinOpInstr),
+    BranchF32Ne {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
 
     /// A fused [`Instruction::F32Lt`] and Wasm branch instruction.
-    BranchF32Lt(BranchBinOpInstr),
+    BranchF32Lt {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::F32Le`] and Wasm branch instruction.
-    BranchF32Le(BranchBinOpInstr),
+    BranchF32Le {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::F32Gt`] and Wasm branch instruction.
-    BranchF32Gt(BranchBinOpInstr),
+    BranchF32Gt {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::F32Ge`] and Wasm branch instruction.
-    BranchF32Ge(BranchBinOpInstr),
+    BranchF32Ge {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
 
     /// A fused [`Instruction::F64Eq`] and Wasm branch instruction.
-    BranchF64Eq(BranchBinOpInstr),
+    BranchF64Eq {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::F64Ne`] and Wasm branch instruction.
-    BranchF64Ne(BranchBinOpInstr),
+    BranchF64Ne {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
 
     /// A fused [`Instruction::F64Lt`] and Wasm branch instruction.
-    BranchF64Lt(BranchBinOpInstr),
+    BranchF64Lt {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::F64Le`] and Wasm branch instruction.
-    BranchF64Le(BranchBinOpInstr),
+    BranchF64Le {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::F64Gt`] and Wasm branch instruction.
-    BranchF64Gt(BranchBinOpInstr),
+    BranchF64Gt {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A fused [`Instruction::F64Ge`] and Wasm branch instruction.
-    BranchF64Ge(BranchBinOpInstr),
-
+    BranchF64Ge {
+        /// The left-hand side operand to the branch conditional.
+        lhs: Reg,
+        /// The right-hand side operand to the branch conditional.
+        rhs: Reg,
+        /// The 16-bit encoded branch offset.
+        offset: BranchOffset16,
+    },
     /// A Wasm `br_table` equivalent Wasmi instruction.
     ///
     /// # Encoding
@@ -3353,8 +3797,8 @@ pub enum Instruction {
 impl Instruction {
     /// Convenience method to create a new [`Instruction::ConsumeFuel`].
     pub fn consume_fuel(amount: u64) -> Result<Self, Error> {
-        let block_fuel = BlockFuel::try_from(amount)?;
-        Ok(Self::ConsumeFuel(block_fuel))
+        let block_fuel: BlockFuel = BlockFuel::try_from(amount)?;
+        Ok(Self::ConsumeFuel { block_fuel })
     }
 
     /// Increases the fuel consumption of the [`Instruction::ConsumeFuel`] instruction by `delta`.
@@ -3365,7 +3809,7 @@ impl Instruction {
     /// - If the new fuel consumption overflows the internal `u64` value.
     pub fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
         match self {
-            Self::ConsumeFuel(block_fuel) => block_fuel.bump_by(delta),
+            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta),
             instr => panic!("expected Instruction::ConsumeFuel but found: {instr:?}"),
         }
     }

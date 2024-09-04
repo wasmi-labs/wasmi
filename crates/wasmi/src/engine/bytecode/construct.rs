@@ -4,8 +4,6 @@ use super::{
     BinInstr,
     BinInstrImm,
     BinInstrImm16,
-    BranchBinOpInstr,
-    BranchBinOpInstrImm16,
     BranchOffset,
     CallIndirectParams,
     Const16,
@@ -29,9 +27,15 @@ use super::{
     TableIdx,
     UnaryInstr,
 };
+use crate::core::TrapCode;
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
 impl Instruction {
+    /// Creates a new [`Instruction::Trap`] from the given [`TrapCode`].
+    pub fn trap(trap_code: TrapCode) -> Self {
+        Self::Trap { trap_code }
+    }
+
     /// Creates a new [`Instruction::Const32`] from the given `value`.
     pub fn const32(value: impl Into<AnyConst32>) -> Self {
         Self::Const32(value.into())
@@ -1724,8 +1728,8 @@ macro_rules! constructor_for_branch_cmp_instrs {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> Self {
-                    Self::$op_code(BranchBinOpInstr::new(lhs, rhs, offset))
+                pub fn $name(lhs: impl Into<Reg>, rhs: impl Into<Reg>, offset: BranchOffset16) -> Self {
+                    Self::$op_code { lhs: lhs.into(), rhs: rhs.into(), offset }
                 }
             )*
         }
@@ -1780,8 +1784,8 @@ macro_rules! constructor_for_branch_cmp_imm_instrs {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-                pub fn $name(lhs: Reg, rhs: impl Into<Const16<$ty>>, offset: BranchOffset16) -> Self {
-                    Self::$op_code(BranchBinOpInstrImm16::new(lhs, rhs.into(), offset))
+                pub fn $name(lhs: impl Into<Reg>, rhs: impl Into<Const16<$ty>>, offset: BranchOffset16) -> Self {
+                    Self::$op_code { lhs: lhs.into(), rhs: rhs.into(), offset }
                 }
             )*
         }

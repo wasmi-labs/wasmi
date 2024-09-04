@@ -556,45 +556,6 @@ impl BranchOffset16 {
     }
 }
 
-/// A generic fused comparison and conditional branch [`Instruction`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BranchBinOpInstr {
-    /// The left-hand side operand to the conditional operator.
-    pub lhs: Reg,
-    /// The right-hand side operand to the conditional operator.
-    pub rhs: Reg,
-    /// The 16-bit encoded branch offset.
-    pub offset: BranchOffset16,
-}
-
-impl BranchBinOpInstr {
-    /// Creates a new [`BranchBinOpInstr`].
-    pub fn new(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> Self {
-        Self { lhs, rhs, offset }
-    }
-}
-
-/// A generic fused comparison and conditional branch [`Instruction`] with 16-bit immediate value.
-pub type BranchBinOpInstrImm16<T> = BranchBinOpInstrImm<Const16<T>>;
-
-/// A generic fused comparison and conditional branch [`Instruction`] with generic immediate value.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BranchBinOpInstrImm<T> {
-    /// The left-hand side operand to the conditional operator.
-    pub lhs: Reg,
-    /// The right-hand side operand to the conditional operator.
-    pub rhs: T,
-    /// The 16-bit encoded branch offset.
-    pub offset: BranchOffset16,
-}
-
-impl<T> BranchBinOpInstrImm<T> {
-    /// Creates a new [`BranchBinOpInstr`].
-    pub fn new(lhs: Reg, rhs: T, offset: BranchOffset16) -> Self {
-        Self { lhs, rhs, offset }
-    }
-}
-
 /// A function index.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
