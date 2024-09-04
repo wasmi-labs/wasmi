@@ -1,5 +1,6 @@
 use super::*;
 use crate::engine::bytecode::{BranchOffset, GlobalIdx, RegisterSpan};
+use core::num::NonZeroI16;
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -724,4 +725,239 @@ fn reg_params_4_many() {
             Instruction::return_span(RegisterSpan::new(Register::from(5)).iter(4)),
         ])
         .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn i64imm32_ok() {
+    fn test_for(imm: i32) {
+        let wasm = &format!(
+            r"
+            (module
+                (func (param i32) (result i64)
+                    (block (result i64)
+                        (block (result i64)
+                            (block (result i64)
+                                (i64.const {imm})
+                                (br_table 2 3 1 0 (local.get 0))
+                            )
+                            (return (i64.add (i64.const 10)))
+                        )
+                        (return (i64.mul (i64.const 2)))
+                    )
+                    (return (i64.div_s (i64.const 2)))
+                )
+            )"
+        );
+        TranslationTest::from_wat(wasm)
+            .expect_func_instrs([
+                Instruction::branch_table_1(0, 4),
+                Instruction::i64const32(imm),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(1)),
+                    BranchOffset::from(8),
+                ),
+                Instruction::return_i64imm32(imm),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(1)),
+                    BranchOffset::from(4),
+                ),
+                Instruction::branch_table_target(
+                    RegisterSpan::new(Register::from(1)),
+                    BranchOffset::from(1),
+                ),
+                Instruction::i64_add_imm16(Register::from(1), Register::from(1), 10_i16),
+                Instruction::return_reg(1),
+                Instruction::i64_mul_imm16(Register::from(1), Register::from(1), 2_i16),
+                Instruction::return_reg(1),
+                Instruction::i64_div_s_imm16(
+                    Register::from(1),
+                    Register::from(1),
+                    NonZeroI16::new(2).unwrap(),
+                ),
+                Instruction::return_reg(1),
+            ])
+            .run()
+    }
+    test_for(0);
+    test_for(1);
+    test_for(i32::MIN + 1);
+    test_for(i32::MIN);
+    test_for(i32::MAX - 1);
+    test_for(i32::MAX);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn i64imm32_err() {
+    fn test_for(imm: i64) {
+        let wasm = &format!(
+            r"
+            (module
+                (func (param i32) (result i64)
+                    (block (result i64)
+                        (block (result i64)
+                            (block (result i64)
+                                (i64.const {imm})
+                                (br_table 2 3 1 0 (local.get 0))
+                            )
+                            (return (i64.add (i64.const 10)))
+                        )
+                        (return (i64.mul (i64.const 2)))
+                    )
+                    (return (i64.div_s (i64.const 2)))
+                )
+            )"
+        );
+        TranslationTest::from_wat(wasm)
+            .expect_func(
+                ExpectedFunc::new([
+                    Instruction::branch_table_1(0, 4),
+                    Instruction::register(-1),
+                    Instruction::branch_table_target(
+                        RegisterSpan::new(Register::from(1)),
+                        BranchOffset::from(8),
+                    ),
+                    Instruction::return_reg(-1),
+                    Instruction::branch_table_target(
+                        RegisterSpan::new(Register::from(1)),
+                        BranchOffset::from(4),
+                    ),
+                    Instruction::branch_table_target(
+                        RegisterSpan::new(Register::from(1)),
+                        BranchOffset::from(1),
+                    ),
+                    Instruction::i64_add_imm16(Register::from(1), Register::from(1), 10_i16),
+                    Instruction::return_reg(1),
+                    Instruction::i64_mul_imm16(Register::from(1), Register::from(1), 2_i16),
+                    Instruction::return_reg(1),
+                    Instruction::i64_div_s_imm16(
+                        Register::from(1),
+                        Register::from(1),
+                        NonZeroI16::new(2).unwrap(),
+                    ),
+                    Instruction::return_reg(1),
+                ])
+                .consts([imm]),
+            )
+            .run()
+    }
+    test_for(i64::MIN);
+    test_for(i64::MAX);
+    test_for(i64::from(i32::MIN) - 1);
+    test_for(i64::from(i32::MAX) + 1);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn f64imm32_ok() {
+    fn test_for(imm: f32) {
+        let wasm = &format!(
+            r"
+            (module
+                (func (param i32) (result f64)
+                    (block (result f64)
+                        (block (result f64)
+                            (block (result f64)
+                                (f64.const {imm})
+                                (br_table 2 3 1 0 (local.get 0))
+                            )
+                            (return (f64.add (f64.const 10)))
+                        )
+                        (return (f64.mul (f64.const 2)))
+                    )
+                    (return (f64.div (f64.const 2)))
+                )
+            )"
+        );
+        TranslationTest::from_wat(wasm)
+            .expect_func(
+                ExpectedFunc::new([
+                    Instruction::branch_table_1(0, 4),
+                    Instruction::f64const32(imm),
+                    Instruction::branch_table_target(
+                        RegisterSpan::new(Register::from(1)),
+                        BranchOffset::from(8),
+                    ),
+                    Instruction::return_f64imm32(imm),
+                    Instruction::branch_table_target(
+                        RegisterSpan::new(Register::from(1)),
+                        BranchOffset::from(4),
+                    ),
+                    Instruction::branch_table_target(
+                        RegisterSpan::new(Register::from(1)),
+                        BranchOffset::from(1),
+                    ),
+                    Instruction::f64_add(Register::from(1), Register::from(1), Register::from(-1)),
+                    Instruction::return_reg(1),
+                    Instruction::f64_mul(Register::from(1), Register::from(1), Register::from(-2)),
+                    Instruction::return_reg(1),
+                    Instruction::f64_div(Register::from(1), Register::from(1), Register::from(-2)),
+                    Instruction::return_reg(1),
+                ])
+                .consts([10_f64, 2_f64]),
+            )
+            .run()
+    }
+    test_for(0.0);
+    test_for(0.25);
+    test_for(0.5);
+    test_for(1.0);
+    test_for(-1.0);
+    test_for(10.0);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn f64imm32_err() {
+    fn test_for(imm: f64) {
+        let wasm = &format!(
+            r"
+            (module
+                (func (param i32) (result f64)
+                    (block (result f64)
+                        (block (result f64)
+                            (block (result f64)
+                                (f64.const {imm})
+                                (br_table 2 3 1 0 (local.get 0))
+                            )
+                            (return (f64.add (f64.const 10)))
+                        )
+                        (return (f64.mul (f64.const 2)))
+                    )
+                    (return (f64.div (f64.const 2)))
+                )
+            )"
+        );
+        TranslationTest::from_wat(wasm)
+            .expect_func(
+                ExpectedFunc::new([
+                    Instruction::branch_table_1(0, 4),
+                    Instruction::register(-1),
+                    Instruction::branch_table_target(
+                        RegisterSpan::new(Register::from(1)),
+                        BranchOffset::from(8),
+                    ),
+                    Instruction::return_reg(-1),
+                    Instruction::branch_table_target(
+                        RegisterSpan::new(Register::from(1)),
+                        BranchOffset::from(4),
+                    ),
+                    Instruction::branch_table_target(
+                        RegisterSpan::new(Register::from(1)),
+                        BranchOffset::from(1),
+                    ),
+                    Instruction::f64_add(Register::from(1), Register::from(1), Register::from(-2)),
+                    Instruction::return_reg(1),
+                    Instruction::f64_mul(Register::from(1), Register::from(1), Register::from(-3)),
+                    Instruction::return_reg(1),
+                    Instruction::f64_div(Register::from(1), Register::from(1), Register::from(-3)),
+                    Instruction::return_reg(1),
+                ])
+                .consts([imm, 10_f64, 2_f64]),
+            )
+            .run()
+    }
+    test_for(1.99);
+    test_for(-420.69);
 }
