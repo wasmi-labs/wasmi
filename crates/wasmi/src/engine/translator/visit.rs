@@ -11,9 +11,7 @@ use super::{
     },
     stack::TypedProvider,
     ControlFrameKind,
-    FuelInfo,
     FuncTranslator,
-    LabelRef,
     TypedVal,
 };
 use crate::{
@@ -31,7 +29,6 @@ use crate::{
     Mutability,
 };
 use core::num::{NonZeroU32, NonZeroU64};
-use std::collections::BTreeMap;
 use wasmparser::VisitOperator;
 
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
@@ -383,20 +380,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_br(&mut self, relative_depth: u32) -> Self::Output {
         bail_unreachable!(self);
-        let engine = self.engine().clone();
-        match self.alloc.control_stack.acquire_target(relative_depth) {
-            AcquiredTarget::Return(_frame) => self.translate_return(),
-            AcquiredTarget::Branch(frame) => {
-                frame.bump_branches();
-                let branch_dst = frame.branch_destination();
-                let branch_params = frame.branch_params(&engine);
-                self.translate_copy_branch_params(branch_params)?;
-                let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                self.push_base_instr(Instruction::branch(branch_offset))?;
-                self.reachable = false;
-                Ok(())
-            }
-        }
+        self.translate_br(relative_depth)
     }
 
     fn visit_br_if(&mut self, relative_depth: u32) -> Self::Output {
@@ -407,7 +391,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 if i32::from(condition) != 0 {
                     // Case: `condition == 1` so the branch is always taken.
                     // Therefore we can simplify the `br_if` to a `br` instruction.
-                    self.visit_br(relative_depth)
+                    self.translate_br(relative_depth)
                 } else {
                     // Case: `condition != 1` so the branch is never taken.
                     // Therefore the `br_if` is a `nop` and can be ignored.
@@ -489,155 +473,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_br_table(&mut self, targets: wasmparser::BrTable<'a>) -> Self::Output {
         bail_unreachable!(self);
-        let engine = self.engine().clone();
-        let fuel_info = self.fuel_info();
-        let index = self.alloc.stack.pop();
-        if targets.is_empty() {
-            // Case: the `br_table` only has a default target.
-            //
-            // This means the `br_table` always branches to the default target
-            // independent of the `index` value. Therefore we can encode it as
-            // a simpler `br` instruction instead.
-            return self.visit_br(targets.default());
-        }
-        let default_target = targets.default();
-        let index: Register = match index {
-            TypedProvider::Register(index) => index,
-            TypedProvider::Const(index) => {
-                // Case: the index is a constant value.
-                //
-                // This means the `br_table` always branches to the same target
-                // and therefore acts exactly the same as a normal `br` instruction.
-                let chosen_index = u32::from(index) as usize;
-                let chosen_target = targets
-                    .targets()
-                    .nth(chosen_index)
-                    .transpose()?
-                    .unwrap_or(default_target);
-                return self.visit_br(chosen_target);
-            }
-        };
-        // Add `br_table` targets to `br_table_targets` buffer including default target.
-        // This allows us to uniformely treat all `br_table` targets the same and only parse once.
-        self.alloc.buffer.br_table_targets.clear();
-        for target in targets.targets() {
-            self.alloc.buffer.br_table_targets.push(target?);
-        }
-        self.alloc.buffer.br_table_targets.push(default_target);
-        // We check if all `br_table` targets expect their results at the same
-        // registers which allows us to encode the `br_table` more efficiently
-        // by using a single copy instruction before branching instead of having
-        // to copy in each branch.
-        let default_branch_params = self
-            .alloc
-            .control_stack
-            .acquire_target(default_target)
-            .control_frame()
-            .branch_params(&engine);
-        let same_branch_params = self
-            .alloc
-            .buffer
-            .br_table_targets
-            .iter()
-            .copied()
-            .all(|target| {
-                match self.alloc.control_stack.acquire_target(target) {
-                    AcquiredTarget::Return(_) => {
-                        // Return instructions never need to copy anything and
-                        // thus we can simply ignore them for this conditional.
-                        true
-                    }
-                    AcquiredTarget::Branch(frame) => {
-                        default_branch_params == frame.branch_params(&engine)
-                    }
-                }
-            });
-        if default_branch_params.is_empty() || same_branch_params {
-            // Case 1: No `br_target` target requires values to be copied around.
-            // Case 2: All `br_target` targets use the same branch parameter registers.
-            //
-            // In both cases it is sufficient to copy values to the destination of
-            // the default branch target and encode the `br_table` with a series of
-            // simple direct branches without any further copy instructions.
-            self.push_base_instr(Instruction::branch_table(index, targets.len() + 1))?;
-            self.translate_copy_branch_params(default_branch_params)?;
-            let return_instr = match default_branch_params.len() {
-                0 => Instruction::Return,
-                1 => Instruction::return_reg(default_branch_params.span().head()),
-                _ => Instruction::return_span(default_branch_params),
-            };
-            for target in self.alloc.buffer.br_table_targets.iter().copied() {
-                match self.alloc.control_stack.acquire_target(target) {
-                    AcquiredTarget::Return(_) => {
-                        self.alloc.instr_encoder.append_instr(return_instr)?;
-                    }
-                    AcquiredTarget::Branch(frame) => {
-                        frame.bump_branches();
-                        let branch_dst = frame.branch_destination();
-                        let branch_offset =
-                            self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                        self.alloc
-                            .instr_encoder
-                            .append_instr(Instruction::branch(branch_offset))?;
-                    }
-                }
-            }
-            self.reachable = false;
-            return Ok(());
-        }
-        // Case: Some branch targets differ in their branch parameter registers.
-        //
-        // Therefore we cannot copy registers before the `br_table` instruction and
-        // instead need to perform the copy instructions in the `br_table` branch arms.
-        //
-        // Since `br_table` target depths are often shared we use a btree-set to
-        // share codegen for `br_table` arms that have the same branch target.
-        self.push_base_instr(Instruction::branch_table(index, targets.len() + 1))?;
-        let mut shared_targets = <BTreeMap<u32, LabelRef>>::new();
-        for target in self.alloc.buffer.br_table_targets.iter().copied() {
-            let shared_label = *shared_targets
-                .entry(target)
-                .or_insert_with(|| self.alloc.instr_encoder.new_label());
-            let branch_offset = self.alloc.instr_encoder.try_resolve_label(shared_label)?;
-            self.alloc
-                .instr_encoder
-                .append_instr(Instruction::branch(branch_offset))?;
-        }
-        let values = &mut self.alloc.buffer.providers;
-        self.alloc.stack.pop_n(default_branch_params.len(), values);
-        for (depth, label) in shared_targets {
-            self.alloc.instr_encoder.pin_label(label);
-            match self.alloc.control_stack.acquire_target(depth) {
-                AcquiredTarget::Return(_frame) => {
-                    // Note: We do not use fuel metering for the below
-                    //       `encode_return` instruction since it is part
-                    //       of the `br_table` instruction above.
-                    self.alloc.instr_encoder.encode_return(
-                        &mut self.alloc.stack,
-                        values,
-                        FuelInfo::None,
-                    )?;
-                }
-                AcquiredTarget::Branch(frame) => {
-                    frame.bump_branches();
-                    self.alloc.instr_encoder.encode_copies(
-                        &mut self.alloc.stack,
-                        frame.branch_params(&engine),
-                        values,
-                        fuel_info,
-                    )?;
-                    let branch_dst = frame.branch_destination();
-                    let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                    // Note: No need to bump fuel consumption for each branch table target
-                    //       since only one of the branch targets is going to be executed.
-                    self.alloc
-                        .instr_encoder
-                        .push_instr(Instruction::branch(branch_offset))?;
-                }
-            }
-        }
-        self.reachable = false;
-        Ok(())
+        self.translate_br_table(targets)
     }
 
     fn visit_return(&mut self) -> Self::Output {

@@ -202,12 +202,65 @@ impl Instruction {
         Self::branch_i64_ne_imm(condition, 0_i16, offset)
     }
 
-    /// Creates a new [`Instruction::BranchTable`] for the given `index` and `len_targets`.
-    pub fn branch_table(index: Register, len_targets: impl Into<Const32<u32>>) -> Self {
-        Self::BranchTable {
-            index,
-            len_targets: len_targets.into(),
+    /// Creates a new [`Instruction::BranchTable0`] for the given `index` and `len_targets`.
+    pub fn branch_table_0(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTable0 {
+            index: index.into(),
+            len_targets,
         }
+    }
+
+    /// Creates a new [`Instruction::BranchTable1`] for the given `index` and `len_targets`.
+    pub fn branch_table_1(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTable1 {
+            index: index.into(),
+            len_targets,
+        }
+    }
+
+    /// Creates a new [`Instruction::BranchTable2`] for the given `index` and `len_targets`.
+    pub fn branch_table_2(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTable2 {
+            index: index.into(),
+            len_targets,
+        }
+    }
+
+    /// Creates a new [`Instruction::BranchTable3`] for the given `index` and `len_targets`.
+    pub fn branch_table_3(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTable3 {
+            index: index.into(),
+            len_targets,
+        }
+    }
+
+    /// Creates a new [`Instruction::BranchTableSpan`] for the given `index` and `len_targets`.
+    pub fn branch_table_span(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTableSpan {
+            index: index.into(),
+            len_targets,
+        }
+    }
+
+    /// Creates a new [`Instruction::BranchTableMany`] for the given `index` and `len_targets`.
+    pub fn branch_table_many(index: impl Into<Register>, len_targets: u32) -> Self {
+        Self::BranchTableMany {
+            index: index.into(),
+            len_targets,
+        }
+    }
+
+    /// Creates a new [`Instruction::BranchTableTarget`] for the given `index` and `len_targets`.
+    pub fn branch_table_target(results: RegisterSpan, offset: BranchOffset) -> Self {
+        Self::BranchTableTarget { results, offset }
+    }
+
+    /// Creates a new [`Instruction::BranchTableTargetNonOverlapping`] for the given `index` and `len_targets`.
+    pub fn branch_table_target_non_overlapping(
+        results: RegisterSpan,
+        offset: BranchOffset,
+    ) -> Self {
+        Self::BranchTableTargetNonOverlapping { results, offset }
     }
 
     /// Creates a new [`Instruction::Copy`].
@@ -999,6 +1052,11 @@ impl Instruction {
         reg2: impl Into<Register>,
     ) -> Self {
         Self::RegisterList([reg0.into(), reg1.into(), reg2.into()])
+    }
+
+    /// Creates a new [`Instruction::RegisterSpan`].
+    pub fn register_span(span: RegisterSpanIter) -> Self {
+        Self::RegisterSpan(span)
     }
 
     /// Creates a new [`Instruction::CallIndirectParams`] for the given `index` and `table`.

@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{AnyConst32, Const32, Instruction, Register, RegisterSpan},
+    engine::bytecode::{AnyConst32, Const32, Instruction, InstructionPtr, Register, RegisterSpan},
 };
 use core::slice;
 use smallvec::SmallVec;
@@ -29,13 +29,19 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::Copy2`].
     #[inline(always)]
     pub fn execute_copy_2(&mut self, results: RegisterSpan, values: [Register; 2]) {
+        self.execute_copy_2_impl(results, values);
+        self.next_instr()
+    }
+
+    /// Internal implementation of [`Instruction::Copy2`] execution.
+    #[inline(always)]
+    fn execute_copy_2_impl(&mut self, results: RegisterSpan, values: [Register; 2]) {
         let result0 = results.head();
         let result1 = result0.next();
         // We need `tmp` in case `results[0] == values[1]` to avoid overwriting `values[1]` before reading it.
         let tmp = self.get_register(values[1]);
         self.set_register(result0, self.get_register(values[0]));
         self.set_register(result1, tmp);
-        self.next_instr()
     }
 
     /// Executes an [`Instruction::CopyImm32`].
@@ -66,6 +72,18 @@ impl<'engine> Executor<'engine> {
     /// - If `results` and `values` do _not_ overlap [`Instruction::CopySpanNonOverlapping`] is used.
     #[inline(always)]
     pub fn execute_copy_span(&mut self, results: RegisterSpan, values: RegisterSpan, len: u16) {
+        self.execute_copy_span_impl(results, values, len);
+        self.next_instr();
+    }
+
+    /// Internal implementation of [`Instruction::CopySpan`] execution.
+    #[inline(always)]
+    pub fn execute_copy_span_impl(
+        &mut self,
+        results: RegisterSpan,
+        values: RegisterSpan,
+        len: u16,
+    ) {
         let results = results.iter_u16(len);
         let values = values.iter_u16(len);
         let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
@@ -73,7 +91,6 @@ impl<'engine> Executor<'engine> {
         for (result, value) in results.into_iter().zip(tmp) {
             self.set_register(result, value);
         }
-        self.next_instr();
     }
 
     /// Executes an [`Instruction::CopySpanNonOverlapping`].
@@ -85,6 +102,18 @@ impl<'engine> Executor<'engine> {
     /// - If `results` and `values` _do_ overlap [`Instruction::CopySpan`] is used.
     #[inline(always)]
     pub fn execute_copy_span_non_overlapping(
+        &mut self,
+        results: RegisterSpan,
+        values: RegisterSpan,
+        len: u16,
+    ) {
+        self.execute_copy_span_non_overlapping_impl(results, values, len);
+        self.next_instr();
+    }
+
+    /// Internal implementation of [`Instruction::CopySpanNonOverlapping`] execution.
+    #[inline(always)]
+    pub fn execute_copy_span_non_overlapping_impl(
         &mut self,
         results: RegisterSpan,
         values: RegisterSpan,
@@ -102,11 +131,23 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::CopyMany`].
     #[inline(always)]
     pub fn execute_copy_many(&mut self, results: RegisterSpan, values: [Register; 2]) {
+        self.ip.add(1);
+        self.ip = self.execute_copy_many_impl(self.ip, results, &values);
+        self.next_instr()
+    }
+
+    /// Internal implementation of [`Instruction::CopyMany`] execution.
+    #[inline(always)]
+    pub fn execute_copy_many_impl(
+        &mut self,
+        ip: InstructionPtr,
+        results: RegisterSpan,
+        values: &[Register],
+    ) -> InstructionPtr {
         // We need `tmp` since `values[n]` might be overwritten by previous copies.
         let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
-        let mut ip = self.ip;
-        tmp.extend(values.into_iter().map(|value| self.get_register(value)));
-        ip.add(1);
+        let mut ip = ip;
+        tmp.extend(values.iter().map(|value| self.get_register(*value)));
         while let Instruction::RegisterList(values) = ip.get() {
             tmp.extend(values.iter().map(|value| self.get_register(*value)));
             ip.add(1);
@@ -115,14 +156,15 @@ impl<'engine> Executor<'engine> {
             Instruction::Register(value) => slice::from_ref(value),
             Instruction::Register2(values) => values,
             Instruction::Register3(values) => values,
-            unexpected => unreachable!("unexpected Instruction found while executing Instruction::CopyMany: {unexpected:?}"),
+            unexpected => unreachable!(
+                "unexpected Instruction found while copying many values: {unexpected:?}"
+            ),
         };
         tmp.extend(values.iter().map(|value| self.get_register(*value)));
         for (result, value) in results.iter(tmp.len()).zip(tmp) {
             self.set_register(result, value);
         }
-        self.ip = ip;
-        self.next_instr()
+        ip
     }
 
     /// Executes an [`Instruction::CopyManyNonOverlapping`].
@@ -132,7 +174,20 @@ impl<'engine> Executor<'engine> {
         results: RegisterSpan,
         values: [Register; 2],
     ) {
-        let mut ip = self.ip;
+        self.ip.add(1);
+        self.ip = self.execute_copy_many_non_overlapping_impl(self.ip, results, &values);
+        self.next_instr()
+    }
+
+    /// Internal implementation of [`Instruction::CopyManyNonOverlapping`] execution.
+    #[inline(always)]
+    pub fn execute_copy_many_non_overlapping_impl(
+        &mut self,
+        ip: InstructionPtr,
+        results: RegisterSpan,
+        values: &[Register],
+    ) -> InstructionPtr {
+        let mut ip = ip;
         let mut result = results.head();
         let mut copy_values = |values: &[Register]| {
             for &value in values {
@@ -141,8 +196,7 @@ impl<'engine> Executor<'engine> {
                 result = result.next();
             }
         };
-        copy_values(&values);
-        ip.add(1);
+        copy_values(values);
         while let Instruction::RegisterList(values) = ip.get() {
             copy_values(values);
             ip.add(1);
@@ -151,10 +205,9 @@ impl<'engine> Executor<'engine> {
             Instruction::Register(value) => slice::from_ref(value),
             Instruction::Register2(values) => values,
             Instruction::Register3(values) => values,
-            unexpected => unreachable!("unexpected Instruction found while executing Instruction::CopyManyNonOverlapping: {unexpected:?}"),
+            unexpected => unreachable!("unexpected Instruction found while copying many non-overlapping values: {unexpected:?}"),
         };
         copy_values(values);
-        self.ip = ip;
-        self.next_instr()
+        ip
     }
 }

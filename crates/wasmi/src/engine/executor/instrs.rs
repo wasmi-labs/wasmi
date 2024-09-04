@@ -213,8 +213,23 @@ impl<'engine> Executor<'engine> {
                     ))
                 }
                 Instr::Branch { offset } => self.execute_branch(offset),
-                Instr::BranchTable { index, len_targets } => {
-                    self.execute_branch_table(index, len_targets)
+                Instr::BranchTable0 { index, len_targets } => {
+                    self.execute_branch_table_0(index, len_targets)
+                }
+                Instr::BranchTable1 { index, len_targets } => {
+                    self.execute_branch_table_1(index, len_targets)
+                }
+                Instr::BranchTable2 { index, len_targets } => {
+                    self.execute_branch_table_2(index, len_targets)
+                }
+                Instr::BranchTable3 { index, len_targets } => {
+                    self.execute_branch_table_3(index, len_targets)
+                }
+                Instr::BranchTableSpan { index, len_targets } => {
+                    self.execute_branch_table_span(index, len_targets)
+                }
+                Instr::BranchTableMany { index, len_targets } => {
+                    self.execute_branch_table_many(index, len_targets)
                 }
                 Instr::BranchCmpFallback { lhs, rhs, params } => {
                     self.execute_branch_cmp_fallback(lhs, rhs, params)
@@ -856,10 +871,13 @@ impl<'engine> Executor<'engine> {
                 | Instr::Const32(_)
                 | Instr::I64Const32(_)
                 | Instr::F64Const32(_)
+                | Instr::BranchTableTarget { .. }
+                | Instr::BranchTableTargetNonOverlapping { .. }
                 | Instr::Register(_)
                 | Instr::Register2(_)
                 | Instr::Register3(_)
                 | Instr::RegisterAndImm32 { .. }
+                | Instr::RegisterSpan(_)
                 | Instr::RegisterList(_)
                 | Instr::CallIndirectParams(_)
                 | Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
@@ -1159,6 +1177,20 @@ impl<'engine> Executor<'engine> {
         let rhs = self.get_register(instr.reg_in);
         self.set_register(instr.result, op(lhs, rhs)?);
         self.try_next_instr()
+    }
+
+    /// Skips all [`Instruction`]s belonging to an [`Instruction::RegisterList`] encoding.
+    fn skip_register_list(ip: InstructionPtr) -> InstructionPtr {
+        let mut ip = ip;
+        while let Instruction::RegisterList(_) = *ip.get() {
+            ip.add(1);
+        }
+        // We skip an additional `Instruction` because we know that `Instruction::RegisterList` is always followed by one of:
+        // - `Instruction::Register`
+        // - `Instruction::Register2`
+        // - `Instruction::Register3`.
+        ip.add(1);
+        ip
     }
 }
 

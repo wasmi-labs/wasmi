@@ -189,6 +189,16 @@ impl ValueStack {
         self.consts.alloc(value.into())
     }
 
+    /// Converts a [`TypedProvider`] into a [`Register`].
+    ///
+    /// This allocates constant values for [`TypedProvider::Const`].
+    pub fn provider2reg(&mut self, provider: &TypedProvider) -> Result<Register, Error> {
+        match provider {
+            Provider::Register(register) => Ok(*register),
+            Provider::Const(value) => self.alloc_const(*value),
+        }
+    }
+
     /// Returns the allocated function local constant values in reversed allocation order.
     ///
     /// # Note

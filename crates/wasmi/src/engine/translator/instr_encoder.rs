@@ -157,7 +157,7 @@ impl InstrSequence {
     /// # Panics
     ///
     /// If no [`Instruction`] is associated to the [`Instr`] for this [`InstrSequence`].
-    fn get(&mut self, instr: Instr) -> &Instruction {
+    fn get(&self, instr: Instr) -> &Instruction {
         &self.instrs[instr.into_usize()]
     }
 
@@ -312,6 +312,24 @@ impl InstrEncoder {
         Ok(last_instr)
     }
 
+    /// Utility function for pushing a new [`Instruction`] with fuel costs.
+    ///
+    /// # Note
+    ///
+    /// Fuel metering is only encoded or adjusted if it is enabled.
+    pub fn push_fueled_instr<F>(
+        &mut self,
+        instr: Instruction,
+        fuel_info: FuelInfo,
+        f: F,
+    ) -> Result<Instr, Error>
+    where
+        F: FnOnce(&FuelCosts) -> u64,
+    {
+        self.bump_fuel_consumption(fuel_info, f)?;
+        self.push_instr(instr)
+    }
+
     /// Appends the [`Instruction`] to the last [`Instruction`] created via [`InstrEncoder::push_instr`].
     ///
     /// # Note
@@ -457,8 +475,8 @@ impl InstrEncoder {
                     // Note: we already asserted that the first copy is not a no-op
                     return self.encode_copy(stack, result, *v0, fuel_info);
                 }
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 let instr = self.push_instr(Instruction::copy2(results.span(), reg0, reg1))?;
                 Ok(Some(instr))
@@ -492,8 +510,8 @@ impl InstrEncoder {
                     true => Instruction::copy_many,
                     false => Instruction::copy_many_non_overlapping,
                 };
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 let instr = self.push_instr(make_instr(results.span(), reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
                 Ok(Some(instr))
@@ -509,7 +527,11 @@ impl InstrEncoder {
     /// - `[ 1 <- 0 ]`: single element never overlaps
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
-    fn has_overlapping_copy_spans(results: RegisterSpan, values: RegisterSpan, len: usize) -> bool {
+    pub fn has_overlapping_copy_spans(
+        results: RegisterSpan,
+        values: RegisterSpan,
+        len: usize,
+    ) -> bool {
         RegisterSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 
@@ -522,7 +544,7 @@ impl InstrEncoder {
     ///   is written to in the first copy but read from in the next.
     /// - The sequence `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since register `3`
     ///   is written to in the first copy but read from in the third.
-    fn has_overlapping_copies(results: RegisterSpanIter, values: &[TypedProvider]) -> bool {
+    pub fn has_overlapping_copies(results: RegisterSpanIter, values: &[TypedProvider]) -> bool {
         debug_assert_eq!(results.len(), values.len());
         if results.is_empty() {
             // Note: An empty set of copies can never have overlapping copies.
@@ -589,14 +611,14 @@ impl InstrEncoder {
                 }
             },
             [v0, v1] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 Instruction::return_reg2(reg0, reg1)
             }
             [v0, v1, v2] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                let reg2 = Self::provider2reg(stack, v2)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
+                let reg2 = stack.provider2reg(v2)?;
                 Instruction::return_reg3(reg0, reg1, reg2)
             }
             [v0, v1, v2, rest @ ..] => {
@@ -612,9 +634,9 @@ impl InstrEncoder {
                     self.push_instr(Instruction::return_span(span))?;
                     return Ok(());
                 }
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                let reg2 = Self::provider2reg(stack, v2)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
+                let reg2 = stack.provider2reg(v2)?;
                 self.push_instr(Instruction::return_many(reg0, reg1, reg2))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
@@ -657,8 +679,8 @@ impl InstrEncoder {
                 }
             },
             [v0, v1] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 Instruction::return_nez_reg2(condition, reg0, reg1)
             }
             [v0, v1, rest @ ..] => {
@@ -674,8 +696,8 @@ impl InstrEncoder {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
                     return Ok(());
                 }
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 self.push_instr(Instruction::return_nez_many(condition, reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
@@ -684,16 +706,6 @@ impl InstrEncoder {
         self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
         self.push_instr(instr)?;
         Ok(())
-    }
-
-    /// Converts a [`TypedProvider`] into a [`Register`].
-    ///
-    /// This allocates constant values for [`TypedProvider::Const`].
-    fn provider2reg(stack: &mut ValueStack, provider: &TypedProvider) -> Result<Register, Error> {
-        match provider {
-            Provider::Register(register) => Ok(*register),
-            Provider::Const(value) => stack.alloc_const(*value),
-        }
     }
 
     /// Encode the given slice of [`TypedProvider`] as a list of [`Register`].
@@ -717,36 +729,32 @@ impl InstrEncoder {
         inputs: &[TypedProvider],
     ) -> Result<(), Error> {
         let mut remaining = inputs;
-        loop {
+        let instr = loop {
             match remaining {
                 [] => return Ok(()),
-                [v0] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    self.instrs.push(Instruction::register(v0))?;
-                    return Ok(());
-                }
+                [v0] => break Instruction::register(stack.provider2reg(v0)?),
                 [v0, v1] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    let v1 = Self::provider2reg(stack, v1)?;
-                    self.instrs.push(Instruction::register2(v0, v1))?;
-                    return Ok(());
+                    break Instruction::register2(stack.provider2reg(v0)?, stack.provider2reg(v1)?)
                 }
                 [v0, v1, v2] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    let v1 = Self::provider2reg(stack, v1)?;
-                    let v2 = Self::provider2reg(stack, v2)?;
-                    self.instrs.push(Instruction::register3(v0, v1, v2))?;
-                    return Ok(());
+                    break Instruction::register3(
+                        stack.provider2reg(v0)?,
+                        stack.provider2reg(v1)?,
+                        stack.provider2reg(v2)?,
+                    );
                 }
                 [v0, v1, v2, rest @ ..] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    let v1 = Self::provider2reg(stack, v1)?;
-                    let v2 = Self::provider2reg(stack, v2)?;
-                    self.instrs.push(Instruction::register_list(v0, v1, v2))?;
+                    self.instrs.push(Instruction::register_list(
+                        stack.provider2reg(v0)?,
+                        stack.provider2reg(v1)?,
+                        stack.provider2reg(v2)?,
+                    ))?;
                     remaining = rest;
                 }
-            }
-        }
+            };
+        };
+        self.instrs.push(instr)?;
+        Ok(())
     }
 
     /// Encode a `local.set` or `local.tee` instruction.
@@ -1397,7 +1405,9 @@ impl Instruction {
         use Instruction as I;
         use BranchComparator as Cmp;
         match self {
-            Instruction::Branch { offset } => {
+            Instruction::Branch { offset } |
+            Instruction::BranchTableTarget { offset, .. } |
+            Instruction::BranchTableTargetNonOverlapping { offset, .. } => {
                 offset.init(new_offset);
                 Ok(())
             }

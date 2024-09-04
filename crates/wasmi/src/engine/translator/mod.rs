@@ -36,7 +36,10 @@ pub use self::{
     instr_encoder::{Instr, InstrEncoder},
     stack::TypedProvider,
 };
-use super::{bytecode::Provider, code_map::CompiledFuncEntity};
+use super::{
+    bytecode::{BranchOffset, Provider},
+    code_map::CompiledFuncEntity,
+};
 use crate::{
     core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{
@@ -2435,5 +2438,321 @@ impl FuncTranslator {
             TypedProvider::Register(index) => Instruction::call_indirect_params(index, table_index),
         };
         Ok(instr)
+    }
+
+    /// Translates a Wasm `br` instruction with its `relative_depth`.
+    fn translate_br(&mut self, relative_depth: u32) -> Result<(), Error> {
+        let engine = self.engine().clone();
+        match self.alloc.control_stack.acquire_target(relative_depth) {
+            AcquiredTarget::Return(_frame) => self.translate_return(),
+            AcquiredTarget::Branch(frame) => {
+                frame.bump_branches();
+                let branch_dst = frame.branch_destination();
+                let branch_params = frame.branch_params(&engine);
+                self.translate_copy_branch_params(branch_params)?;
+                let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                self.push_base_instr(Instruction::branch(branch_offset))?;
+                self.reachable = false;
+                Ok(())
+            }
+        }
+    }
+
+    /// Populate the `buffer` with the `table` targets including the `table` default target.
+    ///
+    /// Returns a shared slice to the `buffer` after it has been filled.
+    ///
+    /// # Note
+    ///
+    /// The `table` default target is pushed last to the `buffer`.
+    fn populate_br_table_buffer<'a>(
+        buffer: &'a mut Vec<u32>,
+        table: &wasmparser::BrTable,
+    ) -> Result<&'a [u32], Error> {
+        let default_target = table.default();
+        buffer.clear();
+        for target in table.targets() {
+            buffer.push(target?);
+        }
+        buffer.push(default_target);
+        Ok(buffer)
+    }
+
+    /// Convenience method to allow inspecting the provider buffer while manipulating `self` circumventing the borrow checker.
+    fn apply_providers_buffer<R>(&mut self, f: impl FnOnce(&mut Self, &[TypedProvider]) -> R) -> R {
+        let values = core::mem::take(&mut self.alloc.buffer.providers);
+        let result = f(self, &values[..]);
+        let _ = core::mem::replace(&mut self.alloc.buffer.providers, values);
+        result
+    }
+
+    /// Translates a Wasm `br_table` instruction with its branching targets.
+    fn translate_br_table(&mut self, table: wasmparser::BrTable) -> Result<(), Error> {
+        let engine = self.engine().clone();
+        let index = self.alloc.stack.pop();
+        let default_target = table.default();
+        if table.is_empty() {
+            // Case: the `br_table` only has a single target `t` which is equal to a `br t`.
+            return self.translate_br(default_target);
+        }
+        let index: Register = match index {
+            TypedProvider::Register(index) => index,
+            TypedProvider::Const(index) => {
+                // Case: the `br_table` index is a constant value, therefore always taking the same branch.
+                let chosen_index = u32::from(index) as usize;
+                let chosen_target = table
+                    .targets()
+                    .nth(chosen_index)
+                    .transpose()?
+                    .unwrap_or(default_target);
+                return self.translate_br(chosen_target);
+            }
+        };
+        let targets = &mut self.alloc.buffer.br_table_targets;
+        Self::populate_br_table_buffer(targets, &table)?;
+        if targets.iter().all(|&target| target == default_target) {
+            // Case: all targets are the same and thus the `br_table` is equal to a `br`.
+            return self.translate_br(default_target);
+        }
+        // Note: The Wasm spec mandates that all `br_table` targets manipulate the
+        //       Wasm value stack the same. This implies for Wasmi that all `br_table`
+        //       targets have the same branch parameter arity.
+        let branch_params = self
+            .alloc
+            .control_stack
+            .acquire_target(default_target)
+            .control_frame()
+            .branch_params(&engine);
+        match branch_params.len() {
+            0 => self.translate_br_table_0(index),
+            1 => self.translate_br_table_1(index),
+            2 => self.translate_br_table_2(index),
+            3 => self.translate_br_table_3(index),
+            n => self.translate_br_table_n(index, n),
+        }
+    }
+
+    /// Translates the branching targets of a Wasm `br_table` instruction for simple cases without value copying.
+    fn translate_br_table_targets_simple(&mut self, values: &[TypedProvider]) -> Result<(), Error> {
+        self.translate_br_table_targets(values, |_, _| unreachable!())
+    }
+
+    /// Translates the branching targets of a Wasm `br_table` instruction.
+    ///
+    /// The `make_target` closure allows to define the branch table target instruction being used
+    /// for each branch that copies 4 or more values to the destination.
+    fn translate_br_table_targets(
+        &mut self,
+        values: &[TypedProvider],
+        make_target: impl Fn(RegisterSpanIter, BranchOffset) -> Instruction,
+    ) -> Result<(), Error> {
+        let engine = self.engine().clone();
+        let fuel_info = self.fuel_info();
+        let targets = &self.alloc.buffer.br_table_targets;
+        for &target in targets {
+            match self.alloc.control_stack.acquire_target(target) {
+                AcquiredTarget::Return(_) => {
+                    self.alloc.instr_encoder.encode_return(
+                        &mut self.alloc.stack,
+                        values,
+                        fuel_info,
+                    )?;
+                }
+                AcquiredTarget::Branch(frame) => {
+                    frame.bump_branches();
+                    let branch_params = frame.branch_params(&engine);
+                    let branch_dst = frame.branch_destination();
+                    let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                    let instr = match branch_params.len() {
+                        0 => Instruction::branch(branch_offset),
+                        1..=3 => {
+                            Instruction::branch_table_target(branch_params.span(), branch_offset)
+                        }
+                        _ => make_target(branch_params, branch_offset),
+                    };
+                    self.alloc.instr_encoder.append_instr(instr)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction without inputs.
+    fn translate_br_table_0(&mut self, index: Register) -> Result<(), Error> {
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_0(index, len_targets),
+            self.fuel_info(),
+            FuelCosts::base,
+        )?;
+        self.translate_br_table_targets_simple(&[])?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction with a single input.
+    fn translate_br_table_1(&mut self, index: Register) -> Result<(), Error> {
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let fuel_info = self.fuel_info();
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_1(index, len_targets),
+            fuel_info,
+            FuelCosts::base,
+        )?;
+        let stack = &mut self.alloc.stack;
+        let value = stack.pop();
+        let param_instr = match value {
+            TypedProvider::Register(register) => Instruction::register(register),
+            TypedProvider::Const(immediate) => match immediate.ty() {
+                ValType::I32 | ValType::F32 => Instruction::const32(u32::from(immediate.untyped())),
+                ValType::I64 => match <Const32<i64>>::try_from(i64::from(immediate)) {
+                    Ok(value) => Instruction::i64const32(value),
+                    Err(_) => {
+                        let register = self.alloc.stack.provider2reg(&value)?;
+                        Instruction::register(register)
+                    }
+                },
+                ValType::F64 => match <Const32<f64>>::try_from(f64::from(immediate)) {
+                    Ok(value) => Instruction::f64const32(value),
+                    Err(_) => {
+                        let register = self.alloc.stack.provider2reg(&value)?;
+                        Instruction::register(register)
+                    }
+                },
+                ValType::ExternRef | ValType::FuncRef => {
+                    let register = self.alloc.stack.provider2reg(&value)?;
+                    Instruction::register(register)
+                }
+            },
+        };
+        self.alloc.instr_encoder.append_instr(param_instr)?;
+        self.translate_br_table_targets_simple(&[value])?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction with exactly two inputs.
+    fn translate_br_table_2(&mut self, index: Register) -> Result<(), Error> {
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let fuel_info = self.fuel_info();
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_2(index, len_targets),
+            fuel_info,
+            FuelCosts::base,
+        )?;
+        let stack = &mut self.alloc.stack;
+        let (v0, v1) = stack.pop2();
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register2(
+                stack.provider2reg(&v0)?,
+                stack.provider2reg(&v1)?,
+            ))?;
+        self.translate_br_table_targets_simple(&[v0, v1])?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction with exactly three inputs.
+    fn translate_br_table_3(&mut self, index: Register) -> Result<(), Error> {
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let fuel_info = self.fuel_info();
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_3(index, len_targets),
+            fuel_info,
+            FuelCosts::base,
+        )?;
+        let stack = &mut self.alloc.stack;
+        let (v0, v1, v2) = stack.pop3();
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register3(
+                stack.provider2reg(&v0)?,
+                stack.provider2reg(&v1)?,
+                stack.provider2reg(&v2)?,
+            ))?;
+        self.translate_br_table_targets_simple(&[v0, v1, v2])?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs.
+    fn translate_br_table_n(&mut self, index: Register, len_values: usize) -> Result<(), Error> {
+        debug_assert!(len_values > 3);
+        let values = &mut self.alloc.buffer.providers;
+        self.alloc.stack.pop_n(len_values, values);
+        match RegisterSpanIter::from_providers(values) {
+            Some(span) => self.translate_br_table_span(index, span),
+            None => self.translate_br_table_many(index),
+        }
+    }
+
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs that form a [`RegisterSpan`].
+    fn translate_br_table_span(
+        &mut self,
+        index: Register,
+        values: RegisterSpanIter,
+    ) -> Result<(), Error> {
+        debug_assert!(values.len() > 3);
+        let fuel_info = self.fuel_info();
+        let targets = &mut self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_span(index, len_targets),
+            fuel_info,
+            FuelCosts::base,
+        )?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register_span(values))?;
+        self.apply_providers_buffer(|this, buffer| {
+            this.translate_br_table_targets(buffer, |branch_params, branch_offset| {
+                debug_assert_eq!(values.len(), branch_params.len());
+                let len = values.len();
+                let results = branch_params.span();
+                let values = values.span();
+                let make_instr =
+                    match InstrEncoder::has_overlapping_copy_spans(results, values, len) {
+                        true => Instruction::branch_table_target,
+                        false => Instruction::branch_table_target_non_overlapping,
+                    };
+                make_instr(branch_params.span(), branch_offset)
+            })
+        })?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs that cannot form a [`RegisterSpan`].
+    fn translate_br_table_many(&mut self, index: Register) -> Result<(), Error> {
+        let targets = &mut self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let fuel_info = self.fuel_info();
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_many(index, len_targets),
+            fuel_info,
+            FuelCosts::base,
+        )?;
+        let stack = &mut self.alloc.stack;
+        let values = &self.alloc.buffer.providers[..];
+        debug_assert!(values.len() > 3);
+        self.alloc
+            .instr_encoder
+            .encode_register_list(stack, values)?;
+        self.apply_providers_buffer(|this, values| {
+            this.translate_br_table_targets(&[], |branch_params, branch_offset| {
+                let make_instr = match InstrEncoder::has_overlapping_copies(branch_params, values) {
+                    true => Instruction::branch_table_target,
+                    false => Instruction::branch_table_target_non_overlapping,
+                };
+                make_instr(branch_params.span(), branch_offset)
+            })
+        })?;
+        self.reachable = false;
+        Ok(())
     }
 }

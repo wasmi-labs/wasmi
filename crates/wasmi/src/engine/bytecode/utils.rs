@@ -229,6 +229,11 @@ impl Iterator for RegisterSpanIter {
         self.next = self.next.next();
         Some(reg)
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.len_as_u16() as usize;
+        (remaining, Some(remaining))
+    }
 }
 
 impl DoubleEndedIterator for RegisterSpanIter {

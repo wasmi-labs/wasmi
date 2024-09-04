@@ -46,6 +46,9 @@ impl VisitInputRegisters for Instruction {
             Instruction::Register2(registers) => registers.visit_input_registers(f),
             Instruction::Register3(registers) |
             Instruction::RegisterList(registers) => registers.visit_input_registers(f),
+            Instruction::RegisterSpan(registers) => registers.visit_input_registers(f),
+            Instruction::BranchTableTarget { .. } |
+            Instruction::BranchTableTargetNonOverlapping { .. } => {},
             Instruction::Trap(_) |
             Instruction::ConsumeFuel(_) |
             Instruction::Return => {},
@@ -79,7 +82,12 @@ impl VisitInputRegisters for Instruction {
                 values.visit_input_registers(f);
             }
             Instruction::Branch { .. } => {},
-            Instruction::BranchTable { index, .. } => f(index),
+            Instruction::BranchTable0 { index, .. } |
+            Instruction::BranchTable1 { index, .. } |
+            Instruction::BranchTable2 { index, .. } |
+            Instruction::BranchTable3 { index, .. } |
+            Instruction::BranchTableSpan { index, .. } |
+            Instruction::BranchTableMany { index, .. } => f(index),
 
             Instruction::BranchCmpFallback { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
             Instruction::BranchI32And(instr) => instr.visit_input_registers(f),
