@@ -116,6 +116,6 @@ where
     );
     let trap_code = eval(input);
     TranslationTest::from_wat(&wasm)
-        .expect_func_instrs([Instruction::Trap(trap_code)])
+        .expect_func_instrs([Instruction::trap(trap_code)])
         .run();
 }

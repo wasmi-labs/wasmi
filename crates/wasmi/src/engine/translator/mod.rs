@@ -1329,7 +1329,7 @@ impl FuncTranslator {
     /// Translates a [`TrapCode`] as [`Instruction`].
     fn translate_trap(&mut self, trap_code: TrapCode) -> Result<(), Error> {
         bail_unreachable!(self);
-        self.push_fueled_instr(Instruction::Trap(trap_code), FuelCosts::base)?;
+        self.push_fueled_instr(Instruction::trap(trap_code), FuelCosts::base)?;
         self.reachable = false;
         Ok(())
     }

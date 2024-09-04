@@ -101,7 +101,7 @@ fn test_load_at_overflow(wasm_op: WasmOp, ptr: u32, offset: u32) {
         "ptr+offset must overflow in this testcase"
     );
     TranslationTest::from_wat(&wasm)
-        .expect_func_instrs([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
+        .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }
 

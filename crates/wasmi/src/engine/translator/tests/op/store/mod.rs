@@ -292,7 +292,7 @@ fn test_store_at_overflow_for(wasm_op: WasmOp, ptr: u32, offset: u32) {
     "#
     );
     TranslationTest::from_wat(&wasm)
-        .expect_func_instrs([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
+        .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }
 
@@ -383,7 +383,7 @@ where
     "#
     );
     TranslationTest::from_wat(&wasm)
-        .expect_func_instrs([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
+        .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }
 

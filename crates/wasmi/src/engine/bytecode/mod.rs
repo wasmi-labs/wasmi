@@ -78,7 +78,7 @@ pub enum Instruction {
     /// as well as code paths that are determined to always
     /// lead to traps during execution. For example division
     /// by constant zero.
-    Trap(TrapCode),
+    Trap { trap_code: TrapCode },
     /// Instruction generated to consume fuel for its associated basic block.
     ///
     /// # Note

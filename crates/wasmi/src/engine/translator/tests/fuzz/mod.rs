@@ -71,8 +71,8 @@ fn fuzz_regression_4() {
             Instruction::copy(2, 1),
             Instruction::copy(1, 0),
             Instruction::branch_i32_eq_imm(Reg::from(1), 0, BranchOffset16::from(2)),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
 }
@@ -91,7 +91,7 @@ fn fuzz_regression_5() {
             Instruction::branch_i32_eq_imm(Reg::from(4), 0, BranchOffset16::from(1)),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy_imm32(Reg::from(3), 0),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
 }
@@ -108,7 +108,7 @@ fn fuzz_regression_6() {
             Instruction::copy(1, 2),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy(1, 2),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
 }
@@ -188,7 +188,7 @@ fn fuzz_regression_11() {
             Instruction::i32_eq_imm16(Reg::from(0), Reg::from(0), 0),
             Instruction::i32_and(Reg::from(1), Reg::from(1), Reg::from(0)),
             Instruction::return_nez(1),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
 }
@@ -202,13 +202,13 @@ fn fuzz_regression_12_f32() {
             Instruction::copy_imm32(Reg::from(0), u32::MAX),
             Instruction::f32_le(Reg::from(1), Reg::from(0), Reg::from(0)),
             Instruction::return_nez(1),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
         ]))
         .expect_func(ExpectedFunc::new([
             Instruction::copy_imm32(Reg::from(0), u32::MAX),
             Instruction::f32_ge(Reg::from(1), Reg::from(0), Reg::from(0)),
             Instruction::return_nez(1),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
         ]))
         .run()
 }
@@ -223,7 +223,7 @@ fn fuzz_regression_12_f64() {
                 Instruction::copy(0, -1),
                 Instruction::f64_le(Reg::from(1), Reg::from(0), Reg::from(0)),
                 Instruction::return_nez(1),
-                Instruction::Trap(TrapCode::UnreachableCodeReached),
+                Instruction::trap(TrapCode::UnreachableCodeReached),
             ])
             .consts([u64::MAX]),
         )
@@ -232,7 +232,7 @@ fn fuzz_regression_12_f64() {
                 Instruction::copy(0, -1),
                 Instruction::f64_ge(Reg::from(1), Reg::from(0), Reg::from(0)),
                 Instruction::return_nez(1),
-                Instruction::Trap(TrapCode::UnreachableCodeReached),
+                Instruction::trap(TrapCode::UnreachableCodeReached),
             ])
             .consts([u64::MAX]),
         )
@@ -309,7 +309,7 @@ fn fuzz_regression_15_01_codegen() {
                 Instruction::branch_table_target(RegSpan::new(Reg::from(1)), BranchOffset::from(3)),
                 Instruction::return_imm32(10.0_f32),
                 Instruction::branch_table_target(RegSpan::new(Reg::from(1)), BranchOffset::from(1)),
-                Instruction::Trap(TrapCode::UnreachableCodeReached),
+                Instruction::trap(TrapCode::UnreachableCodeReached),
             ]),
         )
         .run()
@@ -355,7 +355,7 @@ fn fuzz_regression_15_02() {
                 Instruction::branch_table_target(RegSpan::new(Reg::from(1)), BranchOffset::from(3)),
                 Instruction::return_reg2(Reg::from(-1), Reg::from(-2)),
                 Instruction::branch_table_target(RegSpan::new(Reg::from(1)), BranchOffset::from(1)),
-                Instruction::Trap(TrapCode::UnreachableCodeReached),
+                Instruction::trap(TrapCode::UnreachableCodeReached),
             ])
             .consts([10.0_f32, 20.0_f32]),
         )
@@ -404,7 +404,7 @@ fn fuzz_regression_16() {
             Instruction::global_get(Reg::from(0), GlobalIdx::from(0)),
             Instruction::global_set(GlobalIdx::from(0), Reg::from(0)),
             Instruction::i64_store_at(Const32::from(2147483647), Reg::from(2)),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
 }
@@ -422,7 +422,7 @@ fn fuzz_regression_17() {
             Instruction::copy_i64imm32(Reg::from(0), 2),
             Instruction::copy_imm32(Reg::from(1), -1.0_f32),
             Instruction::i64_store_at(Const32::from(4294967295), Reg::from(2)),
-            Instruction::Trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
 }

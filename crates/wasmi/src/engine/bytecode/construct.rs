@@ -29,9 +29,15 @@ use super::{
     TableIdx,
     UnaryInstr,
 };
+use crate::core::TrapCode;
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
 impl Instruction {
+    /// Creates a new [`Instruction::Trap`] from the given [`TrapCode`].
+    pub fn trap(trap_code: TrapCode) -> Self {
+        Self::Trap { trap_code }
+    }
+
     /// Creates a new [`Instruction::Const32`] from the given `value`.
     pub fn const32(value: impl Into<AnyConst32>) -> Self {
         Self::Const32(value.into())

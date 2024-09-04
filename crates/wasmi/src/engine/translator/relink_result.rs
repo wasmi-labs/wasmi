@@ -47,7 +47,7 @@ impl Instruction {
             | I::BranchTableTargetNonOverlapping { .. } // can't relink since `br_table` diverts control flow
             | I::CallIndirectParams(_)
             | I::CallIndirectParamsImm16(_)
-            | I::Trap(_)
+            | I::Trap { .. }
             | I::ConsumeFuel(_)
             | I::Return
             | I::ReturnReg { .. }

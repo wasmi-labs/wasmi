@@ -92,7 +92,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_unreachable(&mut self) -> Self::Output {
         bail_unreachable!(self);
-        self.push_base_instr(Instruction::Trap(TrapCode::UnreachableCodeReached))?;
+        self.push_base_instr(Instruction::trap(TrapCode::UnreachableCodeReached))?;
         self.reachable = false;
         Ok(())
     }
