@@ -524,48 +524,132 @@ impl<'engine> Executor<'engine> {
                 Instr::GlobalSetI64Imm16 { global, input } => {
                     self.execute_global_set_i64imm16(&mut store.inner, global, input)
                 }
-                Instr::I32Load(instr) => self.execute_i32_load(instr)?,
-                Instr::I32LoadAt(instr) => self.execute_i32_load_at(instr)?,
-                Instr::I32LoadOffset16(instr) => self.execute_i32_load_offset16(instr)?,
-                Instr::I64Load(instr) => self.execute_i64_load(instr)?,
-                Instr::I64LoadAt(instr) => self.execute_i64_load_at(instr)?,
-                Instr::I64LoadOffset16(instr) => self.execute_i64_load_offset16(instr)?,
-                Instr::F32Load(instr) => self.execute_f32_load(instr)?,
-                Instr::F32LoadAt(instr) => self.execute_f32_load_at(instr)?,
-                Instr::F32LoadOffset16(instr) => self.execute_f32_load_offset16(instr)?,
-                Instr::F64Load(instr) => self.execute_f64_load(instr)?,
-                Instr::F64LoadAt(instr) => self.execute_f64_load_at(instr)?,
-                Instr::F64LoadOffset16(instr) => self.execute_f64_load_offset16(instr)?,
-                Instr::I32Load8s(instr) => self.execute_i32_load8_s(instr)?,
-                Instr::I32Load8sAt(instr) => self.execute_i32_load8_s_at(instr)?,
-                Instr::I32Load8sOffset16(instr) => self.execute_i32_load8_s_offset16(instr)?,
-                Instr::I32Load8u(instr) => self.execute_i32_load8_u(instr)?,
-                Instr::I32Load8uAt(instr) => self.execute_i32_load8_u_at(instr)?,
-                Instr::I32Load8uOffset16(instr) => self.execute_i32_load8_u_offset16(instr)?,
-                Instr::I32Load16s(instr) => self.execute_i32_load16_s(instr)?,
-                Instr::I32Load16sAt(instr) => self.execute_i32_load16_s_at(instr)?,
-                Instr::I32Load16sOffset16(instr) => self.execute_i32_load16_s_offset16(instr)?,
-                Instr::I32Load16u(instr) => self.execute_i32_load16_u(instr)?,
-                Instr::I32Load16uAt(instr) => self.execute_i32_load16_u_at(instr)?,
-                Instr::I32Load16uOffset16(instr) => self.execute_i32_load16_u_offset16(instr)?,
-                Instr::I64Load8s(instr) => self.execute_i64_load8_s(instr)?,
-                Instr::I64Load8sAt(instr) => self.execute_i64_load8_s_at(instr)?,
-                Instr::I64Load8sOffset16(instr) => self.execute_i64_load8_s_offset16(instr)?,
-                Instr::I64Load8u(instr) => self.execute_i64_load8_u(instr)?,
-                Instr::I64Load8uAt(instr) => self.execute_i64_load8_u_at(instr)?,
-                Instr::I64Load8uOffset16(instr) => self.execute_i64_load8_u_offset16(instr)?,
-                Instr::I64Load16s(instr) => self.execute_i64_load16_s(instr)?,
-                Instr::I64Load16sAt(instr) => self.execute_i64_load16_s_at(instr)?,
-                Instr::I64Load16sOffset16(instr) => self.execute_i64_load16_s_offset16(instr)?,
-                Instr::I64Load16u(instr) => self.execute_i64_load16_u(instr)?,
-                Instr::I64Load16uAt(instr) => self.execute_i64_load16_u_at(instr)?,
-                Instr::I64Load16uOffset16(instr) => self.execute_i64_load16_u_offset16(instr)?,
-                Instr::I64Load32s(instr) => self.execute_i64_load32_s(instr)?,
-                Instr::I64Load32sAt(instr) => self.execute_i64_load32_s_at(instr)?,
-                Instr::I64Load32sOffset16(instr) => self.execute_i64_load32_s_offset16(instr)?,
-                Instr::I64Load32u(instr) => self.execute_i64_load32_u(instr)?,
-                Instr::I64Load32uAt(instr) => self.execute_i64_load32_u_at(instr)?,
-                Instr::I64Load32uOffset16(instr) => self.execute_i64_load32_u_offset16(instr)?,
+                Instr::I32Load { result, ptr } => self.execute_i32_load(result, ptr)?,
+                Instr::I32LoadAt { result, address } => {
+                    self.execute_i32_load_at(result, address)?
+                }
+                Instr::I32LoadOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i32_load_offset16(result, ptr, offset)?,
+                Instr::I64Load { result, ptr } => self.execute_i64_load(result, ptr)?,
+                Instr::I64LoadAt { result, address } => {
+                    self.execute_i64_load_at(result, address)?
+                }
+                Instr::I64LoadOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i64_load_offset16(result, ptr, offset)?,
+                Instr::F32Load { result, ptr } => self.execute_f32_load(result, ptr)?,
+                Instr::F32LoadAt { result, address } => {
+                    self.execute_f32_load_at(result, address)?
+                }
+                Instr::F32LoadOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_f32_load_offset16(result, ptr, offset)?,
+                Instr::F64Load { result, ptr } => self.execute_f64_load(result, ptr)?,
+                Instr::F64LoadAt { result, address } => {
+                    self.execute_f64_load_at(result, address)?
+                }
+                Instr::F64LoadOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_f64_load_offset16(result, ptr, offset)?,
+                Instr::I32Load8s { result, ptr } => self.execute_i32_load8_s(result, ptr)?,
+                Instr::I32Load8sAt { result, address } => {
+                    self.execute_i32_load8_s_at(result, address)?
+                }
+                Instr::I32Load8sOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i32_load8_s_offset16(result, ptr, offset)?,
+                Instr::I32Load8u { result, ptr } => self.execute_i32_load8_u(result, ptr)?,
+                Instr::I32Load8uAt { result, address } => {
+                    self.execute_i32_load8_u_at(result, address)?
+                }
+                Instr::I32Load8uOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i32_load8_u_offset16(result, ptr, offset)?,
+                Instr::I32Load16s { result, ptr } => self.execute_i32_load16_s(result, ptr)?,
+                Instr::I32Load16sAt { result, address } => {
+                    self.execute_i32_load16_s_at(result, address)?
+                }
+                Instr::I32Load16sOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i32_load16_s_offset16(result, ptr, offset)?,
+                Instr::I32Load16u { result, ptr } => self.execute_i32_load16_u(result, ptr)?,
+                Instr::I32Load16uAt { result, address } => {
+                    self.execute_i32_load16_u_at(result, address)?
+                }
+                Instr::I32Load16uOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i32_load16_u_offset16(result, ptr, offset)?,
+                Instr::I64Load8s { result, ptr } => self.execute_i64_load8_s(result, ptr)?,
+                Instr::I64Load8sAt { result, address } => {
+                    self.execute_i64_load8_s_at(result, address)?
+                }
+                Instr::I64Load8sOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i64_load8_s_offset16(result, ptr, offset)?,
+                Instr::I64Load8u { result, ptr } => self.execute_i64_load8_u(result, ptr)?,
+                Instr::I64Load8uAt { result, address } => {
+                    self.execute_i64_load8_u_at(result, address)?
+                }
+                Instr::I64Load8uOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i64_load8_u_offset16(result, ptr, offset)?,
+                Instr::I64Load16s { result, ptr } => self.execute_i64_load16_s(result, ptr)?,
+                Instr::I64Load16sAt { result, address } => {
+                    self.execute_i64_load16_s_at(result, address)?
+                }
+                Instr::I64Load16sOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i64_load16_s_offset16(result, ptr, offset)?,
+                Instr::I64Load16u { result, ptr } => self.execute_i64_load16_u(result, ptr)?,
+                Instr::I64Load16uAt { result, address } => {
+                    self.execute_i64_load16_u_at(result, address)?
+                }
+                Instr::I64Load16uOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i64_load16_u_offset16(result, ptr, offset)?,
+                Instr::I64Load32s { result, ptr } => self.execute_i64_load32_s(result, ptr)?,
+                Instr::I64Load32sAt { result, address } => {
+                    self.execute_i64_load32_s_at(result, address)?
+                }
+                Instr::I64Load32sOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i64_load32_s_offset16(result, ptr, offset)?,
+                Instr::I64Load32u { result, ptr } => self.execute_i64_load32_u(result, ptr)?,
+                Instr::I64Load32uAt { result, address } => {
+                    self.execute_i64_load32_u_at(result, address)?
+                }
+                Instr::I64Load32uOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => self.execute_i64_load32_u_offset16(result, ptr, offset)?,
                 Instr::I32Store(instr) => self.execute_i32_store(instr)?,
                 Instr::I32StoreOffset16(instr) => self.execute_i32_store_offset16(instr)?,
                 Instr::I32StoreOffset16Imm16(instr) => {
