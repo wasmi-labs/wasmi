@@ -318,58 +318,58 @@ impl Instruction {
             | I::F64Store { .. }
             | I::F64StoreOffset16 { .. }
             | I::F64StoreAt { .. } => Ok(false),
-            I::I32Eq(instr) |
-            I::I64Eq(instr) |
-            I::I32Ne(instr) |
-            I::I64Ne(instr) |
-            I::I32LtS(instr) |
-            I::I64LtS(instr) |
-            I::I32LtU(instr) |
-            I::I64LtU(instr) |
-            I::I32LeS(instr) |
-            I::I64LeS(instr) |
-            I::I32LeU(instr) |
-            I::I64LeU(instr) |
-            I::I32GtS(instr) |
-            I::I64GtS(instr) |
-            I::I32GtU(instr) |
-            I::I64GtU(instr) |
-            I::I32GeS(instr) |
-            I::I64GeS(instr) |
-            I::I32GeU(instr) |
-            I::I64GeU(instr) |
-            I::F32Eq(instr) |
-            I::F32Ne(instr) |
-            I::F32Lt(instr) |
-            I::F32Le(instr) |
-            I::F32Gt(instr) |
-            I::F32Ge(instr) |
-            I::F64Eq(instr) |
-            I::F64Ne(instr) |
-            I::F64Lt(instr) |
-            I::F64Le(instr) |
-            I::F64Gt(instr) |
-            I::F64Ge(instr) => relink_simple(instr, new_result, old_result),
-            I::I32EqImm16(instr) |
-            I::I32NeImm16(instr) |
-            I::I32LtSImm16(instr) |
-            I::I32LeSImm16(instr) |
-            I::I32GtSImm16(instr) |
-            I::I32GeSImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I32LtUImm16(instr) |
-            I::I32LeUImm16(instr) |
-            I::I32GtUImm16(instr) |
-            I::I32GeUImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64EqImm16(instr) |
-            I::I64NeImm16(instr) |
-            I::I64LtSImm16(instr) |
-            I::I64LeSImm16(instr) |
-            I::I64GtSImm16(instr) |
-            I::I64GeSImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64LtUImm16(instr) |
-            I::I64LeUImm16(instr) |
-            I::I64GtUImm16(instr) |
-            I::I64GeUImm16(instr) => relink_simple(instr, new_result, old_result),
+            I::I32Eq { result, .. } |
+            I::I64Eq { result, .. } |
+            I::I32Ne { result, .. } |
+            I::I64Ne { result, .. } |
+            I::I32LtS { result, .. } |
+            I::I64LtS { result, .. } |
+            I::I32LtU { result, .. } |
+            I::I64LtU { result, .. } |
+            I::I32LeS { result, .. } |
+            I::I64LeS { result, .. } |
+            I::I32LeU { result, .. } |
+            I::I64LeU { result, .. } |
+            I::I32GtS { result, .. } |
+            I::I64GtS { result, .. } |
+            I::I32GtU { result, .. } |
+            I::I64GtU { result, .. } |
+            I::I32GeS { result, .. } |
+            I::I64GeS { result, .. } |
+            I::I32GeU { result, .. } |
+            I::I64GeU { result, .. } |
+            I::F32Eq { result, .. } |
+            I::F32Ne { result, .. } |
+            I::F32Lt { result, .. } |
+            I::F32Le { result, .. } |
+            I::F32Gt { result, .. } |
+            I::F32Ge { result, .. } |
+            I::F64Eq { result, .. } |
+            I::F64Ne { result, .. } |
+            I::F64Lt { result, .. } |
+            I::F64Le { result, .. } |
+            I::F64Gt { result, .. } |
+            I::F64Ge { result, .. } |
+            I::I32EqImm16 { result, .. } |
+            I::I32NeImm16 { result, .. } |
+            I::I32LtSImm16 { result, .. } |
+            I::I32LeSImm16 { result, .. } |
+            I::I32GtSImm16 { result, .. } |
+            I::I32GeSImm16 { result, .. } |
+            I::I32LtUImm16 { result, .. } |
+            I::I32LeUImm16 { result, .. } |
+            I::I32GtUImm16 { result, .. } |
+            I::I32GeUImm16 { result, .. } |
+            I::I64EqImm16 { result, .. } |
+            I::I64NeImm16 { result, .. } |
+            I::I64LtSImm16 { result, .. } |
+            I::I64LeSImm16 { result, .. } |
+            I::I64GtSImm16 { result, .. } |
+            I::I64GeSImm16 { result, .. } |
+            I::I64LtUImm16 { result, .. } |
+            I::I64LeUImm16 { result, .. } |
+            I::I64GtUImm16 { result, .. } |
+            I::I64GeUImm16 { result, .. } => relink_simple(result, new_result, old_result),
 
             I::I32Clz(instr) |
             I::I32Ctz(instr) |

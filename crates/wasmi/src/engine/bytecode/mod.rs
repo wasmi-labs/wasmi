@@ -2520,226 +2520,590 @@ pub enum Instruction {
     },
 
     /// `i32` equality comparison instruction: `r0 = r1 == r2`
-    I32Eq(BinInstr),
+    I32Eq {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` equality comparison instruction with immediate: `r0 = r1 == c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32Eq`]
     /// for 16-bit right-hand side constant values.
-    I32EqImm16(BinInstrImm16<i32>),
+    I32EqImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
 
     /// `i32` inequality comparison instruction: `r0 = r1 != r2`
-    I32Ne(BinInstr),
+    I32Ne {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` inequality comparison instruction with immediate: `r0 = r1 != c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32Ne`]
     /// for 16-bit right-hand side constant values.
-    I32NeImm16(BinInstrImm16<i32>),
+    I32NeImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
 
     /// `i32` signed less-than comparison instruction: `r0 = r1 < r2`
-    I32LtS(BinInstr),
-    /// `i32` unsigned less-than comparison instruction: `r0 = r1 < r2`
-    I32LtU(BinInstr),
+    I32LtS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` signed less-than comparison instruction with immediate: `r0 = r1 < c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32LtS`]
     /// for small right-hand side constant values.
-    I32LtSImm16(BinInstrImm16<i32>),
+    I32LtSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
+    /// `i32` unsigned less-than comparison instruction: `r0 = r1 < r2`
+    I32LtU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` unsigned less-than comparison instruction with immediate: `r0 = r1 < c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32LtU`]
     /// for small right-hand side constant values.
-    I32LtUImm16(BinInstrImm16<u32>),
+    I32LtUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<u32>,
+    },
 
     /// `i32` signed greater-than comparison instruction: `r0 = r1 > r2`
-    I32GtS(BinInstr),
-    /// `i32` unsigned greater-than comparison instruction: `r0 = r1 > r2`
-    I32GtU(BinInstr),
+    I32GtS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` signed greater-than comparison instruction with immediate: `r0 = r1 > c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32GtS`]
     /// for small right-hand side constant values.
-    I32GtSImm16(BinInstrImm16<i32>),
+    I32GtSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
+    /// `i32` unsigned greater-than comparison instruction: `r0 = r1 > r2`
+    I32GtU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` unsigned greater-than comparison instruction with immediate: `r0 = r1 > c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32GtU`]
     /// for small right-hand side constant values.
-    I32GtUImm16(BinInstrImm16<u32>),
+    I32GtUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<u32>,
+    },
 
     /// `i32` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
-    I32LeS(BinInstr),
-    /// `i32` unsigned less-than or equals comparison instruction: `r0 = r1 <= r2`
-    I32LeU(BinInstr),
+    I32LeS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` signed less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32LeS`]
     /// for small right-hand side constant values.
-    I32LeSImm16(BinInstrImm16<i32>),
+    I32LeSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
+    /// `i32` unsigned less-than or equals comparison instruction: `r0 = r1 <= r2`
+    I32LeU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` unsigned less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32LeU`]
     /// for small right-hand side constant values.
-    I32LeUImm16(BinInstrImm16<u32>),
+    I32LeUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<u32>,
+    },
 
     /// `i32` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
-    I32GeS(BinInstr),
-    /// `i32` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
-    I32GeU(BinInstr),
+    I32GeS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` signed greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32GeS`]
     /// for small right-hand side constant values.
-    I32GeSImm16(BinInstrImm16<i32>),
+    I32GeSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
+    /// `i32` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
+    I32GeU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` unsigned greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I32GeU`]
     /// for small right-hand side constant values.
-    I32GeUImm16(BinInstrImm16<u32>),
+    I32GeUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<u32>,
+    },
 
     /// `i64` equality comparison instruction: `r0 = r1 == r2`
-    I64Eq(BinInstr),
+    I64Eq {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` equality comparison instruction with immediate: `r0 = r1 == c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64Eq`]
     /// for 16-bit right-hand side constant values.
-    I64EqImm16(BinInstrImm16<i64>),
+    I64EqImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
     /// `i64` inequality comparison instruction: `r0 = r1 != r2`
-    I64Ne(BinInstr),
+    I64Ne {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` inequality comparison instruction with immediate: `r0 = r1 != c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64Ne`]
     /// for 16-bit right-hand side constant values.
-    I64NeImm16(BinInstrImm16<i64>),
+    I64NeImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
     /// `i64` signed less-than comparison instruction: `r0 = r1 < r2`
-    I64LtS(BinInstr),
+    I64LtS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` signed less-than comparison instruction with immediate: `r0 = r1 < c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64LtS`]
     /// for small right-hand side constant values.
-    I64LtSImm16(BinInstrImm16<i64>),
+    I64LtSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
     /// `i64` unsigned less-than comparison instruction: `r0 = r1 < r2`
-    I64LtU(BinInstr),
+    I64LtU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` unsigned less-than comparison instruction with immediate: `r0 = r1 < c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64LtU`]
     /// for small right-hand side constant values.
-    I64LtUImm16(BinInstrImm16<u64>),
+    I64LtUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<u64>,
+    },
 
     /// `i64` signed greater-than comparison instruction: `r0 = r1 > r2`
-    I64GtS(BinInstr),
+    I64GtS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` signed greater-than comparison instruction with immediate: `r0 = r1 > c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64GtS`]
     /// for small right-hand side constant values.
-    I64GtSImm16(BinInstrImm16<i64>),
+    I64GtSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
     /// `i64` unsigned greater-than comparison instruction: `r0 = r1 > r2`
-    I64GtU(BinInstr),
+    I64GtU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` unsigned greater-than comparison instruction with immediate: `r0 = r1 > c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64GtU`]
     /// for small right-hand side constant values.
-    I64GtUImm16(BinInstrImm16<u64>),
+    I64GtUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<u64>,
+    },
 
     /// `i64` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
-    I64LeS(BinInstr),
+    I64LeS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` signed less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64LeS`]
     /// for small right-hand side constant values.
-    I64LeSImm16(BinInstrImm16<i64>),
+    I64LeSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
     /// `i64` unsigned less-than or equals comparison instruction: `r0 = r1 <= r2`
-    I64LeU(BinInstr),
+    I64LeU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` unsigned less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64LeU`]
     /// for small right-hand side constant values.
-    I64LeUImm16(BinInstrImm16<u64>),
+    I64LeUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<u64>,
+    },
 
     /// `i64` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
-    I64GeS(BinInstr),
+    I64GeS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` signed greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64GeS`]
     /// for small right-hand side constant values.
-    I64GeSImm16(BinInstrImm16<i64>),
+    I64GeSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
     /// `i64` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
-    I64GeU(BinInstr),
+    I64GeU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` unsigned greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
     ///
     /// # Note
     ///
     /// This is an optimization of [`Instruction::I64GeU`]
     /// for small right-hand side constant values.
-    I64GeUImm16(BinInstrImm16<u64>),
+    I64GeUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<u64>,
+    },
 
     /// `f32` equality comparison instruction: `r0 = r1 == r2`
-    F32Eq(BinInstr),
+    F32Eq {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `f32` inequality comparison instruction: `r0 = r1 != r2`
-    F32Ne(BinInstr),
+    F32Ne {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `f32` less-than comparison instruction: `r0 = r1 < r2`
-    F32Lt(BinInstr),
+    F32Lt {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `f32` less-than or equals comparison instruction: `r0 = r1 <= r2`
-    F32Le(BinInstr),
+    F32Le {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `f32` greater-than comparison instruction: `r0 = r1 > r2`
-    F32Gt(BinInstr),
+    F32Gt {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `f32` greater-than or equals comparison instruction: `r0 = r1 >= r2`
-    F32Ge(BinInstr),
+    F32Ge {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
 
     /// `f64` equality comparison instruction: `r0 = r1 == r2`
-    F64Eq(BinInstr),
+    F64Eq {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `f64` inequality comparison instruction: `r0 = r1 != r2`
-    F64Ne(BinInstr),
+    F64Ne {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `f64` less-than comparison instruction: `r0 = r1 < r2`
-    F64Lt(BinInstr),
+    F64Lt {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `f64` less-than or equals comparison instruction: `r0 = r1 <= r2`
-    F64Le(BinInstr),
+    F64Le {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `f64` greater-than comparison instruction: `r0 = r1 > r2`
-    F64Gt(BinInstr),
+    F64Gt {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `f64` greater-than or equals comparison instruction: `r0 = r1 >= r2`
-    F64Ge(BinInstr),
+    F64Ge {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
 
     /// `i32` count-leading-zeros (clz) instruction.
     I32Clz(UnaryInstr),

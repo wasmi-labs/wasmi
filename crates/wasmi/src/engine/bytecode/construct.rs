@@ -1148,6 +1148,154 @@ impl Instruction {
     }
 }
 
+macro_rules! constructor_for_binary_instrs_v2 {
+    (
+        $(
+            fn $fn_name:ident($($mode:tt)?) -> Self::$op_code:ident;
+        )* $(,)?
+    ) => {
+        impl Instruction {
+            $(
+                constructor_for_binary_instrs_v2! {
+                    @impl fn $fn_name($($mode)?) -> Self::$op_code
+                }
+            )*
+        }
+    };
+    ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Reg, lhs: Reg, rhs: Reg) -> Self {
+            Self::$op_code { result, lhs, rhs }
+        }
+    };
+    ( @impl fn $fn_name:ident({i32.binary_imm<i16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<i32>>) -> Self {
+            Self::$op_code { result, lhs, rhs: rhs.into() }
+        }
+    };
+    ( @impl fn $fn_name:ident({i32.binary_imm<u16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<u32>>) -> Self {
+            Self::$op_code { result, lhs, rhs: rhs.into() }
+        }
+    };
+    ( @impl fn $fn_name:ident({i64.binary_imm<i16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<i64>>) -> Self {
+            Self::$op_code { result, lhs, rhs: rhs.into() }
+        }
+    };
+    ( @impl fn $fn_name:ident({i64.binary_imm<u16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<u64>>) -> Self {
+            Self::$op_code { result, lhs, rhs: rhs.into() }
+        }
+    };
+    ( @impl fn $fn_name:ident({i32.binary_imm_rev<i16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Reg, lhs: impl Into<Const16<i32>>, rhs: Reg) -> Self {
+            Self::$op_code { result, lhs: lhs.into(), rhs }
+        }
+    };
+    ( @impl fn $fn_name:ident({i32.binary_imm_rev<u16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Reg, lhs: impl Into<Const16<u32>>, rhs: Reg) -> Self {
+            Self::$op_code { result, lhs: lhs.into(), rhs }
+        }
+    };
+    ( @impl fn $fn_name:ident({i64.binary_imm_rev<i16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Reg, lhs: impl Into<Const16<i64>>, rhs: Reg) -> Self {
+            Self::$op_code { result, lhs: lhs.into(), rhs }
+        }
+    };
+    ( @impl fn $fn_name:ident({i64.binary_imm_rev<u16>}) -> Self::$op_code:ident ) => {
+        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
+        pub fn $fn_name(result: Reg, lhs: Const16<u64>, rhs: Reg) -> Self {
+            Self::$op_code { result, lhs: lhs.into(), rhs }
+        }
+    };
+}
+constructor_for_binary_instrs_v2! {
+    // Integer Comparison
+
+    fn i32_eq() -> Self::I32Eq;
+    fn i32_eq_imm16({i32.binary_imm<i16>}) -> Self::I32EqImm16;
+
+    fn i64_eq() -> Self::I64Eq;
+    fn i64_eq_imm16({i64.binary_imm<i16>}) -> Self::I64EqImm16;
+
+    fn i32_ne() -> Self::I32Ne;
+    fn i32_ne_imm16({i32.binary_imm<i16>}) -> Self::I32NeImm16;
+
+    fn i64_ne() -> Self::I64Ne;
+    fn i64_ne_imm16({i64.binary_imm<i16>}) -> Self::I64NeImm16;
+
+    fn i32_lt_s() -> Self::I32LtS;
+    fn i32_lt_s_imm16({i32.binary_imm<i16>}) -> Self::I32LtSImm16;
+
+    fn i64_lt_s() -> Self::I64LtS;
+    fn i64_lt_s_imm16({i64.binary_imm<i16>}) -> Self::I64LtSImm16;
+
+    fn i32_lt_u() -> Self::I32LtU;
+    fn i32_lt_u_imm16({i32.binary_imm<u16>}) -> Self::I32LtUImm16;
+
+    fn i64_lt_u() -> Self::I64LtU;
+    fn i64_lt_u_imm16({i64.binary_imm<u16>}) -> Self::I64LtUImm16;
+
+    fn i32_le_s() -> Self::I32LeS;
+    fn i32_le_s_imm16({i32.binary_imm<i16>}) -> Self::I32LeSImm16;
+
+    fn i64_le_s() -> Self::I64LeS;
+    fn i64_le_s_imm16({i64.binary_imm<i16>}) -> Self::I64LeSImm16;
+
+    fn i32_le_u() -> Self::I32LeU;
+    fn i32_le_u_imm16({i32.binary_imm<u16>}) -> Self::I32LeUImm16;
+
+    fn i64_le_u() -> Self::I64LeU;
+    fn i64_le_u_imm16({i64.binary_imm<u16>}) -> Self::I64LeUImm16;
+
+    fn i32_gt_s() -> Self::I32GtS;
+    fn i32_gt_s_imm16({i32.binary_imm<i16>}) -> Self::I32GtSImm16;
+
+    fn i64_gt_s() -> Self::I64GtS;
+    fn i64_gt_s_imm16({i64.binary_imm<i16>}) -> Self::I64GtSImm16;
+
+    fn i32_gt_u() -> Self::I32GtU;
+    fn i32_gt_u_imm16({i32.binary_imm<u16>}) -> Self::I32GtUImm16;
+
+    fn i64_gt_u() -> Self::I64GtU;
+    fn i64_gt_u_imm16({i64.binary_imm<u16>}) -> Self::I64GtUImm16;
+
+    fn i32_ge_s() -> Self::I32GeS;
+    fn i32_ge_s_imm16({i32.binary_imm<i16>}) -> Self::I32GeSImm16;
+
+    fn i64_ge_s() -> Self::I64GeS;
+    fn i64_ge_s_imm16({i64.binary_imm<i16>}) -> Self::I64GeSImm16;
+
+    fn i32_ge_u() -> Self::I32GeU;
+    fn i32_ge_u_imm16({i32.binary_imm<u16>}) -> Self::I32GeUImm16;
+
+    fn i64_ge_u() -> Self::I64GeU;
+    fn i64_ge_u_imm16({i64.binary_imm<u16>}) -> Self::I64GeUImm16;
+
+    // Float Comparison
+
+    fn f32_eq() -> Self::F32Eq;
+    fn f64_eq() -> Self::F64Eq;
+    fn f32_ne() -> Self::F32Ne;
+    fn f64_ne() -> Self::F64Ne;
+    fn f32_lt() -> Self::F32Lt;
+    fn f64_lt() -> Self::F64Lt;
+    fn f32_le() -> Self::F32Le;
+    fn f64_le() -> Self::F64Le;
+    fn f32_gt() -> Self::F32Gt;
+    fn f64_gt() -> Self::F64Gt;
+    fn f32_ge() -> Self::F32Ge;
+    fn f64_ge() -> Self::F64Ge;
+}
+
 macro_rules! constructor_for_binary_instrs {
     (
         $(
@@ -1234,83 +1382,6 @@ constructor_for_binary_instrs! {
     fn f64_max() -> Self::F64Max;
     fn f32_copysign() -> Self::F32Copysign;
     fn f64_copysign() -> Self::F64Copysign;
-
-    // Integer Comparison
-
-    fn i32_eq() -> Self::I32Eq;
-    fn i32_eq_imm16({i32.binary_imm<i16>}) -> Self::I32EqImm16;
-
-    fn i64_eq() -> Self::I64Eq;
-    fn i64_eq_imm16({i64.binary_imm<i16>}) -> Self::I64EqImm16;
-
-    fn i32_ne() -> Self::I32Ne;
-    fn i32_ne_imm16({i32.binary_imm<i16>}) -> Self::I32NeImm16;
-
-    fn i64_ne() -> Self::I64Ne;
-    fn i64_ne_imm16({i64.binary_imm<i16>}) -> Self::I64NeImm16;
-
-    fn i32_lt_s() -> Self::I32LtS;
-    fn i32_lt_s_imm16({i32.binary_imm<i16>}) -> Self::I32LtSImm16;
-
-    fn i64_lt_s() -> Self::I64LtS;
-    fn i64_lt_s_imm16({i64.binary_imm<i16>}) -> Self::I64LtSImm16;
-
-    fn i32_lt_u() -> Self::I32LtU;
-    fn i32_lt_u_imm16({i32.binary_imm<u16>}) -> Self::I32LtUImm16;
-
-    fn i64_lt_u() -> Self::I64LtU;
-    fn i64_lt_u_imm16({i64.binary_imm<u16>}) -> Self::I64LtUImm16;
-
-    fn i32_le_s() -> Self::I32LeS;
-    fn i32_le_s_imm16({i32.binary_imm<i16>}) -> Self::I32LeSImm16;
-
-    fn i64_le_s() -> Self::I64LeS;
-    fn i64_le_s_imm16({i64.binary_imm<i16>}) -> Self::I64LeSImm16;
-
-    fn i32_le_u() -> Self::I32LeU;
-    fn i32_le_u_imm16({i32.binary_imm<u16>}) -> Self::I32LeUImm16;
-
-    fn i64_le_u() -> Self::I64LeU;
-    fn i64_le_u_imm16({i64.binary_imm<u16>}) -> Self::I64LeUImm16;
-
-    fn i32_gt_s() -> Self::I32GtS;
-    fn i32_gt_s_imm16({i32.binary_imm<i16>}) -> Self::I32GtSImm16;
-
-    fn i64_gt_s() -> Self::I64GtS;
-    fn i64_gt_s_imm16({i64.binary_imm<i16>}) -> Self::I64GtSImm16;
-
-    fn i32_gt_u() -> Self::I32GtU;
-    fn i32_gt_u_imm16({i32.binary_imm<u16>}) -> Self::I32GtUImm16;
-
-    fn i64_gt_u() -> Self::I64GtU;
-    fn i64_gt_u_imm16({i64.binary_imm<u16>}) -> Self::I64GtUImm16;
-
-    fn i32_ge_s() -> Self::I32GeS;
-    fn i32_ge_s_imm16({i32.binary_imm<i16>}) -> Self::I32GeSImm16;
-
-    fn i64_ge_s() -> Self::I64GeS;
-    fn i64_ge_s_imm16({i64.binary_imm<i16>}) -> Self::I64GeSImm16;
-
-    fn i32_ge_u() -> Self::I32GeU;
-    fn i32_ge_u_imm16({i32.binary_imm<u16>}) -> Self::I32GeUImm16;
-
-    fn i64_ge_u() -> Self::I64GeU;
-    fn i64_ge_u_imm16({i64.binary_imm<u16>}) -> Self::I64GeUImm16;
-
-    // Float Comparison
-
-    fn f32_eq() -> Self::F32Eq;
-    fn f64_eq() -> Self::F64Eq;
-    fn f32_ne() -> Self::F32Ne;
-    fn f64_ne() -> Self::F64Ne;
-    fn f32_lt() -> Self::F32Lt;
-    fn f64_lt() -> Self::F64Lt;
-    fn f32_le() -> Self::F32Le;
-    fn f64_le() -> Self::F64Le;
-    fn f32_gt() -> Self::F32Gt;
-    fn f64_gt() -> Self::F64Gt;
-    fn f32_ge() -> Self::F32Ge;
-    fn f64_ge() -> Self::F64Ge;
 
     // Integer Arithmetic
 
