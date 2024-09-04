@@ -18,9 +18,6 @@ use super::{
     RegSpan,
     RegSpanIter,
     SignatureIdx,
-    StoreAtInstr,
-    StoreInstr,
-    StoreOffset16Instr,
     TableIdx,
     UnaryInstr,
 };
@@ -1621,43 +1618,43 @@ macro_rules! constructor_for_store_instrs {
     ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(ptr: Reg, offset: Const32<u32>) -> Self {
-            Self::$op_code(StoreInstr::new(ptr, offset))
+            Self::$op_code { ptr, offset: u32::from(offset) }
         }
     };
     ( @impl fn $fn_name:ident(at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(address: Const32<u32>, value: Reg) -> Self {
-            Self::$op_code(StoreAtInstr::new(address, value))
+            Self::$op_code { address: u32::from(address), value }
         }
     };
     ( @impl fn $fn_name:ident(offset16) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(ptr: Reg, offset: u16, value: Reg) -> Self {
-            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value))
+            Self::$op_code { ptr, offset: offset.into(), value }
         }
     };
     ( @impl fn $fn_name:ident({offset16_imm<i8>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(ptr: Reg, offset: u16, value: i8) -> Self {
-            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
+            Self::$op_code { ptr, offset: offset.into(), value: value.into() }
         }
     };
     ( @impl fn $fn_name:ident({offset16_imm<i16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(ptr: Reg, offset: u16, value: i16) -> Self {
-            Self::$op_code(StoreOffset16Instr::new(ptr, offset.into(), value.into()))
+            Self::$op_code { ptr, offset: offset.into(), value: value.into() }
         }
     };
     ( @impl fn $fn_name:ident({at_imm<i8>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(address: Const32<u32>, value: i8) -> Self {
-            Self::$op_code(StoreAtInstr::new(address, value.into()))
+            Self::$op_code { address: u32::from(address), value: value.into() }
         }
     };
     ( @impl fn $fn_name:ident({at_imm<i16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(address: Const32<u32>, value: i16) -> Self {
-            Self::$op_code(StoreAtInstr::new(address, value.into()))
+            Self::$op_code { address: u32::from(address), value: value.into() }
         }
     };
 }

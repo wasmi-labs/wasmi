@@ -1,14 +1,10 @@
 use crate::engine::bytecode::{
     BinInstr,
     BinInstrImm,
-    Const16,
     Instruction,
     Reg,
     RegSpan,
     RegSpanIter,
-    StoreAtInstr,
-    StoreInstr,
-    StoreOffset16Instr,
     UnaryInstr,
 };
 
@@ -308,7 +304,6 @@ impl VisitInputRegisters for Instruction {
             Instruction::I64Load16uOffset16 { ptr, .. } |
             Instruction::I64Load32sOffset16 { ptr, .. } |
             Instruction::I64Load32uOffset16 { ptr, .. } => f(ptr),
-            Instruction::I32Store(instr) => instr.visit_input_registers(f),
             Instruction::I32LoadAt { .. } => {},
             Instruction::I64LoadAt { .. } => {},
             Instruction::F32LoadAt { .. } => {},
@@ -323,46 +318,47 @@ impl VisitInputRegisters for Instruction {
             Instruction::I64Load16uAt { .. } => {},
             Instruction::I64Load32sAt { .. } => {},
             Instruction::I64Load32uAt { .. } => {},
-            Instruction::I32StoreOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I32StoreOffset16Imm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32StoreAt(instr) => instr.visit_input_registers(f),
-            Instruction::I32StoreAtImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Store8(instr) => instr.visit_input_registers(f),
-            Instruction::I32Store8Offset16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Store8Offset16Imm(instr) => instr.visit_input_registers(f),
-            Instruction::I32Store8At(instr) => instr.visit_input_registers(f),
-            Instruction::I32Store8AtImm(instr) => instr.visit_input_registers(f),
-            Instruction::I32Store16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Store16Offset16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Store16Offset16Imm(instr) => instr.visit_input_registers(f),
-            Instruction::I32Store16At(instr) => instr.visit_input_registers(f),
-            Instruction::I32Store16AtImm(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store(instr) => instr.visit_input_registers(f),
-            Instruction::I64StoreOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64StoreOffset16Imm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64StoreAt(instr) => instr.visit_input_registers(f),
-            Instruction::I64StoreAtImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store8(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store8Offset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store8Offset16Imm(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store8At(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store8AtImm(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store16Offset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store16Offset16Imm(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store16At(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store16AtImm(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store32(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store32Offset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store32Offset16Imm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store32At(instr) => instr.visit_input_registers(f),
-            Instruction::I64Store32AtImm16(instr) => instr.visit_input_registers(f),
-            Instruction::F32Store(instr) => instr.visit_input_registers(f),
-            Instruction::F32StoreOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::F32StoreAt(instr) => instr.visit_input_registers(f),
-            Instruction::F64Store(instr) => instr.visit_input_registers(f),
-            Instruction::F64StoreOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::F64StoreAt(instr) => instr.visit_input_registers(f),
+            Instruction::I32Store { ptr, .. } |
+            Instruction::I32StoreOffset16Imm16 { ptr, .. } |
+            Instruction::I32Store8 { ptr, .. } |
+            Instruction::I32Store8Offset16Imm { ptr, .. } |
+            Instruction::I32Store16 { ptr, .. } |
+            Instruction::I32Store16Offset16Imm { ptr, .. } |
+            Instruction::I64Store { ptr, .. } |
+            Instruction::I64StoreOffset16Imm16 { ptr, .. } |
+            Instruction::I64Store8 { ptr, .. } |
+            Instruction::I64Store8Offset16Imm { ptr, .. } |
+            Instruction::I64Store16 { ptr, .. } |
+            Instruction::I64Store16Offset16Imm { ptr, .. } |
+            Instruction::I64Store32 { ptr, .. } |
+            Instruction::I64Store32Offset16Imm16 { ptr, .. } |
+            Instruction::F32Store { ptr, .. } |
+            Instruction::F64Store { ptr, .. } => f(ptr),
+            Instruction::F32StoreAt { value, .. } |
+            Instruction::F64StoreAt { value, .. } |
+            Instruction::I32StoreAt { value, .. } |
+            Instruction::I32Store8At { value, .. } |
+            Instruction::I32Store16At { value, .. } |
+            Instruction::I64StoreAt { value, .. } |
+            Instruction::I64Store8At { value, .. } |
+            Instruction::I64Store16At { value, .. } |
+            Instruction::I64Store32At { value, .. } => f(value),
+            Instruction::I32StoreAtImm16 { .. } |
+            Instruction::I32Store8AtImm { .. } |
+            Instruction::I32Store16AtImm { .. } |
+            Instruction::I64StoreAtImm16 { .. } |
+            Instruction::I64Store8AtImm { .. } |
+            Instruction::I64Store16AtImm { .. } |
+            Instruction::I64Store32AtImm16 { .. } => {}
+            Instruction::I32StoreOffset16 { ptr, value, ..} |
+            Instruction::I32Store8Offset16 { ptr, value, ..} |
+            Instruction::I32Store16Offset16 { ptr, value, ..} |
+            Instruction::I64StoreOffset16 { ptr, value, ..} |
+            Instruction::I64Store8Offset16 { ptr, value, ..} |
+            Instruction::I64Store16Offset16 { ptr, value, ..} |
+            Instruction::I64Store32Offset16 { ptr, value, ..} |
+            Instruction::F32StoreOffset16 { ptr, value, .. } |
+            Instruction::F64StoreOffset16 { ptr, value, .. } => visit_registers!(f, ptr, value),
             Instruction::I32Eq(instr) => instr.visit_input_registers(f),
             Instruction::I32EqImm16(instr) => instr.visit_input_registers(f),
             Instruction::I64Eq(instr) => instr.visit_input_registers(f),
@@ -576,72 +572,6 @@ impl<const N: usize> VisitInputRegisters for [Reg; N] {
         for register in self {
             f(register);
         }
-    }
-}
-
-impl VisitInputRegisters for StoreInstr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        f(&mut self.ptr);
-    }
-}
-
-impl VisitInputRegisters for StoreAtInstr<Reg> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        f(&mut self.value);
-    }
-}
-
-impl VisitInputRegisters for StoreAtInstr<i8> {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Reg)) {
-        // Nothing to do.
-    }
-}
-
-impl VisitInputRegisters for StoreAtInstr<i16> {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Reg)) {
-        // Nothing to do.
-    }
-}
-
-impl VisitInputRegisters for StoreAtInstr<Const16<i32>> {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Reg)) {
-        // Nothing to do.
-    }
-}
-
-impl VisitInputRegisters for StoreAtInstr<Const16<i64>> {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Reg)) {
-        // Nothing to do.
-    }
-}
-
-impl VisitInputRegisters for StoreOffset16Instr<Reg> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        visit_registers!(f, &mut self.ptr, &mut self.value)
-    }
-}
-
-impl VisitInputRegisters for StoreOffset16Instr<i8> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        f(&mut self.ptr)
-    }
-}
-
-impl VisitInputRegisters for StoreOffset16Instr<i16> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        f(&mut self.ptr)
-    }
-}
-
-impl VisitInputRegisters for StoreOffset16Instr<Const16<i32>> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        f(&mut self.ptr)
-    }
-}
-
-impl VisitInputRegisters for StoreOffset16Instr<Const16<i64>> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        f(&mut self.ptr)
     }
 }
 

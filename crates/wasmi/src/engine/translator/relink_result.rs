@@ -277,47 +277,47 @@ impl Instruction {
             I::I64Load16uOffset16 { result, .. } |
             I::I64Load32sOffset16 { result, .. } |
             I::I64Load32uOffset16 { result, .. } => relink_simple(result, new_result, old_result),
-            I::I32Store(_)
-            | I::I32StoreOffset16(_)
-            | I::I32StoreOffset16Imm16(_)
-            | I::I32StoreAt(_)
-            | I::I32StoreAtImm16(_)
-            | I::I32Store8(_)
-            | I::I32Store8Offset16(_)
-            | I::I32Store8Offset16Imm(_)
-            | I::I32Store8At(_)
-            | I::I32Store8AtImm(_)
-            | I::I32Store16(_)
-            | I::I32Store16Offset16(_)
-            | I::I32Store16Offset16Imm(_)
-            | I::I32Store16At(_)
-            | I::I32Store16AtImm(_)
-            | I::I64Store(_)
-            | I::I64StoreOffset16(_)
-            | I::I64StoreOffset16Imm16(_)
-            | I::I64StoreAt(_)
-            | I::I64StoreAtImm16(_)
-            | I::I64Store8(_)
-            | I::I64Store8Offset16(_)
-            | I::I64Store8Offset16Imm(_)
-            | I::I64Store8At(_)
-            | I::I64Store8AtImm(_)
-            | I::I64Store16(_)
-            | I::I64Store16Offset16(_)
-            | I::I64Store16Offset16Imm(_)
-            | I::I64Store16At(_)
-            | I::I64Store16AtImm(_)
-            | I::I64Store32(_)
-            | I::I64Store32Offset16(_)
-            | I::I64Store32Offset16Imm16(_)
-            | I::I64Store32At(_)
-            | I::I64Store32AtImm16(_)
-            | I::F32Store(_)
-            | I::F32StoreOffset16(_)
-            | I::F32StoreAt(_)
-            | I::F64Store(_)
-            | I::F64StoreOffset16(_)
-            | I::F64StoreAt(_) => Ok(false),
+            I::I32Store { .. }
+            | I::I32StoreOffset16 { .. }
+            | I::I32StoreOffset16Imm16 { .. }
+            | I::I32StoreAt { .. }
+            | I::I32StoreAtImm16 { .. }
+            | I::I32Store8 { .. }
+            | I::I32Store8Offset16 { .. }
+            | I::I32Store8Offset16Imm { .. }
+            | I::I32Store8At { .. }
+            | I::I32Store8AtImm { .. }
+            | I::I32Store16 { .. }
+            | I::I32Store16Offset16 { .. }
+            | I::I32Store16Offset16Imm { .. }
+            | I::I32Store16At { .. }
+            | I::I32Store16AtImm { .. }
+            | I::I64Store { .. }
+            | I::I64StoreOffset16 { .. }
+            | I::I64StoreOffset16Imm16 { .. }
+            | I::I64StoreAt { .. }
+            | I::I64StoreAtImm16 { .. }
+            | I::I64Store8 { .. }
+            | I::I64Store8Offset16 { .. }
+            | I::I64Store8Offset16Imm { .. }
+            | I::I64Store8At { .. }
+            | I::I64Store8AtImm { .. }
+            | I::I64Store16 { .. }
+            | I::I64Store16Offset16 { .. }
+            | I::I64Store16Offset16Imm { .. }
+            | I::I64Store16At { .. }
+            | I::I64Store16AtImm { .. }
+            | I::I64Store32 { .. }
+            | I::I64Store32Offset16 { .. }
+            | I::I64Store32Offset16Imm16 { .. }
+            | I::I64Store32At { .. }
+            | I::I64Store32AtImm16 { .. }
+            | I::F32Store { .. }
+            | I::F32StoreOffset16 { .. }
+            | I::F32StoreAt { .. }
+            | I::F64Store { .. }
+            | I::F64StoreOffset16 { .. }
+            | I::F64StoreAt { .. } => Ok(false),
             I::I32Eq(instr) |
             I::I64Eq(instr) |
             I::I32Ne(instr) |

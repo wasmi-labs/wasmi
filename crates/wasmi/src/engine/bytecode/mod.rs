@@ -30,9 +30,6 @@ pub(crate) use self::{
         RegSpanIter,
         Sign,
         SignatureIdx,
-        StoreAtInstr,
-        StoreInstr,
-        StoreOffset16Instr,
         TableIdx,
         UnaryInstr,
     },
@@ -2163,127 +2160,364 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// Must be followed by [`Instruction::Register`] to encode `value`.
-    I32Store(StoreInstr),
+    I32Store {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: u32,
+    },
     /// Variant of [`Instruction::I32Store`] for 16-bit `offset`.
-    I32StoreOffset16(StoreOffset16Instr<Reg>),
+    I32StoreOffset16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Reg,
+    },
     /// Variant of [`Instruction::I32StoreOffset16`] for constant 16-bit `value`.
-    I32StoreOffset16Imm16(StoreOffset16Instr<Const16<i32>>),
+    I32StoreOffset16Imm16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Const16<i32>,
+    },
     /// Variant of [`Instruction::I32Store`] for constant `address`.
-    I32StoreAt(StoreAtInstr<Reg>),
+    I32StoreAt {
+        /// The value to be stored.
+        value: Reg,
+        /// The constant address to store the value.
+        address: u32,
+    },
     /// Variant of [`Instruction::I32StoreAt`] for constant 16-bit `value`.
-    I32StoreAtImm16(StoreAtInstr<Const16<i32>>),
+    I32StoreAtImm16 {
+        /// The value to be stored.
+        value: Const16<i32>,
+        /// The constant address to store the value.
+        address: u32,
+    },
 
     /// Wasm `i32.store8` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// Must be followed by [`Instruction::Register`] to encode `value`.
-    I32Store8(StoreInstr),
+    I32Store8 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: u32,
+    },
     /// Variant of [`Instruction::I32Store8`] for 16-bit `offset`.
-    I32Store8Offset16(StoreOffset16Instr<Reg>),
+    I32Store8Offset16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Reg,
+    },
     /// Variant of [`Instruction::I32Store8Offset16`] for constant `value`.
-    I32Store8Offset16Imm(StoreOffset16Instr<i8>),
+    I32Store8Offset16Imm {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: i8,
+    },
     /// Variant of [`Instruction::I32Store8`] for constant `address`.
-    I32Store8At(StoreAtInstr<Reg>),
+    I32Store8At {
+        /// The value to be stored.
+        value: Reg,
+        /// The constant address to store the value.
+        address: u32,
+    },
     /// Variant of [`Instruction::I32Store8At`] for constant `value`.
-    I32Store8AtImm(StoreAtInstr<i8>),
+    I32Store8AtImm {
+        /// The value to be stored.
+        value: i8,
+        /// The constant address to store the value.
+        address: u32,
+    },
 
     /// Wasm `i32.store16` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// Must be followed by [`Instruction::Register`] to encode `value`.
-    I32Store16(StoreInstr),
+    I32Store16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: u32,
+    },
     /// Variant of [`Instruction::I32Store16`] for 16-bit `offset`.
-    I32Store16Offset16(StoreOffset16Instr<Reg>),
+    I32Store16Offset16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Reg,
+    },
     /// Variant of [`Instruction::I32Store16Offset16`] for constant `value`.
-    I32Store16Offset16Imm(StoreOffset16Instr<i16>),
+    I32Store16Offset16Imm {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: i16,
+    },
     /// Variant of [`Instruction::I32Store16`] for constant `address`.
-    I32Store16At(StoreAtInstr<Reg>),
+    I32Store16At {
+        /// The value to be stored.
+        value: Reg,
+        /// The constant address to store the value.
+        address: u32,
+    },
     /// Variant of [`Instruction::I32Store16At`] for constant `value`.
-    I32Store16AtImm(StoreAtInstr<i16>),
+    I32Store16AtImm {
+        /// The value to be stored.
+        value: i16,
+        /// The constant address to store the value.
+        address: u32,
+    },
 
     /// Wasm `i64.store` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// Must be followed by [`Instruction::Register`] to encode `value`.
-    I64Store(StoreInstr),
+    I64Store {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: u32,
+    },
     /// Variant of [`Instruction::I64Store`] for 16-bit `offset`.
-    I64StoreOffset16(StoreOffset16Instr<Reg>),
+    I64StoreOffset16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Reg,
+    },
     /// Variant of [`Instruction::I64StoreOffset16`] for constant 16-bit `value`.
-    I64StoreOffset16Imm16(StoreOffset16Instr<Const16<i64>>),
+    I64StoreOffset16Imm16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Const16<i64>,
+    },
     /// Variant of [`Instruction::I64Store`] for constant `address`.
-    I64StoreAt(StoreAtInstr<Reg>),
+    I64StoreAt {
+        /// The value to be stored.
+        value: Reg,
+        /// The constant address to store the value.
+        address: u32,
+    },
     /// Variant of [`Instruction::I64StoreAt`] for 16-bit `value`.
-    I64StoreAtImm16(StoreAtInstr<Const16<i64>>),
+    I64StoreAtImm16 {
+        /// The value to be stored.
+        value: Const16<i64>,
+        /// The constant address to store the value.
+        address: u32,
+    },
 
     /// Wasm `i64.store8` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// Must be followed by [`Instruction::Register`] to encode `value`.
-    I64Store8(StoreInstr),
+    I64Store8 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: u32,
+    },
     /// Variant of [`Instruction::I64Store8`] for 16-bit `offset`.
-    I64Store8Offset16(StoreOffset16Instr<Reg>),
+    I64Store8Offset16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Reg,
+    },
     /// Variant of [`Instruction::I64Store8Offset16`] for constant `value`.
-    I64Store8Offset16Imm(StoreOffset16Instr<i8>),
+    I64Store8Offset16Imm {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: i8,
+    },
     /// Variant of [`Instruction::I64Store8`] for constant `address`.
-    I64Store8At(StoreAtInstr<Reg>),
+    I64Store8At {
+        /// The value to be stored.
+        value: Reg,
+        /// The constant address to store the value.
+        address: u32,
+    },
     /// Variant of [`Instruction::I64Store8At`] for constant `value`.
-    I64Store8AtImm(StoreAtInstr<i8>),
+    I64Store8AtImm {
+        /// The value to be stored.
+        value: i8,
+        /// The constant address to store the value.
+        address: u32,
+    },
 
     /// Wasm `i64.store16` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// Must be followed by [`Instruction::Register`] to encode `value`.
-    I64Store16(StoreInstr),
+    I64Store16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: u32,
+    },
     /// Variant of [`Instruction::I64Store16`] for 16-bit `offset`.
-    I64Store16Offset16(StoreOffset16Instr<Reg>),
+    I64Store16Offset16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Reg,
+    },
     /// Variant of [`Instruction::I64Store16Offset16`] for constant `value`.
-    I64Store16Offset16Imm(StoreOffset16Instr<i16>),
+    I64Store16Offset16Imm {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: i16,
+    },
     /// Variant of [`Instruction::I64Store16`] for constant `address`.
-    I64Store16At(StoreAtInstr<Reg>),
+    I64Store16At {
+        /// The value to be stored.
+        value: Reg,
+        /// The constant address to store the value.
+        address: u32,
+    },
     /// Variant of [`Instruction::I64Store16At`] for constant `value`.
-    I64Store16AtImm(StoreAtInstr<i16>),
+    I64Store16AtImm {
+        /// The value to be stored.
+        value: i16,
+        /// The constant address to store the value.
+        address: u32,
+    },
 
     /// Wasm `i64.store32` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// Must be followed by [`Instruction::Register`] to encode `value`.
-    I64Store32(StoreInstr),
+    I64Store32 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: u32,
+    },
     /// Variant of [`Instruction::I64Store32`] for 16-bit `offset`.
-    I64Store32Offset16(StoreOffset16Instr<Reg>),
+    I64Store32Offset16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Reg,
+    },
     /// Variant of [`Instruction::I64Store32Offset16`] for constant 16-bit `value`.
-    I64Store32Offset16Imm16(StoreOffset16Instr<Const16<i32>>),
+    I64Store32Offset16Imm16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Const16<i32>,
+    },
     /// Variant of [`Instruction::I64Store32`] for constant `address`.
-    I64Store32At(StoreAtInstr<Reg>),
+    I64Store32At {
+        /// The value to be stored.
+        value: Reg,
+        /// The constant address to store the value.
+        address: u32,
+    },
     /// Variant of [`Instruction::I64Store32At`] for constant 16-bit `value`.
-    I64Store32AtImm16(StoreAtInstr<Const16<i32>>),
+    I64Store32AtImm16 {
+        /// The value to be stored.
+        value: Const16<i32>,
+        /// The constant address to store the value.
+        address: u32,
+    },
 
     /// Wasm `f32.store` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// Must be followed by an [`Instruction::Register`] to encode `value`.
-    F32Store(StoreInstr),
+    F32Store {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: u32,
+    },
     /// Variant of [`Instruction::F32Store`] for 16-bit `offset`.
-    F32StoreOffset16(StoreOffset16Instr<Reg>),
+    F32StoreOffset16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Reg,
+    },
     /// Variant of [`Instruction::F32Store`] for constant `address`.
-    F32StoreAt(StoreAtInstr<Reg>),
+    F32StoreAt {
+        /// The value to be stored.
+        value: Reg,
+        /// The constant address to store the value.
+        address: u32,
+    },
 
     /// Wasm `f32.store` equivalent Wasmi instruction.
     ///
     /// # Encoding
     ///
     /// Must be followed by an [`Instruction::Register`] to encode `value`.
-    F64Store(StoreInstr),
+    F64Store {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: u32,
+    },
     /// Variant of [`Instruction::F32Store`] for 16-bit `offset`.
-    F64StoreOffset16(StoreOffset16Instr<Reg>),
+    F64StoreOffset16 {
+        /// The register storing the pointer of the `store` instruction.
+        ptr: Reg,
+        /// The register storing the pointer offset of the `store` instruction.
+        offset: Const16<u32>,
+        /// The value to be stored.
+        value: Reg,
+    },
     /// Variant of [`Instruction::F32Store`] for constant `address`.
-    F64StoreAt(StoreAtInstr<Reg>),
+    F64StoreAt {
+        /// The value to be stored.
+        value: Reg,
+        /// The constant address to store the value.
+        address: u32,
+    },
 
     /// `i32` equality comparison instruction: `r0 = r1 == r2`
     I32Eq(BinInstr),

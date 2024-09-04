@@ -1,4 +1,4 @@
-use super::{Const16, Const32};
+use super::Const16;
 use crate::{
     core::UntypedVal,
     engine::{Instr, TranslationError},
@@ -318,78 +318,6 @@ impl UnaryInstr {
     /// Creates a new [`UnaryInstr`].
     pub fn new(result: Reg, input: Reg) -> Self {
         Self { result, input }
-    }
-}
-
-/// A general `store` instruction.
-///
-/// # Encoding
-///
-/// Must be followed by an [`Instruction::Register] to encode `value`.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreInstr {
-    /// The register storing the pointer of the `store` instruction.
-    pub ptr: Reg,
-    /// The register storing the pointer offset of the `store` instruction.
-    pub offset: Const32<u32>,
-}
-
-impl StoreInstr {
-    /// Creates a new [`StoreInstr`].
-    pub fn new(ptr: Reg, offset: Const32<u32>) -> Self {
-        Self { ptr, offset }
-    }
-}
-
-/// A `store` instruction.
-///
-/// # Note
-///
-/// - Variant of [`StoreInstr`] for 16-bit address offsets.
-/// - This allow encoding of the entire [`Instruction`] in a single word.
-///
-/// # Encoding
-///
-/// Must be followed by an [`Instruction::Register] to encode `value`.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreOffset16Instr<T> {
-    /// The register storing the pointer of the `store` instruction.
-    pub ptr: Reg,
-    /// The register storing the pointer offset of the `store` instruction.
-    pub offset: Const16<u32>,
-    /// The value to be stored.
-    pub value: T,
-}
-
-impl<T> StoreOffset16Instr<T> {
-    /// Creates a new [`StoreOffset16Instr`].
-    pub fn new(ptr: Reg, offset: Const16<u32>, value: T) -> Self {
-        Self { ptr, offset, value }
-    }
-}
-
-/// A `store` instruction.
-///
-/// # Note
-///
-/// Variant of [`StoreInstr`] for constant address values.
-///
-/// # Encoding
-///
-/// 1. `T is Register`: The stored `value` is loaded from the register.
-/// 1. Otherwise `T` is stored inline, e.g. as `i8` or `i16` value.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct StoreAtInstr<T> {
-    /// The constant address to store the value.
-    pub address: Const32<u32>,
-    /// The value to be stored.
-    pub value: T,
-}
-
-impl<T> StoreAtInstr<T> {
-    /// Creates a new [`StoreAtInstr`].
-    pub fn new(address: Const32<u32>, value: T) -> Self {
-        Self { address, value }
     }
 }
 
