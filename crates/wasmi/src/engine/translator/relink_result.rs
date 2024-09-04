@@ -5,9 +5,6 @@ use crate::{
             BinInstrImm,
             FuncIdx,
             Instruction,
-            LoadAtInstr,
-            LoadInstr,
-            LoadOffset16Instr,
             Reg,
             RegSpan,
             SignatureIdx,
@@ -238,48 +235,48 @@ impl Instruction {
             I::GlobalSet { .. } | I::GlobalSetI32Imm16 { .. } | I::GlobalSetI64Imm16 { .. } => {
                 Ok(false)
             }
-            I::I32Load(instr) |
-            I::I64Load(instr) |
-            I::F32Load(instr) |
-            I::F64Load(instr) |
-            I::I32Load8s(instr) |
-            I::I32Load8u(instr) |
-            I::I32Load16s(instr) |
-            I::I32Load16u(instr) |
-            I::I64Load8s(instr) |
-            I::I64Load8u(instr) |
-            I::I64Load16s(instr) |
-            I::I64Load16u(instr) |
-            I::I64Load32s(instr) |
-            I::I64Load32u(instr) => relink_simple(instr, new_result, old_result),
-            I::I32LoadAt(instr) |
-            I::I64LoadAt(instr) |
-            I::F32LoadAt(instr) |
-            I::F64LoadAt(instr) |
-            I::I32Load8sAt(instr) |
-            I::I32Load8uAt(instr) |
-            I::I32Load16sAt(instr) |
-            I::I32Load16uAt(instr) |
-            I::I64Load8sAt(instr) |
-            I::I64Load8uAt(instr) |
-            I::I64Load16sAt(instr) |
-            I::I64Load16uAt(instr) |
-            I::I64Load32sAt(instr) |
-            I::I64Load32uAt(instr) => relink_simple(instr, new_result, old_result),
-            I::I32LoadOffset16(instr) |
-            I::I64LoadOffset16(instr) |
-            I::F32LoadOffset16(instr) |
-            I::F64LoadOffset16(instr) |
-            I::I32Load8sOffset16(instr) |
-            I::I32Load8uOffset16(instr) |
-            I::I32Load16sOffset16(instr) |
-            I::I32Load16uOffset16(instr) |
-            I::I64Load8sOffset16(instr) |
-            I::I64Load8uOffset16(instr) |
-            I::I64Load16sOffset16(instr) |
-            I::I64Load16uOffset16(instr) |
-            I::I64Load32sOffset16(instr) |
-            I::I64Load32uOffset16(instr) => relink_simple(instr, new_result, old_result),
+            I::I32Load { result, .. } |
+            I::I64Load { result, .. } |
+            I::F32Load { result, .. } |
+            I::F64Load { result, .. } |
+            I::I32Load8s { result, .. } |
+            I::I32Load8u { result, .. } |
+            I::I32Load16s { result, .. } |
+            I::I32Load16u { result, .. } |
+            I::I64Load8s { result, .. } |
+            I::I64Load8u { result, .. } |
+            I::I64Load16s { result, .. } |
+            I::I64Load16u { result, .. } |
+            I::I64Load32s { result, .. } |
+            I::I64Load32u { result, .. } |
+            I::I32LoadAt { result, .. } |
+            I::I64LoadAt { result, .. } |
+            I::F32LoadAt { result, .. } |
+            I::F64LoadAt { result, .. } |
+            I::I32Load8sAt { result, .. } |
+            I::I32Load8uAt { result, .. } |
+            I::I32Load16sAt { result, .. } |
+            I::I32Load16uAt { result, .. } |
+            I::I64Load8sAt { result, .. } |
+            I::I64Load8uAt { result, .. } |
+            I::I64Load16sAt { result, .. } |
+            I::I64Load16uAt { result, .. } |
+            I::I64Load32sAt { result, .. } |
+            I::I64Load32uAt { result, .. } |
+            I::I32LoadOffset16 { result, .. } |
+            I::I64LoadOffset16 { result, .. } |
+            I::F32LoadOffset16 { result, .. } |
+            I::F64LoadOffset16 { result, .. } |
+            I::I32Load8sOffset16 { result, .. } |
+            I::I32Load8uOffset16 { result, .. } |
+            I::I32Load16sOffset16 { result, .. } |
+            I::I32Load16uOffset16 { result, .. } |
+            I::I64Load8sOffset16 { result, .. } |
+            I::I64Load8uOffset16 { result, .. } |
+            I::I64Load16sOffset16 { result, .. } |
+            I::I64Load16uOffset16 { result, .. } |
+            I::I64Load32sOffset16 { result, .. } |
+            I::I64Load32uOffset16 { result, .. } => relink_simple(result, new_result, old_result),
             I::I32Store(_)
             | I::I32StoreOffset16(_)
             | I::I32StoreOffset16Imm16(_)
@@ -620,24 +617,6 @@ trait ResultMut {
 impl ResultMut for Reg {
     fn result_mut(&mut self) -> &mut Reg {
         self
-    }
-}
-
-impl ResultMut for LoadInstr {
-    fn result_mut(&mut self) -> &mut Reg {
-        &mut self.result
-    }
-}
-
-impl ResultMut for LoadAtInstr {
-    fn result_mut(&mut self) -> &mut Reg {
-        &mut self.result
-    }
-}
-
-impl ResultMut for LoadOffset16Instr {
-    fn result_mut(&mut self) -> &mut Reg {
-        &mut self.result
     }
 }
 

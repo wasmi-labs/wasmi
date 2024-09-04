@@ -3,9 +3,6 @@ use crate::engine::bytecode::{
     BinInstrImm,
     Const16,
     Instruction,
-    LoadAtInstr,
-    LoadInstr,
-    LoadOffset16Instr,
     Reg,
     RegSpan,
     RegSpanIter,
@@ -283,49 +280,49 @@ impl VisitInputRegisters for Instruction {
             Instruction::GlobalSet { global: _, input } => f(input),
             Instruction::GlobalSetI32Imm16 { global: _, input: _ } |
             Instruction::GlobalSetI64Imm16 { global: _, input: _ } => {},
-            Instruction::I32Load(instr) => instr.visit_input_registers(f),
-            Instruction::I32LoadAt(instr) => instr.visit_input_registers(f),
-            Instruction::I32LoadOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load(instr) => instr.visit_input_registers(f),
-            Instruction::I64LoadAt(instr) => instr.visit_input_registers(f),
-            Instruction::I64LoadOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::F32Load(instr) => instr.visit_input_registers(f),
-            Instruction::F32LoadAt(instr) => instr.visit_input_registers(f),
-            Instruction::F32LoadOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::F64Load(instr) => instr.visit_input_registers(f),
-            Instruction::F64LoadAt(instr) => instr.visit_input_registers(f),
-            Instruction::F64LoadOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load8s(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load8sAt(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load8sOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load8u(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load8uAt(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load8uOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load16s(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load16sAt(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load16sOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load16u(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load16uAt(instr) => instr.visit_input_registers(f),
-            Instruction::I32Load16uOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load8s(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load8sAt(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load8sOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load8u(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load8uAt(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load8uOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load16s(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load16sAt(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load16sOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load16u(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load16uAt(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load16uOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load32s(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load32sAt(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load32sOffset16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load32u(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load32uAt(instr) => instr.visit_input_registers(f),
-            Instruction::I64Load32uOffset16(instr) => instr.visit_input_registers(f),
+            Instruction::I32Load { ptr, .. } |
+            Instruction::I64Load { ptr, .. } |
+            Instruction::F32Load { ptr, .. } |
+            Instruction::F64Load { ptr, .. } |
+            Instruction::I32Load8s { ptr, .. } |
+            Instruction::I32Load8u { ptr, .. } |
+            Instruction::I32Load16s { ptr, .. } |
+            Instruction::I32Load16u { ptr, .. } |
+            Instruction::I64Load8s { ptr, .. } |
+            Instruction::I64Load8u { ptr, .. } |
+            Instruction::I64Load16s { ptr, .. } |
+            Instruction::I64Load16u { ptr, .. } |
+            Instruction::I64Load32s { ptr, .. } |
+            Instruction::I64Load32u { ptr, .. } |
+            Instruction::I32LoadOffset16 { ptr, .. } |
+            Instruction::I64LoadOffset16 { ptr, .. } |
+            Instruction::F32LoadOffset16 { ptr, .. } |
+            Instruction::F64LoadOffset16 { ptr, .. } |
+            Instruction::I32Load8sOffset16 { ptr, .. } |
+            Instruction::I32Load8uOffset16 { ptr, .. } |
+            Instruction::I32Load16sOffset16 { ptr, .. } |
+            Instruction::I32Load16uOffset16 { ptr, .. } |
+            Instruction::I64Load8sOffset16 { ptr, .. } |
+            Instruction::I64Load8uOffset16 { ptr, .. } |
+            Instruction::I64Load16sOffset16 { ptr, .. } |
+            Instruction::I64Load16uOffset16 { ptr, .. } |
+            Instruction::I64Load32sOffset16 { ptr, .. } |
+            Instruction::I64Load32uOffset16 { ptr, .. } => f(ptr),
             Instruction::I32Store(instr) => instr.visit_input_registers(f),
+            Instruction::I32LoadAt { .. } => {},
+            Instruction::I64LoadAt { .. } => {},
+            Instruction::F32LoadAt { .. } => {},
+            Instruction::F64LoadAt { .. } => {},
+            Instruction::I32Load8sAt { .. } => {},
+            Instruction::I32Load8uAt { .. } => {},
+            Instruction::I32Load16sAt { .. } => {},
+            Instruction::I32Load16uAt { .. } => {},
+            Instruction::I64Load8sAt { .. } => {},
+            Instruction::I64Load8uAt { .. } => {},
+            Instruction::I64Load16sAt { .. } => {},
+            Instruction::I64Load16uAt { .. } => {},
+            Instruction::I64Load32sAt { .. } => {},
+            Instruction::I64Load32uAt { .. } => {},
             Instruction::I32StoreOffset16(instr) => instr.visit_input_registers(f),
             Instruction::I32StoreOffset16Imm16(instr) => instr.visit_input_registers(f),
             Instruction::I32StoreAt(instr) => instr.visit_input_registers(f),
@@ -579,24 +576,6 @@ impl<const N: usize> VisitInputRegisters for [Reg; N] {
         for register in self {
             f(register);
         }
-    }
-}
-
-impl LoadInstr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        f(&mut self.ptr);
-    }
-}
-
-impl LoadAtInstr {
-    fn visit_input_registers(&mut self, _f: impl FnMut(&mut Reg)) {
-        // Nothing to do.
-    }
-}
-
-impl LoadOffset16Instr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        f(&mut self.ptr)
     }
 }
 

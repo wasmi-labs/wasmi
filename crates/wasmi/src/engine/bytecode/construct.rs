@@ -14,9 +14,6 @@ use super::{
     FuncIdx,
     GlobalIdx,
     Instruction,
-    LoadAtInstr,
-    LoadInstr,
-    LoadOffset16Instr,
     Reg,
     RegSpan,
     RegSpanIter,
@@ -1535,19 +1532,19 @@ macro_rules! constructor_for_load_instrs {
     ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(result: Reg, ptr: Reg) -> Self {
-            Self::$op_code(LoadInstr::new(result, ptr))
+            Self::$op_code { result, ptr }
         }
     };
     ( @impl fn $fn_name:ident(at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(result: Reg, address: Const32<u32>) -> Self {
-            Self::$op_code(LoadAtInstr::new(result, address))
+            Self::$op_code { result, address: u32::from(address) }
         }
     };
     ( @impl fn $fn_name:ident(offset16) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
         pub fn $fn_name(result: Reg, ptr: Reg, offset: Const16<u32>) -> Self {
-            Self::$op_code(LoadOffset16Instr::new(result, ptr, offset))
+            Self::$op_code { result, ptr, offset }
         }
     };
 }

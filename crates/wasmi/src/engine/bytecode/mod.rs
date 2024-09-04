@@ -25,9 +25,6 @@ pub(crate) use self::{
         ElementSegmentIdx,
         FuncIdx,
         GlobalIdx,
-        LoadAtInstr,
-        LoadInstr,
-        LoadOffset16Instr,
         Reg,
         RegSpan,
         RegSpanIter,
@@ -1649,19 +1646,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I32Load(LoadInstr),
+    I32Load {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i32.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load`] with a constant load address.
-    I32LoadAt(LoadAtInstr),
+    I32LoadAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i32.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load`] for small offset values.
-    I32LoadOffset16(LoadOffset16Instr),
+    I32LoadOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i64.load` equivalent Wasmi instruction.
     ///
@@ -1669,19 +1683,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I64Load(LoadInstr),
+    I64Load {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i64.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load`] with a constant load address.
-    I64LoadAt(LoadAtInstr),
+    I64LoadAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i64.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load`] for small offset values.
-    I64LoadOffset16(LoadOffset16Instr),
+    I64LoadOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `f32.load` equivalent Wasmi instruction.
     ///
@@ -1689,19 +1720,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    F32Load(LoadInstr),
+    F32Load {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `f32.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::F32Load`] with a constant load address.
-    F32LoadAt(LoadAtInstr),
+    F32LoadAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `f32.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::F32Load`] for small offset values.
-    F32LoadOffset16(LoadOffset16Instr),
+    F32LoadOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `f64.load` equivalent Wasmi instruction.
     ///
@@ -1709,19 +1757,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    F64Load(LoadInstr),
+    F64Load {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `f64.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::F64Load`] with a constant load address.
-    F64LoadAt(LoadAtInstr),
+    F64LoadAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `f64.load` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::F64Load`] for small offset values.
-    F64LoadOffset16(LoadOffset16Instr),
+    F64LoadOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i32.load8_s` equivalent Wasmi instruction.
     ///
@@ -1729,19 +1794,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I32Load8s(LoadInstr),
+    I32Load8s {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i32.load8_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load8s`] with a constant load address.
-    I32Load8sAt(LoadAtInstr),
+    I32Load8sAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i32.load8_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load8s`] for small offset values.
-    I32Load8sOffset16(LoadOffset16Instr),
+    I32Load8sOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i32.load8_u` equivalent Wasmi instruction.
     ///
@@ -1749,19 +1831,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I32Load8u(LoadInstr),
+    I32Load8u {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i32.load8_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load8u`] with a constant load address.
-    I32Load8uAt(LoadAtInstr),
+    I32Load8uAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i32.load8_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load8u`] for small offset values.
-    I32Load8uOffset16(LoadOffset16Instr),
+    I32Load8uOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i32.load16_s` equivalent Wasmi instruction.
     ///
@@ -1769,19 +1868,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I32Load16s(LoadInstr),
+    I32Load16s {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i32.load16_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load16s`] with a constant load address.
-    I32Load16sAt(LoadAtInstr),
+    I32Load16sAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i32.load16_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load16s`] for small offset values.
-    I32Load16sOffset16(LoadOffset16Instr),
+    I32Load16sOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i32.load16_u` equivalent Wasmi instruction.
     ///
@@ -1789,19 +1905,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I32Load16u(LoadInstr),
+    I32Load16u {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i32.load16_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load16u`] with a constant load address.
-    I32Load16uAt(LoadAtInstr),
+    I32Load16uAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i32.load16_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I32Load16u`] for small offset values.
-    I32Load16uOffset16(LoadOffset16Instr),
+    I32Load16uOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i64.load8_s` equivalent Wasmi instruction.
     ///
@@ -1809,19 +1942,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I64Load8s(LoadInstr),
+    I64Load8s {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i64.load8_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load8s`] with a constant load address.
-    I64Load8sAt(LoadAtInstr),
+    I64Load8sAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i64.load8_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load8s`] for small offset values.
-    I64Load8sOffset16(LoadOffset16Instr),
+    I64Load8sOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i64.load8_u` equivalent Wasmi instruction.
     ///
@@ -1829,19 +1979,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I64Load8u(LoadInstr),
+    I64Load8u {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i64.load8_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load8u`] with a constant load address.
-    I64Load8uAt(LoadAtInstr),
+    I64Load8uAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i64.load8_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load8u`] for small offset values.
-    I64Load8uOffset16(LoadOffset16Instr),
+    I64Load8uOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i64.load16_s` equivalent Wasmi instruction.
     ///
@@ -1849,19 +2016,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I64Load16s(LoadInstr),
+    I64Load16s {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i64.load16_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load16s`] with a constant load address.
-    I64Load16sAt(LoadAtInstr),
+    I64Load16sAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i64.load16_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load16s`] for small offset values.
-    I64Load16sOffset16(LoadOffset16Instr),
+    I64Load16sOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i64.load16_u` equivalent Wasmi instruction.
     ///
@@ -1869,19 +2053,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I64Load16u(LoadInstr),
+    I64Load16u {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i64.load16_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load16u`] with a constant load address.
-    I64Load16uAt(LoadAtInstr),
+    I64Load16uAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i64.load16_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load16u`] for small offset values.
-    I64Load16uOffset16(LoadOffset16Instr),
+    I64Load16uOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i64.load32_s` equivalent Wasmi instruction.
     ///
@@ -1889,19 +2090,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I64Load32s(LoadInstr),
+    I64Load32s {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i64.load32_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load32s`] with a constant load address.
-    I64Load32sAt(LoadAtInstr),
+    I64Load32sAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i64.load32_s` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load32s`] for small offset values.
-    I64Load32sOffset16(LoadOffset16Instr),
+    I64Load32sOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i64.load32_u` equivalent Wasmi instruction.
     ///
@@ -1909,19 +2127,36 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
     /// that represents the `offset` for the load/store operation.
-    I64Load32u(LoadInstr),
+    I64Load32u {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+    },
     /// Wasm `i64.load32_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load32u`] with a constant load address.
-    I64Load32uAt(LoadAtInstr),
+    I64Load32uAt {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The `ptr+offset` address of the `load` instruction.
+        address: u32,
+    },
     /// Wasm `i64.load32_u` equivalent Wasmi instruction.
     ///
     /// # Note
     ///
     /// Variant of [`Instruction::I64Load32u`] for small offset values.
-    I64Load32uOffset16(LoadOffset16Instr),
+    I64Load32uOffset16 {
+        /// The register storing the result of the instruction.
+        result: Reg,
+        /// The register storing the pointer of the `load` instruction.
+        ptr: Reg,
+        /// The 16-bit encoded offset of the `load` instruction.
+        offset: Const16<u32>,
+    },
 
     /// Wasm `i32.store` equivalent Wasmi instruction.
     ///
