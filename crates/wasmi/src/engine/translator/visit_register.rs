@@ -50,7 +50,7 @@ impl VisitInputRegisters for Instruction {
             Instruction::BranchTableTarget { .. } |
             Instruction::BranchTableTargetNonOverlapping { .. } => {},
             Instruction::Trap { .. } |
-            Instruction::ConsumeFuel(_) |
+            Instruction::ConsumeFuel { .. } |
             Instruction::Return => {},
             Instruction::ReturnReg { value } => f(value),
             Instruction::ReturnReg2 { values } => values.visit_input_registers(f),

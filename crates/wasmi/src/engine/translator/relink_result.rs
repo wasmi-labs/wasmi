@@ -48,7 +48,7 @@ impl Instruction {
             | I::CallIndirectParams(_)
             | I::CallIndirectParamsImm16(_)
             | I::Trap { .. }
-            | I::ConsumeFuel(_)
+            | I::ConsumeFuel { .. }
             | I::Return
             | I::ReturnReg { .. }
             | I::ReturnReg2 { .. }

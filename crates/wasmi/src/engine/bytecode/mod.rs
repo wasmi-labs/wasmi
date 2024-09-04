@@ -84,7 +84,7 @@ pub enum Instruction {
     /// # Note
     ///
     /// These instructions are only generated if fuel metering is enabled.
-    ConsumeFuel(BlockFuel),
+    ConsumeFuel { block_fuel: BlockFuel },
 
     /// A Wasm `return` instruction.
     ///
@@ -3353,8 +3353,8 @@ pub enum Instruction {
 impl Instruction {
     /// Convenience method to create a new [`Instruction::ConsumeFuel`].
     pub fn consume_fuel(amount: u64) -> Result<Self, Error> {
-        let block_fuel = BlockFuel::try_from(amount)?;
-        Ok(Self::ConsumeFuel(block_fuel))
+        let block_fuel: BlockFuel = BlockFuel::try_from(amount)?;
+        Ok(Self::ConsumeFuel { block_fuel })
     }
 
     /// Increases the fuel consumption of the [`Instruction::ConsumeFuel`] instruction by `delta`.
@@ -3365,7 +3365,7 @@ impl Instruction {
     /// - If the new fuel consumption overflows the internal `u64` value.
     pub fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
         match self {
-            Self::ConsumeFuel(block_fuel) => block_fuel.bump_by(delta),
+            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta),
             instr => panic!("expected Instruction::ConsumeFuel but found: {instr:?}"),
         }
     }
