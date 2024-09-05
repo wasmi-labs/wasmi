@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
-        bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegSpan},
+        bytecode::{BranchOffset, BranchOffset16, Global, RegSpan},
         EngineFunc,
     },
 };
@@ -68,7 +68,7 @@ fn if_then_global_set() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(2)),
-            Instruction::global_set(GlobalIdx::from(0), Reg::from(1)),
+            Instruction::global_set(Global::from(0), Reg::from(1)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
         ])
         .run()

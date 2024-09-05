@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::bytecode::{BranchOffset, GlobalIdx, RegSpan};
+use crate::engine::bytecode::{BranchOffset, Global, RegSpan};
 use core::num::NonZeroI16;
 
 #[test]
@@ -153,13 +153,13 @@ fn reg_params_0_return() {
             Instruction::branch(BranchOffset::from(7)),
             Instruction::branch(BranchOffset::from(4)),
             Instruction::branch(BranchOffset::from(1)),
-            Instruction::global_set_i32imm16(GlobalIdx::from(0), 10),
+            Instruction::global_set_i32imm16(Global::from(0), 10),
             Instruction::Return,
-            Instruction::global_set_i32imm16(GlobalIdx::from(0), 20),
+            Instruction::global_set_i32imm16(Global::from(0), 20),
             Instruction::Return,
-            Instruction::global_set_i32imm16(GlobalIdx::from(0), 30),
+            Instruction::global_set_i32imm16(Global::from(0), 30),
             Instruction::Return,
-            Instruction::global_set_i32imm16(GlobalIdx::from(0), 40),
+            Instruction::global_set_i32imm16(Global::from(0), 40),
             Instruction::Return,
         ])
         .run()
@@ -372,7 +372,7 @@ fn reg_params_1_diff() {
     let result = Reg::from(2);
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::global_get(result, GlobalIdx::from(0)),
+            Instruction::global_get(result, Global::from(0)),
             Instruction::branch_table_1(index, 7),
             Instruction::register(input),
             Instruction::return_reg(input),
@@ -425,7 +425,7 @@ fn reg_params_2_diff() {
     let result = Reg::from(3);
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::global_get(result, GlobalIdx::from(0)),
+            Instruction::global_get(result, Global::from(0)),
             Instruction::branch_table_2(index, 5),
             Instruction::register2(1, 2),
             Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(9)),

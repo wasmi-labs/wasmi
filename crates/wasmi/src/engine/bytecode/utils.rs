@@ -278,7 +278,7 @@ impl Sign {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct CallIndirectParams<T> {
     /// The table which holds the called function at the index.
-    pub table: TableIdx,
+    pub table: Table,
     /// The index of the called function in the table.
     pub index: T,
 }
@@ -347,16 +347,16 @@ impl BranchOffset16 {
 /// A function index.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct FuncIdx(u32);
+pub struct Func(u32);
 
-impl From<u32> for FuncIdx {
+impl From<u32> for Func {
     fn from(index: u32) -> Self {
         Self(index)
     }
 }
 
-impl From<FuncIdx> for u32 {
-    fn from(index: FuncIdx) -> Self {
+impl From<Func> for u32 {
+    fn from(index: Func) -> Self {
         index.0
     }
 }
@@ -364,16 +364,16 @@ impl From<FuncIdx> for u32 {
 /// A table index.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct TableIdx([u8; 4]);
+pub struct Table([u8; 4]);
 
-impl From<u32> for TableIdx {
+impl From<u32> for Table {
     fn from(index: u32) -> Self {
         Self(index.to_ne_bytes())
     }
 }
 
-impl From<TableIdx> for u32 {
-    fn from(index: TableIdx) -> Self {
+impl From<Table> for u32 {
+    fn from(index: Table) -> Self {
         u32::from_ne_bytes(index.0)
     }
 }
@@ -381,16 +381,16 @@ impl From<TableIdx> for u32 {
 /// An index of a unique function signature.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct SignatureIdx(u32);
+pub struct FuncType(u32);
 
-impl From<u32> for SignatureIdx {
+impl From<u32> for FuncType {
     fn from(index: u32) -> Self {
         Self(index)
     }
 }
 
-impl From<SignatureIdx> for u32 {
-    fn from(index: SignatureIdx) -> Self {
+impl From<FuncType> for u32 {
+    fn from(index: FuncType) -> Self {
         index.0
     }
 }
@@ -404,16 +404,16 @@ impl From<SignatureIdx> for u32 {
 /// [`Store`]: [`crate::Store`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct GlobalIdx(u32);
+pub struct Global(u32);
 
-impl From<u32> for GlobalIdx {
+impl From<u32> for Global {
     fn from(index: u32) -> Self {
         Self(index)
     }
 }
 
-impl From<GlobalIdx> for u32 {
-    fn from(index: GlobalIdx) -> Self {
+impl From<Global> for u32 {
+    fn from(index: Global) -> Self {
         index.0
     }
 }
@@ -427,16 +427,16 @@ impl From<GlobalIdx> for u32 {
 /// [`Store`]: [`crate::Store`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct DataSegmentIdx(u32);
+pub struct Data(u32);
 
-impl From<u32> for DataSegmentIdx {
+impl From<u32> for Data {
     fn from(index: u32) -> Self {
         Self(index)
     }
 }
 
-impl From<DataSegmentIdx> for u32 {
-    fn from(index: DataSegmentIdx) -> Self {
+impl From<Data> for u32 {
+    fn from(index: Data) -> Self {
         index.0
     }
 }
@@ -450,16 +450,16 @@ impl From<DataSegmentIdx> for u32 {
 /// [`Store`]: [`crate::Store`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct ElementSegmentIdx(u32);
+pub struct Elem(u32);
 
-impl From<u32> for ElementSegmentIdx {
+impl From<u32> for Elem {
     fn from(index: u32) -> Self {
         Self(index)
     }
 }
 
-impl From<ElementSegmentIdx> for u32 {
-    fn from(index: ElementSegmentIdx) -> Self {
+impl From<Elem> for u32 {
+    fn from(index: Elem) -> Self {
         index.0
     }
 }

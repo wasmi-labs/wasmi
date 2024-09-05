@@ -17,7 +17,7 @@ use super::{
 use crate::{
     core::{TrapCode, ValType, F32, F64},
     engine::{
-        bytecode::{self, Const16, Instruction, Reg, SignatureIdx},
+        bytecode::{self, Const16, FuncType, Instruction, Reg},
         translator::{AcquiredTarget, Provider},
         BlockType,
         FuelCosts,
@@ -521,7 +521,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     ) -> Self::Output {
         bail_unreachable!(self);
         self.bump_fuel_consumption(FuelCosts::call)?;
-        let type_index = SignatureIdx::from(type_index);
+        let type_index = FuncType::from(type_index);
         let func_type = self.func_type_at(type_index);
         let (params, results) = func_type.params_results();
         let index = self.alloc.stack.pop();
@@ -589,7 +589,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
         bail_unreachable!(self);
         self.bump_fuel_consumption(FuelCosts::call)?;
-        let type_index = SignatureIdx::from(type_index);
+        let type_index = FuncType::from(type_index);
         let func_type = self.func_type_at(type_index);
         let params = func_type.params();
         let index = self.alloc.stack.pop();
@@ -703,7 +703,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         // Case: The `global.get` instruction accesses a mutable or imported
         //       global variable and thus cannot be optimized away.
-        let global_idx = bytecode::GlobalIdx::from(global_index);
+        let global_idx = bytecode::Global::from(global_index);
         let result = self.alloc.stack.push_dynamic()?;
         self.push_fueled_instr(
             Instruction::global_get(result, global_idx),
@@ -714,7 +714,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        let global = bytecode::GlobalIdx::from(global_index);
+        let global = bytecode::Global::from(global_index);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
                 self.push_fueled_instr(Instruction::global_set(global, input), FuelCosts::entity)?;

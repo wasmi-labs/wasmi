@@ -1,7 +1,7 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
-    engine::bytecode::{Const16, ElementSegmentIdx, Instruction, Reg, TableIdx},
+    engine::bytecode::{Const16, Elem, Instruction, Reg, Table},
     error::EntityGrowError,
     store::{ResourceLimiterRef, StoreInner},
     table::TableEntity,
@@ -11,7 +11,7 @@ use crate::{
 
 impl<'engine> Executor<'engine> {
     /// Returns the [`Instruction::TableIndex`] parameter for an [`Instruction`].
-    fn fetch_table_index(&self, offset: usize) -> TableIdx {
+    fn fetch_table_index(&self, offset: usize) -> Table {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
@@ -23,7 +23,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Returns the [`Instruction::ElemIndex`] parameter for an [`Instruction`].
-    fn fetch_element_segment_index(&self, offset: usize) -> ElementSegmentIdx {
+    fn fetch_element_segment_index(&self, offset: usize) -> Elem {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
@@ -76,13 +76,13 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::TableSize`].
     #[inline(always)]
-    pub fn execute_table_size(&mut self, store: &StoreInner, result: Reg, table_index: TableIdx) {
+    pub fn execute_table_size(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
         self.execute_table_size_impl(store, result, table_index);
         self.next_instr();
     }
 
     /// Executes a generic `table.size` instruction.
-    fn execute_table_size_impl(&mut self, store: &StoreInner, result: Reg, table_index: TableIdx) {
+    fn execute_table_size_impl(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
         let table = self.get_table(table_index);
         let size = store.resolve_table(&table).size();
         self.set_register(result, size);
@@ -555,11 +555,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::ElemDrop`].
     #[inline(always)]
-    pub fn execute_element_drop(
-        &mut self,
-        store: &mut StoreInner,
-        segment_index: ElementSegmentIdx,
-    ) {
+    pub fn execute_element_drop(&mut self, store: &mut StoreInner, segment_index: Elem) {
         let segment = self.get_element_segment(segment_index);
         store.resolve_element_segment_mut(&segment).drop_items();
         self.next_instr();

@@ -38,11 +38,14 @@ pub use self::{
     instr_encoder::{Instr, InstrEncoder},
     stack::TypedProvider,
 };
-use super::{bytecode::BranchOffset, code_map::CompiledFuncEntity};
+use super::{
+    bytecode::{index, BranchOffset},
+    code_map::CompiledFuncEntity,
+};
 use crate::{
     core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{
-        bytecode::{Const16, Const32, Instruction, Reg, RegSpan, RegSpanIter, Sign, SignatureIdx},
+        bytecode::{Const16, Const32, Instruction, Reg, RegSpan, RegSpanIter, Sign},
         config::FuelCosts,
         BlockType,
         EngineFunc,
@@ -692,7 +695,7 @@ impl FuncTranslator {
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
-    fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
+    fn func_type_at(&self, func_type_index: index::FuncType) -> FuncType {
         let func_type_index = FuncTypeIdx::from(u32::from(func_type_index));
         let dedup_func_type = self.module.get_func_type(func_type_index);
         self.engine()

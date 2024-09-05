@@ -1,6 +1,6 @@
 use crate::{
     engine::{
-        bytecode::{FuncIdx, Instruction, Reg, RegSpan, SignatureIdx},
+        bytecode::{index, Instruction, Reg, RegSpan},
         EngineFunc,
     },
     module::ModuleHeader,
@@ -568,7 +568,7 @@ fn relink_call_internal(
 
 fn relink_call_imported(
     results: &mut RegSpan,
-    func: FuncIdx,
+    func: index::Func,
     module: &ModuleHeader,
     new_result: Reg,
     old_result: Reg,
@@ -585,7 +585,7 @@ fn relink_call_imported(
 
 fn relink_call_indirect(
     results: &mut RegSpan,
-    func_type: SignatureIdx,
+    func_type: index::FuncType,
     module: &ModuleHeader,
     new_result: Reg,
     old_result: Reg,
