@@ -10,7 +10,7 @@ use crate::{
 };
 
 impl<'engine> Executor<'engine> {
-    /// Returns the [`Instruction::TableIdx`] parameter for an [`Instruction`].
+    /// Returns the [`Instruction::TableIndex`] parameter for an [`Instruction`].
     fn fetch_table_index(&self, offset: usize) -> TableIdx {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
@@ -22,7 +22,7 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Returns the [`Instruction::ElementSegmentIdx`] parameter for an [`Instruction`].
+    /// Returns the [`Instruction::ElemIndex`] parameter for an [`Instruction`].
     fn fetch_element_segment_index(&self, offset: usize) -> ElementSegmentIdx {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);

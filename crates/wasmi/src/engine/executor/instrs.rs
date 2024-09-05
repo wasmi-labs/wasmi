@@ -1672,7 +1672,7 @@ impl<'engine> Executor<'engine> {
     ///
     /// # Note
     ///
-    /// This includes [`Instruction`] variants such as [`Instruction::TableIdx`]
+    /// This includes [`Instruction`] variants such as [`Instruction::TableIndex`]
     /// that primarily carry parameters for actually executable [`Instruction`].
     #[inline(always)]
     fn invalid_instruction_word(&mut self) -> Result<(), Error> {

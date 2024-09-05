@@ -469,21 +469,21 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::DataSegmentIdx`] from the given `index`.
+    /// Creates a new [`Instruction::DataIndex`] from the given `index`.
     pub fn data_idx(index: impl Into<DataSegmentIdx>) -> Self {
         Self::DataIndex {
             index: index.into(),
         }
     }
 
-    /// Creates a new [`Instruction::ElementSegmentIdx`] from the given `index`.
+    /// Creates a new [`Instruction::ElemIndex`] from the given `index`.
     pub fn elem_idx(index: impl Into<ElementSegmentIdx>) -> Self {
         Self::ElemIndex {
             index: index.into(),
         }
     }
 
-    /// Creates a new [`Instruction::TableIdx`] from the given `index`.
+    /// Creates a new [`Instruction::TableIndex`] from the given `index`.
     pub fn table_idx(index: impl Into<TableIdx>) -> Self {
         Self::TableIndex {
             index: index.into(),
