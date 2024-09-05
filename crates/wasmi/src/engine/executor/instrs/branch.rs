@@ -5,7 +5,7 @@ use crate::{
         BranchOffset,
         BranchOffset16,
         Comparator,
-        ComparatorOffsetParam,
+        ComparatorAndOffset,
         Const16,
         Instruction,
         Reg,
@@ -376,7 +376,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
         use Comparator as C;
         let params = self.get_register(params);
-        let Some(params) = ComparatorOffsetParam::from_untyped(params) else {
+        let Some(params) = ComparatorAndOffset::from_untyped(params) else {
             panic!("encountered invalidaly encoded ComparatorOffsetParam: {params:?}")
         };
         let offset = params.offset;

@@ -13,7 +13,7 @@ pub(crate) use self::{
         BranchOffset16,
         CallIndirectParams,
         Comparator,
-        ComparatorOffsetParam,
+        ComparatorAndOffset,
         DataSegmentIdx,
         ElementSegmentIdx,
         FuncIdx,
@@ -284,12 +284,12 @@ pub enum Instruction {
         /// We allocate constant values as function local constant values and use
         /// their register to only require a single fallback instruction variant.
         rhs: Reg,
-        /// The register that stores the [`ComparatorOffsetParam`] of this instruction.
+        /// The register that stores the [`ComparatorAndOffset`] of this instruction.
         ///
         /// # Note
         ///
-        /// The [`ComparatorOffsetParam`] is loaded from register as `u64` value and
-        /// decoded into a [`ComparatorOffsetParam`] before access its comparator
+        /// The [`ComparatorAndOffset`] is loaded from register as `u64` value and
+        /// decoded into a [`ComparatorAndOffset`] before access its comparator
         /// and 32-bit branch offset fields.
         params: Reg,
     },

@@ -623,20 +623,20 @@ pub enum Comparator {
 ///
 /// This type can be converted from and to a `u64` value.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct ComparatorOffsetParam {
+pub struct ComparatorAndOffset {
     /// Encodes the actual binary operator for the conditional branch.
     pub cmp: Comparator,
     //// Encodes the 32-bit branching offset.
     pub offset: BranchOffset,
 }
 
-impl ComparatorOffsetParam {
-    /// Create a new [`ComparatorOffsetParam`].
+impl ComparatorAndOffset {
+    /// Create a new [`ComparatorAndOffset`].
     pub fn new(cmp: Comparator, offset: BranchOffset) -> Self {
         Self { cmp, offset }
     }
 
-    /// Creates a new [`ComparatorOffsetParam`] from the given `u64` value.
+    /// Creates a new [`ComparatorAndOffset`] from the given `u64` value.
     ///
     /// Returns `None` if the `u64` has an invalid encoding.
     pub fn from_u64(value: u64) -> Option<Self> {
@@ -648,14 +648,14 @@ impl ComparatorOffsetParam {
         Some(Self { cmp, offset })
     }
 
-    /// Creates a new [`ComparatorOffsetParam`] from the given [`UntypedVal`].
+    /// Creates a new [`ComparatorAndOffset`] from the given [`UntypedVal`].
     ///
     /// Returns `None` if the [`UntypedVal`] has an invalid encoding.
     pub fn from_untyped(value: UntypedVal) -> Option<Self> {
         Self::from_u64(u64::from(value))
     }
 
-    /// Converts the [`ComparatorOffsetParam`] into an `u64` value.
+    /// Converts the [`ComparatorAndOffset`] into an `u64` value.
     pub fn as_u64(&self) -> u64 {
         let hi = self.cmp as u64;
         let lo = self.offset.to_i32() as u64;
@@ -663,8 +663,8 @@ impl ComparatorOffsetParam {
     }
 }
 
-impl From<ComparatorOffsetParam> for UntypedVal {
-    fn from(params: ComparatorOffsetParam) -> Self {
+impl From<ComparatorAndOffset> for UntypedVal {
+    fn from(params: ComparatorAndOffset) -> Self {
         Self::from(params.as_u64())
     }
 }

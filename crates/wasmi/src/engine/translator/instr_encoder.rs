@@ -13,7 +13,7 @@ use crate::{
             BranchOffset,
             BranchOffset16,
             Comparator,
-            ComparatorOffsetParam,
+            ComparatorAndOffset,
             Const16,
             Const32,
             Instruction,
@@ -1007,7 +1007,7 @@ impl InstrEncoder {
             rhs: Reg,
             offset: BranchOffset,
         ) -> Result<Instruction, Error> {
-            let params = stack.alloc_const(ComparatorOffsetParam::new(cmp, offset))?;
+            let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
             Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
         }
 
@@ -1198,7 +1198,7 @@ impl InstrEncoder {
             rhs: Reg,
             offset: BranchOffset,
         ) -> Result<Instruction, Error> {
-            let params = stack.alloc_const(ComparatorOffsetParam::new(cmp, offset))?;
+            let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
             Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
         }
 
@@ -1395,7 +1395,7 @@ impl Instruction {
         macro_rules! init_offset {
             ($lhs:expr, $rhs:expr, $offset:expr, $new_offset:expr, $cmp:expr) => {{
                 if let Err(_) = $offset.init($new_offset) {
-                    let params = stack.alloc_const(ComparatorOffsetParam::new($cmp, $new_offset))?;
+                    let params = stack.alloc_const(ComparatorAndOffset::new($cmp, $new_offset))?;
                     *self = Instruction::branch_cmp_fallback(*$lhs, *$rhs, params);
                 }
                 Ok(())
@@ -1406,7 +1406,7 @@ impl Instruction {
             ($ty:ty, $lhs:expr, $rhs:expr, $offset:expr, $new_offset:expr, $cmp:expr) => {{
                 if let Err(_) = $offset.init($new_offset) {
                     let rhs = stack.alloc_const(<$ty>::from(*$rhs))?;
-                    let params = stack.alloc_const(ComparatorOffsetParam::new($cmp, $new_offset))?;
+                    let params = stack.alloc_const(ComparatorAndOffset::new($cmp, $new_offset))?;
                     *self = Instruction::branch_cmp_fallback(*$lhs, rhs, params);
                 }
                 Ok(())
