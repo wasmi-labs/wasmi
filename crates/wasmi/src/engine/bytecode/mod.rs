@@ -12,8 +12,6 @@ pub(crate) use self::{
     instr_ptr::InstructionPtr,
     provider::{Provider, ProviderSliceStack, UntypedProvider},
     utils::{
-        // BinInstr,
-        // BinInstrImm,
         BlockFuel,
         BranchComparator,
         BranchOffset,
