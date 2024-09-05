@@ -1,12 +1,4 @@
-use crate::engine::bytecode::{
-    BinInstr,
-    BinInstrImm,
-    Instruction,
-    Reg,
-    RegSpan,
-    RegSpanIter,
-    UnaryInstr,
-};
+use crate::engine::bytecode::{Instruction, Reg, RegSpan, RegSpanIter, UnaryInstr};
 
 macro_rules! visit_registers {
     ( $f:expr, $($field:expr),* $(,)? ) => {{
@@ -411,126 +403,126 @@ impl VisitInputRegisters for Instruction {
             Instruction::F64Gt { lhs, rhs, .. } |
             Instruction::F32Ge { lhs, rhs, .. } |
             Instruction::F64Ge { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
-            Instruction::I32Clz(instr) => instr.visit_input_registers(f),
-            Instruction::I64Clz(instr) => instr.visit_input_registers(f),
-            Instruction::I32Ctz(instr) => instr.visit_input_registers(f),
-            Instruction::I64Ctz(instr) => instr.visit_input_registers(f),
-            Instruction::I32Popcnt(instr) => instr.visit_input_registers(f),
+            Instruction::I32Clz(instr) |
+            Instruction::I64Clz(instr) |
+            Instruction::I32Ctz(instr) |
+            Instruction::I64Ctz(instr) |
+            Instruction::I32Popcnt(instr) |
             Instruction::I64Popcnt(instr) => instr.visit_input_registers(f),
-            Instruction::I32Add(instr) => instr.visit_input_registers(f),
-            Instruction::I64Add(instr) => instr.visit_input_registers(f),
-            Instruction::I32AddImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64AddImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Sub(instr) => instr.visit_input_registers(f),
-            Instruction::I64Sub(instr) => instr.visit_input_registers(f),
-            Instruction::I32SubImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I64SubImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I32Mul(instr) => instr.visit_input_registers(f),
-            Instruction::I64Mul(instr) => instr.visit_input_registers(f),
-            Instruction::I32MulImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64MulImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32DivS(instr) => instr.visit_input_registers(f),
-            Instruction::I64DivS(instr) => instr.visit_input_registers(f),
-            Instruction::I32DivSImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64DivSImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32DivSImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I64DivSImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I32DivU(instr) => instr.visit_input_registers(f),
-            Instruction::I64DivU(instr) => instr.visit_input_registers(f),
-            Instruction::I32DivUImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64DivUImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32DivUImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I64DivUImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I32RemS(instr) => instr.visit_input_registers(f),
-            Instruction::I64RemS(instr) => instr.visit_input_registers(f),
-            Instruction::I32RemSImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64RemSImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32RemSImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I64RemSImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I32RemU(instr) => instr.visit_input_registers(f),
-            Instruction::I64RemU(instr) => instr.visit_input_registers(f),
-            Instruction::I32RemUImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64RemUImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32RemUImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I64RemUImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I32And(instr) => instr.visit_input_registers(f),
-            Instruction::I32AndEqz(instr) => instr.visit_input_registers(f),
-            Instruction::I32AndEqzImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32AndImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64And(instr) => instr.visit_input_registers(f),
-            Instruction::I64AndImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Or(instr) => instr.visit_input_registers(f),
-            Instruction::I32OrEqz(instr) => instr.visit_input_registers(f),
-            Instruction::I32OrEqzImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32OrImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Or(instr) => instr.visit_input_registers(f),
-            Instruction::I64OrImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Xor(instr) => instr.visit_input_registers(f),
-            Instruction::I32XorEqz(instr) => instr.visit_input_registers(f),
-            Instruction::I32XorEqzImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32XorImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I64Xor(instr) => instr.visit_input_registers(f),
-            Instruction::I64XorImm16(instr) => instr.visit_input_registers(f),
-            Instruction::I32Shl(instr) => instr.visit_input_registers(f),
-            Instruction::I64Shl(instr) => instr.visit_input_registers(f),
-            Instruction::I32ShlImm(instr) => instr.visit_input_registers(f),
-            Instruction::I64ShlImm(instr) => instr.visit_input_registers(f),
-            Instruction::I32ShlImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I64ShlImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I32ShrU(instr) => instr.visit_input_registers(f),
-            Instruction::I64ShrU(instr) => instr.visit_input_registers(f),
-            Instruction::I32ShrUImm(instr) => instr.visit_input_registers(f),
-            Instruction::I64ShrUImm(instr) => instr.visit_input_registers(f),
-            Instruction::I32ShrUImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I64ShrUImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I32ShrS(instr) => instr.visit_input_registers(f),
-            Instruction::I64ShrS(instr) => instr.visit_input_registers(f),
-            Instruction::I32ShrSImm(instr) => instr.visit_input_registers(f),
-            Instruction::I64ShrSImm(instr) => instr.visit_input_registers(f),
-            Instruction::I32ShrSImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I64ShrSImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I32Rotl(instr) => instr.visit_input_registers(f),
-            Instruction::I64Rotl(instr) => instr.visit_input_registers(f),
-            Instruction::I32RotlImm(instr) => instr.visit_input_registers(f),
-            Instruction::I64RotlImm(instr) => instr.visit_input_registers(f),
-            Instruction::I32RotlImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I64RotlImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I32Rotr(instr) => instr.visit_input_registers(f),
-            Instruction::I64Rotr(instr) => instr.visit_input_registers(f),
-            Instruction::I32RotrImm(instr) => instr.visit_input_registers(f),
-            Instruction::I64RotrImm(instr) => instr.visit_input_registers(f),
-            Instruction::I32RotrImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::I64RotrImm16Rev(instr) => instr.visit_input_registers(f),
-            Instruction::F32Abs(instr) => instr.visit_input_registers(f),
-            Instruction::F64Abs(instr) => instr.visit_input_registers(f),
-            Instruction::F32Neg(instr) => instr.visit_input_registers(f),
-            Instruction::F64Neg(instr) => instr.visit_input_registers(f),
-            Instruction::F32Ceil(instr) => instr.visit_input_registers(f),
-            Instruction::F64Ceil(instr) => instr.visit_input_registers(f),
-            Instruction::F32Floor(instr) => instr.visit_input_registers(f),
-            Instruction::F64Floor(instr) => instr.visit_input_registers(f),
-            Instruction::F32Trunc(instr) => instr.visit_input_registers(f),
-            Instruction::F64Trunc(instr) => instr.visit_input_registers(f),
-            Instruction::F32Nearest(instr) => instr.visit_input_registers(f),
-            Instruction::F64Nearest(instr) => instr.visit_input_registers(f),
-            Instruction::F32Sqrt(instr) => instr.visit_input_registers(f),
+            Instruction::I32Add { lhs, rhs, .. } |
+            Instruction::I64Add { lhs, rhs, .. } |
+            Instruction::I32Sub { lhs, rhs, .. } |
+            Instruction::I64Sub { lhs, rhs, .. } |
+            Instruction::I32Mul { lhs, rhs, .. } |
+            Instruction::I64Mul { lhs, rhs, .. } |
+            Instruction::I32DivS { lhs, rhs, .. } |
+            Instruction::I64DivS { lhs, rhs, .. } |
+            Instruction::I32DivU { lhs, rhs, .. } |
+            Instruction::I64DivU { lhs, rhs, .. } |
+            Instruction::I32RemS { lhs, rhs, .. } |
+            Instruction::I64RemS { lhs, rhs, .. } |
+            Instruction::I32RemU { lhs, rhs, .. } |
+            Instruction::I64RemU { lhs, rhs, .. } |
+            Instruction::I32And { lhs, rhs, .. } |
+            Instruction::I32AndEqz { lhs, rhs, .. } |
+            Instruction::I64And { lhs, rhs, .. } |
+            Instruction::I32Or { lhs, rhs, .. } |
+            Instruction::I32OrEqz { lhs, rhs, .. } |
+            Instruction::I64Or { lhs, rhs, .. } |
+            Instruction::I32Xor { lhs, rhs, .. } |
+            Instruction::I32XorEqz { lhs, rhs, .. } |
+            Instruction::I64Xor { lhs, rhs, .. } |
+            Instruction::I32Shl { lhs, rhs, .. } |
+            Instruction::I64Shl { lhs, rhs, .. } |
+            Instruction::I32ShrU { lhs, rhs, .. } |
+            Instruction::I64ShrU { lhs, rhs, .. } |
+            Instruction::I32ShrS { lhs, rhs, .. } |
+            Instruction::I64ShrS { lhs, rhs, .. } |
+            Instruction::I32Rotl { lhs, rhs, .. } |
+            Instruction::I64Rotl { lhs, rhs, .. } |
+            Instruction::I32Rotr { lhs, rhs, .. } |
+            Instruction::I64Rotr { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::I32AddImm16 { lhs, .. } |
+            Instruction::I64AddImm16 { lhs, .. } |
+            Instruction::I32MulImm16 { lhs, .. } |
+            Instruction::I64MulImm16 { lhs, .. } |
+            Instruction::I32DivSImm16 { lhs, .. } |
+            Instruction::I64DivSImm16 { lhs, .. } |
+            Instruction::I32DivUImm16 { lhs, .. } |
+            Instruction::I64DivUImm16 { lhs, .. } |
+            Instruction::I32RemSImm16 { lhs, .. } |
+            Instruction::I64RemSImm16 { lhs, .. } |
+            Instruction::I32RemUImm16 { lhs, .. } |
+            Instruction::I64RemUImm16 { lhs, .. } |
+            Instruction::I32AndEqzImm16 { lhs, .. } |
+            Instruction::I32AndImm16 { lhs, .. } |
+            Instruction::I64AndImm16 { lhs, .. } |
+            Instruction::I32OrEqzImm16 { lhs, .. } |
+            Instruction::I32OrImm16 { lhs, .. } |
+            Instruction::I64OrImm16 { lhs, .. } |
+            Instruction::I32XorEqzImm16 { lhs, .. } |
+            Instruction::I32XorImm16 { lhs, .. } |
+            Instruction::I64XorImm16 { lhs, .. } |
+            Instruction::I32ShlImm { lhs, .. } |
+            Instruction::I64ShlImm { lhs, .. } |
+            Instruction::I32ShrUImm { lhs, .. } |
+            Instruction::I64ShrUImm { lhs, .. } |
+            Instruction::I32ShrSImm { lhs, .. } |
+            Instruction::I64ShrSImm { lhs, .. } |
+            Instruction::I32RotlImm { lhs, .. } |
+            Instruction::I64RotlImm { lhs, .. } |
+            Instruction::I32RotrImm { lhs, .. } |
+            Instruction::I64RotrImm { lhs, .. } => f(lhs),
+            Instruction::I32SubImm16Rev { rhs, .. } |
+            Instruction::I64SubImm16Rev { rhs, .. } |
+            Instruction::I32DivSImm16Rev { rhs, .. } |
+            Instruction::I64DivSImm16Rev { rhs, .. } |
+            Instruction::I32DivUImm16Rev { rhs, .. } |
+            Instruction::I64DivUImm16Rev { rhs, .. } |
+            Instruction::I32RemSImm16Rev { rhs, .. } |
+            Instruction::I64RemSImm16Rev { rhs, .. } |
+            Instruction::I32RemUImm16Rev { rhs, .. } |
+            Instruction::I64RemUImm16Rev { rhs, .. } |
+            Instruction::I32ShlImm16Rev { rhs, .. } |
+            Instruction::I64ShlImm16Rev { rhs, .. } |
+            Instruction::I32ShrUImm16Rev { rhs, .. } |
+            Instruction::I64ShrUImm16Rev { rhs, .. } |
+            Instruction::I32ShrSImm16Rev { rhs, .. } |
+            Instruction::I64ShrSImm16Rev { rhs, .. } |
+            Instruction::I32RotlImm16Rev { rhs, .. } |
+            Instruction::I64RotlImm16Rev { rhs, .. } |
+            Instruction::I32RotrImm16Rev { rhs, .. } |
+            Instruction::I64RotrImm16Rev { rhs, .. } => f(rhs),
+            Instruction::F32Abs(instr) |
+            Instruction::F64Abs(instr) |
+            Instruction::F32Neg(instr) |
+            Instruction::F64Neg(instr) |
+            Instruction::F32Ceil(instr) |
+            Instruction::F64Ceil(instr) |
+            Instruction::F32Floor(instr) |
+            Instruction::F64Floor(instr) |
+            Instruction::F32Trunc(instr) |
+            Instruction::F64Trunc(instr) |
+            Instruction::F32Nearest(instr) |
+            Instruction::F64Nearest(instr) |
+            Instruction::F32Sqrt(instr) |
             Instruction::F64Sqrt(instr) => instr.visit_input_registers(f),
-            Instruction::F32Add(instr) => instr.visit_input_registers(f),
-            Instruction::F64Add(instr) => instr.visit_input_registers(f),
-            Instruction::F32Sub(instr) => instr.visit_input_registers(f),
-            Instruction::F64Sub(instr) => instr.visit_input_registers(f),
-            Instruction::F32Mul(instr) => instr.visit_input_registers(f),
-            Instruction::F64Mul(instr) => instr.visit_input_registers(f),
-            Instruction::F32Div(instr) => instr.visit_input_registers(f),
-            Instruction::F64Div(instr) => instr.visit_input_registers(f),
-            Instruction::F32Min(instr) => instr.visit_input_registers(f),
-            Instruction::F64Min(instr) => instr.visit_input_registers(f),
-            Instruction::F32Max(instr) => instr.visit_input_registers(f),
-            Instruction::F64Max(instr) => instr.visit_input_registers(f),
-            Instruction::F32Copysign(instr) => instr.visit_input_registers(f),
-            Instruction::F64Copysign(instr) => instr.visit_input_registers(f),
-            Instruction::F32CopysignImm(instr) => instr.visit_input_registers(f),
-            Instruction::F64CopysignImm(instr) => instr.visit_input_registers(f),
+            Instruction::F32Add { lhs, rhs, .. } |
+            Instruction::F64Add { lhs, rhs, .. } |
+            Instruction::F32Sub { lhs, rhs, .. } |
+            Instruction::F64Sub { lhs, rhs, .. } |
+            Instruction::F32Mul { lhs, rhs, .. } |
+            Instruction::F64Mul { lhs, rhs, .. } |
+            Instruction::F32Div { lhs, rhs, .. } |
+            Instruction::F64Div { lhs, rhs, .. } |
+            Instruction::F32Min { lhs, rhs, .. } |
+            Instruction::F64Min { lhs, rhs, .. } |
+            Instruction::F32Max { lhs, rhs, .. } |
+            Instruction::F64Max { lhs, rhs, .. } |
+            Instruction::F32Copysign { lhs, rhs, .. } |
+            Instruction::F64Copysign { lhs, rhs, .. } => visit_registers!(f, lhs, rhs),
+            Instruction::F32CopysignImm { lhs, .. } |
+            Instruction::F64CopysignImm { lhs, .. } => f(lhs),
             Instruction::I32WrapI64(instr) => instr.visit_input_registers(f),
             Instruction::I32TruncF32S(instr) => instr.visit_input_registers(f),
             Instruction::I32TruncF32U(instr) => instr.visit_input_registers(f),
@@ -578,18 +570,6 @@ impl<const N: usize> VisitInputRegisters for [Reg; N] {
 impl VisitInputRegisters for UnaryInstr {
     fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         f(&mut self.input)
-    }
-}
-
-impl VisitInputRegisters for BinInstr {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        visit_registers!(f, &mut self.lhs, &mut self.rhs)
-    }
-}
-
-impl<T> VisitInputRegisters for BinInstrImm<T> {
-    fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
-        f(&mut self.reg_in)
     }
 }
 

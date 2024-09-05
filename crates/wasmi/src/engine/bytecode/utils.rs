@@ -1,4 +1,3 @@
-use super::Const16;
 use crate::{
     core::UntypedVal,
     engine::{Instr, TranslationError},
@@ -245,63 +244,6 @@ impl DoubleEndedIterator for RegSpanIter {
 impl ExactSizeIterator for RegSpanIter {
     fn len(&self) -> usize {
         usize::from(self.len_as_u16())
-    }
-}
-
-/// A binary [`Reg`] based instruction.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BinInstr {
-    /// The register storing the result of the computation.
-    pub result: Reg,
-    /// The register holding the left-hand side value.
-    pub lhs: Reg,
-    /// The register holding the right-hand side value.
-    pub rhs: Reg,
-}
-
-impl BinInstr {
-    /// Creates a new [`BinInstr`].
-    pub fn new(result: Reg, lhs: Reg, rhs: Reg) -> Self {
-        Self { result, lhs, rhs }
-    }
-}
-
-/// A binary instruction with a 16-bit encoded immediate value.
-pub type BinInstrImm16<T> = BinInstrImm<Const16<T>>;
-
-/// A binary instruction with an immediate value.
-///
-/// # Note
-///
-/// Optimized for small constant values that fit into 16-bit.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct BinInstrImm<T> {
-    /// The register storing the result of the computation.
-    pub result: Reg,
-    /// The register holding one of the operands.
-    ///
-    /// # Note
-    ///
-    /// The instruction decides if this operand is the left-hand or
-    /// right-hand operand for the computation.
-    pub reg_in: Reg,
-    /// The 16-bit immediate value.
-    ///
-    /// # Note
-    ///
-    /// The instruction decides if this operand is the left-hand or
-    /// right-hand operand for the computation.
-    pub imm_in: T,
-}
-
-impl<T> BinInstrImm<T> {
-    /// Creates a new [`BinInstrImm16`].
-    pub fn new(result: Reg, reg_in: Reg, imm_in: T) -> Self {
-        Self {
-            result,
-            reg_in,
-            imm_in,
-        }
     }
 }
 
