@@ -5359,21 +5359,21 @@ pub enum Instruction {
         len: Const16<u32>,
     },
 
-    /// A [`TableIdx`] instruction parameter.
+    /// An [`index::Table`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
     TableIndex { index: Table },
-    /// A [`DataSegmentIdx`] instruction parameter.
+    /// An [`index::Data`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
     DataIndex { index: Data },
-    /// An [`ElementSegmentIdx`] instruction parameter.
+    /// An [`index::Elem`] instruction parameter.
     ///
     /// # Note
     ///

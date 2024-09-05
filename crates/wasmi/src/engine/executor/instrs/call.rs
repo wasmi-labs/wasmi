@@ -174,10 +174,10 @@ impl<'engine> Executor<'engine> {
     ///
     /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
     /// - This is done by encoding an [`Instruction::TableGet`] instruction
-    ///   word following the actual instruction where the [`TableIdx`]
+    ///   word following the actual instruction where the [`index::Table`]
     ///   paremeter belongs to.
     /// - This is required for some instructions that do not fit into
-    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   a single instruction word and store a [`index::Table`] value in
     ///   another instruction word.
     fn pull_call_indirect_params(&mut self) -> (u32, index::Table) {
         self.ip.add(1);
@@ -198,10 +198,10 @@ impl<'engine> Executor<'engine> {
     ///
     /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
     /// - This is done by encoding an [`Instruction::TableGet`] instruction
-    ///   word following the actual instruction where the [`TableIdx`]
+    ///   word following the actual instruction where the [`index::Table`]
     ///   paremeter belongs to.
     /// - This is required for some instructions that do not fit into
-    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   a single instruction word and store a [`index::Table`] value in
     ///   another instruction word.
     fn pull_call_indirect_params_imm16(&mut self) -> (u32, index::Table) {
         self.ip.add(1);
