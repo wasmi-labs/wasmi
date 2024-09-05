@@ -1,6 +1,5 @@
 mod construct;
 mod immediate;
-mod instr_ptr;
 mod provider;
 mod utils;
 
@@ -9,7 +8,6 @@ mod tests;
 
 pub(crate) use self::{
     immediate::{AnyConst16, AnyConst32, Const16, Const32},
-    instr_ptr::InstructionPtr,
     provider::{Provider, ProviderSliceStack, UntypedProvider},
     utils::{
         BlockFuel,

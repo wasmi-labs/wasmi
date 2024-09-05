@@ -1,6 +1,6 @@
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use self::return_::ReturnOutcome;
-use super::{cache::CachedInstance, Stack};
+use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
@@ -13,7 +13,6 @@ use crate::{
             FuncIdx,
             GlobalIdx,
             Instruction,
-            InstructionPtr,
             Reg,
             SignatureIdx,
             TableIdx,

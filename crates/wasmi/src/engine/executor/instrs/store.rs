@@ -1,7 +1,7 @@
-use super::Executor;
+use super::{Executor, InstructionPtr};
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::bytecode::{Const16, Instruction, InstructionPtr, Reg},
+    engine::bytecode::{Const16, Instruction, Reg},
     Error,
 };
 

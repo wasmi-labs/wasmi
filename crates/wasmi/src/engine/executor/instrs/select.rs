@@ -1,7 +1,7 @@
-use super::Executor;
+use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{AnyConst32, Const32, Instruction, InstructionPtr, Reg},
+    engine::bytecode::{AnyConst32, Const32, Instruction, Reg},
 };
 
 impl<'engine> Executor<'engine> {
