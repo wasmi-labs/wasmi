@@ -3,6 +3,7 @@ use super::{
     FuelInfo,
     LabelRef,
     LabelRegistry,
+    Provider,
     TypedProvider,
 };
 use crate::{
@@ -16,7 +17,6 @@ use crate::{
             Const16,
             Const32,
             Instruction,
-            Provider,
             Reg,
             RegSpan,
             RegSpanIter,

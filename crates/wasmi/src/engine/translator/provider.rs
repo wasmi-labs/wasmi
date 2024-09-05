@@ -1,5 +1,11 @@
-use super::{AnyConst32, Reg};
-use crate::{core::UntypedVal, engine::translator::TranslationError, Error};
+use crate::{
+    core::UntypedVal,
+    engine::{
+        bytecode::{AnyConst32, Reg},
+        translator::TranslationError,
+    },
+    Error,
+};
 use std::vec::{Drain, Vec};
 
 #[cfg(doc)]

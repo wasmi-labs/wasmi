@@ -1,6 +1,5 @@
 mod construct;
 mod immediate;
-mod provider;
 mod utils;
 
 #[cfg(test)]
@@ -8,7 +7,6 @@ mod tests;
 
 pub(crate) use self::{
     immediate::{AnyConst16, AnyConst32, Const16, Const32},
-    provider::{Provider, ProviderSliceStack, UntypedProvider},
     utils::{
         BlockFuel,
         BranchComparator,
@@ -137,7 +135,7 @@ pub enum Instruction {
     ///
     /// Returns values as stored in the [`RegSpanIter`].
     ReturnSpan {
-        /// Identifier for a [`Provider`] slice.
+        /// The underlying [`RegSpanIter`] value.
         values: RegSpanIter,
     },
     /// A Wasm `return` instruction.

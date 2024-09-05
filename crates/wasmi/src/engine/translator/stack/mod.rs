@@ -13,7 +13,8 @@ use super::{PreservedLocal, TypedVal};
 use crate::{
     core::UntypedVal,
     engine::{
-        bytecode::{Provider, Reg, RegSpan, UntypedProvider},
+        bytecode::{Reg, RegSpan},
+        translator::{Provider, UntypedProvider},
         TranslationError,
     },
     Error,

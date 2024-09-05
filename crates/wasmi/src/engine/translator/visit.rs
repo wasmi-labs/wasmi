@@ -17,8 +17,8 @@ use super::{
 use crate::{
     core::{TrapCode, ValType, F32, F64},
     engine::{
-        bytecode::{self, Const16, Instruction, Provider, Reg, SignatureIdx},
-        translator::AcquiredTarget,
+        bytecode::{self, Const16, Instruction, Reg, SignatureIdx},
+        translator::{AcquiredTarget, Provider},
         BlockType,
         FuelCosts,
     },

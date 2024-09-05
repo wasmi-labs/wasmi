@@ -1,7 +1,7 @@
 use super::ControlFrame;
 use crate::{
     core::TypedVal,
-    engine::bytecode::{Provider, ProviderSliceStack},
+    engine::translator::{Provider, ProviderSliceStack},
     Error,
 };
 use std::vec::{Drain, Vec};
