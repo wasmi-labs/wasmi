@@ -1,8 +1,8 @@
-use super::Executor;
+use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
     engine::{
-        bytecode::{FuncIdx, Instruction, InstructionPtr, Reg, RegSpan, SignatureIdx, TableIdx},
+        bytecode::{FuncIdx, Instruction, Reg, RegSpan, SignatureIdx, TableIdx},
         code_map::CompiledFuncRef,
         executor::stack::{CallFrame, FrameParams, ValueStack},
         EngineFunc,

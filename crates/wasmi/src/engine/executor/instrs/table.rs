@@ -1,7 +1,7 @@
-use super::Executor;
+use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
-    engine::bytecode::{Const16, ElementSegmentIdx, Instruction, InstructionPtr, Reg, TableIdx},
+    engine::bytecode::{Const16, ElementSegmentIdx, Instruction, Reg, TableIdx},
     error::EntityGrowError,
     store::{ResourceLimiterRef, StoreInner},
     table::TableEntity,

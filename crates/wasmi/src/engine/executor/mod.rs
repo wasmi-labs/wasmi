@@ -1,12 +1,13 @@
 pub use self::instrs::ResumableHostError;
 pub(crate) use self::stack::Stack;
 use self::{
+    instr_ptr::InstructionPtr,
     instrs::{dispatch_host_func, execute_instrs},
     stack::CallFrame,
 };
 use crate::{
     engine::{
-        bytecode::{InstructionPtr, Reg, RegSpan},
+        bytecode::{Reg, RegSpan},
         CallParams,
         CallResults,
         EngineInner,
@@ -28,6 +29,7 @@ use crate::engine::StackLimits;
 use super::code_map::CodeMap;
 
 mod cache;
+mod instr_ptr;
 mod instrs;
 mod stack;
 
