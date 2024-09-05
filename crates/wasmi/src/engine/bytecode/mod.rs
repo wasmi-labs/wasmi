@@ -4623,7 +4623,7 @@ pub enum Instruction {
         /// The register storing the result of the instruction.
         result: Reg,
         /// The constant `index` value of the table element to get.
-        index: Const32<u32>,
+        index: u32,
     },
 
     /// A Wasm `table.size` instruction.
@@ -4651,10 +4651,10 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
     TableSetAt {
-        /// The constant `index` of the instruction.
-        index: Const32<u32>,
         /// The register holding the `value` of the instruction.
         value: Reg,
+        /// The constant `index` of the instruction.
+        index: u32,
     },
 
     /// Wasm `table.copy <dst> <src>` instruction.

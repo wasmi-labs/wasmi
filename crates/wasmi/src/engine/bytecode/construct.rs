@@ -485,11 +485,8 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableGetImm`] with the given `result` and `index`.
-    pub fn table_get_imm(result: Reg, index: impl Into<Const32<u32>>) -> Self {
-        Self::TableGetImm {
-            result,
-            index: index.into(),
-        }
+    pub fn table_get_imm(result: Reg, index: u32) -> Self {
+        Self::TableGetImm { result, index }
     }
 
     /// Creates a new [`Instruction::TableSize`] with the given `result` and `table`.
@@ -506,11 +503,8 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableSetAt`] with the given `index` and `value`.
-    pub fn table_set_at(index: impl Into<Const32<u32>>, value: Reg) -> Self {
-        Self::TableSetAt {
-            index: index.into(),
-            value,
-        }
+    pub fn table_set_at(index: u32, value: Reg) -> Self {
+        Self::TableSetAt { index, value }
     }
 
     /// Creates a new [`Instruction::TableCopy`] with the given `dst`, `src` and `len`.
@@ -1530,7 +1524,7 @@ macro_rules! constructor_for_load_instrs {
     };
     ( @impl fn $fn_name:ident(at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Reg, address: Const32<u32>) -> Self {
+        pub fn $fn_name(result: Reg, address: u32) -> Self {
             Self::$op_code { result, address: u32::from(address) }
         }
     };
@@ -1613,13 +1607,13 @@ macro_rules! constructor_for_store_instrs {
     };
     ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(ptr: Reg, offset: Const32<u32>) -> Self {
+        pub fn $fn_name(ptr: Reg, offset: u32) -> Self {
             Self::$op_code { ptr, offset: u32::from(offset) }
         }
     };
     ( @impl fn $fn_name:ident(at) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32<u32>, value: Reg) -> Self {
+        pub fn $fn_name(address: u32, value: Reg) -> Self {
             Self::$op_code { address: u32::from(address), value }
         }
     };
@@ -1643,13 +1637,13 @@ macro_rules! constructor_for_store_instrs {
     };
     ( @impl fn $fn_name:ident({at_imm<i8>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32<u32>, value: i8) -> Self {
+        pub fn $fn_name(address: u32, value: i8) -> Self {
             Self::$op_code { address: u32::from(address), value: value.into() }
         }
     };
     ( @impl fn $fn_name:ident({at_imm<i16>}) -> Self::$op_code:ident ) => {
         #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(address: Const32<u32>, value: i16) -> Self {
+        pub fn $fn_name(address: u32, value: i16) -> Self {
             Self::$op_code { address: u32::from(address), value: value.into() }
         }
     };

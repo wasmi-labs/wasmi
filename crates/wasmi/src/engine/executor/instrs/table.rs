@@ -1,15 +1,7 @@
 use super::Executor;
 use crate::{
     core::TrapCode,
-    engine::bytecode::{
-        Const16,
-        Const32,
-        ElementSegmentIdx,
-        Instruction,
-        InstructionPtr,
-        Reg,
-        TableIdx,
-    },
+    engine::bytecode::{Const16, ElementSegmentIdx, Instruction, InstructionPtr, Reg, TableIdx},
     error::EntityGrowError,
     store::{ResourceLimiterRef, StoreInner},
     table::TableEntity,
@@ -56,9 +48,9 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &StoreInner,
         result: Reg,
-        index: Const32<u32>,
+        index: u32,
     ) -> Result<(), Error> {
-        self.execute_table_get_impl(store, result, u32::from(index))
+        self.execute_table_get_impl(store, result, index)
     }
 
     /// Executes a `table.get` instruction generically.
@@ -109,10 +101,9 @@ impl<'engine> Executor<'engine> {
     pub fn execute_table_set_at(
         &mut self,
         store: &mut StoreInner,
-        index: Const32<u32>,
+        index: u32,
         value: Reg,
     ) -> Result<(), Error> {
-        let index = u32::from(index);
         self.execute_table_set_impl(store, index, value)
     }
 

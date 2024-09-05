@@ -58,7 +58,7 @@ fn test_load_at(
     wasm_op: WasmOp,
     ptr: u32,
     offset: u32,
-    make_instr_at: fn(result: Reg, address: Const32<u32>) -> Instruction,
+    make_instr_at: fn(result: Reg, address: u32) -> Instruction,
 ) {
     let result_ty = wasm_op.result_ty();
     let wasm = format!(
@@ -77,7 +77,7 @@ fn test_load_at(
         .expect("ptr+offset must be valid in this testcase");
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            make_instr_at(Reg::from(0), Const32::from(address)),
+            make_instr_at(Reg::from(0), address),
             Instruction::return_reg(Reg::from(0)),
         ])
         .run();

@@ -1874,7 +1874,7 @@ impl FuncTranslator {
         memarg: MemArg,
         make_instr: fn(result: Reg, ptr: Reg) -> Instruction,
         make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Const16<u32>) -> Instruction,
-        make_instr_at: fn(result: Reg, address: Const32<u32>) -> Instruction,
+        make_instr_at: fn(result: Reg, address: u32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
@@ -1898,10 +1898,7 @@ impl FuncTranslator {
             TypedProvider::Const(ptr) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     let result = this.alloc.stack.push_dynamic()?;
-                    this.push_fueled_instr(
-                        make_instr_at(result, Const32::from(address)),
-                        FuelCosts::load,
-                    )?;
+                    this.push_fueled_instr(make_instr_at(result, address), FuelCosts::load)?;
                     Ok(())
                 })
             }
@@ -1923,11 +1920,11 @@ impl FuncTranslator {
     fn translate_istore<T, U>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Reg, offset: Const32<u32>) -> Instruction,
+        make_instr: fn(ptr: Reg, offset: u32) -> Instruction,
         make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
         make_instr_offset16_imm: fn(ptr: Reg, offset: u16, value: U) -> Instruction,
-        make_instr_at: fn(address: Const32<u32>, value: Reg) -> Instruction,
-        make_instr_at_imm: fn(address: Const32<u32>, value: U) -> Instruction,
+        make_instr_at: fn(address: u32, value: Reg) -> Instruction,
+        make_instr_at_imm: fn(address: u32, value: U) -> Instruction,
     ) -> Result<(), Error>
     where
         T: Copy + From<TypedVal>,
@@ -1944,10 +1941,7 @@ impl FuncTranslator {
                     )?;
                     Ok(())
                 } else {
-                    self.push_fueled_instr(
-                        make_instr(ptr, Const32::from(offset)),
-                        FuelCosts::store,
-                    )?;
+                    self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
                     self.alloc
                         .instr_encoder
                         .append_instr(Instruction::Register(value))?;
@@ -1974,10 +1968,7 @@ impl FuncTranslator {
                         Ok(())
                     }
                     (Err(_), _) => {
-                        self.push_fueled_instr(
-                            make_instr(ptr, Const32::from(offset)),
-                            FuelCosts::store,
-                        )?;
+                        self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
                         self.alloc
                             .instr_encoder
                             .append_instr(Instruction::Register(
@@ -1989,26 +1980,20 @@ impl FuncTranslator {
             }
             (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
                 .effective_address_and(ptr, offset, |this, address| {
-                    this.push_fueled_instr(
-                        make_instr_at(Const32::from(address), value),
-                        FuelCosts::store,
-                    )?;
+                    this.push_fueled_instr(make_instr_at(address, value), FuelCosts::store)?;
                     Ok(())
                 }),
             (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     if let Ok(value) = U::try_from(T::from(value)) {
                         this.push_fueled_instr(
-                            make_instr_at_imm(Const32::from(address), value),
+                            make_instr_at_imm(address, value),
                             FuelCosts::store,
                         )?;
                         Ok(())
                     } else {
                         let value = this.alloc.stack.alloc_const(value)?;
-                        this.push_fueled_instr(
-                            make_instr_at(Const32::from(address), value),
-                            FuelCosts::store,
-                        )?;
+                        this.push_fueled_instr(make_instr_at(address, value), FuelCosts::store)?;
                         Ok(())
                     }
                 })
@@ -2031,9 +2016,9 @@ impl FuncTranslator {
     fn translate_fstore(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Reg, offset: Const32<u32>) -> Instruction,
+        make_instr: fn(ptr: Reg, offset: u32) -> Instruction,
         make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
-        make_instr_at: fn(address: Const32<u32>, value: Reg) -> Instruction,
+        make_instr_at: fn(address: u32, value: Reg) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
@@ -2046,10 +2031,7 @@ impl FuncTranslator {
                     )?;
                     Ok(())
                 } else {
-                    self.push_fueled_instr(
-                        make_instr(ptr, Const32::from(offset)),
-                        FuelCosts::store,
-                    )?;
+                    self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
                     self.alloc
                         .instr_encoder
                         .append_instr(Instruction::Register(value))?;
@@ -2068,10 +2050,7 @@ impl FuncTranslator {
                         Ok(())
                     }
                     Err(_) => {
-                        self.push_fueled_instr(
-                            make_instr(ptr, Const32::from(offset)),
-                            FuelCosts::store,
-                        )?;
+                        self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
                         self.alloc
                             .instr_encoder
                             .append_instr(Instruction::Register(
@@ -2083,19 +2062,13 @@ impl FuncTranslator {
             }
             (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
                 .effective_address_and(ptr, offset, |this, address| {
-                    this.push_fueled_instr(
-                        make_instr_at(Const32::from(address), value),
-                        FuelCosts::store,
-                    )?;
+                    this.push_fueled_instr(make_instr_at(address, value), FuelCosts::store)?;
                     Ok(())
                 }),
             (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     let value = this.alloc.stack.alloc_const(value)?;
-                    this.push_fueled_instr(
-                        make_instr_at(Const32::from(address), value),
-                        FuelCosts::store,
-                    )?;
+                    this.push_fueled_instr(make_instr_at(address, value), FuelCosts::store)?;
                     Ok(())
                 })
             }
