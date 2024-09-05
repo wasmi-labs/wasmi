@@ -470,21 +470,21 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::DataIndex`] from the given `index`.
-    pub fn data_idx(index: impl Into<DataSegmentIdx>) -> Self {
+    pub fn data_index(index: impl Into<DataSegmentIdx>) -> Self {
         Self::DataIndex {
             index: index.into(),
         }
     }
 
     /// Creates a new [`Instruction::ElemIndex`] from the given `index`.
-    pub fn elem_idx(index: impl Into<ElementSegmentIdx>) -> Self {
+    pub fn elem_index(index: impl Into<ElementSegmentIdx>) -> Self {
         Self::ElemIndex {
             index: index.into(),
         }
     }
 
     /// Creates a new [`Instruction::TableIndex`] from the given `index`.
-    pub fn table_idx(index: impl Into<TableIdx>) -> Self {
+    pub fn table_index(index: impl Into<TableIdx>) -> Self {
         Self::TableIndex {
             index: index.into(),
         }

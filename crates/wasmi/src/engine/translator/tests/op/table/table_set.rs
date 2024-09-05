@@ -17,7 +17,7 @@ fn test_reg(ty: ValType) {
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::table_set(Reg::from(0), Reg::from(1)),
-            Instruction::table_idx(0),
+            Instruction::table_index(0),
             Instruction::Return,
         ])
         .run();
@@ -47,7 +47,7 @@ fn test_reg_at(index: u32, value_type: ValType) {
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::table_set_at(index, Reg::from(0)),
-            Instruction::table_idx(0),
+            Instruction::table_index(0),
             Instruction::Return,
         ])
         .run();
@@ -79,7 +79,7 @@ fn imm_funcref() {
         .expect_func_instrs([
             Instruction::ref_func(Reg::from(1), 0),
             Instruction::table_set(Reg::from(0), Reg::from(1)),
-            Instruction::table_idx(0),
+            Instruction::table_index(0),
             Instruction::Return,
         ])
         .run();
@@ -100,7 +100,7 @@ fn test_at_imm_funcref(index: u32) {
         .expect_func_instrs([
             Instruction::ref_func(Reg::from(0), 0),
             Instruction::table_set_at(index, Reg::from(0)),
-            Instruction::table_idx(0),
+            Instruction::table_index(0),
             Instruction::Return,
         ])
         .run();
@@ -133,7 +133,7 @@ fn test_imm_null(value_type: ValType) {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::table_set(Reg::from(0), Reg::from(-1)),
-                Instruction::table_idx(0),
+                Instruction::table_index(0),
                 Instruction::Return,
             ])
             .consts([0]),
@@ -168,7 +168,7 @@ fn test_at_imm_null(index: u32, value_type: ValType) {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::table_set_at(index, Reg::from(-1)),
-                Instruction::table_idx(0),
+                Instruction::table_index(0),
                 Instruction::Return,
             ])
             .consts([0]),
