@@ -1,6 +1,6 @@
 use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
-    engine::bytecode::{AnyConst16, Const16, Reg, RegSpanIter, Sign},
+    engine::bytecode::{Const16, Reg, RegSpanIter, Sign},
     Error,
 };
 
@@ -10,7 +10,7 @@ use crate::{
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy + Eq + From<TypedVal> + Into<TypedVal> + TryInto<AnyConst16> + TryInto<Const16<Self>>
+    Copy + Eq + From<TypedVal> + Into<TypedVal> + TryInto<Const16<Self>>
 {
     /// Returns the `i16` shift amount.
     ///

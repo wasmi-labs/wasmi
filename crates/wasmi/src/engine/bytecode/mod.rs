@@ -6,7 +6,7 @@ mod utils;
 mod tests;
 
 pub(crate) use self::{
-    immediate::{AnyConst16, AnyConst32, Const16, Const32},
+    immediate::{AnyConst32, Const16, Const32},
     utils::{
         BlockFuel,
         BranchComparator,
