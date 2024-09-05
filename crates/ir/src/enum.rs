@@ -54,6 +54,25 @@ macro_rules! define_enum {
                 )?
             ),*
         }
+
+        impl Instruction {
+            $(
+                #[doc = concat!("Creates a new [`Instruction::", stringify!($name), "`].")]
+                pub fn $snake_name(
+                    $(
+                        $( $result_name: impl Into<$result_ty>, )?
+                        $( $field_name: impl Into<$field_ty> ),*
+                    )?
+                ) -> Self {
+                    Self::$name {
+                        $(
+                            $( $result_name: $result_name.into(), )?
+                            $( $field_name: $field_name.into() ),*
+                        )?
+                    }
+                }
+            )*
+        }
     };
 }
 for_each_op::for_each_op!(define_enum);
