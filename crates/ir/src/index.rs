@@ -73,4 +73,9 @@ impl Reg {
     pub fn prev(self) -> Reg {
         Self(self.0.wrapping_sub(1))
     }
+
+    /// Returns `true` if `self` represents a function local constant value.
+    pub fn is_const(self) -> bool {
+        self.0.is_negative()
+    }
 }
