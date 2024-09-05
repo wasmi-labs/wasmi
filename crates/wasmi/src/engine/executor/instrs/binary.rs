@@ -1,7 +1,7 @@
 use super::{Executor, UntypedValueExt};
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::bytecode::{BinInstr, BinInstrImm, BinInstrImm16, Sign},
+    engine::bytecode::{Const16, Reg, Sign},
     Error,
 };
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
@@ -14,8 +14,8 @@ macro_rules! impl_binary {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstr) {
-                self.execute_binary(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
+                self.execute_binary(result, lhs, rhs, $op)
             }
         )*
     };
@@ -74,8 +74,8 @@ macro_rules! impl_binary_imm16 {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
-                self.execute_binary_imm16(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
+                self.execute_binary_imm16(result, lhs, rhs, $op)
             }
         )*
     };
@@ -117,8 +117,8 @@ macro_rules! impl_binary_imm16_rev {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
-                self.execute_binary_imm16_rev(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) {
+                self.execute_binary_imm16_rev(result, lhs, rhs, $op)
             }
         )*
     };
@@ -147,8 +147,8 @@ macro_rules! impl_fallible_binary {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstr) -> Result<(), Error> {
-                self.try_execute_binary(instr, $op).map_err(Into::into)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) -> Result<(), Error> {
+                self.try_execute_binary(result, lhs, rhs, $op).map_err(Into::into)
             }
         )*
     };
@@ -239,8 +239,8 @@ macro_rules! impl_divrem_s_imm16 {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), Error> {
-                self.try_execute_divrem_imm16(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) -> Result<(), Error> {
+                self.try_execute_divrem_imm16(result, lhs, rhs, $op)
             }
         )*
     };
@@ -260,8 +260,8 @@ macro_rules! impl_divrem_u_imm16 {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
-                self.execute_divrem_imm16(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
+                self.execute_divrem_imm16(result, lhs, rhs, $op)
             }
         )*
     };
@@ -281,8 +281,8 @@ macro_rules! impl_fallible_binary_imm16_rev {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), Error> {
-                self.try_execute_binary_imm16_rev(instr, $op).map_err(Into::into)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) -> Result<(), Error> {
+                self.try_execute_binary_imm16_rev(result, lhs, rhs, $op).map_err(Into::into)
             }
         )*
     };
@@ -304,19 +304,19 @@ impl<'engine> Executor<'engine> {
 impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::F32CopysignImm`].
     #[inline(always)]
-    pub fn execute_f32_copysign_imm(&mut self, instr: BinInstrImm<Sign>) {
-        let lhs = self.get_register(instr.reg_in);
-        let rhs = instr.imm_in.to_f32();
-        self.set_register(instr.result, UntypedVal::f32_copysign(lhs, rhs.into()));
+    pub fn execute_f32_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign) {
+        let lhs = self.get_register(lhs);
+        let rhs = rhs.to_f32();
+        self.set_register(result, UntypedVal::f32_copysign(lhs, rhs.into()));
         self.next_instr()
     }
 
     /// Executes an [`Instruction::F64CopysignImm`].
     #[inline(always)]
-    pub fn execute_f64_copysign_imm(&mut self, instr: BinInstrImm<Sign>) {
-        let lhs = self.get_register(instr.reg_in);
-        let rhs = instr.imm_in.to_f64();
-        self.set_register(instr.result, UntypedVal::f64_copysign(lhs, rhs.into()));
+    pub fn execute_f64_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign) {
+        let lhs = self.get_register(lhs);
+        let rhs = rhs.to_f64();
+        self.set_register(result, UntypedVal::f64_copysign(lhs, rhs.into()));
         self.next_instr()
     }
 }

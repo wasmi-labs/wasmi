@@ -1,9 +1,6 @@
 use super::{
     utils::{BranchOffset16, Sign},
     AnyConst32,
-    BinInstr,
-    BinInstrImm,
-    BinInstrImm16,
     BranchOffset,
     CallIndirectParams,
     Const16,
@@ -364,12 +361,12 @@ impl Instruction {
 
     /// Creates a new [`Instruction::F32CopysignImm`] instruction.
     pub fn f32_copysign_imm(result: Reg, lhs: Reg, rhs: Sign) -> Self {
-        Self::F32CopysignImm(BinInstrImm::new(result, lhs, rhs))
+        Self::F32CopysignImm { result, lhs, rhs }
     }
 
     /// Creates a new [`Instruction::F64CopysignImm`] instruction.
     pub fn f64_copysign_imm(result: Reg, lhs: Reg, rhs: Sign) -> Self {
-        Self::F64CopysignImm(BinInstrImm::new(result, lhs, rhs))
+        Self::F64CopysignImm { result, lhs, rhs }
     }
 
     /// Creates a new [`Instruction::RegisterAndImm32`].
@@ -1218,6 +1215,23 @@ macro_rules! constructor_for_binary_instrs_v2 {
     };
 }
 constructor_for_binary_instrs_v2! {
+    // Float Arithmetic
+
+    fn f32_add() -> Self::F32Add;
+    fn f64_add() -> Self::F64Add;
+    fn f32_sub() -> Self::F32Sub;
+    fn f64_sub() -> Self::F64Sub;
+    fn f32_mul() -> Self::F32Mul;
+    fn f64_mul() -> Self::F64Mul;
+    fn f32_div() -> Self::F32Div;
+    fn f64_div() -> Self::F64Div;
+    fn f32_min() -> Self::F32Min;
+    fn f64_min() -> Self::F64Min;
+    fn f32_max() -> Self::F32Max;
+    fn f64_max() -> Self::F64Max;
+    fn f32_copysign() -> Self::F32Copysign;
+    fn f64_copysign() -> Self::F64Copysign;
+
     // Integer Comparison
 
     fn i32_eq() -> Self::I32Eq;
@@ -1294,94 +1308,6 @@ constructor_for_binary_instrs_v2! {
     fn f64_gt() -> Self::F64Gt;
     fn f32_ge() -> Self::F32Ge;
     fn f64_ge() -> Self::F64Ge;
-}
-
-macro_rules! constructor_for_binary_instrs {
-    (
-        $(
-            fn $fn_name:ident($($mode:tt)?) -> Self::$op_code:ident;
-        )* $(,)?
-    ) => {
-        impl Instruction {
-            $(
-                constructor_for_binary_instrs! {
-                    @impl fn $fn_name($($mode)?) -> Self::$op_code
-                }
-            )*
-        }
-    };
-    ( @impl fn $fn_name:ident() -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Reg, lhs: Reg, rhs: Reg) -> Self {
-            Self::$op_code(BinInstr::new(result, lhs, rhs))
-        }
-    };
-    ( @impl fn $fn_name:ident({i32.binary_imm<i16>}) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<i32>>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident({i32.binary_imm<u16>}) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<u32>>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident({i64.binary_imm<i16>}) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<i64>>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident({i64.binary_imm<u16>}) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Reg, lhs: Reg, rhs: impl Into<Const16<u64>>) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident({i32.binary_imm_rev<i16>}) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Reg, lhs: impl Into<Const16<i32>>, rhs: Reg) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident({i32.binary_imm_rev<u16>}) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Reg, lhs: impl Into<Const16<u32>>, rhs: Reg) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident({i64.binary_imm_rev<i16>}) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Reg, lhs: impl Into<Const16<i64>>, rhs: Reg) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs.into()))
-        }
-    };
-    ( @impl fn $fn_name:ident({i64.binary_imm_rev<u16>}) -> Self::$op_code:ident ) => {
-        #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
-        pub fn $fn_name(result: Reg, lhs: Const16<u64>, rhs: Reg) -> Self {
-            Self::$op_code(BinInstrImm16::new(result, rhs, lhs))
-        }
-    };
-}
-constructor_for_binary_instrs! {
-    // Float Arithmetic
-
-    fn f32_add() -> Self::F32Add;
-    fn f64_add() -> Self::F64Add;
-    fn f32_sub() -> Self::F32Sub;
-    fn f64_sub() -> Self::F64Sub;
-    fn f32_mul() -> Self::F32Mul;
-    fn f64_mul() -> Self::F64Mul;
-    fn f32_div() -> Self::F32Div;
-    fn f64_div() -> Self::F64Div;
-    fn f32_min() -> Self::F32Min;
-    fn f64_min() -> Self::F64Min;
-    fn f32_max() -> Self::F32Max;
-    fn f64_max() -> Self::F64Max;
-    fn f32_copysign() -> Self::F32Copysign;
-    fn f64_copysign() -> Self::F64Copysign;
 
     // Integer Arithmetic
 
@@ -1892,7 +1818,7 @@ macro_rules! constructor_for_divrem_imm_instrs {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($op_code), "`].")]
                 pub fn $name(result: Reg, lhs: Reg, rhs: impl Into<Const16<$ty>>) -> Self {
-                    Self::$op_code(BinInstrImm16::new(result, lhs, rhs.into()))
+                    Self::$op_code { result, lhs, rhs: rhs.into() }
                 }
             )*
         }

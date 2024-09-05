@@ -1,15 +1,6 @@
 use crate::{
     engine::{
-        bytecode::{
-            BinInstr,
-            BinInstrImm,
-            FuncIdx,
-            Instruction,
-            Reg,
-            RegSpan,
-            SignatureIdx,
-            UnaryInstr,
-        },
+        bytecode::{FuncIdx, Instruction, Reg, RegSpan, SignatureIdx, UnaryInstr},
         EngineFunc,
     },
     module::ModuleHeader,
@@ -378,39 +369,39 @@ impl Instruction {
             I::I64Ctz(instr) |
             I::I64Popcnt(instr) => relink_simple(instr, new_result, old_result),
 
-            I::I32Add(instr) |
-            I::I32Sub(instr) |
-            I::I32Mul(instr) |
-            I::I32DivS(instr) |
-            I::I32DivU(instr) |
-            I::I32RemS(instr) |
-            I::I32RemU(instr) |
-            I::I32And(instr) |
-            I::I32AndEqz(instr) |
-            I::I32Or(instr) |
-            I::I32OrEqz(instr) |
-            I::I32Xor(instr) |
-            I::I32XorEqz(instr) |
-            I::I32Shl(instr) |
-            I::I32ShrS(instr) |
-            I::I32ShrU(instr) |
-            I::I32Rotl(instr) |
-            I::I32Rotr(instr) |
-            I::I64Add(instr) |
-            I::I64Sub(instr) |
-            I::I64Mul(instr) |
-            I::I64DivS(instr) |
-            I::I64DivU(instr) |
-            I::I64RemS(instr) |
-            I::I64RemU(instr) |
-            I::I64And(instr) |
-            I::I64Or(instr) |
-            I::I64Xor(instr) |
-            I::I64Shl(instr) |
-            I::I64ShrS(instr) |
-            I::I64ShrU(instr) |
-            I::I64Rotl(instr) |
-            I::I64Rotr(instr) => relink_simple(instr, new_result, old_result),
+            I::I32Add { result, ..} |
+            I::I32Sub { result, ..} |
+            I::I32Mul { result, ..} |
+            I::I32DivS { result, ..} |
+            I::I32DivU { result, ..} |
+            I::I32RemS { result, ..} |
+            I::I32RemU { result, ..} |
+            I::I32And { result, ..} |
+            I::I32AndEqz { result, ..} |
+            I::I32Or { result, ..} |
+            I::I32OrEqz { result, ..} |
+            I::I32Xor { result, ..} |
+            I::I32XorEqz { result, ..} |
+            I::I32Shl { result, ..} |
+            I::I32ShrS { result, ..} |
+            I::I32ShrU { result, ..} |
+            I::I32Rotl { result, ..} |
+            I::I32Rotr { result, ..} |
+            I::I64Add { result, ..} |
+            I::I64Sub { result, ..} |
+            I::I64Mul { result, ..} |
+            I::I64DivS { result, ..} |
+            I::I64DivU { result, ..} |
+            I::I64RemS { result, ..} |
+            I::I64RemU { result, ..} |
+            I::I64And { result, ..} |
+            I::I64Or { result, ..} |
+            I::I64Xor { result, ..} |
+            I::I64Shl { result, ..} |
+            I::I64ShrS { result, ..} |
+            I::I64ShrU { result, ..} |
+            I::I64Rotl { result, ..} |
+            I::I64Rotr { result, ..} => relink_simple(result, new_result, old_result),
 
             I::F32Abs(instr) |
             I::F32Neg(instr) |
@@ -427,76 +418,75 @@ impl Instruction {
             I::F64Nearest(instr) |
             I::F64Sqrt(instr) => relink_simple(instr, new_result, old_result),
 
-            I::F32Add(instr) |
-            I::F32Sub(instr) |
-            I::F32Mul(instr) |
-            I::F32Div(instr) |
-            I::F32Min(instr) |
-            I::F32Max(instr) |
-            I::F32Copysign(instr) => relink_simple(instr, new_result, old_result),
-            I::F64Add(instr) |
-            I::F64Sub(instr) |
-            I::F64Mul(instr) |
-            I::F64Div(instr) |
-            I::F64Min(instr) |
-            I::F64Max(instr) |
-            I::F64Copysign(instr) => relink_simple(instr, new_result, old_result),
+            I::F32Add { result, .. } |
+            I::F32Sub { result, .. } |
+            I::F32Mul { result, .. } |
+            I::F32Div { result, .. } |
+            I::F32Min { result, .. } |
+            I::F32Max { result, .. } |
+            I::F32Copysign { result, .. } |
+            I::F64Add { result, .. } |
+            I::F64Sub { result, .. } |
+            I::F64Mul { result, .. } |
+            I::F64Div { result, .. } |
+            I::F64Min { result, .. } |
+            I::F64Max { result, .. } |
+            I::F64Copysign { result, .. } |
+            I::F32CopysignImm { result, .. } |
+            I::F64CopysignImm { result, .. } => relink_simple(result, new_result, old_result),
 
-            I::F32CopysignImm(instr) |
-            I::F64CopysignImm(instr) => relink_simple(instr, new_result, old_result),
+            I::I32AddImm16 { result, .. } |
+            I::I32SubImm16Rev { result, .. } |
+            I::I32MulImm16 { result, .. } |
+            I::I32DivSImm16 { result, .. } |
+            I::I32DivSImm16Rev { result, .. } |
+            I::I32RemSImm16 { result, .. } |
+            I::I32RemSImm16Rev { result, .. } |
+            I::I32AndEqzImm16 { result, .. } |
+            I::I32AndImm16 { result, .. } |
+            I::I32OrEqzImm16 { result, .. } |
+            I::I32OrImm16 { result, .. } |
+            I::I32XorEqzImm16 { result, .. } |
+            I::I32XorImm16 { result, .. } |
+            I::I32ShlImm { result, .. } |
+            I::I32ShlImm16Rev { result, .. } |
+            I::I32ShrSImm { result, .. } |
+            I::I32ShrSImm16Rev { result, .. } |
+            I::I32ShrUImm { result, .. } |
+            I::I32ShrUImm16Rev { result, .. } |
+            I::I32RotlImm { result, .. } |
+            I::I32RotlImm16Rev { result, .. } |
+            I::I32RotrImm { result, .. } |
+            I::I32RotrImm16Rev { result, .. } |
+            I::I32DivUImm16 { result, .. } |
+            I::I32DivUImm16Rev { result, .. } |
+            I::I32RemUImm16 { result, .. } |
+            I::I32RemUImm16Rev { result, .. } => relink_simple(result, new_result, old_result),
 
-            I::I32AddImm16(instr) |
-            I::I32SubImm16Rev(instr) |
-            I::I32MulImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I32DivSImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I32DivSImm16Rev(instr) => relink_simple(instr, new_result, old_result),
-            I::I32RemSImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I32RemSImm16Rev(instr) |
-            I::I32AndEqzImm16(instr) |
-            I::I32AndImm16(instr) |
-            I::I32OrEqzImm16(instr) |
-            I::I32OrImm16(instr) |
-            I::I32XorEqzImm16(instr) |
-            I::I32XorImm16(instr) |
-            I::I32ShlImm(instr) |
-            I::I32ShlImm16Rev(instr) |
-            I::I32ShrSImm(instr) |
-            I::I32ShrSImm16Rev(instr) |
-            I::I32ShrUImm(instr) |
-            I::I32ShrUImm16Rev(instr) |
-            I::I32RotlImm(instr) |
-            I::I32RotlImm16Rev(instr) |
-            I::I32RotrImm(instr) |
-            I::I32RotrImm16Rev(instr) => relink_simple(instr, new_result, old_result),
-            I::I32DivUImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I32DivUImm16Rev(instr) => relink_simple(instr, new_result, old_result),
-            I::I32RemUImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I32RemUImm16Rev(instr) => relink_simple(instr, new_result, old_result),
-
-            I::I64AddImm16(instr) |
-            I::I64SubImm16Rev(instr) |
-            I::I64MulImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64DivSImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64DivSImm16Rev(instr) => relink_simple(instr, new_result, old_result),
-            I::I64RemSImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64RemSImm16Rev(instr) |
-            I::I64AndImm16(instr) |
-            I::I64OrImm16(instr) |
-            I::I64XorImm16(instr) |
-            I::I64ShlImm(instr) |
-            I::I64ShlImm16Rev(instr) |
-            I::I64ShrSImm(instr) |
-            I::I64ShrSImm16Rev(instr) |
-            I::I64ShrUImm(instr) |
-            I::I64ShrUImm16Rev(instr) |
-            I::I64RotlImm(instr) |
-            I::I64RotlImm16Rev(instr) |
-            I::I64RotrImm(instr) |
-            I::I64RotrImm16Rev(instr) => relink_simple(instr, new_result, old_result),
-            I::I64DivUImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64DivUImm16Rev(instr) => relink_simple(instr, new_result, old_result),
-            I::I64RemUImm16(instr) => relink_simple(instr, new_result, old_result),
-            I::I64RemUImm16Rev(instr) => relink_simple(instr, new_result, old_result),
+            I::I64AddImm16 { result, .. } |
+            I::I64SubImm16Rev { result, .. } |
+            I::I64MulImm16 { result, .. } |
+            I::I64DivSImm16 { result, .. } |
+            I::I64DivSImm16Rev { result, .. } |
+            I::I64RemSImm16 { result, .. } |
+            I::I64RemSImm16Rev { result, .. } |
+            I::I64AndImm16 { result, .. } |
+            I::I64OrImm16 { result, .. } |
+            I::I64XorImm16 { result, .. } |
+            I::I64ShlImm { result, .. } |
+            I::I64ShlImm16Rev { result, .. } |
+            I::I64ShrSImm { result, .. } |
+            I::I64ShrSImm16Rev { result, .. } |
+            I::I64ShrUImm { result, .. } |
+            I::I64ShrUImm16Rev { result, .. } |
+            I::I64RotlImm { result, .. } |
+            I::I64RotlImm16Rev { result, .. } |
+            I::I64RotrImm { result, .. } |
+            I::I64RotrImm16Rev { result, .. } |
+            I::I64DivUImm16 { result, .. } |
+            I::I64DivUImm16Rev { result, .. } |
+            I::I64RemUImm16 { result, .. } |
+            I::I64RemUImm16Rev { result, .. } => relink_simple(result, new_result, old_result),
 
             I::I32WrapI64(instr) |
             I::I32TruncF32S(instr) |
@@ -621,18 +611,6 @@ impl ResultMut for Reg {
 }
 
 impl ResultMut for UnaryInstr {
-    fn result_mut(&mut self) -> &mut Reg {
-        &mut self.result
-    }
-}
-
-impl ResultMut for BinInstr {
-    fn result_mut(&mut self) -> &mut Reg {
-        &mut self.result
-    }
-}
-
-impl<T> ResultMut for BinInstrImm<T> {
     fn result_mut(&mut self) -> &mut Reg {
         &mut self.result
     }

@@ -12,9 +12,8 @@ pub(crate) use self::{
     instr_ptr::InstructionPtr,
     provider::{Provider, ProviderSliceStack, UntypedProvider},
     utils::{
-        BinInstr,
-        BinInstrImm,
-        BinInstrImm16,
+        // BinInstr,
+        // BinInstrImm,
         BlockFuel,
         BranchComparator,
         BranchOffset,
@@ -3113,42 +3112,98 @@ pub enum Instruction {
     I32Popcnt(UnaryInstr),
 
     /// `i32` add instruction: `r0 = r1 + r2`
-    I32Add(BinInstr),
+    I32Add {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` add (small) immediate instruction: `r0 = r1 + c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Add`] for 16-bit constant values.
-    I32AddImm16(BinInstrImm16<i32>),
+    I32AddImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
 
     /// `i32` subtract instruction: `r0 = r1 - r2`
-    I32Sub(BinInstr),
+    I32Sub {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` subtract immediate instruction: `r0 = c0 - r1`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I32Sub`] for 16-bit constant values.
     /// - Required instruction since subtraction is not commutative.
-    I32SubImm16Rev(BinInstrImm16<i32>),
+    I32SubImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i32>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i32` multiply instruction: `r0 = r1 * r2`
-    I32Mul(BinInstr),
+    I32Mul {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` multiply immediate instruction: `r0 = r1 * c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Mul`] for 16-bit constant values.
-    I32MulImm16(BinInstrImm16<i32>),
+    I32MulImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
 
     /// `i32` singed-division instruction: `r0 = r1 / r2`
-    I32DivS(BinInstr),
+    I32DivS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` singed-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I32DivS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I32DivSImm16(BinInstrImm16<NonZeroI32>),
+    I32DivSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<NonZeroI32>,
+    },
     /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -3156,10 +3211,24 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since signed-division is not commutative.
-    I32DivSImm16Rev(BinInstrImm16<i32>),
+    I32DivSImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i32>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i32` unsinged-division instruction: `r0 = r1 / r2`
-    I32DivU(BinInstr),
+    I32DivU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` unsinged-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Note
@@ -3169,7 +3238,14 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
-    I32DivUImm16(BinInstrImm16<NonZeroU32>),
+    I32DivUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<NonZeroU32>,
+    },
     /// `i32` unsinged-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -3177,17 +3253,38 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since `i32` unsigned-division is not commutative.
-    I32DivUImm16Rev(BinInstrImm16<u32>),
+    I32DivUImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<u32>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i32` singed-remainder instruction: `r0 = r1 % r2`
-    I32RemS(BinInstr),
+    I32RemS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I32RemSImm16(BinInstrImm16<NonZeroI32>),
+    I32RemSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<NonZeroI32>,
+    },
     /// `i32` singed-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -3195,17 +3292,38 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since `i32` signed-remainder is not commutative.
-    I32RemSImm16Rev(BinInstrImm16<i32>),
+    I32RemSImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i32>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i32` unsigned-remainder instruction: `r0 = r1 % r2`
-    I32RemU(BinInstr),
+    I32RemU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i32` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I32RemUImm16(BinInstrImm16<NonZeroU32>),
+    I32RemUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<NonZeroU32>,
+    },
     /// `i32` unsigned-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -3213,131 +3331,277 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since unsigned-remainder is not commutative.
-    I32RemUImm16Rev(BinInstrImm16<u32>),
+    I32RemUImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<u32>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i32` bitwise-and instruction: `r0 = r1 & r2`
-    I32And(BinInstr),
+    I32And {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`].
-    I32AndEqz(BinInstr),
+    I32AndEqz {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-    I32AndEqzImm16(BinInstrImm16<i32>),
+    I32AndEqzImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
     /// `i32` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32And`] for 16-bit constant values.
-    I32AndImm16(BinInstrImm16<i32>),
+    I32AndImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
 
     /// `i32` bitwise-or instruction: `r0 = r1 & r2`
-    I32Or(BinInstr),
+    I32Or {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`].
-    I32OrEqz(BinInstr),
+    I32OrEqz {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-    I32OrEqzImm16(BinInstrImm16<i32>),
+    I32OrEqzImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
     /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Or`] for 16-bit constant values.
-    I32OrImm16(BinInstrImm16<i32>),
+    I32OrImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
 
     /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
-    I32Xor(BinInstr),
+    I32Xor {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`].
-    I32XorEqz(BinInstr),
+    I32XorEqz {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
-    I32XorEqzImm16(BinInstrImm16<i32>),
+    I32XorEqzImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
     /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I32Xor`] for 16-bit constant values.
-    I32XorImm16(BinInstrImm16<i32>),
+    I32XorImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
 
-    /// `i32` logical shift-left instruction: `r0 = r1 << r2`
-    I32Shl(BinInstr),
-    /// `i32` logical shift-left immediate instruction: `r0 = r1 << c0`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I32ShlImm(BinInstrImm16<i32>),
-    /// `i32` logical shift-left immediate instruction: `r0 = c0 << r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I32Shl`] for 16-bit constant values.
-    /// - Required instruction since logical shift-left is not commutative.
-    I32ShlImm16Rev(BinInstrImm16<i32>),
+    /// A Wasm `i32.shl` equivalent Wasmi instruction.
+    I32Shl {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
+    /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` operand.
+    I32ShlImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
+    /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `lhs` operand.
+    I32ShlImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i32>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
-    /// `i32` logical shift-right instruction: `r0 = r1 >> r2`
-    I32ShrU(BinInstr),
-    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I32ShrUImm(BinInstrImm16<i32>),
-    /// `i32` logical shift-right immediate instruction: `r0 = c0 >> r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I32ShrU`] for 16-bit constant values.
-    /// - Required instruction since `i32` logical shift-right is not commutative.
-    I32ShrUImm16Rev(BinInstrImm16<i32>),
+    /// A Wasm `i32.shr_u` equivalent Wasmi instruction.
+    I32ShrU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
+    /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
+    I32ShrUImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
+    /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
+    I32ShrUImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i32>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
-    /// `i32` arithmetic shift-right instruction: `r0 = r1 >> r2`
-    I32ShrS(BinInstr),
-    /// `i32` logical shift-right immediate instruction: `r0 = r1 >> c0`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I32ShrSImm(BinInstrImm16<i32>),
-    /// `i32` arithmetic shift-right immediate instruction: `r0 = c0 >> r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I32ShrS`] for 16-bit constant values.
-    /// - Required instruction since `arithmetic shift-right is not commutative.
-    I32ShrSImm16Rev(BinInstrImm16<i32>),
+    /// A Wasm `i32.shr_s` equivalent Wasmi instruction.
+    I32ShrS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
+    /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
+    I32ShrSImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
+    /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
+    I32ShrSImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i32>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
-    /// `i32` rotate-left instruction: `r0 = rotate_left(r1, r2)`
-    I32Rotl(BinInstr),
-    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I32RotlImm(BinInstrImm16<i32>),
-    /// `i32` rotate-left immediate instruction: `r0 = rotate_left(c0, r1)`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I32Rotl`] for 16-bit constant values.
-    /// - Required instruction since `i32` rotate-left is not commutative.
-    I32RotlImm16Rev(BinInstrImm16<i32>),
+    /// A Wasm `i32.rotl` equivalent Wasmi instruction.
+    I32Rotl {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
+    /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
+    I32RotlImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
+    /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
+    I32RotlImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i32>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
-    /// `i32` rotate-right instruction: `r0 = rotate_right(r1, r2)`
-    I32Rotr(BinInstr),
-    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I32RotrImm(BinInstrImm16<i32>),
-    /// `i32` rotate-right immediate instruction: `r0 = rotate_right(c0, r1)`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I32Rotl`] for 16-bit constant values.
-    /// - Required instruction since rotate-right is not commutative.
-    I32RotrImm16Rev(BinInstrImm16<i32>),
+    /// A Wasm `i32.rotr` equivalent Wasmi instruction.
+    I32Rotr {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
+    /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
+    I32RotrImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i32>,
+    },
+    /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
+    I32RotrImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i32>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i64` count-leading-zeros (clz) instruction.
     I64Clz(UnaryInstr),
@@ -3347,42 +3611,98 @@ pub enum Instruction {
     I64Popcnt(UnaryInstr),
 
     /// `i64` add instruction: `r0 = r1 + r2`
-    I64Add(BinInstr),
+    I64Add {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` add (small) immediate instruction: `r0 = r1 + c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64Add`] for 16-bit constant values.
-    I64AddImm16(BinInstrImm16<i64>),
+    I64AddImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
     /// `i64` subtract instruction: `r0 = r1 - r2`
-    I64Sub(BinInstr),
+    I64Sub {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` subtract immediate instruction: `r0 = c0 - r1`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64Sub`] for 16-bit constant values.
     /// - Required instruction since subtraction is not commutative.
-    I64SubImm16Rev(BinInstrImm16<i64>),
+    I64SubImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i64>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i64` multiply instruction: `r0 = r1 * r2`
-    I64Mul(BinInstr),
+    I64Mul {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` multiply immediate instruction: `r0 = r1 * c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64Mul`] for 16-bit constant values.
-    I64MulImm16(BinInstrImm16<i64>),
+    I64MulImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
     /// `i64` singed-division instruction: `r0 = r1 / r2`
-    I64DivS(BinInstr),
+    I64DivS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` singed-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64DivS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I64DivSImm16(BinInstrImm16<NonZeroI64>),
+    I64DivSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<NonZeroI64>,
+    },
     /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -3390,10 +3710,24 @@ pub enum Instruction {
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since signed-division is not commutative.
     /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-    I64DivSImm16Rev(BinInstrImm16<i64>),
+    I64DivSImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i64>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i64` unsinged-division instruction: `r0 = r1 / r2`
-    I64DivU(BinInstr),
+    I64DivU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` unsinged-division immediate instruction: `r0 = r1 / c0`
     ///
     /// # Note
@@ -3403,7 +3737,14 @@ pub enum Instruction {
     /// # Encoding
     ///
     /// Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-    I64DivUImm16(BinInstrImm16<NonZeroU64>),
+    I64DivUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<NonZeroU64>,
+    },
     /// `i64` unsinged-division immediate instruction: `r0 = c0 / r1`
     ///
     /// # Note
@@ -3411,17 +3752,38 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since unsigned-division is not commutative.
-    I64DivUImm16Rev(BinInstrImm16<u64>),
+    I64DivUImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<u64>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i64` singed-remainder instruction: `r0 = r1 % r2`
-    I64RemS(BinInstr),
+    I64RemS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I64RemSImm16(BinInstrImm16<NonZeroI64>),
+    I64RemSImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<NonZeroI64>,
+    },
     /// `i64` singed-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -3429,17 +3791,38 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since signed-remainder is not commutative.
-    I64RemSImm16Rev(BinInstrImm16<i64>),
+    I64RemSImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i64>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i64` unsigned-remainder instruction: `r0 = r1 % r2`
-    I64RemU(BinInstr),
+    I64RemU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
     ///
     /// # Note
     ///
     /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
-    I64RemUImm16(BinInstrImm16<NonZeroU64>),
+    I64RemUImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<NonZeroU64>,
+    },
     /// `i64` unsigned-remainder immediate instruction: `r0 = c0 % r1`
     ///
     /// # Note
@@ -3447,119 +3830,223 @@ pub enum Instruction {
     /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
     /// - Guarantees that the right-hand side operand is not zero.
     /// - Required instruction since unsigned-remainder is not commutative.
-    I64RemUImm16Rev(BinInstrImm16<u64>),
+    I64RemUImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<u64>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// `i64` bitwise-and instruction: `r0 = r1 & r2`
-    I64And(BinInstr),
+    I64And {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64And`] for 16-bit constant values.
-    I64AndImm16(BinInstrImm16<i64>),
+    I64AndImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
     /// `i64` bitwise-or instruction: `r0 = r1 & r2`
-    I64Or(BinInstr),
+    I64Or {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64Or`] for 16-bit constant values.
-    I64OrImm16(BinInstrImm16<i64>),
+    I64OrImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
     /// `i64` bitwise-or instruction: `r0 = r1 ^ r2`
-    I64Xor(BinInstr),
+    I64Xor {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
     ///
     /// # Note
     ///
     /// Optimized variant of [`Instruction::I64Xor`] for 16-bit constant values.
-    I64XorImm16(BinInstrImm16<i64>),
+    I64XorImm16 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
 
-    /// `i64` logical shift-left instruction: `r0 = r1 << r2`
-    I64Shl(BinInstr),
-    /// `i64` logical shift-left immediate instruction: `r0 = r1 << c0`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I64ShlImm(BinInstrImm16<i64>),
-    /// `i64` logical shift-left immediate instruction: `r0 = c0 << r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64Shl`] for 16-bit constant values.
-    /// - Required instruction since logical shift-left is not commutative.
-    I64ShlImm16Rev(BinInstrImm16<i64>),
+    /// A Wasm `i64.shl` equivalent Wasmi instruction.
+    I64Shl {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
+    /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
+    I64ShlImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
+    /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
+    I64ShlImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i64>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
-    /// `i64` logical shift-right instruction: `r0 = r1 >> r2`
-    I64ShrU(BinInstr),
-    /// `i64` logical shift-right immediate instruction: `r0 = r1 >> c0`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I64ShrUImm(BinInstrImm16<i64>),
-    /// `i64` logical shift-right immediate instruction: `r0 = c0 >> r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64ShrU`] for 16-bit constant values.
-    /// - Required instruction since logical shift-right is not commutative.
-    I64ShrUImm16Rev(BinInstrImm16<i64>),
+    /// A Wasm `i64.shr_u` equivalent Wasmi instruction.
+    I64ShrU {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
+    /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
+    I64ShrUImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
+    /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
+    I64ShrUImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i64>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
-    /// `i64` arithmetic shift-right instruction: `r0 = r1 >> r2`
-    I64ShrS(BinInstr),
-    /// `i64` logical shift-right immediate instruction: `r0 = r1 >> c0`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I64ShrSImm(BinInstrImm16<i64>),
-    /// `i64` arithmetic shift-right immediate instruction: `r0 = c0 >> r1`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64ShrS`] for 16-bit constant values.
-    /// - Required instruction since arithmetic shift-right is not commutative.
-    I64ShrSImm16Rev(BinInstrImm16<i64>),
+    /// A Wasm `i64.shr_s` equivalent Wasmi instruction.
+    I64ShrS {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
+    /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
+    I64ShrSImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
+    /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
+    I64ShrSImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i64>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
-    /// `i64` rotate-left instruction: `r0 = rotate_left(r1, r2)`
-    I64Rotl(BinInstr),
-    /// `i64` rotate-left immediate instruction: `r0 = rotate_left(r1, c0)`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I64RotlImm(BinInstrImm16<i64>),
-    /// `i64` rotate-left immediate instruction: `r0 = rotate_left(c0, r1)`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64Rotl`] for 16-bit constant values.
-    /// - Required instruction since rotate-left is not commutative.
-    I64RotlImm16Rev(BinInstrImm16<i64>),
+    /// A Wasm `i64.rotl` equivalent Wasmi instruction.
+    I64Rotl {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
+    /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
+    I64RotlImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
+    /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
+    I64RotlImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i64>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
-    /// `i64` rotate-right instruction: `r0 = rotate_right(r1, r2)`
-    I64Rotr(BinInstr),
-    /// `i64` rotate-right immediate instruction: `r0 = rotate_right(r1, c0)`
-    ///
-    /// # Note
-    ///
-    /// It is possible to use [`BinInstrImm16`] since the shift amount must
-    /// always be smaller than the size of the source type in bits.
-    I64RotrImm(BinInstrImm16<i64>),
-    /// `i64` rotate-right immediate instruction: `r0 = rotate_right(c0, r1)`
-    ///
-    /// # Note
-    ///
-    /// - Optimized variant of [`Instruction::I64Rotl`] for 16-bit constant values.
-    /// - Required instruction since rotate-right is not commutative.
-    I64RotrImm16Rev(BinInstrImm16<i64>),
+    /// A Wasm `i64.rotr` equivalent Wasmi instruction.
+    I64Rotr {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
+    /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
+    I64RotrImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding one of the operands.
+        lhs: Reg,
+        /// The 16-bit immediate value.
+        rhs: Const16<i64>,
+    },
+    /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
+    I64RotrImm16Rev {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The 16-bit immediate value.
+        lhs: Const16<i64>,
+        /// The register holding one of the operands.
+        rhs: Reg,
+    },
 
     /// Wasm `i32.wrap_i64` instruction.
     I32WrapI64(UnaryInstr),
@@ -3609,22 +4096,79 @@ pub enum Instruction {
     F32Nearest(UnaryInstr),
     /// Wasm `f32.sqrt` instruction.
     F32Sqrt(UnaryInstr),
+
     /// Wasm `f32.add` instruction: `r0 = r1 + r2`
-    F32Add(BinInstr),
+    F32Add {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f32.sub` instruction: `r0 = r1 - r2`
-    F32Sub(BinInstr),
+    F32Sub {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f32.mul` instruction: `r0 = r1 * r2`
-    F32Mul(BinInstr),
+    F32Mul {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f32.div` instruction: `r0 = r1 / r2`
-    F32Div(BinInstr),
+    F32Div {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f32.min` instruction: `r0 = min(r1, r2)`
-    F32Min(BinInstr),
+    F32Min {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f32.max` instruction: `r0 = max(r1, r2)`
-    F32Max(BinInstr),
+    F32Max {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f32.copysign` instruction: `r0 = copysign(r1, r2)`
-    F32Copysign(BinInstr),
+    F32Copysign {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f32.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
-    F32CopysignImm(BinInstrImm<Sign>),
+    F32CopysignImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Sign,
+    },
 
     /// Wasm `f64.abs` instruction.
     F64Abs(UnaryInstr),
@@ -3640,22 +4184,79 @@ pub enum Instruction {
     F64Nearest(UnaryInstr),
     /// Wasm `f64.sqrt` instruction.
     F64Sqrt(UnaryInstr),
+
     /// Wasm `f64.add` instruction: `r0 = r1 + r2`
-    F64Add(BinInstr),
+    F64Add {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f64.sub` instruction: `r0 = r1 - r2`
-    F64Sub(BinInstr),
+    F64Sub {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f64.mul` instruction: `r0 = r1 * r2`
-    F64Mul(BinInstr),
+    F64Mul {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f64.div` instruction: `r0 = r1 / r2`
-    F64Div(BinInstr),
+    F64Div {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f64.min` instruction: `r0 = min(r1, r2)`
-    F64Min(BinInstr),
+    F64Min {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f64.max` instruction: `r0 = max(r1, r2)`
-    F64Max(BinInstr),
+    F64Max {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f64.copysign` instruction: `r0 = copysign(r1, r2)`
-    F64Copysign(BinInstr),
+    F64Copysign {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Reg,
+    },
     /// Wasm `f64.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
-    F64CopysignImm(BinInstrImm<Sign>),
+    F64CopysignImm {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the left-hand side value.
+        lhs: Reg,
+        /// The register holding the right-hand side value.
+        rhs: Sign,
+    },
 
     /// Wasm `i32.trunc_f32_s` instruction.
     I32TruncF32S(UnaryInstr),
