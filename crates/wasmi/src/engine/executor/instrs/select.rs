@@ -10,7 +10,7 @@ impl<'engine> Executor<'engine> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Instruction::Register2([reg0, reg1]) => (reg0, reg1),
+            Instruction::Register2 { regs: [reg0, reg1] } => (reg0, reg1),
             unexpected => {
                 unreachable!("expected `Instruction::Register2` but found {unexpected:?}")
             }

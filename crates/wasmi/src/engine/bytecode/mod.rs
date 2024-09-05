@@ -5,13 +5,13 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-pub(crate) use self::{
+#[doc(inline)]
+pub use self::{
     immediate::{AnyConst32, Const16, Const32},
     utils::{
         BlockFuel,
         BranchOffset,
         BranchOffset16,
-        CallIndirectParams,
         Comparator,
         ComparatorAndOffset,
         DataSegmentIdx,
@@ -5354,48 +5354,48 @@ pub enum Instruction {
         len: Const16<u32>,
     },
 
-    /// A [`TableIdx`] instruction parameter.
+    /// A [`Table`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    TableIdx(TableIdx),
-    /// A [`DataSegmentIdx`] instruction parameter.
+    TableIndex { index: TableIdx },
+    /// A [`Data`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    DataSegmentIdx(DataSegmentIdx),
-    /// A [`ElementSegmentIdx`] instruction parameter.
+    DataIndex { index: DataSegmentIdx },
+    /// An [`Elem`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    ElementSegmentIdx(ElementSegmentIdx),
+    ElemIndex { index: ElementSegmentIdx },
     /// A [`AnyConst32`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Const32(AnyConst32),
+    Const32 { value: AnyConst32 },
     /// A [`Const32<i64>`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    I64Const32(Const32<i64>),
+    I64Const32 { value: Const32<i64> },
     /// A [`Const32<f64>`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    F64Const32(Const32<f64>),
+    F64Const32 { value: Const32<f64> },
     /// A Wasm `br_table` branching target which copies values before branching.
     ///
     /// # Encoding
@@ -5438,28 +5438,28 @@ pub enum Instruction {
         imm: AnyConst32,
     },
     /// A [`RegSpanIter`] instruction parameter.
-    RegisterSpan(RegSpanIter),
+    RegisterSpan { span: RegSpanIter },
     /// A [`Reg`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Register(Reg),
+    Register { reg: Reg },
     /// Two [`Reg`] instruction parameters.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Register2([Reg; 2]),
+    Register2 { regs: [Reg; 2] },
     /// Three [`Reg`] instruction parameters.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Register3([Reg; 3]),
+    Register3 { regs: [Reg; 3] },
     /// [`Reg`] slice parameters.
     ///
     /// # Note
@@ -5474,11 +5474,21 @@ pub enum Instruction {
     /// - [`Instruction::Register`]
     /// - [`Instruction::Register2`]
     /// - [`Instruction::Register3`]
-    RegisterList([Reg; 3]),
+    RegisterList { regs: [Reg; 3] },
     /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
-    CallIndirectParams(CallIndirectParams<Reg>),
+    CallIndirectParams {
+        /// The index of the called function in the table.
+        index: Reg,
+        /// The table which holds the called function at the index.
+        table: TableIdx,
+    },
     /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
-    CallIndirectParamsImm16(CallIndirectParams<Const16<u32>>),
+    CallIndirectParamsImm16 {
+        /// The index of the called function in the table.
+        index: Const16<u32>,
+        /// The table which holds the called function at the index.
+        table: TableIdx,
+    },
 }
 
 impl Instruction {

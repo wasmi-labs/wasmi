@@ -181,10 +181,9 @@ impl<'engine> Executor<'engine> {
     ///   another instruction word.
     fn pull_call_indirect_params(&mut self) -> (u32, TableIdx) {
         self.ip.add(1);
-        match self.ip.get() {
-            Instruction::CallIndirectParams(call_params) => {
-                let index = u32::from(self.get_register(call_params.index));
-                let table = call_params.table;
+        match *self.ip.get() {
+            Instruction::CallIndirectParams { index, table } => {
+                let index = u32::from(self.get_register(index));
                 (index, table)
             }
             unexpected => unreachable!(
@@ -206,10 +205,9 @@ impl<'engine> Executor<'engine> {
     ///   another instruction word.
     fn pull_call_indirect_params_imm16(&mut self) -> (u32, TableIdx) {
         self.ip.add(1);
-        match self.ip.get() {
-            Instruction::CallIndirectParamsImm16(call_params) => {
-                let index = u32::from(call_params.index);
-                let table = call_params.table;
+        match *self.ip.get() {
+            Instruction::CallIndirectParamsImm16 { index, table } => {
+                let index = u32::from(index);
                 (index, table)
             }
             unexpected => unreachable!(
@@ -252,18 +250,18 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn copy_call_params(&mut self, uninit_params: &mut FrameParams) {
         self.ip.add(1);
-        if let Instruction::RegisterList(_) = self.ip.get() {
+        if let Instruction::RegisterList { .. } = self.ip.get() {
             self.copy_call_params_list(uninit_params);
         }
         match self.ip.get() {
-            Instruction::Register(value) => {
-                self.copy_regs(uninit_params, array::from_ref(value));
+            Instruction::Register { reg } => {
+                self.copy_regs(uninit_params, array::from_ref(reg));
             }
-            Instruction::Register2(values) => {
-                self.copy_regs(uninit_params, values);
+            Instruction::Register2 { regs } => {
+                self.copy_regs(uninit_params, regs);
             }
-            Instruction::Register3(values) => {
-                self.copy_regs(uninit_params, values);
+            Instruction::Register3 { regs } => {
+                self.copy_regs(uninit_params, regs);
             }
             unexpected => {
                 unreachable!(
@@ -294,8 +292,8 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     #[cold]
     fn copy_call_params_list(&mut self, uninit_params: &mut FrameParams) {
-        while let Instruction::RegisterList(values) = self.ip.get() {
-            self.copy_regs(uninit_params, values);
+        while let Instruction::RegisterList { regs } = self.ip.get() {
+            self.copy_regs(uninit_params, regs);
             self.ip.add(1);
         }
     }

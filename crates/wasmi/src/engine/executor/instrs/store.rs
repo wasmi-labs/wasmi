@@ -19,8 +19,10 @@ impl<'engine> Executor<'engine> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
-            Instruction::Register(register) => register,
-            _ => unreachable!("expected an Instruction::Register instruction word"),
+            Instruction::Register { reg } => reg,
+            unexpected => {
+                unreachable!("expected `Instruction::Register` but found: {unexpected:?}")
+            }
         }
     }
 

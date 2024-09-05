@@ -241,15 +241,15 @@ impl<'engine> Executor<'engine> {
         };
         copy_results(values);
         let mut ip = ip;
-        while let Instruction::RegisterList(values) = ip.get() {
-            copy_results(values);
+        while let Instruction::RegisterList { regs } = ip.get() {
+            copy_results(regs);
             ip.add(1);
         }
         let values = match ip.get() {
-            Instruction::Register(value) => slice::from_ref(value),
-            Instruction::Register2(values) => values,
-            Instruction::Register3(values) => values,
-            unexpected => unreachable!("unexpected Instruction found while executing Instruction::ReturnMany: {unexpected:?}"),
+            Instruction::Register { reg } => slice::from_ref(reg),
+            Instruction::Register2 { regs } => regs,
+            Instruction::Register3 { regs } => regs,
+            unexpected => unreachable!("unexpected `Instruction` found while executing `Instruction::ReturnMany`: {unexpected:?}"),
         };
         copy_results(values);
     }

@@ -1319,22 +1319,22 @@ impl<'engine> Executor<'engine> {
                 Instr::MemoryInitFromToExact { dst, src, len } => {
                     self.execute_memory_init_from_to_exact(&mut store.inner, dst, src, len)?
                 }
-                Instr::TableIdx(_)
-                | Instr::DataSegmentIdx(_)
-                | Instr::ElementSegmentIdx(_)
-                | Instr::Const32(_)
-                | Instr::I64Const32(_)
-                | Instr::F64Const32(_)
+                Instr::TableIndex { .. }
+                | Instr::DataIndex { .. }
+                | Instr::ElemIndex { .. }
+                | Instr::Const32 { .. }
+                | Instr::I64Const32 { .. }
+                | Instr::F64Const32 { .. }
                 | Instr::BranchTableTarget { .. }
                 | Instr::BranchTableTargetNonOverlapping { .. }
-                | Instr::Register(_)
-                | Instr::Register2(_)
-                | Instr::Register3(_)
+                | Instr::Register { .. }
+                | Instr::Register2 { .. }
+                | Instr::Register3 { .. }
                 | Instr::RegisterAndImm32 { .. }
-                | Instr::RegisterSpan(_)
-                | Instr::RegisterList(_)
-                | Instr::CallIndirectParams(_)
-                | Instr::CallIndirectParamsImm16(_) => self.invalid_instruction_word()?,
+                | Instr::RegisterSpan { .. }
+                | Instr::RegisterList { .. }
+                | Instr::CallIndirectParams { .. }
+                | Instr::CallIndirectParamsImm16 { .. } => self.invalid_instruction_word()?,
             }
         }
     }
@@ -1501,7 +1501,7 @@ impl<'engine> Executor<'engine> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
-            Instruction::Const32(value) => value,
+            Instruction::Const32 { value } => value,
             _ => unreachable!("expected an Instruction::Const32 instruction word"),
         }
     }
@@ -1655,7 +1655,7 @@ impl<'engine> Executor<'engine> {
     /// Skips all [`Instruction`]s belonging to an [`Instruction::RegisterList`] encoding.
     fn skip_register_list(ip: InstructionPtr) -> InstructionPtr {
         let mut ip = ip;
-        while let Instruction::RegisterList(_) = *ip.get() {
+        while let Instruction::RegisterList { .. } = *ip.get() {
             ip.add(1);
         }
         // We skip an additional `Instruction` because we know that `Instruction::RegisterList` is always followed by one of:

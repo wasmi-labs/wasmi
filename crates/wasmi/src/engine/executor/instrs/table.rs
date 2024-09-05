@@ -15,8 +15,10 @@ impl<'engine> Executor<'engine> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
-            Instruction::TableIdx(table_index) => table_index,
-            _ => unreachable!("expected an Instruction::TableIdx instruction word"),
+            Instruction::TableIndex { index } => index,
+            unexpected => {
+                unreachable!("expected `Instruction::TableIndex` but found: {unexpected:?}")
+            }
         }
     }
 
@@ -25,8 +27,10 @@ impl<'engine> Executor<'engine> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
-            Instruction::ElementSegmentIdx(segment_index) => segment_index,
-            _ => unreachable!("expected an Instruction::ElementSegmentIdx instruction word"),
+            Instruction::ElemIndex { index } => index,
+            unexpected => {
+                unreachable!("expected `Instruction::ElemIndex` but found: {unexpected:?}")
+            }
         }
     }
 

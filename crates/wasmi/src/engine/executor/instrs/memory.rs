@@ -14,8 +14,10 @@ impl<'engine> Executor<'engine> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
-            Instruction::DataSegmentIdx(segment_index) => segment_index,
-            _ => unreachable!("expected an Instruction::DataSegmentIdx instruction word"),
+            Instruction::DataIndex { index } => index,
+            unexpected => {
+                unreachable!("expected `Instruction::DataIndex` but found: {unexpected:?}")
+            }
         }
     }
 
