@@ -1295,7 +1295,7 @@ macro_rules! for_each_op {
             #[snake_name(return_call_imported_0)]
             ReturnCallImported0 {
                 /// The called imported function.
-                func: ImportedFunc,
+                func: Func,
             },
             /// Wasm `return_call` equivalent Wasmi instruction.
             ///
@@ -1315,7 +1315,7 @@ macro_rules! for_each_op {
             #[snake_name(return_call_imported)]
             ReturnCallImported {
                 /// The called imported function.
-                func: ImportedFunc,
+                func: Func,
             },
 
             /// Wasm `return_call_indirect` equivalent Wasmi instruction.
@@ -1431,7 +1431,7 @@ macro_rules! for_each_op {
             CallImported0 {
                 @results: RegSpan,
                 /// The called imported function.
-                func: ImportedFunc,
+                func: Func,
             },
             /// Wasm `call` equivalent Wasmi instruction.
             ///
@@ -1452,7 +1452,7 @@ macro_rules! for_each_op {
             CallImported {
                 @results: RegSpan,
                 /// The called imported function.
-                func: ImportedFunc,
+                func: Func,
             },
 
             /// Wasm `call_indirect` equivalent Wasmi instruction.

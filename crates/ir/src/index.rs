@@ -13,8 +13,6 @@ macro_rules! for_each_index {
             FuncType(pub(crate) u32);
             /// A Wasmi internal function index.
             InternalFunc(pub(crate) u32);
-            /// A Wasmi imported function index.
-            ImportedFunc(pub(crate) u32);
             /// A Wasm global variable index.
             Global(pub(crate) u32);
             /// A Wasm table index.

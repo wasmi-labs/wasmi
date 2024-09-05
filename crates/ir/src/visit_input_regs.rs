@@ -39,7 +39,6 @@ impl_visit_input_regs_fallback!(
     RegSpanIter,
     AnyConst32,
     InternalFunc,
-    ImportedFunc,
     Elem,
     Data,
     Func,
