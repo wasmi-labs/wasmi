@@ -5,6 +5,11 @@ use crate::Error;
 macro_rules! for_each_index {
     ($mac:ident) => {
         $mac! {
+            /// Used to query the [`Instruction`] of an [`InstrSequence`].
+            ///
+            /// [`Instruction`]: crate::Instruction
+            /// [`InstrSequence`]: crate::InstrSequence
+            Instr(pub(crate) u32);
             /// A Wasmi register.
             Reg(pub(crate) i16);
             /// A Wasm function index.
@@ -77,5 +82,24 @@ impl Reg {
     /// Returns `true` if `self` represents a function local constant value.
     pub fn is_const(self) -> bool {
         self.0.is_negative()
+    }
+}
+
+impl Instr {
+    /// Creates an [`Instr`] from the given `usize` value.
+    ///
+    /// # Panics
+    ///
+    /// If the `value` exceeds limitations for [`Instr`].
+    pub fn from_usize(index: usize) -> Self {
+        let index = index.try_into().unwrap_or_else(|error| {
+            panic!("invalid index {index} for instruction reference: {error}")
+        });
+        Self(index)
+    }
+
+    /// Returns the index underlying to `self` as `usize`.
+    pub fn into_usize(self) -> usize {
+        self.0 as usize
     }
 }

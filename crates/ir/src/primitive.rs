@@ -1,29 +1,4 @@
-use crate::{core::UntypedVal, index::Reg, Error};
-
-/// Used to query the [`Instruction`] of an [`InstrSequence`].
-///
-/// [`Instruction`]: crate::Instruction
-/// [`InstrSequence`]: crate::InstrSequence
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Instr(pub(crate) usize);
-
-impl From<usize> for Instr {
-    fn from(value: usize) -> Self {
-        Self(value)
-    }
-}
-
-impl From<Instr> for usize {
-    fn from(value: Instr) -> Self {
-        value.0
-    }
-}
-
-impl Instr {
-    pub fn into_u32(self) -> u32 {
-        self.0 as u32
-    }
-}
+use crate::{core::UntypedVal, index::Reg, Error, Instr};
 
 /// A [`RegSpan`] of contiguous [`Reg`] indices.
 ///
@@ -333,8 +308,8 @@ impl BranchOffset {
     ///
     /// If the resulting [`BranchOffset`] is uninitialized, aka equal to 0.
     pub fn from_src_to_dst(src: Instr, dst: Instr) -> Result<Self, Error> {
-        let src = i64::from(src.into_u32());
-        let dst = i64::from(dst.into_u32());
+        let src = i64::from(u32::from(src));
+        let dst = i64::from(u32::from(dst));
         let Some(offset) = dst.checked_sub(src) else {
             // Note: This never needs to be called on backwards branches since they are immediated resolved.
             unreachable!(

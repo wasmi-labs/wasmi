@@ -69,13 +69,13 @@ impl InstrSequence {
     /// Returns the [`Instruction`] that is associated to `instr`.
     #[inline]
     pub fn get(&self, instr: Instr) -> Option<Instruction> {
-        self.instrs.get(instr.0).copied()
+        self.instrs.get(instr.into_usize()).copied()
     }
 
     /// Returns a mutable reference to the [`Instruction`] that is associated to `instr`.
     #[inline]
     pub fn get_mut(&mut self, instr: Instr) -> Option<&mut Instruction> {
-        self.instrs.get_mut(instr.0)
+        self.instrs.get_mut(instr.into_usize())
     }
 
     /// Returns an iterator yielding the [`Instruction`] of the [`InstrSequence`].
@@ -144,7 +144,7 @@ macro_rules! define_builder {
                     &mut self,
                     $( $( $field_name: impl Into<$field_ty> ),* )?
                 ) -> Instr {
-                    let pos = Instr(self.instrs.len());
+                    let pos = Instr::from_usize(self.instrs.len());
                     self.instrs.push(Instruction::$name {
                         $( $( $field_name: $field_name.into() ),* )?
                     });

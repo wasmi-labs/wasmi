@@ -25,6 +25,7 @@ use wasmi_core as core;
 pub use self::{
     error::Error,
     immeditate::{AnyConst32, Const16, Const32},
+    index::Instr,
     index::Reg,
     primitive::{
         BlockFuel,
@@ -32,7 +33,6 @@ pub use self::{
         BranchOffset16,
         Comparator,
         ComparatorAndOffset,
-        Instr,
         RegSpan,
         RegSpanIter,
         Sign,
