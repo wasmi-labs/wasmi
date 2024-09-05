@@ -135,7 +135,7 @@ pub enum Instruction {
     ///
     /// Returns values as stored in the [`RegSpanIter`].
     ReturnSpan {
-        /// Identifier for a [`Provider`] slice.
+        /// The underlying [`RegSpanIter`] value.
         values: RegSpanIter,
     },
     /// A Wasm `return` instruction.
