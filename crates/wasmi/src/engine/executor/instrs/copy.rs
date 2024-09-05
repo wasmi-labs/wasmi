@@ -138,14 +138,14 @@ impl<'engine> Executor<'engine> {
         let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
         let mut ip = ip;
         tmp.extend(values.iter().map(|value| self.get_register(*value)));
-        while let Instruction::RegisterList(values) = ip.get() {
-            tmp.extend(values.iter().map(|value| self.get_register(*value)));
+        while let Instruction::RegisterList { regs } = ip.get() {
+            tmp.extend(regs.iter().map(|value| self.get_register(*value)));
             ip.add(1);
         }
         let values = match ip.get() {
-            Instruction::Register(value) => slice::from_ref(value),
-            Instruction::Register2(values) => values,
-            Instruction::Register3(values) => values,
+            Instruction::Register { reg } => slice::from_ref(reg),
+            Instruction::Register2 { regs } => regs,
+            Instruction::Register3 { regs } => regs,
             unexpected => unreachable!(
                 "unexpected Instruction found while copying many values: {unexpected:?}"
             ),
@@ -183,14 +183,14 @@ impl<'engine> Executor<'engine> {
             }
         };
         copy_values(values);
-        while let Instruction::RegisterList(values) = ip.get() {
-            copy_values(values);
+        while let Instruction::RegisterList { regs } = ip.get() {
+            copy_values(regs);
             ip.add(1);
         }
         let values = match ip.get() {
-            Instruction::Register(value) => slice::from_ref(value),
-            Instruction::Register2(values) => values,
-            Instruction::Register3(values) => values,
+            Instruction::Register { reg } => slice::from_ref(reg),
+            Instruction::Register2 { regs } => regs,
+            Instruction::Register3 { regs } => regs,
             unexpected => unreachable!("unexpected Instruction found while copying many non-overlapping values: {unexpected:?}"),
         };
         copy_values(values);

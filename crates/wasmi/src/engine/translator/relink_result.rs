@@ -19,22 +19,22 @@ impl Instruction {
     ) -> Result<bool, Error> {
         use Instruction as I;
         match self {
-            I::TableIdx(_)
-            | I::DataSegmentIdx(_)
-            | I::ElementSegmentIdx(_)
-            | I::Const32(_)
-            | I::I64Const32(_)
-            | I::F64Const32(_)
+            I::TableIndex { .. }
+            | I::DataIndex { .. }
+            | I::ElemIndex { .. }
+            | I::Const32 { .. }
+            | I::I64Const32 { .. }
+            | I::F64Const32 { .. }
             | I::RegisterAndImm32 { .. }
-            | I::Register(_)
-            | I::Register2(_)
-            | I::Register3(_)
-            | I::RegisterSpan(_)
-            | I::RegisterList(_)
+            | I::Register { .. }
+            | I::Register2 { .. }
+            | I::Register3 { .. }
+            | I::RegisterSpan { .. }
+            | I::RegisterList { .. }
             | I::BranchTableTarget { .. } // can't relink since `br_table` diverts control flow
             | I::BranchTableTargetNonOverlapping { .. } // can't relink since `br_table` diverts control flow
-            | I::CallIndirectParams(_)
-            | I::CallIndirectParamsImm16(_)
+            | I::CallIndirectParams { .. }
+            | I::CallIndirectParamsImm16 { .. }
             | I::Trap { .. }
             | I::ConsumeFuel { .. }
             | I::Return

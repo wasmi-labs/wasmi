@@ -246,7 +246,7 @@ fn fuzz_regression_13_codegen() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many(0, 0, 0),
-            Instruction::Register(Reg::from(0)),
+            Instruction::register(0),
             Instruction::return_reg3(0, 0, 0),
         ])
         .run()

@@ -2,7 +2,6 @@ use super::{
     utils::{BranchOffset16, Sign},
     AnyConst32,
     BranchOffset,
-    CallIndirectParams,
     Const16,
     Const32,
     DataSegmentIdx,
@@ -28,17 +27,23 @@ impl Instruction {
 
     /// Creates a new [`Instruction::Const32`] from the given `value`.
     pub fn const32(value: impl Into<AnyConst32>) -> Self {
-        Self::Const32(value.into())
+        Self::Const32 {
+            value: value.into(),
+        }
     }
 
     /// Creates a new [`Instruction::I64Const32`] from the given `value`.
     pub fn i64const32(value: impl Into<Const32<i64>>) -> Self {
-        Self::I64Const32(value.into())
+        Self::I64Const32 {
+            value: value.into(),
+        }
     }
 
     /// Creates a new [`Instruction::F64Const32`] from the given `value`.
     pub fn f64const32(value: impl Into<Const32<f64>>) -> Self {
-        Self::F64Const32(value.into())
+        Self::F64Const32 {
+            value: value.into(),
+        }
     }
 
     /// Creates a new [`Instruction::ReturnReg`] from the given [`Reg`] index.
@@ -464,19 +469,25 @@ impl Instruction {
         }
     }
 
-    /// Creates a new [`Instruction::DataSegmentIdx`] from the given `index`.
-    pub fn data_idx(index: impl Into<DataSegmentIdx>) -> Self {
-        Self::DataSegmentIdx(index.into())
+    /// Creates a new [`Instruction::DataIndex`] from the given `index`.
+    pub fn data_index(index: impl Into<DataSegmentIdx>) -> Self {
+        Self::DataIndex {
+            index: index.into(),
+        }
     }
 
-    /// Creates a new [`Instruction::ElementSegmentIdx`] from the given `index`.
-    pub fn elem_idx(index: impl Into<ElementSegmentIdx>) -> Self {
-        Self::ElementSegmentIdx(index.into())
+    /// Creates a new [`Instruction::ElemIndex`] from the given `index`.
+    pub fn elem_index(index: impl Into<ElementSegmentIdx>) -> Self {
+        Self::ElemIndex {
+            index: index.into(),
+        }
     }
 
-    /// Creates a new [`Instruction::TableIdx`] from the given `index`.
-    pub fn table_idx(index: impl Into<TableIdx>) -> Self {
-        Self::TableIdx(index.into())
+    /// Creates a new [`Instruction::TableIndex`] from the given `index`.
+    pub fn table_index(index: impl Into<TableIdx>) -> Self {
+        Self::TableIndex {
+            index: index.into(),
+        }
     }
 
     /// Creates a new [`Instruction::TableGet`] with the given `result` and `index`.
@@ -989,35 +1000,41 @@ impl Instruction {
 
     /// Creates a new [`Instruction::Register`] instruction parameter.
     pub fn register(reg: impl Into<Reg>) -> Self {
-        Self::Register(reg.into())
+        Self::Register { reg: reg.into() }
     }
 
     /// Creates a new [`Instruction::Register2`] instruction parameter.
     pub fn register2(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
-        Self::Register2([reg0.into(), reg1.into()])
+        Self::Register2 {
+            regs: [reg0.into(), reg1.into()],
+        }
     }
 
     /// Creates a new [`Instruction::Register3`] instruction parameter.
     pub fn register3(reg0: impl Into<Reg>, reg1: impl Into<Reg>, reg2: impl Into<Reg>) -> Self {
-        Self::Register3([reg0.into(), reg1.into(), reg2.into()])
+        Self::Register3 {
+            regs: [reg0.into(), reg1.into(), reg2.into()],
+        }
     }
 
     /// Creates a new [`Instruction::RegisterList`] instruction parameter.
     pub fn register_list(reg0: impl Into<Reg>, reg1: impl Into<Reg>, reg2: impl Into<Reg>) -> Self {
-        Self::RegisterList([reg0.into(), reg1.into(), reg2.into()])
+        Self::RegisterList {
+            regs: [reg0.into(), reg1.into(), reg2.into()],
+        }
     }
 
     /// Creates a new [`Instruction::RegisterSpan`].
     pub fn register_span(span: RegSpanIter) -> Self {
-        Self::RegisterSpan(span)
+        Self::RegisterSpan { span }
     }
 
     /// Creates a new [`Instruction::CallIndirectParams`] for the given `index` and `table`.
     pub fn call_indirect_params(index: Reg, table: impl Into<TableIdx>) -> Self {
-        Self::CallIndirectParams(CallIndirectParams {
+        Self::CallIndirectParams {
             index,
             table: table.into(),
-        })
+        }
     }
 
     /// Creates a new [`Instruction::CallIndirectParamsImm16`] for the given `index` and `table`.
@@ -1025,10 +1042,10 @@ impl Instruction {
         index: impl Into<Const16<u32>>,
         table: impl Into<TableIdx>,
     ) -> Self {
-        Self::CallIndirectParamsImm16(CallIndirectParams {
+        Self::CallIndirectParamsImm16 {
             index: index.into(),
             table: table.into(),
-        })
+        }
     }
 
     /// Creates a new [`Instruction::CallInternal0`] for the given `func`.

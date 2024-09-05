@@ -41,7 +41,7 @@ fn test_store_for(
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             make_instr(Reg::from(0), offset),
-            Instruction::Register(Reg::from(1)),
+            Instruction::register(1),
             Instruction::Return,
         ])
         .run();
@@ -207,7 +207,7 @@ fn test_store_imm_for<T>(
         .expect_func(
             ExpectedFunc::new([
                 make_instr(Reg::from(0), offset),
-                Instruction::Register(Reg::from(-1)),
+                Instruction::register(-1),
                 Instruction::Return,
             ])
             .consts([value]),

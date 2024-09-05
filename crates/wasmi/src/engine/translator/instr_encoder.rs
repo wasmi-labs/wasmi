@@ -10,10 +10,10 @@ use crate::{
     core::{UntypedVal, ValType, F32},
     engine::{
         bytecode::{
-            BranchComparator,
             BranchOffset,
             BranchOffset16,
-            ComparatorOffsetParam,
+            Comparator,
+            ComparatorAndOffset,
             Const16,
             Const32,
             Instruction,
@@ -1002,12 +1002,12 @@ impl InstrEncoder {
         /// Create an [`Instruction::BranchCmpFallback`].
         fn make_branch_cmp_fallback(
             stack: &mut ValueStack,
-            cmp: BranchComparator,
+            cmp: Comparator,
             lhs: Reg,
             rhs: Reg,
             offset: BranchOffset,
         ) -> Result<Instruction, Error> {
-            let params = stack.alloc_const(ComparatorOffsetParam::new(cmp, offset))?;
+            let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
             Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
         }
 
@@ -1025,13 +1025,7 @@ impl InstrEncoder {
                 Ok(offset) => Instruction::branch_i32_eqz(condition, offset),
                 Err(_) => {
                     let zero = stack.alloc_const(0_i32)?;
-                    make_branch_cmp_fallback(
-                        stack,
-                        BranchComparator::I32Eq,
-                        condition,
-                        zero,
-                        offset,
-                    )?
+                    make_branch_cmp_fallback(stack, Comparator::I32Eq, condition, zero, offset)?
                 }
             };
             this.push_instr(instr)?;
@@ -1051,7 +1045,7 @@ impl InstrEncoder {
             lhs: Reg,
             rhs: Reg,
             label: LabelRef,
-            cmp: BranchComparator,
+            cmp: Comparator,
             make_instr: BranchCmpConstructor,
         ) -> Result<Option<Instruction>, Error> {
             if matches!(stack.get_register_space(result), RegisterSpace::Local) {
@@ -1086,7 +1080,7 @@ impl InstrEncoder {
             lhs: Reg,
             rhs: Const16<T>,
             label: LabelRef,
-            cmp: BranchComparator,
+            cmp: Comparator,
             make_instr: BranchCmpImmConstructor<T>,
         ) -> Result<Option<Instruction>, Error>
         where
@@ -1113,7 +1107,7 @@ impl InstrEncoder {
             };
             Ok(Some(instr))
         }
-        use BranchComparator as Cmp;
+        use Comparator as Cmp;
         use Instruction as I;
 
         let Some(last_instr) = self.last_instr else {
@@ -1199,12 +1193,12 @@ impl InstrEncoder {
         /// Create an [`Instruction::BranchCmpFallback`].
         fn make_branch_cmp_fallback(
             stack: &mut ValueStack,
-            cmp: BranchComparator,
+            cmp: Comparator,
             lhs: Reg,
             rhs: Reg,
             offset: BranchOffset,
         ) -> Result<Instruction, Error> {
-            let params = stack.alloc_const(ComparatorOffsetParam::new(cmp, offset))?;
+            let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
             Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
         }
 
@@ -1222,13 +1216,7 @@ impl InstrEncoder {
                 Ok(offset) => Instruction::branch_i32_nez(condition, offset),
                 Err(_) => {
                     let zero = stack.alloc_const(0_i32)?;
-                    make_branch_cmp_fallback(
-                        stack,
-                        BranchComparator::I32Ne,
-                        condition,
-                        zero,
-                        offset,
-                    )?
+                    make_branch_cmp_fallback(stack, Comparator::I32Ne, condition, zero, offset)?
                 }
             };
             this.push_instr(instr)?;
@@ -1248,7 +1236,7 @@ impl InstrEncoder {
             lhs: Reg,
             rhs: Reg,
             label: LabelRef,
-            cmp: BranchComparator,
+            cmp: Comparator,
             make_instr: BranchCmpConstructor,
         ) -> Result<Option<Instruction>, Error> {
             if matches!(stack.get_register_space(result), RegisterSpace::Local) {
@@ -1283,7 +1271,7 @@ impl InstrEncoder {
             lhs: Reg,
             rhs: Const16<T>,
             label: LabelRef,
-            cmp: BranchComparator,
+            cmp: Comparator,
             make_instr: BranchCmpImmConstructor<T>,
         ) -> Result<Option<Instruction>, Error>
         where
@@ -1310,7 +1298,7 @@ impl InstrEncoder {
             };
             Ok(Some(instr))
         }
-        use BranchComparator as Cmp;
+        use Comparator as Cmp;
         use Instruction as I;
 
         let Some(last_instr) = self.last_instr else {
@@ -1407,7 +1395,7 @@ impl Instruction {
         macro_rules! init_offset {
             ($lhs:expr, $rhs:expr, $offset:expr, $new_offset:expr, $cmp:expr) => {{
                 if let Err(_) = $offset.init($new_offset) {
-                    let params = stack.alloc_const(ComparatorOffsetParam::new($cmp, $new_offset))?;
+                    let params = stack.alloc_const(ComparatorAndOffset::new($cmp, $new_offset))?;
                     *self = Instruction::branch_cmp_fallback(*$lhs, *$rhs, params);
                 }
                 Ok(())
@@ -1418,7 +1406,7 @@ impl Instruction {
             ($ty:ty, $lhs:expr, $rhs:expr, $offset:expr, $new_offset:expr, $cmp:expr) => {{
                 if let Err(_) = $offset.init($new_offset) {
                     let rhs = stack.alloc_const(<$ty>::from(*$rhs))?;
-                    let params = stack.alloc_const(ComparatorOffsetParam::new($cmp, $new_offset))?;
+                    let params = stack.alloc_const(ComparatorAndOffset::new($cmp, $new_offset))?;
                     *self = Instruction::branch_cmp_fallback(*$lhs, rhs, params);
                 }
                 Ok(())
@@ -1426,7 +1414,7 @@ impl Instruction {
         }
 
         use Instruction as I;
-        use BranchComparator as Cmp;
+        use Comparator as Cmp;
         match self {
             Instruction::Branch { offset } |
             Instruction::BranchTableTarget { offset, .. } |

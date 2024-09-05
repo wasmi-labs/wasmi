@@ -9,13 +9,15 @@ use crate::{
 };
 
 impl<'engine> Executor<'engine> {
-    /// Returns the [`Instruction::DataSegmentIdx`] parameter for an [`Instruction`].
+    /// Returns the [`Instruction::DataIndex`] parameter for an [`Instruction`].
     fn fetch_data_segment_index(&self, offset: usize) -> DataSegmentIdx {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
-            Instruction::DataSegmentIdx(segment_index) => segment_index,
-            _ => unreachable!("expected an Instruction::DataSegmentIdx instruction word"),
+            Instruction::DataIndex { index } => index,
+            unexpected => {
+                unreachable!("expected `Instruction::DataIndex` but found: {unexpected:?}")
+            }
         }
     }
 

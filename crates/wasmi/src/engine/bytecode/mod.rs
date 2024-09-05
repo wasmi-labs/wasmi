@@ -5,15 +5,15 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-pub(crate) use self::{
-    immediate::{AnyConst16, AnyConst32, Const16, Const32},
+#[doc(inline)]
+pub use self::{
+    immediate::{AnyConst32, Const16, Const32},
     utils::{
         BlockFuel,
-        BranchComparator,
         BranchOffset,
         BranchOffset16,
-        CallIndirectParams,
-        ComparatorOffsetParam,
+        Comparator,
+        ComparatorAndOffset,
         DataSegmentIdx,
         ElementSegmentIdx,
         FuncIdx,
@@ -284,12 +284,12 @@ pub enum Instruction {
         /// We allocate constant values as function local constant values and use
         /// their register to only require a single fallback instruction variant.
         rhs: Reg,
-        /// The register that stores the [`ComparatorOffsetParam`] of this instruction.
+        /// The register that stores the [`ComparatorAndOffset`] of this instruction.
         ///
         /// # Note
         ///
-        /// The [`ComparatorOffsetParam`] is loaded from register as `u64` value and
-        /// decoded into a [`ComparatorOffsetParam`] before access its comparator
+        /// The [`ComparatorAndOffset`] is loaded from register as `u64` value and
+        /// decoded into a [`ComparatorAndOffset`] before access its comparator
         /// and 32-bit branch offset fields.
         params: Reg,
     },
@@ -4603,7 +4603,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
     TableGet {
         /// The register storing the result of the instruction.
         result: Reg,
@@ -4614,7 +4614,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
     TableGetImm {
         /// The register storing the result of the instruction.
         result: Reg,
@@ -4634,7 +4634,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
     TableSet {
         /// The register holding the `index` of the instruction.
         index: Reg,
@@ -4645,7 +4645,7 @@ pub enum Instruction {
     ///
     /// # Encoding
     ///
-    /// This [`Instruction`] must be followed by an [`Instruction::TableIdx`].
+    /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
     TableSetAt {
         /// The register holding the `value` of the instruction.
         value: Reg,
@@ -4661,8 +4661,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
     TableCopy {
         /// The start index of the `dst` table.
         dst: Reg,
@@ -4677,8 +4677,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
     TableCopyTo {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
@@ -4693,8 +4693,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
     TableCopyFrom {
         /// The start index of the `dst` table.
         dst: Reg,
@@ -4709,8 +4709,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
     TableCopyFromTo {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
@@ -4729,8 +4729,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
     TableCopyExact {
         /// The start index of the `dst` table.
         dst: Reg,
@@ -4749,8 +4749,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
     TableCopyToExact {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
@@ -4769,8 +4769,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
     TableCopyFromExact {
         /// The start index of the `dst` table.
         dst: Reg,
@@ -4789,8 +4789,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the `dst` Wasm table instance
-    /// 2. [`Instruction::TableIdx`]: the `src` Wasm table instance
+    /// 1. [`Instruction::TableIndex`]: the `dst` Wasm table instance
+    /// 2. [`Instruction::TableIndex`]: the `src` Wasm table instance
     TableCopyFromToExact {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
@@ -4808,8 +4808,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
     TableInit {
         /// The start index of the `dst` table.
         dst: Reg,
@@ -4824,8 +4824,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
     TableInitTo {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
@@ -4840,8 +4840,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
     TableInitFrom {
         /// The start index of the `dst` table.
         dst: Reg,
@@ -4856,8 +4856,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
     TableInitFromTo {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
@@ -4876,8 +4876,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
     TableInitExact {
         /// The start index of the `dst` table.
         dst: Reg,
@@ -4896,8 +4896,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
     TableInitToExact {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
@@ -4916,8 +4916,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
     TableInitFromExact {
         /// The start index of the `dst` table.
         dst: Reg,
@@ -4936,8 +4936,8 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
-    /// 2. [`Instruction::ElementSegmentIdx`]: the Wasm `element` segment instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+    /// 2. [`Instruction::ElemIndex`]: the Wasm `element` segment instance
     TableInitFromToExact {
         /// The start index of the `dst` table.
         dst: Const16<u32>,
@@ -4953,7 +4953,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
     TableFill {
         /// The start index of the table to fill.
         dst: Reg,
@@ -4968,7 +4968,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
     TableFillAt {
         /// The start index of the table to fill.
         dst: Const16<u32>,
@@ -4983,7 +4983,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
     TableFillExact {
         /// The start index of the table to fill.
         dst: Reg,
@@ -4998,7 +4998,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
     TableFillAtExact {
         /// The start index of the table to fill.
         dst: Const16<u32>,
@@ -5014,7 +5014,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
     TableGrow {
         /// Register holding the result of the instruction.
         result: Reg,
@@ -5029,7 +5029,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::TableIdx`]: the Wasm `table` instance
+    /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
     TableGrowImm {
         /// Register holding the result of the instruction.
         result: Reg,
@@ -5239,7 +5239,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
     MemoryInit {
         /// The start index of the `dst` memory.
         dst: Reg,
@@ -5254,7 +5254,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
     MemoryInitTo {
         /// The start index of the `dst` memory.
         dst: Const16<u32>,
@@ -5269,7 +5269,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
     MemoryInitFrom {
         /// The start index of the `dst` memory.
         dst: Reg,
@@ -5284,7 +5284,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
     MemoryInitFromTo {
         /// The start index of the `dst` memory.
         dst: Const16<u32>,
@@ -5299,7 +5299,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
     MemoryInitExact {
         /// The start index of the `dst` memory.
         dst: Reg,
@@ -5314,7 +5314,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
     MemoryInitToExact {
         /// The start index of the `dst` memory.
         dst: Const16<u32>,
@@ -5329,7 +5329,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
     MemoryInitFromExact {
         /// The start index of the `dst` memory.
         dst: Reg,
@@ -5344,7 +5344,7 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] must be followed by
     ///
-    /// 1. [`Instruction::DataSegmentIdx`]: the `data` segment to initialize the memory
+    /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
     MemoryInitFromToExact {
         /// The start index of the `dst` memory.
         dst: Const16<u32>,
@@ -5360,42 +5360,42 @@ pub enum Instruction {
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    TableIdx(TableIdx),
+    TableIndex { index: TableIdx },
     /// A [`DataSegmentIdx`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    DataSegmentIdx(DataSegmentIdx),
-    /// A [`ElementSegmentIdx`] instruction parameter.
+    DataIndex { index: DataSegmentIdx },
+    /// An [`ElementSegmentIdx`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    ElementSegmentIdx(ElementSegmentIdx),
+    ElemIndex { index: ElementSegmentIdx },
     /// A [`AnyConst32`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Const32(AnyConst32),
+    Const32 { value: AnyConst32 },
     /// A [`Const32<i64>`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    I64Const32(Const32<i64>),
+    I64Const32 { value: Const32<i64> },
     /// A [`Const32<f64>`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    F64Const32(Const32<f64>),
+    F64Const32 { value: Const32<f64> },
     /// A Wasm `br_table` branching target which copies values before branching.
     ///
     /// # Encoding
@@ -5438,28 +5438,28 @@ pub enum Instruction {
         imm: AnyConst32,
     },
     /// A [`RegSpanIter`] instruction parameter.
-    RegisterSpan(RegSpanIter),
+    RegisterSpan { span: RegSpanIter },
     /// A [`Reg`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Register(Reg),
+    Register { reg: Reg },
     /// Two [`Reg`] instruction parameters.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Register2([Reg; 2]),
+    Register2 { regs: [Reg; 2] },
     /// Three [`Reg`] instruction parameters.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    Register3([Reg; 3]),
+    Register3 { regs: [Reg; 3] },
     /// [`Reg`] slice parameters.
     ///
     /// # Note
@@ -5474,11 +5474,21 @@ pub enum Instruction {
     /// - [`Instruction::Register`]
     /// - [`Instruction::Register2`]
     /// - [`Instruction::Register3`]
-    RegisterList([Reg; 3]),
+    RegisterList { regs: [Reg; 3] },
     /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
-    CallIndirectParams(CallIndirectParams<Reg>),
+    CallIndirectParams {
+        /// The index of the called function in the table.
+        index: Reg,
+        /// The table which holds the called function at the index.
+        table: TableIdx,
+    },
     /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
-    CallIndirectParamsImm16(CallIndirectParams<Const16<u32>>),
+    CallIndirectParamsImm16 {
+        /// The index of the called function in the table.
+        index: Const16<u32>,
+        /// The table which holds the called function at the index.
+        table: TableIdx,
+    },
 }
 
 impl Instruction {

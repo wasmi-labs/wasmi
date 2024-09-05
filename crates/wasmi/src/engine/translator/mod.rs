@@ -1943,7 +1943,7 @@ impl FuncTranslator {
                     self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
                     self.alloc
                         .instr_encoder
-                        .append_instr(Instruction::Register(value))?;
+                        .append_instr(Instruction::register(value))?;
                     Ok(())
                 }
             }
@@ -1970,7 +1970,7 @@ impl FuncTranslator {
                         self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
                         self.alloc
                             .instr_encoder
-                            .append_instr(Instruction::Register(
+                            .append_instr(Instruction::register(
                                 self.alloc.stack.alloc_const(value)?,
                             ))?;
                         Ok(())
@@ -2033,7 +2033,7 @@ impl FuncTranslator {
                     self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
                     self.alloc
                         .instr_encoder
-                        .append_instr(Instruction::Register(value))?;
+                        .append_instr(Instruction::register(value))?;
                     Ok(())
                 }
             }
@@ -2052,7 +2052,7 @@ impl FuncTranslator {
                         self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
                         self.alloc
                             .instr_encoder
-                            .append_instr(Instruction::Register(
+                            .append_instr(Instruction::register(
                                 self.alloc.stack.alloc_const(value)?,
                             ))?;
                         Ok(())

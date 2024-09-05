@@ -18,18 +18,18 @@ impl VisitInputRegisters for Instruction {
     #[rustfmt::skip]
     fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Reg)) {
         match self {
-            Instruction::TableIdx(_) |
-            Instruction::DataSegmentIdx(_) |
-            Instruction::ElementSegmentIdx(_) |
-            Instruction::Const32(_) |
-            Instruction::I64Const32(_) |
-            Instruction::F64Const32(_) => {},
+            Instruction::TableIndex { .. } |
+            Instruction::DataIndex { .. } |
+            Instruction::ElemIndex { .. } |
+            Instruction::Const32 { .. } |
+            Instruction::I64Const32 { .. } |
+            Instruction::F64Const32 { .. } => {},
             Instruction::RegisterAndImm32 { reg, .. } => f(reg),
-            Instruction::Register(register) => f(register),
-            Instruction::Register2(registers) => registers.visit_input_registers(f),
-            Instruction::Register3(registers) |
-            Instruction::RegisterList(registers) => registers.visit_input_registers(f),
-            Instruction::RegisterSpan(registers) => registers.visit_input_registers(f),
+            Instruction::Register { reg } => f(reg),
+            Instruction::Register2 { regs } => regs.visit_input_registers(f),
+            Instruction::Register3 { regs } |
+            Instruction::RegisterList { regs } => regs.visit_input_registers(f),
+            Instruction::RegisterSpan { span } => span.visit_input_registers(f),
             Instruction::BranchTableTarget { .. } |
             Instruction::BranchTableTargetNonOverlapping { .. } => {},
             Instruction::Trap { .. } |
@@ -179,8 +179,8 @@ impl VisitInputRegisters for Instruction {
                 f(results.head_mut());
                 values.visit_input_registers(f);
             }
-            Instruction::CallIndirectParams(params) => f(&mut params.index),
-            Instruction::CallIndirectParamsImm16(_) => {},
+            Instruction::CallIndirectParams { index, .. } => f(index),
+            Instruction::CallIndirectParamsImm16 { .. } => {},
             Instruction::ReturnCallInternal0 { .. } |
             Instruction::ReturnCallInternal { .. } |
             Instruction::ReturnCallImported0 { .. } |

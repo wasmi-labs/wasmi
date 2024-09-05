@@ -2,10 +2,10 @@ use super::Executor;
 use crate::{
     core::UntypedVal,
     engine::bytecode::{
-        BranchComparator,
         BranchOffset,
         BranchOffset16,
-        ComparatorOffsetParam,
+        Comparator,
+        ComparatorAndOffset,
         Const16,
         Instruction,
         Reg,
@@ -59,10 +59,10 @@ impl<'engine> Executor<'engine> {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let value = match *self.ip.get() {
-            Instruction::Register(value) => self.get_register(value),
-            Instruction::Const32(value) => UntypedVal::from(u32::from(value)),
-            Instruction::I64Const32(value) => UntypedVal::from(i64::from(value)),
-            Instruction::F64Const32(value) => UntypedVal::from(f64::from(value)),
+            Instruction::Register { reg } => self.get_register(reg),
+            Instruction::Const32 { value } => UntypedVal::from(u32::from(value)),
+            Instruction::I64Const32 { value } => UntypedVal::from(i64::from(value)),
+            Instruction::F64Const32 { value } => UntypedVal::from(f64::from(value)),
             _ => unreachable!(),
         };
         self.ip.add(offset);
@@ -78,14 +78,14 @@ impl<'engine> Executor<'engine> {
     pub fn execute_branch_table_2(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
-        let Instruction::Register2(values) = *self.ip.get() else {
+        let Instruction::Register2 { regs } = *self.ip.get() else {
             unreachable!()
         };
         self.ip.add(offset);
         if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
-            let values = [0, 1].map(|i| self.get_register(values[i]));
+            let values = [0, 1].map(|i| self.get_register(regs[i]));
             let results = results.iter(2);
             for (result, value) in results.zip(values) {
                 self.set_register(result, value);
@@ -98,14 +98,14 @@ impl<'engine> Executor<'engine> {
     pub fn execute_branch_table_3(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
-        let Instruction::Register3(values) = *self.ip.get() else {
+        let Instruction::Register3 { regs } = *self.ip.get() else {
             unreachable!()
         };
         self.ip.add(offset);
         if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
-            let values = [0, 1, 2].map(|i| self.get_register(values[i]));
+            let values = [0, 1, 2].map(|i| self.get_register(regs[i]));
             let results = results.iter(3);
             for (result, value) in results.zip(values) {
                 self.set_register(result, value);
@@ -118,7 +118,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_branch_table_span(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
-        let Instruction::RegisterSpan(values) = *self.ip.get() else {
+        let Instruction::RegisterSpan { span: values } = *self.ip.get() else {
             unreachable!()
         };
         let len = values.len_as_u16();
@@ -374,9 +374,9 @@ impl_execute_branch_binop_imm! {
 impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::BranchCmpFallback`].
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
-        use BranchComparator as C;
+        use Comparator as C;
         let params = self.get_register(params);
-        let Some(params) = ComparatorOffsetParam::from_untyped(params) else {
+        let Some(params) = ComparatorAndOffset::from_untyped(params) else {
             panic!("encountered invalidaly encoded ComparatorOffsetParam: {params:?}")
         };
         let offset = params.offset;
