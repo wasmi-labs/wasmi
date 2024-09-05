@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{hint, UntypedVal},
-    engine::bytecode::{Const16, GlobalIdx, Reg},
+    engine::bytecode::{index, Const16, Reg},
     store::StoreInner,
 };
 
@@ -11,7 +11,7 @@ use crate::engine::bytecode::Instruction;
 impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::GlobalGet`].
     #[inline(always)]
-    pub fn execute_global_get(&mut self, store: &StoreInner, result: Reg, global: GlobalIdx) {
+    pub fn execute_global_get(&mut self, store: &StoreInner, result: Reg, global: index::Global) {
         let value = match u32::from(global) {
             0 => unsafe { self.cache.global.get() },
             _ => {
@@ -26,7 +26,12 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::GlobalSet`].
     #[inline(always)]
-    pub fn execute_global_set(&mut self, store: &mut StoreInner, global: GlobalIdx, input: Reg) {
+    pub fn execute_global_set(
+        &mut self,
+        store: &mut StoreInner,
+        global: index::Global,
+        input: Reg,
+    ) {
         let input = self.get_register(input);
         self.execute_global_set_impl(store, global, input)
     }
@@ -36,7 +41,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_global_set_i32imm16(
         &mut self,
         store: &mut StoreInner,
-        global: GlobalIdx,
+        global: index::Global,
         input: Const16<i32>,
     ) {
         let input = i32::from(input).into();
@@ -48,7 +53,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_global_set_i64imm16(
         &mut self,
         store: &mut StoreInner,
-        global: GlobalIdx,
+        global: index::Global,
         input: Const16<i64>,
     ) {
         let input = i64::from(input).into();
@@ -60,7 +65,7 @@ impl<'engine> Executor<'engine> {
     fn execute_global_set_impl(
         &mut self,
         store: &mut StoreInner,
-        global: GlobalIdx,
+        global: index::Global,
         new_value: UntypedVal,
     ) {
         match u32::from(global) {

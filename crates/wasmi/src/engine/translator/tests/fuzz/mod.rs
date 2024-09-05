@@ -4,7 +4,7 @@ use super::*;
 use crate::{
     core::{TrapCode, F32},
     engine::{
-        bytecode::{BranchOffset, BranchOffset16, GlobalIdx, RegSpan},
+        bytecode::{BranchOffset, BranchOffset16, Global, RegSpan},
         EngineFunc,
     },
 };
@@ -370,8 +370,8 @@ fn fuzz_regression_15_03() {
         .expect_func(
             // Note: The bug is that `copy2` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
             ExpectedFunc::new([
-                Instruction::global_get(Reg::from(1), GlobalIdx::from(0)),
-                Instruction::global_get(Reg::from(2), GlobalIdx::from(0)),
+                Instruction::global_get(Reg::from(1), Global::from(0)),
+                Instruction::global_get(Reg::from(2), Global::from(0)),
                 Instruction::i32_wrap_i64(Reg::from(3), Reg::from(0)),
                 Instruction::branch_table_2(Reg::from(3), 4),
                 Instruction::register2(Reg::from(-1), Reg::from(-2)),
@@ -401,8 +401,8 @@ fn fuzz_regression_16() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
-            Instruction::global_get(Reg::from(0), GlobalIdx::from(0)),
-            Instruction::global_set(GlobalIdx::from(0), Reg::from(0)),
+            Instruction::global_get(Reg::from(0), Global::from(0)),
+            Instruction::global_set(Global::from(0), Reg::from(0)),
             Instruction::i64_store_at(2147483647, Reg::from(2)),
             Instruction::trap(TrapCode::UnreachableCodeReached),
         ])

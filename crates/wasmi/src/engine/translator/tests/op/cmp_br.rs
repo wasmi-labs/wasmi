@@ -1,7 +1,7 @@
 use super::{wasm_type::WasmTy, *};
 use crate::{
     core::ValType,
-    engine::bytecode::{BranchOffset, BranchOffset16, GlobalIdx},
+    engine::bytecode::{BranchOffset, BranchOffset16, Global},
 };
 use std::fmt::{Debug, Display};
 
@@ -254,7 +254,7 @@ fn block_forward_nop_copy() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                Instruction::global_get(Reg::from(2), GlobalIdx::from(0)),
+                Instruction::global_get(Reg::from(2), Global::from(0)),
                 expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(2)),
                 Instruction::copy(Reg::from(2), Reg::from(0)),
                 Instruction::return_reg(2),

@@ -1,6 +1,6 @@
 use super::*;
 use crate::engine::{
-    bytecode::{FuncIdx, RegSpan, SignatureIdx, TableIdx},
+    bytecode::{Func, FuncType, RegSpan, Table},
     EngineFunc,
 };
 
@@ -99,7 +99,7 @@ fn overwrite_call_imported_result_1() {
         )"#;
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::call_imported(RegSpan::new(Reg::from(0)), FuncIdx::from(0)),
+            Instruction::call_imported(RegSpan::new(Reg::from(0)), Func::from(0)),
             Instruction::register(0),
             Instruction::return_reg(Reg::from(0)),
         ])
@@ -121,8 +121,8 @@ fn overwrite_call_indirect_result_1() {
         )"#;
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::call_indirect(RegSpan::new(Reg::from(0)), SignatureIdx::from(0)),
-            Instruction::call_indirect_params(Reg::from(0), TableIdx::from(0)),
+            Instruction::call_indirect(RegSpan::new(Reg::from(0)), FuncType::from(0)),
+            Instruction::call_indirect_params(Reg::from(0), Table::from(0)),
             Instruction::register(1),
             Instruction::return_reg(Reg::from(0)),
         ])

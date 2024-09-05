@@ -2,7 +2,7 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
     engine::{
-        bytecode::{FuncIdx, Instruction, Reg, RegSpan, SignatureIdx, TableIdx},
+        bytecode::{index, Instruction, Reg, RegSpan},
         code_map::CompiledFuncRef,
         executor::stack::{CallFrame, FrameParams, ValueStack},
         EngineFunc,
@@ -174,12 +174,12 @@ impl<'engine> Executor<'engine> {
     ///
     /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
     /// - This is done by encoding an [`Instruction::TableGet`] instruction
-    ///   word following the actual instruction where the [`TableIdx`]
+    ///   word following the actual instruction where the [`index::Table`]
     ///   paremeter belongs to.
     /// - This is required for some instructions that do not fit into
-    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   a single instruction word and store a [`index::Table`] value in
     ///   another instruction word.
-    fn pull_call_indirect_params(&mut self) -> (u32, TableIdx) {
+    fn pull_call_indirect_params(&mut self) -> (u32, index::Table) {
         self.ip.add(1);
         match *self.ip.get() {
             Instruction::CallIndirectParams { index, table } => {
@@ -198,12 +198,12 @@ impl<'engine> Executor<'engine> {
     ///
     /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
     /// - This is done by encoding an [`Instruction::TableGet`] instruction
-    ///   word following the actual instruction where the [`TableIdx`]
+    ///   word following the actual instruction where the [`index::Table`]
     ///   paremeter belongs to.
     /// - This is required for some instructions that do not fit into
-    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   a single instruction word and store a [`index::Table`] value in
     ///   another instruction word.
-    fn pull_call_indirect_params_imm16(&mut self) -> (u32, TableIdx) {
+    fn pull_call_indirect_params_imm16(&mut self) -> (u32, index::Table) {
         self.ip.add(1);
         match *self.ip.get() {
             Instruction::CallIndirectParamsImm16 { index, table } => {
@@ -409,7 +409,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_call_imported_0<T>(
         &mut self,
         store: &mut Store<T>,
-        func: FuncIdx,
+        func: index::Func,
     ) -> Result<(), Error> {
         self.execute_return_call_imported_impl::<marker::ReturnCall0, T>(store, func)
     }
@@ -419,7 +419,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_call_imported<T>(
         &mut self,
         store: &mut Store<T>,
-        func: FuncIdx,
+        func: index::Func,
     ) -> Result<(), Error> {
         self.execute_return_call_imported_impl::<marker::ReturnCall, T>(store, func)
     }
@@ -428,7 +428,7 @@ impl<'engine> Executor<'engine> {
     fn execute_return_call_imported_impl<C: ReturnCallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        func: FuncIdx,
+        func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
         let results = self.caller_results();
@@ -441,7 +441,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
-        func: FuncIdx,
+        func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
         self.execute_call_imported_impl::<marker::NestedCall0, T>(store, results, &func)
@@ -453,7 +453,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
-        func: FuncIdx,
+        func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
         self.execute_call_imported_impl::<marker::NestedCall, T>(store, results, &func)
@@ -569,7 +569,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_call_indirect_0<T>(
         &mut self,
         store: &mut Store<T>,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
@@ -583,7 +583,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_call_indirect_0_imm16<T>(
         &mut self,
         store: &mut Store<T>,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
         let results = self.caller_results();
@@ -597,7 +597,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_call_indirect<T>(
         &mut self,
         store: &mut Store<T>,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
@@ -611,7 +611,7 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_call_indirect_imm16<T>(
         &mut self,
         store: &mut Store<T>,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
         let results = self.caller_results();
@@ -626,7 +626,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl::<marker::NestedCall0, T>(
@@ -640,7 +640,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
         self.execute_call_indirect_impl::<marker::NestedCall0, T>(
@@ -654,7 +654,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl::<marker::NestedCall, T>(
@@ -668,7 +668,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
         self.execute_call_indirect_impl::<marker::NestedCall, T>(
@@ -681,9 +681,9 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
         index: u32,
-        table: TableIdx,
+        table: index::Table,
     ) -> Result<(), Error> {
         let table = self.get_table(table);
         let funcref = store

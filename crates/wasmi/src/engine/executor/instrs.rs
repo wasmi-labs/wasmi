@@ -4,19 +4,7 @@ use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
-        bytecode::{
-            AnyConst32,
-            BlockFuel,
-            Const16,
-            DataSegmentIdx,
-            ElementSegmentIdx,
-            FuncIdx,
-            GlobalIdx,
-            Instruction,
-            Reg,
-            SignatureIdx,
-            TableIdx,
-        },
+        bytecode::{index, AnyConst32, BlockFuel, Const16, Instruction, Reg},
         code_map::CodeMap,
         executor::stack::{CallFrame, FrameRegisters, ValueStack},
         DedupFuncType,
@@ -1372,13 +1360,13 @@ macro_rules! get_entity {
 
 impl<'engine> Executor<'engine> {
     get_entity! {
-        fn get_func(&self, store: &StoreInner, index: FuncIdx) -> Func;
-        fn get_func_type_dedup(&self, store: &StoreInner, index: SignatureIdx) -> DedupFuncType;
+        fn get_func(&self, store: &StoreInner, index: index::Func) -> Func;
+        fn get_func_type_dedup(&self, store: &StoreInner, index: index::FuncType) -> DedupFuncType;
         fn get_memory(&self, store: &StoreInner, index: u32) -> Memory;
-        fn get_table(&self, store: &StoreInner, index: TableIdx) -> Table;
-        fn get_global(&self, store: &StoreInner, index: GlobalIdx) -> Global;
-        fn get_data_segment(&self, store: &StoreInner, index: DataSegmentIdx) -> DataSegment;
-        fn get_element_segment(&self, store: &StoreInner, index: ElementSegmentIdx) -> ElementSegment;
+        fn get_table(&self, store: &StoreInner, index: index::Table) -> Table;
+        fn get_global(&self, store: &StoreInner, index: index::Global) -> Global;
+        fn get_data_segment(&self, store: &StoreInner, index: index::Data) -> DataSegment;
+        fn get_element_segment(&self, store: &StoreInner, index: index::Elem) -> ElementSegment;
     }
 
     /// Returns the default memory of the current [`Instance`] for `ctx`.
@@ -1703,7 +1691,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::RefFunc`].
     #[inline(always)]
-    fn execute_ref_func(&mut self, result: Reg, func_index: FuncIdx) {
+    fn execute_ref_func(&mut self, result: Reg, func_index: index::Func) {
         let func = self.get_func(func_index);
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);

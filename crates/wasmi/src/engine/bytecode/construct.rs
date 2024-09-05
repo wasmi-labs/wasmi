@@ -4,17 +4,17 @@ use super::{
     BranchOffset,
     Const16,
     Const32,
-    DataSegmentIdx,
-    ElementSegmentIdx,
+    Data,
+    Elem,
     EngineFunc,
-    FuncIdx,
-    GlobalIdx,
+    Func,
+    FuncType,
+    Global,
     Instruction,
     Reg,
     RegSpan,
     RegSpanIter,
-    SignatureIdx,
-    TableIdx,
+    Table,
 };
 use crate::core::TrapCode;
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
@@ -338,17 +338,17 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::GlobalGet`].
-    pub fn global_get(result: Reg, global: GlobalIdx) -> Self {
+    pub fn global_get(result: Reg, global: Global) -> Self {
         Self::GlobalGet { result, global }
     }
 
     /// Creates a new [`Instruction::GlobalSet`].
-    pub fn global_set(global: GlobalIdx, input: Reg) -> Self {
+    pub fn global_set(global: Global, input: Reg) -> Self {
         Self::GlobalSet { global, input }
     }
 
     /// Creates a new [`Instruction::GlobalSetI32Imm16`].
-    pub fn global_set_i32imm16(global: GlobalIdx, input: impl Into<Const16<i32>>) -> Self {
+    pub fn global_set_i32imm16(global: Global, input: impl Into<Const16<i32>>) -> Self {
         Self::GlobalSetI32Imm16 {
             global,
             input: input.into(),
@@ -356,7 +356,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::GlobalSetI64Imm16`].
-    pub fn global_set_i64imm16(global: GlobalIdx, input: impl Into<Const16<i64>>) -> Self {
+    pub fn global_set_i64imm16(global: Global, input: impl Into<Const16<i64>>) -> Self {
         Self::GlobalSetI64Imm16 {
             global,
             input: input.into(),
@@ -462,7 +462,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::RefFunc`] with the given `result` and `func`.
-    pub fn ref_func(result: Reg, func: impl Into<FuncIdx>) -> Self {
+    pub fn ref_func(result: Reg, func: impl Into<Func>) -> Self {
         Self::RefFunc {
             result,
             func: func.into(),
@@ -470,21 +470,21 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::DataIndex`] from the given `index`.
-    pub fn data_index(index: impl Into<DataSegmentIdx>) -> Self {
+    pub fn data_index(index: impl Into<Data>) -> Self {
         Self::DataIndex {
             index: index.into(),
         }
     }
 
     /// Creates a new [`Instruction::ElemIndex`] from the given `index`.
-    pub fn elem_index(index: impl Into<ElementSegmentIdx>) -> Self {
+    pub fn elem_index(index: impl Into<Elem>) -> Self {
         Self::ElemIndex {
             index: index.into(),
         }
     }
 
     /// Creates a new [`Instruction::TableIndex`] from the given `index`.
-    pub fn table_index(index: impl Into<TableIdx>) -> Self {
+    pub fn table_index(index: impl Into<Table>) -> Self {
         Self::TableIndex {
             index: index.into(),
         }
@@ -501,7 +501,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::TableSize`] with the given `result` and `table`.
-    pub fn table_size(result: Reg, table: impl Into<TableIdx>) -> Self {
+    pub fn table_size(result: Reg, table: impl Into<Table>) -> Self {
         Self::TableSize {
             result,
             table: table.into(),
@@ -1030,7 +1030,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallIndirectParams`] for the given `index` and `table`.
-    pub fn call_indirect_params(index: Reg, table: impl Into<TableIdx>) -> Self {
+    pub fn call_indirect_params(index: Reg, table: impl Into<Table>) -> Self {
         Self::CallIndirectParams {
             index,
             table: table.into(),
@@ -1040,7 +1040,7 @@ impl Instruction {
     /// Creates a new [`Instruction::CallIndirectParamsImm16`] for the given `index` and `table`.
     pub fn call_indirect_params_imm16(
         index: impl Into<Const16<u32>>,
-        table: impl Into<TableIdx>,
+        table: impl Into<Table>,
     ) -> Self {
         Self::CallIndirectParamsImm16 {
             index: index.into(),
@@ -1059,38 +1059,38 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnCallImported0`] for the given `func`.
-    pub fn return_call_imported_0(func: impl Into<FuncIdx>) -> Self {
+    pub fn return_call_imported_0(func: impl Into<Func>) -> Self {
         Self::ReturnCallImported0 { func: func.into() }
     }
 
     /// Creates a new [`Instruction::ReturnCallImported`] for the given `func`.
-    pub fn return_call_imported(func: impl Into<FuncIdx>) -> Self {
+    pub fn return_call_imported(func: impl Into<Func>) -> Self {
         Self::ReturnCallImported { func: func.into() }
     }
 
     /// Creates a new [`Instruction::ReturnCallIndirect0`] for the given `func`.
-    pub fn return_call_indirect_0(func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn return_call_indirect_0(func_type: impl Into<FuncType>) -> Self {
         Self::ReturnCallIndirect0 {
             func_type: func_type.into(),
         }
     }
 
     /// Creates a new [`Instruction::ReturnCallIndirect0Imm16`] for the given `func`.
-    pub fn return_call_indirect_0_imm16(func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn return_call_indirect_0_imm16(func_type: impl Into<FuncType>) -> Self {
         Self::ReturnCallIndirect0Imm16 {
             func_type: func_type.into(),
         }
     }
 
     /// Creates a new [`Instruction::ReturnCallIndirect`] for the given `func`.
-    pub fn return_call_indirect(func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn return_call_indirect(func_type: impl Into<FuncType>) -> Self {
         Self::ReturnCallIndirect {
             func_type: func_type.into(),
         }
     }
 
     /// Creates a new [`Instruction::ReturnCallIndirectImm16`] for the given `func`.
-    pub fn return_call_indirect_imm16(func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn return_call_indirect_imm16(func_type: impl Into<FuncType>) -> Self {
         Self::ReturnCallIndirectImm16 {
             func_type: func_type.into(),
         }
@@ -1107,7 +1107,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallImported0`] for the given `func`.
-    pub fn call_imported_0(results: RegSpan, func: impl Into<FuncIdx>) -> Self {
+    pub fn call_imported_0(results: RegSpan, func: impl Into<Func>) -> Self {
         Self::CallImported0 {
             results,
             func: func.into(),
@@ -1115,7 +1115,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallImported`] for the given `func`.
-    pub fn call_imported(results: RegSpan, func: impl Into<FuncIdx>) -> Self {
+    pub fn call_imported(results: RegSpan, func: impl Into<Func>) -> Self {
         Self::CallImported {
             results,
             func: func.into(),
@@ -1123,7 +1123,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallIndirect0`] for the given `func`.
-    pub fn call_indirect_0(results: RegSpan, func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn call_indirect_0(results: RegSpan, func_type: impl Into<FuncType>) -> Self {
         Self::CallIndirect0 {
             results,
             func_type: func_type.into(),
@@ -1131,7 +1131,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallIndirect0Imm16`] for the given `func`.
-    pub fn call_indirect_0_imm16(results: RegSpan, func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn call_indirect_0_imm16(results: RegSpan, func_type: impl Into<FuncType>) -> Self {
         Self::CallIndirect0Imm16 {
             results,
             func_type: func_type.into(),
@@ -1139,7 +1139,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallIndirect`] for the given `func`.
-    pub fn call_indirect(results: RegSpan, func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn call_indirect(results: RegSpan, func_type: impl Into<FuncType>) -> Self {
         Self::CallIndirect {
             results,
             func_type: func_type.into(),
@@ -1147,7 +1147,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CallIndirectImm16`] for the given `func`.
-    pub fn call_indirect_imm16(results: RegSpan, func_type: impl Into<SignatureIdx>) -> Self {
+    pub fn call_indirect_imm16(results: RegSpan, func_type: impl Into<FuncType>) -> Self {
         Self::CallIndirectImm16 {
             results,
             func_type: func_type.into(),

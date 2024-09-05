@@ -1,7 +1,7 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
-    engine::bytecode::{Const16, DataSegmentIdx, Instruction, Reg},
+    engine::bytecode::{Const16, Data, Instruction, Reg},
     error::EntityGrowError,
     store::{ResourceLimiterRef, StoreInner},
     Error,
@@ -10,7 +10,7 @@ use crate::{
 
 impl<'engine> Executor<'engine> {
     /// Returns the [`Instruction::DataIndex`] parameter for an [`Instruction`].
-    fn fetch_data_segment_index(&self, offset: usize) -> DataSegmentIdx {
+    fn fetch_data_segment_index(&self, offset: usize) -> Data {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
@@ -23,7 +23,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::DataDrop`].
     #[inline(always)]
-    pub fn execute_data_drop(&mut self, store: &mut StoreInner, segment_index: DataSegmentIdx) {
+    pub fn execute_data_drop(&mut self, store: &mut StoreInner, segment_index: Data) {
         let segment = self.get_data_segment(segment_index);
         store.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
@@ -524,7 +524,7 @@ impl<'engine> Executor<'engine> {
         let dst_index = dst as usize;
         let src_index = src as usize;
         let len = len as usize;
-        let data_index: DataSegmentIdx = self.fetch_data_segment_index(1);
+        let data_index: Data = self.fetch_data_segment_index(1);
         let (data, fuel) = store.resolve_data_and_fuel_mut(&self.get_data_segment(data_index));
         // Safety: The Wasmi executor keep track of the current Wasm instance
         //         being used and properly updates the cached linear memory

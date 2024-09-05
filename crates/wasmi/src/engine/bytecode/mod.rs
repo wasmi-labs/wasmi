@@ -5,6 +5,11 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
+/// Re-exports index types.
+pub mod index {
+    pub use super::{Data, Elem, Func, FuncType, Global, Table};
+}
+
 #[doc(inline)]
 pub use self::{
     immediate::{AnyConst32, Const16, Const32},
@@ -14,16 +19,16 @@ pub use self::{
         BranchOffset16,
         Comparator,
         ComparatorAndOffset,
-        DataSegmentIdx,
-        ElementSegmentIdx,
-        FuncIdx,
-        GlobalIdx,
+        Data,
+        Elem,
+        Func,
+        FuncType,
+        Global,
         Reg,
         RegSpan,
         RegSpanIter,
         Sign,
-        SignatureIdx,
-        TableIdx,
+        Table,
     },
 };
 use crate::{core::TrapCode, engine::EngineFunc, Error};
@@ -1245,7 +1250,7 @@ pub enum Instruction {
     /// Used for tail calling imported Wasm functions without parameters.
     ReturnCallImported0 {
         /// The called imported function.
-        func: FuncIdx,
+        func: Func,
     },
     /// Wasm `return_call` equivalent Wasmi instruction.
     ///
@@ -1264,7 +1269,7 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     ReturnCallImported {
         /// The called imported function.
-        func: FuncIdx,
+        func: Func,
     },
 
     /// Wasm `return_call_indirect` equivalent Wasmi instruction.
@@ -1278,7 +1283,7 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::CallIndirectParams`] encoding `table` and `index`.
     ReturnCallIndirect0 {
         /// The called internal function.
-        func_type: SignatureIdx,
+        func_type: FuncType,
     },
     /// Wasm `return_call_indirect` equivalent Wasmi instruction.
     ///
@@ -1291,7 +1296,7 @@ pub enum Instruction {
     /// Must be followed by [`Instruction::CallIndirectParamsImm16`] encoding `table` and 16-bit immediate `index`.
     ReturnCallIndirect0Imm16 {
         /// The called internal function.
-        func_type: SignatureIdx,
+        func_type: FuncType,
     },
     /// Wasm `return_call_indirect` equivalent Wasmi instruction.
     ///
@@ -1311,7 +1316,7 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     ReturnCallIndirect {
         /// The called internal function.
-        func_type: SignatureIdx,
+        func_type: FuncType,
     },
     /// Wasm `return_call_indirect` equivalent Wasmi instruction.
     ///
@@ -1331,7 +1336,7 @@ pub enum Instruction {
     ///     - [`Instruction::Register3`]
     ReturnCallIndirectImm16 {
         /// The called internal function.
-        func_type: SignatureIdx,
+        func_type: FuncType,
     },
 
     /// Wasm `call` equivalent Wasmi instruction.
@@ -1376,7 +1381,7 @@ pub enum Instruction {
         /// The registers storing the results of the call.
         results: RegSpan,
         /// The called imported function.
-        func: FuncIdx,
+        func: Func,
     },
     /// Wasm `call` equivalent Wasmi instruction.
     ///
@@ -1397,7 +1402,7 @@ pub enum Instruction {
         /// The registers storing the results of the call.
         results: RegSpan,
         /// The called imported function.
-        func: FuncIdx,
+        func: Func,
     },
 
     /// Wasm `call_indirect` equivalent Wasmi instruction.
@@ -1413,7 +1418,7 @@ pub enum Instruction {
         /// The registers storing the results of the call.
         results: RegSpan,
         /// The called internal function.
-        func_type: SignatureIdx,
+        func_type: FuncType,
     },
     /// Wasm `call_indirect` equivalent Wasmi instruction.
     ///
@@ -1428,7 +1433,7 @@ pub enum Instruction {
         /// The registers storing the results of the call.
         results: RegSpan,
         /// The called internal function.
-        func_type: SignatureIdx,
+        func_type: FuncType,
     },
     /// Wasm `call_indirect` equivalent Wasmi instruction.
     ///
@@ -1448,7 +1453,7 @@ pub enum Instruction {
         /// The registers storing the results of the call.
         results: RegSpan,
         /// The called internal function.
-        func_type: SignatureIdx,
+        func_type: FuncType,
     },
     /// Wasm `call_indirect` equivalent Wasmi instruction.
     ///
@@ -1470,7 +1475,7 @@ pub enum Instruction {
         /// The registers storing the results of the call.
         results: RegSpan,
         /// The called internal function.
-        func_type: SignatureIdx,
+        func_type: FuncType,
     },
 
     /// A Wasm `select` equivalent Wasmi instruction.
@@ -1589,7 +1594,7 @@ pub enum Instruction {
         /// The register storing the result of the instruction.
         result: Reg,
         /// The index of the referenced function.
-        func: FuncIdx,
+        func: Func,
     },
 
     /// Wasm `global.get` equivalent Wasmi instruction.
@@ -1597,12 +1602,12 @@ pub enum Instruction {
         /// The register storing the result of the instruction.
         result: Reg,
         /// The index identifying the global variable for the `global.get` instruction.
-        global: GlobalIdx,
+        global: Global,
     },
     /// Wasm `global.set` equivalent Wasmi instruction.
     GlobalSet {
         /// The index identifying the global variable for the `global.set` instruction.
-        global: GlobalIdx,
+        global: Global,
         /// The register holding the value to be stored in the global variable.
         input: Reg,
     },
@@ -1613,7 +1618,7 @@ pub enum Instruction {
     /// Variant of [`Instruction::GlobalSet`] for 16-bit encoded `i32` immutable `input` values.
     GlobalSetI32Imm16 {
         /// The index identifying the global variable for the `global.set` instruction.
-        global: GlobalIdx,
+        global: Global,
         /// The 16-bit encoded `i32` value.
         input: Const16<i32>,
     },
@@ -1624,7 +1629,7 @@ pub enum Instruction {
     /// Variant of [`Instruction::GlobalSet`] for 16-bit encoded `i64` immutable `input` values.
     GlobalSetI64Imm16 {
         /// The index identifying the global variable for the `global.set` instruction.
-        global: GlobalIdx,
+        global: Global,
         /// The 16-bit encoded `i64` value.
         input: Const16<i64>,
     },
@@ -4627,7 +4632,7 @@ pub enum Instruction {
         /// The register storing the result of the instruction.
         result: Reg,
         /// The index identifying the table for the instruction.
-        table: TableIdx,
+        table: Table,
     },
 
     /// A Wasm `table.set` instruction: `table[index] = value`
@@ -5040,9 +5045,9 @@ pub enum Instruction {
     },
 
     /// A Wasm `elem.drop` equalivalent Wasmi instruction.
-    ElemDrop(ElementSegmentIdx),
+    ElemDrop(Elem),
     /// A Wasm `data.drop` equalivalent Wasmi instruction.
-    DataDrop(DataSegmentIdx),
+    DataDrop(Data),
 
     /// Wasm `memory.size` instruction.
     MemorySize {
@@ -5354,27 +5359,27 @@ pub enum Instruction {
         len: Const16<u32>,
     },
 
-    /// A [`TableIdx`] instruction parameter.
+    /// An [`index::Table`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    TableIndex { index: TableIdx },
-    /// A [`DataSegmentIdx`] instruction parameter.
+    TableIndex { index: Table },
+    /// An [`index::Data`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    DataIndex { index: DataSegmentIdx },
-    /// An [`ElementSegmentIdx`] instruction parameter.
+    DataIndex { index: Data },
+    /// An [`index::Elem`] instruction parameter.
     ///
     /// # Note
     ///
     /// This [`Instruction`] only acts as a parameter to another
     /// one and will never be executed itself directly.
-    ElemIndex { index: ElementSegmentIdx },
+    ElemIndex { index: Elem },
     /// A [`AnyConst32`] instruction parameter.
     ///
     /// # Note
@@ -5480,14 +5485,14 @@ pub enum Instruction {
         /// The index of the called function in the table.
         index: Reg,
         /// The table which holds the called function at the index.
-        table: TableIdx,
+        table: Table,
     },
     /// Variant of [`Instruction::CallIndirectParams`] for 16-bit constant `index` parameter.
     CallIndirectParamsImm16 {
         /// The index of the called function in the table.
         index: Const16<u32>,
         /// The table which holds the called function at the index.
-        table: TableIdx,
+        table: Table,
     },
 }
 
