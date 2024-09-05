@@ -6,6 +6,7 @@ mod driver;
 mod error;
 mod instr_encoder;
 mod labels;
+mod provider;
 mod relink_result;
 mod stack;
 mod utils;
@@ -25,6 +26,7 @@ use self::{
     },
     control_stack::AcquiredTarget,
     labels::{LabelRef, LabelRegistry},
+    provider::{Provider, ProviderSliceStack, UntypedProvider},
     stack::ValueStack,
     utils::{WasmFloat, WasmInteger},
 };
@@ -36,10 +38,7 @@ pub use self::{
     instr_encoder::{Instr, InstrEncoder},
     stack::TypedProvider,
 };
-use super::{
-    bytecode::{BranchOffset, Provider},
-    code_map::CompiledFuncEntity,
-};
+use super::{bytecode::BranchOffset, code_map::CompiledFuncEntity};
 use crate::{
     core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{

@@ -1,6 +1,6 @@
-use super::{stack::ValueStack, TypedProvider, TypedVal};
+use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
-    engine::bytecode::{AnyConst16, Const16, Provider, Reg, RegSpanIter, Sign},
+    engine::bytecode::{AnyConst16, Const16, Reg, RegSpanIter, Sign},
     Error,
 };
 
