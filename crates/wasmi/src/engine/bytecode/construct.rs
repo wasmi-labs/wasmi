@@ -16,7 +16,6 @@ use super::{
     RegSpanIter,
     SignatureIdx,
     TableIdx,
-    UnaryInstr,
 };
 use crate::core::TrapCode;
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
@@ -1430,7 +1429,7 @@ macro_rules! constructor_for_unary_instrs {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($instr_name), "`].")]
                 pub fn $constructor_name(result: Reg, input: Reg) -> Self {
-                    Self::$instr_name(UnaryInstr::new(result, input))
+                    Self::$instr_name { result, input }
                 }
             )*
         }

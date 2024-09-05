@@ -17,7 +17,6 @@ use crate::{
             Reg,
             SignatureIdx,
             TableIdx,
-            UnaryInstr,
         },
         code_map::CodeMap,
         executor::stack::{CallFrame, FrameRegisters, ValueStack},
@@ -845,9 +844,9 @@ impl<'engine> Executor<'engine> {
                 Instr::F64Le { result, lhs, rhs } => self.execute_f64_le(result, lhs, rhs),
                 Instr::F64Gt { result, lhs, rhs } => self.execute_f64_gt(result, lhs, rhs),
                 Instr::F64Ge { result, lhs, rhs } => self.execute_f64_ge(result, lhs, rhs),
-                Instr::I32Clz(instr) => self.execute_i32_clz(instr),
-                Instr::I32Ctz(instr) => self.execute_i32_ctz(instr),
-                Instr::I32Popcnt(instr) => self.execute_i32_popcnt(instr),
+                Instr::I32Clz { result, input } => self.execute_i32_clz(result, input),
+                Instr::I32Ctz { result, input } => self.execute_i32_ctz(result, input),
+                Instr::I32Popcnt { result, input } => self.execute_i32_popcnt(result, input),
                 Instr::I32Add { result, lhs, rhs } => self.execute_i32_add(result, lhs, rhs),
                 Instr::I32AddImm16 { result, lhs, rhs } => {
                     self.execute_i32_add_imm16(result, lhs, rhs)
@@ -945,9 +944,9 @@ impl<'engine> Executor<'engine> {
                 Instr::I32RotrImm16Rev { result, lhs, rhs } => {
                     self.execute_i32_rotr_imm16_rev(result, lhs, rhs)
                 }
-                Instr::I64Clz(instr) => self.execute_i64_clz(instr),
-                Instr::I64Ctz(instr) => self.execute_i64_ctz(instr),
-                Instr::I64Popcnt(instr) => self.execute_i64_popcnt(instr),
+                Instr::I64Clz { result, input } => self.execute_i64_clz(result, input),
+                Instr::I64Ctz { result, input } => self.execute_i64_ctz(result, input),
+                Instr::I64Popcnt { result, input } => self.execute_i64_popcnt(result, input),
                 Instr::I64Add { result, lhs, rhs } => self.execute_i64_add(result, lhs, rhs),
                 Instr::I64AddImm16 { result, lhs, rhs } => {
                     self.execute_i64_add_imm16(result, lhs, rhs)
@@ -1033,19 +1032,19 @@ impl<'engine> Executor<'engine> {
                 Instr::I64RotrImm16Rev { result, lhs, rhs } => {
                     self.execute_i64_rotr_imm16_rev(result, lhs, rhs)
                 }
-                Instr::I32WrapI64(instr) => self.execute_i32_wrap_i64(instr),
-                Instr::I32Extend8S(instr) => self.execute_i32_extend8_s(instr),
-                Instr::I32Extend16S(instr) => self.execute_i32_extend16_s(instr),
-                Instr::I64Extend8S(instr) => self.execute_i64_extend8_s(instr),
-                Instr::I64Extend16S(instr) => self.execute_i64_extend16_s(instr),
-                Instr::I64Extend32S(instr) => self.execute_i64_extend32_s(instr),
-                Instr::F32Abs(instr) => self.execute_f32_abs(instr),
-                Instr::F32Neg(instr) => self.execute_f32_neg(instr),
-                Instr::F32Ceil(instr) => self.execute_f32_ceil(instr),
-                Instr::F32Floor(instr) => self.execute_f32_floor(instr),
-                Instr::F32Trunc(instr) => self.execute_f32_trunc(instr),
-                Instr::F32Nearest(instr) => self.execute_f32_nearest(instr),
-                Instr::F32Sqrt(instr) => self.execute_f32_sqrt(instr),
+                Instr::I32WrapI64 { result, input } => self.execute_i32_wrap_i64(result, input),
+                Instr::I32Extend8S { result, input } => self.execute_i32_extend8_s(result, input),
+                Instr::I32Extend16S { result, input } => self.execute_i32_extend16_s(result, input),
+                Instr::I64Extend8S { result, input } => self.execute_i64_extend8_s(result, input),
+                Instr::I64Extend16S { result, input } => self.execute_i64_extend16_s(result, input),
+                Instr::I64Extend32S { result, input } => self.execute_i64_extend32_s(result, input),
+                Instr::F32Abs { result, input } => self.execute_f32_abs(result, input),
+                Instr::F32Neg { result, input } => self.execute_f32_neg(result, input),
+                Instr::F32Ceil { result, input } => self.execute_f32_ceil(result, input),
+                Instr::F32Floor { result, input } => self.execute_f32_floor(result, input),
+                Instr::F32Trunc { result, input } => self.execute_f32_trunc(result, input),
+                Instr::F32Nearest { result, input } => self.execute_f32_nearest(result, input),
+                Instr::F32Sqrt { result, input } => self.execute_f32_sqrt(result, input),
                 Instr::F32Add { result, lhs, rhs } => self.execute_f32_add(result, lhs, rhs),
                 Instr::F32Sub { result, lhs, rhs } => self.execute_f32_sub(result, lhs, rhs),
                 Instr::F32Mul { result, lhs, rhs } => self.execute_f32_mul(result, lhs, rhs),
@@ -1058,13 +1057,13 @@ impl<'engine> Executor<'engine> {
                 Instr::F32CopysignImm { result, lhs, rhs } => {
                     self.execute_f32_copysign_imm(result, lhs, rhs)
                 }
-                Instr::F64Abs(instr) => self.execute_f64_abs(instr),
-                Instr::F64Neg(instr) => self.execute_f64_neg(instr),
-                Instr::F64Ceil(instr) => self.execute_f64_ceil(instr),
-                Instr::F64Floor(instr) => self.execute_f64_floor(instr),
-                Instr::F64Trunc(instr) => self.execute_f64_trunc(instr),
-                Instr::F64Nearest(instr) => self.execute_f64_nearest(instr),
-                Instr::F64Sqrt(instr) => self.execute_f64_sqrt(instr),
+                Instr::F64Abs { result, input } => self.execute_f64_abs(result, input),
+                Instr::F64Neg { result, input } => self.execute_f64_neg(result, input),
+                Instr::F64Ceil { result, input } => self.execute_f64_ceil(result, input),
+                Instr::F64Floor { result, input } => self.execute_f64_floor(result, input),
+                Instr::F64Trunc { result, input } => self.execute_f64_trunc(result, input),
+                Instr::F64Nearest { result, input } => self.execute_f64_nearest(result, input),
+                Instr::F64Sqrt { result, input } => self.execute_f64_sqrt(result, input),
                 Instr::F64Add { result, lhs, rhs } => self.execute_f64_add(result, lhs, rhs),
                 Instr::F64Sub { result, lhs, rhs } => self.execute_f64_sub(result, lhs, rhs),
                 Instr::F64Mul { result, lhs, rhs } => self.execute_f64_mul(result, lhs, rhs),
@@ -1077,32 +1076,82 @@ impl<'engine> Executor<'engine> {
                 Instr::F64CopysignImm { result, lhs, rhs } => {
                     self.execute_f64_copysign_imm(result, lhs, rhs)
                 }
-                Instr::I32TruncF32S(instr) => self.execute_i32_trunc_f32_s(instr)?,
-                Instr::I32TruncF32U(instr) => self.execute_i32_trunc_f32_u(instr)?,
-                Instr::I32TruncF64S(instr) => self.execute_i32_trunc_f64_s(instr)?,
-                Instr::I32TruncF64U(instr) => self.execute_i32_trunc_f64_u(instr)?,
-                Instr::I64TruncF32S(instr) => self.execute_i64_trunc_f32_s(instr)?,
-                Instr::I64TruncF32U(instr) => self.execute_i64_trunc_f32_u(instr)?,
-                Instr::I64TruncF64S(instr) => self.execute_i64_trunc_f64_s(instr)?,
-                Instr::I64TruncF64U(instr) => self.execute_i64_trunc_f64_u(instr)?,
-                Instr::I32TruncSatF32S(instr) => self.execute_i32_trunc_sat_f32_s(instr),
-                Instr::I32TruncSatF32U(instr) => self.execute_i32_trunc_sat_f32_u(instr),
-                Instr::I32TruncSatF64S(instr) => self.execute_i32_trunc_sat_f64_s(instr),
-                Instr::I32TruncSatF64U(instr) => self.execute_i32_trunc_sat_f64_u(instr),
-                Instr::I64TruncSatF32S(instr) => self.execute_i64_trunc_sat_f32_s(instr),
-                Instr::I64TruncSatF32U(instr) => self.execute_i64_trunc_sat_f32_u(instr),
-                Instr::I64TruncSatF64S(instr) => self.execute_i64_trunc_sat_f64_s(instr),
-                Instr::I64TruncSatF64U(instr) => self.execute_i64_trunc_sat_f64_u(instr),
-                Instr::F32DemoteF64(instr) => self.execute_f32_demote_f64(instr),
-                Instr::F64PromoteF32(instr) => self.execute_f64_promote_f32(instr),
-                Instr::F32ConvertI32S(instr) => self.execute_f32_convert_i32_s(instr),
-                Instr::F32ConvertI32U(instr) => self.execute_f32_convert_i32_u(instr),
-                Instr::F32ConvertI64S(instr) => self.execute_f32_convert_i64_s(instr),
-                Instr::F32ConvertI64U(instr) => self.execute_f32_convert_i64_u(instr),
-                Instr::F64ConvertI32S(instr) => self.execute_f64_convert_i32_s(instr),
-                Instr::F64ConvertI32U(instr) => self.execute_f64_convert_i32_u(instr),
-                Instr::F64ConvertI64S(instr) => self.execute_f64_convert_i64_s(instr),
-                Instr::F64ConvertI64U(instr) => self.execute_f64_convert_i64_u(instr),
+                Instr::I32TruncF32S { result, input } => {
+                    self.execute_i32_trunc_f32_s(result, input)?
+                }
+                Instr::I32TruncF32U { result, input } => {
+                    self.execute_i32_trunc_f32_u(result, input)?
+                }
+                Instr::I32TruncF64S { result, input } => {
+                    self.execute_i32_trunc_f64_s(result, input)?
+                }
+                Instr::I32TruncF64U { result, input } => {
+                    self.execute_i32_trunc_f64_u(result, input)?
+                }
+                Instr::I64TruncF32S { result, input } => {
+                    self.execute_i64_trunc_f32_s(result, input)?
+                }
+                Instr::I64TruncF32U { result, input } => {
+                    self.execute_i64_trunc_f32_u(result, input)?
+                }
+                Instr::I64TruncF64S { result, input } => {
+                    self.execute_i64_trunc_f64_s(result, input)?
+                }
+                Instr::I64TruncF64U { result, input } => {
+                    self.execute_i64_trunc_f64_u(result, input)?
+                }
+                Instr::I32TruncSatF32S { result, input } => {
+                    self.execute_i32_trunc_sat_f32_s(result, input)
+                }
+                Instr::I32TruncSatF32U { result, input } => {
+                    self.execute_i32_trunc_sat_f32_u(result, input)
+                }
+                Instr::I32TruncSatF64S { result, input } => {
+                    self.execute_i32_trunc_sat_f64_s(result, input)
+                }
+                Instr::I32TruncSatF64U { result, input } => {
+                    self.execute_i32_trunc_sat_f64_u(result, input)
+                }
+                Instr::I64TruncSatF32S { result, input } => {
+                    self.execute_i64_trunc_sat_f32_s(result, input)
+                }
+                Instr::I64TruncSatF32U { result, input } => {
+                    self.execute_i64_trunc_sat_f32_u(result, input)
+                }
+                Instr::I64TruncSatF64S { result, input } => {
+                    self.execute_i64_trunc_sat_f64_s(result, input)
+                }
+                Instr::I64TruncSatF64U { result, input } => {
+                    self.execute_i64_trunc_sat_f64_u(result, input)
+                }
+                Instr::F32DemoteF64 { result, input } => self.execute_f32_demote_f64(result, input),
+                Instr::F64PromoteF32 { result, input } => {
+                    self.execute_f64_promote_f32(result, input)
+                }
+                Instr::F32ConvertI32S { result, input } => {
+                    self.execute_f32_convert_i32_s(result, input)
+                }
+                Instr::F32ConvertI32U { result, input } => {
+                    self.execute_f32_convert_i32_u(result, input)
+                }
+                Instr::F32ConvertI64S { result, input } => {
+                    self.execute_f32_convert_i64_s(result, input)
+                }
+                Instr::F32ConvertI64U { result, input } => {
+                    self.execute_f32_convert_i64_u(result, input)
+                }
+                Instr::F64ConvertI32S { result, input } => {
+                    self.execute_f64_convert_i32_s(result, input)
+                }
+                Instr::F64ConvertI32U { result, input } => {
+                    self.execute_f64_convert_i32_u(result, input)
+                }
+                Instr::F64ConvertI64S { result, input } => {
+                    self.execute_f64_convert_i64_s(result, input)
+                }
+                Instr::F64ConvertI64U { result, input } => {
+                    self.execute_f64_convert_i64_u(result, input)
+                }
                 Instr::TableGet { result, index } => {
                     self.execute_table_get(&store.inner, result, index)?
                 }
@@ -1465,9 +1514,9 @@ impl<'engine> Executor<'engine> {
 
     /// Executes a generic unary [`Instruction`].
     #[inline(always)]
-    fn execute_unary(&mut self, instr: UnaryInstr, op: fn(UntypedVal) -> UntypedVal) {
-        let value = self.get_register(instr.input);
-        self.set_register(instr.result, op(value));
+    fn execute_unary(&mut self, result: Reg, input: Reg, op: fn(UntypedVal) -> UntypedVal) {
+        let value = self.get_register(input);
+        self.set_register(result, op(value));
         self.next_instr();
     }
 
@@ -1475,11 +1524,12 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn try_execute_unary(
         &mut self,
-        instr: UnaryInstr,
+        result: Reg,
+        input: Reg,
         op: fn(UntypedVal) -> Result<UntypedVal, TrapCode>,
     ) -> Result<(), Error> {
-        let value = self.get_register(instr.input);
-        self.set_register(instr.result, op(value)?);
+        let value = self.get_register(input);
+        self.set_register(result, op(value)?);
         self.try_next_instr()
     }
 

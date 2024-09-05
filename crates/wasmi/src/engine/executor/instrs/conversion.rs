@@ -1,5 +1,5 @@
 use super::Executor;
-use crate::{core::UntypedVal, engine::bytecode::UnaryInstr, Error};
+use crate::{core::UntypedVal, engine::bytecode::Reg, Error};
 
 #[cfg(doc)]
 use crate::engine::bytecode::Instruction;
@@ -9,8 +9,8 @@ macro_rules! impl_conversion_impls {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: UnaryInstr) {
-                self.execute_unary(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, input: Reg) {
+                self.execute_unary(result, input, $op)
             }
         )*
     };
@@ -21,8 +21,8 @@ macro_rules! impl_fallible_conversion_impls {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             #[inline(always)]
-            pub fn $fn_name(&mut self, instr: UnaryInstr) -> Result<(), Error> {
-                self.try_execute_unary(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, input: Reg) -> Result<(), Error> {
+                self.try_execute_unary(result, input, $op)
             }
         )*
     };
