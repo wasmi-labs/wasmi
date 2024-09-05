@@ -2,9 +2,9 @@ use super::Executor;
 use crate::{
     core::UntypedVal,
     engine::bytecode::{
-        BranchComparator,
         BranchOffset,
         BranchOffset16,
+        Comparator,
         ComparatorOffsetParam,
         Const16,
         Instruction,
@@ -374,7 +374,7 @@ impl_execute_branch_binop_imm! {
 impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::BranchCmpFallback`].
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
-        use BranchComparator as C;
+        use Comparator as C;
         let params = self.get_register(params);
         let Some(params) = ComparatorOffsetParam::from_untyped(params) else {
             panic!("encountered invalidaly encoded ComparatorOffsetParam: {params:?}")

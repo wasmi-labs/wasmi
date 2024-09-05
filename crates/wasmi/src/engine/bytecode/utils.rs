@@ -572,7 +572,7 @@ impl BlockFuel {
 /// Encodes the conditional branch comparator.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, FromPrimitive)]
 #[repr(u32)]
-pub enum BranchComparator {
+pub enum Comparator {
     I32Eq = 0,
     I32Ne = 1,
     I32LtS = 2,
@@ -625,14 +625,14 @@ pub enum BranchComparator {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ComparatorOffsetParam {
     /// Encodes the actual binary operator for the conditional branch.
-    pub cmp: BranchComparator,
+    pub cmp: Comparator,
     //// Encodes the 32-bit branching offset.
     pub offset: BranchOffset,
 }
 
 impl ComparatorOffsetParam {
     /// Create a new [`ComparatorOffsetParam`].
-    pub fn new(cmp: BranchComparator, offset: BranchOffset) -> Self {
+    pub fn new(cmp: Comparator, offset: BranchOffset) -> Self {
         Self { cmp, offset }
     }
 
@@ -643,7 +643,7 @@ impl ComparatorOffsetParam {
         use num_traits::FromPrimitive as _;
         let hi = (value >> 32) as u32;
         let lo = (value & 0xFFFF_FFFF) as u32;
-        let cmp = BranchComparator::from_u32(hi)?;
+        let cmp = Comparator::from_u32(hi)?;
         let offset = BranchOffset::from(lo as i32);
         Some(Self { cmp, offset })
     }

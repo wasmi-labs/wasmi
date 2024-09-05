@@ -9,10 +9,10 @@ pub(crate) use self::{
     immediate::{AnyConst32, Const16, Const32},
     utils::{
         BlockFuel,
-        BranchComparator,
         BranchOffset,
         BranchOffset16,
         CallIndirectParams,
+        Comparator,
         ComparatorOffsetParam,
         DataSegmentIdx,
         ElementSegmentIdx,
