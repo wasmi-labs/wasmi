@@ -28,7 +28,6 @@ pub(crate) use self::{
         Sign,
         SignatureIdx,
         TableIdx,
-        UnaryInstr,
     },
 };
 use crate::{core::TrapCode, engine::EngineFunc, Error};
@@ -3103,11 +3102,26 @@ pub enum Instruction {
     },
 
     /// `i32` count-leading-zeros (clz) instruction.
-    I32Clz(UnaryInstr),
+    I32Clz {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// `i32` count-trailing-zeros (ctz) instruction.
-    I32Ctz(UnaryInstr),
+    I32Ctz {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// `i32` pop-count instruction.
-    I32Popcnt(UnaryInstr),
+    I32Popcnt {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
 
     /// `i32` add instruction: `r0 = r1 + r2`
     I32Add {
@@ -3602,11 +3616,26 @@ pub enum Instruction {
     },
 
     /// `i64` count-leading-zeros (clz) instruction.
-    I64Clz(UnaryInstr),
+    I64Clz {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// `i64` count-trailing-zeros (ctz) instruction.
-    I64Ctz(UnaryInstr),
+    I64Ctz {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// `i64` pop-count instruction.
-    I64Popcnt(UnaryInstr),
+    I64Popcnt {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
 
     /// `i64` add instruction: `r0 = r1 + r2`
     I64Add {
@@ -4047,53 +4076,118 @@ pub enum Instruction {
     },
 
     /// Wasm `i32.wrap_i64` instruction.
-    I32WrapI64(UnaryInstr),
+    I32WrapI64 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
 
     /// Wasm `i32.extend8_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `sign-extension` proposal.
-    I32Extend8S(UnaryInstr),
+    I32Extend8S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i32.extend16_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `sign-extension` proposal.
-    I32Extend16S(UnaryInstr),
+    I32Extend16S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i64.extend8_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `sign-extension` proposal.
-    I64Extend8S(UnaryInstr),
+    I64Extend8S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm(UnaryInstr) `i64.extend16_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `sign-extension` proposal.
-    I64Extend16S(UnaryInstr),
+    I64Extend16S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i64.extend32_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `sign-extension` proposal.
-    I64Extend32S(UnaryInstr),
+    I64Extend32S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
 
     /// Wasm `f32.abs` instruction.
-    F32Abs(UnaryInstr),
+    F32Abs {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f32.neg` instruction.
-    F32Neg(UnaryInstr),
+    F32Neg {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f32.ceil` instruction.
-    F32Ceil(UnaryInstr),
+    F32Ceil {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f32.floor` instruction.
-    F32Floor(UnaryInstr),
+    F32Floor {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f32.trunc` instruction.
-    F32Trunc(UnaryInstr),
+    F32Trunc {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f32.nearest` instruction.
-    F32Nearest(UnaryInstr),
+    F32Nearest {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f32.sqrt` instruction.
-    F32Sqrt(UnaryInstr),
+    F32Sqrt {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
 
     /// Wasm `f32.add` instruction: `r0 = r1 + r2`
     F32Add {
@@ -4169,19 +4263,54 @@ pub enum Instruction {
     },
 
     /// Wasm `f64.abs` instruction.
-    F64Abs(UnaryInstr),
+    F64Abs {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.neg` instruction.
-    F64Neg(UnaryInstr),
+    F64Neg {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.ceil` instruction.
-    F64Ceil(UnaryInstr),
+    F64Ceil {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.floor` instruction.
-    F64Floor(UnaryInstr),
+    F64Floor {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.trunc` instruction.
-    F64Trunc(UnaryInstr),
+    F64Trunc {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.nearest` instruction.
-    F64Nearest(UnaryInstr),
+    F64Nearest {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.sqrt` instruction.
-    F64Sqrt(UnaryInstr),
+    F64Sqrt {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
 
     /// Wasm `f64.add` instruction: `r0 = r1 + r2`
     F64Add {
@@ -4257,92 +4386,222 @@ pub enum Instruction {
     },
 
     /// Wasm `i32.trunc_f32_s` instruction.
-    I32TruncF32S(UnaryInstr),
+    I32TruncF32S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i32.trunc_f32_u` instruction.
-    I32TruncF32U(UnaryInstr),
+    I32TruncF32U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i32.trunc_f64_s` instruction.
-    I32TruncF64S(UnaryInstr),
+    I32TruncF64S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i32.trunc_f64_u` instruction.
-    I32TruncF64U(UnaryInstr),
+    I32TruncF64U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i64.trunc_f32_s` instruction.
-    I64TruncF32S(UnaryInstr),
+    I64TruncF32S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i64.trunc_f32_u` instruction.
-    I64TruncF32U(UnaryInstr),
+    I64TruncF32U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i64.trunc_f64_s` instruction.
-    I64TruncF64S(UnaryInstr),
+    I64TruncF64S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i64.trunc_f64_u` instruction.
-    I64TruncF64U(UnaryInstr),
+    I64TruncF64U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
 
     /// Wasm `i32.trunc_sat_f32_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
-    I32TruncSatF32S(UnaryInstr),
+    I32TruncSatF32S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i32.trunc_sat_f32_u` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
-    I32TruncSatF32U(UnaryInstr),
+    I32TruncSatF32U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i32.trunc_sat_f64_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
-    I32TruncSatF64S(UnaryInstr),
+    I32TruncSatF64S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i32.trunc_sat_f64_u` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
-    I32TruncSatF64U(UnaryInstr),
+    I32TruncSatF64U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i64.trunc_sat_f32_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
-    I64TruncSatF32S(UnaryInstr),
+    I64TruncSatF32S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i64.trunc_sat_f32_u` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
-    I64TruncSatF32U(UnaryInstr),
+    I64TruncSatF32U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i64.trunc_sat_f64_s` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
-    I64TruncSatF64S(UnaryInstr),
+    I64TruncSatF64S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `i64.trunc_sat_f64_u` instruction.
     ///
     /// # Note
     ///
     /// Instruction from the Wasm `non-trapping float-to-int conversions` proposal.
-    I64TruncSatF64U(UnaryInstr),
+    I64TruncSatF64U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
 
     /// Wasm `f32.demote_f64` instruction.
-    F32DemoteF64(UnaryInstr),
+    F32DemoteF64 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.promote_f32` instruction.
-    F64PromoteF32(UnaryInstr),
+    F64PromoteF32 {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
 
     /// Wasm `f32.convert_i32_s` instruction.
-    F32ConvertI32S(UnaryInstr),
+    F32ConvertI32S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f32.convert_i32_u` instruction.
-    F32ConvertI32U(UnaryInstr),
+    F32ConvertI32U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f32.convert_i64_s` instruction.
-    F32ConvertI64S(UnaryInstr),
+    F32ConvertI64S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f32.convert_i64_u` instruction.
-    F32ConvertI64U(UnaryInstr),
+    F32ConvertI64U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.convert_i32_s` instruction.
-    F64ConvertI32S(UnaryInstr),
+    F64ConvertI32S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.convert_i32_u` instruction.
-    F64ConvertI32U(UnaryInstr),
+    F64ConvertI32U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.convert_i64_s` instruction.
-    F64ConvertI64S(UnaryInstr),
+    F64ConvertI64S {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
     /// Wasm `f64.convert_i64_u` instruction.
-    F64ConvertI64U(UnaryInstr),
+    F64ConvertI64U {
+        /// The register holding the result of the instruction.
+        result: Reg,
+        /// The register holding the input of the instruction.
+        input: Reg,
+    },
 
     /// A Wasm `table.get` instruction: `result = table[index]`
     ///

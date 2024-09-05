@@ -247,22 +247,6 @@ impl ExactSizeIterator for RegSpanIter {
     }
 }
 
-/// A unary instruction.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct UnaryInstr {
-    /// The register storing the result of the instruction.
-    pub result: Reg,
-    /// The register holding the input of the instruction.
-    pub input: Reg,
-}
-
-impl UnaryInstr {
-    /// Creates a new [`UnaryInstr`].
-    pub fn new(result: Reg, input: Reg) -> Self {
-        Self { result, input }
-    }
-}
-
 /// The sign of a value.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Sign {

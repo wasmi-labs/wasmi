@@ -1,6 +1,6 @@
 use crate::{
     engine::{
-        bytecode::{FuncIdx, Instruction, Reg, RegSpan, SignatureIdx, UnaryInstr},
+        bytecode::{FuncIdx, Instruction, Reg, RegSpan, SignatureIdx},
         EngineFunc,
     },
     module::ModuleHeader,
@@ -362,12 +362,12 @@ impl Instruction {
             I::I64GtUImm16 { result, .. } |
             I::I64GeUImm16 { result, .. } => relink_simple(result, new_result, old_result),
 
-            I::I32Clz(instr) |
-            I::I32Ctz(instr) |
-            I::I32Popcnt(instr) |
-            I::I64Clz(instr) |
-            I::I64Ctz(instr) |
-            I::I64Popcnt(instr) => relink_simple(instr, new_result, old_result),
+            I::I32Clz { result, .. } |
+            I::I32Ctz { result, .. } |
+            I::I32Popcnt { result, .. } |
+            I::I64Clz { result, .. } |
+            I::I64Ctz { result, .. } |
+            I::I64Popcnt { result, .. } => relink_simple(result, new_result, old_result),
 
             I::I32Add { result, ..} |
             I::I32Sub { result, ..} |
@@ -403,20 +403,20 @@ impl Instruction {
             I::I64Rotl { result, ..} |
             I::I64Rotr { result, ..} => relink_simple(result, new_result, old_result),
 
-            I::F32Abs(instr) |
-            I::F32Neg(instr) |
-            I::F32Ceil(instr) |
-            I::F32Floor(instr) |
-            I::F32Trunc(instr) |
-            I::F32Nearest(instr) |
-            I::F32Sqrt(instr) |
-            I::F64Abs(instr) |
-            I::F64Neg(instr) |
-            I::F64Ceil(instr) |
-            I::F64Floor(instr) |
-            I::F64Trunc(instr) |
-            I::F64Nearest(instr) |
-            I::F64Sqrt(instr) => relink_simple(instr, new_result, old_result),
+            I::F32Abs { result, .. } |
+            I::F32Neg { result, .. } |
+            I::F32Ceil { result, .. } |
+            I::F32Floor { result, .. } |
+            I::F32Trunc { result, .. } |
+            I::F32Nearest { result, .. } |
+            I::F32Sqrt { result, .. } |
+            I::F64Abs { result, .. } |
+            I::F64Neg { result, .. } |
+            I::F64Ceil { result, .. } |
+            I::F64Floor { result, .. } |
+            I::F64Trunc { result, .. } |
+            I::F64Nearest { result, .. } |
+            I::F64Sqrt { result, .. } => relink_simple(result, new_result, old_result),
 
             I::F32Add { result, .. } |
             I::F32Sub { result, .. } |
@@ -488,38 +488,38 @@ impl Instruction {
             I::I64RemUImm16 { result, .. } |
             I::I64RemUImm16Rev { result, .. } => relink_simple(result, new_result, old_result),
 
-            I::I32WrapI64(instr) |
-            I::I32TruncF32S(instr) |
-            I::I32TruncF32U(instr) |
-            I::I32TruncF64S(instr) |
-            I::I32TruncF64U(instr) |
-            I::I64TruncF32S(instr) |
-            I::I64TruncF32U(instr) |
-            I::I64TruncF64S(instr) |
-            I::I64TruncF64U(instr) |
-            I::I32TruncSatF32S(instr) |
-            I::I32TruncSatF32U(instr) |
-            I::I32TruncSatF64S(instr) |
-            I::I32TruncSatF64U(instr) |
-            I::I64TruncSatF32S(instr) |
-            I::I64TruncSatF32U(instr) |
-            I::I64TruncSatF64S(instr) |
-            I::I64TruncSatF64U(instr) |
-            I::I32Extend8S(instr) |
-            I::I32Extend16S(instr) |
-            I::I64Extend8S(instr) |
-            I::I64Extend16S(instr) |
-            I::I64Extend32S(instr) |
-            I::F32DemoteF64(instr) |
-            I::F64PromoteF32(instr) |
-            I::F32ConvertI32S(instr) |
-            I::F32ConvertI32U(instr) |
-            I::F32ConvertI64S(instr) |
-            I::F32ConvertI64U(instr) |
-            I::F64ConvertI32S(instr) |
-            I::F64ConvertI32U(instr) |
-            I::F64ConvertI64S(instr) |
-            I::F64ConvertI64U(instr) => relink_simple(instr, new_result, old_result),
+            I::I32WrapI64 { result, .. } |
+            I::I32TruncF32S { result, .. } |
+            I::I32TruncF32U { result, .. } |
+            I::I32TruncF64S { result, .. } |
+            I::I32TruncF64U { result, .. } |
+            I::I64TruncF32S { result, .. } |
+            I::I64TruncF32U { result, .. } |
+            I::I64TruncF64S { result, .. } |
+            I::I64TruncF64U { result, .. } |
+            I::I32TruncSatF32S { result, .. } |
+            I::I32TruncSatF32U { result, .. } |
+            I::I32TruncSatF64S { result, .. } |
+            I::I32TruncSatF64U { result, .. } |
+            I::I64TruncSatF32S { result, .. } |
+            I::I64TruncSatF32U { result, .. } |
+            I::I64TruncSatF64S { result, .. } |
+            I::I64TruncSatF64U { result, .. } |
+            I::I32Extend8S { result, .. } |
+            I::I32Extend16S { result, .. } |
+            I::I64Extend8S { result, .. } |
+            I::I64Extend16S { result, .. } |
+            I::I64Extend32S { result, .. } |
+            I::F32DemoteF64 { result, .. } |
+            I::F64PromoteF32 { result, .. } |
+            I::F32ConvertI32S { result, .. } |
+            I::F32ConvertI32U { result, .. } |
+            I::F32ConvertI64S { result, .. } |
+            I::F32ConvertI64U { result, .. } |
+            I::F64ConvertI32S { result, .. } |
+            I::F64ConvertI32U { result, .. } |
+            I::F64ConvertI64S { result, .. } |
+            I::F64ConvertI64U { result, .. } => relink_simple(result, new_result, old_result),
         }
     }
 }
@@ -607,11 +607,5 @@ trait ResultMut {
 impl ResultMut for Reg {
     fn result_mut(&mut self) -> &mut Reg {
         self
-    }
-}
-
-impl ResultMut for UnaryInstr {
-    fn result_mut(&mut self) -> &mut Reg {
-        &mut self.result
     }
 }

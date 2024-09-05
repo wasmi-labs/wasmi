@@ -4,7 +4,6 @@ use core::mem::size_of;
 #[test]
 fn bytecode_size() {
     assert_eq!(size_of::<Reg>(), 2);
-    assert_eq!(size_of::<UnaryInstr>(), 4);
     assert_eq!(size_of::<Instruction>(), 8);
 }
 
