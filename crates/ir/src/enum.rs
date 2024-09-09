@@ -77,6 +77,87 @@ macro_rules! define_enum {
 }
 for_each_op::for_each_op!(define_enum);
 
+impl Instruction {
+    /// Creates a new [`Instruction::ReturnReg2`] for the given [`Reg`] indices.
+    pub fn return_reg2_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
+        Self::return_reg2([reg0.into(), reg1.into()])
+    }
+
+    /// Creates a new [`Instruction::ReturnReg3`] for the given [`Reg`] indices.
+    pub fn return_reg3_ext(
+        reg0: impl Into<Reg>,
+        reg1: impl Into<Reg>,
+        reg2: impl Into<Reg>,
+    ) -> Self {
+        Self::return_reg3([reg0.into(), reg1.into(), reg2.into()])
+    }
+
+    /// Creates a new [`Instruction::ReturnMany`] for the given [`Reg`] indices.
+    pub fn return_many_ext(
+        reg0: impl Into<Reg>,
+        reg1: impl Into<Reg>,
+        reg2: impl Into<Reg>,
+    ) -> Self {
+        Self::return_many([reg0.into(), reg1.into(), reg2.into()])
+    }
+
+    /// Creates a new [`Instruction::ReturnNezReg2`] for the given `condition` and `value`.
+    pub fn return_nez_reg2_ext(
+        condition: impl Into<Reg>,
+        value0: impl Into<Reg>,
+        value1: impl Into<Reg>,
+    ) -> Self {
+        Self::return_nez_reg2(condition, [value0.into(), value1.into()])
+    }
+
+    /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `value`.
+    pub fn return_nez_many_ext(
+        condition: impl Into<Reg>,
+        head0: impl Into<Reg>,
+        head1: impl Into<Reg>,
+    ) -> Self {
+        Self::return_nez_many(condition, [head0.into(), head1.into()])
+    }
+
+    /// Creates a new [`Instruction::Copy2`].
+    pub fn copy2_ext(results: RegSpan, value0: impl Into<Reg>, value1: impl Into<Reg>) -> Self {
+        Self::copy2(results, [value0.into(), value1.into()])
+    }
+
+    /// Creates a new [`Instruction::CopyMany`].
+    pub fn copy_many_ext(results: RegSpan, head0: impl Into<Reg>, head1: impl Into<Reg>) -> Self {
+        Self::copy_many(results, [head0.into(), head1.into()])
+    }
+
+    /// Creates a new [`Instruction::CopyManyNonOverlapping`].
+    pub fn copy_many_non_overlapping_ext(
+        results: RegSpan,
+        head0: impl Into<Reg>,
+        head1: impl Into<Reg>,
+    ) -> Self {
+        Self::copy_many_non_overlapping(results, [head0.into(), head1.into()])
+    }
+
+    /// Creates a new [`Instruction::Register2`] instruction parameter.
+    pub fn register2_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
+        Self::register2([reg0.into(), reg1.into()])
+    }
+
+    /// Creates a new [`Instruction::Register3`] instruction parameter.
+    pub fn register3_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>, reg2: impl Into<Reg>) -> Self {
+        Self::register3([reg0.into(), reg1.into(), reg2.into()])
+    }
+
+    /// Creates a new [`Instruction::RegisterList`] instruction parameter.
+    pub fn register_list_ext(
+        reg0: impl Into<Reg>,
+        reg1: impl Into<Reg>,
+        reg2: impl Into<Reg>,
+    ) -> Self {
+        Self::register_list([reg0.into(), reg1.into(), reg2.into()])
+    }
+}
+
 #[test]
 fn size_of() {
     // Note: In case this test starts failing:
