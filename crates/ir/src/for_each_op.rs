@@ -1154,7 +1154,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// This is a Wasmi utility instruction used to translate Wasm control flow.
-            #[snake_name(copy_2)]
+            #[snake_name(copy2)]
             Copy2 {
                 @results: RegSpan,
                 /// The registers holding the values to copy.
