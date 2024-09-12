@@ -3,17 +3,21 @@
 mod utils;
 
 use libfuzzer_sys::fuzz_target;
-use utils::{ty_to_val, ExecConfig};
-use wasm_smith::ConfiguredModule;
+use utils::{arbitrary_exec_module, ty_to_val};
 use wasmi::{Engine, Linker, Module, Store, StoreLimitsBuilder};
 
-fuzz_target!(|cfg_module: ConfiguredModule<ExecConfig>| {
-    let mut smith_module = cfg_module.module;
+fuzz_target!(|data: &[u8]| {
+    let Ok(mut smith_module) = arbitrary_exec_module(data) else {
+        return;
+    };
+
     // TODO: We could use Wasmi's built-in fuel metering instead.
     //       This would improve test coverage and may be more efficient
     //       given that `wasm-smith`'s fuel metering uses global variables
     //       to communicate used fuel.
-    smith_module.ensure_termination(1000 /* fuel */);
+    let Ok(_) = smith_module.ensure_termination(1000 /* fuel */) else {
+        return;
+    };
     let wasm = smith_module.to_bytes();
     let engine = Engine::default();
     let linker = Linker::new(&engine);
