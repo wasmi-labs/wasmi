@@ -154,32 +154,6 @@ impl RegSpanIter {
         self.len() == 0
     }
 
-    /// Returns the [`Reg`] with the minimum index of the [`RegSpanIter`].
-    fn min_register(&self) -> Reg {
-        self.span().head()
-    }
-
-    /// Returns the [`Reg`] with the maximum index of the [`RegSpanIter`].
-    ///
-    /// # Note
-    ///
-    /// - Returns [`Self::min_register`] in case the [`RegSpanIter`] is empty.
-    fn max_register(&self) -> Reg {
-        self.clone()
-            .next_back()
-            .unwrap_or_else(|| self.min_register())
-    }
-
-    /// Returns `true` if the [`Reg`] is contains in the [`RegSpanIter`].
-    pub fn contains(&self, register: Reg) -> bool {
-        if self.is_empty() {
-            return false;
-        }
-        let min = self.min_register();
-        let max = self.max_register();
-        min <= register && register <= max
-    }
-
     /// Returns `true` if `copy_span results <- values` has overlapping copies.
     ///
     /// # Examples
