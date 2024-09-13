@@ -121,7 +121,10 @@ impl Instruction {
 
     /// Creates a new [`Instruction::Copy2`].
     pub fn copy2_ext(results: RegSpan, value0: impl Into<Reg>, value1: impl Into<Reg>) -> Self {
-        Self::copy2(results, [value0.into(), value1.into()])
+        let span = FixedRegSpan::new(results).unwrap_or_else(|_| {
+            panic!("encountered invalid `results` `RegSpan` for `Copy2`: {results:?}")
+        });
+        Self::copy2(span, [value0.into(), value1.into()])
     }
 
     /// Creates a new [`Instruction::CopyMany`].

@@ -95,11 +95,11 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Returns values as stored in the [`RegSpanIter`].
+            /// Returns values as stored in the bounded [`RegSpan`].
             #[snake_name(return_span)]
             ReturnSpan {
                 /// The [`RegSpan`] that represents the registers that store the returned values.
-                values: RegSpanIter,
+                values: BoundedRegSpan,
             },
             /// A Wasm `return` instruction.
             ///
@@ -208,7 +208,7 @@ macro_rules! for_each_op {
                 /// The register holding the condition to evaluate against zero.
                 condition: Reg,
                 /// The returned values.
-                values: RegSpanIter,
+                values: BoundedRegSpan,
             },
             /// A conditional `return` instruction.
             ///
@@ -1156,7 +1156,7 @@ macro_rules! for_each_op {
             /// This is a Wasmi utility instruction used to translate Wasm control flow.
             #[snake_name(copy2)]
             Copy2 {
-                @results: RegSpan,
+                @results: FixedRegSpan<2>,
                 /// The registers holding the values to copy.
                 values: [Reg; 2],
             },
@@ -5609,9 +5609,9 @@ macro_rules! for_each_op {
                 /// The 32-bit immediate value.
                 imm: AnyConst32,
             },
-            /// A [`RegSpanIter`] instruction parameter.
+            /// A bounded [`RegSpan`] instruction parameter.
             #[snake_name(register_span)]
-            RegisterSpan { span: RegSpanIter },
+            RegisterSpan { span: BoundedRegSpan },
             /// A [`Reg`] instruction parameter.
             ///
             /// # Note

@@ -1,4 +1,4 @@
-use crate::{for_each_op, index::Reg, Instruction, RegSpan};
+use crate::{for_each_op, index::Reg, FixedRegSpan, Instruction, RegSpan};
 
 impl Instruction {
     /// Relinks the result [`Reg`] of `self` to `new_reg` if it was `old_reg`.
@@ -69,5 +69,11 @@ impl RelinkResult for RegSpan {
         }
         *self.head_mut() = new_reg;
         true
+    }
+}
+
+impl<const N: u16> RelinkResult for FixedRegSpan<N> {
+    fn relink_result(&mut self, _old_reg: Reg, _new_reg: Reg) -> bool {
+        false
     }
 }

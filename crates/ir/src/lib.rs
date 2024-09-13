@@ -14,6 +14,7 @@ pub mod index;
 mod primitive;
 mod relink_result;
 mod sequence;
+mod span;
 mod visit_input_regs;
 
 #[cfg(test)]
@@ -27,16 +28,8 @@ pub use self::{
     immeditate::{AnyConst32, Const16, Const32},
     index::Instr,
     index::Reg,
-    primitive::{
-        BlockFuel,
-        BranchOffset,
-        BranchOffset16,
-        Comparator,
-        ComparatorAndOffset,
-        RegSpan,
-        RegSpanIter,
-        Sign,
-    },
+    primitive::{BlockFuel, BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Sign},
     r#enum::Instruction,
     sequence::{InstrIter, InstrIterMut, InstrSequence},
+    span::{BoundedRegSpan, FixedRegSpan, RegSpan, RegSpanIter},
 };

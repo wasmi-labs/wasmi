@@ -36,7 +36,7 @@ impl_visit_input_regs_fallback!(
     BranchOffset16,
     Reg,
     RegSpan,
-    RegSpanIter,
+    BoundedRegSpan,
     AnyConst32,
     InternalFunc,
     Elem,

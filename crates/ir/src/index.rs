@@ -69,14 +69,34 @@ impl TryFrom<u32> for Reg {
 }
 
 impl Reg {
+    /// Returns the n-th next [`Reg`] from `self` with contigous index.
+    ///
+    /// # Note
+    ///
+    /// - Calling this with `n == 0` just returns `self`.
+    /// - This has wrapping semantics with respect to the underlying index.
+    pub fn next_n(self, n: u16) -> Self {
+        Self(self.0.wrapping_add_unsigned(n))
+    }
+
+    /// Returns the n-th previous [`Reg`] from `self` with contigous index.
+    ///
+    /// # Note
+    ///
+    /// - Calling this with `n == 0` just returns `self`.
+    /// - This has wrapping semantics with respect to the underlying index.
+    pub fn prev_n(self, n: u16) -> Self {
+        Self(self.0.wrapping_sub_unsigned(n))
+    }
+
     /// Returns the [`Reg`] with the next contiguous index.
-    pub fn next(self) -> Reg {
-        Self(self.0.wrapping_add(1))
+    pub fn next(self) -> Self {
+        self.next_n(1)
     }
 
     /// Returns the [`Reg`] with the previous contiguous index.
-    pub fn prev(self) -> Reg {
-        Self(self.0.wrapping_sub(1))
+    pub fn prev(self) -> Self {
+        self.prev_n(1)
     }
 
     /// Returns `true` if `self` represents a function local constant value.

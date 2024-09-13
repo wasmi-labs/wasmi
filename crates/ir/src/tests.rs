@@ -7,7 +7,7 @@ fn has_overlapping_copy_spans_works() {
     }
 
     fn has_overlapping_copy_spans(results: RegSpan, values: RegSpan, len: u16) -> bool {
-        RegSpanIter::has_overlapping_copies(results.iter_u16(len), values.iter_u16(len))
+        RegSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 
     // len == 0
