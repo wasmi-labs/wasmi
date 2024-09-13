@@ -27,7 +27,7 @@ impl BlockHeight {
     /// Creates a new [`BlockHeight`] for the given [`ValueStack`] `height` and [`BlockType`].
     pub fn new(engine: &Engine, height: usize, block_type: BlockType) -> Result<Self, Error> {
         fn new_impl(engine: &Engine, height: usize, block_type: BlockType) -> Option<BlockHeight> {
-            let len_params = u16::try_from(block_type.len_params(engine)).ok()?;
+            let len_params = block_type.len_params(engine);
             let height = u16::try_from(height).ok()?;
             let block_height = height.checked_sub(len_params)?;
             Some(BlockHeight(block_height))

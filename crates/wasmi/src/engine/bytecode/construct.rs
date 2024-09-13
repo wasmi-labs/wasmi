@@ -294,8 +294,8 @@ impl Instruction {
     /// Creates a new [`Instruction::CopySpan`] copying multiple consecutive values.
     pub fn copy_span(results: RegSpan, values: RegSpan, len: u16) -> Self {
         debug_assert!(RegSpanIter::has_overlapping_copies(
-            results.iter_u16(len),
-            values.iter_u16(len)
+            results.iter(len),
+            values.iter(len)
         ));
         Self::CopySpan {
             results,
@@ -307,8 +307,8 @@ impl Instruction {
     /// Creates a new [`Instruction::CopySpanNonOverlapping`] copying multiple consecutive values.
     pub fn copy_span_non_overlapping(results: RegSpan, values: RegSpan, len: u16) -> Self {
         debug_assert!(!RegSpanIter::has_overlapping_copies(
-            results.iter_u16(len),
-            values.iter_u16(len)
+            results.iter(len),
+            values.iter(len)
         ));
         Self::CopySpanNonOverlapping {
             results,

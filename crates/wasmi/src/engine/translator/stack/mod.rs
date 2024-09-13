@@ -382,7 +382,7 @@ impl ValueStack {
     /// If this procedure would allocate more registers than are available.
     pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegSpan, Error> {
         let registers = self.reg_alloc.push_dynamic_n(n)?;
-        for register in registers.iter(n) {
+        for register in registers.iter_sized(n) {
             self.providers.push_dynamic(register);
         }
         Ok(registers)

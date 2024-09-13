@@ -74,8 +74,8 @@ impl<'engine> Executor<'engine> {
     /// Internal implementation of [`Instruction::CopySpan`] execution.
     #[inline(always)]
     pub fn execute_copy_span_impl(&mut self, results: RegSpan, values: RegSpan, len: u16) {
-        let results = results.iter_u16(len);
-        let values = values.iter_u16(len);
+        let results = results.iter(len);
+        let values = values.iter(len);
         let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
         tmp.extend(values.into_iter().map(|value| self.get_register(value)));
         for (result, value) in results.into_iter().zip(tmp) {
@@ -109,8 +109,8 @@ impl<'engine> Executor<'engine> {
         values: RegSpan,
         len: u16,
     ) {
-        let results = results.iter_u16(len);
-        let values = values.iter_u16(len);
+        let results = results.iter(len);
+        let values = values.iter(len);
         for (result, value) in results.into_iter().zip(values.into_iter()) {
             let value = self.get_register(value);
             self.set_register(result, value);
@@ -151,7 +151,7 @@ impl<'engine> Executor<'engine> {
             ),
         };
         tmp.extend(values.iter().map(|value| self.get_register(*value)));
-        for (result, value) in results.iter(tmp.len()).zip(tmp) {
+        for (result, value) in results.iter_sized(tmp.len()).zip(tmp) {
             self.set_register(result, value);
         }
         ip

@@ -825,7 +825,7 @@ impl FuncTranslator {
         });
         for copy_group in copy_groups {
             let len = copy_group.len();
-            let results = RegSpan::new(copy_group[0].preserved).iter(len);
+            let results = RegSpan::new(copy_group[0].preserved).iter_sized(len);
             let providers = &mut self.alloc.buffer.providers;
             providers.clear();
             providers.extend(
@@ -1205,14 +1205,19 @@ impl FuncTranslator {
     /// If this procedure would allocate more registers than are available.
     fn alloc_branch_params(
         &mut self,
-        len_block_params: usize,
-        len_branch_params: usize,
+        len_block_params: u16,
+        len_branch_params: u16,
     ) -> Result<RegSpan, Error> {
         let params = &mut self.alloc.buffer.providers;
         // Pop the block parameters off the stack.
-        self.alloc.stack.pop_n(len_block_params, params);
+        self.alloc
+            .stack
+            .pop_n(usize::from(len_block_params), params);
         // Peek the branch parameter registers which are going to be returned.
-        let branch_params = self.alloc.stack.peek_dynamic_n(len_branch_params)?;
+        let branch_params = self
+            .alloc
+            .stack
+            .peek_dynamic_n(usize::from(len_branch_params))?;
         // Push the block parameters onto the stack again as if nothing happened.
         self.alloc.stack.push_n(params)?;
         params.clear();

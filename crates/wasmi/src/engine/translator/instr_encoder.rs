@@ -526,7 +526,7 @@ impl InstrEncoder {
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
     pub fn has_overlapping_copy_spans(results: RegSpan, values: RegSpan, len: usize) -> bool {
-        RegSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
+        RegSpanIter::has_overlapping_copies(results.iter_sized(len), values.iter_sized(len))
     }
 
     /// Returns `true` if the `copy results <- values` instruction has overlaps.
