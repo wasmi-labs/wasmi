@@ -143,7 +143,7 @@ impl<'engine> Executor<'engine> {
     ) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
         debug_assert!(u16::try_from(N).is_ok());
-        for (result, value) in results.iter_u16(N as u16).zip(values) {
+        for (result, value) in results.iter(N as u16).zip(values) {
             let value = self.get_register(value);
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the
