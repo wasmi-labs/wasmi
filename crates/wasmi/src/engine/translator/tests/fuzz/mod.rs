@@ -474,3 +474,38 @@ fn audit_0_execution() {
     std::println!("result = {result:?}");
     assert_eq!(result, (0, 1, 0, 1));
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn audit_1_codegen() {
+    let wasm = include_str!("wat/audit_1.wat");
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy_span_non_overlapping(
+                RegSpan::new(Reg::from(6)),
+                RegSpan::new(Reg::from(0)),
+                3,
+            ),
+            Instruction::trap(TrapCode::IntegerOverflow),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn audit_1_execution() {
+    use crate::{Engine, Instance, Store};
+    let wat = include_str!("wat/audit_1.wat");
+    let wasm = wat::parse_str(wat).unwrap();
+    let engine = Engine::default();
+    let mut store = <Store<()>>::new(&engine, ());
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let instance = Instance::new(&mut store, &module, &[]).unwrap();
+    let func = instance
+        .get_func(&store, "")
+        .unwrap()
+        .typed::<(), (i32, i32, i32)>(&store)
+        .unwrap();
+    let result = func.call(&mut store, ()).unwrap_err();
+    std::println!("result = {result:?}");
+}
