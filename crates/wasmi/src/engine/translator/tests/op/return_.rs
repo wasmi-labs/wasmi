@@ -264,9 +264,7 @@ fn return_4_span() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(4),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(4))])
         .run()
 }
 
@@ -303,9 +301,7 @@ fn return_5_span() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(5),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(5))])
         .run()
 }
 

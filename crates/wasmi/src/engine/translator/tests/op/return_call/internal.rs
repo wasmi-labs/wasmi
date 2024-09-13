@@ -240,9 +240,7 @@ fn params7_reg() {
         )
     "#;
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(7),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(7))])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register_list(0, 1, 2),
@@ -280,9 +278,7 @@ fn params7_reg_rev() {
         )
     "#;
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(7),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(7))])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register_list(6, 5, 4),
@@ -320,9 +316,7 @@ fn params7_imm() {
         )
     "#;
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(7),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(7))])
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_internal(EngineFunc::from_u32(0)),
@@ -365,9 +359,7 @@ fn params8_reg() {
         )
     "#;
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(8),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(8))])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register_list(0, 1, 2),
@@ -407,9 +399,7 @@ fn params8_reg_rev() {
         )
     "#;
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(8),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(8))])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register_list(7, 6, 5),
@@ -449,9 +439,7 @@ fn params8_imm() {
         )
     "#;
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(8),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(8))])
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_internal(EngineFunc::from_u32(0)),
@@ -496,9 +484,7 @@ fn params9_reg() {
         )
     "#;
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(9),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(9))])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register_list(0, 1, 2),
@@ -540,9 +526,7 @@ fn params9_reg_rev() {
         )
     "#;
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(9),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(9))])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register_list(8, 7, 6),
@@ -584,9 +568,7 @@ fn params9_imm() {
         )
     "#;
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegSpan::new(Reg::from(0)).iter_sized(9),
-        )])
+        .expect_func_instrs([Instruction::return_span(RegSpan::new(Reg::from(0)).iter(9))])
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_internal(EngineFunc::from_u32(0)),

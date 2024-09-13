@@ -509,9 +509,9 @@ impl<'engine> Executor<'engine> {
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        let len_params = usize::from(host_func.len_params());
-        let len_results = usize::from(host_func.len_results());
-        let max_inout = len_params.max(len_results);
+        let len_params = host_func.len_params();
+        let len_results = host_func.len_results();
+        let max_inout = usize::from(len_params.max(len_results));
         let instance = *self.stack.calls.instance_expect();
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
@@ -537,7 +537,7 @@ impl<'engine> Executor<'engine> {
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
         self.cache.update(&mut store.inner, &instance);
-        let results = results.iter_sized(len_results);
+        let results = results.iter(len_results);
         let returned = self.stack.values.drop_return(max_inout);
         for (result, value) in results.zip(returned) {
             // # Safety (1)
