@@ -19,142 +19,151 @@ impl Instruction {
     ) -> Result<bool, Error> {
         use Instruction as I;
         match self {
-            I::TableIndex { .. }
-            | I::DataIndex { .. }
-            | I::ElemIndex { .. }
-            | I::Const32 { .. }
-            | I::I64Const32 { .. }
-            | I::F64Const32 { .. }
-            | I::RegisterAndImm32 { .. }
-            | I::Register { .. }
-            | I::Register2 { .. }
-            | I::Register3 { .. }
-            | I::RegisterSpan { .. }
-            | I::RegisterList { .. }
-            | I::BranchTableTarget { .. } // can't relink since `br_table` diverts control flow
-            | I::BranchTableTargetNonOverlapping { .. } // can't relink since `br_table` diverts control flow
-            | I::CallIndirectParams { .. }
-            | I::CallIndirectParamsImm16 { .. }
-            | I::Trap { .. }
-            | I::ConsumeFuel { .. }
-            | I::Return
-            | I::ReturnReg { .. }
-            | I::ReturnReg2 { .. }
-            | I::ReturnReg3 { .. }
-            | I::ReturnImm32 { .. }
-            | I::ReturnI64Imm32 { .. }
-            | I::ReturnF64Imm32 { .. }
-            | I::ReturnSpan { .. }
-            | I::ReturnMany { .. }
-            | I::ReturnNez { .. }
-            | I::ReturnNezReg { .. }
-            | I::ReturnNezReg2 { .. }
-            | I::ReturnNezImm32 { .. }
-            | I::ReturnNezI64Imm32 { .. }
-            | I::ReturnNezF64Imm32 { .. }
-            | I::ReturnNezSpan { .. }
-            | I::ReturnNezMany { .. }
-            | I::Branch { .. }
-            | I::BranchCmpFallback { .. }
-            | I::BranchI32And { .. }
-            | I::BranchI32AndImm { .. }
-            | I::BranchI32Or { .. }
-            | I::BranchI32OrImm { .. }
-            | I::BranchI32Xor { .. }
-            | I::BranchI32XorImm { .. }
-            | I::BranchI32AndEqz { .. }
-            | I::BranchI32AndEqzImm { .. }
-            | I::BranchI32OrEqz { .. }
-            | I::BranchI32OrEqzImm { .. }
-            | I::BranchI32XorEqz { .. }
-            | I::BranchI32XorEqzImm { .. }
-            | I::BranchTable0 { .. }
-            | I::BranchTable1 { .. }
-            | I::BranchTable2 { .. }
-            | I::BranchTable3 { .. }
-            | I::BranchTableSpan { .. }
-            | I::BranchTableMany { .. }
-            | I::BranchI32Eq { .. }
-            | I::BranchI32EqImm { .. }
-            | I::BranchI32Ne { .. }
-            | I::BranchI32NeImm { .. }
-            | I::BranchI32LtS { .. }
-            | I::BranchI32LtSImm { .. }
-            | I::BranchI32LtU { .. }
-            | I::BranchI32LtUImm { .. }
-            | I::BranchI32LeS { .. }
-            | I::BranchI32LeSImm { .. }
-            | I::BranchI32LeU { .. }
-            | I::BranchI32LeUImm { .. }
-            | I::BranchI32GtS { .. }
-            | I::BranchI32GtSImm { .. }
-            | I::BranchI32GtU { .. }
-            | I::BranchI32GtUImm { .. }
-            | I::BranchI32GeS { .. }
-            | I::BranchI32GeSImm { .. }
-            | I::BranchI32GeU { .. }
-            | I::BranchI32GeUImm { .. }
-            | I::BranchI64Eq { .. }
-            | I::BranchI64EqImm { .. }
-            | I::BranchI64Ne { .. }
-            | I::BranchI64NeImm { .. }
-            | I::BranchI64LtS { .. }
-            | I::BranchI64LtSImm { .. }
-            | I::BranchI64LtU { .. }
-            | I::BranchI64LtUImm { .. }
-            | I::BranchI64LeS { .. }
-            | I::BranchI64LeSImm { .. }
-            | I::BranchI64LeU { .. }
-            | I::BranchI64LeUImm { .. }
-            | I::BranchI64GtS { .. }
-            | I::BranchI64GtSImm { .. }
-            | I::BranchI64GtU { .. }
-            | I::BranchI64GtUImm { .. }
-            | I::BranchI64GeS { .. }
-            | I::BranchI64GeSImm { .. }
-            | I::BranchI64GeU { .. }
-            | I::BranchI64GeUImm { .. }
-            | I::BranchF32Eq { .. }
-            | I::BranchF32Ne { .. }
-            | I::BranchF32Lt { .. }
-            | I::BranchF32Le { .. }
-            | I::BranchF32Gt { .. }
-            | I::BranchF32Ge { .. }
-            | I::BranchF64Eq { .. }
-            | I::BranchF64Ne { .. }
-            | I::BranchF64Lt { .. }
-            | I::BranchF64Le { .. }
-            | I::BranchF64Gt { .. }
-            | I::BranchF64Ge { .. } => Ok(false),
-            I::Copy { result, .. }
-            | I::CopyImm32 { result, .. }
-            | I::CopyI64Imm32 { result, .. }
-            | I::CopyF64Imm32 { result, .. } => relink_simple(result, new_result, old_result),
-            I::CopySpan { .. }
-            | I::CopySpanNonOverlapping { .. }
-            | I::Copy2 { .. }
-            | I::CopyMany { .. }
-            | I::CopyManyNonOverlapping { .. }
-            | I::ReturnCallInternal0 { .. }
-            | I::ReturnCallInternal { .. }
-            | I::ReturnCallImported0 { .. }
-            | I::ReturnCallImported { .. }
-            | I::ReturnCallIndirect0 { .. }
-            | I::ReturnCallIndirect0Imm16 { .. }
-            | I::ReturnCallIndirect { .. }
-            | I::ReturnCallIndirectImm16 { .. } => Ok(false),
-            I::CallInternal0 { results, func } | I::CallInternal { results, func } => {
+            I::TableIndex { .. } |
+            I::DataIndex { .. } |
+            I::ElemIndex { .. } |
+            I::Const32 { .. } |
+            I::I64Const32 { .. } |
+            I::F64Const32 { .. } |
+            I::RegisterAndImm32 { .. } |
+            I::Register { .. } |
+            I::Register2 { .. } |
+            I::Register3 { .. } |
+            I::RegisterSpan { .. } |
+            I::RegisterList { .. } |
+            I::BranchTableTarget { .. } |
+            I::BranchTableTargetNonOverlapping { .. } |
+            I::CallIndirectParams { .. } |
+            I::CallIndirectParamsImm16 { .. } |
+
+            I::Trap { .. } |
+            I::ConsumeFuel { .. } |
+
+            I::Return |
+            I::ReturnReg { .. } |
+            I::ReturnReg2 { .. } |
+            I::ReturnReg3 { .. } |
+            I::ReturnImm32 { .. } |
+            I::ReturnI64Imm32 { .. } |
+            I::ReturnF64Imm32 { .. } |
+            I::ReturnSpan { .. } |
+            I::ReturnMany { .. } |
+            I::ReturnNez { .. } |
+            I::ReturnNezReg { .. } |
+            I::ReturnNezReg2 { .. } |
+            I::ReturnNezImm32 { .. } |
+            I::ReturnNezI64Imm32 { .. } |
+            I::ReturnNezF64Imm32 { .. } |
+            I::ReturnNezSpan { .. } |
+            I::ReturnNezMany { .. } |
+
+            I::Branch { .. } |
+            I::BranchCmpFallback { .. } |
+            I::BranchI32And { .. } |
+            I::BranchI32AndImm { .. } |
+            I::BranchI32Or { .. } |
+            I::BranchI32OrImm { .. } |
+            I::BranchI32Xor { .. } |
+            I::BranchI32XorImm { .. } |
+            I::BranchI32AndEqz { .. } |
+            I::BranchI32AndEqzImm { .. } |
+            I::BranchI32OrEqz { .. } |
+            I::BranchI32OrEqzImm { .. } |
+            I::BranchI32XorEqz { .. } |
+            I::BranchI32XorEqzImm { .. } |
+            I::BranchTable0 { .. } |
+            I::BranchTable1 { .. } |
+            I::BranchTable2 { .. } |
+            I::BranchTable3 { .. } |
+            I::BranchTableSpan { .. } |
+            I::BranchTableMany { .. } |
+            I::BranchI32Eq { .. } |
+            I::BranchI32EqImm { .. } |
+            I::BranchI32Ne { .. } |
+            I::BranchI32NeImm { .. } |
+            I::BranchI32LtS { .. } |
+            I::BranchI32LtSImm { .. } |
+            I::BranchI32LtU { .. } |
+            I::BranchI32LtUImm { .. } |
+            I::BranchI32LeS { .. } |
+            I::BranchI32LeSImm { .. } |
+            I::BranchI32LeU { .. } |
+            I::BranchI32LeUImm { .. } |
+            I::BranchI32GtS { .. } |
+            I::BranchI32GtSImm { .. } |
+            I::BranchI32GtU { .. } |
+            I::BranchI32GtUImm { .. } |
+            I::BranchI32GeS { .. } |
+            I::BranchI32GeSImm { .. } |
+            I::BranchI32GeU { .. } |
+            I::BranchI32GeUImm { .. } |
+            I::BranchI64Eq { .. } |
+            I::BranchI64EqImm { .. } |
+            I::BranchI64Ne { .. } |
+            I::BranchI64NeImm { .. } |
+            I::BranchI64LtS { .. } |
+            I::BranchI64LtSImm { .. } |
+            I::BranchI64LtU { .. } |
+            I::BranchI64LtUImm { .. } |
+            I::BranchI64LeS { .. } |
+            I::BranchI64LeSImm { .. } |
+            I::BranchI64LeU { .. } |
+            I::BranchI64LeUImm { .. } |
+            I::BranchI64GtS { .. } |
+            I::BranchI64GtSImm { .. } |
+            I::BranchI64GtU { .. } |
+            I::BranchI64GtUImm { .. } |
+            I::BranchI64GeS { .. } |
+            I::BranchI64GeSImm { .. } |
+            I::BranchI64GeU { .. } |
+            I::BranchI64GeUImm { .. } |
+            I::BranchF32Eq { .. } |
+            I::BranchF32Ne { .. } |
+            I::BranchF32Lt { .. } |
+            I::BranchF32Le { .. } |
+            I::BranchF32Gt { .. } |
+            I::BranchF32Ge { .. } |
+            I::BranchF64Eq { .. } |
+            I::BranchF64Ne { .. } |
+            I::BranchF64Lt { .. } |
+            I::BranchF64Le { .. } |
+            I::BranchF64Gt { .. } |
+            I::BranchF64Ge { .. } => Ok(false),
+
+            I::Copy { result, .. } |
+            I::CopyImm32 { result, .. } |
+            I::CopyI64Imm32 { result, .. } |
+            I::CopyF64Imm32 { result, .. } => relink_simple(result, new_result, old_result),
+            I::CopySpan { .. } |
+            I::CopySpanNonOverlapping { .. } |
+            I::Copy2 { .. } |
+            I::CopyMany { .. } |
+            I::CopyManyNonOverlapping { .. } |
+
+            I::ReturnCallInternal0 { .. } |
+            I::ReturnCallInternal { .. } |
+            I::ReturnCallImported0 { .. } |
+            I::ReturnCallImported { .. } |
+            I::ReturnCallIndirect0 { .. } |
+            I::ReturnCallIndirect0Imm16 { .. } |
+            I::ReturnCallIndirect { .. } |
+            I::ReturnCallIndirectImm16 { .. } => Ok(false),
+
+            I::CallInternal0 { results, func } |
+            I::CallInternal { results, func } => {
                 relink_call_internal(results, *func, module, new_result, old_result)
             }
-            I::CallImported0 { results, func } | I::CallImported { results, func } => {
+            I::CallImported0 { results, func } |
+            I::CallImported { results, func } => {
                 relink_call_imported(results, *func, module, new_result, old_result)
             }
-            I::CallIndirect0 { results, func_type }
-            | I::CallIndirect0Imm16 { results, func_type }
-            | I::CallIndirect { results, func_type }
-            | I::CallIndirectImm16 { results, func_type } => {
+            I::CallIndirect0 { results, func_type } |
+            I::CallIndirect0Imm16 { results, func_type } |
+            I::CallIndirect { results, func_type } |
+            I::CallIndirectImm16 { results, func_type } => {
                 relink_call_indirect(results, *func_type, module, new_result, old_result)
             }
+
             I::Select { result, .. } |
             I::SelectImm32Rhs { result, .. } |
             I::SelectImm32Lhs { result, .. } |
@@ -164,68 +173,75 @@ impl Instruction {
             I::SelectI64Imm32 { result, .. } |
             I::SelectF64Imm32Rhs { result, .. } |
             I::SelectF64Imm32Lhs { result, .. } |
-            I::SelectF64Imm32 { result, .. } => relink_simple(result, new_result, old_result),
-            I::RefFunc { result, .. }
-            | I::TableGet { result, .. }
-            | I::TableGetImm { result, .. }
-            | I::TableSize { result, .. } => relink_simple(result, new_result, old_result),
-            I::TableSet { .. }
-            | I::TableSetAt { .. }
-            | I::TableCopy { .. }
-            | I::TableCopyTo { .. }
-            | I::TableCopyFrom { .. }
-            | I::TableCopyFromTo { .. }
-            | I::TableCopyExact { .. }
-            | I::TableCopyToExact { .. }
-            | I::TableCopyFromExact { .. }
-            | I::TableCopyFromToExact { .. }
-            | I::TableInit { .. }
-            | I::TableInitTo { .. }
-            | I::TableInitFrom { .. }
-            | I::TableInitFromTo { .. }
-            | I::TableInitExact { .. }
-            | I::TableInitToExact { .. }
-            | I::TableInitFromExact { .. }
-            | I::TableInitFromToExact { .. }
-            | I::TableFill { .. }
-            | I::TableFillAt { .. }
-            | I::TableFillExact { .. }
-            | I::TableFillAtExact { .. } => Ok(false),
-            I::TableGrow { result, .. } | I::TableGrowImm { result, .. } => {
+            I::SelectF64Imm32 { result, .. } |
+
+            I::RefFunc { result, .. } |
+            I::TableGet { result, .. } |
+            I::TableGetImm { result, .. } |
+            I::TableSize { result, .. } => relink_simple(result, new_result, old_result),
+            I::TableSet { .. } |
+            I::TableSetAt { .. } |
+            I::TableCopy { .. } |
+            I::TableCopyTo { .. } |
+            I::TableCopyFrom { .. } |
+            I::TableCopyFromTo { .. } |
+            I::TableCopyExact { .. } |
+            I::TableCopyToExact { .. } |
+            I::TableCopyFromExact { .. } |
+            I::TableCopyFromToExact { .. } |
+            I::TableInit { .. } |
+            I::TableInitTo { .. } |
+            I::TableInitFrom { .. } |
+            I::TableInitFromTo { .. } |
+            I::TableInitExact { .. } |
+            I::TableInitToExact { .. } |
+            I::TableInitFromExact { .. } |
+            I::TableInitFromToExact { .. } |
+            I::TableFill { .. } |
+            I::TableFillAt { .. } |
+            I::TableFillExact { .. } |
+            I::TableFillAtExact { .. } => Ok(false),
+            I::TableGrow { result, .. } |
+            I::TableGrowImm { result, .. } => {
                 relink_simple(result, new_result, old_result)
             }
-            I::ElemDrop(_) | I::DataDrop(_) => Ok(false),
-            I::MemorySize { result }
-            | I::MemoryGrow { result, .. }
-            | I::MemoryGrowBy { result, .. } => relink_simple(result, new_result, old_result),
-            I::MemoryCopy { .. }
-            | I::MemoryCopyTo { .. }
-            | I::MemoryCopyFrom { .. }
-            | I::MemoryCopyFromTo { .. }
-            | I::MemoryCopyExact { .. }
-            | I::MemoryCopyToExact { .. }
-            | I::MemoryCopyFromExact { .. }
-            | I::MemoryCopyFromToExact { .. }
-            | I::MemoryFill { .. }
-            | I::MemoryFillAt { .. }
-            | I::MemoryFillImm { .. }
-            | I::MemoryFillExact { .. }
-            | I::MemoryFillAtImm { .. }
-            | I::MemoryFillAtExact { .. }
-            | I::MemoryFillImmExact { .. }
-            | I::MemoryFillAtImmExact { .. }
-            | I::MemoryInit { .. }
-            | I::MemoryInitTo { .. }
-            | I::MemoryInitFrom { .. }
-            | I::MemoryInitFromTo { .. }
-            | I::MemoryInitExact { .. }
-            | I::MemoryInitToExact { .. }
-            | I::MemoryInitFromExact { .. }
-            | I::MemoryInitFromToExact { .. } => Ok(false),
+
+            I::ElemDrop(_) |
+            I::DataDrop(_) => Ok(false),
+
+            I::MemorySize { result } |
+            I::MemoryGrow { result, .. } |
+            I::MemoryGrowBy { result, .. } => relink_simple(result, new_result, old_result),
+            I::MemoryCopy { .. } |
+            I::MemoryCopyTo { .. } |
+            I::MemoryCopyFrom { .. } |
+            I::MemoryCopyFromTo { .. } |
+            I::MemoryCopyExact { .. } |
+            I::MemoryCopyToExact { .. } |
+            I::MemoryCopyFromExact { .. } |
+            I::MemoryCopyFromToExact { .. } |
+            I::MemoryFill { .. } |
+            I::MemoryFillAt { .. } |
+            I::MemoryFillImm { .. } |
+            I::MemoryFillExact { .. } |
+            I::MemoryFillAtImm { .. } |
+            I::MemoryFillAtExact { .. } |
+            I::MemoryFillImmExact { .. } |
+            I::MemoryFillAtImmExact { .. } |
+            I::MemoryInit { .. } |
+            I::MemoryInitTo { .. } |
+            I::MemoryInitFrom { .. } |
+            I::MemoryInitFromTo { .. } |
+            I::MemoryInitExact { .. } |
+            I::MemoryInitToExact { .. } |
+            I::MemoryInitFromExact { .. } |
+            I::MemoryInitFromToExact { .. } => Ok(false),
+
             I::GlobalGet { result, .. } => relink_simple(result, new_result, old_result),
-            I::GlobalSet { .. } | I::GlobalSetI32Imm16 { .. } | I::GlobalSetI64Imm16 { .. } => {
-                Ok(false)
-            }
+            I::GlobalSet { .. } |
+            I::GlobalSetI32Imm16 { .. } |
+            I::GlobalSetI64Imm16 { .. } => Ok(false),
+
             I::I32Load { result, .. } |
             I::I64Load { result, .. } |
             I::F32Load { result, .. } |
@@ -268,47 +284,49 @@ impl Instruction {
             I::I64Load16uOffset16 { result, .. } |
             I::I64Load32sOffset16 { result, .. } |
             I::I64Load32uOffset16 { result, .. } => relink_simple(result, new_result, old_result),
-            I::I32Store { .. }
-            | I::I32StoreOffset16 { .. }
-            | I::I32StoreOffset16Imm16 { .. }
-            | I::I32StoreAt { .. }
-            | I::I32StoreAtImm16 { .. }
-            | I::I32Store8 { .. }
-            | I::I32Store8Offset16 { .. }
-            | I::I32Store8Offset16Imm { .. }
-            | I::I32Store8At { .. }
-            | I::I32Store8AtImm { .. }
-            | I::I32Store16 { .. }
-            | I::I32Store16Offset16 { .. }
-            | I::I32Store16Offset16Imm { .. }
-            | I::I32Store16At { .. }
-            | I::I32Store16AtImm { .. }
-            | I::I64Store { .. }
-            | I::I64StoreOffset16 { .. }
-            | I::I64StoreOffset16Imm16 { .. }
-            | I::I64StoreAt { .. }
-            | I::I64StoreAtImm16 { .. }
-            | I::I64Store8 { .. }
-            | I::I64Store8Offset16 { .. }
-            | I::I64Store8Offset16Imm { .. }
-            | I::I64Store8At { .. }
-            | I::I64Store8AtImm { .. }
-            | I::I64Store16 { .. }
-            | I::I64Store16Offset16 { .. }
-            | I::I64Store16Offset16Imm { .. }
-            | I::I64Store16At { .. }
-            | I::I64Store16AtImm { .. }
-            | I::I64Store32 { .. }
-            | I::I64Store32Offset16 { .. }
-            | I::I64Store32Offset16Imm16 { .. }
-            | I::I64Store32At { .. }
-            | I::I64Store32AtImm16 { .. }
-            | I::F32Store { .. }
-            | I::F32StoreOffset16 { .. }
-            | I::F32StoreAt { .. }
-            | I::F64Store { .. }
-            | I::F64StoreOffset16 { .. }
-            | I::F64StoreAt { .. } => Ok(false),
+
+            I::I32Store { .. } |
+            I::I32StoreOffset16 { .. } |
+            I::I32StoreOffset16Imm16 { .. } |
+            I::I32StoreAt { .. } |
+            I::I32StoreAtImm16 { .. } |
+            I::I32Store8 { .. } |
+            I::I32Store8Offset16 { .. } |
+            I::I32Store8Offset16Imm { .. } |
+            I::I32Store8At { .. } |
+            I::I32Store8AtImm { .. } |
+            I::I32Store16 { .. } |
+            I::I32Store16Offset16 { .. } |
+            I::I32Store16Offset16Imm { .. } |
+            I::I32Store16At { .. } |
+            I::I32Store16AtImm { .. } |
+            I::I64Store { .. } |
+            I::I64StoreOffset16 { .. } |
+            I::I64StoreOffset16Imm16 { .. } |
+            I::I64StoreAt { .. } |
+            I::I64StoreAtImm16 { .. } |
+            I::I64Store8 { .. } |
+            I::I64Store8Offset16 { .. } |
+            I::I64Store8Offset16Imm { .. } |
+            I::I64Store8At { .. } |
+            I::I64Store8AtImm { .. } |
+            I::I64Store16 { .. } |
+            I::I64Store16Offset16 { .. } |
+            I::I64Store16Offset16Imm { .. } |
+            I::I64Store16At { .. } |
+            I::I64Store16AtImm { .. } |
+            I::I64Store32 { .. } |
+            I::I64Store32Offset16 { .. } |
+            I::I64Store32Offset16Imm16 { .. } |
+            I::I64Store32At { .. } |
+            I::I64Store32AtImm16 { .. } |
+            I::F32Store { .. } |
+            I::F32StoreOffset16 { .. } |
+            I::F32StoreAt { .. } |
+            I::F64Store { .. } |
+            I::F64StoreOffset16 { .. } |
+            I::F64StoreAt { .. } => Ok(false),
+
             I::I32Eq { result, .. } |
             I::I64Eq { result, .. } |
             I::I32Ne { result, .. } |
@@ -360,14 +378,14 @@ impl Instruction {
             I::I64LtUImm16 { result, .. } |
             I::I64LeUImm16 { result, .. } |
             I::I64GtUImm16 { result, .. } |
-            I::I64GeUImm16 { result, .. } => relink_simple(result, new_result, old_result),
+            I::I64GeUImm16 { result, .. } |
 
             I::I32Clz { result, .. } |
             I::I32Ctz { result, .. } |
             I::I32Popcnt { result, .. } |
             I::I64Clz { result, .. } |
             I::I64Ctz { result, .. } |
-            I::I64Popcnt { result, .. } => relink_simple(result, new_result, old_result),
+            I::I64Popcnt { result, .. } |
 
             I::I32Add { result, ..} |
             I::I32Sub { result, ..} |
@@ -401,7 +419,7 @@ impl Instruction {
             I::I64ShrS { result, ..} |
             I::I64ShrU { result, ..} |
             I::I64Rotl { result, ..} |
-            I::I64Rotr { result, ..} => relink_simple(result, new_result, old_result),
+            I::I64Rotr { result, ..} |
 
             I::F32Abs { result, .. } |
             I::F32Neg { result, .. } |
@@ -416,7 +434,7 @@ impl Instruction {
             I::F64Floor { result, .. } |
             I::F64Trunc { result, .. } |
             I::F64Nearest { result, .. } |
-            I::F64Sqrt { result, .. } => relink_simple(result, new_result, old_result),
+            I::F64Sqrt { result, .. } |
 
             I::F32Add { result, .. } |
             I::F32Sub { result, .. } |
@@ -433,7 +451,7 @@ impl Instruction {
             I::F64Max { result, .. } |
             I::F64Copysign { result, .. } |
             I::F32CopysignImm { result, .. } |
-            I::F64CopysignImm { result, .. } => relink_simple(result, new_result, old_result),
+            I::F64CopysignImm { result, .. } |
 
             I::I32AddImm16 { result, .. } |
             I::I32SubImm16Rev { result, .. } |
@@ -461,7 +479,7 @@ impl Instruction {
             I::I32DivUImm16 { result, .. } |
             I::I32DivUImm16Rev { result, .. } |
             I::I32RemUImm16 { result, .. } |
-            I::I32RemUImm16Rev { result, .. } => relink_simple(result, new_result, old_result),
+            I::I32RemUImm16Rev { result, .. } |
 
             I::I64AddImm16 { result, .. } |
             I::I64SubImm16Rev { result, .. } |
@@ -486,7 +504,7 @@ impl Instruction {
             I::I64DivUImm16 { result, .. } |
             I::I64DivUImm16Rev { result, .. } |
             I::I64RemUImm16 { result, .. } |
-            I::I64RemUImm16Rev { result, .. } => relink_simple(result, new_result, old_result),
+            I::I64RemUImm16Rev { result, .. } |
 
             I::I32WrapI64 { result, .. } |
             I::I32TruncF32S { result, .. } |
