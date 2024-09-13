@@ -825,7 +825,7 @@ impl FuncTranslator {
         });
         for copy_group in copy_groups {
             let len = copy_group.len();
-            let results = RegSpan::new(copy_group[0].preserved).iter(len);
+            let results = RegSpan::new(copy_group[0].preserved).iter_sized(len);
             let providers = &mut self.alloc.buffer.providers;
             providers.clear();
             providers.extend(

@@ -616,12 +616,12 @@ fn reg_params_4_span() {
         .expect_func_instrs([
             Instruction::i32_popcnt(Reg::from(5), Reg::from(0)),
             Instruction::branch_table_span(4, 4),
-            Instruction::register_span(RegSpan::new(Reg::from(0)).iter(4)),
+            Instruction::register_span(RegSpan::new(Reg::from(0)).iter_sized(4)),
             Instruction::branch_table_target_non_overlapping(
                 RegSpan::new(Reg::from(5)),
                 BranchOffset::from(8),
             ),
-            Instruction::return_span(RegSpan::new(Reg::from(0)).iter(4)),
+            Instruction::return_span(RegSpan::new(Reg::from(0)).iter_sized(4)),
             Instruction::branch_table_target_non_overlapping(
                 RegSpan::new(Reg::from(5)),
                 BranchOffset::from(4),
@@ -631,11 +631,11 @@ fn reg_params_4_span() {
                 BranchOffset::from(1),
             ),
             Instruction::i32_add_imm16(Reg::from(9), Reg::from(9), 10_i16),
-            Instruction::return_span(RegSpan::new(Reg::from(6)).iter(4)),
+            Instruction::return_span(RegSpan::new(Reg::from(6)).iter_sized(4)),
             Instruction::i32_add_imm16(Reg::from(8), Reg::from(8), 20_i16),
-            Instruction::return_span(RegSpan::new(Reg::from(5)).iter(4)),
+            Instruction::return_span(RegSpan::new(Reg::from(5)).iter_sized(4)),
             Instruction::i32_add_imm16(Reg::from(8), Reg::from(8), 30_i16),
-            Instruction::return_span(RegSpan::new(Reg::from(5)).iter(4)),
+            Instruction::return_span(RegSpan::new(Reg::from(5)).iter_sized(4)),
         ])
         .run()
 }
@@ -683,11 +683,11 @@ fn reg_params_4_many() {
                 BranchOffset::from(1),
             ),
             Instruction::i32_add_imm16(Reg::from(9), Reg::from(9), 10_i16),
-            Instruction::return_span(RegSpan::new(Reg::from(6)).iter(4)),
+            Instruction::return_span(RegSpan::new(Reg::from(6)).iter_sized(4)),
             Instruction::i32_add_imm16(Reg::from(8), Reg::from(8), 20_i16),
-            Instruction::return_span(RegSpan::new(Reg::from(5)).iter(4)),
+            Instruction::return_span(RegSpan::new(Reg::from(5)).iter_sized(4)),
             Instruction::i32_add_imm16(Reg::from(8), Reg::from(8), 30_i16),
-            Instruction::return_span(RegSpan::new(Reg::from(5)).iter(4)),
+            Instruction::return_span(RegSpan::new(Reg::from(5)).iter_sized(4)),
         ])
         .run()
 }

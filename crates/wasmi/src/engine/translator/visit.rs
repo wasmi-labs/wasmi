@@ -161,7 +161,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
-            branch_params.iter(len_block_params),
+            branch_params.iter_sized(len_block_params),
             &self.alloc.buffer.providers[..],
             fuel_info,
         )?;

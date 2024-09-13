@@ -606,7 +606,7 @@ fn params7_reg_index_local() {
             Instruction::register_list(1, 2, 3),
             Instruction::register_list(4, 5, 6),
             Instruction::register(7),
-            Instruction::return_span(RegSpan::new(Reg::from(8)).iter(7)),
+            Instruction::return_span(RegSpan::new(Reg::from(8)).iter_sized(7)),
         ])
         .run();
 }
@@ -639,7 +639,7 @@ fn params7_imm_index_local() {
                 Instruction::register_list(-1, -2, -3),
                 Instruction::register_list(-4, -5, -6),
                 Instruction::register(-7),
-                Instruction::return_span(RegSpan::new(Reg::from(1)).iter(7)),
+                Instruction::return_span(RegSpan::new(Reg::from(1)).iter_sized(7)),
             ])
             .consts([10_i32, 20, 30, 40, 50, 60, 70]),
         )
@@ -674,7 +674,7 @@ fn params8_reg_index_local() {
             Instruction::register_list(1, 2, 3),
             Instruction::register_list(4, 5, 6),
             Instruction::register2(7, 8),
-            Instruction::return_span(RegSpan::new(Reg::from(9)).iter(8)),
+            Instruction::return_span(RegSpan::new(Reg::from(9)).iter_sized(8)),
         ])
         .run();
 }
@@ -708,7 +708,7 @@ fn params8_imm_index_local() {
                 Instruction::register_list(-1, -2, -3),
                 Instruction::register_list(-4, -5, -6),
                 Instruction::register2(-7, -8),
-                Instruction::return_span(RegSpan::new(Reg::from(1)).iter(8)),
+                Instruction::return_span(RegSpan::new(Reg::from(1)).iter_sized(8)),
             ])
             .consts([10_i32, 20, 30, 40, 50, 60, 70, 80]),
         )
@@ -744,7 +744,7 @@ fn params9_reg_index_local() {
             Instruction::register_list(1, 2, 3),
             Instruction::register_list(4, 5, 6),
             Instruction::register3(7, 8, 9),
-            Instruction::return_span(RegSpan::new(Reg::from(10)).iter(9)),
+            Instruction::return_span(RegSpan::new(Reg::from(10)).iter_sized(9)),
         ])
         .run();
 }
@@ -779,7 +779,7 @@ fn params9_imm_index_local() {
                 Instruction::register_list(-1, -2, -3),
                 Instruction::register_list(-4, -5, -6),
                 Instruction::register3(-7, -8, -9),
-                Instruction::return_span(RegSpan::new(Reg::from(1)).iter(9)),
+                Instruction::return_span(RegSpan::new(Reg::from(1)).iter_sized(9)),
             ])
             .consts([10_i32, 20, 30, 40, 50, 60, 70, 80, 90]),
         )

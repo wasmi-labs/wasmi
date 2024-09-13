@@ -277,7 +277,7 @@ impl<'engine> EngineExecutor<'engine> {
         let mut caller_sp = unsafe { self.stack.values.stack_ptr_at(caller.base_offset()) };
         let call_params = params.call_params();
         let len_params = call_params.len();
-        for (result, param) in caller_results.iter(len_params).zip(call_params) {
+        for (result, param) in caller_results.iter_sized(len_params).zip(call_params) {
             unsafe { caller_sp.set(result, param) };
         }
         self.execute_func(store)?;

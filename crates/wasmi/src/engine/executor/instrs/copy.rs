@@ -151,7 +151,7 @@ impl<'engine> Executor<'engine> {
             ),
         };
         tmp.extend(values.iter().map(|value| self.get_register(*value)));
-        for (result, value) in results.iter(tmp.len()).zip(tmp) {
+        for (result, value) in results.iter_sized(tmp.len()).zip(tmp) {
             self.set_register(result, value);
         }
         ip

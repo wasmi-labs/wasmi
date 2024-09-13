@@ -86,7 +86,7 @@ impl<'engine> Executor<'engine> {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
             let values = [0, 1].map(|i| self.get_register(regs[i]));
-            let results = results.iter(2);
+            let results = results.iter_sized(2);
             for (result, value) in results.zip(values) {
                 self.set_register(result, value);
             }
@@ -106,7 +106,7 @@ impl<'engine> Executor<'engine> {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
             let values = [0, 1, 2].map(|i| self.get_register(regs[i]));
-            let results = results.iter(3);
+            let results = results.iter_sized(3);
             for (result, value) in results.zip(values) {
                 self.set_register(result, value);
             }

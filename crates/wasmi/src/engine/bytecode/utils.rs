@@ -74,7 +74,7 @@ impl RegSpan {
     }
 
     /// Returns a [`RegSpanIter`] yielding `len` [`Reg`].
-    pub fn iter(self, len: usize) -> RegSpanIter {
+    pub fn iter_sized(self, len: usize) -> RegSpanIter {
         RegSpanIter::new(self.0, len)
     }
 

@@ -108,7 +108,7 @@ impl BlockControlFrame {
     /// Returns an iterator over the registers holding the branching parameters of the [`BlockControlFrame`].
     pub fn branch_params(&self, engine: &Engine) -> RegSpanIter {
         self.branch_params
-            .iter(self.block_type().len_results(engine))
+            .iter_sized(self.block_type().len_results(engine))
     }
 
     /// Returns the label for the branch destination of the [`BlockControlFrame`].
@@ -213,7 +213,7 @@ impl LoopControlFrame {
     /// Returns an iterator over the registers holding the branching parameters of the [`LoopControlFrame`].
     pub fn branch_params(&self, engine: &Engine) -> RegSpanIter {
         self.branch_params
-            .iter(self.block_type().len_params(engine))
+            .iter_sized(self.block_type().len_params(engine))
     }
 
     /// Returns the label for the branch destination of the [`LoopControlFrame`].
@@ -383,7 +383,7 @@ impl IfControlFrame {
     /// Returns an iterator over the registers holding the branching parameters of the [`IfControlFrame`].
     pub fn branch_params(&self, engine: &Engine) -> RegSpanIter {
         self.branch_params
-            .iter(self.block_type().len_results(engine))
+            .iter_sized(self.block_type().len_results(engine))
     }
 
     /// Returns the label for the branch destination of the [`IfControlFrame`].

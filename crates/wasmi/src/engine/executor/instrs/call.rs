@@ -537,7 +537,7 @@ impl<'engine> Executor<'engine> {
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
         self.cache.update(&mut store.inner, &instance);
-        let results = results.iter(len_results);
+        let results = results.iter_sized(len_results);
         let returned = self.stack.values.drop_return(max_inout);
         for (result, value) in results.zip(returned) {
             // # Safety (1)

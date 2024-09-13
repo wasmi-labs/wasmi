@@ -192,7 +192,7 @@ impl<'engine> Executor<'engine> {
         values: RegSpanIter,
     ) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
-        let results = results.iter(values.len());
+        let results = results.iter_sized(values.len());
         for (result, value) in results.zip(values) {
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the

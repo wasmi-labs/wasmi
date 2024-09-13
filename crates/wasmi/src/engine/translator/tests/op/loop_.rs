@@ -180,7 +180,7 @@ fn identity_loop_4_mixed_1() {
             ExpectedFunc::new([
                 Instruction::copy_many_non_overlapping(RegSpan::new(Reg::from(2)), -1, 0),
                 Instruction::register2(1, -2),
-                Instruction::return_span(RegSpan::new(Reg::from(2)).iter(4)),
+                Instruction::return_span(RegSpan::new(Reg::from(2)).iter_sized(4)),
             ])
             .consts([10_i32, 20]),
         )
@@ -204,7 +204,7 @@ fn identity_loop_4_mixed_2() {
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping(RegSpan::new(Reg::from(2)), 0, 0),
             Instruction::register2(1, 1),
-            Instruction::return_span(RegSpan::new(Reg::from(2)).iter(4)),
+            Instruction::return_span(RegSpan::new(Reg::from(2)).iter_sized(4)),
         ])
         .run()
 }
