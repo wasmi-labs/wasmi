@@ -115,7 +115,6 @@ impl<'engine> Executor<'engine> {
             let value = self.get_register(value);
             self.set_register(result, value);
         }
-        self.next_instr();
     }
 
     /// Executes an [`Instruction::CopyMany`].
