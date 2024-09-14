@@ -507,5 +507,5 @@ fn audit_1_execution() {
         .typed::<(), (i32, i32, i32)>(&store)
         .unwrap();
     let result = func.call(&mut store, ()).unwrap_err();
-    std::println!("result = {result:?}");
+    assert_eq!(result.as_trap_code(), Some(TrapCode::IntegerOverflow));
 }
