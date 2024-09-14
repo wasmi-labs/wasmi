@@ -798,10 +798,10 @@ impl InstrEncoder {
         };
         if matches!(
             stack.get_register_space(returned_value),
-            RegisterSpace::Local
+            RegisterSpace::Local | RegisterSpace::Preserve
         ) {
             // Can only apply the optimization if the returned value of `last_instr`
-            // is _NOT_ itself a local register due to observable behavior.
+            // is _NOT_ itself a local register due to observable behavior or already preserved.
             return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
         let Some(last_instr) = self.last_instr else {

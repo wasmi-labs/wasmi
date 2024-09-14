@@ -7,6 +7,7 @@ use crate::{
         bytecode::{BranchOffset, BranchOffset16, Global, RegSpan},
         EngineFunc,
     },
+    Val,
 };
 
 #[test]
@@ -507,5 +508,39 @@ fn audit_1_execution() {
         .typed::<(), (i32, i32, i32)>(&store)
         .unwrap();
     let result = func.call(&mut store, ()).unwrap_err();
-    std::println!("result = {result:?}");
+    assert_eq!(result.as_trap_code(), Some(TrapCode::IntegerOverflow));
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn audit_2_codegen() {
+    let wasm = include_str!("wat/audit_2.wat");
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy(2, 0),
+            Instruction::copy(0, 2),
+            Instruction::copy(1, 0),
+            Instruction::return_many(2, 1, 0),
+            Instruction::register(0),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn audit_2_execution() {
+    use crate::{Engine, Instance, Store};
+    let wat = include_str!("wat/audit_2.wat");
+    let wasm = wat::parse_str(wat).unwrap();
+    let engine = Engine::default();
+    let mut store = <Store<()>>::new(&engine, ());
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let instance = Instance::new(&mut store, &module, &[]).unwrap();
+    let func = instance.get_func(&store, "").unwrap();
+    let inputs = [Val::I32(1)];
+    let mut results = [0_i32; 4].map(Val::from);
+    let expected = [1_i32; 4];
+    func.call(&mut store, &inputs[..], &mut results[..])
+        .unwrap();
+    assert_eq!(results.map(|v| v.i32().unwrap()), expected,);
 }
