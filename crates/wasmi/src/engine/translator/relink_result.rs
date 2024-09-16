@@ -542,11 +542,7 @@ impl Instruction {
     }
 }
 
-fn relink_simple<T>(result: &mut T, new_result: Reg, old_result: Reg) -> Result<bool, Error>
-where
-    T: ResultMut,
-{
-    let result = result.result_mut();
+fn relink_simple(result: &mut Reg, new_result: Reg, old_result: Reg) -> Result<bool, Error> {
     if *result != old_result {
         // Note: This is a safeguard to prevent miscompilations.
         return Ok(false);
@@ -616,14 +612,4 @@ fn relink_call_indirect(
         return Ok(false);
     }
     relink_simple(results.head_mut(), new_result, old_result)
-}
-
-trait ResultMut {
-    fn result_mut(&mut self) -> &mut Reg;
-}
-
-impl ResultMut for Reg {
-    fn result_mut(&mut self) -> &mut Reg {
-        self
-    }
 }
