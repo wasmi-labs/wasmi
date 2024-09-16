@@ -1,5 +1,7 @@
 mod construct;
+mod error;
 mod immediate;
+mod span;
 mod utils;
 mod visit_regs;
 
@@ -13,7 +15,9 @@ pub mod index {
 
 #[doc(inline)]
 pub use self::{
+    error::Error as IrError,
     immediate::{AnyConst32, Const16, Const32},
+    span::{BoundedRegSpan, FixedRegSpan, RegSpan, RegSpanIter},
     utils::{
         BlockFuel,
         BranchOffset,
@@ -26,8 +30,6 @@ pub use self::{
         FuncType,
         Global,
         Reg,
-        RegSpan,
-        RegSpanIter,
         Sign,
         Table,
     },
