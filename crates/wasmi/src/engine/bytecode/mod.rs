@@ -1,6 +1,7 @@
 mod construct;
 mod immediate;
 mod utils;
+mod visit_regs;
 
 #[cfg(test)]
 mod tests;
@@ -30,6 +31,7 @@ pub use self::{
         Sign,
         Table,
     },
+    visit_regs::VisitRegs,
 };
 use crate::{core::TrapCode, engine::EngineFunc, Error};
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
