@@ -1,4 +1,4 @@
-use crate::engine::bytecode::{VisitRegs, Instruction, Reg, RegSpan};
+use crate::engine::bytecode::{Instruction, Reg, RegSpan, VisitRegs};
 
 /// Extension-trait for [`Instruction`] to only visit certain [`Reg`]s via closure.
 pub trait VisitInputRegisters {
@@ -34,12 +34,12 @@ impl VisitInputRegisters for Instruction {
         // Note: for copy instructions that copy register values we also need to visit
         //       their results because preserved registers might be populating them.
         match self {
-            Self::Copy { result, .. } => f(result),
-            Self::Copy2 { results, .. } |
-            Self::CopySpan { results, .. } |
-            Self::CopySpanNonOverlapping { results, .. } |
-            Self::CopyMany { results, .. } |
-            Self::CopyManyNonOverlapping { results, .. } => f(results.head_mut()),
+            | Self::Copy { result, .. } => f(result),
+            | Self::Copy2 { results, .. }
+            | Self::CopySpan { results, .. }
+            | Self::CopySpanNonOverlapping { results, .. }
+            | Self::CopyMany { results, .. }
+            | Self::CopyManyNonOverlapping { results, .. } => f(results.head_mut()),
             _ => {}
         }
         self.visit_regs(&mut Visitor { f });
