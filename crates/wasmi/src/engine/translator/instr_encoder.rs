@@ -1,5 +1,6 @@
 use super::{
-    visit_register::VisitInputRegisters,
+    relink_result::RelinkResult as _,
+    visit_register::VisitInputRegisters as _,
     FuelInfo,
     LabelRef,
     LabelRegistry,
