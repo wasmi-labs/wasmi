@@ -10,29 +10,16 @@ mod tests;
 
 /// Re-exports index types.
 pub mod index {
-    pub use super::{Data, Elem, Func, FuncType, Global, Table};
+    pub use super::utils::{Data, Elem, Func, FuncType, Global, Table};
 }
 
+use self::index::{Data, Elem, Func, FuncType, Global, Table};
 #[doc(inline)]
 pub use self::{
     error::Error as IrError,
     immediate::{AnyConst32, Const16, Const32},
     span::{BoundedRegSpan, FixedRegSpan, RegSpan},
-    utils::{
-        BlockFuel,
-        BranchOffset,
-        BranchOffset16,
-        Comparator,
-        ComparatorAndOffset,
-        Data,
-        Elem,
-        Func,
-        FuncType,
-        Global,
-        Reg,
-        Sign,
-        Table,
-    },
+    utils::{BlockFuel, BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Reg, Sign},
     visit_regs::VisitRegs,
 };
 use crate::{core::TrapCode, engine::EngineFunc, Error};

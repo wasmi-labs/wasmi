@@ -1,6 +1,6 @@
 use super::*;
 use crate::engine::{
-    bytecode::{FuncType, Global, Table},
+    bytecode::index::{FuncType, Global, Table},
     RegSpan,
 };
 
