@@ -1379,14 +1379,23 @@ impl InstrEncoder {
     }
 }
 
-impl Instruction {
+/// Extension trait to update the branch offset of an [`Instruction`].
+trait UpdateBranchOffset {
     /// Updates the [`BranchOffset`] for the branch [`Instruction].
     ///
     /// # Panics
     ///
     /// If `self` is not a branch [`Instruction`].
+    fn update_branch_offset(
+        &mut self,
+        stack: &mut ValueStack,
+        new_offset: BranchOffset,
+    ) -> Result<(), Error>;
+}
+
+impl UpdateBranchOffset for Instruction {
     #[rustfmt::skip]
-    pub fn update_branch_offset(&mut self, stack: &mut ValueStack, new_offset: BranchOffset) -> Result<(), Error> {
+    fn update_branch_offset(&mut self, stack: &mut ValueStack, new_offset: BranchOffset) -> Result<(), Error> {
         /// Initializes the 16-bit offset of `instr` if possible.
         /// 
         /// If `new_offset` cannot be encoded as 16-bit offset `self` is replaced with a fallback instruction.
