@@ -586,7 +586,7 @@ impl HostVisitor for &'_ mut Instruction {
             | Instr::TableGrowImm { result, value, .. } => {
                 host_visitor!(visitor => Res(result), value)
             }
-            | Instr::ElemDrop(_) | Instr::DataDrop(_) => {}
+            | Instr::ElemDrop { .. } | Instr::DataDrop { .. } => {}
             | Instr::MemorySize { result } => host_visitor!(visitor => Res(result)),
             | Instr::MemoryGrow { result, delta } => host_visitor!(visitor => Res(result), delta),
             | Instr::MemoryGrowBy { result, .. } => host_visitor!(visitor => Res(result)),

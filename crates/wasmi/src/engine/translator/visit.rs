@@ -3077,7 +3077,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_fueled_instr(Instruction::DataDrop(data_index.into()), FuelCosts::entity)?;
+        self.push_fueled_instr(Instruction::data_drop(data_index), FuelCosts::entity)?;
         Ok(())
     }
 
@@ -3197,7 +3197,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_fueled_instr(Instruction::ElemDrop(elem_index.into()), FuelCosts::entity)?;
+        self.push_fueled_instr(Instruction::elem_drop(elem_index), FuelCosts::entity)?;
         Ok(())
     }
 
