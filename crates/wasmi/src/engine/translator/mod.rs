@@ -28,7 +28,7 @@ use self::{
     labels::{LabelRef, LabelRegistry},
     provider::{Provider, ProviderSliceStack, UntypedProvider},
     stack::ValueStack,
-    utils::{WasmFloat, WasmInteger},
+    utils::{FromProviders as _, WasmFloat, WasmInteger},
 };
 pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},

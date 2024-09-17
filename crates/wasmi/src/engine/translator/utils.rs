@@ -147,14 +147,19 @@ impl TypedProvider {
     }
 }
 
-impl BoundedRegSpan {
+/// Extension trait to create a [`BoundedRegSpan`] from a slice of [`TypedProvider`]s.
+pub trait FromProviders: Sized {
     /// Creates a [`BoundedRegSpan`] from the given slice of [`TypedProvider`] if possible.
     ///
     /// All [`TypedProvider`] must be [`Reg`] and have
     /// contiguous indices for the conversion to succeed.
     ///
     /// Returns `None` if the `providers` slice is empty.
-    pub fn from_providers(providers: &[TypedProvider]) -> Option<Self> {
+    fn from_providers(providers: &[TypedProvider]) -> Option<Self>;
+}
+
+impl FromProviders for BoundedRegSpan {
+    fn from_providers(providers: &[TypedProvider]) -> Option<Self> {
         let (first, rest) = providers.split_first()?;
         let first_index = first.register_index()?;
         let mut prev_index = first_index;
