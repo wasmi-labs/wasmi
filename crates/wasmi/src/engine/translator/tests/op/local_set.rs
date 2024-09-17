@@ -1,6 +1,9 @@
 use super::*;
 use crate::engine::{
-    bytecode::{Func, FuncType, RegSpan, Table},
+    bytecode::{
+        index::{Func, FuncType, Table},
+        RegSpan,
+    },
     EngineFunc,
 };
 

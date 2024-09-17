@@ -17,7 +17,7 @@ use super::{
 use crate::{
     core::{TrapCode, ValType, F32, F64},
     engine::{
-        bytecode::{self, BoundedRegSpan, Const16, FuncType, Instruction, Reg},
+        bytecode::{self, index::FuncType, BoundedRegSpan, Const16, Instruction, Reg},
         translator::{AcquiredTarget, Provider},
         BlockType,
         FuelCosts,
@@ -709,7 +709,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         // Case: The `global.get` instruction accesses a mutable or imported
         //       global variable and thus cannot be optimized away.
-        let global_idx = bytecode::Global::from(global_index);
+        let global_idx = bytecode::index::Global::from(global_index);
         let result = self.alloc.stack.push_dynamic()?;
         self.push_fueled_instr(
             Instruction::global_get(result, global_idx),
@@ -720,7 +720,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        let global = bytecode::Global::from(global_index);
+        let global = bytecode::index::Global::from(global_index);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
                 self.push_fueled_instr(Instruction::global_set(global, input), FuelCosts::entity)?;
@@ -3077,7 +3077,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_fueled_instr(Instruction::DataDrop(data_index.into()), FuelCosts::entity)?;
+        self.push_fueled_instr(Instruction::data_drop(data_index), FuelCosts::entity)?;
         Ok(())
     }
 
@@ -3197,7 +3197,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_fueled_instr(Instruction::ElemDrop(elem_index.into()), FuelCosts::entity)?;
+        self.push_fueled_instr(Instruction::elem_drop(elem_index), FuelCosts::entity)?;
         Ok(())
     }
 

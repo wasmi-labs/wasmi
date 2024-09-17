@@ -1224,10 +1224,8 @@ impl<'engine> Executor<'engine> {
                     delta,
                     value,
                 } => self.execute_table_grow_imm(store, result, delta, value)?,
-                Instr::ElemDrop(element_index) => {
-                    self.execute_element_drop(&mut store.inner, element_index)
-                }
-                Instr::DataDrop(data_index) => self.execute_data_drop(&mut store.inner, data_index),
+                Instr::ElemDrop { elem } => self.execute_element_drop(&mut store.inner, elem),
+                Instr::DataDrop { data } => self.execute_data_drop(&mut store.inner, data),
                 Instr::MemorySize { result } => self.execute_memory_size(&store.inner, result),
                 Instr::MemoryGrow { result, delta } => {
                     self.execute_memory_grow(store, result, delta)?
