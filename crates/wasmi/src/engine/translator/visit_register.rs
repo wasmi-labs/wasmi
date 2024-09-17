@@ -35,7 +35,7 @@ impl VisitInputRegisters for Instruction {
         //       their results because preserved registers might be populating them.
         match self {
             | Self::Copy { result, .. } => f(result),
-            | Self::Copy2 { results, .. }
+            | Self::Copy2 { results, .. } => f(results.span_mut().head_mut()),
             | Self::CopySpan { results, .. }
             | Self::CopySpanNonOverlapping { results, .. }
             | Self::CopyMany { results, .. }

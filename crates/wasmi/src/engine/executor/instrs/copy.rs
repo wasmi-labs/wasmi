@@ -1,7 +1,7 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{AnyConst32, Const32, Instruction, Reg, RegSpan},
+    engine::bytecode::{AnyConst32, Const32, FixedRegSpan, Instruction, Reg, RegSpan},
 };
 use core::slice;
 use smallvec::SmallVec;
@@ -23,15 +23,15 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::Copy2`].
     #[inline(always)]
-    pub fn execute_copy_2(&mut self, results: RegSpan, values: [Reg; 2]) {
+    pub fn execute_copy_2(&mut self, results: FixedRegSpan<2>, values: [Reg; 2]) {
         self.execute_copy_2_impl(results, values);
         self.next_instr()
     }
 
     /// Internal implementation of [`Instruction::Copy2`] execution.
     #[inline(always)]
-    fn execute_copy_2_impl(&mut self, results: RegSpan, values: [Reg; 2]) {
-        let result0 = results.head();
+    fn execute_copy_2_impl(&mut self, results: FixedRegSpan<2>, values: [Reg; 2]) {
+        let result0 = results.span().head();
         let result1 = result0.next();
         // We need `tmp` in case `results[0] == values[1]` to avoid overwriting `values[1]` before reading it.
         let tmp = self.get_register(values[1]);

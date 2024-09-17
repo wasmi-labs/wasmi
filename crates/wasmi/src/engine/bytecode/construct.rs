@@ -1,19 +1,20 @@
 use super::{
     utils::{BranchOffset16, Sign},
     AnyConst32,
+    BoundedRegSpan,
     BranchOffset,
     Const16,
     Const32,
     Data,
     Elem,
     EngineFunc,
+    FixedRegSpan,
     Func,
     FuncType,
     Global,
     Instruction,
     Reg,
     RegSpan,
-    RegSpanIter,
     Table,
 };
 use crate::core::TrapCode;
@@ -89,7 +90,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnSpan`] from the given `values`.
-    pub fn return_span(values: RegSpanIter) -> Self {
+    pub fn return_span(values: BoundedRegSpan) -> Self {
         Self::ReturnSpan { values }
     }
 
@@ -152,7 +153,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `values`.
-    pub fn return_nez_span(condition: Reg, values: RegSpanIter) -> Self {
+    pub fn return_nez_span(condition: Reg, values: BoundedRegSpan) -> Self {
         Self::ReturnNezSpan { condition, values }
     }
 
@@ -262,7 +263,7 @@ impl Instruction {
     /// Creates a new [`Instruction::Copy2`].
     pub fn copy2(results: RegSpan, value0: impl Into<Reg>, value1: impl Into<Reg>) -> Self {
         Self::Copy2 {
-            results,
+            results: <FixedRegSpan<2>>::new(results).unwrap(),
             values: [value0.into(), value1.into()],
         }
     }
@@ -293,10 +294,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::CopySpan`] copying multiple consecutive values.
     pub fn copy_span(results: RegSpan, values: RegSpan, len: u16) -> Self {
-        debug_assert!(RegSpanIter::has_overlapping_copies(
-            results.iter(len),
-            values.iter(len)
-        ));
+        debug_assert!(RegSpan::has_overlapping_copies(results, values, len));
         Self::CopySpan {
             results,
             values,
@@ -306,10 +304,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::CopySpanNonOverlapping`] copying multiple consecutive values.
     pub fn copy_span_non_overlapping(results: RegSpan, values: RegSpan, len: u16) -> Self {
-        debug_assert!(!RegSpanIter::has_overlapping_copies(
-            results.iter(len),
-            values.iter(len)
-        ));
+        debug_assert!(!RegSpan::has_overlapping_copies(results, values, len));
         Self::CopySpanNonOverlapping {
             results,
             values,
@@ -1025,7 +1020,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::RegisterSpan`].
-    pub fn register_span(span: RegSpanIter) -> Self {
+    pub fn register_span(span: BoundedRegSpan) -> Self {
         Self::RegisterSpan { span }
     }
 

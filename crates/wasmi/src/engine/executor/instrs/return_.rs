@@ -2,7 +2,7 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
     engine::{
-        bytecode::{AnyConst32, Const32, Instruction, Reg, RegSpan, RegSpanIter},
+        bytecode::{AnyConst32, BoundedRegSpan, Const32, Instruction, Reg, RegSpan},
         executor::stack::FrameRegisters,
     },
     store::StoreInner,
@@ -189,10 +189,10 @@ impl<'engine> Executor<'engine> {
     pub fn execute_return_span(
         &mut self,
         store: &mut StoreInner,
-        values: RegSpanIter,
+        values: BoundedRegSpan,
     ) -> ReturnOutcome {
         let (mut caller_sp, results) = self.return_caller_results();
-        let results = results.iter(values.len_as_u16());
+        let results = results.iter(values.len());
         for (result, value) in results.zip(values) {
             // Safety: The `callee.results()` always refer to a span of valid
             //         registers of the `caller` that does not overlap with the
@@ -342,7 +342,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         condition: Reg,
-        values: RegSpanIter,
+        values: BoundedRegSpan,
     ) -> ReturnOutcome {
         self.execute_return_nez_impl(store, condition, values, Self::execute_return_span)
     }

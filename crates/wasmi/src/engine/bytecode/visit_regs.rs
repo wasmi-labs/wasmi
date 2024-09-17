@@ -1,4 +1,4 @@
-use super::{Instruction, Reg, RegSpan, RegSpanIter};
+use super::{BoundedRegSpan, FixedRegSpan, Instruction, Reg, RegSpan};
 
 impl Instruction {
     /// Visit [`Reg`]s of `self` via the `visitor`.
@@ -45,12 +45,16 @@ impl HostVisitor for &'_ mut RegSpan {
     }
 }
 
-impl HostVisitor for &'_ mut RegSpanIter {
+impl HostVisitor for &'_ mut BoundedRegSpan {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
-        let len = self.len_as_u16();
-        let mut span = self.span();
-        visitor.visit_input_regs(&mut span, Some(len));
-        *self = span.iter(len);
+        let len = self.len();
+        visitor.visit_input_regs(self.span_mut(), Some(len));
+    }
+}
+
+impl<const N: u16> HostVisitor for &'_ mut FixedRegSpan<N> {
+    fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
+        visitor.visit_input_regs(self.span_mut(), Some(N));
     }
 }
 
@@ -66,6 +70,19 @@ impl HostVisitor for Res<&'_ mut Reg> {
 impl HostVisitor for Res<&'_ mut RegSpan> {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         visitor.visit_result_regs(self.0, None);
+    }
+}
+
+impl HostVisitor for Res<&'_ mut BoundedRegSpan> {
+    fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
+        let len = self.0.len();
+        visitor.visit_result_regs(self.0.span_mut(), Some(len));
+    }
+}
+
+impl<const N: u16> HostVisitor for Res<&'_ mut FixedRegSpan<N>> {
+    fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
+        visitor.visit_result_regs(self.0.span_mut(), Some(N));
     }
 }
 

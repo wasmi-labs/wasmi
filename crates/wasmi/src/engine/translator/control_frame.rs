@@ -5,7 +5,7 @@ use super::LabelRef;
 use super::ValueStack;
 use crate::{
     engine::{
-        bytecode::{RegSpan, RegSpanIter},
+        bytecode::{BoundedRegSpan, RegSpan},
         BlockType,
         Instr,
         TranslationError,
@@ -106,9 +106,8 @@ impl BlockControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`BlockControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegSpanIter {
-        self.branch_params
-            .iter(self.block_type().len_results(engine))
+    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+        BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
     }
 
     /// Returns the label for the branch destination of the [`BlockControlFrame`].
@@ -211,9 +210,8 @@ impl LoopControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`LoopControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegSpanIter {
-        self.branch_params
-            .iter(self.block_type().len_params(engine))
+    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+        BoundedRegSpan::new(self.branch_params, self.block_type().len_params(engine))
     }
 
     /// Returns the label for the branch destination of the [`LoopControlFrame`].
@@ -381,9 +379,8 @@ impl IfControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`IfControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegSpanIter {
-        self.branch_params
-            .iter(self.block_type().len_results(engine))
+    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+        BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
     }
 
     /// Returns the label for the branch destination of the [`IfControlFrame`].
@@ -602,7 +599,7 @@ impl ControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branch parameters of the [`ControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegSpanIter {
+    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
         match self {
             Self::Block(frame) => frame.branch_params(engine),
             Self::Loop(frame) => frame.branch_params(engine),
