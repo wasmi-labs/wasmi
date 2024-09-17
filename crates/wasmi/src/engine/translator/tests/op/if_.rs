@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
-        bytecode::{BranchOffset, BranchOffset16, Global, RegSpan},
+        bytecode::{index::Global, BranchOffset, BranchOffset16, RegSpan},
         EngineFunc,
     },
 };
