@@ -12,7 +12,6 @@ mod for_each_op;
 mod immeditate;
 pub mod index;
 mod primitive;
-mod relink_result;
 mod sequence;
 mod span;
 mod visit_input_regs;
