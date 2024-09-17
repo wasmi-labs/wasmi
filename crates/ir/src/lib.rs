@@ -14,12 +14,14 @@ pub mod index;
 mod primitive;
 mod sequence;
 mod span;
+mod visit_regs;
 
 #[cfg(test)]
 mod tests;
 
 use wasmi_core as core;
 
+use self::immeditate::AnyConst16;
 #[doc(inline)]
 pub use self::{
     error::Error,
@@ -30,4 +32,5 @@ pub use self::{
     r#enum::Instruction,
     sequence::{InstrIter, InstrIterMut, InstrSequence},
     span::{BoundedRegSpan, FixedRegSpan, RegSpan, RegSpanIter},
+    visit_regs::VisitRegs,
 };
