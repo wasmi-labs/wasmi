@@ -509,9 +509,9 @@ impl<'engine> Executor<'engine> {
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        let len_params = usize::from(host_func.len_params());
-        let len_results = usize::from(host_func.len_results());
-        let max_inout = len_params.max(len_results);
+        let len_params = host_func.len_params();
+        let len_results = host_func.len_results();
+        let max_inout = usize::from(len_params.max(len_results));
         let instance = *self.stack.calls.instance_expect();
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].

@@ -4,6 +4,7 @@ use super::errors::{
     FuncError,
     GlobalError,
     InstantiationError,
+    IrError,
     LinkerError,
     MemoryError,
     TableError,
@@ -189,6 +190,8 @@ pub enum ErrorKind {
     Translation(TranslationError),
     /// Encountered when an enforced limit is exceeded.
     Limits(EnforcedLimitsError),
+    /// Encountered for Wasmi bytecode related errors.
+    Ir(IrError),
 }
 
 impl ErrorKind {
@@ -255,6 +258,7 @@ impl Display for ErrorKind {
             Self::Translation(error) => Display::fmt(error, f),
             Self::Limits(error) => Display::fmt(error, f),
             Self::ResumableHost(error) => Display::fmt(error, f),
+            Self::Ir(error) => Display::fmt(error, f),
         }
     }
 }
@@ -286,6 +290,7 @@ impl_from! {
     impl From<FuncError> for Error::Func;
     impl From<EnforcedLimitsError> for Error::Limits;
     impl From<ResumableHostError> for Error::ResumableHost;
+    impl From<IrError> for Error::Ir;
 }
 
 /// An error that can occur upon `memory.grow` or `table.grow`.

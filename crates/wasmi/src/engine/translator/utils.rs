@@ -1,6 +1,6 @@
 use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
-    engine::bytecode::{Const16, Reg, RegSpanIter, Sign},
+    engine::bytecode::{BoundedRegSpan, Const16, Reg, RegSpan, Sign},
     Error,
 };
 
@@ -137,35 +137,36 @@ impl Provider<Const16<u32>> {
     }
 }
 
-impl RegSpanIter {
-    /// Creates a [`RegSpanIter`] from the given slice of [`TypedProvider`] if possible.
+impl TypedProvider {
+    /// Returns the `i16` [`Reg`] index if the [`TypedProvider`] is a [`Reg`].
+    fn register_index(&self) -> Option<i16> {
+        match self {
+            TypedProvider::Register(index) => Some(i16::from(*index)),
+            TypedProvider::Const(_) => None,
+        }
+    }
+}
+
+impl BoundedRegSpan {
+    /// Creates a [`BoundedRegSpan`] from the given slice of [`TypedProvider`] if possible.
     ///
     /// All [`TypedProvider`] must be [`Reg`] and have
     /// contiguous indices for the conversion to succeed.
     ///
     /// Returns `None` if the `providers` slice is empty.
     pub fn from_providers(providers: &[TypedProvider]) -> Option<Self> {
-        /// Returns the `i16` [`Reg`] index if the [`TypedProvider`] is a [`Reg`].
-        fn register_index(provider: &TypedProvider) -> Option<i16> {
-            match provider {
-                TypedProvider::Register(index) => Some(i16::from(*index)),
-                TypedProvider::Const(_) => None,
-            }
-        }
         let (first, rest) = providers.split_first()?;
-        let first_index = register_index(first)?;
+        let first_index = first.register_index()?;
         let mut prev_index = first_index;
         for next in rest {
-            let next_index = register_index(next)?;
+            let next_index = next.register_index()?;
             if next_index.checked_sub(prev_index)? != 1 {
                 return None;
             }
             prev_index = next_index;
         }
         let end_index = prev_index.checked_add(1)?;
-        Some(Self::from_raw_parts(
-            Reg::from(first_index),
-            Reg::from(end_index),
-        ))
+        let len = (end_index - first_index) as u16;
+        Some(Self::new(RegSpan::new(Reg::from(first_index)), len))
     }
 }

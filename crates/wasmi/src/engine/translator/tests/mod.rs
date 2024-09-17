@@ -12,7 +12,7 @@ use self::{
 };
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{AnyConst32, Const16, Const32, Instruction, Reg},
+    engine::bytecode::{AnyConst32, BoundedRegSpan, Const16, Const32, Instruction, Reg, RegSpan},
     Config,
     Engine,
     Module,
@@ -60,6 +60,11 @@ where
         testcase.expect_func_instrs(instrs);
     }
     testcase.run();
+}
+
+/// Creates a new [`BoundedRegSpan`] starting with `reg` and with `len`.
+fn bspan(reg: impl Into<Reg>, len: u16) -> BoundedRegSpan {
+    BoundedRegSpan::new(RegSpan::new(reg.into()), len)
 }
 
 /// Identifier for a Wasm operator.

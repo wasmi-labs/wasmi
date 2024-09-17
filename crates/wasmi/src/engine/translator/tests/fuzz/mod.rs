@@ -7,6 +7,7 @@ use crate::{
         bytecode::{BranchOffset, BranchOffset16, Global, RegSpan},
         EngineFunc,
     },
+    Val,
 };
 
 #[test]
@@ -425,4 +426,121 @@ fn fuzz_regression_17() {
             Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn audit_0_codegen() {
+    let wasm = include_str!("wat/audit_0.wat");
+    TranslationTest::from_wat(wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::return_many(-1, -2, -1),
+                Instruction::register(-2),
+            ])
+            .consts([1, 0]),
+        )
+        .expect_func(
+            ExpectedFunc::new([
+                Instruction::call_internal_0(RegSpan::new(Reg::from(0)), EngineFunc::from_u32(0)),
+                Instruction::branch_table_many(Reg::from(3), 3),
+                Instruction::register_list(-1, 0, 1),
+                Instruction::register(2),
+                Instruction::branch_table_target(RegSpan::new(Reg::from(0)), BranchOffset::from(3)),
+                Instruction::Return,
+                Instruction::Return,
+                Instruction::return_span(bspan(0, 4)),
+            ])
+            .consts([0]),
+        )
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn audit_0_execution() {
+    use crate::{Engine, Instance, Store};
+    let wat = include_str!("wat/audit_0.wat");
+    let wasm = wat::parse_str(wat).unwrap();
+    let engine = Engine::default();
+    let mut store = <Store<()>>::new(&engine, ());
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let instance = Instance::new(&mut store, &module, &[]).unwrap();
+    let func = instance
+        .get_func(&store, "")
+        .unwrap()
+        .typed::<(), (i32, i32, i32, i32)>(&store)
+        .unwrap();
+    let result = func.call(&mut store, ()).unwrap();
+    std::println!("result = {result:?}");
+    assert_eq!(result, (0, 1, 0, 1));
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn audit_1_codegen() {
+    let wasm = include_str!("wat/audit_1.wat");
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy_span_non_overlapping(
+                RegSpan::new(Reg::from(6)),
+                RegSpan::new(Reg::from(0)),
+                3,
+            ),
+            Instruction::trap(TrapCode::IntegerOverflow),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn audit_1_execution() {
+    use crate::{Engine, Instance, Store};
+    let wat = include_str!("wat/audit_1.wat");
+    let wasm = wat::parse_str(wat).unwrap();
+    let engine = Engine::default();
+    let mut store = <Store<()>>::new(&engine, ());
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let instance = Instance::new(&mut store, &module, &[]).unwrap();
+    let func = instance
+        .get_func(&store, "")
+        .unwrap()
+        .typed::<(), (i32, i32, i32)>(&store)
+        .unwrap();
+    let result = func.call(&mut store, ()).unwrap_err();
+    assert_eq!(result.as_trap_code(), Some(TrapCode::IntegerOverflow));
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn audit_2_codegen() {
+    let wasm = include_str!("wat/audit_2.wat");
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy(2, 0),
+            Instruction::copy(0, 2),
+            Instruction::copy(1, 0),
+            Instruction::return_many(2, 1, 0),
+            Instruction::register(0),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn audit_2_execution() {
+    use crate::{Engine, Instance, Store};
+    let wat = include_str!("wat/audit_2.wat");
+    let wasm = wat::parse_str(wat).unwrap();
+    let engine = Engine::default();
+    let mut store = <Store<()>>::new(&engine, ());
+    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let instance = Instance::new(&mut store, &module, &[]).unwrap();
+    let func = instance.get_func(&store, "").unwrap();
+    let inputs = [Val::I32(1)];
+    let mut results = [0_i32; 4].map(Val::from);
+    let expected = [1_i32; 4];
+    func.call(&mut store, &inputs[..], &mut results[..])
+        .unwrap();
+    assert_eq!(results.map(|v| v.i32().unwrap()), expected,);
 }

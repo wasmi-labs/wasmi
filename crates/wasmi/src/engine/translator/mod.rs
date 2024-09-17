@@ -39,13 +39,13 @@ pub use self::{
     stack::TypedProvider,
 };
 use super::{
-    bytecode::{index, BranchOffset},
+    bytecode::{index, BoundedRegSpan, BranchOffset},
     code_map::CompiledFuncEntity,
 };
 use crate::{
     core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{
-        bytecode::{Const16, Const32, Instruction, Reg, RegSpan, RegSpanIter, Sign},
+        bytecode::{Const16, Const32, Instruction, Reg, RegSpan, Sign},
         config::FuelCosts,
         BlockType,
         EngineFunc,
@@ -824,8 +824,14 @@ impl FuncTranslator {
             (i16::from(b.preserved) - i16::from(a.preserved)) == 1
         });
         for copy_group in copy_groups {
-            let len = copy_group.len();
-            let results = RegSpan::new(copy_group[0].preserved).iter(len);
+            let len = u16::try_from(copy_group.len()).unwrap_or_else(|error| {
+                panic!(
+                    "too many ({}) registers in copy group: {}",
+                    copy_group.len(),
+                    error
+                )
+            });
+            let results = BoundedRegSpan::new(RegSpan::new(copy_group[0].preserved), len);
             let providers = &mut self.alloc.buffer.providers;
             providers.clear();
             providers.extend(
@@ -848,14 +854,16 @@ impl FuncTranslator {
     }
 
     /// Convenience function to copy the parameters when branching to a control frame.
-    fn translate_copy_branch_params(&mut self, branch_params: RegSpanIter) -> Result<(), Error> {
+    fn translate_copy_branch_params(&mut self, branch_params: BoundedRegSpan) -> Result<(), Error> {
         if branch_params.is_empty() {
             // If the block does not have branch parameters there is no need to copy anything.
             return Ok(());
         }
         let fuel_info = self.fuel_info();
         let params = &mut self.alloc.buffer.providers;
-        self.alloc.stack.pop_n(branch_params.len(), params);
+        self.alloc
+            .stack
+            .pop_n(usize::from(branch_params.len()), params);
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
             branch_params,
@@ -1205,14 +1213,19 @@ impl FuncTranslator {
     /// If this procedure would allocate more registers than are available.
     fn alloc_branch_params(
         &mut self,
-        len_block_params: usize,
-        len_branch_params: usize,
+        len_block_params: u16,
+        len_branch_params: u16,
     ) -> Result<RegSpan, Error> {
         let params = &mut self.alloc.buffer.providers;
         // Pop the block parameters off the stack.
-        self.alloc.stack.pop_n(len_block_params, params);
+        self.alloc
+            .stack
+            .pop_n(usize::from(len_block_params), params);
         // Peek the branch parameter registers which are going to be returned.
-        let branch_params = self.alloc.stack.peek_dynamic_n(len_branch_params)?;
+        let branch_params = self
+            .alloc
+            .stack
+            .peek_dynamic_n(usize::from(len_branch_params))?;
         // Push the block parameters onto the stack again as if nothing happened.
         self.alloc.stack.push_n(params)?;
         params.clear();
@@ -2499,7 +2512,7 @@ impl FuncTranslator {
     fn translate_br_table_targets(
         &mut self,
         values: &[TypedProvider],
-        make_target: impl Fn(RegSpanIter, BranchOffset) -> Instruction,
+        make_target: impl Fn(BoundedRegSpan, BranchOffset) -> Instruction,
     ) -> Result<(), Error> {
         let engine = self.engine().clone();
         let fuel_info = self.fuel_info();
@@ -2636,18 +2649,18 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `br_table` instruction with 4 or more inputs.
-    fn translate_br_table_n(&mut self, index: Reg, len_values: usize) -> Result<(), Error> {
+    fn translate_br_table_n(&mut self, index: Reg, len_values: u16) -> Result<(), Error> {
         debug_assert!(len_values > 3);
         let values = &mut self.alloc.buffer.providers;
-        self.alloc.stack.pop_n(len_values, values);
-        match RegSpanIter::from_providers(values) {
+        self.alloc.stack.pop_n(usize::from(len_values), values);
+        match BoundedRegSpan::from_providers(values) {
             Some(span) => self.translate_br_table_span(index, span),
             None => self.translate_br_table_many(index),
         }
     }
 
     /// Translates a Wasm `br_table` instruction with 4 or more inputs that form a [`RegSpan`].
-    fn translate_br_table_span(&mut self, index: Reg, values: RegSpanIter) -> Result<(), Error> {
+    fn translate_br_table_span(&mut self, index: Reg, values: BoundedRegSpan) -> Result<(), Error> {
         debug_assert!(values.len() > 3);
         let fuel_info = self.fuel_info();
         let targets = &mut self.alloc.buffer.br_table_targets;

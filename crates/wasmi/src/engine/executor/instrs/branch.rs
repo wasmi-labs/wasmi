@@ -121,7 +121,7 @@ impl<'engine> Executor<'engine> {
         let Instruction::RegisterSpan { span: values } = *self.ip.get() else {
             unreachable!()
         };
-        let len = values.len_as_u16();
+        let len = values.len();
         let values = values.span();
         self.ip.add(offset);
         match *self.ip.get() {
@@ -141,10 +141,11 @@ impl<'engine> Executor<'engine> {
 
     #[inline(always)]
     pub fn execute_branch_table_many(&mut self, index: Reg, len_targets: u32) {
-        let offset = self.fetch_branch_table_offset(index, len_targets);
-        self.ip.add(offset);
+        let offset = self.fetch_branch_table_offset(index, len_targets) - 1;
+        self.ip.add(1);
         let ip_list = self.ip;
         self.ip = Self::skip_register_list(self.ip);
+        self.ip.add(offset);
         match *self.ip.get() {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.

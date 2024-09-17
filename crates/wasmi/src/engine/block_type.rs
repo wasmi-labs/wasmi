@@ -3,6 +3,7 @@ use crate::{
     engine::DedupFuncType,
     module::{utils::WasmiValueType, FuncTypeIdx, ModuleHeader},
     Engine,
+    FuncType,
 };
 
 /// The type of a Wasm control flow block.
@@ -63,22 +64,22 @@ impl BlockType {
     }
 
     /// Returns the number of parameters of the [`BlockType`].
-    pub fn len_params(&self, engine: &Engine) -> usize {
+    pub fn len_params(&self, engine: &Engine) -> u16 {
         match &self.inner {
             BlockTypeInner::Empty | BlockTypeInner::Returns => 0,
             BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(func_type, |func_type| func_type.params().len())
+                engine.resolve_func_type(func_type, FuncType::len_params)
             }
         }
     }
 
     /// Returns the number of results of the [`BlockType`].
-    pub fn len_results(&self, engine: &Engine) -> usize {
+    pub fn len_results(&self, engine: &Engine) -> u16 {
         match &self.inner {
             BlockTypeInner::Empty => 0,
             BlockTypeInner::Returns => 1,
             BlockTypeInner::FuncType(func_type) => {
-                engine.resolve_func_type(func_type, |func_type| func_type.results().len())
+                engine.resolve_func_type(func_type, FuncType::len_results)
             }
         }
     }

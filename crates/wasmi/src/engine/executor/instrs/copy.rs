@@ -1,7 +1,7 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{AnyConst32, Const32, Instruction, Reg, RegSpan},
+    engine::bytecode::{AnyConst32, Const32, FixedRegSpan, Instruction, Reg, RegSpan},
 };
 use core::slice;
 use smallvec::SmallVec;
@@ -23,15 +23,15 @@ impl<'engine> Executor<'engine> {
 
     /// Executes an [`Instruction::Copy2`].
     #[inline(always)]
-    pub fn execute_copy_2(&mut self, results: RegSpan, values: [Reg; 2]) {
+    pub fn execute_copy_2(&mut self, results: FixedRegSpan<2>, values: [Reg; 2]) {
         self.execute_copy_2_impl(results, values);
         self.next_instr()
     }
 
     /// Internal implementation of [`Instruction::Copy2`] execution.
     #[inline(always)]
-    fn execute_copy_2_impl(&mut self, results: RegSpan, values: [Reg; 2]) {
-        let result0 = results.head();
+    fn execute_copy_2_impl(&mut self, results: FixedRegSpan<2>, values: [Reg; 2]) {
+        let result0 = results.span().head();
         let result1 = result0.next();
         // We need `tmp` in case `results[0] == values[1]` to avoid overwriting `values[1]` before reading it.
         let tmp = self.get_register(values[1]);
@@ -74,8 +74,8 @@ impl<'engine> Executor<'engine> {
     /// Internal implementation of [`Instruction::CopySpan`] execution.
     #[inline(always)]
     pub fn execute_copy_span_impl(&mut self, results: RegSpan, values: RegSpan, len: u16) {
-        let results = results.iter_u16(len);
-        let values = values.iter_u16(len);
+        let results = results.iter(len);
+        let values = values.iter(len);
         let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
         tmp.extend(values.into_iter().map(|value| self.get_register(value)));
         for (result, value) in results.into_iter().zip(tmp) {
@@ -109,13 +109,12 @@ impl<'engine> Executor<'engine> {
         values: RegSpan,
         len: u16,
     ) {
-        let results = results.iter_u16(len);
-        let values = values.iter_u16(len);
+        let results = results.iter(len);
+        let values = values.iter(len);
         for (result, value) in results.into_iter().zip(values.into_iter()) {
             let value = self.get_register(value);
             self.set_register(result, value);
         }
-        self.next_instr();
     }
 
     /// Executes an [`Instruction::CopyMany`].
@@ -151,7 +150,7 @@ impl<'engine> Executor<'engine> {
             ),
         };
         tmp.extend(values.iter().map(|value| self.get_register(*value)));
-        for (result, value) in results.iter(tmp.len()).zip(tmp) {
+        for (result, value) in results.iter_sized(tmp.len()).zip(tmp) {
             self.set_register(result, value);
         }
         ip
