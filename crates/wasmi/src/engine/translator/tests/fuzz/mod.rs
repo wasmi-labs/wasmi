@@ -449,7 +449,7 @@ fn audit_0_codegen() {
                 Instruction::branch_table_target(RegSpan::new(Reg::from(0)), BranchOffset::from(3)),
                 Instruction::Return,
                 Instruction::Return,
-                Instruction::return_span(RegSpan::new(Reg::from(0)).iter(4)),
+                Instruction::return_span(bspan(0, 4)),
             ])
             .consts([0]),
         )

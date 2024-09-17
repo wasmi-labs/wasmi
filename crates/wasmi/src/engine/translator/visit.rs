@@ -17,7 +17,7 @@ use super::{
 use crate::{
     core::{TrapCode, ValType, F32, F64},
     engine::{
-        bytecode::{self, Const16, FuncType, Instruction, Reg},
+        bytecode::{self, BoundedRegSpan, Const16, FuncType, Instruction, Reg},
         translator::{AcquiredTarget, Provider},
         BlockType,
         FuelCosts,
@@ -165,7 +165,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
-            branch_params.iter(len_block_params),
+            BoundedRegSpan::new(branch_params, len_block_params),
             &self.alloc.buffer.providers[..],
             fuel_info,
         )?;
@@ -419,16 +419,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                             )?;
                             return Ok(());
                         }
-                        self.alloc
-                            .stack
-                            .peek_n(branch_params.len(), &mut self.alloc.buffer.providers);
+                        self.alloc.stack.peek_n(
+                            usize::from(branch_params.len()),
+                            &mut self.alloc.buffer.providers,
+                        );
                         if self
                             .alloc
                             .buffer
                             .providers
                             .iter()
                             .copied()
-                            .eq(branch_params.map(TypedProvider::Register))
+                            .eq(branch_params.iter().map(TypedProvider::Register))
                         {
                             // Case: the providers on the stack are already as
                             //       expected by the branch params and therefore

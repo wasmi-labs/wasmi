@@ -121,7 +121,7 @@ impl<'engine> Executor<'engine> {
         let Instruction::RegisterSpan { span: values } = *self.ip.get() else {
             unreachable!()
         };
-        let len = values.len_as_u16();
+        let len = values.len();
         let values = values.span();
         self.ip.add(offset);
         match *self.ip.get() {

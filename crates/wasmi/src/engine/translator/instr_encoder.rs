@@ -11,6 +11,7 @@ use crate::{
     core::{UntypedVal, ValType, F32},
     engine::{
         bytecode::{
+            BoundedRegSpan,
             BranchOffset,
             BranchOffset16,
             Comparator,
@@ -20,7 +21,6 @@ use crate::{
             Instruction,
             Reg,
             RegSpan,
-            RegSpanIter,
         },
         translator::{stack::RegisterSpace, ValueStack},
         FuelCosts,
@@ -447,21 +447,21 @@ impl InstrEncoder {
     pub fn encode_copies(
         &mut self,
         stack: &mut ValueStack,
-        mut results: RegSpanIter,
+        mut results: BoundedRegSpan,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
     ) -> Result<Option<Instr>, Error> {
-        assert_eq!(results.len(), values.len());
+        assert_eq!(usize::from(results.len()), values.len());
+        let result = results.span().head();
         if let Some((TypedProvider::Register(value), rest)) = values.split_first() {
-            if results.span().head() == *value {
+            if result == *value {
                 // Case: `result` and `value` are equal thus this is a no-op copy which we can avoid.
                 //       Applied recursively we thereby remove all no-op copies at the start of the
                 //       copy sequence until the first actual copy.
-                results.next();
+                results = BoundedRegSpan::new(RegSpan::new(result.next()), results.len() - 1);
                 return self.encode_copies(stack, results, rest, fuel_info);
             }
         }
-        let result = results.span().head();
         match values {
             [] => {
                 // The copy sequence is empty, nothing to encode in this case.
@@ -489,7 +489,7 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(values) = RegSpanIter::from_providers(values) {
+                if let Some(values) = BoundedRegSpan::from_providers(values) {
                     let make_instr = match Self::has_overlapping_copy_spans(
                         results.span(),
                         values.span(),
@@ -498,11 +498,8 @@ impl InstrEncoder {
                         true => Instruction::copy_span,
                         false => Instruction::copy_span_non_overlapping,
                     };
-                    let instr = self.push_instr(make_instr(
-                        results.span(),
-                        values.span(),
-                        values.len_as_u16(),
-                    ))?;
+                    let instr =
+                        self.push_instr(make_instr(results.span(), values.span(), values.len()))?;
                     return Ok(Some(instr));
                 }
                 let make_instr = match Self::has_overlapping_copies(results, values) {
@@ -526,8 +523,8 @@ impl InstrEncoder {
     /// - `[ 1 <- 0 ]`: single element never overlaps
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
-    pub fn has_overlapping_copy_spans(results: RegSpan, values: RegSpan, len: usize) -> bool {
-        RegSpanIter::has_overlapping_copies(results.iter_sized(len), values.iter_sized(len))
+    pub fn has_overlapping_copy_spans(results: RegSpan, values: RegSpan, len: u16) -> bool {
+        RegSpan::has_overlapping_copies(results, values, len)
     }
 
     /// Returns `true` if the `copy results <- values` instruction has overlaps.
@@ -539,14 +536,14 @@ impl InstrEncoder {
     ///   is written to in the first copy but read from in the next.
     /// - The sequence `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since register `3`
     ///   is written to in the first copy but read from in the third.
-    pub fn has_overlapping_copies(results: RegSpanIter, values: &[TypedProvider]) -> bool {
-        debug_assert_eq!(results.len(), values.len());
+    pub fn has_overlapping_copies(results: BoundedRegSpan, values: &[TypedProvider]) -> bool {
+        debug_assert_eq!(usize::from(results.len()), values.len());
         if results.is_empty() {
             // Note: An empty set of copies can never have overlapping copies.
             return false;
         }
         let result0 = results.span().head();
-        for (result, value) in results.zip(values) {
+        for (result, value) in results.iter().zip(values) {
             // Note: We only have to check the register case since constant value
             //       copies can never overlap.
             if let TypedProvider::Register(value) = *value {
@@ -625,7 +622,7 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(span) = RegSpanIter::from_providers(values) {
+                if let Some(span) = BoundedRegSpan::from_providers(values) {
                     self.push_instr(Instruction::return_span(span))?;
                     return Ok(());
                 }
@@ -687,7 +684,7 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(span) = RegSpanIter::from_providers(values) {
+                if let Some(span) = BoundedRegSpan::from_providers(values) {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
                     return Ok(());
                 }
@@ -1497,36 +1494,37 @@ mod tests {
     use super::*;
     use crate::core::TypedVal;
 
+    fn bspan(reg: i16, len: u16) -> BoundedRegSpan {
+        BoundedRegSpan::new(RegSpan::new(Reg::from(reg)), len)
+    }
+
     #[test]
     fn has_overlapping_copies_works() {
+        assert!(!InstrEncoder::has_overlapping_copies(bspan(0, 0), &[],));
         assert!(!InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from(0)).iter(0),
-            &[],
-        ));
-        assert!(!InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from(0)).iter(2),
+            bspan(0, 2),
             &[TypedProvider::register(0), TypedProvider::register(1),],
         ));
         assert!(!InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from(0)).iter(2),
+            bspan(0, 2),
             &[
                 TypedProvider::Const(TypedVal::from(10_i32)),
                 TypedProvider::Const(TypedVal::from(20_i32)),
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from(0)).iter(2),
+            bspan(0, 2),
             &[
                 TypedProvider::Const(TypedVal::from(10_i32)),
                 TypedProvider::register(0),
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from(0)).iter(2),
+            bspan(0, 2),
             &[TypedProvider::register(0), TypedProvider::register(0),],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from(3)).iter(3),
+            bspan(3, 3),
             &[
                 TypedProvider::register(2),
                 TypedProvider::register(3),
@@ -1534,7 +1532,7 @@ mod tests {
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegSpan::new(Reg::from(3)).iter(4),
+            bspan(3, 4),
             &[
                 TypedProvider::register(-1),
                 TypedProvider::register(10),

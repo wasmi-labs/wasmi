@@ -542,7 +542,7 @@ fn return_if_results_3_span() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_span(Reg::from(3), RegSpan::new(Reg::from(0)).iter(3)),
+            Instruction::return_nez_span(Reg::from(3), bspan(0, 3)),
             Instruction::return_reg3(0, 1, 2),
         ])
         .run()
@@ -614,8 +614,8 @@ fn return_if_results_4_span() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_span(Reg::from(4), RegSpan::new(Reg::from(0)).iter(4)),
-            Instruction::return_span(RegSpan::new(Reg::from(0)).iter(4)),
+            Instruction::return_nez_span(Reg::from(4), bspan(0, 4)),
+            Instruction::return_span(bspan(0, 4)),
         ])
         .run()
 }
@@ -954,7 +954,7 @@ fn branch_if_results_4_mixed_1() {
                 Instruction::branch(BranchOffset::from(3)),
                 Instruction::copy_many_non_overlapping(RegSpan::new(Reg::from(3)), -1, 0),
                 Instruction::register2(1, -2),
-                Instruction::return_span(RegSpan::new(Reg::from(3)).iter(4)),
+                Instruction::return_span(bspan(3, 4)),
             ])
             .consts([10_i32, 20]),
         )
@@ -987,7 +987,7 @@ fn branch_if_results_4_mixed_2() {
             Instruction::branch(BranchOffset::from(3)),
             Instruction::copy_many_non_overlapping(RegSpan::new(Reg::from(3)), 0, 0),
             Instruction::register2(1, 1),
-            Instruction::return_span(RegSpan::new(Reg::from(3)).iter(4)),
+            Instruction::return_span(bspan(3, 4)),
         ])
         .run()
 }

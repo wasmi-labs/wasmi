@@ -17,7 +17,7 @@ pub mod index {
 pub use self::{
     error::Error as IrError,
     immediate::{AnyConst32, Const16, Const32},
-    span::{BoundedRegSpan, FixedRegSpan, RegSpan, RegSpanIter},
+    span::{BoundedRegSpan, FixedRegSpan, RegSpan},
     utils::{
         BlockFuel,
         BranchOffset,
@@ -142,10 +142,10 @@ pub enum Instruction {
     ///
     /// # Note
     ///
-    /// Returns values as stored in the [`RegSpanIter`].
+    /// Returns values as stored in the [`BoundedRegSpan`].
     ReturnSpan {
-        /// The underlying [`RegSpanIter`] value.
-        values: RegSpanIter,
+        /// The underlying [`BoundedRegSpan`] value.
+        values: BoundedRegSpan,
     },
     /// A Wasm `return` instruction.
     ///
@@ -246,7 +246,7 @@ pub enum Instruction {
         /// The register holding the condition to evaluate against zero.
         condition: Reg,
         /// The returned values.
-        values: RegSpanIter,
+        values: BoundedRegSpan,
     },
     /// A conditional `return` instruction.
     ///
@@ -1118,7 +1118,7 @@ pub enum Instruction {
     /// This is a Wasmi utility instruction used to translate Wasm control flow.
     Copy2 {
         /// The registers holding the result of the instruction.
-        results: RegSpan,
+        results: FixedRegSpan<2>,
         /// The registers holding the values to copy.
         values: [Reg; 2],
     },
@@ -5446,8 +5446,8 @@ pub enum Instruction {
         /// The 32-bit immediate value.
         imm: AnyConst32,
     },
-    /// A [`RegSpanIter`] instruction parameter.
-    RegisterSpan { span: RegSpanIter },
+    /// A [`BoundedRegSpan`] instruction parameter.
+    RegisterSpan { span: BoundedRegSpan },
     /// A [`Reg`] instruction parameter.
     ///
     /// # Note

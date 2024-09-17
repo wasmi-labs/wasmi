@@ -24,6 +24,7 @@ mod table;
 mod unary;
 
 use super::{
+    bspan,
     display_wasm::DisplayValueType,
     driver::ExpectedFunc,
     swap_ops,
