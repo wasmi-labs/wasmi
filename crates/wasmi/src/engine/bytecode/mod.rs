@@ -5049,9 +5049,9 @@ pub enum Instruction {
     },
 
     /// A Wasm `elem.drop` equalivalent Wasmi instruction.
-    ElemDrop(Elem),
+    ElemDrop { elem: Elem },
     /// A Wasm `data.drop` equalivalent Wasmi instruction.
-    DataDrop(Data),
+    DataDrop { data: Data },
 
     /// Wasm `memory.size` instruction.
     MemorySize {

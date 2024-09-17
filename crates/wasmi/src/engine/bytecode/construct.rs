@@ -464,6 +464,16 @@ impl Instruction {
         }
     }
 
+    /// Creates a new [`Instruction::DataDrop`] from the given `data`.
+    pub fn data_drop(data: impl Into<Data>) -> Self {
+        Self::DataDrop { data: data.into() }
+    }
+
+    /// Creates a new [`Instruction::ElemDrop`] from the given `elem`.
+    pub fn elem_drop(elem: impl Into<Elem>) -> Self {
+        Self::ElemDrop { elem: elem.into() }
+    }
+
     /// Creates a new [`Instruction::DataIndex`] from the given `index`.
     pub fn data_index(index: impl Into<Data>) -> Self {
         Self::DataIndex {
