@@ -14,7 +14,6 @@ pub mod index;
 mod primitive;
 mod sequence;
 mod span;
-mod visit_input_regs;
 
 #[cfg(test)]
 mod tests;
