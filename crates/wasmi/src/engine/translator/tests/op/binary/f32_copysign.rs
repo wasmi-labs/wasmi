@@ -12,14 +12,14 @@ fn reg_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm() {
-    fn make_instrs(sign: Sign) -> [Instruction; 2] {
+    fn make_instrs(sign: Sign<f32>) -> [Instruction; 2] {
         [
             Instruction::f32_copysign_imm(Reg::from(1), Reg::from(0), sign),
             Instruction::return_reg(1),
         ]
     }
-    test_binary_reg_imm_with(WASM_OP, 1.0_f32, make_instrs(Sign::Pos)).run();
-    test_binary_reg_imm_with(WASM_OP, -1.0_f32, make_instrs(Sign::Neg)).run();
+    test_binary_reg_imm_with(WASM_OP, 1.0_f32, make_instrs(Sign::pos())).run();
+    test_binary_reg_imm_with(WASM_OP, -1.0_f32, make_instrs(Sign::neg())).run();
 }
 
 #[test]

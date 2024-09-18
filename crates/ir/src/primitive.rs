@@ -1,31 +1,72 @@
 use crate::{core::UntypedVal, Error, Instr};
+use core::marker::PhantomData;
 
 /// The sign of a value.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Sign {
-    /// Positive sign.
-    Pos,
-    /// Negative sign.
-    Neg,
+#[derive(Debug)]
+pub struct Sign<T> {
+    /// Whether the sign value is positive.
+    is_positive: bool,
+    /// Required for the Rust compiler.
+    marker: PhantomData<fn() -> T>,
 }
 
-impl Sign {
-    /// Converts the [`Sign`] into an `f32` value.
-    pub fn to_f32(self) -> f32 {
-        match self {
-            Self::Pos => 1.0_f32,
-            Self::Neg => -1.0_f32,
+impl<T> Clone for Sign<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> Copy for Sign<T> {}
+
+impl<T> PartialEq for Sign<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.is_positive == other.is_positive
+    }
+}
+
+impl<T> Eq for Sign<T> {}
+
+impl<T> Sign<T> {
+    /// Create a new typed [`Sign`] with the given value.
+    fn new(is_positive: bool) -> Self {
+        Self {
+            is_positive,
+            marker: PhantomData,
         }
     }
 
-    /// Converts the [`Sign`] into an `f64` value.
-    pub fn to_f64(self) -> f64 {
-        match self {
-            Self::Pos => 1.0_f64,
-            Self::Neg => -1.0_f64,
-        }
+    /// Creates a new typed [`Sign`] that has positive polarity.
+    pub fn pos() -> Self {
+        Self::new(true)
+    }
+
+    /// Creates a new typed [`Sign`] that has negative polarity.
+    pub fn neg() -> Self {
+        Self::new(false)
     }
 }
+
+macro_rules! impl_sign_for {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl From<$ty> for Sign<$ty> {
+                fn from(value: $ty) -> Self {
+                    Self::new(value.is_sign_positive())
+                }
+            }
+
+            impl From<Sign<$ty>> for $ty {
+                fn from(sign: Sign<$ty>) -> Self {
+                    match sign.is_positive {
+                        true => 1.0,
+                        false => -1.0,
+                    }
+                }
+            }
+        )*
+    };
+}
+impl_sign_for!(f32, f64);
 
 /// A 16-bit signed offset for branch instructions.
 ///
