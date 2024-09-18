@@ -750,8 +750,9 @@ impl FuncTranslator {
             // Fuel metering is disabled so there is no need to create an `Instruction::ConsumeFuel`.
             return Ok(None);
         };
-        let fuel_instr = Instruction::consume_fuel(fuel_costs.base())
+        let base = u32::try_from(fuel_costs.base())
             .expect("base fuel must be valid for creating `Instruction::ConsumeFuel`");
+        let fuel_instr = Instruction::consume_fuel(base);
         let instr = self.alloc.instr_encoder.push_instr(fuel_instr)?;
         Ok(Some(instr))
     }
@@ -2718,5 +2719,24 @@ impl FuncTranslator {
         })?;
         self.reachable = false;
         Ok(())
+    }
+}
+
+trait BumpFuelConsumption {
+    /// Increases the fuel consumption of the [`Instruction::ConsumeFuel`] instruction by `delta`.
+    ///
+    /// # Error
+    ///
+    /// - If `self` is not a [`Instruction::ConsumeFuel`] instruction.
+    /// - If the new fuel consumption overflows the internal `u64` value.
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error>;
+}
+
+impl BumpFuelConsumption for Instruction {
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
+        match self {
+            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Into::into),
+            instr => panic!("expected `Instruction::ConsumeFuel` but found: {instr:?}"),
+        }
     }
 }

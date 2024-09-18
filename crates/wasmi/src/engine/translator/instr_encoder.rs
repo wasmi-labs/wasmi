@@ -2,6 +2,7 @@ use super::{
     relink_result::RelinkResult as _,
     utils::FromProviders as _,
     visit_register::VisitInputRegisters as _,
+    BumpFuelConsumption as _,
     FuelInfo,
     LabelRef,
     LabelRegistry,

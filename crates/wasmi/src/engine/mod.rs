@@ -1,7 +1,6 @@
 //! The Wasmi interpreter.
 
 mod block_type;
-pub mod bytecode;
 mod code_map;
 mod config;
 mod executor;

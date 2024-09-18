@@ -34,7 +34,6 @@ impl Sign {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BranchOffset16(i16);
 
-#[cfg(test)]
 impl From<i16> for BranchOffset16 {
     fn from(offset: i16) -> Self {
         Self(offset)
@@ -160,6 +159,12 @@ impl BranchOffset {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct BlockFuel(u32);
+
+impl From<u32> for BlockFuel {
+    fn from(value: u32) -> Self {
+        Self(value)
+    }
+}
 
 impl TryFrom<u64> for BlockFuel {
     type Error = Error;
