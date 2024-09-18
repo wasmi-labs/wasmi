@@ -30,8 +30,6 @@ spin = { version = "0.9", default-features = false, features = [
 ] }
 smallvec = { version = "1.13.1", features = ["union"] }
 multi-stash = { version = "0.2.0" }
-num-traits = { workspace = true }
-num-derive = "0.4"
 arrayvec = { version = "0.7.4", default-features = false }
 
 [dev-dependencies]
@@ -48,7 +46,6 @@ std = [
     "wasmi_collections/std",
     "wasmparser/std",
     "spin/std",
-    "num-traits/std",
     "arrayvec/std",
 ]
 # Tells the `wasmi` crate to avoid using hash based data structures.
