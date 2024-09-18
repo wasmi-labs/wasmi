@@ -110,6 +110,10 @@ pub use wasmi_core as core;
 #[doc(inline)]
 use wasmi_collections as collections;
 
+/// Definitions from the `wasmi_collections` crate.
+#[doc(inline)]
+use wasmi_ir as ir;
+
 /// Defines some errors that may occur upon interaction with Wasmi.
 pub mod errors {
     pub use super::{

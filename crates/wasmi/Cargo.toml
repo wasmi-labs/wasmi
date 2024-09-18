@@ -22,6 +22,7 @@ exclude = [
 wasmparser = { version = "0.100.2", package = "wasmparser-nostd", default-features = false }
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
+wasmi_ir = { workspace = true }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
     "spin_mutex",

@@ -1863,6 +1863,7 @@ dependencies = [
  "spin",
  "wasmi_collections",
  "wasmi_core 0.36.0",
+ "wasmi_ir",
  "wasmparser-nostd",
  "wast 70.0.2",
  "wat",
