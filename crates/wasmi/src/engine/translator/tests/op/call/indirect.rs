@@ -269,8 +269,8 @@ fn two_reg_params_reg() {
         .expect_func_instrs([
             Instruction::call_indirect(results, FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
-            Instruction::register2(1, 2),
-            Instruction::return_reg2(3, 4),
+            Instruction::register2_ext(1, 2),
+            Instruction::return_reg2_ext(3, 4),
         ])
         .run();
 }
@@ -297,8 +297,8 @@ fn two_reg_params_reg_rev() {
         .expect_func_instrs([
             Instruction::call_indirect(results, FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
-            Instruction::register2(2, 1),
-            Instruction::return_reg2(3, 4),
+            Instruction::register2_ext(2, 1),
+            Instruction::return_reg2_ext(3, 4),
         ])
         .run();
 }
@@ -326,8 +326,8 @@ fn two_imm_params_reg() {
             ExpectedFunc::new([
                 Instruction::call_indirect(results, FuncType::from(0)),
                 Instruction::call_indirect_params(elem_index, Table::from(0)),
-                Instruction::register2(-1, -2),
-                Instruction::return_reg2(1, 2),
+                Instruction::register2_ext(-1, -2),
+                Instruction::return_reg2_ext(1, 2),
             ])
             .consts([10_i32, 20_i32]),
         )
@@ -359,8 +359,8 @@ fn two_reg_params_imm16() {
             .expect_func_instrs([
                 Instruction::call_indirect_imm16(results, FuncType::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
-                Instruction::register2(0, 1),
-                Instruction::return_reg2(2, 3),
+                Instruction::register2_ext(0, 1),
+                Instruction::return_reg2_ext(2, 3),
             ])
             .run();
     }
@@ -396,8 +396,8 @@ fn two_reg_params_rev_imm16() {
             .expect_func_instrs([
                 Instruction::call_indirect_imm16(results, FuncType::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
-                Instruction::register2(1, 0),
-                Instruction::return_reg2(2, 3),
+                Instruction::register2_ext(1, 0),
+                Instruction::return_reg2_ext(2, 3),
             ])
             .run();
     }
@@ -434,8 +434,8 @@ fn two_imm_params_imm16() {
                 ExpectedFunc::new([
                     Instruction::call_indirect_imm16(results, FuncType::from(0)),
                     Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
-                    Instruction::register2(-1, -2),
-                    Instruction::return_reg2(0, 1),
+                    Instruction::register2_ext(-1, -2),
+                    Instruction::return_reg2_ext(0, 1),
                 ])
                 .consts([10_i32, 20_i32]),
             )
@@ -471,8 +471,8 @@ fn three_reg_params_reg() {
         .expect_func_instrs([
             Instruction::call_indirect(results, FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
-            Instruction::register3(1, 2, 3),
-            Instruction::return_reg3(4, 5, 6),
+            Instruction::register3_ext(1, 2, 3),
+            Instruction::return_reg3_ext(4, 5, 6),
         ])
         .run();
 }
@@ -500,8 +500,8 @@ fn three_reg_params_reg_rev() {
         .expect_func_instrs([
             Instruction::call_indirect(results, FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
-            Instruction::register3(3, 2, 1),
-            Instruction::return_reg3(4, 5, 6),
+            Instruction::register3_ext(3, 2, 1),
+            Instruction::return_reg3_ext(4, 5, 6),
         ])
         .run();
 }
@@ -530,8 +530,8 @@ fn three_imm_params_reg() {
             ExpectedFunc::new([
                 Instruction::call_indirect(results, FuncType::from(0)),
                 Instruction::call_indirect_params(elem_index, Table::from(0)),
-                Instruction::register3(-1, -2, -3),
-                Instruction::return_reg3(1, 2, 3),
+                Instruction::register3_ext(-1, -2, -3),
+                Instruction::return_reg3_ext(1, 2, 3),
             ])
             .consts([10_i32, 20, 30]),
         )
@@ -565,8 +565,8 @@ fn three_imm_params_imm16() {
                 ExpectedFunc::new([
                     Instruction::call_indirect_imm16(results, FuncType::from(0)),
                     Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
-                    Instruction::register3(-1, -2, -3),
-                    Instruction::return_reg3(0, 1, 2),
+                    Instruction::register3_ext(-1, -2, -3),
+                    Instruction::return_reg3_ext(0, 1, 2),
                 ])
                 .consts([10_i32, 20, 30]),
             )
@@ -603,8 +603,8 @@ fn params7_reg_index_local() {
         .expect_func_instrs([
             Instruction::call_indirect(RegSpan::new(Reg::from(8)), FuncType::from(0)),
             Instruction::call_indirect_params(Reg::from(0), Table::from(0)),
-            Instruction::register_list(1, 2, 3),
-            Instruction::register_list(4, 5, 6),
+            Instruction::register_list_ext(1, 2, 3),
+            Instruction::register_list_ext(4, 5, 6),
             Instruction::register(7),
             Instruction::return_span(bspan(8, 7)),
         ])
@@ -636,8 +636,8 @@ fn params7_imm_index_local() {
             ExpectedFunc::new([
                 Instruction::call_indirect(RegSpan::new(Reg::from(1)), FuncType::from(0)),
                 Instruction::call_indirect_params(Reg::from(0), Table::from(0)),
-                Instruction::register_list(-1, -2, -3),
-                Instruction::register_list(-4, -5, -6),
+                Instruction::register_list_ext(-1, -2, -3),
+                Instruction::register_list_ext(-4, -5, -6),
                 Instruction::register(-7),
                 Instruction::return_span(bspan(1, 7)),
             ])
@@ -671,9 +671,9 @@ fn params8_reg_index_local() {
         .expect_func_instrs([
             Instruction::call_indirect(RegSpan::new(Reg::from(9)), FuncType::from(0)),
             Instruction::call_indirect_params(Reg::from(0), Table::from(0)),
-            Instruction::register_list(1, 2, 3),
-            Instruction::register_list(4, 5, 6),
-            Instruction::register2(7, 8),
+            Instruction::register_list_ext(1, 2, 3),
+            Instruction::register_list_ext(4, 5, 6),
+            Instruction::register2_ext(7, 8),
             Instruction::return_span(bspan(9, 8)),
         ])
         .run();
@@ -705,9 +705,9 @@ fn params8_imm_index_local() {
             ExpectedFunc::new([
                 Instruction::call_indirect(RegSpan::new(Reg::from(1)), FuncType::from(0)),
                 Instruction::call_indirect_params(Reg::from(0), Table::from(0)),
-                Instruction::register_list(-1, -2, -3),
-                Instruction::register_list(-4, -5, -6),
-                Instruction::register2(-7, -8),
+                Instruction::register_list_ext(-1, -2, -3),
+                Instruction::register_list_ext(-4, -5, -6),
+                Instruction::register2_ext(-7, -8),
                 Instruction::return_span(bspan(1, 8)),
             ])
             .consts([10_i32, 20, 30, 40, 50, 60, 70, 80]),
@@ -741,9 +741,9 @@ fn params9_reg_index_local() {
         .expect_func_instrs([
             Instruction::call_indirect(RegSpan::new(Reg::from(10)), FuncType::from(0)),
             Instruction::call_indirect_params(Reg::from(0), Table::from(0)),
-            Instruction::register_list(1, 2, 3),
-            Instruction::register_list(4, 5, 6),
-            Instruction::register3(7, 8, 9),
+            Instruction::register_list_ext(1, 2, 3),
+            Instruction::register_list_ext(4, 5, 6),
+            Instruction::register3_ext(7, 8, 9),
             Instruction::return_span(bspan(10, 9)),
         ])
         .run();
@@ -776,9 +776,9 @@ fn params9_imm_index_local() {
             ExpectedFunc::new([
                 Instruction::call_indirect(RegSpan::new(Reg::from(1)), FuncType::from(0)),
                 Instruction::call_indirect_params(Reg::from(0), Table::from(0)),
-                Instruction::register_list(-1, -2, -3),
-                Instruction::register_list(-4, -5, -6),
-                Instruction::register3(-7, -8, -9),
+                Instruction::register_list_ext(-1, -2, -3),
+                Instruction::register_list_ext(-4, -5, -6),
+                Instruction::register3_ext(-7, -8, -9),
                 Instruction::return_span(bspan(1, 9)),
             ])
             .consts([10_i32, 20, 30, 40, 50, 60, 70, 80, 90]),
@@ -814,7 +814,7 @@ fn test_imm_params_dynamic_index() {
                 Instruction::global_get(Reg::from(0), Global::from(0)),
                 Instruction::call_indirect(results, FuncType::from(0)),
                 Instruction::call_indirect_params(Reg::from(0), Table::from(0)),
-                Instruction::register2(-1, -2),
+                Instruction::register2_ext(-1, -2),
                 Instruction::return_reg(result),
             ])
             .consts([10_i32, 20_i32]),
@@ -852,7 +852,7 @@ fn regression_issue_768() {
                 Instruction::global_get(Reg::from(1), Global::from(1)),
                 Instruction::call_indirect(results, FuncType::from(0)),
                 Instruction::call_indirect_params(Reg::from(1), Table::from(0)),
-                Instruction::register2(0, -1),
+                Instruction::register2_ext(0, -1),
                 Instruction::return_reg(result),
             ])
             .consts([20_i32]),

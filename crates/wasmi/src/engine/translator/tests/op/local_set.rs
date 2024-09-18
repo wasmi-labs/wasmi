@@ -260,7 +260,7 @@ fn preserve_result_2() {
         .expect_func_instrs([
             Instruction::copy(Reg::from(3), Reg::from(0)),
             Instruction::i32_add(Reg::from(0), Reg::from(0), Reg::from(1)),
-            Instruction::return_reg2(3, 3),
+            Instruction::return_reg2_ext(3, 3),
         ])
         .run()
 }
@@ -299,7 +299,7 @@ fn preserve_multiple_1() {
         .expect_func_instrs([
             Instruction::copy(Reg::from(1), Reg::from(0)),
             Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::return_reg2(1, 1),
+            Instruction::return_reg2_ext(1, 1),
         ])
         .run()
 }
@@ -322,7 +322,7 @@ fn preserve_multiple_2() {
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy(Reg::from(2), Reg::from(0)),
             Instruction::copy_imm32(Reg::from(0), 20_i32),
-            Instruction::return_reg2(3, 2),
+            Instruction::return_reg2_ext(3, 2),
         ])
         .run()
 }
@@ -373,7 +373,7 @@ fn preserve_multiple_4() {
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy(Reg::from(1), Reg::from(0)),
             Instruction::copy_imm32(Reg::from(0), 20_i32),
-            Instruction::return_reg2(1, 1),
+            Instruction::return_reg2_ext(1, 1),
         ])
         .run()
 }
@@ -400,7 +400,7 @@ fn preserve_multiple_5() {
             Instruction::copy_imm32(Reg::from(1), 22_i32),
             Instruction::copy(Reg::from(3), Reg::from(0)),
             Instruction::copy_imm32(Reg::from(0), 33_i32),
-            Instruction::return_reg3(3, 4, 5),
+            Instruction::return_reg3_ext(3, 4, 5),
         ])
         .run()
 }
@@ -432,7 +432,7 @@ fn preserve_multiple_6() {
             Instruction::copy_imm32(Reg::from(1), 33_i32),
             Instruction::copy(Reg::from(5), Reg::from(1)),
             Instruction::copy_imm32(Reg::from(1), 44_i32),
-            Instruction::return_reg3(4, 3, 5),
+            Instruction::return_reg3_ext(4, 3, 5),
         ])
         .run()
 }
@@ -460,7 +460,7 @@ fn merge_overwriting_local_set() {
         .expect_func_instrs([
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy2(RegSpan::new(Reg::from(0)), 1, 1),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(0)), 1, 1),
             Instruction::return_reg(1),
         ])
         .run()
@@ -489,7 +489,7 @@ fn merge_overwriting_local_set_rev() {
         .expect_func_instrs([
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy2(RegSpan::new(Reg::from(0)), 0, 0),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(0)), 0, 0),
             Instruction::return_reg(0),
         ])
         .run()
@@ -518,7 +518,7 @@ fn merge_overwriting_local_set_3() {
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy_imm32(Reg::from(1), 20_i32),
             Instruction::copy_imm32(Reg::from(2), 30_i32),
-            Instruction::copy2(RegSpan::new(Reg::from(0)), 2, 2),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(0)), 2, 2),
             Instruction::return_reg(1),
         ])
         .run()
@@ -547,7 +547,7 @@ fn merge_overwriting_local_set_3_rev() {
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy_imm32(Reg::from(1), 20_i32),
             Instruction::copy_imm32(Reg::from(2), 30_i32),
-            Instruction::copy2(RegSpan::new(Reg::from(0)), 2, 2),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(0)), 2, 2),
             Instruction::return_reg(0),
         ])
         .run()

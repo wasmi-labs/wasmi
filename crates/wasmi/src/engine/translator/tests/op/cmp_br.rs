@@ -139,7 +139,7 @@ fn loop_backward_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loop_backward_imm_eqz() {
-    fn test_for(op: &str, expect_instr: fn(Reg, BranchOffset16) -> Instruction) {
+    fn test_for(op: &str, expect_instr: fn(Reg, i16, BranchOffset16) -> Instruction) {
         let wasm = format!(
             r"
             (module
@@ -155,13 +155,13 @@ fn loop_backward_imm_eqz() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(0), BranchOffset16::from(0_i16)),
+                expect_instr(Reg::from(0), 0, BranchOffset16::from(0_i16)),
                 Instruction::Return,
             ])
             .run()
     }
-    test_for("eq", Instruction::branch_i32_eqz);
-    test_for("ne", Instruction::branch_i32_nez);
+    test_for("eq", Instruction::branch_i32_eq_imm);
+    test_for("ne", Instruction::branch_i32_ne_imm);
 }
 
 #[test]
@@ -486,7 +486,7 @@ fn block_i64_eqz_fuse() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_eqz(Reg::from(0), BranchOffset16::from(1)),
+            Instruction::branch_i64_eq_imm(Reg::from(0), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -506,7 +506,7 @@ fn if_i64_eqz_fuse() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_nez(Reg::from(0), BranchOffset16::from(1)),
+            Instruction::branch_i64_ne_imm(Reg::from(0), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()

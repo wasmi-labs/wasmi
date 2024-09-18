@@ -475,8 +475,8 @@ fn return_if_results_2() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_reg2(Reg::from(2), 0, 1),
-            Instruction::return_reg2(0, 1),
+            Instruction::return_nez_reg2_ext(Reg::from(2), 0, 1),
+            Instruction::return_reg2_ext(0, 1),
         ])
         .run()
 }
@@ -496,8 +496,8 @@ fn return_if_results_2_rev() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_reg2(Reg::from(2), 1, 0),
-            Instruction::return_reg2(1, 0),
+            Instruction::return_nez_reg2_ext(Reg::from(2), 1, 0),
+            Instruction::return_reg2_ext(1, 0),
         ])
         .run()
 }
@@ -518,8 +518,8 @@ fn return_if_results_2_imm() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::return_nez_reg2(Reg::from(0), -1, -2),
-                Instruction::return_reg2(-1, -2),
+                Instruction::return_nez_reg2_ext(Reg::from(0), -1, -2),
+                Instruction::return_reg2_ext(-1, -2),
             ])
             .consts([10_i32, 20]),
         )
@@ -543,7 +543,7 @@ fn return_if_results_3_span() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::return_nez_span(Reg::from(3), bspan(0, 3)),
-            Instruction::return_reg3(0, 1, 2),
+            Instruction::return_reg3_ext(0, 1, 2),
         ])
         .run()
 }
@@ -564,9 +564,9 @@ fn return_if_results_3() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_many(Reg::from(2), 0, 1),
+            Instruction::return_nez_many_ext(Reg::from(2), 0, 1),
             Instruction::register(0),
-            Instruction::return_reg3(0, 1, 0),
+            Instruction::return_reg3_ext(0, 1, 0),
         ])
         .run()
 }
@@ -588,9 +588,9 @@ fn return_if_results_3_imm() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::return_nez_many(Reg::from(0), -1, -2),
+                Instruction::return_nez_many_ext(Reg::from(0), -1, -2),
                 Instruction::register(-3),
-                Instruction::return_reg3(-1, -2, -3),
+                Instruction::return_reg3_ext(-1, -2, -3),
             ])
             .consts([10_i32, 20, 30]),
         )
@@ -637,9 +637,9 @@ fn return_if_results_4() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_many(Reg::from(2), 0, 1),
-            Instruction::register2(0, 1),
-            Instruction::return_many(0, 1, 0),
+            Instruction::return_nez_many_ext(Reg::from(2), 0, 1),
+            Instruction::register2_ext(0, 1),
+            Instruction::return_many_ext(0, 1, 0),
             Instruction::register(1),
         ])
         .run()
@@ -663,9 +663,9 @@ fn return_if_results_4_imm() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::return_nez_many(Reg::from(0), -1, -2),
-                Instruction::register2(-1, -2),
-                Instruction::return_many(-1, -2, -1),
+                Instruction::return_nez_many_ext(Reg::from(0), -1, -2),
+                Instruction::register2_ext(-1, -2),
+                Instruction::return_many_ext(-1, -2, -1),
                 Instruction::register(-2),
             ])
             .consts([10_i32, 20]),
@@ -691,10 +691,10 @@ fn return_if_results_5() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_many(Reg::from(2), 0, 1),
-            Instruction::register3(0, 1, 0),
-            Instruction::return_many(0, 1, 0),
-            Instruction::register2(1, 0),
+            Instruction::return_nez_many_ext(Reg::from(2), 0, 1),
+            Instruction::register3_ext(0, 1, 0),
+            Instruction::return_many_ext(0, 1, 0),
+            Instruction::register2_ext(1, 0),
         ])
         .run()
 }
@@ -718,10 +718,10 @@ fn return_if_results_5_imm() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::return_nez_many(Reg::from(0), -1, -2),
-                Instruction::register3(-1, -2, -1),
-                Instruction::return_many(-1, -2, -1),
-                Instruction::register2(-2, -1),
+                Instruction::return_nez_many_ext(Reg::from(0), -1, -2),
+                Instruction::register3_ext(-1, -2, -1),
+                Instruction::return_many_ext(-1, -2, -1),
+                Instruction::register2_ext(-2, -1),
             ])
             .consts([10_i32, 20]),
         )
@@ -747,11 +747,11 @@ fn return_if_results_6() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_many(Reg::from(2), 0, 1),
-            Instruction::register_list(0, 1, 0),
+            Instruction::return_nez_many_ext(Reg::from(2), 0, 1),
+            Instruction::register_list_ext(0, 1, 0),
             Instruction::register(1),
-            Instruction::return_many(0, 1, 0),
-            Instruction::register3(1, 0, 1),
+            Instruction::return_many_ext(0, 1, 0),
+            Instruction::register3_ext(1, 0, 1),
         ])
         .run()
 }
@@ -776,11 +776,11 @@ fn return_if_results_6_imm() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::return_nez_many(Reg::from(0), -1, -2),
-                Instruction::register_list(-1, -2, -1),
+                Instruction::return_nez_many_ext(Reg::from(0), -1, -2),
+                Instruction::register_list_ext(-1, -2, -1),
                 Instruction::register(-2),
-                Instruction::return_many(-1, -2, -1),
-                Instruction::register3(-2, -1, -2),
+                Instruction::return_many_ext(-1, -2, -1),
+                Instruction::register3_ext(-2, -1, -2),
             ])
             .consts([10_i32, 20]),
         )
@@ -802,7 +802,7 @@ fn branch_if_results_0() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
-            Instruction::branch_i32_nez(Reg::from(1), BranchOffset16::from(1)),
+            Instruction::branch_i32_ne_imm(Reg::from(1), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -823,8 +823,8 @@ fn branch_if_results_1() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegSpan::new(Reg::from(3)), 0, 1),
-            Instruction::branch_i32_eqz(Reg::from(4), BranchOffset16::from(3)),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(3)), 0, 1),
+            Instruction::branch_i32_eq_imm(Reg::from(4), 0, BranchOffset16::from(3)),
             Instruction::copy(2, 3),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy(2, 3),
@@ -857,7 +857,7 @@ fn branch_if_results_1_avoid_copy() {
         .expect_func_instrs([
             Instruction::i32_clz(Reg::from(2), Reg::from(0)),
             Instruction::i32_ctz(Reg::from(3), Reg::from(1)),
-            Instruction::branch_i32_nez(Reg::from(3), BranchOffset16::from(1)),
+            Instruction::branch_i32_ne_imm(Reg::from(3), 0, BranchOffset16::from(1)),
             Instruction::return_reg(Reg::from(2)),
         ])
         .run()
@@ -883,12 +883,12 @@ fn branch_if_results_2() {
             Instruction::copy_span_non_overlapping(
                 RegSpan::new(Reg::from(5)),
                 RegSpan::new(Reg::from(0)),
-                3,
+                3_u16,
             ),
-            Instruction::branch_i32_eqz(Reg::from(7), BranchOffset16::from(3)),
-            Instruction::copy2(RegSpan::new(Reg::from(3)), 5, 6),
+            Instruction::branch_i32_eq_imm(Reg::from(7), 0, BranchOffset16::from(3)),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(3)), 5, 6),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy2(RegSpan::new(Reg::from(3)), 5, 6),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(3)), 5, 6),
             Instruction::i32_add(Reg::from(3), Reg::from(3), Reg::from(4)),
             Instruction::return_reg(3),
         ])
@@ -920,7 +920,7 @@ fn branch_if_results_2_avoid_copy() {
         .expect_func_instrs([
             Instruction::i32_clz(Reg::from(3), Reg::from(0)),
             Instruction::i32_ctz(Reg::from(4), Reg::from(1)),
-            Instruction::branch_i32_nez(Reg::from(2), BranchOffset16::from(1)),
+            Instruction::branch_i32_ne_imm(Reg::from(2), 0, BranchOffset16::from(1)),
             Instruction::i32_add(Reg::from(3), Reg::from(3), Reg::from(4)),
             Instruction::return_reg(Reg::from(3)),
         ])
@@ -948,12 +948,12 @@ fn branch_if_results_4_mixed_1() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::branch_i32_eqz(Reg::from(2), BranchOffset16::from(4)),
-                Instruction::copy_many_non_overlapping(RegSpan::new(Reg::from(3)), -1, 0),
-                Instruction::register2(1, -2),
+                Instruction::branch_i32_eq_imm(Reg::from(2), 0, BranchOffset16::from(4)),
+                Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(3)), -1, 0),
+                Instruction::register2_ext(1, -2),
                 Instruction::branch(BranchOffset::from(3)),
-                Instruction::copy_many_non_overlapping(RegSpan::new(Reg::from(3)), -1, 0),
-                Instruction::register2(1, -2),
+                Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(3)), -1, 0),
+                Instruction::register2_ext(1, -2),
                 Instruction::return_span(bspan(3, 4)),
             ])
             .consts([10_i32, 20]),
@@ -981,12 +981,12 @@ fn branch_if_results_4_mixed_2() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Reg::from(2), BranchOffset16::from(4)),
-            Instruction::copy_many_non_overlapping(RegSpan::new(Reg::from(3)), 0, 0),
-            Instruction::register2(1, 1),
+            Instruction::branch_i32_eq_imm(Reg::from(2), 0, BranchOffset16::from(4)),
+            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(3)), 0, 0),
+            Instruction::register2_ext(1, 1),
             Instruction::branch(BranchOffset::from(3)),
-            Instruction::copy_many_non_overlapping(RegSpan::new(Reg::from(3)), 0, 0),
-            Instruction::register2(1, 1),
+            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(3)), 0, 0),
+            Instruction::register2_ext(1, 1),
             Instruction::return_span(bspan(3, 4)),
         ])
         .run()

@@ -24,7 +24,7 @@ where
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            Instruction::global_set(Global::from(0), Reg::from(0)),
+            Instruction::global_set(Reg::from(0), Global::from(0)),
             Instruction::Return,
         ])
         .run()
@@ -60,7 +60,7 @@ where
     TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::global_set(Global::from(0), Reg::from(-1)),
+                Instruction::global_set(Reg::from(-1), Global::from(0)),
                 Instruction::Return,
             ])
             .consts([value]),
@@ -99,7 +99,7 @@ fn test_i32imm16(value: i32) {
         .unwrap_or_else(|_| panic!("cannot convert `value` to 16-bit encoding: {value}"));
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            Instruction::global_set_i32imm16(Global::from(0), imm16),
+            Instruction::global_set_i32imm16(imm16, Global::from(0)),
             Instruction::Return,
         ])
         .run()
@@ -133,7 +133,7 @@ fn test_i64imm16(value: i64) {
         .unwrap_or_else(|_| panic!("cannot convert `value` to 16-bit encoding: {value}"));
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            Instruction::global_set_i64imm16(Global::from(0), imm16),
+            Instruction::global_set_i64imm16(imm16, Global::from(0)),
             Instruction::Return,
         ])
         .run()

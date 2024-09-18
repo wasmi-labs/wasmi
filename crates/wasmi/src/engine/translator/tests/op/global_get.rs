@@ -191,7 +191,7 @@ fn test_global_get_as_return_values_0() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::global_get(Reg::from(0), Global::from(0)),
-                Instruction::return_reg2(-1, 0),
+                Instruction::return_reg2_ext(-1, 0),
             ])
             .consts([2_i32]),
         )
@@ -216,7 +216,7 @@ fn test_global_get_as_return_values_1() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::global_get(Reg::from(0), Global::from(0)),
-                Instruction::return_reg2(-1, 0),
+                Instruction::return_reg2_ext(-1, 0),
             ])
             .consts([2_i32]),
         )

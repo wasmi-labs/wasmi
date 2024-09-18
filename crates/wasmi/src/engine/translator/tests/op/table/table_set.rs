@@ -46,7 +46,7 @@ fn test_reg_at(index: u32, value_type: ValType) {
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            Instruction::table_set_at(index, Reg::from(0)),
+            Instruction::table_set_at(Reg::from(0), index),
             Instruction::table_index(0),
             Instruction::Return,
         ])
@@ -99,7 +99,7 @@ fn test_at_imm_funcref(index: u32) {
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
             Instruction::ref_func(Reg::from(0), 0),
-            Instruction::table_set_at(index, Reg::from(0)),
+            Instruction::table_set_at(Reg::from(0), index),
             Instruction::table_index(0),
             Instruction::Return,
         ])
@@ -167,7 +167,7 @@ fn test_at_imm_null(index: u32, value_type: ValType) {
     TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::table_set_at(index, Reg::from(-1)),
+                Instruction::table_set_at(Reg::from(-1), index),
                 Instruction::table_index(0),
                 Instruction::Return,
             ])

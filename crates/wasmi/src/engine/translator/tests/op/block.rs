@@ -58,7 +58,7 @@ fn identity_block_2() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegSpan::new(Reg::from(4)), 0, 1),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 0, 1),
             Instruction::return_reg(4),
         ])
         .run()
@@ -97,7 +97,7 @@ fn nested_identity_block_2() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegSpan::new(Reg::from(4)), 0, 1),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 0, 1),
             Instruction::return_reg(4),
         ])
         .run()
@@ -309,8 +309,8 @@ fn branched_block_2() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegSpan::new(Reg::from(4)), 0, 1),
-            Instruction::copy2(RegSpan::new(Reg::from(2)), 4, 5),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 0, 1),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(2)), 4, 5),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_reg(Reg::from(2)),
         ])
@@ -332,7 +332,7 @@ fn branch_if_block_0() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
-            Instruction::branch_i32_nez(Reg::from(1), BranchOffset16::from(1)),
+            Instruction::branch_i32_ne_imm(Reg::from(1), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -353,8 +353,8 @@ fn branch_if_block_1() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegSpan::new(Reg::from(3)), 0, 1),
-            Instruction::branch_i32_eqz(Reg::from(4), BranchOffset16::from(3)),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(3)), 0, 1),
+            Instruction::branch_i32_eq_imm(Reg::from(4), 0, BranchOffset16::from(3)),
             Instruction::copy(Reg::from(2), Reg::from(3)),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy(Reg::from(2), Reg::from(3)),
