@@ -723,7 +723,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let global = bytecode::index::Global::from(global_index);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
-                self.push_fueled_instr(Instruction::global_set(global, input), FuelCosts::entity)?;
+                self.push_fueled_instr(Instruction::global_set(input, global), FuelCosts::entity)?;
                 Ok(())
             }
             TypedProvider::Const(input) => {
@@ -735,7 +735,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     ValType::I32 => {
                         if let Ok(value) = Const16::try_from(i32::from(input)) {
                             self.push_fueled_instr(
-                                Instruction::global_set_i32imm16(global, value),
+                                Instruction::global_set_i32imm16(value, global),
                                 FuelCosts::entity,
                             )?;
                             return Ok(());
@@ -744,7 +744,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     ValType::I64 => {
                         if let Ok(value) = Const16::try_from(i64::from(input)) {
                             self.push_fueled_instr(
-                                Instruction::global_set_i64imm16(global, value),
+                                Instruction::global_set_i64imm16(value, global),
                                 FuelCosts::entity,
                             )?;
                             return Ok(());
@@ -753,7 +753,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     _ => {}
                 };
                 let cref = self.alloc.stack.alloc_const(input)?;
-                self.push_fueled_instr(Instruction::global_set(global, cref), FuelCosts::entity)?;
+                self.push_fueled_instr(Instruction::global_set(cref, global), FuelCosts::entity)?;
                 Ok(())
             }
         }
@@ -3303,7 +3303,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         };
         let instr = match index {
             TypedProvider::Register(index) => Instruction::table_set(index, value),
-            TypedProvider::Const(index) => Instruction::table_set_at(u32::from(index), value),
+            TypedProvider::Const(index) => Instruction::table_set_at(value, u32::from(index)),
         };
         self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc

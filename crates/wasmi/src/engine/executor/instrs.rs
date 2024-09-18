@@ -8,6 +8,7 @@ use crate::{
         code_map::CodeMap,
         executor::stack::{CallFrame, FrameRegisters, ValueStack},
         DedupFuncType,
+        EngineFunc,
     },
     memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
@@ -430,10 +431,10 @@ impl<'engine> Executor<'engine> {
                     self.execute_copy_many_non_overlapping(results, values)
                 }
                 Instr::ReturnCallInternal0 { func } => {
-                    self.execute_return_call_internal_0(&mut store.inner, func)?
+                    self.execute_return_call_internal_0(&mut store.inner, EngineFunc::from(func))?
                 }
                 Instr::ReturnCallInternal { func } => {
-                    self.execute_return_call_internal(&mut store.inner, func)?
+                    self.execute_return_call_internal(&mut store.inner, EngineFunc::from(func))?
                 }
                 Instr::ReturnCallImported0 { func } => {
                     self.execute_return_call_imported_0::<T>(store, func)?
@@ -454,10 +455,10 @@ impl<'engine> Executor<'engine> {
                     self.execute_return_call_indirect_imm16::<T>(store, func_type)?
                 }
                 Instr::CallInternal0 { results, func } => {
-                    self.execute_call_internal_0(&mut store.inner, results, func)?
+                    self.execute_call_internal_0(&mut store.inner, results, EngineFunc::from(func))?
                 }
                 Instr::CallInternal { results, func } => {
-                    self.execute_call_internal(&mut store.inner, results, func)?
+                    self.execute_call_internal(&mut store.inner, results, EngineFunc::from(func))?
                 }
                 Instr::CallImported0 { results, func } => {
                     self.execute_call_imported_0::<T>(store, results, func)?
@@ -1224,8 +1225,8 @@ impl<'engine> Executor<'engine> {
                     delta,
                     value,
                 } => self.execute_table_grow_imm(store, result, delta, value)?,
-                Instr::ElemDrop { elem } => self.execute_element_drop(&mut store.inner, elem),
-                Instr::DataDrop { data } => self.execute_data_drop(&mut store.inner, data),
+                Instr::ElemDrop { index } => self.execute_element_drop(&mut store.inner, index),
+                Instr::DataDrop { index } => self.execute_data_drop(&mut store.inner, index),
                 Instr::MemorySize { result } => self.execute_memory_size(&store.inner, result),
                 Instr::MemoryGrow { result, delta } => {
                     self.execute_memory_grow(store, result, delta)?

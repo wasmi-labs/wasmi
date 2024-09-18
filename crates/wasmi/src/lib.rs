@@ -113,7 +113,7 @@ use wasmi_collections as collections;
 /// Defines some errors that may occur upon interaction with Wasmi.
 pub mod errors {
     pub use super::{
-        engine::{bytecode::IrError, EnforcedLimitsError},
+        engine::{bytecode::Error as IrError, EnforcedLimitsError},
         error::ErrorKind,
         func::FuncError,
         global::GlobalError,

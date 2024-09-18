@@ -79,7 +79,13 @@ impl RelinkResult for Instruction {
         //       a single value which allows us to relink the single result register.
         match self {
             Self::CallInternal0 { results, func } | Self::CallInternal { results, func } => {
-                relink_call_internal(results, *func, module, new_result, old_result)
+                relink_call_internal(
+                    results,
+                    EngineFunc::from(*func),
+                    module,
+                    new_result,
+                    old_result,
+                )
             }
             Self::CallImported0 { results, func } | Self::CallImported { results, func } => {
                 relink_call_imported(results, *func, module, new_result, old_result)

@@ -50,6 +50,7 @@ pub use self::{
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
 };
+pub(crate) use crate::ir as bytecode;
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},
     module::{FuncIdx, ModuleHeader},

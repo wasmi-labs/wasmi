@@ -12,6 +12,7 @@ use crate::{
     core::{UntypedVal, ValType, F32},
     engine::{
         bytecode::{
+            self,
             BoundedRegSpan,
             BranchOffset,
             BranchOffset16,
@@ -36,6 +37,18 @@ use std::vec::{Drain, Vec};
 /// constructed function body of the [`InstrEncoder`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Instr(u32);
+
+impl From<bytecode::Instr> for Instr {
+    fn from(instr: bytecode::Instr) -> Self {
+        Self(u32::from(instr))
+    }
+}
+
+impl From<Instr> for bytecode::Instr {
+    fn from(instr: Instr) -> Self {
+        Self::from(instr.0)
+    }
+}
 
 impl Instr {
     /// Creates an [`Instr`] from the given `usize` value.
@@ -381,7 +394,7 @@ impl InstrEncoder {
             (result, value, last_value)
         };
 
-        let merged_copy = Instruction::copy2(RegSpan::new(merged_result), value0, value1);
+        let merged_copy = Instruction::copy2_ext(RegSpan::new(merged_result), value0, value1);
         *self.instrs.get_mut(last_instr) = merged_copy;
         Some(last_instr)
     }
@@ -478,7 +491,7 @@ impl InstrEncoder {
                 let reg0 = stack.provider2reg(v0)?;
                 let reg1 = stack.provider2reg(v1)?;
                 self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
-                let instr = self.push_instr(Instruction::copy2(results.span(), reg0, reg1))?;
+                let instr = self.push_instr(Instruction::copy2_ext(results.span(), reg0, reg1))?;
                 Ok(Some(instr))
             }
             [v0, v1, rest @ ..] => {
@@ -504,8 +517,8 @@ impl InstrEncoder {
                     return Ok(Some(instr));
                 }
                 let make_instr = match Self::has_overlapping_copies(results, values) {
-                    true => Instruction::copy_many,
-                    false => Instruction::copy_many_non_overlapping,
+                    true => Instruction::copy_many_ext,
+                    false => Instruction::copy_many_non_overlapping_ext,
                 };
                 let reg0 = stack.provider2reg(v0)?;
                 let reg1 = stack.provider2reg(v1)?;
@@ -606,13 +619,13 @@ impl InstrEncoder {
             [v0, v1] => {
                 let reg0 = stack.provider2reg(v0)?;
                 let reg1 = stack.provider2reg(v1)?;
-                Instruction::return_reg2(reg0, reg1)
+                Instruction::return_reg2_ext(reg0, reg1)
             }
             [v0, v1, v2] => {
                 let reg0 = stack.provider2reg(v0)?;
                 let reg1 = stack.provider2reg(v1)?;
                 let reg2 = stack.provider2reg(v2)?;
-                Instruction::return_reg3(reg0, reg1, reg2)
+                Instruction::return_reg3_ext(reg0, reg1, reg2)
             }
             [v0, v1, v2, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
@@ -630,7 +643,7 @@ impl InstrEncoder {
                 let reg0 = stack.provider2reg(v0)?;
                 let reg1 = stack.provider2reg(v1)?;
                 let reg2 = stack.provider2reg(v2)?;
-                self.push_instr(Instruction::return_many(reg0, reg1, reg2))?;
+                self.push_instr(Instruction::return_many_ext(reg0, reg1, reg2))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
             }
@@ -674,7 +687,7 @@ impl InstrEncoder {
             [v0, v1] => {
                 let reg0 = stack.provider2reg(v0)?;
                 let reg1 = stack.provider2reg(v1)?;
-                Instruction::return_nez_reg2(condition, reg0, reg1)
+                Instruction::return_nez_reg2_ext(condition, reg0, reg1)
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
@@ -691,7 +704,7 @@ impl InstrEncoder {
                 }
                 let reg0 = stack.provider2reg(v0)?;
                 let reg1 = stack.provider2reg(v1)?;
-                self.push_instr(Instruction::return_nez_many(condition, reg0, reg1))?;
+                self.push_instr(Instruction::return_nez_many_ext(condition, reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
             }
@@ -727,17 +740,20 @@ impl InstrEncoder {
                 [] => return Ok(()),
                 [v0] => break Instruction::register(stack.provider2reg(v0)?),
                 [v0, v1] => {
-                    break Instruction::register2(stack.provider2reg(v0)?, stack.provider2reg(v1)?)
+                    break Instruction::register2_ext(
+                        stack.provider2reg(v0)?,
+                        stack.provider2reg(v1)?,
+                    )
                 }
                 [v0, v1, v2] => {
-                    break Instruction::register3(
+                    break Instruction::register3_ext(
                         stack.provider2reg(v0)?,
                         stack.provider2reg(v1)?,
                         stack.provider2reg(v2)?,
                     );
                 }
                 [v0, v1, v2, rest @ ..] => {
-                    self.instrs.push(Instruction::register_list(
+                    self.instrs.push(Instruction::register_list_ext(
                         stack.provider2reg(v0)?,
                         stack.provider2reg(v1)?,
                         stack.provider2reg(v2)?,
@@ -1021,7 +1037,7 @@ impl InstrEncoder {
         ) -> Result<(), Error> {
             let offset = this.try_resolve_label(label)?;
             let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => Instruction::branch_i32_eqz(condition, offset),
+                Ok(offset) => Instruction::branch_i32_eq_imm(condition, 0, offset),
                 Err(_) => {
                     let zero = stack.alloc_const(0_i32)?;
                     make_branch_cmp_fallback(stack, Comparator::I32Eq, condition, zero, offset)?
@@ -1212,7 +1228,7 @@ impl InstrEncoder {
         ) -> Result<(), Error> {
             let offset = this.try_resolve_label(label)?;
             let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => Instruction::branch_i32_nez(condition, offset),
+                Ok(offset) => Instruction::branch_i32_ne_imm(condition, 0, offset),
                 Err(_) => {
                     let zero = stack.alloc_const(0_i32)?;
                     make_branch_cmp_fallback(stack, Comparator::I32Ne, condition, zero, offset)?
