@@ -304,18 +304,18 @@ impl<'engine> Executor<'engine> {
 impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::F32CopysignImm`].
     #[inline(always)]
-    pub fn execute_f32_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign) {
+    pub fn execute_f32_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f32>) {
         let lhs = self.get_register(lhs);
-        let rhs = rhs.to_f32();
+        let rhs = f32::from(rhs);
         self.set_register(result, UntypedVal::f32_copysign(lhs, rhs.into()));
         self.next_instr()
     }
 
     /// Executes an [`Instruction::F64CopysignImm`].
     #[inline(always)]
-    pub fn execute_f64_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign) {
+    pub fn execute_f64_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f64>) {
         let lhs = self.get_register(lhs);
-        let rhs = rhs.to_f64();
+        let rhs = f64::from(rhs);
         self.set_register(result, UntypedVal::f64_copysign(lhs, rhs.into()));
         self.next_instr()
     }

@@ -1503,7 +1503,7 @@ impl FuncTranslator {
     fn translate_fcopysign<T>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: Sign) -> Instruction,
+        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: Sign<T>) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
     ) -> Result<(), Error>
     where

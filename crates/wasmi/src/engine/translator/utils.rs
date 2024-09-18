@@ -77,7 +77,7 @@ pub trait WasmFloat: Copy + Into<TypedVal> + From<TypedVal> {
     fn is_nan(self) -> bool;
 
     /// Returns the [`Sign`] of `self`.
-    fn sign(self) -> Sign;
+    fn sign(self) -> Sign<Self>;
 }
 
 impl WasmFloat for f32 {
@@ -85,11 +85,8 @@ impl WasmFloat for f32 {
         self.is_nan()
     }
 
-    fn sign(self) -> Sign {
-        match self.is_sign_positive() {
-            true => Sign::Pos,
-            false => Sign::Neg,
-        }
+    fn sign(self) -> Sign<Self> {
+        Sign::from(self)
     }
 }
 
@@ -98,11 +95,8 @@ impl WasmFloat for f64 {
         self.is_nan()
     }
 
-    fn sign(self) -> Sign {
-        match self.is_sign_positive() {
-            true => Sign::Pos,
-            false => Sign::Neg,
-        }
+    fn sign(self) -> Sign<Self> {
+        Sign::from(self)
     }
 }
 

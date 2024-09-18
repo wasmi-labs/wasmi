@@ -59,9 +59,9 @@ impl<const N: u16> HostVisitor for &'_ mut FixedRegSpan<N> {
 }
 
 macro_rules! impl_host_visitor_for {
-    ( $( $ty:ty ),* $(,)? ) => {
+    ( $( $ty:ident $(<$t:ident>)? ),* $(,)? ) => {
         $(
-            impl HostVisitor for &'_ mut $ty {
+            impl $(<$t>)? HostVisitor for &'_ mut $ty $(<$t>)? {
                 #[inline]
                 fn host_visitor<V: VisitRegs>(self, _visitor: &mut V) {}
             }
@@ -87,18 +87,10 @@ impl_host_visitor_for!(
     Table,
     Elem,
     Data,
-    Sign,
+    Const16<T>,
+    Const32<T>,
+    Sign<T>,
 );
-
-impl<T> HostVisitor for &'_ mut Const32<T> {
-    #[inline]
-    fn host_visitor<V: VisitRegs>(self, _visitor: &mut V) {}
-}
-
-impl<T> HostVisitor for &'_ mut Const16<T> {
-    #[inline]
-    fn host_visitor<V: VisitRegs>(self, _visitor: &mut V) {}
-}
 
 /// Type-wrapper to signal that the wrapped [`Reg`], [`RegSpan`] (etc.) is a result.
 pub struct Res<T>(T);
