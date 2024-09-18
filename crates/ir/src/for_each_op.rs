@@ -1215,7 +1215,7 @@ macro_rules! for_each_op {
                 len: u16,
             },
             /// Variant of [`Instruction::CopySpan`] that assumes that `results` and `values` span do not overlap.
-            #[snake_name(copy_span_overlapping)]
+            #[snake_name(copy_span_non_overlapping)]
             CopySpanNonOverlapping {
                 @results: RegSpan,
                 /// The contiguous registers holding the inputs of this instruction.
@@ -1681,7 +1681,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::GlobalSet`] for 16-bit encoded `i64` immutable `input` values.
-            #[snake_name(global_i64imm16)]
+            #[snake_name(global_set_i64imm16)]
             GlobalSetI64Imm16 {
                 /// The 16-bit encoded `i64` value.
                 input: Const16<i64>,
@@ -1843,7 +1843,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
             /// that represents the `offset` for the load/store operation.
-            #[snake_name(i32_load_8s)]
+            #[snake_name(i32_load8_s)]
             I32Load8s {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -1854,7 +1854,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I32Load8s`] with a constant load address.
-            #[snake_name(i32_load_8s_at)]
+            #[snake_name(i32_load8_s_at)]
             I32Load8sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
@@ -1865,7 +1865,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I32Load8s`] for small offset values.
-            #[snake_name(i32_load_8s_offset16)]
+            #[snake_name(i32_load8_s_offset16)]
             I32Load8sOffset16 {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -1880,7 +1880,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
             /// that represents the `offset` for the load/store operation.
-            #[snake_name(i32_load_8u)]
+            #[snake_name(i32_load8_u)]
             I32Load8u {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -1891,7 +1891,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I32Load8u`] with a constant load address.
-            #[snake_name(i32_load_8u_at)]
+            #[snake_name(i32_load8_u_at)]
             I32Load8uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
@@ -1902,7 +1902,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I32Load8u`] for small offset values.
-            #[snake_name(i32_load_8u_offset16)]
+            #[snake_name(i32_load8_u_offset16)]
             I32Load8uOffset16 {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -1917,7 +1917,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
             /// that represents the `offset` for the load/store operation.
-            #[snake_name(i32_load_16s)]
+            #[snake_name(i32_load16_s)]
             I32Load16s {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -1928,7 +1928,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I32Load16s`] with a constant load address.
-            #[snake_name(i32_load_16s_at)]
+            #[snake_name(i32_load16_s_at)]
             I32Load16sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
@@ -1939,7 +1939,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I32Load16s`] for small offset values.
-            #[snake_name(i32_load_16s_offset16)]
+            #[snake_name(i32_load16_s_offset16)]
             I32Load16sOffset16 {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -1954,7 +1954,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
             /// that represents the `offset` for the load/store operation.
-            #[snake_name(i32_load_16u)]
+            #[snake_name(i32_load16_u)]
             I32Load16u {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -1965,7 +1965,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I32Load16u`] with a constant load address.
-            #[snake_name(i32_load_16u_at)]
+            #[snake_name(i32_load16_u_at)]
             I32Load16uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
@@ -1976,7 +1976,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I32Load16u`] for small offset values.
-            #[snake_name(i32_load_16u_offset16)]
+            #[snake_name(i32_load16_u_offset16)]
             I32Load16uOffset16 {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -1991,7 +1991,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
             /// that represents the `offset` for the load/store operation.
-            #[snake_name(i64_load_8s)]
+            #[snake_name(i64_load8_s)]
             I64Load8s {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2002,7 +2002,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load8s`] with a constant load address.
-            #[snake_name(i64_load_8s_at)]
+            #[snake_name(i64_load8_s_at)]
             I64Load8sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
@@ -2013,7 +2013,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load8s`] for small offset values.
-            #[snake_name(i64_load_8s_offset16)]
+            #[snake_name(i64_load8_s_offset16)]
             I64Load8sOffset16 {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2028,7 +2028,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
             /// that represents the `offset` for the load/store operation.
-            #[snake_name(i64_load_8u)]
+            #[snake_name(i64_load8_u)]
             I64Load8u {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2039,7 +2039,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load8u`] with a constant load address.
-            #[snake_name(i64_load_8u_at)]
+            #[snake_name(i64_load8_u_at)]
             I64Load8uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
@@ -2050,7 +2050,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load8u`] for small offset values.
-            #[snake_name(i64_load_8u_offset16)]
+            #[snake_name(i64_load8_u_offset16)]
             I64Load8uOffset16 {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2065,7 +2065,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
             /// that represents the `offset` for the load/store operation.
-            #[snake_name(i64_load_16s)]
+            #[snake_name(i64_load16_s)]
             I64Load16s {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2076,7 +2076,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load16s`] with a constant load address.
-            #[snake_name(i64_load_16s_at)]
+            #[snake_name(i64_load16_s_at)]
             I64Load16sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
@@ -2087,7 +2087,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load16s`] for small offset values.
-            #[snake_name(i64_load_16s_offset16)]
+            #[snake_name(i64_load16_s_offset16)]
             I64Load16sOffset16 {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2102,7 +2102,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
             /// that represents the `offset` for the load/store operation.
-            #[snake_name(i64_load_16u)]
+            #[snake_name(i64_load16_u)]
             I64Load16u {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2113,7 +2113,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load16u`] with a constant load address.
-            #[snake_name(i64_load_16u_at)]
+            #[snake_name(i64_load16_u_at)]
             I64Load16uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
@@ -2124,7 +2124,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load16u`] for small offset values.
-            #[snake_name(i64_load_16u_offset16)]
+            #[snake_name(i64_load16_u_offset16)]
             I64Load16uOffset16 {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2139,7 +2139,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
             /// that represents the `offset` for the load/store operation.
-            #[snake_name(i64_load_32s)]
+            #[snake_name(i64_load32_s)]
             I64Load32s {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2150,7 +2150,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load32s`] with a constant load address.
-            #[snake_name(i64_load_32s_at)]
+            #[snake_name(i64_load32_s_at)]
             I64Load32sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
@@ -2161,7 +2161,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load32s`] for small offset values.
-            #[snake_name(i64_load_32s_offset16)]
+            #[snake_name(i64_load32_s_offset16)]
             I64Load32sOffset16 {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2176,7 +2176,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
             /// that represents the `offset` for the load/store operation.
-            #[snake_name(i64_load_32u)]
+            #[snake_name(i64_load32_u)]
             I64Load32u {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -2187,7 +2187,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load32u`] with a constant load address.
-            #[snake_name(i64_load_32u_at)]
+            #[snake_name(i64_load32_u_at)]
             I64Load32uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
@@ -2198,7 +2198,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::I64Load32u`] for small offset values.
-            #[snake_name(i64_load_32u_offset16)]
+            #[snake_name(i64_load32_u_offset16)]
             I64Load32uOffset16 {
                 @result: Reg,
                 /// The register storing the pointer of the `load` instruction.
@@ -4185,7 +4185,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Instruction from the Wasm `sign-extension` proposal.
-            #[snake_name(i32_extend_8s)]
+            #[snake_name(i32_extend8_s)]
             I32Extend8S {
                 @result: Reg,
                 /// The register holding the input of the instruction.
@@ -4196,7 +4196,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Instruction from the Wasm `sign-extension` proposal.
-            #[snake_name(i32_extend_16s)]
+            #[snake_name(i32_extend16_s)]
             I32Extend16S {
                 @result: Reg,
                 /// The register holding the input of the instruction.
@@ -4207,7 +4207,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Instruction from the Wasm `sign-extension` proposal.
-            #[snake_name(i64_extend_8s)]
+            #[snake_name(i64_extend8_s)]
             I64Extend8S {
                 @result: Reg,
                 /// The register holding the input of the instruction.
@@ -4218,7 +4218,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Instruction from the Wasm `sign-extension` proposal.
-            #[snake_name(i64_extend_16s)]
+            #[snake_name(i64_extend16_s)]
             I64Extend16S {
                 @result: Reg,
                 /// The register holding the input of the instruction.
@@ -4229,7 +4229,7 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Instruction from the Wasm `sign-extension` proposal.
-            #[snake_name(i64_extend_32s)]
+            #[snake_name(i64_extend32_s)]
             I64Extend32S {
                 @result: Reg,
                 /// The register holding the input of the instruction.
