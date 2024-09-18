@@ -65,13 +65,9 @@ fn fuzz_regression_3() {
                 EngineFunc::from_u32(0),
             ),
             Instruction::branch_table(Register::from_i16(5), 2),
-            Instruction::copy_span_non_overlapping(
-                RegisterSpan::new(Register::from_i16(0)),
-                RegisterSpan::new(Register::from_i16(2)),
-                3,
-            ),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter_u16(3)),
-            Instruction::return_span(RegisterSpan::new(Register::from_i16(0)).iter_u16(3)),
+            Instruction::branch(BranchOffset::from(2)),
+            Instruction::branch(BranchOffset::from(1)),
+            Instruction::return_reg3(2, 3, 4),
         ])
         .run()
 }
@@ -357,10 +353,12 @@ fn fuzz_regression_15_01_codegen() {
             ExpectedFunc::new([
                 Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
                 Instruction::branch_table(Register::from_i16(1), 3),
-                Instruction::copy_imm32(Register::from_i16(1), 10.0_f32),
                 Instruction::branch(BranchOffset::from(3)),
-                Instruction::return_reg(1),
+                Instruction::branch(BranchOffset::from(4)),
                 Instruction::branch(BranchOffset::from(1)),
+                Instruction::copy_imm32(Register::from_i16(1), 10.0_f32),
+                Instruction::branch(BranchOffset::from(2)),
+                Instruction::return_imm32(10.0_f32),
                 Instruction::Trap(TrapCode::UnreachableCodeReached),
             ]),
         )
@@ -403,14 +401,16 @@ fn fuzz_regression_15_02() {
             ExpectedFunc::new([
                 Instruction::i32_wrap_i64(Register::from_i16(1), Register::from_i16(0)),
                 Instruction::branch_table(Register::from_i16(1), 3),
+                Instruction::branch(BranchOffset::from(3)),
+                Instruction::branch(BranchOffset::from(4)),
+                Instruction::branch(BranchOffset::from(1)),
                 Instruction::copy2(
                     RegisterSpan::new(Register::from_i16(1)),
                     Register::from_i16(-1),
                     Register::from_i16(-2),
                 ),
-                Instruction::branch(BranchOffset::from(3)),
-                Instruction::return_span(RegisterSpan::new(Register::from_i16(1)).iter_u16(2)),
-                Instruction::branch(BranchOffset::from(1)),
+                Instruction::branch(BranchOffset::from(2)),
+                Instruction::return_reg2(-1, -2),
                 Instruction::Trap(TrapCode::UnreachableCodeReached),
             ])
             .consts([10.0_f32, 20.0_f32]),

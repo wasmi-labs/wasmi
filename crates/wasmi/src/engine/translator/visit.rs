@@ -534,25 +534,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             .acquire_target(default_target)
             .control_frame()
             .branch_params(&engine);
-        let same_branch_params = self
-            .alloc
-            .buffer
-            .br_table_targets
-            .iter()
-            .copied()
-            .all(|target| {
-                match self.alloc.control_stack.acquire_target(target) {
-                    AcquiredTarget::Return(_) => {
-                        // Return instructions never need to copy anything and
-                        // thus we can simply ignore them for this conditional.
-                        true
-                    }
-                    AcquiredTarget::Branch(frame) => {
-                        default_branch_params == frame.branch_params(&engine)
-                    }
-                }
-            });
-        if default_branch_params.is_empty() || same_branch_params {
+        if default_branch_params.is_empty() {
             // Case 1: No `br_target` target requires values to be copied around.
             // Case 2: All `br_target` targets use the same branch parameter registers.
             //
