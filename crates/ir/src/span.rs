@@ -1,4 +1,4 @@
-use crate::{index::Reg, Error};
+use crate::{Error, Reg};
 
 /// A [`RegSpan`] of contiguous [`Reg`] indices.
 ///
@@ -14,6 +14,7 @@ use crate::{index::Reg, Error};
 /// Due to Wasm validation guided bytecode construction we assert
 /// that the externally stored length is valid.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
 pub struct RegSpan(Reg);
 
 impl RegSpan {
@@ -41,10 +42,23 @@ impl RegSpan {
     pub fn head_mut(&mut self) -> &mut Reg {
         &mut self.0
     }
+
+    /// Returns `true` if `copy_span results <- values` has overlapping copies.
+    ///
+    /// # Examples
+    ///
+    /// - `[ ]`: empty never overlaps
+    /// - `[ 1 <- 0 ]`: single element never overlaps
+    /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]`: no overlap
+    /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
+    pub fn has_overlapping_copies(results: Self, values: Self, len: u16) -> bool {
+        RegSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
+    }
 }
 
 /// A [`RegSpan`] with a statically known number of [`Reg`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
 pub struct FixedRegSpan<const N: u16> {
     /// The underlying [`RegSpan`] without the known length.
     span: RegSpan,
@@ -242,8 +256,13 @@ impl RegSpanIter {
     }
 
     /// Returns the remaining number of [`Reg`]s yielded by the [`RegSpanIter`].
-    fn len(&self) -> u16 {
+    pub fn len_as_u16(&self) -> u16 {
         self.last.0.abs_diff(self.next.0)
+    }
+
+    /// Returns `true` if `self` yields no more [`Reg`]s.
+    pub fn is_empty(&self) -> bool {
+        self.len_as_u16() == 0
     }
 
     /// Returns `true` if `copy_span results <- values` has overlapping copies.
@@ -304,6 +323,6 @@ impl DoubleEndedIterator for RegSpanIter {
 
 impl ExactSizeIterator for RegSpanIter {
     fn len(&self) -> usize {
-        usize::from(RegSpanIter::len(self))
+        usize::from(RegSpanIter::len_as_u16(self))
     }
 }
