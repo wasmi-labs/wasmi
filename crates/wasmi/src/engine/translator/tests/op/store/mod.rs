@@ -232,7 +232,7 @@ fn test_store_at_for(
     wasm_op: WasmOp,
     ptr: u32,
     offset: u32,
-    make_instr: fn(address: u32, value: Reg) -> Instruction,
+    make_instr: fn(value: Reg, address: u32) -> Instruction,
 ) {
     let address = ptr
         .checked_add(offset)
@@ -251,11 +251,11 @@ fn test_store_at_for(
     "#
     );
     TranslationTest::from_wat(&wasm)
-        .expect_func_instrs([make_instr(address, Reg::from(0)), Instruction::Return])
+        .expect_func_instrs([make_instr(Reg::from(0), address), Instruction::Return])
         .run();
 }
 
-fn test_store_at(wasm_op: WasmOp, make_instr: fn(address: u32, value: Reg) -> Instruction) {
+fn test_store_at(wasm_op: WasmOp, make_instr: fn(value: Reg, address: u32) -> Instruction) {
     test_store_at_for(wasm_op, 0, 0, make_instr);
     test_store_at_for(wasm_op, 0, 1, make_instr);
     test_store_at_for(wasm_op, 1, 0, make_instr);
@@ -301,7 +301,7 @@ fn test_store_at_imm_for<T>(
     ptr: u32,
     offset: u32,
     value: T,
-    make_instr: fn(address: u32, value: Reg) -> Instruction,
+    make_instr: fn(value: Reg, address: u32) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
@@ -325,7 +325,7 @@ fn test_store_at_imm_for<T>(
     );
     TranslationTest::from_wat(&wasm)
         .expect_func(
-            ExpectedFunc::new([make_instr(address, Reg::from(-1)), Instruction::Return])
+            ExpectedFunc::new([make_instr(Reg::from(-1), address), Instruction::Return])
                 .consts([value]),
         )
         .run();
@@ -334,7 +334,7 @@ fn test_store_at_imm_for<T>(
 fn test_store_at_imm<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(address: u32, value: Reg) -> Instruction,
+    make_instr: fn(value: Reg, address: u32) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,

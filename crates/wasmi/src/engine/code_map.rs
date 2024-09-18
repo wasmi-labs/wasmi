@@ -15,7 +15,7 @@ use super::{
 use crate::{
     collections::arena::{Arena, ArenaIndex},
     core::{TrapCode, UntypedVal},
-    engine::bytecode::Instruction,
+    engine::bytecode::{index::InternalFunc, Instruction},
     module::{FuncIdx, ModuleHeader},
     store::{Fuel, FuelError},
     Config,
@@ -35,6 +35,18 @@ use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EngineFunc(u32);
+
+impl From<EngineFunc> for InternalFunc {
+    fn from(value: EngineFunc) -> Self {
+        InternalFunc::from(value.0)
+    }
+}
+
+impl From<InternalFunc> for EngineFunc {
+    fn from(index: InternalFunc) -> Self {
+        Self(u32::from(index))
+    }
+}
 
 impl EngineFunc {
     /// Creates a new [`EngineFunc`] from the given `u32` index.

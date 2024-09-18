@@ -176,7 +176,7 @@ fn test_br_as_return_values() {
             ExpectedFunc::new([
                 Instruction::copy_i64imm32(Reg::from(0), 7),
                 Instruction::branch(BranchOffset::from(1)),
-                Instruction::return_reg2(-1, 0),
+                Instruction::return_reg2_ext(-1, 0),
             ])
             .consts([UntypedVal::from(2_i32)]),
         )

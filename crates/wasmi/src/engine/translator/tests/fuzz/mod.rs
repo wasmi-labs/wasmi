@@ -58,7 +58,7 @@ fn fuzz_regression_3() {
         .expect_func_instrs([
             Instruction::call_internal_0(RegSpan::new(Reg::from(0)), EngineFunc::from_u32(0)),
             Instruction::call_internal_0(RegSpan::new(Reg::from(3)), EngineFunc::from_u32(0)),
-            Instruction::return_reg3(2, 3, 4),
+            Instruction::return_reg3_ext(2, 3, 4),
         ])
         .run()
 }
@@ -138,7 +138,7 @@ fn fuzz_regression_8() {
             Instruction::copy(3, 0),
             Instruction::copy_imm32(Reg::from(0), 20),
             Instruction::copy(2, 4),
-            Instruction::return_reg2(3, 2),
+            Instruction::return_reg2_ext(3, 2),
         ])
         .run()
 }
@@ -246,9 +246,9 @@ fn fuzz_regression_13_codegen() {
     let wasm = include_str!("wat/fuzz_13.wat");
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_many(0, 0, 0),
+            Instruction::return_nez_many_ext(0, 0, 0),
             Instruction::register(0),
-            Instruction::return_reg3(0, 0, 0),
+            Instruction::return_reg3_ext(0, 0, 0),
         ])
         .run()
 }
@@ -285,7 +285,7 @@ fn fuzz_regression_14() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::i32_and(Reg::from(2), Reg::from(0), Reg::from(1)),
-                Instruction::return_reg2(2, -1),
+                Instruction::return_reg2_ext(2, -1),
             ])
             .consts([0_i32]),
         )
@@ -305,7 +305,7 @@ fn fuzz_regression_15_01_codegen() {
             //   stores its `index` result.
             ExpectedFunc::new([
                 Instruction::i32_wrap_i64(Reg::from(1), Reg::from(0)),
-                Instruction::branch_table_1(Reg::from(1), 3),
+                Instruction::branch_table_1(Reg::from(1), 3_u32),
                 Instruction::const32(10.0_f32),
                 Instruction::branch_table_target(RegSpan::new(Reg::from(1)), BranchOffset::from(3)),
                 Instruction::return_imm32(10.0_f32),
@@ -351,10 +351,10 @@ fn fuzz_regression_15_02() {
             // Note: The bug is that `copy2` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
             ExpectedFunc::new([
                 Instruction::i32_wrap_i64(Reg::from(1), Reg::from(0)),
-                Instruction::branch_table_2(Reg::from(1), 3),
-                Instruction::register2(Reg::from(-1), Reg::from(-2)),
+                Instruction::branch_table_2(Reg::from(1), 3_u32),
+                Instruction::register2_ext(Reg::from(-1), Reg::from(-2)),
                 Instruction::branch_table_target(RegSpan::new(Reg::from(1)), BranchOffset::from(3)),
-                Instruction::return_reg2(Reg::from(-1), Reg::from(-2)),
+                Instruction::return_reg2_ext(Reg::from(-1), Reg::from(-2)),
                 Instruction::branch_table_target(RegSpan::new(Reg::from(1)), BranchOffset::from(1)),
                 Instruction::trap(TrapCode::UnreachableCodeReached),
             ])
@@ -374,8 +374,8 @@ fn fuzz_regression_15_03() {
                 Instruction::global_get(Reg::from(1), Global::from(0)),
                 Instruction::global_get(Reg::from(2), Global::from(0)),
                 Instruction::i32_wrap_i64(Reg::from(3), Reg::from(0)),
-                Instruction::branch_table_2(Reg::from(3), 4),
-                Instruction::register2(Reg::from(-1), Reg::from(-2)),
+                Instruction::branch_table_2(Reg::from(3), 4_u32),
+                Instruction::register2_ext(Reg::from(-1), Reg::from(-2)),
                 Instruction::branch_table_target(RegSpan::new(Reg::from(3)), BranchOffset::from(4)),
                 Instruction::branch_table_target(RegSpan::new(Reg::from(2)), BranchOffset::from(5)),
                 Instruction::branch_table_target(RegSpan::new(Reg::from(3)), BranchOffset::from(2)),
@@ -403,8 +403,8 @@ fn fuzz_regression_16() {
         .expect_func_instrs([
             Instruction::copy(2, 0),
             Instruction::global_get(Reg::from(0), Global::from(0)),
-            Instruction::global_set(Global::from(0), Reg::from(0)),
-            Instruction::i64_store_at(2147483647, Reg::from(2)),
+            Instruction::global_set(Reg::from(0), Global::from(0)),
+            Instruction::i64_store_at(Reg::from(2), 2147483647_u32),
             Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
@@ -422,7 +422,7 @@ fn fuzz_regression_17() {
             Instruction::copy(2, 0),
             Instruction::copy_i64imm32(Reg::from(0), 2),
             Instruction::copy_imm32(Reg::from(1), -1.0_f32),
-            Instruction::i64_store_at(4294967295, Reg::from(2)),
+            Instruction::i64_store_at(Reg::from(2), 4294967295_u32),
             Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
@@ -435,7 +435,7 @@ fn audit_0_codegen() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::return_many(-1, -2, -1),
+                Instruction::return_many_ext(-1, -2, -1),
                 Instruction::register(-2),
             ])
             .consts([1, 0]),
@@ -443,8 +443,8 @@ fn audit_0_codegen() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_internal_0(RegSpan::new(Reg::from(0)), EngineFunc::from_u32(0)),
-                Instruction::branch_table_many(Reg::from(3), 3),
-                Instruction::register_list(-1, 0, 1),
+                Instruction::branch_table_many(Reg::from(3), 3_u32),
+                Instruction::register_list_ext(-1, 0, 1),
                 Instruction::register(2),
                 Instruction::branch_table_target(RegSpan::new(Reg::from(0)), BranchOffset::from(3)),
                 Instruction::Return,
@@ -485,7 +485,7 @@ fn audit_1_codegen() {
             Instruction::copy_span_non_overlapping(
                 RegSpan::new(Reg::from(6)),
                 RegSpan::new(Reg::from(0)),
-                3,
+                3_u16,
             ),
             Instruction::trap(TrapCode::IntegerOverflow),
         ])
@@ -520,7 +520,7 @@ fn audit_2_codegen() {
             Instruction::copy(2, 0),
             Instruction::copy(0, 2),
             Instruction::copy(1, 0),
-            Instruction::return_many(2, 1, 0),
+            Instruction::return_many_ext(2, 1, 0),
             Instruction::register(0),
         ])
         .run()

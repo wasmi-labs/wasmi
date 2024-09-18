@@ -77,8 +77,8 @@ fn two_params_reg() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(2)), Func::from(0)),
-            Instruction::register2(0, 1),
-            Instruction::return_reg2(2, 3),
+            Instruction::register2_ext(0, 1),
+            Instruction::return_reg2_ext(2, 3),
         ])
         .run();
 }
@@ -97,8 +97,8 @@ fn two_params_reg_rev() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(2)), Func::from(0)),
-            Instruction::register2(1, 0),
-            Instruction::return_reg2(2, 3),
+            Instruction::register2_ext(1, 0),
+            Instruction::return_reg2_ext(2, 3),
         ])
         .run();
 }
@@ -118,8 +118,8 @@ fn two_params_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(RegSpan::new(Reg::from(0)), Func::from(0)),
-                Instruction::register2(-1, -2),
-                Instruction::return_reg2(0, 1),
+                Instruction::register2_ext(-1, -2),
+                Instruction::return_reg2_ext(0, 1),
             ])
             .consts([10_i32, 20]),
         )
@@ -140,8 +140,8 @@ fn three_params_reg() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(3)), Func::from(0)),
-            Instruction::register3(0, 1, 2),
-            Instruction::return_reg3(3, 4, 5),
+            Instruction::register3_ext(0, 1, 2),
+            Instruction::return_reg3_ext(3, 4, 5),
         ])
         .run();
 }
@@ -160,8 +160,8 @@ fn three_params_reg_rev() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(3)), Func::from(0)),
-            Instruction::register3(2, 1, 0),
-            Instruction::return_reg3(3, 4, 5),
+            Instruction::register3_ext(2, 1, 0),
+            Instruction::return_reg3_ext(3, 4, 5),
         ])
         .run();
 }
@@ -181,8 +181,8 @@ fn three_params_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(RegSpan::new(Reg::from(0)), Func::from(0)),
-                Instruction::register3(-1, -2, -3),
-                Instruction::return_reg3(0, 1, 2),
+                Instruction::register3_ext(-1, -2, -3),
+                Instruction::return_reg3_ext(0, 1, 2),
             ])
             .consts([10_i32, 20, 30]),
         )
@@ -211,8 +211,8 @@ fn params7_reg() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(7)), Func::from(0)),
-            Instruction::register_list(0, 1, 2),
-            Instruction::register_list(3, 4, 5),
+            Instruction::register_list_ext(0, 1, 2),
+            Instruction::register_list_ext(3, 4, 5),
             Instruction::register(6),
             Instruction::return_span(bspan(7, 7)),
         ])
@@ -241,8 +241,8 @@ fn params7_reg_rev() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(7)), Func::from(0)),
-            Instruction::register_list(6, 5, 4),
-            Instruction::register_list(3, 2, 1),
+            Instruction::register_list_ext(6, 5, 4),
+            Instruction::register_list_ext(3, 2, 1),
             Instruction::register(0),
             Instruction::return_span(bspan(7, 7)),
         ])
@@ -272,8 +272,8 @@ fn params7_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(RegSpan::new(Reg::from(0)), Func::from(0)),
-                Instruction::register_list(-1, -2, -3),
-                Instruction::register_list(-4, -5, -6),
+                Instruction::register_list_ext(-1, -2, -3),
+                Instruction::register_list_ext(-4, -5, -6),
                 Instruction::register(-7),
                 Instruction::return_span(bspan(0, 7)),
             ])
@@ -305,9 +305,9 @@ fn params8_reg() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(8)), Func::from(0)),
-            Instruction::register_list(0, 1, 2),
-            Instruction::register_list(3, 4, 5),
-            Instruction::register2(6, 7),
+            Instruction::register_list_ext(0, 1, 2),
+            Instruction::register_list_ext(3, 4, 5),
+            Instruction::register2_ext(6, 7),
             Instruction::return_span(bspan(8, 8)),
         ])
         .run();
@@ -336,9 +336,9 @@ fn params8_reg_rev() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(8)), Func::from(0)),
-            Instruction::register_list(7, 6, 5),
-            Instruction::register_list(4, 3, 2),
-            Instruction::register2(1, 0),
+            Instruction::register_list_ext(7, 6, 5),
+            Instruction::register_list_ext(4, 3, 2),
+            Instruction::register2_ext(1, 0),
             Instruction::return_span(bspan(8, 8)),
         ])
         .run();
@@ -368,9 +368,9 @@ fn params8_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(RegSpan::new(Reg::from(0)), Func::from(0)),
-                Instruction::register_list(-1, -2, -3),
-                Instruction::register_list(-4, -5, -6),
-                Instruction::register2(-7, -8),
+                Instruction::register_list_ext(-1, -2, -3),
+                Instruction::register_list_ext(-4, -5, -6),
+                Instruction::register2_ext(-7, -8),
                 Instruction::return_span(bspan(0, 8)),
             ])
             .consts([10, 20, 30, 40, 50, 60, 70, 80]),
@@ -402,9 +402,9 @@ fn params9_reg() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(9)), Func::from(0)),
-            Instruction::register_list(0, 1, 2),
-            Instruction::register_list(3, 4, 5),
-            Instruction::register3(6, 7, 8),
+            Instruction::register_list_ext(0, 1, 2),
+            Instruction::register_list_ext(3, 4, 5),
+            Instruction::register3_ext(6, 7, 8),
             Instruction::return_span(bspan(9, 9)),
         ])
         .run();
@@ -434,9 +434,9 @@ fn params9_reg_rev() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(9)), Func::from(0)),
-            Instruction::register_list(8, 7, 6),
-            Instruction::register_list(5, 4, 3),
-            Instruction::register3(2, 1, 0),
+            Instruction::register_list_ext(8, 7, 6),
+            Instruction::register_list_ext(5, 4, 3),
+            Instruction::register3_ext(2, 1, 0),
             Instruction::return_span(bspan(9, 9)),
         ])
         .run();
@@ -467,9 +467,9 @@ fn params9_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(RegSpan::new(Reg::from(0)), Func::from(0)),
-                Instruction::register_list(-1, -2, -3),
-                Instruction::register_list(-4, -5, -6),
-                Instruction::register3(-7, -8, -9),
+                Instruction::register_list_ext(-1, -2, -3),
+                Instruction::register_list_ext(-4, -5, -6),
+                Instruction::register3_ext(-7, -8, -9),
                 Instruction::return_span(bspan(0, 9)),
             ])
             .consts([10, 20, 30, 40, 50, 60, 70, 80, 90]),

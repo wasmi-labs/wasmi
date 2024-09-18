@@ -20,7 +20,7 @@ fn simple_if_then() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(1)),
+            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -43,8 +43,8 @@ fn simple_if_then_nested() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(2)),
-            Instruction::branch_i32_eqz(Reg::from(1), BranchOffset16::from(1)),
+            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm(Reg::from(1), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -67,8 +67,8 @@ fn if_then_global_set() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(2)),
-            Instruction::global_set(Global::from(0), Reg::from(1)),
+            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(2_i16)),
+            Instruction::global_set(Reg::from(1), Global::from(0)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
         ])
         .run()
@@ -95,7 +95,7 @@ fn if_then_return() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(3)),
+            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(3)),
             Instruction::i32_add(Reg::from(3), Reg::from(1), Reg::from(2)),
             Instruction::return_reg(Reg::from(3)),
             Instruction::return_imm32(AnyConst32::from(0_i32)),
@@ -122,7 +122,7 @@ fn if_then_else_return() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(2)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
             Instruction::return_imm32(AnyConst32::from(20_i32)),
         ])
@@ -148,7 +148,7 @@ fn if_then_br_else() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
             Instruction::return_imm32(AnyConst32::from(20_i32)),
@@ -175,7 +175,7 @@ fn if_then_else_br() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(2)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_imm32(AnyConst32::from(20_i32)),
@@ -199,7 +199,7 @@ fn simple_if_then_else() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::Return,
         ])
@@ -230,11 +230,11 @@ fn simple_if_then_else_nested() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(4)),
-            Instruction::branch_i32_eqz(Reg::from(1), BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(4)),
+            Instruction::branch_i32_eq_imm(Reg::from(1), 0, BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::branch(BranchOffset::from(3)),
-            Instruction::branch_i32_eqz(Reg::from(1), BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm(Reg::from(1), 0, BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::Return,
         ])
@@ -257,8 +257,8 @@ fn if_then_else_with_params() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegSpan::new(Reg::from(4)), 1, 2),
-            Instruction::branch_i32_eqz(Reg::from(0), BranchOffset16::from(3)),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 1, 2),
+            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(3)),
             Instruction::i32_add(Reg::from(3), Reg::from(4), Reg::from(5)),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::i32_mul(Reg::from(3), Reg::from(4), Reg::from(5)),
@@ -413,7 +413,7 @@ fn const_condition_br_if_then() {
     test_for(
         false,
         [
-            Instruction::branch_i32_nez(Reg::from(0), BranchOffset16::from(2)),
+            Instruction::branch_i32_ne_imm(Reg::from(0), 0, BranchOffset16::from(2)),
             Instruction::trap(TrapCode::UnreachableCodeReached),
             Instruction::return_imm32(AnyConst32::from(1_i32)),
         ],
@@ -454,7 +454,7 @@ fn const_condition_br_if_else() {
     test_for(
         true,
         [
-            Instruction::branch_i32_nez(Reg::from(0), BranchOffset16::from(2)),
+            Instruction::branch_i32_ne_imm(Reg::from(0), 0, BranchOffset16::from(2)),
             Instruction::trap(TrapCode::UnreachableCodeReached),
             Instruction::return_imm32(AnyConst32::from(1_i32)),
         ],
@@ -525,12 +525,12 @@ fn test_if_without_else_has_result() {
         "#;
     TranslationTest::from_wat(wasm)
         .expect_func(
-            ExpectedFunc::new([Instruction::return_reg2(-1, -2)])
+            ExpectedFunc::new([Instruction::return_reg2_ext(-1, -2)])
                 .consts([UntypedVal::from(1_i64), UntypedVal::from(0_i32)]),
         )
         .expect_func_instrs([
             Instruction::call_internal_0(RegSpan::new(Reg::from(0)), EngineFunc::from_u32(0)),
-            Instruction::branch_i32_eqz(Reg::from(1), BranchOffset16::from(3)),
+            Instruction::branch_i32_eq_imm(Reg::from(1), 0, BranchOffset16::from(3)),
             Instruction::copy_i64imm32(Reg::from(0), -1),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_reg(Reg::from(0)),

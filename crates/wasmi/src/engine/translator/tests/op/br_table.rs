@@ -22,13 +22,13 @@ fn spec_test_failure_2() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::branch_table_2(0, 3),
-                Instruction::register2(-1, -2),
+                Instruction::branch_table_2(0, 3_u16),
+                Instruction::register2_ext(-1, -2),
                 Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(3)),
-                Instruction::return_reg2(-1, -2),
+                Instruction::return_reg2_ext(-1, -2),
                 Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(1)),
                 Instruction::i32_add(Reg::from(1), Reg::from(1), Reg::from(2)),
-                Instruction::return_reg2(1, -3),
+                Instruction::return_reg2_ext(1, -3),
             ])
             .consts([50, 51, 52]),
         )
@@ -56,7 +56,7 @@ fn spec_test_failure() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table_0(0, 3),
+            Instruction::branch_table_0(0, 3_u16),
             Instruction::branch(BranchOffset::from(3)),
             Instruction::branch(BranchOffset::from(3)),
             Instruction::branch(BranchOffset::from(3)),
@@ -110,7 +110,7 @@ fn reg_params_0() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table_0(Reg::from(0), 4),
+            Instruction::branch_table_0(Reg::from(0), 4_u16),
             Instruction::branch(BranchOffset::from(7)),
             Instruction::branch(BranchOffset::from(5)),
             Instruction::branch(BranchOffset::from(3)),
@@ -147,19 +147,19 @@ fn reg_params_0_return() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table_0(Reg::from(0), 5),
+            Instruction::branch_table_0(Reg::from(0), 5_u32),
             Instruction::Return,
             Instruction::branch(BranchOffset::from(10)),
             Instruction::branch(BranchOffset::from(7)),
             Instruction::branch(BranchOffset::from(4)),
             Instruction::branch(BranchOffset::from(1)),
-            Instruction::global_set_i32imm16(Global::from(0), 10),
+            Instruction::global_set_i32imm16(10, Global::from(0)),
             Instruction::Return,
-            Instruction::global_set_i32imm16(Global::from(0), 20),
+            Instruction::global_set_i32imm16(20, Global::from(0)),
             Instruction::Return,
-            Instruction::global_set_i32imm16(Global::from(0), 30),
+            Instruction::global_set_i32imm16(30, Global::from(0)),
             Instruction::Return,
-            Instruction::global_set_i32imm16(Global::from(0), 40),
+            Instruction::global_set_i32imm16(40, Global::from(0)),
             Instruction::Return,
         ])
         .run()
@@ -192,7 +192,7 @@ fn reg_params_1_return() {
     let result = Reg::from(2);
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table_1(index, 5),
+            Instruction::branch_table_1(index, 5_u32),
             Instruction::register(value),
             Instruction::return_reg(value),
             Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(10)),
@@ -241,7 +241,7 @@ fn reg_params_1_pass() {
     let result = Reg::from(2);
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table_1(index, 3),
+            Instruction::branch_table_1(index, 3_u32),
             Instruction::register(value),
             Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(7)),
             Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(4)),
@@ -282,8 +282,8 @@ fn reg_params_2_ops() {
     let result = Reg::from(3);
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table_2(index, 3),
-            Instruction::register2(1, 2),
+            Instruction::branch_table_2(index, 3_u32),
+            Instruction::register2_ext(1, 2),
             Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(7)),
             Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(4)),
             Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(1)),
@@ -323,18 +323,18 @@ fn reg_params_2_return() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::branch_table_2(index, 4),
-                Instruction::register2(1, 2),
-                Instruction::return_reg2(1, 2),
+                Instruction::branch_table_2(index, 4_u32),
+                Instruction::register2_ext(1, 2),
+                Instruction::return_reg2_ext(1, 2),
                 Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(7)),
                 Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(4)),
                 Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(1)),
                 Instruction::i32_add(result, result, result2),
-                Instruction::return_reg2(3, -1),
+                Instruction::return_reg2_ext(3, -1),
                 Instruction::i32_sub(result, result, result2),
-                Instruction::return_reg2(3, -2),
+                Instruction::return_reg2_ext(3, -2),
                 Instruction::i32_mul(result, result, result2),
-                Instruction::return_reg2(3, -3),
+                Instruction::return_reg2_ext(3, -3),
             ])
             .consts([0_i32, 1, 2]),
         )
@@ -373,7 +373,7 @@ fn reg_params_1_diff() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::global_get(result, Global::from(0)),
-            Instruction::branch_table_1(index, 7),
+            Instruction::branch_table_1(index, 7_u32),
             Instruction::register(input),
             Instruction::return_reg(input),
             Instruction::branch_table_target(RegSpan::new(Reg::from(2)), BranchOffset::from(10)),
@@ -426,8 +426,8 @@ fn reg_params_2_diff() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::global_get(result, Global::from(0)),
-            Instruction::branch_table_2(index, 5),
-            Instruction::register2(1, 2),
+            Instruction::branch_table_2(index, 5_u32),
+            Instruction::register2_ext(1, 2),
             Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(9)),
             Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(6)),
             Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(5)),
@@ -573,18 +573,18 @@ fn reg_params_3() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table_3(3, 4),
-            Instruction::register3(0, 1, 2),
+            Instruction::branch_table_3(3, 4_u32),
+            Instruction::register3_ext(0, 1, 2),
             Instruction::branch_table_target(RegSpan::new(Reg::from(4)), BranchOffset::from(8)),
-            Instruction::return_reg3(0, 1, 2),
+            Instruction::return_reg3_ext(0, 1, 2),
             Instruction::branch_table_target(RegSpan::new(Reg::from(4)), BranchOffset::from(4)),
             Instruction::branch_table_target(RegSpan::new(Reg::from(4)), BranchOffset::from(1)),
             Instruction::i32_add_imm16(Reg::from(6), Reg::from(6), 10_i16),
-            Instruction::return_reg3(4, 5, 6),
+            Instruction::return_reg3_ext(4, 5, 6),
             Instruction::i32_add_imm16(Reg::from(6), Reg::from(6), 20_i16),
-            Instruction::return_reg3(4, 5, 6),
+            Instruction::return_reg3_ext(4, 5, 6),
             Instruction::i32_add_imm16(Reg::from(6), Reg::from(6), 30_i16),
-            Instruction::return_reg3(4, 5, 6),
+            Instruction::return_reg3_ext(4, 5, 6),
         ])
         .run()
 }
@@ -615,7 +615,7 @@ fn reg_params_4_span() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::i32_popcnt(Reg::from(5), Reg::from(0)),
-            Instruction::branch_table_span(4, 4),
+            Instruction::branch_table_span(4, 4_u32),
             Instruction::register_span(bspan(0, 4)),
             Instruction::branch_table_target_non_overlapping(
                 RegSpan::new(Reg::from(5)),
@@ -666,8 +666,8 @@ fn reg_params_4_many() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::i32_popcnt(Reg::from(5), Reg::from(0)),
-            Instruction::branch_table_many(4, 4),
-            Instruction::register_list(3, 2, 1),
+            Instruction::branch_table_many(4, 4_u32),
+            Instruction::register_list_ext(3, 2, 1),
             Instruction::register(0),
             Instruction::branch_table_target_non_overlapping(
                 RegSpan::new(Reg::from(5)),
@@ -716,7 +716,7 @@ fn i64imm32_ok() {
         );
         TranslationTest::from_wat(wasm)
             .expect_func_instrs([
-                Instruction::branch_table_1(0, 4),
+                Instruction::branch_table_1(0, 4_u32),
                 Instruction::i64const32(imm),
                 Instruction::branch_table_target(RegSpan::new(Reg::from(1)), BranchOffset::from(8)),
                 Instruction::return_i64imm32(imm),
@@ -768,7 +768,7 @@ fn i64imm32_err() {
         TranslationTest::from_wat(wasm)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::branch_table_1(0, 4),
+                    Instruction::branch_table_1(0, 4_u32),
                     Instruction::register(-1),
                     Instruction::branch_table_target(
                         RegSpan::new(Reg::from(1)),
@@ -829,7 +829,7 @@ fn f64imm32_ok() {
         TranslationTest::from_wat(wasm)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::branch_table_1(0, 4),
+                    Instruction::branch_table_1(0, 4_u32),
                     Instruction::f64const32(imm),
                     Instruction::branch_table_target(
                         RegSpan::new(Reg::from(1)),
@@ -888,7 +888,7 @@ fn f64imm32_err() {
         TranslationTest::from_wat(wasm)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::branch_table_1(0, 4),
+                    Instruction::branch_table_1(0, 4_u32),
                     Instruction::register(-1),
                     Instruction::branch_table_target(
                         RegSpan::new(Reg::from(1)),

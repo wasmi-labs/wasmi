@@ -77,7 +77,7 @@ fn identity_loop_2() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegSpan::new(Reg::from(2)), 0, 1),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(2)), 0, 1),
             Instruction::i32_add(Reg::from(2), Reg::from(2), Reg::from(3)),
             Instruction::return_reg(Reg::from(2)),
         ])
@@ -100,7 +100,7 @@ fn identity_loop_2_nested() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy2(RegSpan::new(Reg::from(2)), 0, 1),
+            Instruction::copy2_ext(RegSpan::new(Reg::from(2)), 0, 1),
             Instruction::i32_add(Reg::from(2), Reg::from(2), Reg::from(3)),
             Instruction::return_reg(Reg::from(2)),
         ])
@@ -178,8 +178,8 @@ fn identity_loop_4_mixed_1() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::copy_many_non_overlapping(RegSpan::new(Reg::from(2)), -1, 0),
-                Instruction::register2(1, -2),
+                Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(2)), -1, 0),
+                Instruction::register2_ext(1, -2),
                 Instruction::return_span(bspan(2, 4)),
             ])
             .consts([10_i32, 20]),
@@ -202,8 +202,8 @@ fn identity_loop_4_mixed_2() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::copy_many_non_overlapping(RegSpan::new(Reg::from(2)), 0, 0),
-            Instruction::register2(1, 1),
+            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(2)), 0, 0),
+            Instruction::register2_ext(1, 1),
             Instruction::return_span(bspan(2, 4)),
         ])
         .run()

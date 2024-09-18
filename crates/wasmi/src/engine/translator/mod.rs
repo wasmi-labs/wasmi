@@ -750,8 +750,9 @@ impl FuncTranslator {
             // Fuel metering is disabled so there is no need to create an `Instruction::ConsumeFuel`.
             return Ok(None);
         };
-        let fuel_instr = Instruction::consume_fuel(fuel_costs.base())
+        let base = u32::try_from(fuel_costs.base())
             .expect("base fuel must be valid for creating `Instruction::ConsumeFuel`");
+        let fuel_instr = Instruction::consume_fuel(base);
         let instr = self.alloc.instr_encoder.push_instr(fuel_instr)?;
         Ok(Some(instr))
     }
@@ -1938,8 +1939,8 @@ impl FuncTranslator {
         make_instr: fn(ptr: Reg, offset: u32) -> Instruction,
         make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
         make_instr_offset16_imm: fn(ptr: Reg, offset: u16, value: U) -> Instruction,
-        make_instr_at: fn(address: u32, value: Reg) -> Instruction,
-        make_instr_at_imm: fn(address: u32, value: U) -> Instruction,
+        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
+        make_instr_at_imm: fn(value: U, address: u32) -> Instruction,
     ) -> Result<(), Error>
     where
         T: Copy + From<TypedVal>,
@@ -1995,20 +1996,20 @@ impl FuncTranslator {
             }
             (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
                 .effective_address_and(ptr, offset, |this, address| {
-                    this.push_fueled_instr(make_instr_at(address, value), FuelCosts::store)?;
+                    this.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
                     Ok(())
                 }),
             (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     if let Ok(value) = U::try_from(T::from(value)) {
                         this.push_fueled_instr(
-                            make_instr_at_imm(address, value),
+                            make_instr_at_imm(value, address),
                             FuelCosts::store,
                         )?;
                         Ok(())
                     } else {
                         let value = this.alloc.stack.alloc_const(value)?;
-                        this.push_fueled_instr(make_instr_at(address, value), FuelCosts::store)?;
+                        this.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
                         Ok(())
                     }
                 })
@@ -2033,7 +2034,7 @@ impl FuncTranslator {
         memarg: MemArg,
         make_instr: fn(ptr: Reg, offset: u32) -> Instruction,
         make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
-        make_instr_at: fn(address: u32, value: Reg) -> Instruction,
+        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let offset = Self::memarg_offset(memarg);
@@ -2077,13 +2078,13 @@ impl FuncTranslator {
             }
             (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
                 .effective_address_and(ptr, offset, |this, address| {
-                    this.push_fueled_instr(make_instr_at(address, value), FuelCosts::store)?;
+                    this.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
                     Ok(())
                 }),
             (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     let value = this.alloc.stack.alloc_const(value)?;
-                    this.push_fueled_instr(make_instr_at(address, value), FuelCosts::store)?;
+                    this.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
                     Ok(())
                 })
             }
@@ -2163,7 +2164,7 @@ impl FuncTranslator {
         self.push_fueled_instr(Instruction::select(result, lhs), FuelCosts::base)?;
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register2(condition, rhs))?;
+            .append_instr(Instruction::register2_ext(condition, rhs))?;
         Ok(())
     }
 
@@ -2188,7 +2189,7 @@ impl FuncTranslator {
                 debug_assert!(matches!(lhs.ty(), ValType::I32 | ValType::F32));
                 (
                     Instruction::select_imm32_lhs(result, u32::from(lhs.untyped())),
-                    Instruction::register2(condition, rhs),
+                    Instruction::register2_ext(condition, rhs),
                 )
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
@@ -2237,7 +2238,7 @@ impl FuncTranslator {
             ),
             (Provider::Const(lhs), Provider::Register(rhs)) => (
                 Instruction::select_i64imm32_lhs(result, lhs),
-                Instruction::register2(condition, rhs),
+                Instruction::register2_ext(condition, rhs),
             ),
             (Provider::Const(lhs), Provider::Const(rhs)) => (
                 Instruction::select_i64imm32(result, lhs),
@@ -2281,7 +2282,7 @@ impl FuncTranslator {
             ),
             (Provider::Const(lhs), Provider::Register(rhs)) => (
                 Instruction::select_f64imm32_lhs(result, lhs),
-                Instruction::register2(condition, rhs),
+                Instruction::register2_ext(condition, rhs),
             ),
             (Provider::Const(lhs), Provider::Const(rhs)) => (
                 Instruction::select_f64imm32(result, lhs),
@@ -2615,7 +2616,7 @@ impl FuncTranslator {
         let (v0, v1) = stack.pop2();
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register2(
+            .append_instr(Instruction::register2_ext(
                 stack.provider2reg(&v0)?,
                 stack.provider2reg(&v1)?,
             ))?;
@@ -2638,7 +2639,7 @@ impl FuncTranslator {
         let (v0, v1, v2) = stack.pop3();
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register3(
+            .append_instr(Instruction::register3_ext(
                 stack.provider2reg(&v0)?,
                 stack.provider2reg(&v1)?,
                 stack.provider2reg(&v2)?,
@@ -2718,5 +2719,24 @@ impl FuncTranslator {
         })?;
         self.reachable = false;
         Ok(())
+    }
+}
+
+trait BumpFuelConsumption {
+    /// Increases the fuel consumption of the [`Instruction::ConsumeFuel`] instruction by `delta`.
+    ///
+    /// # Error
+    ///
+    /// - If `self` is not a [`Instruction::ConsumeFuel`] instruction.
+    /// - If the new fuel consumption overflows the internal `u64` value.
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error>;
+}
+
+impl BumpFuelConsumption for Instruction {
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
+        match self {
+            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Into::into),
+            instr => panic!("expected `Instruction::ConsumeFuel` but found: {instr:?}"),
+        }
     }
 }
