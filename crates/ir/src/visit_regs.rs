@@ -84,6 +84,7 @@ impl_host_visitor_for!(
     Func,
     FuncType,
     Global,
+    Memory,
     Table,
     Elem,
     Data,

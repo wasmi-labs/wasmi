@@ -1693,19 +1693,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i32_load)]
             I32Load {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i32.load` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Load`] with a constant load address.
+            /// - Variant of [`Instruction::I32Load`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load_at)]
             I32LoadAt {
                 @result: Reg,
@@ -1716,7 +1716,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Load`] for small offset values.
+            /// - Variant of [`Instruction::I32Load`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load_offset16)]
             I32LoadOffset16 {
                 @result: Reg,
@@ -1730,19 +1731,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i64_load)]
             I64Load {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i64.load` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load`] with a constant load address.
+            /// - Variant of [`Instruction::I64Load`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load_at)]
             I64LoadAt {
                 @result: Reg,
@@ -1753,7 +1754,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load`] for small offset values.
+            /// - Variant of [`Instruction::I64Load`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load_offset16)]
             I64LoadOffset16 {
                 @result: Reg,
@@ -1767,19 +1769,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(f32_load)]
             F32Load {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `f32.load` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::F32Load`] with a constant load address.
+            /// - Variant of [`Instruction::F32Load`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(f32_load_at)]
             F32LoadAt {
                 @result: Reg,
@@ -1790,7 +1792,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::F32Load`] for small offset values.
+            /// - Variant of [`Instruction::F32Load`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(f32_load_offset16)]
             F32LoadOffset16 {
                 @result: Reg,
@@ -1804,19 +1807,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(f64_load)]
             F64Load {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `f64.load` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::F64Load`] with a constant load address.
+            /// - Variant of [`Instruction::F64Load`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(f64_load_at)]
             F64LoadAt {
                 @result: Reg,
@@ -1827,7 +1830,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::F64Load`] for small offset values.
+            /// - Variant of [`Instruction::F64Load`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(f64_load_offset16)]
             F64LoadOffset16 {
                 @result: Reg,
@@ -1841,19 +1845,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i32_load8_s)]
             I32Load8s {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i32.load8_s` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Load8s`] with a constant load address.
+            /// - Variant of [`Instruction::I32Load8s`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load8_s_at)]
             I32Load8sAt {
                 @result: Reg,
@@ -1864,7 +1868,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Load8s`] for small offset values.
+            /// - Variant of [`Instruction::I32Load8s`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load8_s_offset16)]
             I32Load8sOffset16 {
                 @result: Reg,
@@ -1878,19 +1883,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i32_load8_u)]
             I32Load8u {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i32.load8_u` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Load8u`] with a constant load address.
+            /// - Variant of [`Instruction::I32Load8u`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load8_u_at)]
             I32Load8uAt {
                 @result: Reg,
@@ -1901,7 +1906,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Load8u`] for small offset values.
+            /// - Variant of [`Instruction::I32Load8u`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load8_u_offset16)]
             I32Load8uOffset16 {
                 @result: Reg,
@@ -1915,19 +1921,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i32_load16_s)]
             I32Load16s {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i32.load16_s` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Load16s`] with a constant load address.
+            /// - Variant of [`Instruction::I32Load16s`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load16_s_at)]
             I32Load16sAt {
                 @result: Reg,
@@ -1938,7 +1944,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Load16s`] for small offset values.
+            /// - Variant of [`Instruction::I32Load16s`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load16_s_offset16)]
             I32Load16sOffset16 {
                 @result: Reg,
@@ -1952,19 +1959,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i32_load16_u)]
             I32Load16u {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i32.load16_u` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Load16u`] with a constant load address.
+            /// - Variant of [`Instruction::I32Load16u`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load16_u_at)]
             I32Load16uAt {
                 @result: Reg,
@@ -1975,7 +1982,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Load16u`] for small offset values.
+            /// - Variant of [`Instruction::I32Load16u`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load16_u_offset16)]
             I32Load16uOffset16 {
                 @result: Reg,
@@ -1989,19 +1997,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i64_load8_s)]
             I64Load8s {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i64.load8_s` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load8s`] with a constant load address.
+            /// - Variant of [`Instruction::I64Load8s`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load8_s_at)]
             I64Load8sAt {
                 @result: Reg,
@@ -2012,7 +2020,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load8s`] for small offset values.
+            /// - Variant of [`Instruction::I64Load8s`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load8_s_offset16)]
             I64Load8sOffset16 {
                 @result: Reg,
@@ -2026,19 +2035,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i64_load8_u)]
             I64Load8u {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i64.load8_u` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load8u`] with a constant load address.
+            /// - Variant of [`Instruction::I64Load8u`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load8_u_at)]
             I64Load8uAt {
                 @result: Reg,
@@ -2049,7 +2058,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load8u`] for small offset values.
+            /// - Variant of [`Instruction::I64Load8u`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load8_u_offset16)]
             I64Load8uOffset16 {
                 @result: Reg,
@@ -2063,19 +2073,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i64_load16_s)]
             I64Load16s {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i64.load16_s` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load16s`] with a constant load address.
+            /// - Variant of [`Instruction::I64Load16s`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load16_s_at)]
             I64Load16sAt {
                 @result: Reg,
@@ -2086,7 +2096,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load16s`] for small offset values.
+            /// - Variant of [`Instruction::I64Load16s`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load16_s_offset16)]
             I64Load16sOffset16 {
                 @result: Reg,
@@ -2100,19 +2111,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i64_load16_u)]
             I64Load16u {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i64.load16_u` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load16u`] with a constant load address.
+            /// - Variant of [`Instruction::I64Load16u`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load16_u_at)]
             I64Load16uAt {
                 @result: Reg,
@@ -2123,7 +2134,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load16u`] for small offset values.
+            /// - Variant of [`Instruction::I64Load16u`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load16_u_offset16)]
             I64Load16uOffset16 {
                 @result: Reg,
@@ -2137,19 +2149,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i64_load32_s)]
             I64Load32s {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i64.load32_s` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load32s`] with a constant load address.
+            /// - Variant of [`Instruction::I64Load32s`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load32_s_at)]
             I64Load32sAt {
                 @result: Reg,
@@ -2160,7 +2172,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load32s`] for small offset values.
+            /// - Variant of [`Instruction::I64Load32s`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load32_s_offset16)]
             I64Load32sOffset16 {
                 @result: Reg,
@@ -2174,19 +2187,19 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by an [`Instruction::Const32`]
-            /// that represents the `offset` for the load/store operation.
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
             #[snake_name(i64_load32_u)]
             I64Load32u {
                 @result: Reg,
-                /// The register storing the pointer of the `load` instruction.
-                ptr: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
             },
             /// Wasm `i64.load32_u` equivalent Wasmi instruction.
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load32u`] with a constant load address.
+            /// - Variant of [`Instruction::I64Load32u`] with a constant load address.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load32_u_at)]
             I64Load32uAt {
                 @result: Reg,
@@ -2197,7 +2210,8 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Load32u`] for small offset values.
+            /// - Variant of [`Instruction::I64Load32u`] for 16-bit offset values.
+            /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load32_u_offset16)]
             I64Load32uOffset16 {
                 @result: Reg,
