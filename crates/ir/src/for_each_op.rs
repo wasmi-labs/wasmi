@@ -1716,7 +1716,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Load`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I32Load`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load_offset16)]
             I32LoadOffset16 {
@@ -1754,7 +1754,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I64Load`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load_offset16)]
             I64LoadOffset16 {
@@ -1792,7 +1792,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::F32Load`] for 16-bit offset values.
+            /// - Variant of [`Instruction::F32Load`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(f32_load_offset16)]
             F32LoadOffset16 {
@@ -1830,7 +1830,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::F64Load`] for 16-bit offset values.
+            /// - Variant of [`Instruction::F64Load`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(f64_load_offset16)]
             F64LoadOffset16 {
@@ -1868,7 +1868,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Load8s`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I32Load8s`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load8_s_offset16)]
             I32Load8sOffset16 {
@@ -1906,7 +1906,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Load8u`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I32Load8u`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load8_u_offset16)]
             I32Load8uOffset16 {
@@ -1944,7 +1944,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Load16s`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I32Load16s`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load16_s_offset16)]
             I32Load16sOffset16 {
@@ -1982,7 +1982,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Load16u`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I32Load16u`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_load16_u_offset16)]
             I32Load16uOffset16 {
@@ -2020,7 +2020,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load8s`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I64Load8s`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load8_s_offset16)]
             I64Load8sOffset16 {
@@ -2058,7 +2058,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load8u`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I64Load8u`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load8_u_offset16)]
             I64Load8uOffset16 {
@@ -2096,7 +2096,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load16s`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I64Load16s`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load16_s_offset16)]
             I64Load16sOffset16 {
@@ -2134,7 +2134,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load16u`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I64Load16u`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load16_u_offset16)]
             I64Load16uOffset16 {
@@ -2172,7 +2172,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load32s`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I64Load32s`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load32_s_offset16)]
             I64Load32sOffset16 {
@@ -2210,7 +2210,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load32u`] for 16-bit offset values.
+            /// - Variant of [`Instruction::I64Load32u`] with a 16-bit `offset`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_load32_u_offset16)]
             I64Load32uOffset16 {
