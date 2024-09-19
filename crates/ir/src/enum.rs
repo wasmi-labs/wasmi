@@ -54,7 +54,30 @@ macro_rules! define_enum {
                 )?
             ),*
         }
+    };
+}
+for_each_op::for_each_op!(define_enum);
 
+macro_rules! define_constructors {
+    (
+        $(
+            $( #[doc = $doc:literal] )*
+            #[snake_name($snake_name:ident)]
+            $name:ident
+            $(
+                {
+                    $(
+                        @ $result_name:ident: $result_ty:ty,
+                    )?
+                    $(
+                        $( #[$field_docs:meta] )*
+                        $field_name:ident: $field_ty:ty
+                    ),*
+                    $(,)?
+                }
+            )?
+        ),* $(,)?
+    ) => {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($name), "`].")]
@@ -75,7 +98,7 @@ macro_rules! define_enum {
         }
     };
 }
-for_each_op::for_each_op!(define_enum);
+for_each_op::for_each_op!(define_constructors);
 
 impl Instruction {
     /// Creates a new [`Instruction::ReturnReg2`] for the given [`Reg`] indices.
