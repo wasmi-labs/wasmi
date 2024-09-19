@@ -79,7 +79,7 @@ macro_rules! for_each_op {
             #[snake_name(return_i64imm32)]
             ReturnI64Imm32 {
                 /// The returned constant value.
-                value: Const32<i64>,
+                value: (Const32<i64>),
             },
             /// A Wasm `return` instruction.
             ///
@@ -89,7 +89,7 @@ macro_rules! for_each_op {
             #[snake_name(return_f64imm32)]
             ReturnF64Imm32 {
                 /// The returned constant value.
-                value: Const32<f64>,
+                value: (Const32<f64>),
             },
             /// A Wasm `return` instruction.
             ///
@@ -183,7 +183,7 @@ macro_rules! for_each_op {
                 /// The register holding the condition to evaluate against zero.
                 condition: Reg,
                 /// The returned value.
-                value: Const32<i64>,
+                value: (Const32<i64>),
             },
             /// A conditional `return` instruction.
             ///
@@ -196,7 +196,7 @@ macro_rules! for_each_op {
                 /// The register holding the condition to evaluate against zero.
                 condition: Reg,
                 /// The returned value.
-                value: Const32<f64>,
+                value: (Const32<f64>),
             },
             /// A conditional `return` instruction.
             ///
@@ -289,7 +289,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: ((Const16<i32>)),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -313,7 +313,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: ((Const16<i32>)),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -337,7 +337,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: ((Const16<i32>)),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -362,7 +362,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -386,7 +386,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -410,7 +410,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -435,7 +435,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -459,7 +459,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -484,7 +484,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -508,7 +508,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u32>,
+                rhs: (Const16<u32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -532,7 +532,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -556,7 +556,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u32>,
+                rhs: (Const16<u32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -580,7 +580,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -604,7 +604,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u32>,
+                rhs: (Const16<u32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -628,7 +628,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -652,7 +652,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u32>,
+                rhs: (Const16<u32>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -677,7 +677,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -701,7 +701,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -726,7 +726,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -750,7 +750,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u64>,
+                rhs: (Const16<u64>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -774,7 +774,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -798,7 +798,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u64>,
+                rhs: (Const16<u64>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -822,7 +822,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -846,7 +846,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u64>,
+                rhs: (Const16<u64>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -870,7 +870,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -894,7 +894,7 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u64>,
+                rhs: (Const16<u64>),
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
@@ -1156,7 +1156,7 @@ macro_rules! for_each_op {
             /// This is a Wasmi utility instruction used to translate Wasm control flow.
             #[snake_name(copy2)]
             Copy2 {
-                @results: FixedRegSpan<2>,
+                @results: (FixedRegSpan<2>),
                 /// The registers holding the values to copy.
                 values: [Reg; 2],
             },
@@ -1183,7 +1183,7 @@ macro_rules! for_each_op {
             CopyI64Imm32 {
                 @result: Reg,
                 /// The 32-bit encoded `i64` immediate value to copy.
-                value: Const32<i64>,
+                value: (Const32<i64>),
             },
             /// Copies the 32-bit encoded `f64` immediate `value` to `result`.
             ///
@@ -1196,7 +1196,7 @@ macro_rules! for_each_op {
             CopyF64Imm32 {
                 @result: Reg,
                 /// The 32-bit encoded `i64` immediate value to copy.
-                value: Const32<f64>,
+                value: (Const32<f64>),
             },
             /// Copies `len` contiguous `values` [`RegSpan`] into `results` [`RegSpan`].
             ///
@@ -1594,7 +1594,7 @@ macro_rules! for_each_op {
             SelectI64Imm32Lhs {
                 @result: Reg,
                 /// The register holding the left-hand side value.
-                lhs: Const32<i64>,
+                lhs: (Const32<i64>),
             },
             /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` and `rhs` values.
             ///
@@ -1605,7 +1605,7 @@ macro_rules! for_each_op {
             SelectI64Imm32 {
                 @result: Reg,
                 /// The register holding the left-hand side value.
-                lhs: Const32<i64>,
+                lhs: (Const32<i64>),
             },
             /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `rhs` value.
             ///
@@ -1627,7 +1627,7 @@ macro_rules! for_each_op {
             SelectF64Imm32Lhs {
                 @result: Reg,
                 /// The register holding the left-hand side value.
-                lhs: Const32<f64>,
+                lhs: (Const32<f64>),
             },
             /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `lhs` and `rhs` value.
             ///
@@ -1638,7 +1638,7 @@ macro_rules! for_each_op {
             SelectF64Imm32 {
                 @result: Reg,
                 /// The register holding the left-hand side value.
-                lhs: Const32<f64>,
+                lhs: (Const32<f64>),
             },
 
             /// A Wasm `ref.func` equivalent Wasmi instruction.
@@ -1672,7 +1672,7 @@ macro_rules! for_each_op {
             #[snake_name(global_set_i32imm16)]
             GlobalSetI32Imm16 {
                 /// The 16-bit encoded `i32` value.
-                input: Const16<i32>,
+                input: (Const16<i32>),
                 /// The index identifying the global variable for the `global.set` instruction.
                 global: Global,
             },
@@ -1684,7 +1684,7 @@ macro_rules! for_each_op {
             #[snake_name(global_set_i64imm16)]
             GlobalSetI64Imm16 {
                 /// The 16-bit encoded `i64` value.
-                input: Const16<i64>,
+                input: (Const16<i64>),
                 /// The index identifying the global variable for the `global.set` instruction.
                 global: Global,
             },
@@ -1723,7 +1723,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i64.load` equivalent Wasmi instruction.
@@ -1760,7 +1760,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `f32.load` equivalent Wasmi instruction.
@@ -1797,7 +1797,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `f64.load` equivalent Wasmi instruction.
@@ -1834,7 +1834,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i32.load8_s` equivalent Wasmi instruction.
@@ -1871,7 +1871,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i32.load8_u` equivalent Wasmi instruction.
@@ -1908,7 +1908,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i32.load16_s` equivalent Wasmi instruction.
@@ -1945,7 +1945,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i32.load16_u` equivalent Wasmi instruction.
@@ -1982,7 +1982,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i64.load8_s` equivalent Wasmi instruction.
@@ -2019,7 +2019,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i64.load8_u` equivalent Wasmi instruction.
@@ -2056,7 +2056,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i64.load16_s` equivalent Wasmi instruction.
@@ -2093,7 +2093,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i64.load16_u` equivalent Wasmi instruction.
@@ -2130,7 +2130,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i64.load32_s` equivalent Wasmi instruction.
@@ -2167,7 +2167,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i64.load32_u` equivalent Wasmi instruction.
@@ -2204,7 +2204,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
             },
 
             /// Wasm `i32.store` equivalent Wasmi instruction.
@@ -2225,7 +2225,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2235,9 +2235,9 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
-                value: Const16<i32>,
+                value: (Const16<i32>),
             },
             /// Variant of [`Instruction::I32Store`] for constant `address`.
             #[snake_name(i32_store_at)]
@@ -2251,7 +2251,7 @@ macro_rules! for_each_op {
             #[snake_name(i32_store_at_imm16)]
             I32StoreAtImm16 {
                 /// The value to be stored.
-                value: Const16<i32>,
+                value: (Const16<i32>),
                 /// The constant address to store the value.
                 address: u32,
             },
@@ -2274,7 +2274,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2284,7 +2284,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: i8,
             },
@@ -2323,7 +2323,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2333,7 +2333,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: i16,
             },
@@ -2372,7 +2372,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2382,9 +2382,9 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
-                value: Const16<i64>,
+                value: (Const16<i64>),
             },
             /// Variant of [`Instruction::I64Store`] for constant `address`.
             #[snake_name(i64_store_at)]
@@ -2398,7 +2398,7 @@ macro_rules! for_each_op {
             #[snake_name(i64_store_at_imm16)]
             I64StoreAtImm16 {
                 /// The value to be stored.
-                value: Const16<i64>,
+                value: (Const16<i64>),
                 /// The constant address to store the value.
                 address: u32,
             },
@@ -2421,7 +2421,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2431,7 +2431,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: i8,
             },
@@ -2470,7 +2470,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2480,7 +2480,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: i16,
             },
@@ -2519,7 +2519,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2529,9 +2529,9 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
-                value: Const16<i32>,
+                value: (Const16<i32>),
             },
             /// Variant of [`Instruction::I64Store32`] for constant `address`.
             #[snake_name(i64_store32_at)]
@@ -2545,7 +2545,7 @@ macro_rules! for_each_op {
             #[snake_name(i64_store32_at_imm16)]
             I64Store32AtImm16 {
                 /// The value to be stored.
-                value: Const16<i32>,
+                value: (Const16<i32>),
                 /// The constant address to store the value.
                 address: u32,
             },
@@ -2568,7 +2568,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2599,7 +2599,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u32>,
+                offset: (Const16<u32>),
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2633,7 +2633,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
 
             /// `i32` inequality comparison instruction: `r0 = r1 != r2`
@@ -2657,7 +2657,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
 
             /// `i32` signed less-than comparison instruction: `r0 = r1 < r2`
@@ -2681,7 +2681,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// `i32` unsigned less-than comparison instruction: `r0 = r1 < r2`
             #[snake_name(i32_lt_u)]
@@ -2704,7 +2704,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<u32>,
+                rhs: (Const16<u32>),
             },
 
             /// `i32` signed greater-than comparison instruction: `r0 = r1 > r2`
@@ -2728,7 +2728,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// `i32` unsigned greater-than comparison instruction: `r0 = r1 > r2`
             #[snake_name(i32_gt_u)]
@@ -2751,7 +2751,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<u32>,
+                rhs: (Const16<u32>),
             },
 
             /// `i32` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
@@ -2775,7 +2775,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// `i32` unsigned less-than or equals comparison instruction: `r0 = r1 <= r2`
             #[snake_name(i32_le_u)]
@@ -2798,7 +2798,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<u32>,
+                rhs: (Const16<u32>),
             },
 
             /// `i32` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
@@ -2822,7 +2822,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// `i32` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
             #[snake_name(i32_ge_u)]
@@ -2845,7 +2845,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<u32>,
+                rhs: (Const16<u32>),
             },
 
             /// `i64` equality comparison instruction: `r0 = r1 == r2`
@@ -2869,7 +2869,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// `i64` inequality comparison instruction: `r0 = r1 != r2`
@@ -2893,7 +2893,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// `i64` signed less-than comparison instruction: `r0 = r1 < r2`
@@ -2917,7 +2917,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// `i64` unsigned less-than comparison instruction: `r0 = r1 < r2`
@@ -2941,7 +2941,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<u64>,
+                rhs: (Const16<u64>),
             },
 
             /// `i64` signed greater-than comparison instruction: `r0 = r1 > r2`
@@ -2965,7 +2965,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// `i64` unsigned greater-than comparison instruction: `r0 = r1 > r2`
@@ -2989,7 +2989,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<u64>,
+                rhs: (Const16<u64>),
             },
 
             /// `i64` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
@@ -3013,7 +3013,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// `i64` unsigned less-than or equals comparison instruction: `r0 = r1 <= r2`
@@ -3037,7 +3037,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<u64>,
+                rhs: (Const16<u64>),
             },
 
             /// `i64` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
@@ -3061,7 +3061,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// `i64` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
@@ -3085,7 +3085,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<u64>,
+                rhs: (Const16<u64>),
             },
 
             /// `f32` equality comparison instruction: `r0 = r1 == r2`
@@ -3240,7 +3240,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
 
             /// `i32` subtract instruction: `r0 = r1 - r2`
@@ -3262,7 +3262,7 @@ macro_rules! for_each_op {
             I32SubImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i32>,
+                lhs: (Const16<i32>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3287,7 +3287,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
 
             /// `i32` singed-division instruction: `r0 = r1 / r2`
@@ -3311,7 +3311,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<NonZeroI32>,
+                rhs: (Const16<NonZeroI32>),
             },
             /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
             ///
@@ -3324,7 +3324,7 @@ macro_rules! for_each_op {
             I32DivSImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i32>,
+                lhs: (Const16<i32>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3353,7 +3353,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<NonZeroU32>,
+                rhs: (Const16<NonZeroU32>),
             },
             /// `i32` unsinged-division immediate instruction: `r0 = c0 / r1`
             ///
@@ -3366,7 +3366,7 @@ macro_rules! for_each_op {
             I32DivUImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<u32>,
+                lhs: (Const16<u32>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3392,7 +3392,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<NonZeroI32>,
+                rhs: (Const16<NonZeroI32>),
             },
             /// `i32` singed-remainder immediate instruction: `r0 = c0 % r1`
             ///
@@ -3405,7 +3405,7 @@ macro_rules! for_each_op {
             I32RemSImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i32>,
+                lhs: (Const16<i32>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3431,7 +3431,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<NonZeroU32>,
+                rhs: (Const16<NonZeroU32>),
             },
             /// `i32` unsigned-remainder immediate instruction: `r0 = c0 % r1`
             ///
@@ -3444,7 +3444,7 @@ macro_rules! for_each_op {
             I32RemUImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<u32>,
+                lhs: (Const16<u32>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3474,7 +3474,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// `i32` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
             ///
@@ -3487,7 +3487,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
 
             /// `i32` bitwise-or instruction: `r0 = r1 & r2`
@@ -3515,7 +3515,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
             ///
@@ -3528,7 +3528,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
 
             /// `i32` bitwise-or instruction: `r0 = r1 ^ r2`
@@ -3556,7 +3556,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// `i32` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
             ///
@@ -3569,7 +3569,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
 
             /// A Wasm `i32.shl` equivalent Wasmi instruction.
@@ -3588,14 +3588,14 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `lhs` operand.
             #[snake_name(i32_shl_imm16_rev)]
             I32ShlImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i32>,
+                lhs: (Const16<i32>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3616,14 +3616,14 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i32_shr_u_imm16_rev)]
             I32ShrUImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i32>,
+                lhs: (Const16<i32>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3644,14 +3644,14 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i32_shr_s_imm16_rev)]
             I32ShrSImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i32>,
+                lhs: (Const16<i32>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3672,14 +3672,14 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i32_rotl_imm16_rev)]
             I32RotlImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i32>,
+                lhs: (Const16<i32>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3700,14 +3700,14 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: (Const16<i32>),
             },
             /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i32_rotr_imm16_rev)]
             I32RotrImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i32>,
+                lhs: (Const16<i32>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3754,7 +3754,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// `i64` subtract instruction: `r0 = r1 - r2`
@@ -3776,7 +3776,7 @@ macro_rules! for_each_op {
             I64SubImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i64>,
+                lhs: (Const16<i64>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3801,7 +3801,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// `i64` singed-division instruction: `r0 = r1 / r2`
@@ -3825,7 +3825,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<NonZeroI64>,
+                rhs: (Const16<NonZeroI64>),
             },
             /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
             ///
@@ -3838,7 +3838,7 @@ macro_rules! for_each_op {
             I64DivSImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i64>,
+                lhs: (Const16<i64>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3867,7 +3867,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<NonZeroU64>,
+                rhs: (Const16<NonZeroU64>),
             },
             /// `i64` unsinged-division immediate instruction: `r0 = c0 / r1`
             ///
@@ -3880,7 +3880,7 @@ macro_rules! for_each_op {
             I64DivUImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<u64>,
+                lhs: (Const16<u64>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3906,7 +3906,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<NonZeroI64>,
+                rhs: (Const16<NonZeroI64>),
             },
             /// `i64` singed-remainder immediate instruction: `r0 = c0 % r1`
             ///
@@ -3919,7 +3919,7 @@ macro_rules! for_each_op {
             I64RemSImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i64>,
+                lhs: (Const16<i64>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3945,7 +3945,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<NonZeroU64>,
+                rhs: (Const16<NonZeroU64>),
             },
             /// `i64` unsigned-remainder immediate instruction: `r0 = c0 % r1`
             ///
@@ -3958,7 +3958,7 @@ macro_rules! for_each_op {
             I64RemUImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<u64>,
+                lhs: (Const16<u64>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -3983,7 +3983,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// `i64` bitwise-or instruction: `r0 = r1 & r2`
@@ -4006,7 +4006,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// `i64` bitwise-or instruction: `r0 = r1 ^ r2`
@@ -4029,7 +4029,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
 
             /// A Wasm `i64.shl` equivalent Wasmi instruction.
@@ -4048,14 +4048,14 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
             /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i64_shl_imm16_rev)]
             I64ShlImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i64>,
+                lhs: (Const16<i64>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -4076,14 +4076,14 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
             /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i64_shr_u_imm16_rev)]
             I64ShrUImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i64>,
+                lhs: (Const16<i64>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -4104,14 +4104,14 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
             /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i64_shr_s_imm16_rev)]
             I64ShrSImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i64>,
+                lhs: (Const16<i64>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -4132,14 +4132,14 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
             /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i64_rotl_imm16_rev)]
             I64RotlImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i64>,
+                lhs: (Const16<i64>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -4160,14 +4160,14 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: (Const16<i64>),
             },
             /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i64_rotr_imm16_rev)]
             I64RotrImm16Rev {
                 @result: Reg,
                 /// The 16-bit immediate value.
-                lhs: Const16<i64>,
+                lhs: (Const16<i64>),
                 /// The register holding one of the operands.
                 rhs: Reg,
             },
@@ -4355,7 +4355,7 @@ macro_rules! for_each_op {
                 /// The register holding the left-hand side value.
                 lhs: Reg,
                 /// The register holding the right-hand side value.
-                rhs: Sign<f32>,
+                rhs: (Sign<f32>),
             },
 
             /// Wasm `f64.abs` instruction.
@@ -4477,7 +4477,7 @@ macro_rules! for_each_op {
                 /// The register holding the left-hand side value.
                 lhs: Reg,
                 /// The register holding the right-hand side value.
-                rhs: Sign<f64>,
+                rhs: (Sign<f64>),
             },
 
             /// Wasm `i32.trunc_f32_s` instruction.
@@ -4784,7 +4784,7 @@ macro_rules! for_each_op {
             #[snake_name(table_copy_to)]
             TableCopyTo {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
@@ -4803,7 +4803,7 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` table.
                 dst: Reg,
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied elements.
                 len: Reg,
             },
@@ -4818,9 +4818,9 @@ macro_rules! for_each_op {
             #[snake_name(table_copy_from_to)]
             TableCopyFromTo {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied elements.
                 len: Reg,
             },
@@ -4843,7 +4843,7 @@ macro_rules! for_each_op {
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `dst`.
             ///
@@ -4860,11 +4860,11 @@ macro_rules! for_each_op {
             #[snake_name(table_copy_to_exact)]
             TableCopyToExact {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `src`.
             ///
@@ -4883,9 +4883,9 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` table.
                 dst: Reg,
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `src`.
             ///
@@ -4902,11 +4902,11 @@ macro_rules! for_each_op {
             #[snake_name(table_copy_from_to_exact)]
             TableCopyFromToExact {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
 
             /// Wasm `table.init <table> <elem>` instruction.
@@ -4939,7 +4939,7 @@ macro_rules! for_each_op {
             #[snake_name(table_init_to)]
             TableInitTo {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
@@ -4958,7 +4958,7 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` table.
                 dst: Reg,
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied elements.
                 len: Reg,
             },
@@ -4973,9 +4973,9 @@ macro_rules! for_each_op {
             #[snake_name(table_init_from_to)]
             TableInitFromTo {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied elements.
                 len: Reg,
             },
@@ -4998,7 +4998,7 @@ macro_rules! for_each_op {
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` and `dst`.
             ///
@@ -5015,11 +5015,11 @@ macro_rules! for_each_op {
             #[snake_name(table_init_to_exact)]
             TableInitToExact {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` and `src`.
             ///
@@ -5038,9 +5038,9 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` table.
                 dst: Reg,
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::TableInit`] with a constant 16-bit `len` and `src`.
             ///
@@ -5057,11 +5057,11 @@ macro_rules! for_each_op {
             #[snake_name(table_init_from_to_exact)]
             TableInitFromToExact {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
 
             /// Wasm `table.fill <table>` instruction: `table[dst..dst+len] = value`
@@ -5090,7 +5090,7 @@ macro_rules! for_each_op {
             #[snake_name(table_fill_at)]
             TableFillAt {
                 /// The start index of the table to fill.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The number of elements to fill.
                 len: Reg,
                 /// The value of the filled elements.
@@ -5108,7 +5108,7 @@ macro_rules! for_each_op {
                 /// The start index of the table to fill.
                 dst: Reg,
                 /// The number of elements to fill.
-                len: Const16<u32>,
+                len: (Const16<u32>),
                 /// The value of the filled elements.
                 value: Reg,
             },
@@ -5122,9 +5122,9 @@ macro_rules! for_each_op {
             #[snake_name(table_fill_at_exact)]
             TableFillAtExact {
                 /// The start index of the table to fill.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The number of elements to fill.
-                len: Const16<u32>,
+                len: (Const16<u32>),
                 /// The value of the filled elements.
                 value: Reg,
             },
@@ -5155,7 +5155,7 @@ macro_rules! for_each_op {
             TableGrowImm {
                 @result: Reg,
                 /// The number of elements to add to the table.
-                delta: Const16<u32>,
+                delta: (Const16<u32>),
                 /// The value that is used to fill up the new cells.
                 value: Reg,
             },
@@ -5189,7 +5189,7 @@ macro_rules! for_each_op {
             MemoryGrowBy {
                 @result: Reg,
                 /// The number of pages to add to the memory.
-                delta: Const16<u32>,
+                delta: (Const16<u32>),
             },
 
             /// Wasm `memory.copy` instruction.
@@ -5208,7 +5208,7 @@ macro_rules! for_each_op {
             #[snake_name(memory_copy_to)]
             MemoryCopyTo {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` memory.
                 src: Reg,
                 /// The number of copied bytes.
@@ -5220,7 +5220,7 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Reg,
                 /// The start index of the `src` memory.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied bytes.
                 len: Reg,
             },
@@ -5228,9 +5228,9 @@ macro_rules! for_each_op {
             #[snake_name(memory_copy_from_to)]
             MemoryCopyFromTo {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` memory.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied bytes.
                 len: Reg,
             },
@@ -5246,7 +5246,7 @@ macro_rules! for_each_op {
                 /// The start index of the `src` memory.
                 src: Reg,
                 /// The number of copied bytes.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `dst`.
             ///
@@ -5256,11 +5256,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_copy_to_exact)]
             MemoryCopyToExact {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` memory.
                 src: Reg,
                 /// The number of copied bytes.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
             ///
@@ -5272,9 +5272,9 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Reg,
                 /// The start index of the `src` memory.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied bytes.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
             ///
@@ -5284,11 +5284,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_copy_from_to_exact)]
             MemoryCopyFromToExact {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` memory.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of copied bytes.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
 
             /// Wasm `memory.fill` instruction.
@@ -5307,7 +5307,7 @@ macro_rules! for_each_op {
             #[snake_name(memory_fill_at)]
             MemoryFillAt {
                 /// The start index of the memory to fill.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The byte value used to fill the memory.
                 value: Reg,
                 /// The number of bytes to fill.
@@ -5331,13 +5331,13 @@ macro_rules! for_each_op {
                 /// The byte value used to fill the memory.
                 value: Reg,
                 /// The number of bytes to fill.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `value`.
             #[snake_name(memory_fill_at_imm)]
             MemoryFillAtImm {
                 /// The start index of the memory to fill.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The byte value used to fill the memory.
                 value: u8,
                 /// The number of bytes to fill.
@@ -5347,11 +5347,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_fill_at_exact)]
             MemoryFillAtExact {
                 /// The start index of the memory to fill.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The byte value used to fill the memory.
                 value: Reg,
                 /// The number of bytes to fill.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::MemoryFill`] with constant fill `value` and `len`.
             #[snake_name(memory_fill_imm_exact)]
@@ -5361,17 +5361,17 @@ macro_rules! for_each_op {
                 /// The byte value used to fill the memory.
                 value: u8,
                 /// The number of bytes to fill.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::MemoryFill`] with constant `dst` index, fill `value` and `len`.
             #[snake_name(memory_fill_at_imm_exact)]
             MemoryFillAtImmExact {
                 /// The start index of the memory to fill.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The byte value used to fill the memory.
                 value: u8,
                 /// The number of bytes to fill.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
 
             /// Wasm `memory.init <data>` instruction.
@@ -5402,7 +5402,7 @@ macro_rules! for_each_op {
             #[snake_name(memory_init_to)]
             MemoryInitTo {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` data segment.
                 src: Reg,
                 /// The number of initialized bytes.
@@ -5420,7 +5420,7 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Reg,
                 /// The start index of the `src` data segment.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of initialized bytes.
                 len: Reg,
             },
@@ -5434,9 +5434,9 @@ macro_rules! for_each_op {
             #[snake_name(memory_init_from_to)]
             MemoryInitFromTo {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` data segment.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of initialized bytes.
                 len: Reg,
             },
@@ -5454,7 +5454,7 @@ macro_rules! for_each_op {
                 /// The start index of the `src` data segment.
                 src: Reg,
                 /// The number of initialized bytes.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `dst`.
             ///
@@ -5466,11 +5466,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_init_to_exact)]
             MemoryInitToExact {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` data segment.
                 src: Reg,
                 /// The number of initialized bytes.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
             ///
@@ -5484,9 +5484,9 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Reg,
                 /// The start index of the `src` data segment.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of initialized bytes.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
             /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
             ///
@@ -5498,11 +5498,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_init_from_to_exact)]
             MemoryInitFromToExact {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: (Const16<u32>),
                 /// The start index of the `src` data segment.
-                src: Const16<u32>,
+                src: (Const16<u32>),
                 /// The number of initialized bytes.
-                len: Const16<u32>,
+                len: (Const16<u32>),
             },
 
             /// A [`Table`] instruction parameter.
@@ -5553,7 +5553,7 @@ macro_rules! for_each_op {
             /// one and will never be executed itself directly.
             #[snake_name(i64const32)]
             I64Const32 {
-                value: Const32<i64>
+                value: (Const32<i64>)
             },
             /// A [`Const32<f64>`] instruction parameter.
             ///
@@ -5563,7 +5563,7 @@ macro_rules! for_each_op {
             /// one and will never be executed itself directly.
             #[snake_name(f64const32)]
             F64Const32 {
-                value: Const32<f64>
+                value: (Const32<f64>)
             },
             /// A Wasm `br_table` branching target which copies values before branching.
             ///
@@ -5672,7 +5672,7 @@ macro_rules! for_each_op {
             #[snake_name(call_indirect_params_imm16)]
             CallIndirectParamsImm16 {
                 /// The index of the called function in the table.
-                index: Const16<u32>,
+                index: (Const16<u32>),
                 /// The table which holds the called function at the index.
                 table: Table,
             },

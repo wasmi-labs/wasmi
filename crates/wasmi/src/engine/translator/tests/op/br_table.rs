@@ -22,7 +22,7 @@ fn spec_test_failure_2() {
     TranslationTest::from_wat(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::branch_table_2(0, 3_u16),
+                Instruction::branch_table_2(0, 3),
                 Instruction::register2_ext(-1, -2),
                 Instruction::branch_table_target(RegSpan::new(result), BranchOffset::from(3)),
                 Instruction::return_reg2_ext(-1, -2),
@@ -56,7 +56,7 @@ fn spec_test_failure() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table_0(0, 3_u16),
+            Instruction::branch_table_0(0, 3),
             Instruction::branch(BranchOffset::from(3)),
             Instruction::branch(BranchOffset::from(3)),
             Instruction::branch(BranchOffset::from(3)),
@@ -110,7 +110,7 @@ fn reg_params_0() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_table_0(Reg::from(0), 4_u16),
+            Instruction::branch_table_0(Reg::from(0), 4),
             Instruction::branch(BranchOffset::from(7)),
             Instruction::branch(BranchOffset::from(5)),
             Instruction::branch(BranchOffset::from(3)),

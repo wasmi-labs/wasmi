@@ -58,6 +58,37 @@ macro_rules! define_enum {
 }
 for_each_op::for_each_op!(define_enum);
 
+macro_rules! param_ty {
+    ( i8 ) => { i8 };
+    ( u8 ) => { u8 };
+    ( i16 ) => { i16 };
+    ( u16 ) => { u16 };
+    ( i32 ) => { i32 };
+    ( u32 ) => { u32 };
+    ( Global ) => { Global };
+    ( FuncType ) => { FuncType };
+    // ( Table ) => { Table };
+    // ( Func ) => { Func };
+    // ( InternalFunc ) => { InternalFunc };
+    // ( Data ) => { Data };
+    // ( Elem ) => { Elem };
+    ( RegSpan ) => { RegSpan };
+    ( BoundedRegSpan ) => { BoundedRegSpan };
+    ( (FixedRegSpan <$param:literal> ) ) => { FixedRegSpan<$param> };
+    ( ( $($tt:tt)* ) ) => { impl Into<$($tt)*> };
+    ( [$ty:ident; $n:literal] ) => { [impl Into<$ty>; $n] };
+    ( $fallback:tt ) => { impl Into<$fallback> };
+}
+
+macro_rules! param_expr {
+    ( $name:ident, [$ty:ident; $n:literal] ) => {
+        $name.map(Into::into)
+    };
+    ( $name:ident, $fallback:tt ) => {
+        $name.into()
+    };
+}
+
 macro_rules! define_constructors {
     (
         $(
@@ -67,11 +98,11 @@ macro_rules! define_constructors {
             $(
                 {
                     $(
-                        @ $result_name:ident: $result_ty:ty,
+                        @ $result_name:ident: $result_ty:tt,
                     )?
                     $(
                         $( #[$field_docs:meta] )*
-                        $field_name:ident: $field_ty:ty
+                        $field_name:ident: $field_ty:tt
                     ),*
                     $(,)?
                 }
@@ -83,14 +114,14 @@ macro_rules! define_constructors {
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($name), "`].")]
                 pub fn $snake_name(
                     $(
-                        $( $result_name: impl Into<$result_ty>, )?
-                        $( $field_name: impl Into<$field_ty> ),*
+                        $( $result_name: param_ty!($result_ty), )?
+                        $( $field_name: param_ty!($field_ty) ),*
                     )?
                 ) -> Self {
                     Self::$name {
                         $(
-                            $( $result_name: $result_name.into(), )?
-                            $( $field_name: $field_name.into() ),*
+                            $( $result_name: param_expr!($result_name, $result_ty), )?
+                            $( $field_name: param_expr!($field_name, $field_ty) ),*
                         )?
                     }
                 }
