@@ -663,7 +663,12 @@ impl<'engine> Executor<'engine> {
                     ptr,
                     offset,
                 } => self.execute_i64_load32_u_offset16(result, ptr, offset)?,
-                Instr::I32Store { ptr, offset } => self.execute_i32_store(ptr, offset)?,
+                Instr::I32Store { ptr, memory } => {
+                    self.execute_i32_store(&mut store.inner, ptr, memory)?
+                }
+                Instr::I32StoreImm16 { ptr, memory } => {
+                    self.execute_i32_store_imm16(&mut store.inner, ptr, memory)?
+                }
                 Instr::I32StoreOffset16 { ptr, offset, value } => {
                     self.execute_i32_store_offset16(ptr, offset, value)?
                 }
@@ -676,7 +681,12 @@ impl<'engine> Executor<'engine> {
                 Instr::I32StoreAtImm16 { address, value } => {
                     self.execute_i32_store_at_imm16(address, value)?
                 }
-                Instr::I32Store8 { ptr, offset } => self.execute_i32_store8(ptr, offset)?,
+                Instr::I32Store8 { ptr, memory } => {
+                    self.execute_i32_store8(&mut store.inner, ptr, memory)?
+                }
+                Instr::I32Store8Imm { ptr, memory } => {
+                    self.execute_i32_store8_imm(&mut store.inner, ptr, memory)?
+                }
                 Instr::I32Store8Offset16 { ptr, offset, value } => {
                     self.execute_i32_store8_offset16(ptr, offset, value)?
                 }
@@ -689,7 +699,12 @@ impl<'engine> Executor<'engine> {
                 Instr::I32Store8AtImm { address, value } => {
                     self.execute_i32_store8_at_imm(address, value)?
                 }
-                Instr::I32Store16 { ptr, offset } => self.execute_i32_store16(ptr, offset)?,
+                Instr::I32Store16 { ptr, memory } => {
+                    self.execute_i32_store16(&mut store.inner, ptr, memory)?
+                }
+                Instr::I32Store16Imm { ptr, memory } => {
+                    self.execute_i32_store16_imm(&mut store.inner, ptr, memory)?
+                }
                 Instr::I32Store16Offset16 { ptr, offset, value } => {
                     self.execute_i32_store16_offset16(ptr, offset, value)?
                 }
@@ -702,7 +717,12 @@ impl<'engine> Executor<'engine> {
                 Instr::I32Store16AtImm { address, value } => {
                     self.execute_i32_store16_at_imm(address, value)?
                 }
-                Instr::I64Store { ptr, offset } => self.execute_i64_store(ptr, offset)?,
+                Instr::I64Store { ptr, memory } => {
+                    self.execute_i64_store(&mut store.inner, ptr, memory)?
+                }
+                Instr::I64StoreImm16 { ptr, memory } => {
+                    self.execute_i64_store_imm16(&mut store.inner, ptr, memory)?
+                }
                 Instr::I64StoreOffset16 { ptr, offset, value } => {
                     self.execute_i64_store_offset16(ptr, offset, value)?
                 }
@@ -715,7 +735,12 @@ impl<'engine> Executor<'engine> {
                 Instr::I64StoreAtImm16 { address, value } => {
                     self.execute_i64_store_at_imm16(address, value)?
                 }
-                Instr::I64Store8 { ptr, offset } => self.execute_i64_store8(ptr, offset)?,
+                Instr::I64Store8 { ptr, memory } => {
+                    self.execute_i64_store8(&mut store.inner, ptr, memory)?
+                }
+                Instr::I64Store8Imm { ptr, memory } => {
+                    self.execute_i64_store8_imm(&mut store.inner, ptr, memory)?
+                }
                 Instr::I64Store8Offset16 { ptr, offset, value } => {
                     self.execute_i64_store8_offset16(ptr, offset, value)?
                 }
@@ -728,7 +753,12 @@ impl<'engine> Executor<'engine> {
                 Instr::I64Store8AtImm { address, value } => {
                     self.execute_i64_store8_at_imm(address, value)?
                 }
-                Instr::I64Store16 { ptr, offset } => self.execute_i64_store16(ptr, offset)?,
+                Instr::I64Store16 { ptr, memory } => {
+                    self.execute_i64_store16(&mut store.inner, ptr, memory)?
+                }
+                Instr::I64Store16Imm { ptr, memory } => {
+                    self.execute_i64_store16_imm(&mut store.inner, ptr, memory)?
+                }
                 Instr::I64Store16Offset16 { ptr, offset, value } => {
                     self.execute_i64_store16_offset16(ptr, offset, value)?
                 }
@@ -741,7 +771,12 @@ impl<'engine> Executor<'engine> {
                 Instr::I64Store16AtImm { address, value } => {
                     self.execute_i64_store16_at_imm(address, value)?
                 }
-                Instr::I64Store32 { ptr, offset } => self.execute_i64_store32(ptr, offset)?,
+                Instr::I64Store32 { ptr, memory } => {
+                    self.execute_i64_store32(&mut store.inner, ptr, memory)?
+                }
+                Instr::I64Store32Imm16 { ptr, memory } => {
+                    self.execute_i64_store32_imm16(&mut store.inner, ptr, memory)?
+                }
                 Instr::I64Store32Offset16 { ptr, offset, value } => {
                     self.execute_i64_store32_offset16(ptr, offset, value)?
                 }
@@ -754,14 +789,18 @@ impl<'engine> Executor<'engine> {
                 Instr::I64Store32AtImm16 { address, value } => {
                     self.execute_i64_store32_at_imm16(address, value)?
                 }
-                Instr::F32Store { ptr, offset } => self.execute_f32_store(ptr, offset)?,
+                Instr::F32Store { ptr, memory } => {
+                    self.execute_f32_store(&mut store.inner, ptr, memory)?
+                }
                 Instr::F32StoreOffset16 { ptr, offset, value } => {
                     self.execute_f32_store_offset16(ptr, offset, value)?
                 }
                 Instr::F32StoreAt { address, value } => {
                     self.execute_f32_store_at(address, value)?
                 }
-                Instr::F64Store { ptr, offset } => self.execute_f64_store(ptr, offset)?,
+                Instr::F64Store { ptr, memory } => {
+                    self.execute_f64_store(&mut store.inner, ptr, memory)?
+                }
                 Instr::F64StoreOffset16 { ptr, offset, value } => {
                     self.execute_f64_store_offset16(ptr, offset, value)?
                 }
@@ -1346,6 +1385,7 @@ impl<'engine> Executor<'engine> {
                 | Instr::Register2 { .. }
                 | Instr::Register3 { .. }
                 | Instr::RegisterAndImm32 { .. }
+                | Instr::Imm16AndImm32 { .. }
                 | Instr::RegisterSpan { .. }
                 | Instr::RegisterList { .. }
                 | Instr::CallIndirectParams { .. }

@@ -533,7 +533,10 @@ impl StoreInner {
     /// # Panics
     ///
     /// - If the entity index cannot be resolved to its entity.
-    fn resolve_mut<Idx, Entity>(idx: Idx, entities: &mut Arena<Idx, Entity>) -> &mut Entity
+    fn resolve_mut<'a, Idx, Entity>(
+        idx: Idx,
+        entities: &'a mut Arena<Idx, Entity>,
+    ) -> &'a mut Entity
     where
         Idx: ArenaIndex + Debug,
     {
@@ -753,7 +756,7 @@ impl StoreInner {
     ///
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory_mut(&mut self, memory: &Memory) -> &mut MemoryEntity {
+    pub fn resolve_memory_mut<'a>(&'a mut self, memory: &Memory) -> &'a mut MemoryEntity {
         let idx = self.unwrap_stored(memory.as_inner());
         Self::resolve_mut(idx, &mut self.memories)
     }
