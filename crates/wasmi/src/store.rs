@@ -533,10 +533,7 @@ impl StoreInner {
     /// # Panics
     ///
     /// - If the entity index cannot be resolved to its entity.
-    fn resolve_mut<Idx, Entity>(
-        idx: Idx,
-        entities: &mut Arena<Idx, Entity>,
-    ) -> &mut Entity
+    fn resolve_mut<Idx, Entity>(idx: Idx, entities: &mut Arena<Idx, Entity>) -> &mut Entity
     where
         Idx: ArenaIndex + Debug,
     {
