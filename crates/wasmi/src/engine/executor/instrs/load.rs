@@ -18,7 +18,7 @@ type WasmLoadOp =
     fn(memory: &[u8], address: UntypedVal, offset: u32) -> Result<UntypedVal, TrapCode>;
 
 impl<'engine> Executor<'engine> {
-    /// Returns the `value` and `offset` parameters for a `load` [`Instruction`].
+    /// Returns the `ptr` and `offset` parameters for a `load` [`Instruction`].
     fn fetch_ptr_and_offset(&self) -> (Reg, u32) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
