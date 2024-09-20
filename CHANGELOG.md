@@ -8,6 +8,19 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.36.1`] - 2024-20-09
+
+### Fixed
+
+- Fixed `ref.is_null` translation constant propagation issue. [#1189]
+- Fixed invalid overwrite of preserved local register. [#1177]
+- Removed faulty `br_table` optimization.
+    - [Link to Commit](https://github.com/wasmi-labs/wasmi/commit/a646d27a4d69e73dffb30bf706bfb394dfa6a27f)
+- Fix a few `clippy` warnings.
+
+[#1177]: https://github.com/wasmi-labs/wasmi/pull/1177
+[#1189]: https://github.com/wasmi-labs/wasmi/pull/1189
+
 ## [`0.36.0`] - 2024-07-24
 
 ### Added
