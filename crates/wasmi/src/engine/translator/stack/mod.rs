@@ -340,7 +340,7 @@ impl ValueStack {
     /// Removes the `n` top-most [`Provider`] from the [`ValueStack`].
     pub fn remove_n(&mut self, n: usize) {
         for _ in 0..n {
-            self.pop();
+            self.drop();
         }
     }
 
