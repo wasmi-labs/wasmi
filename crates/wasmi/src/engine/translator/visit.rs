@@ -889,6 +889,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i32, i16>(
             memarg,
             Instruction::i32_store,
+            Instruction::i32_store_imm16,
             Instruction::i32_store_offset16,
             Instruction::i32_store_offset16_imm16,
             Instruction::i32_store_at,
@@ -900,6 +901,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i64, i16>(
             memarg,
             Instruction::i64_store,
+            Instruction::i64_store_imm16,
             Instruction::i64_store_offset16,
             Instruction::i64_store_offset16_imm16,
             Instruction::i64_store_at,
@@ -929,6 +931,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i32, i8>(
             memarg,
             Instruction::i32_store8,
+            Instruction::i32_store8_imm,
             Instruction::i32_store8_offset16,
             Instruction::i32_store8_offset16_imm,
             Instruction::i32_store8_at,
@@ -940,6 +943,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i32, i16>(
             memarg,
             Instruction::i32_store16,
+            Instruction::i32_store16_imm,
             Instruction::i32_store16_offset16,
             Instruction::i32_store16_offset16_imm,
             Instruction::i32_store16_at,
@@ -951,6 +955,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i64, i8>(
             memarg,
             Instruction::i64_store8,
+            Instruction::i64_store8_imm,
             Instruction::i64_store8_offset16,
             Instruction::i64_store8_offset16_imm,
             Instruction::i64_store8_at,
@@ -962,6 +967,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i64, i16>(
             memarg,
             Instruction::i64_store16,
+            Instruction::i64_store16_imm,
             Instruction::i64_store16_offset16,
             Instruction::i64_store16_offset16_imm,
             Instruction::i64_store16_at,
@@ -973,6 +979,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i64, i16>(
             memarg,
             Instruction::i64_store32,
+            Instruction::i64_store32_imm16,
             Instruction::i64_store32_offset16,
             Instruction::i64_store32_offset16_imm16,
             Instruction::i64_store32_at,

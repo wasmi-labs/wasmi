@@ -50,6 +50,7 @@ use crate::{
         BlockType,
         EngineFunc,
     },
+    ir::AnyConst16,
     module::{FuncIdx, FuncTypeIdx, ModuleHeader},
     Engine,
     Error,
@@ -1873,6 +1874,11 @@ impl FuncTranslator {
         }
     }
 
+    /// Returns the effective address `ptr+offset` if it is valid.
+    fn effective_address(ptr: u32, offset: u32) -> Option<u32> {
+        ptr.checked_add(offset)
+    }
+
     /// Translates a Wasm `load` instruction to Wasmi bytecode.
     ///
     /// # Note
@@ -1939,10 +1945,12 @@ impl FuncTranslator {
     /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{store, store8, store16, store32}`
+    #[allow(clippy::too_many_arguments)]
     fn translate_istore<T, U>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Reg, offset: u32) -> Instruction,
+        make_instr: fn(ptr: Reg, memory: index::Memory) -> Instruction,
+        make_instr_imm: fn(ptr: Reg, memory: index::Memory) -> Instruction,
         make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
         make_instr_offset16_imm: fn(ptr: Reg, offset: u16, value: U) -> Instruction,
         make_instr_at: fn(value: Reg, address: u32) -> Instruction,
@@ -1950,77 +1958,139 @@ impl FuncTranslator {
     ) -> Result<(), Error>
     where
         T: Copy + From<TypedVal>,
-        U: TryFrom<T>,
+        U: TryFrom<T> + Into<AnyConst16>,
     {
         bail_unreachable!(self);
-        let (_memory, offset) = Self::decode_memarg(memarg);
-        match self.alloc.stack.pop2() {
-            (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
-                if let Ok(offset) = u16::try_from(offset) {
-                    self.push_fueled_instr(
-                        make_instr_offset16(ptr, offset, value),
-                        FuelCosts::store,
-                    )?;
-                    Ok(())
-                } else {
-                    self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
-                    self.alloc
-                        .instr_encoder
-                        .append_instr(Instruction::register(value))?;
-                    Ok(())
-                }
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let (ptr, value) = self.alloc.stack.pop2();
+        let ptr = match ptr {
+            Provider::Register(ptr) => ptr,
+            Provider::Const(ptr) => {
+                return self.translate_istore_at::<T, U>(
+                    memory,
+                    u32::from(ptr),
+                    offset,
+                    value,
+                    make_instr_at,
+                    make_instr_at_imm,
+                )
             }
-            (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
-                let offset16 = u16::try_from(offset);
-                let value16 = U::try_from(T::from(value));
-                match (offset16, value16) {
-                    (Ok(offset), Ok(value)) => {
-                        self.push_fueled_instr(
-                            make_instr_offset16_imm(ptr, offset, value),
-                            FuelCosts::store,
-                        )?;
-                        Ok(())
-                    }
-                    (Ok(offset), Err(_)) => {
-                        let value = self.alloc.stack.alloc_const(value)?;
-                        self.push_fueled_instr(
-                            make_instr_offset16(ptr, offset, value),
-                            FuelCosts::store,
-                        )?;
-                        Ok(())
-                    }
-                    (Err(_), _) => {
-                        self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
-                        self.alloc
-                            .instr_encoder
-                            .append_instr(Instruction::register(
-                                self.alloc.stack.alloc_const(value)?,
-                            ))?;
-                        Ok(())
-                    }
-                }
-            }
-            (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
-                .effective_address_and(ptr, offset, |this, address| {
-                    this.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
-                    Ok(())
-                }),
-            (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
-                self.effective_address_and(ptr, offset, |this, address| {
-                    if let Ok(value) = U::try_from(T::from(value)) {
-                        this.push_fueled_instr(
-                            make_instr_at_imm(value, address),
-                            FuelCosts::store,
-                        )?;
-                        Ok(())
-                    } else {
-                        let value = this.alloc.stack.alloc_const(value)?;
-                        this.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
-                        Ok(())
-                    }
-                })
+        };
+        if memory.is_default() {
+            if let Some(_instr) = self.translate_istore_mem0::<T, U>(
+                ptr,
+                offset,
+                value,
+                make_instr_offset16,
+                make_instr_offset16_imm,
+            )? {
+                return Ok(());
             }
         }
+        let (instr, param) = match value {
+            TypedProvider::Register(value) => (
+                make_instr(ptr, memory),
+                Instruction::register_and_imm32(value, offset),
+            ),
+            TypedProvider::Const(value) => match U::try_from(T::from(value)).ok() {
+                Some(value) => (
+                    make_instr_imm(ptr, memory),
+                    Instruction::imm16_and_imm32(value, offset),
+                ),
+                None => (
+                    make_instr(ptr, memory),
+                    Instruction::register_and_imm32(self.alloc.stack.alloc_const(value)?, offset),
+                ),
+            },
+        };
+        self.push_fueled_instr(instr, FuelCosts::store)?;
+        self.alloc.instr_encoder.append_instr(param)?;
+        Ok(())
+    }
+
+    /// Translates Wasm integer `store` and `storeN` instructions to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This is used in cases where the `ptr` is a known constant value.
+    fn translate_istore_at<T, U>(
+        &mut self,
+        memory: index::Memory,
+        ptr: u32,
+        offset: u32,
+        value: TypedProvider,
+        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
+        make_instr_at_imm: fn(value: U, address: u32) -> Instruction,
+    ) -> Result<(), Error>
+    where
+        T: Copy + From<TypedVal>,
+        U: TryFrom<T>,
+    {
+        let Some(address) = Self::effective_address(ptr, offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
+        match value {
+            Provider::Register(value) => {
+                self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
+            }
+            Provider::Const(value) => {
+                if let Ok(value) = U::try_from(T::from(value)) {
+                    self.push_fueled_instr(make_instr_at_imm(value, address), FuelCosts::store)?;
+                } else {
+                    let value = self.alloc.stack.alloc_const(value)?;
+                    self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
+                }
+            }
+        }
+        if !memory.is_default() {
+            self.alloc
+                .instr_encoder
+                .append_instr(Instruction::memory_index(memory))?;
+        }
+        Ok(())
+    }
+
+    /// Translates Wasm integer `store` and `storeN` instructions to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This optimizes for cases where the Wasm linear memory that is operated on is known
+    /// to be the default memory.
+    /// Returns `Some` in case the optimized instructions have been encoded.
+    fn translate_istore_mem0<T, U>(
+        &mut self,
+        ptr: Reg,
+        offset: u32,
+        value: TypedProvider,
+        make_instr_offset16: fn(Reg, u16, Reg) -> Instruction,
+        make_instr_offset16_imm: fn(Reg, u16, U) -> Instruction,
+    ) -> Result<Option<Instr>, Error>
+    where
+        T: Copy + From<TypedVal>,
+        U: TryFrom<T>,
+    {
+        let Ok(offset16) = u16::try_from(offset) else {
+            return Ok(None);
+        };
+        let instr = match value {
+            Provider::Register(value) => {
+                self.push_fueled_instr(make_instr_offset16(ptr, offset16, value), FuelCosts::store)?
+            }
+            Provider::Const(value) => match U::try_from(T::from(value)) {
+                Ok(value) => self.push_fueled_instr(
+                    make_instr_offset16_imm(ptr, offset16, value),
+                    FuelCosts::store,
+                )?,
+                Err(_) => {
+                    let value = self.alloc.stack.alloc_const(value)?;
+                    self.push_fueled_instr(
+                        make_instr_offset16(ptr, offset16, value),
+                        FuelCosts::store,
+                    )?
+                }
+            },
+        };
+        Ok(Some(instr))
     }
 
     /// Translates Wasm float `store` instructions to Wasmi bytecode.
@@ -2038,63 +2108,63 @@ impl FuncTranslator {
     fn translate_fstore(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Reg, offset: u32) -> Instruction,
+        make_instr: fn(ptr: Reg, memory: index::Memory) -> Instruction,
         make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
         make_instr_at: fn(value: Reg, address: u32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let (_memory, offset) = Self::decode_memarg(memarg);
-        match self.alloc.stack.pop2() {
-            (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
-                if let Ok(offset) = u16::try_from(offset) {
-                    self.push_fueled_instr(
-                        make_instr_offset16(ptr, offset, value),
-                        FuelCosts::store,
-                    )?;
-                    Ok(())
-                } else {
-                    self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
-                    self.alloc
-                        .instr_encoder
-                        .append_instr(Instruction::register(value))?;
-                    Ok(())
-                }
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let (ptr, value) = self.alloc.stack.pop2();
+        let ptr = match ptr {
+            Provider::Register(ptr) => ptr,
+            Provider::Const(ptr) => {
+                return self.translate_fstore_at(
+                    memory,
+                    u32::from(ptr),
+                    offset,
+                    value,
+                    make_instr_at,
+                )
             }
-            (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
-                let offset16 = u16::try_from(offset);
-                match offset16 {
-                    Ok(offset) => {
-                        let value = self.alloc.stack.alloc_const(value)?;
-                        self.push_fueled_instr(
-                            make_instr_offset16(ptr, offset, value),
-                            FuelCosts::store,
-                        )?;
-                        Ok(())
-                    }
-                    Err(_) => {
-                        self.push_fueled_instr(make_instr(ptr, offset), FuelCosts::store)?;
-                        self.alloc
-                            .instr_encoder
-                            .append_instr(Instruction::register(
-                                self.alloc.stack.alloc_const(value)?,
-                            ))?;
-                        Ok(())
-                    }
-                }
-            }
-            (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
-                .effective_address_and(ptr, offset, |this, address| {
-                    this.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
-                    Ok(())
-                }),
-            (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
-                self.effective_address_and(ptr, offset, |this, address| {
-                    let value = this.alloc.stack.alloc_const(value)?;
-                    this.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
-                    Ok(())
-                })
+        };
+        let value = self.alloc.stack.provider2reg(&value)?;
+        if memory.is_default() {
+            if let Ok(offset) = u16::try_from(offset) {
+                self.push_fueled_instr(make_instr_offset16(ptr, offset, value), FuelCosts::store)?;
+                return Ok(());
             }
         }
+        self.push_fueled_instr(make_instr(ptr, memory), FuelCosts::store)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register_and_imm32(value, offset))?;
+        Ok(())
+    }
+
+    /// Translates Wasm float `store` instructions to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This is used in cases where the `ptr` is a known constant value.
+    fn translate_fstore_at(
+        &mut self,
+        memory: index::Memory,
+        ptr: u32,
+        offset: u32,
+        value: TypedProvider,
+        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
+    ) -> Result<(), Error> {
+        let Some(address) = Self::effective_address(ptr, offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
+        let value = self.alloc.stack.provider2reg(&value)?;
+        self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
+        if !memory.is_default() {
+            self.alloc
+                .instr_encoder
+                .append_instr(Instruction::memory_index(memory))?;
+        }
+        Ok(())
     }
 
     /// Translates a Wasm `select` or `select <ty>` instruction.
