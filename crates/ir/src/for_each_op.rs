@@ -2482,7 +2482,7 @@ macro_rules! for_each_op {
             /// # Encoding
             ///
             /// Followed by an [`Instruction::Imm16AndImm32`] encoding `value` and `offset`.
-            #[snake_name(i32_store16_imm16)]
+            #[snake_name(i32_store16_imm)]
             I32Store16Imm {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
