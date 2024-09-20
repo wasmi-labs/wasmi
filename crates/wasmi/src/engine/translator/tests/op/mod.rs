@@ -16,6 +16,7 @@ mod local_preserve;
 mod local_set;
 mod loop_;
 mod memory;
+mod ref_;
 mod return_;
 mod return_call;
 mod select;
