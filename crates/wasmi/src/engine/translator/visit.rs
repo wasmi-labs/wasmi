@@ -628,7 +628,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_drop(&mut self) -> Self::Output {
         bail_unreachable!(self);
-        self.alloc.stack.pop();
+        self.alloc.stack.drop();
         Ok(())
     }
 
@@ -1050,8 +1050,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_ref_is_null(&mut self) -> Self::Output {
         bail_unreachable!(self);
-        let input = self.alloc.stack.pop();
+        let input = self.alloc.stack.peek();
         if let Provider::Const(input) = input {
+            self.alloc.stack.drop();
             let untyped = input.untyped();
             let is_null = match input.ty() {
                 ValType::FuncRef => FuncRef::from(untyped).is_null(),
