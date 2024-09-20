@@ -296,7 +296,7 @@ impl ValueStack {
     }
 
     /// Pops the top-most [`Provider`] from the [`ValueStack`].
-    /// 
+    ///
     /// Use [`Self::drop`] if you are not interested in the returned provider.
     #[must_use]
     pub fn pop(&mut self) -> TypedProvider {
