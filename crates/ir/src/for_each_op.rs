@@ -2230,7 +2230,7 @@ macro_rules! for_each_op {
             I32Store {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i32.store` equivalent Wasmi instruction.
@@ -2246,7 +2246,7 @@ macro_rules! for_each_op {
             I32StoreImm16 {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i32.store` equivalent Wasmi instruction.
@@ -2315,7 +2315,7 @@ macro_rules! for_each_op {
             I32Store8 {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i32.store8` equivalent Wasmi instruction.
@@ -2331,7 +2331,7 @@ macro_rules! for_each_op {
             I32Store8Imm {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i32.store8` equivalent Wasmi instruction.
@@ -2400,7 +2400,7 @@ macro_rules! for_each_op {
             I32Store16 {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i32.store16` equivalent Wasmi instruction.
@@ -2416,7 +2416,7 @@ macro_rules! for_each_op {
             I32Store16Imm {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i32.store16` equivalent Wasmi instruction.
@@ -2485,7 +2485,7 @@ macro_rules! for_each_op {
             I64Store {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i64.store` equivalent Wasmi instruction.
@@ -2501,7 +2501,7 @@ macro_rules! for_each_op {
             I64StoreImm16 {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i64.store` equivalent Wasmi instruction.
@@ -2570,7 +2570,7 @@ macro_rules! for_each_op {
             I64Store8 {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i64.store8` equivalent Wasmi instruction.
@@ -2586,7 +2586,7 @@ macro_rules! for_each_op {
             I64Store8Imm {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i64.store8` equivalent Wasmi instruction.
@@ -2655,7 +2655,7 @@ macro_rules! for_each_op {
             I64Store16 {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i64.store16` equivalent Wasmi instruction.
@@ -2671,7 +2671,7 @@ macro_rules! for_each_op {
             I64Store16Imm {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i64.store16` equivalent Wasmi instruction.
@@ -2740,7 +2740,7 @@ macro_rules! for_each_op {
             I64Store32 {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i64.store32` equivalent Wasmi instruction.
@@ -2756,7 +2756,7 @@ macro_rules! for_each_op {
             I64Store32Imm16 {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `i64.store32` equivalent Wasmi instruction.
@@ -2825,7 +2825,7 @@ macro_rules! for_each_op {
             F32Store {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `f32.store` equivalent Wasmi instruction.
@@ -2866,7 +2866,7 @@ macro_rules! for_each_op {
             F64Store {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
-                /// The linear memory index for which the load instruction is executed.
+                /// The linear memory index for which the store instruction is executed.
                 memory: Memory,
             },
             /// Wasm `f64.store` equivalent Wasmi instruction.
