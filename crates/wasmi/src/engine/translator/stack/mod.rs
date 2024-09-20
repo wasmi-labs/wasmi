@@ -78,7 +78,7 @@ impl ValueStack {
     pub fn trunc(&mut self, height: usize) {
         assert!(height <= self.height());
         while self.height() != height {
-            self.pop();
+            self.drop();
         }
     }
 
@@ -279,7 +279,15 @@ impl ValueStack {
         Ok(reg)
     }
 
+    /// Drops the top-most [`Provider`] from the [`ValueStack`].
+    pub fn drop(&mut self) {
+        self.reg_alloc.pop_provider(self.providers.pop());
+    }
+
     /// Pops the top-most [`Provider`] from the [`ValueStack`].
+    ///
+    /// Use [`Self::drop`] if you are not interested in the returned provider.
+    #[must_use]
     pub fn pop(&mut self) -> TypedProvider {
         self.reg_alloc.pop_provider(self.providers.pop())
     }
@@ -321,7 +329,7 @@ impl ValueStack {
     /// Removes the `n` top-most [`Provider`] from the [`ValueStack`].
     pub fn remove_n(&mut self, n: usize) {
         for _ in 0..n {
-            self.pop();
+            self.drop();
         }
     }
 
