@@ -21,11 +21,10 @@ mod tests;
 
 use wasmi_core as core;
 
-use self::immeditate::AnyConst16;
 #[doc(inline)]
 pub use self::{
     error::Error,
-    immeditate::{AnyConst32, Const16, Const32},
+    immeditate::{AnyConst16, AnyConst32, Const16, Const32},
     index::Instr,
     index::Reg,
     primitive::{BlockFuel, BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset, Sign},
