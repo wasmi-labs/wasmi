@@ -30,6 +30,24 @@ impl<'engine> Executor<'engine> {
         }
     }
 
+    /// Returns the optional `memory` parameter for a `load_at` [`Instruction`].
+    ///
+    /// # Note
+    ///
+    /// - Returns the default [`Memory`] if the parameter is missing.
+    /// - Bumps `self.ip` if a [`Memory`] parameter was found.
+    fn fetch_optional_memory(&mut self) -> Memory {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(1);
+        match *addr.get() {
+            Instruction::MemoryIndex { index } => {
+                self.ip = addr;
+                index
+            }
+            _ => Memory::from(0),
+        }
+    }
+
     /// Fetches the bytes of the default memory at index 0.
     fn fetch_default_memory_bytes(&self) -> &[u8] {
         // Safety: the `self.cache.memory` pointer is always synchronized
@@ -136,12 +154,21 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_load_at_impl(
         &mut self,
+        store: &StoreInner,
         result: Reg,
         address: u32,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
+        let memory = self.fetch_optional_memory();
         let offset = address;
-        self.execute_load_extend_mem0(result, UntypedVal::from(0u32), offset, load_extend)?;
+        self.execute_load_extend(
+            store,
+            memory,
+            result,
+            UntypedVal::from(0u32),
+            offset,
+            load_extend,
+        )?;
         self.try_next_instr()
     }
 
@@ -179,8 +206,8 @@ macro_rules! impl_execute_load {
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
             #[inline(always)]
-            pub fn $fn_load_at(&mut self, result: Reg, address: u32) -> Result<(), Error> {
-                self.execute_load_at_impl(result, address, $impl_fn)
+            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: u32) -> Result<(), Error> {
+                self.execute_load_at_impl(store, result, address, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]

@@ -4,7 +4,7 @@ use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{
-        bytecode::{index, AnyConst32, BlockFuel, Const16, Instruction, Reg},
+        bytecode::{index, BlockFuel, Const16, Instruction, Reg},
         code_map::CodeMap,
         executor::stack::{CallFrame, FrameRegisters, ValueStack},
         DedupFuncType,
@@ -513,7 +513,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32_load(&store.inner, result, memory)?
                 }
                 Instr::I32LoadAt { result, address } => {
-                    self.execute_i32_load_at(result, address)?
+                    self.execute_i32_load_at(&store.inner, result, address)?
                 }
                 Instr::I32LoadOffset16 {
                     result,
@@ -524,7 +524,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_load(&store.inner, result, memory)?
                 }
                 Instr::I64LoadAt { result, address } => {
-                    self.execute_i64_load_at(result, address)?
+                    self.execute_i64_load_at(&store.inner, result, address)?
                 }
                 Instr::I64LoadOffset16 {
                     result,
@@ -535,7 +535,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_f32_load(&store.inner, result, memory)?
                 }
                 Instr::F32LoadAt { result, address } => {
-                    self.execute_f32_load_at(result, address)?
+                    self.execute_f32_load_at(&store.inner, result, address)?
                 }
                 Instr::F32LoadOffset16 {
                     result,
@@ -546,7 +546,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_f64_load(&store.inner, result, memory)?
                 }
                 Instr::F64LoadAt { result, address } => {
-                    self.execute_f64_load_at(result, address)?
+                    self.execute_f64_load_at(&store.inner, result, address)?
                 }
                 Instr::F64LoadOffset16 {
                     result,
@@ -557,7 +557,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32_load8_s(&store.inner, result, memory)?
                 }
                 Instr::I32Load8sAt { result, address } => {
-                    self.execute_i32_load8_s_at(result, address)?
+                    self.execute_i32_load8_s_at(&store.inner, result, address)?
                 }
                 Instr::I32Load8sOffset16 {
                     result,
@@ -568,7 +568,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32_load8_u(&store.inner, result, memory)?
                 }
                 Instr::I32Load8uAt { result, address } => {
-                    self.execute_i32_load8_u_at(result, address)?
+                    self.execute_i32_load8_u_at(&store.inner, result, address)?
                 }
                 Instr::I32Load8uOffset16 {
                     result,
@@ -579,7 +579,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32_load16_s(&store.inner, result, memory)?
                 }
                 Instr::I32Load16sAt { result, address } => {
-                    self.execute_i32_load16_s_at(result, address)?
+                    self.execute_i32_load16_s_at(&store.inner, result, address)?
                 }
                 Instr::I32Load16sOffset16 {
                     result,
@@ -590,7 +590,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32_load16_u(&store.inner, result, memory)?
                 }
                 Instr::I32Load16uAt { result, address } => {
-                    self.execute_i32_load16_u_at(result, address)?
+                    self.execute_i32_load16_u_at(&store.inner, result, address)?
                 }
                 Instr::I32Load16uOffset16 {
                     result,
@@ -601,7 +601,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_load8_s(&store.inner, result, memory)?
                 }
                 Instr::I64Load8sAt { result, address } => {
-                    self.execute_i64_load8_s_at(result, address)?
+                    self.execute_i64_load8_s_at(&store.inner, result, address)?
                 }
                 Instr::I64Load8sOffset16 {
                     result,
@@ -612,7 +612,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_load8_u(&store.inner, result, memory)?
                 }
                 Instr::I64Load8uAt { result, address } => {
-                    self.execute_i64_load8_u_at(result, address)?
+                    self.execute_i64_load8_u_at(&store.inner, result, address)?
                 }
                 Instr::I64Load8uOffset16 {
                     result,
@@ -623,7 +623,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_load16_s(&store.inner, result, memory)?
                 }
                 Instr::I64Load16sAt { result, address } => {
-                    self.execute_i64_load16_s_at(result, address)?
+                    self.execute_i64_load16_s_at(&store.inner, result, address)?
                 }
                 Instr::I64Load16sOffset16 {
                     result,
@@ -634,7 +634,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_load16_u(&store.inner, result, memory)?
                 }
                 Instr::I64Load16uAt { result, address } => {
-                    self.execute_i64_load16_u_at(result, address)?
+                    self.execute_i64_load16_u_at(&store.inner, result, address)?
                 }
                 Instr::I64Load16uOffset16 {
                     result,
@@ -645,7 +645,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_load32_s(&store.inner, result, memory)?
                 }
                 Instr::I64Load32sAt { result, address } => {
-                    self.execute_i64_load32_s_at(result, address)?
+                    self.execute_i64_load32_s_at(&store.inner, result, address)?
                 }
                 Instr::I64Load32sOffset16 {
                     result,
@@ -656,7 +656,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_load32_u(&store.inner, result, memory)?
                 }
                 Instr::I64Load32uAt { result, address } => {
-                    self.execute_i64_load32_u_at(result, address)?
+                    self.execute_i64_load32_u_at(&store.inner, result, address)?
                 }
                 Instr::I64Load32uOffset16 {
                     result,
@@ -1374,6 +1374,7 @@ impl<'engine> Executor<'engine> {
                     self.execute_memory_init_from_to_exact(&mut store.inner, dst, src, len)?
                 }
                 Instr::TableIndex { .. }
+                | Instr::MemoryIndex { .. }
                 | Instr::DataIndex { .. }
                 | Instr::ElemIndex { .. }
                 | Instr::Const32 { .. }
@@ -1549,16 +1550,6 @@ impl<'engine> Executor<'engine> {
     ) {
         *sp = Self::frame_stack_ptr_impl(value_stack, frame);
         *ip = frame.instr_ptr();
-    }
-
-    /// Returns the [`Instruction::Const32`] parameter for an [`Instruction`].
-    fn fetch_const32(&self, offset: usize) -> AnyConst32 {
-        let mut addr: InstructionPtr = self.ip;
-        addr.add(offset);
-        match *addr.get() {
-            Instruction::Const32 { value } => value,
-            _ => unreachable!("expected an Instruction::Const32 instruction word"),
-        }
     }
 
     /// Executes a generic unary [`Instruction`].

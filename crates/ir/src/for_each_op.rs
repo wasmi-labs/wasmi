@@ -1704,8 +1704,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Load`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32Load`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_load_at)]
             I32LoadAt {
                 @result: Reg,
@@ -1742,8 +1747,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Load`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_load_at)]
             I64LoadAt {
                 @result: Reg,
@@ -1780,8 +1790,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::F32Load`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::F32Load`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(f32_load_at)]
             F32LoadAt {
                 @result: Reg,
@@ -1818,8 +1833,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::F64Load`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::F64Load`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(f64_load_at)]
             F64LoadAt {
                 @result: Reg,
@@ -1856,8 +1876,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Load8s`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32Load8s`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_load8_s_at)]
             I32Load8sAt {
                 @result: Reg,
@@ -1894,8 +1919,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Load8u`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32Load8u`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_load8_u_at)]
             I32Load8uAt {
                 @result: Reg,
@@ -1932,8 +1962,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Load16s`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32Load16s`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_load16_s_at)]
             I32Load16sAt {
                 @result: Reg,
@@ -1970,8 +2005,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Load16u`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32Load16u`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_load16_u_at)]
             I32Load16uAt {
                 @result: Reg,
@@ -2008,8 +2048,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load8s`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Load8s`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_load8_s_at)]
             I64Load8sAt {
                 @result: Reg,
@@ -2046,8 +2091,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load8u`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Load8u`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_load8_u_at)]
             I64Load8uAt {
                 @result: Reg,
@@ -2084,8 +2134,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load16s`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Load16s`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_load16_s_at)]
             I64Load16sAt {
                 @result: Reg,
@@ -2122,8 +2177,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load16u`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Load16u`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_load16_u_at)]
             I64Load16uAt {
                 @result: Reg,
@@ -2160,8 +2220,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load32s`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Load32s`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_load32_s_at)]
             I64Load32sAt {
                 @result: Reg,
@@ -2198,8 +2263,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Load32u`] with a constant load address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Load32u`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_load32_u_at)]
             I64Load32uAt {
                 @result: Reg,
@@ -5800,6 +5870,16 @@ macro_rules! for_each_op {
             #[snake_name(table_index)]
             TableIndex {
                 index: Table,
+            },
+            /// A [`Memory`] instruction parameter.
+            ///
+            /// # Note
+            ///
+            /// This [`Instruction`] only acts as a parameter to another
+            /// one and will never be executed itself directly.
+            #[snake_name(memory_index)]
+            MemoryIndex {
+                index: Memory,
             },
             /// A [`Data`] instruction parameter.
             ///
