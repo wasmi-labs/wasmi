@@ -1842,18 +1842,20 @@ impl FuncTranslator {
         }
     }
 
-    /// Returns the 32-bit [`MemArg`] offset.
+    /// Returns the [`MemArg`] linear `memory` index and load/store `offset`.
     ///
     /// # Panics
     ///
     /// If the [`MemArg`] offset is not 32-bit.
-    fn memarg_offset(memarg: MemArg) -> u32 {
-        u32::try_from(memarg.offset).unwrap_or_else(|_| {
+    fn decode_memarg(memarg: MemArg) -> (index::Memory, u32) {
+        let memory = index::Memory::from(memarg.memory);
+        let offset = u32::try_from(memarg.offset).unwrap_or_else(|_| {
             panic!(
                 "encountered 64-bit memory load/store offset: {}",
                 memarg.offset
             )
-        })
+        });
+        (memory, offset)
     }
 
     /// Calculates the effective address `ptr+offset` and calls `f(address)` if valid.
@@ -1888,37 +1890,41 @@ impl FuncTranslator {
     fn translate_load(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(result: Reg, ptr: Reg) -> Instruction,
+        make_instr: fn(result: Reg, memory: index::Memory) -> Instruction,
         make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Const16<u32>) -> Instruction,
         make_instr_at: fn(result: Reg, address: u32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let offset = Self::memarg_offset(memarg);
-        match self.alloc.stack.pop() {
-            TypedProvider::Register(ptr) => {
-                if let Ok(offset) = <Const16<u32>>::try_from(offset) {
-                    let result = self.alloc.stack.push_dynamic()?;
-                    self.push_fueled_instr(
-                        make_instr_offset16(result, ptr, offset),
-                        FuelCosts::load,
-                    )?;
-                    return Ok(());
-                }
-                let result = self.alloc.stack.push_dynamic()?;
-                self.push_fueled_instr(make_instr(result, ptr), FuelCosts::load)?;
-                self.alloc
-                    .instr_encoder
-                    .append_instr(Instruction::const32(offset))?;
-                Ok(())
-            }
-            TypedProvider::Const(ptr) => {
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let ptr = self.alloc.stack.pop();
+        let ptr = match ptr {
+            Provider::Register(ptr) => ptr,
+            Provider::Const(ptr) => {
                 self.effective_address_and(ptr, offset, |this, address| {
                     let result = this.alloc.stack.push_dynamic()?;
                     this.push_fueled_instr(make_instr_at(result, address), FuelCosts::load)?;
                     Ok(())
-                })
+                })?;
+                if !memory.is_default() {
+                    self.alloc
+                        .instr_encoder
+                        .append_instr(Instruction::memory_index(memory))?;
+                }
+                return Ok(());
+            }
+        };
+        let result = self.alloc.stack.push_dynamic()?;
+        if memory.is_default() {
+            if let Ok(offset) = <Const16<u32>>::try_from(offset) {
+                self.push_fueled_instr(make_instr_offset16(result, ptr, offset), FuelCosts::load)?;
+                return Ok(());
             }
         }
+        self.push_fueled_instr(make_instr(result, memory), FuelCosts::load)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register_and_imm32(ptr, offset))?;
+        Ok(())
     }
 
     /// Translates Wasm integer `store` and `storeN` instructions to Wasmi bytecode.
@@ -1947,7 +1953,7 @@ impl FuncTranslator {
         U: TryFrom<T>,
     {
         bail_unreachable!(self);
-        let offset = Self::memarg_offset(memarg);
+        let (_memory, offset) = Self::decode_memarg(memarg);
         match self.alloc.stack.pop2() {
             (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
                 if let Ok(offset) = u16::try_from(offset) {
@@ -2037,7 +2043,7 @@ impl FuncTranslator {
         make_instr_at: fn(value: Reg, address: u32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let offset = Self::memarg_offset(memarg);
+        let (_memory, offset) = Self::decode_memarg(memarg);
         match self.alloc.stack.pop2() {
             (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
                 if let Ok(offset) = u16::try_from(offset) {
