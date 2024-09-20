@@ -743,7 +743,7 @@ impl StoreInner {
     ///
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory(&self, memory: &Memory) -> &MemoryEntity {
+    pub fn resolve_memory<'a>(&'a self, memory: &Memory) -> &'a MemoryEntity {
         self.resolve(memory.as_inner(), &self.memories)
     }
 
