@@ -62,6 +62,11 @@ impl TypedVal {
         Self { ty, value }
     }
 
+    /// Returns the underlying [`UntypedVal`] of the [`TypedVal`].
+    pub fn untyped(&self) -> UntypedVal {
+        self.value
+    }
+
     /// Returns the [`ValType`] of the [`TypedVal`].
     pub fn ty(&self) -> ValType {
         self.ty
