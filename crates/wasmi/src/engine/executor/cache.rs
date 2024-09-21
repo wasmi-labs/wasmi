@@ -120,9 +120,9 @@ impl CachedInstance {
     ///
     /// It is the callers responsibility to use this method only when the caches are fresh.
     #[inline]
-    pub unsafe fn get_memory(&self, index: u32) -> Option<Memory> {
+    pub unsafe fn get_memory(&self, index: index::Memory) -> Option<Memory> {
         let instance = unsafe { self.as_ref() };
-        instance.get_memory(index)
+        instance.get_memory(u32::from(index))
     }
 
     /// Returns the [`Table`] at the `index` if any.

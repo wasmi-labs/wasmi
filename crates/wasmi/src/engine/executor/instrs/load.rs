@@ -44,14 +44,14 @@ impl<'engine> Executor<'engine> {
         'exec: 'bytes,
         'store: 'bytes,
     {
-        match u32::from(memory) {
-            0 => self.fetch_default_memory_bytes(),
-            index => {
+        match memory.is_default() {
+            true => self.fetch_default_memory_bytes(),
+            false => {
                 // Safety: the underlying instance of `self.cache` is always kept up-to-date conservatively.
                 let memory = unsafe {
                     self.cache
-                        .get_memory(index)
-                        .expect("missing linear memory at {index}")
+                        .get_memory(memory)
+                        .unwrap_or_else(|| panic!("missing linear memory for {memory:?}"))
                 };
                 store.resolve_memory(&memory).data()
             }

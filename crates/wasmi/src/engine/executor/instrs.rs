@@ -11,7 +11,6 @@ use crate::{
         EngineFunc,
     },
     memory::DataSegment,
-    module::DEFAULT_MEMORY_INDEX,
     store::StoreInner,
     table::ElementSegment,
     Error,
@@ -1294,7 +1293,9 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_table_grow_imm(store, result, delta, value)?,
                 Instr::ElemDrop { index } => self.execute_element_drop(&mut store.inner, index),
                 Instr::DataDrop { index } => self.execute_data_drop(&mut store.inner, index),
-                Instr::MemorySize { result } => self.execute_memory_size(&store.inner, result),
+                Instr::MemorySize { result, memory } => {
+                    self.execute_memory_size(&store.inner, result, memory)
+                }
                 Instr::MemoryGrow { result, delta } => {
                     self.execute_memory_grow(store, result, delta)?
                 }
@@ -1430,22 +1431,11 @@ impl<'engine> Executor<'engine> {
     get_entity! {
         fn get_func(&self, store: &StoreInner, index: index::Func) -> Func;
         fn get_func_type_dedup(&self, store: &StoreInner, index: index::FuncType) -> DedupFuncType;
-        fn get_memory(&self, store: &StoreInner, index: u32) -> Memory;
+        fn get_memory(&self, store: &StoreInner, index: index::Memory) -> Memory;
         fn get_table(&self, store: &StoreInner, index: index::Table) -> Table;
         fn get_global(&self, store: &StoreInner, index: index::Global) -> Global;
         fn get_data_segment(&self, store: &StoreInner, index: index::Data) -> DataSegment;
         fn get_element_segment(&self, store: &StoreInner, index: index::Elem) -> ElementSegment;
-    }
-
-    /// Returns the default memory of the current [`Instance`] for `ctx`.
-    ///
-    /// # Panics
-    ///
-    /// - If the current [`Instance`] does not belong to `ctx`.
-    /// - If the current [`Instance`] does not have a linear memory.
-    #[inline]
-    fn get_default_memory(&self) -> Memory {
-        self.get_memory(DEFAULT_MEMORY_INDEX)
     }
 
     /// Returns the [`Reg`] value.

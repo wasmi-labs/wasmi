@@ -707,10 +707,10 @@ impl StoreInner {
         let data_idx = segment.as_inner();
         let instance_idx = instance.as_inner();
         let instance = self.resolve(instance_idx, &self.instances);
-        let data = self.resolve(data_idx, &self.elems);
-        let mem = Self::resolve_mut(mem_idx, &mut self.tables);
+        let elem = self.resolve(data_idx, &self.elems);
+        let table = Self::resolve_mut(mem_idx, &mut self.tables);
         let fuel = &mut self.fuel;
-        (instance, mem, data, fuel)
+        (instance, table, elem, fuel)
     }
 
     /// Returns a shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
@@ -774,20 +774,54 @@ impl StoreInner {
         (memory, fuel)
     }
 
-    /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`Memory`].
+    /// Returns the following data:
+    ///
+    /// - An exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// - A shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
+    ///
+    /// # Note
+    ///
+    /// This method exists to properly handle use cases where
+    /// otherwise the Rust borrow-checker would not accept.
     ///
     /// # Panics
     ///
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
     /// - If the [`DataSegment`] does not originate from this [`Store`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub fn resolve_data_and_fuel_mut(
+    pub(super) fn resolve_memory_init_params(
         &mut self,
-        data: &DataSegment,
-    ) -> (&mut DataSegmentEntity, &mut Fuel) {
-        let idx = self.unwrap_stored(data.as_inner());
-        let data_segment = Self::resolve_mut(idx, &mut self.datas);
+        memory: &Memory,
+        segment: &DataSegment,
+    ) -> (&mut MemoryEntity, &DataSegmentEntity, &mut Fuel) {
+        let mem_idx = self.unwrap_stored(memory.as_inner());
+        let data_idx = segment.as_inner();
+        let data = self.resolve(data_idx, &self.datas);
+        let mem = Self::resolve_mut(mem_idx, &mut self.memories);
         let fuel = &mut self.fuel;
-        (data_segment, fuel)
+        (mem, data, fuel)
+    }
+
+    /// Returns an exclusive pair of references to the [`MemoryEntity`] associated to the given [`Memory`]s.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
+    pub(super) fn resolve_memory_pair_and_fuel(
+        &mut self,
+        fst: &Memory,
+        snd: &Memory,
+    ) -> (&mut MemoryEntity, &mut MemoryEntity, &mut Fuel) {
+        let fst = self.unwrap_stored(fst.as_inner());
+        let snd = self.unwrap_stored(snd.as_inner());
+        let (fst, snd) = self.memories.get_pair_mut(fst, snd).unwrap_or_else(|| {
+            panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
+        });
+        let fuel = &mut self.fuel;
+        (fst, snd, fuel)
     }
 
     /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].

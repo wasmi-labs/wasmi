@@ -5599,6 +5599,8 @@ macro_rules! for_each_op {
             #[snake_name(memory_size)]
             MemorySize {
                 @result: Reg,
+                /// The index identifying the Wasm linear memory for the instruction.
+                memory: Memory,
             },
 
             /// Wasm `memory.grow` instruction.
