@@ -1859,21 +1859,6 @@ impl FuncTranslator {
         (memory, offset)
     }
 
-    /// Calculates the effective address `ptr+offset` and calls `f(address)` if valid.
-    ///
-    /// Encodes a [`TrapCode::MemoryOutOfBounds`] trap instruction if the effective address is invalid.
-    fn effective_address_and(
-        &mut self,
-        ptr: TypedVal,
-        offset: u32,
-        f: impl FnOnce(&mut Self, u32) -> Result<(), Error>,
-    ) -> Result<(), Error> {
-        match u32::from(ptr).checked_add(offset) {
-            Some(address) => f(self, address),
-            None => self.translate_trap(TrapCode::MemoryOutOfBounds),
-        }
-    }
-
     /// Returns the effective address `ptr+offset` if it is valid.
     fn effective_address(ptr: u32, offset: u32) -> Option<u32> {
         ptr.checked_add(offset)
@@ -1906,11 +1891,11 @@ impl FuncTranslator {
         let ptr = match ptr {
             Provider::Register(ptr) => ptr,
             Provider::Const(ptr) => {
-                self.effective_address_and(ptr, offset, |this, address| {
-                    let result = this.alloc.stack.push_dynamic()?;
-                    this.push_fueled_instr(make_instr_at(result, address), FuelCosts::load)?;
-                    Ok(())
-                })?;
+                let Some(address) = Self::effective_address(u32::from(ptr), offset) else {
+                    return self.translate_trap(TrapCode::MemoryOutOfBounds)
+                };
+                let result = self.alloc.stack.push_dynamic()?;
+                self.push_fueled_instr(make_instr_at(result, address), FuelCosts::load)?;
                 if !memory.is_default() {
                     self.alloc
                         .instr_encoder
