@@ -60,7 +60,8 @@ fn mvp_config() -> Config {
         .wasm_mutable_global(false)
         .wasm_saturating_float_to_int(false)
         .wasm_sign_extension(false)
-        .wasm_multi_value(false);
+        .wasm_multi_value(false)
+        .wasm_multi_memory(false);
     config
 }
 
