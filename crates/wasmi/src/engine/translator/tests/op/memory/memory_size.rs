@@ -1,4 +1,5 @@
 use super::*;
+use crate::ir::index::Memory;
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -12,7 +13,7 @@ fn reg() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::memory_size(Reg::from(0)),
+            Instruction::memory_size(Reg::from(0), Memory::from(0)),
             Instruction::return_reg(Reg::from(0)),
         ])
         .run();
