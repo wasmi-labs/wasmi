@@ -10,9 +10,6 @@ use crate::{
     Error,
 };
 
-#[cfg(doc)]
-use crate::engine::bytecode::Instruction;
-
 /// The function signature of Wasm load operations.
 type WasmLoadOp =
     fn(memory: &[u8], address: UntypedVal, offset: u32) -> Result<UntypedVal, TrapCode>;
