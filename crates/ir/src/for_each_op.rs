@@ -5602,6 +5602,10 @@ macro_rules! for_each_op {
             },
 
             /// Wasm `memory.grow` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
             #[snake_name(memory_grow)]
             MemoryGrow {
                 @result: Reg,
@@ -5609,6 +5613,10 @@ macro_rules! for_each_op {
                 delta: Reg,
             },
             /// Variant of [`Instruction::MemoryGrow`] with 16-bit constant `delta`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
             #[snake_name(memory_grow_by)]
             MemoryGrowBy {
                 @result: Reg,
@@ -5619,6 +5627,13 @@ macro_rules! for_each_op {
             /// Wasm `memory.copy` instruction.
             ///
             /// Copies elements from `memory[src..src+len]` to `memory[dst..dst+len]`.
+            ///
+            /// # Encoding
+            ///
+            /// This [`Instruction`] must be followed by
+            ///
+            /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
+            /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
             #[snake_name(memory_copy)]
             MemoryCopy {
                 /// The start index of the `dst` memory.
@@ -5629,6 +5644,13 @@ macro_rules! for_each_op {
                 len: Reg,
             },
             /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` index.
+            ///
+            /// # Encoding
+            ///
+            /// This [`Instruction`] must be followed by
+            ///
+            /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
+            /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
             #[snake_name(memory_copy_to)]
             MemoryCopyTo {
                 /// The start index of the `dst` memory.
@@ -5639,6 +5661,13 @@ macro_rules! for_each_op {
                 len: Reg,
             },
             /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `src` index.
+            ///
+            /// # Encoding
+            ///
+            /// This [`Instruction`] must be followed by
+            ///
+            /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
+            /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
             #[snake_name(memory_copy_from)]
             MemoryCopyFrom {
                 /// The start index of the `dst` memory.
@@ -5649,6 +5678,13 @@ macro_rules! for_each_op {
                 len: Reg,
             },
             /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `dst` and `src` indices.
+            ///
+            /// # Encoding
+            ///
+            /// This [`Instruction`] must be followed by
+            ///
+            /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
+            /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
             #[snake_name(memory_copy_from_to)]
             MemoryCopyFromTo {
                 /// The start index of the `dst` memory.
@@ -5663,6 +5699,13 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// This instruction copies _exactly_ `len` elements between the memories.
+            ///
+            /// # Encoding
+            ///
+            /// This [`Instruction`] must be followed by
+            ///
+            /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
+            /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
             #[snake_name(memory_copy_exact)]
             MemoryCopyExact {
                 /// The start index of the `dst` memory.
@@ -5677,6 +5720,13 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// This instruction copies _exactly_ `len` elements between the memories.
+            ///
+            /// # Encoding
+            ///
+            /// This [`Instruction`] must be followed by
+            ///
+            /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
+            /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
             #[snake_name(memory_copy_to_exact)]
             MemoryCopyToExact {
                 /// The start index of the `dst` memory.
@@ -5691,6 +5741,13 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// This instruction copies _exactly_ `len` elements between the memories.
+            ///
+            /// # Encoding
+            ///
+            /// This [`Instruction`] must be followed by
+            ///
+            /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
+            /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
             #[snake_name(memory_copy_from_exact)]
             MemoryCopyFromExact {
                 /// The start index of the `dst` memory.
@@ -5705,6 +5762,13 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// This instruction copies _exactly_ `len` elements between the memories.
+            ///
+            /// # Encoding
+            ///
+            /// This [`Instruction`] must be followed by
+            ///
+            /// 1. [`Instruction::MemoryIndex`]: the `dst` Wasm linear memory instance
+            /// 2. [`Instruction::MemoryIndex`]: the `src` Wasm linear memory instance
             #[snake_name(memory_copy_from_to_exact)]
             MemoryCopyFromToExact {
                 /// The start index of the `dst` memory.
@@ -5718,6 +5782,10 @@ macro_rules! for_each_op {
             /// Wasm `memory.fill` instruction.
             ///
             /// Sets bytes of `memory[dst..dst+len]` to `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
             #[snake_name(memory_fill)]
             MemoryFill {
                 /// The start index of the memory to fill.
@@ -5728,6 +5796,10 @@ macro_rules! for_each_op {
                 len: Reg,
             },
             /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `dst` index.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
             #[snake_name(memory_fill_at)]
             MemoryFillAt {
                 /// The start index of the memory to fill.
@@ -5738,6 +5810,10 @@ macro_rules! for_each_op {
                 len: Reg,
             },
             /// Variant of [`Instruction::MemoryFill`] with constant fill `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
             #[snake_name(memory_fill_imm)]
             MemoryFillImm {
                 /// The start index of the memory to fill.
@@ -5748,6 +5824,10 @@ macro_rules! for_each_op {
                 len: Reg,
             },
             /// Variant of [`Instruction::MemoryFill`] with 16-bit constant `len` value.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
             #[snake_name(memory_fill_exact)]
             MemoryFillExact {
                 /// The start index of the memory to fill.
@@ -5758,6 +5838,10 @@ macro_rules! for_each_op {
                 len: Const16<u32>,
             },
             /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
             #[snake_name(memory_fill_at_imm)]
             MemoryFillAtImm {
                 /// The start index of the memory to fill.
@@ -5768,6 +5852,10 @@ macro_rules! for_each_op {
                 len: Reg,
             },
             /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `len`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
             #[snake_name(memory_fill_at_exact)]
             MemoryFillAtExact {
                 /// The start index of the memory to fill.
@@ -5778,6 +5866,10 @@ macro_rules! for_each_op {
                 len: Const16<u32>,
             },
             /// Variant of [`Instruction::MemoryFill`] with constant fill `value` and `len`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
             #[snake_name(memory_fill_imm_exact)]
             MemoryFillImmExact {
                 /// The start index of the memory to fill.
@@ -5788,6 +5880,10 @@ macro_rules! for_each_op {
                 len: Const16<u32>,
             },
             /// Variant of [`Instruction::MemoryFill`] with constant `dst` index, fill `value` and `len`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::MemoryIndex`] encoding the Wasm `memory` instance.
             #[snake_name(memory_fill_at_imm_exact)]
             MemoryFillAtImmExact {
                 /// The start index of the memory to fill.
@@ -5806,6 +5902,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by
             ///
+            /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
             /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
             #[snake_name(memory_init)]
             MemoryInit {
@@ -5822,6 +5919,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by
             ///
+            /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
             /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
             #[snake_name(memory_init_to)]
             MemoryInitTo {
@@ -5838,6 +5936,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by
             ///
+            /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
             /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
             #[snake_name(memory_init_from)]
             MemoryInitFrom {
@@ -5854,6 +5953,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by
             ///
+            /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
             /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
             #[snake_name(memory_init_from_to)]
             MemoryInitFromTo {
@@ -5870,6 +5970,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by
             ///
+            /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
             /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
             #[snake_name(memory_init_exact)]
             MemoryInitExact {
@@ -5886,6 +5987,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by
             ///
+            /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
             /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
             #[snake_name(memory_init_to_exact)]
             MemoryInitToExact {
@@ -5902,6 +6004,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by
             ///
+            /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
             /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
             #[snake_name(memory_init_from_exact)]
             MemoryInitFromExact {
@@ -5918,6 +6021,7 @@ macro_rules! for_each_op {
             ///
             /// This [`Instruction`] must be followed by
             ///
+            /// 1. [`Instruction::MemoryIndex`]: the Wasm `memory` instance
             /// 1. [`Instruction::DataIndex`]: the `data` segment to initialize the memory
             #[snake_name(memory_init_from_to_exact)]
             MemoryInitFromToExact {
