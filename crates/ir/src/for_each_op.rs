@@ -5504,9 +5504,7 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by
-            ///
-            /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+            /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
             #[snake_name(table_fill)]
             TableFill {
                 /// The start index of the table to fill.
@@ -5520,9 +5518,7 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by
-            ///
-            /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+            /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
             #[snake_name(table_fill_at)]
             TableFillAt {
                 /// The start index of the table to fill.
@@ -5536,9 +5532,7 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by
-            ///
-            /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+            /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
             #[snake_name(table_fill_exact)]
             TableFillExact {
                 /// The start index of the table to fill.
@@ -5552,9 +5546,7 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by
-            ///
-            /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+            /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
             #[snake_name(table_fill_at_exact)]
             TableFillAtExact {
                 /// The start index of the table to fill.
@@ -5569,9 +5561,7 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by
-            ///
-            /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+            /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
             #[snake_name(table_grow)]
             TableGrow {
                 @result: Reg,
@@ -5584,9 +5574,7 @@ macro_rules! for_each_op {
             ///
             /// # Encoding
             ///
-            /// This [`Instruction`] must be followed by
-            ///
-            /// 1. [`Instruction::TableIndex`]: the Wasm `table` instance
+            /// Followed by [`Instruction::TableIndex`] encoding the Wasm `table` instance.
             #[snake_name(table_grow_imm)]
             TableGrowImm {
                 @result: Reg,
