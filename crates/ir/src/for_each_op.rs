@@ -2353,8 +2353,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Store`] with an immediate `ptr+offset` address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32Store`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_store_at)]
             I32StoreAt {
                 /// The value to be stored.
@@ -2366,8 +2371,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32StoreAt`] with 16-bit immediate `value`.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32StoreAt`] with 16-bit immediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_store_at_imm16)]
             I32StoreAtImm16 {
                 /// The value to be stored.
@@ -2438,8 +2448,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Store8`] with an immediate `ptr+offset` address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32Store8`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_store8_at)]
             I32Store8At {
                 /// The value to be stored.
@@ -2451,8 +2466,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Store8At`] with immediate `value`.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32Store8At`] with immediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_store8_at_imm)]
             I32Store8AtImm {
                 /// The value to be stored.
@@ -2523,8 +2543,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Store16`] with an immediate `ptr+offset` address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32Store16`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_store16_at)]
             I32Store16At {
                 /// The value to be stored.
@@ -2536,8 +2561,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32Store16At`] with immediate `value`.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I32Store16At`] with immediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i32_store16_at_imm)]
             I32Store16AtImm {
                 /// The value to be stored.
@@ -2608,8 +2638,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Store`] with an immediate `ptr+offset` address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Store`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_store_at)]
             I64StoreAt {
                 /// The value to be stored.
@@ -2621,8 +2656,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64StoreAt`] with 16-bit immediate `value`.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64StoreAt`] with 16-bit immediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_store_at_imm16)]
             I64StoreAtImm16 {
                 /// The value to be stored.
@@ -2693,8 +2733,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Store8`] with an immediate `ptr+offset` address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Store8`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_store8_at)]
             I64Store8At {
                 /// The value to be stored.
@@ -2706,8 +2751,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Store8At`] with immediate `value`.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Store8At`] with immediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_store8_at_imm)]
             I64Store8AtImm {
                 /// The value to be stored.
@@ -2778,8 +2828,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Store16`] with an immediate `ptr+offset` address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Store16`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_store16_at)]
             I64Store16At {
                 /// The value to be stored.
@@ -2791,8 +2846,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Store16At`] with immediate `value`.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Store16At`] with immediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_store16_at_imm)]
             I64Store16AtImm {
                 /// The value to be stored.
@@ -2863,8 +2923,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Store32`] with an immediate `ptr+offset` address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Store32`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_store32_at)]
             I64Store32At {
                 /// The value to be stored.
@@ -2876,8 +2941,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64Store32At`] with 16-bit immediate `value`.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::I64Store32At`] with 16-bit immediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(i64_store32_at_imm16)]
             I64Store32AtImm16 {
                 /// The value to be stored.
@@ -2917,8 +2987,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::F32Store`] with an immediate `ptr+offset` address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::F32Store`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(f32_store_at)]
             F32StoreAt {
                 /// The value to be stored.
@@ -2958,8 +3033,13 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::F64Store`] with an immediate `ptr+offset` address.
-            /// - Operates on the default Wasm memory instance.
+            /// Variant of [`Instruction::F64Store`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
             #[snake_name(f64_store_at)]
             F64StoreAt {
                 /// The value to be stored.
