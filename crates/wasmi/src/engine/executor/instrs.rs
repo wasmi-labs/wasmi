@@ -1757,6 +1757,7 @@ impl<'engine> Executor<'engine> {
     ///
     /// - Returns the default [`index::Memory`] if the parameter is missing.
     /// - Bumps `self.ip` if a [`Instruction::MemoryIndex`] parameter was found.
+    #[inline]
     fn fetch_optional_memory(&mut self) -> index::Memory {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
