@@ -1892,7 +1892,7 @@ impl FuncTranslator {
             Provider::Register(ptr) => ptr,
             Provider::Const(ptr) => {
                 let Some(address) = Self::effective_address(u32::from(ptr), offset) else {
-                    return self.translate_trap(TrapCode::MemoryOutOfBounds)
+                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
                 let result = self.alloc.stack.push_dynamic()?;
                 self.push_fueled_instr(make_instr_at(result, address), FuelCosts::load)?;
