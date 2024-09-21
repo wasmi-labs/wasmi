@@ -1007,16 +1007,20 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let memory = index::Memory::from(mem);
         let result = self.alloc.stack.push_dynamic()?;
         let instr = match delta {
-            Provider::Register(delta) => Instruction::memory_grow(result, delta),
             Provider::Const(delta) if u32::from(delta) == 0 => {
                 // Case: growing by 0 pages.
                 //
                 // Since `memory.grow` returns the `memory.size` before the
                 // operation a `memory.grow` with `delta` of 0 can be translated
                 // as `memory.size` instruction instead.
-                Instruction::memory_size(result, memory)
+                self.push_fueled_instr(
+                    Instruction::memory_size(result, memory),
+                    FuelCosts::entity,
+                )?;
+                return Ok(());
             }
             Provider::Const(delta) => Instruction::memory_grow_by(result, delta),
+            Provider::Register(delta) => Instruction::memory_grow(result, delta),
         };
         self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc
