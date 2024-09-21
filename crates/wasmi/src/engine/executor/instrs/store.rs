@@ -211,11 +211,15 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_store_at(
         &mut self,
+        store: &mut StoreInner,
         address: u32,
         value: Reg,
         store_op: WasmStoreOp,
     ) -> Result<(), Error> {
-        self.execute_store_wrap_mem0(
+        let memory = self.fetch_optional_memory();
+        self.execute_store_wrap(
+            store,
+            memory,
             UntypedVal::from(0u32),
             address,
             self.get_register(value),
@@ -227,6 +231,7 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute_store_at_imm16<T, V>(
         &mut self,
+        store: &mut StoreInner,
         address: u32,
         value: V,
         store_op: WasmStoreOp,
@@ -234,7 +239,10 @@ impl<'engine> Executor<'engine> {
     where
         T: From<V> + Into<UntypedVal>,
     {
-        self.execute_store_wrap_mem0(
+        let memory = self.fetch_optional_memory();
+        self.execute_store_wrap(
+            store,
+            memory,
             UntypedVal::from(0u32),
             address,
             T::from(value).into(),
@@ -294,18 +302,19 @@ macro_rules! impl_execute_istore {
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
             #[inline(always)]
-            pub fn $fn_store_at(&mut self, address: u32, value: Reg) -> Result<(), Error> {
-                self.execute_store_at(address, value, $impl_fn)
+            pub fn $fn_store_at(&mut self, store: &mut StoreInner, address: u32, value: Reg) -> Result<(), Error> {
+                self.execute_store_at(store, address, value, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at_imm16), "`].")]
             #[inline(always)]
             pub fn $fn_store_at_imm16(
                 &mut self,
+                store: &mut StoreInner,
                 address: u32,
                 value: $from_ty,
             ) -> Result<(), Error> {
-                self.execute_store_at_imm16::<$to_ty, _>(address, value, $impl_fn)
+                self.execute_store_at_imm16::<$to_ty, _>(store, address, value, $impl_fn)
             }
         )*
     };
@@ -414,8 +423,8 @@ macro_rules! impl_execute_fstore {
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
             #[inline(always)]
-            pub fn $fn_store_at(&mut self, address: u32, value: Reg) -> Result<(), Error> {
-                self.execute_store_at(address, value, $impl_fn)
+            pub fn $fn_store_at(&mut self, store: &mut StoreInner,address: u32, value: Reg) -> Result<(), Error> {
+                self.execute_store_at(store, address, value, $impl_fn)
             }
         )*
     }

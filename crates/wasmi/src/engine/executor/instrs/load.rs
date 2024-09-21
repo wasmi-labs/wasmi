@@ -27,24 +27,6 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Returns the optional `memory` parameter for a `load_at` [`Instruction`].
-    ///
-    /// # Note
-    ///
-    /// - Returns the default [`Memory`] if the parameter is missing.
-    /// - Bumps `self.ip` if a [`Memory`] parameter was found.
-    fn fetch_optional_memory(&mut self) -> Memory {
-        let mut addr: InstructionPtr = self.ip;
-        addr.add(1);
-        match *addr.get() {
-            Instruction::MemoryIndex { index } => {
-                self.ip = addr;
-                index
-            }
-            _ => Memory::from(0),
-        }
-    }
-
     /// Fetches the bytes of the default memory at index 0.
     fn fetch_default_memory_bytes(&self) -> &[u8] {
         // Safety: the `self.cache.memory` pointer is always synchronized
