@@ -45,10 +45,16 @@ impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::MemorySize`].
     #[inline(always)]
     pub fn execute_memory_size(&mut self, store: &StoreInner, result: Reg, memory: Memory) {
+        self.execute_memory_size_impl(store, result, memory);
+        self.next_instr()
+    }
+
+    /// Underlying implementation of [`Instruction::MemorySize`].
+    #[inline(always)]
+    fn execute_memory_size_impl(&mut self, store: &StoreInner, result: Reg, memory: Memory) {
         let memory = self.get_memory(memory);
         let size = store.resolve_memory(&memory).size();
         self.set_register(result, size);
-        self.next_instr()
     }
 
     /// Executes an [`Instruction::MemoryGrow`].
@@ -88,8 +94,8 @@ impl<'engine> Executor<'engine> {
         let memory = self.fetch_memory_index(1);
         if delta == 0 {
             // Case: growing by 0 pages means there is nothing to do
-            self.execute_memory_size(store, result, memory);
-            return Ok(());
+            self.execute_memory_size_impl(store, result, memory);
+            return self.try_next_instr_at(2);
         }
         let memory = self.get_memory(memory);
         let (memory, fuel) = store.resolve_memory_and_fuel_mut(&memory);
