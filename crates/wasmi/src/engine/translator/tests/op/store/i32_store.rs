@@ -21,6 +21,27 @@ fn imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
+fn imm16() {
+    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, 0);
+    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, 1);
+    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, -1);
+    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, 42);
+    test_store_imm16::<i32>(
+        WASM_OP,
+        Instruction::i32_store_imm16,
+        i32::from(i16::MIN) + 1,
+    );
+    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, i32::from(i16::MIN));
+    test_store_imm16::<i32>(
+        WASM_OP,
+        Instruction::i32_store_imm16,
+        i32::from(i16::MAX) - 1,
+    );
+    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, i32::from(i16::MAX));
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
 fn offset16() {
     test_store_offset16(WASM_OP, Instruction::i32_store_offset16);
 }

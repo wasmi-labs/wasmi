@@ -231,6 +231,56 @@ fn test_store_imm<T>(
     test_store_imm_for(wasm_op, u32::MAX, value, make_instr);
 }
 
+fn test_store_imm16_for<T>(
+    wasm_op: WasmOp,
+    make_instr: fn(ptr: Reg, memory: Memory) -> Instruction,
+    value: T,
+    offset: u32,
+) where
+    T: Copy + TryInto<AnyConst16>,
+    DisplayWasm<T>: Display,
+{
+    assert!(
+        u16::try_from(offset).is_err(),
+        "this test requires non-16 bit offsets but found {offset}"
+    );
+    let param_ty = wasm_op.param_ty();
+    let display_value = DisplayWasm::from(value);
+    let wasm = format!(
+        r#"
+        (module
+            (memory 1)
+            (func (param $ptr i32)
+                local.get $ptr
+                {param_ty}.const {display_value}
+                {wasm_op} offset={offset}
+            )
+        )
+    "#
+    );
+    let value = value.try_into().ok().unwrap();
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([
+            make_instr(Reg::from(0), Memory::from(0)),
+            Instruction::imm16_and_imm32(value, offset),
+            Instruction::Return,
+        ])
+        .run();
+}
+
+fn test_store_imm16<T>(
+    wasm_op: WasmOp,
+    make_instr: fn(ptr: Reg, memory: Memory) -> Instruction,
+    value: T,
+) where
+    T: Copy + TryInto<AnyConst16>,
+    DisplayWasm<T>: Display,
+{
+    test_store_imm16_for(wasm_op, make_instr, value, u32::from(u16::MAX) + 1);
+    test_store_imm16_for(wasm_op, make_instr, value, u32::MAX - 1);
+    test_store_imm16_for(wasm_op, make_instr, value, u32::MAX);
+}
+
 fn test_store_at_for(
     wasm_op: WasmOp,
     ptr: u32,
