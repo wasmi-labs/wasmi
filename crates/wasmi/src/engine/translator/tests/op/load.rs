@@ -199,7 +199,7 @@ macro_rules! generate_tests {
         #[test]
         #[cfg_attr(miri, ignore)]
         fn reg_mem0() {
-            test_load_mem0(WASM_OP, $make_instr, u16::MAX as u32 + 1);
+            test_load_mem0(WASM_OP, $make_instr, u32::from(u16::MAX) + 1);
             test_load_mem0(WASM_OP, $make_instr, u32::MAX - 1);
             test_load_mem0(WASM_OP, $make_instr, u32::MAX);
         }
@@ -207,7 +207,7 @@ macro_rules! generate_tests {
         #[test]
         #[cfg_attr(miri, ignore)]
         fn reg() {
-            test_load(WASM_OP, $make_instr, u16::MAX as u32 + 1);
+            test_load(WASM_OP, $make_instr, u32::from(u16::MAX) + 1);
             test_load(WASM_OP, $make_instr, u32::MAX - 1);
             test_load(WASM_OP, $make_instr, u32::MAX);
         }
