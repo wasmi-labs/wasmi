@@ -11,11 +11,11 @@ fn reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm() {
-    test_store_imm::<i32>(WASM_OP, 0, Instruction::i32_store);
-    test_store_imm::<i32>(WASM_OP, 1, Instruction::i32_store);
-    test_store_imm::<i32>(WASM_OP, -1, Instruction::i32_store);
-    test_store_imm::<i32>(WASM_OP, 42, Instruction::i32_store);
+    test_store_imm::<i32>(WASM_OP, i32::from(i16::MIN) - 1, Instruction::i32_store);
+    test_store_imm::<i32>(WASM_OP, i32::from(i16::MAX) + 1, Instruction::i32_store);
     test_store_imm::<i32>(WASM_OP, i32::MIN, Instruction::i32_store);
+    test_store_imm::<i32>(WASM_OP, i32::MIN + 1, Instruction::i32_store);
+    test_store_imm::<i32>(WASM_OP, i32::MAX - 1, Instruction::i32_store);
     test_store_imm::<i32>(WASM_OP, i32::MAX, Instruction::i32_store);
 }
 

@@ -1,7 +1,10 @@
 //! Translation tests for all Wasm `store` instructions.
 
 use super::*;
-use crate::core::UntypedVal;
+use crate::{
+    core::UntypedVal,
+    ir::{index::Memory, AnyConst16},
+};
 
 mod f32_store;
 mod f64_store;
@@ -19,7 +22,7 @@ use core::fmt::Display;
 fn test_store_for(
     wasm_op: WasmOp,
     offset: u32,
-    make_instr: fn(ptr: Reg, offset: u32) -> Instruction,
+    make_instr: fn(ptr: Reg, memory: Memory) -> Instruction,
 ) {
     assert!(
         u16::try_from(offset).is_err(),
@@ -40,14 +43,14 @@ fn test_store_for(
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            make_instr(Reg::from(0), offset),
-            Instruction::register(1),
+            make_instr(Reg::from(0), Memory::from(0)),
+            Instruction::register_and_imm32(Reg::from(1), offset),
             Instruction::Return,
         ])
         .run();
 }
 
-fn test_store(wasm_op: WasmOp, make_instr: fn(ptr: Reg, offset: u32) -> Instruction) {
+fn test_store(wasm_op: WasmOp, make_instr: fn(ptr: Reg, memory: Memory) -> Instruction) {
     test_store_for(wasm_op, u32::from(u16::MAX) + 1, make_instr);
     test_store_for(wasm_op, u32::MAX - 1, make_instr);
     test_store_for(wasm_op, u32::MAX, make_instr);
@@ -180,7 +183,7 @@ fn test_store_imm_for<T>(
     wasm_op: WasmOp,
     offset: u32,
     value: T,
-    make_instr: fn(ptr: Reg, offset: u32) -> Instruction,
+    make_instr: fn(ptr: Reg, memory: Memory) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
@@ -206,8 +209,8 @@ fn test_store_imm_for<T>(
     TranslationTest::from_wat(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                make_instr(Reg::from(0), offset),
-                Instruction::register(-1),
+                make_instr(Reg::from(0), Memory::from(0)),
+                Instruction::register_and_imm32(Reg::from(-1), offset),
                 Instruction::Return,
             ])
             .consts([value]),
@@ -218,7 +221,7 @@ fn test_store_imm_for<T>(
 fn test_store_imm<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(ptr: Reg, offset: u32) -> Instruction,
+    make_instr: fn(ptr: Reg, memory: Memory) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
