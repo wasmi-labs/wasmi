@@ -11,12 +11,26 @@ fn reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm() {
-    test_store_imm::<i64>(WASM_OP, 0, Instruction::i64_store32);
-    test_store_imm::<i64>(WASM_OP, 1, Instruction::i64_store32);
-    test_store_imm::<i64>(WASM_OP, -1, Instruction::i64_store32);
-    test_store_imm::<i64>(WASM_OP, 42, Instruction::i64_store32);
-    test_store_imm::<i64>(WASM_OP, i64::MIN, Instruction::i64_store32);
-    test_store_imm::<i64>(WASM_OP, i64::MAX, Instruction::i64_store32);
+    let values = [
+        i64::from(i16::MIN) - 1,
+        i64::from(i16::MAX) + 1,
+        i64::MIN,
+        i64::MIN + 1,
+        i64::MAX,
+        i64::MAX - 1,
+    ];
+    for value in values {
+        test_store_imm::<i64>(WASM_OP, value, Instruction::i64_store32);
+    }
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn imm16() {
+    let values = [0, 1, -1, 42, i16::MIN + 1, i16::MIN, i16::MAX - 1, i16::MAX].map(i32::from);
+    for value in values {
+        test_store_imm16::<i32>(WASM_OP, Instruction::i64_store32_imm16, value);
+    }
 }
 
 #[test]

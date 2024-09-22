@@ -11,33 +11,35 @@ fn reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm() {
-    test_store_imm::<i32>(WASM_OP, i32::from(i16::MIN) - 1, Instruction::i32_store);
-    test_store_imm::<i32>(WASM_OP, i32::from(i16::MAX) + 1, Instruction::i32_store);
-    test_store_imm::<i32>(WASM_OP, i32::MIN, Instruction::i32_store);
-    test_store_imm::<i32>(WASM_OP, i32::MIN + 1, Instruction::i32_store);
-    test_store_imm::<i32>(WASM_OP, i32::MAX - 1, Instruction::i32_store);
-    test_store_imm::<i32>(WASM_OP, i32::MAX, Instruction::i32_store);
+    let values = [
+        i32::from(i16::MIN) - 1,
+        i32::from(i16::MAX) + 1,
+        i32::MIN,
+        i32::MIN + 1,
+        i32::MAX,
+        i32::MAX - 1,
+    ];
+    for value in values {
+        test_store_imm::<i32>(WASM_OP, value, Instruction::i32_store);
+    }
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm16() {
-    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, 0);
-    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, 1);
-    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, -1);
-    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, 42);
-    test_store_imm16::<i32>(
-        WASM_OP,
-        Instruction::i32_store_imm16,
+    let values = [
+        0,
+        1,
+        -1,
+        42,
         i32::from(i16::MIN) + 1,
-    );
-    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, i32::from(i16::MIN));
-    test_store_imm16::<i32>(
-        WASM_OP,
-        Instruction::i32_store_imm16,
+        i32::from(i16::MIN),
         i32::from(i16::MAX) - 1,
-    );
-    test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, i32::from(i16::MAX));
+        i32::from(i16::MAX),
+    ];
+    for value in values {
+        test_store_imm16::<i32>(WASM_OP, Instruction::i32_store_imm16, value);
+    }
 }
 
 #[test]
