@@ -5,7 +5,7 @@ use super::*;
 fn fill() {
     let wasm = r"
         (module
-            (memory $m1 10)
+            (memory 1)
             (func (param $dst i32) (param $value i32) (param $len i32)
                 (local.get $dst)
                 (local.get $value)
@@ -16,6 +16,7 @@ fn fill() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::memory_fill(Reg::from(0), Reg::from(1), Reg::from(2)),
+            Instruction::memory_index(0),
             Instruction::Return,
         ])
         .run()
@@ -25,7 +26,7 @@ fn testcase_fill_exact(len: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory 1)
             (func (param $dst i32) (param $value i32)
                 (local.get $dst)
                 (local.get $value)
@@ -41,6 +42,7 @@ fn test_fill_exact16(len: u32) {
     testcase_fill_exact(len)
         .expect_func_instrs([
             Instruction::memory_fill_exact(Reg::from(0), Reg::from(1), u32imm16(len)),
+            Instruction::memory_index(0),
             Instruction::Return,
         ])
         .run()
@@ -60,6 +62,7 @@ fn test_fill_exact(len: u32) {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::memory_fill(Reg::from(0), Reg::from(1), Reg::from(-1)),
+                Instruction::memory_index(0),
                 Instruction::Return,
             ])
             .consts([len]),
@@ -78,7 +81,7 @@ fn testcase_fill_imm(value: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory 1)
             (func (param $dst i32) (param $len i32)
                 (local.get $dst)
                 (i32.const {value})
@@ -94,6 +97,7 @@ fn test_fill_imm(value: u32) {
     testcase_fill_imm(value)
         .expect_func_instrs([
             Instruction::memory_fill_imm(Reg::from(0), value as u8, Reg::from(1)),
+            Instruction::memory_index(0),
             Instruction::Return,
         ])
         .run()
@@ -114,7 +118,7 @@ fn testcase_fill_at(dst: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory 1)
             (func (param $value i32) (param $len i32)
                 (i32.const {dst})
                 (local.get $value)
@@ -130,6 +134,7 @@ fn test_fill_at16(dst: u32) {
     testcase_fill_at(dst)
         .expect_func_instrs([
             Instruction::memory_fill_at(u32imm16(dst), Reg::from(0), Reg::from(1)),
+            Instruction::memory_index(0),
             Instruction::Return,
         ])
         .run()
@@ -147,6 +152,7 @@ fn test_fill_at(dst: u32) {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::memory_fill(Reg::from(-1), Reg::from(0), Reg::from(1)),
+                Instruction::memory_index(0),
                 Instruction::Return,
             ])
             .consts([dst]),
@@ -165,7 +171,7 @@ fn testcase_fill_at_imm(dst: u32, value: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory 1)
             (func (param $len i32)
                 (i32.const {dst})
                 (i32.const {value})
@@ -181,6 +187,7 @@ fn test_fill_at16_imm(dst: u32, value: u32) {
     testcase_fill_at_imm(dst, value)
         .expect_func_instrs([
             Instruction::memory_fill_at_imm(u32imm16(dst), value as u8, Reg::from(0)),
+            Instruction::memory_index(0),
             Instruction::Return,
         ])
         .run()
@@ -212,6 +219,7 @@ fn test_fill_at_imm(dst: u32, value: u32) {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::memory_fill_imm(Reg::from(-1), value as u8, Reg::from(0)),
+                Instruction::memory_index(0),
                 Instruction::Return,
             ])
             .consts([dst]),
@@ -241,7 +249,7 @@ fn testcase_fill_at_exact(dst: u32, len: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory 1)
             (func (param $value i32)
                 (i32.const {dst})
                 (local.get $value)
@@ -257,6 +265,7 @@ fn test_fill_at_exact16(dst: u32, len: u32) {
     testcase_fill_at_exact(dst, len)
         .expect_func_instrs([
             Instruction::memory_fill_at_exact(u32imm16(dst), Reg::from(0), u32imm16(len)),
+            Instruction::memory_index(0),
             Instruction::Return,
         ])
         .run()
@@ -278,6 +287,7 @@ fn test_fill_at_exact(dst: u32, len: u32) {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::memory_fill(Reg::from(-1), Reg::from(0), Reg::from(-2)),
+                Instruction::memory_index(0),
                 Instruction::Return,
             ])
             .consts([dst, len]),
@@ -307,7 +317,7 @@ fn testcase_fill_imm_exact(value: u32, len: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory 1)
             (func (param $dst i32)
                 (local.get $dst)
                 (i32.const {value})
@@ -323,6 +333,7 @@ fn test_fill_imm_exact16(value: u32, len: u32) {
     testcase_fill_imm_exact(value, len)
         .expect_func_instrs([
             Instruction::memory_fill_imm_exact(Reg::from(0), value as u8, u32imm16(len)),
+            Instruction::memory_index(0),
             Instruction::Return,
         ])
         .run()
@@ -354,6 +365,7 @@ fn test_fill_imm_exact(value: u32, len: u32) {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::memory_fill_imm(Reg::from(0), value as u8, Reg::from(-1)),
+                Instruction::memory_index(0),
                 Instruction::Return,
             ])
             .consts([len]),
@@ -383,7 +395,7 @@ fn testcase_fill_at_imm_exact(dst: u32, value: u32, len: u32) -> TranslationTest
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory 1)
             (func
                 (i32.const {dst})
                 (i32.const {value})
@@ -399,6 +411,7 @@ fn test_fill_at_imm_exact16(dst: u32, value: u32, len: u32) {
     testcase_fill_at_imm_exact(dst, value, len)
         .expect_func_instrs([
             Instruction::memory_fill_at_imm_exact(u32imm16(dst), value as u8, u32imm16(len)),
+            Instruction::memory_index(0),
             Instruction::Return,
         ])
         .run()
@@ -422,6 +435,7 @@ fn test_fill_at_imm_exact(dst: u32, value: u32, len: u32) {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::memory_fill_imm(Reg::from(-1), value as u8, Reg::from(-2)),
+                Instruction::memory_index(0),
                 Instruction::Return,
             ])
             .consts([dst, len]),
