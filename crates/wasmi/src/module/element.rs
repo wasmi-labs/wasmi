@@ -133,7 +133,7 @@ impl ElementSegment {
     }
 
     /// Returns the element items of the [`ElementSegment`].
-    pub fn items_cloned(&self) -> ElementSegmentItems {
-        self.items.clone()
+    pub fn items(&self) -> &[ConstExpr] {
+        self.items.items()
     }
 }

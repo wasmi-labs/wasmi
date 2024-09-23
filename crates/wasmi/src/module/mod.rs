@@ -29,7 +29,7 @@ pub use self::{
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
-    element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
+    element::{ElementSegment, ElementSegmentKind},
     init_expr::ConstExpr,
     utils::WasmiValueType,
 };

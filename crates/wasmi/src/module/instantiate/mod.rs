@@ -26,7 +26,6 @@ use crate::{
     Table,
     Val,
 };
-use std::boxed::Box;
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
@@ -288,7 +287,10 @@ impl Module {
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), Error> {
         for segment in &self.module_header().element_segments[..] {
-            let element = ElementSegment::new(context.as_context_mut(), segment);
+            let get_global = |index| builder.get_global(index);
+            let get_func = |index| builder.get_func(index);
+            let element =
+                ElementSegment::new(context.as_context_mut(), segment, get_func, get_global);
             if let ElementSegmentKind::Active(active) = segment.kind() {
                 let dst_index = u32::from(Self::eval_init_expr(
                     context.as_context(),
@@ -309,30 +311,14 @@ impl Module {
                         offset: dst_index,
                         amount: len_items,
                     })?;
-                // Finally do the actual initialization of the table elements.
-                let items = context
-                    .as_context()
-                    .store
-                    .inner
-                    .resolve_table_element(&element)
-                    .items()
-                    .iter()
-                    .map(|const_expr| {
-                        const_expr.eval_with_context(
-                            |index| builder.get_global(index).get(&context),
-                            |index| builder.get_func(index).into()
-                        ).unwrap_or_else(|| {
-                            panic!("unexpected failed initialization of constant expression: {const_expr:?}")
-                        })
-                    }).collect::<Box<[_]>>();
-                let table = context
+                let (table, elem) = context
                     .as_context_mut()
                     .store
                     .inner
-                    .resolve_table_mut(&table);
-                table.init_untyped(dst_index, &items, None)?;
+                    .resolve_table_and_element_mut(&table, &element);
+                table.init_untyped(dst_index, elem.items(), None)?;
                 // Now drop the active element segment as commanded by the Wasm spec.
-                element.drop_items(&mut context);
+                elem.drop_items();
             }
             builder.push_element_segment(element);
         }

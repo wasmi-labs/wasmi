@@ -7,11 +7,8 @@ use crate::{
     collections::arena::ArenaIndex,
     core::{TrapCode, UntypedVal, ValType},
     error::EntityGrowError,
-    module::FuncIdx,
     store::{Fuel, FuelError, ResourceLimiterRef},
     value::WithType,
-    Func,
-    FuncRef,
     Val,
 };
 use core::cmp::max;
@@ -397,7 +394,6 @@ impl TableEntity {
         src_index: u32,
         len: u32,
         fuel: Option<&mut Fuel>,
-        get_func: impl Fn(u32) -> Func,
     ) -> Result<(), TrapCode> {
         let table_type = self.ty();
         assert!(
@@ -432,22 +428,7 @@ impl TableEntity {
             fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
         }
         // Perform the actual table initialization.
-        match table_type.element() {
-            ValType::FuncRef => {
-                // Initialize element interpreted as Wasm `funrefs`.
-                dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
-                    let func_or_null = src.funcref().map(FuncIdx::into_u32).map(&get_func);
-                    *dst = FuncRef::new(func_or_null).into();
-                });
-            }
-            ValType::ExternRef => {
-                // Initialize element interpreted as Wasm `externrefs`.
-                dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
-                    *dst = src.eval_const().expect("must evaluate to some value");
-                });
-            }
-            _ => panic!("table.init currently only works on reftypes"),
-        };
+        dst_items.copy_from_slice(src_items);
         Ok(())
     }
 
