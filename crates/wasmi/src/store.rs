@@ -644,32 +644,16 @@ impl StoreInner {
         (fst, snd, fuel)
     }
 
-    /// Returns a triple of:
-    ///
-    /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
-    /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
-    ///
-    /// # Note
-    ///
-    /// This method exists to properly handle use cases where
-    /// otherwise the Rust borrow-checker would not accept.
+    /// Returns an exclusive reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
     ///
     /// # Panics
     ///
-    /// - If the [`Table`] does not originate from this [`Store`].
-    /// - If the [`Table`] cannot be resolved to its entity.
     /// - If the [`ElementSegment`] does not originate from this [`Store`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_table_element(
-        &mut self,
-        table: &Table,
-        segment: &ElementSegment,
-    ) -> (&mut TableEntity, &ElementSegmentEntity) {
-        let table_idx = self.unwrap_stored(table.as_inner());
+    pub(super) fn resolve_table_element(&self, segment: &ElementSegment) -> &ElementSegmentEntity {
         let elem_idx = segment.as_inner();
         let elem = self.resolve(elem_idx, &self.elems);
-        let table = Self::resolve_mut(table_idx, &mut self.tables);
-        (table, elem)
+        elem
     }
 
     /// Returns the following data:

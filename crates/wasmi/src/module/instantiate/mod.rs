@@ -26,6 +26,7 @@ use crate::{
     Table,
     Val,
 };
+use std::boxed::Box;
 
 impl Module {
     /// Instantiates a new [`Instance`] from the given compiled [`Module`].
@@ -309,16 +310,27 @@ impl Module {
                         amount: len_items,
                     })?;
                 // Finally do the actual initialization of the table elements.
-                {
-                    let (table, element) = context
-                        .as_context_mut()
-                        .store
-                        .inner
-                        .resolve_table_element(&table, &element);
-                    table.init(dst_index, element, 0, len_items, None, |func_index| {
-                        builder.get_func(func_index)
-                    })?;
-                }
+                let items = context
+                    .as_context()
+                    .store
+                    .inner
+                    .resolve_table_element(&element)
+                    .items()
+                    .iter()
+                    .map(|const_expr| {
+                        const_expr.eval_with_context(
+                            |index| builder.get_global(index).get(&context),
+                            |index| builder.get_func(index).into()
+                        ).unwrap_or_else(|| {
+                            panic!("unexpected failed initialization of constant expression: {const_expr:?}")
+                        })
+                    }).collect::<Box<[_]>>();
+                let table = context
+                    .as_context_mut()
+                    .store
+                    .inner
+                    .resolve_table_mut(&table);
+                table.init_untyped(dst_index, &items, None)?;
                 // Now drop the active element segment as commanded by the Wasm spec.
                 element.drop_items(&mut context);
             }
