@@ -248,8 +248,8 @@ impl<'engine> Executor<'engine> {
         src_index: u32,
         len: u32,
     ) -> Result<(), Error> {
-        let src_memory = self.fetch_memory_index(1);
-        let dst_memory = self.fetch_memory_index(2);
+        let dst_memory = self.fetch_memory_index(1);
+        let src_memory = self.fetch_memory_index(2);
         let src_index = src_index as usize;
         let dst_index = dst_index as usize;
         if src_memory == dst_memory {
