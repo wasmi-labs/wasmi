@@ -1,6 +1,6 @@
 use super::{ConstExpr, TableIdx};
 use crate::{core::ValType, module::utils::WasmiValueType};
-use std::sync::Arc;
+use std::boxed::Box;
 
 /// A table element segment within a [`Module`].
 ///
@@ -12,47 +12,7 @@ pub struct ElementSegment {
     /// The type of elements of the [`ElementSegment`].
     ty: ValType,
     /// The items of the [`ElementSegment`].
-    items: ElementSegmentItems,
-}
-
-/// The items of an [`ElementSegment`].
-#[derive(Debug, Clone)]
-pub struct ElementSegmentItems {
-    exprs: Arc<[ConstExpr]>,
-}
-
-impl ElementSegmentItems {
-    /// Creates new [`ElementSegmentItems`] from the given [`wasmparser::ElementItems`].
-    ///
-    /// # Panics
-    ///
-    /// If the given [`wasmparser::ElementItems`] is invalid.
-    fn new(items: &wasmparser::ElementItems) -> Self {
-        let exprs = match items {
-            wasmparser::ElementItems::Functions(items) => items
-                .clone()
-                .into_iter()
-                .map(|item| {
-                    item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
-                })
-                .map(ConstExpr::new_funcref)
-                .collect::<Arc<[_]>>(),
-            wasmparser::ElementItems::Expressions(items) => items
-                .clone()
-                .into_iter()
-                .map(|item| {
-                    item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
-                })
-                .map(ConstExpr::new)
-                .collect::<Arc<[_]>>(),
-        };
-        Self { exprs }
-    }
-
-    /// Returns a shared reference to the items of the [`ElementSegmentItems`].
-    pub fn items(&self) -> &[ConstExpr] {
-        &self.exprs
-    }
+    items: Box<[ConstExpr]>,
 }
 
 /// The kind of a Wasm [`ElementSegment`].
@@ -116,7 +76,22 @@ impl From<wasmparser::Element<'_>> for ElementSegment {
         );
         let kind = ElementSegmentKind::from(element.kind);
         let ty = WasmiValueType::from(element.ty).into_inner();
-        let items = ElementSegmentItems::new(&element.items);
+        let items = match element.items {
+            wasmparser::ElementItems::Functions(items) => items
+                .into_iter()
+                .map(|item| {
+                    item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
+                })
+                .map(ConstExpr::new_funcref)
+                .collect::<Box<[_]>>(),
+            wasmparser::ElementItems::Expressions(items) => items
+                .into_iter()
+                .map(|item| {
+                    item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
+                })
+                .map(ConstExpr::new)
+                .collect::<Box<[_]>>(),
+        };
         Self { kind, ty, items }
     }
 }
@@ -134,6 +109,6 @@ impl ElementSegment {
 
     /// Returns the element items of the [`ElementSegment`].
     pub fn items(&self) -> &[ConstExpr] {
-        self.items.items()
+        &self.items[..]
     }
 }
