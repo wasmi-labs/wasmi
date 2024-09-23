@@ -95,9 +95,6 @@ impl<'engine> Executor<'engine> {
         store_wrap: WasmStoreOp,
     ) -> Result<(), Error> {
         let memory = self.fetch_memory_bytes_mut(memory, store);
-        // // Safety: `self.memory` is always re-loaded conservatively whenever
-        // //         the heap allocations and thus the pointer might have changed.
-        // let memory = unsafe { self.cache.memory.data_mut() };
         store_wrap(memory, address, offset, value)?;
         Ok(())
     }
