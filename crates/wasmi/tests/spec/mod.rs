@@ -80,6 +80,7 @@ fn test_config(consume_fuel: bool, mode: ParsingMode) -> RunnerConfig {
         .wasm_saturating_float_to_int(true)
         .wasm_sign_extension(true)
         .wasm_multi_value(true)
+        .wasm_multi_memory(false)
         .wasm_bulk_memory(true)
         .wasm_reference_types(true)
         .wasm_tail_call(true)
@@ -208,19 +209,60 @@ macro_rules! include_wasm_blobs {
     };
 }
 
+expand_tests! {
+    define_spec_tests,
+
+    let config = test_config(false, ParsingMode::Buffered);
+    let runner = run::run_wasm_spec_test;
+}
+
+macro_rules! expand_tests_mm {
+    ( $mac:ident, $( $args:tt )* ) => {
+        $mac! {
+            $( $args )*
+
+            fn wasm_multi_memory_binary("proposals/multi-memory/binary");
+            fn wasm_multi_memory_data("proposals/multi-memory/data");
+            fn wasm_multi_memory_imports("proposals/multi-memory/imports");
+            fn wasm_multi_memory_load("proposals/multi-memory/load");
+            fn wasm_multi_memory_memory_grow("proposals/multi-memory/memory_grow");
+            fn wasm_multi_memory_memory_size("proposals/multi-memory/memory_size");
+            fn wasm_multi_memory_mmemory_multi("proposals/multi-memory/memory-multi");
+            fn wasm_multi_memory_memory("proposals/multi-memory/memory");
+            fn wasm_multi_memory_store("proposals/multi-memory/store");
+        }
+    };
+}
+
 mod blobs {
     expand_tests! {
         include_wasm_blobs,
 
         let folder = "testsuite";
     }
+
+    expand_tests_mm! {
+        include_wasm_blobs,
+
+        let folder = "testsuite";
+    }
 }
 
-expand_tests! {
-    define_spec_tests,
+mod multi_memory {
+    use super::*;
 
-    let config = test_config(false, ParsingMode::Buffered);
-    let runner = run::run_wasm_spec_test;
+    fn test_config() -> RunnerConfig {
+        let config = Config::default();
+        let mode = ParsingMode::Buffered;
+        RunnerConfig { config, mode }
+    }
+
+    expand_tests_mm! {
+        define_spec_tests,
+
+        let config = test_config();
+        let runner = run::run_wasm_spec_test;
+    }
 }
 
 mod fueled {
