@@ -1,12 +1,16 @@
 use crate::{
     collections::arena::ArenaIndex,
-    core::ValType,
+    core::{UntypedVal, ValType},
     module,
-    module::{ConstExpr, ElementSegmentItems},
     store::Stored,
     AsContext,
     AsContextMut,
+    Func,
+    FuncRef,
+    Global,
+    Val,
 };
+use std::boxed::Box;
 
 /// A raw index to a element segment entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -46,8 +50,15 @@ impl ElementSegment {
     /// # Errors
     ///
     /// If more than [`u32::MAX`] much linear memory is allocated.
-    pub fn new(mut ctx: impl AsContextMut, segment: &module::ElementSegment) -> Self {
-        let entity = ElementSegmentEntity::from(segment);
+    pub fn new(
+        mut ctx: impl AsContextMut,
+        elem: &module::ElementSegment,
+        get_func: impl Fn(u32) -> Func,
+        get_global: impl Fn(u32) -> Global,
+    ) -> Self {
+        let get_func = |index| get_func(index).into();
+        let get_global = |index| get_global(index).get(&ctx);
+        let entity = ElementSegmentEntity::new(elem, get_func, get_global);
         ctx.as_context_mut()
             .store
             .inner
@@ -62,15 +73,6 @@ impl ElementSegment {
             .resolve_element_segment(self)
             .size()
     }
-
-    /// Drops the items of the [`ElementSegment`].
-    pub fn drop_items(&self, mut ctx: impl AsContextMut) {
-        ctx.as_context_mut()
-            .store
-            .inner
-            .resolve_element_segment_mut(self)
-            .drop_items()
-    }
 }
 
 /// An instantiated [`ElementSegmentEntity`].
@@ -84,33 +86,43 @@ impl ElementSegment {
 pub struct ElementSegmentEntity {
     /// The [`ValType`] of elements of this [`ElementSegmentEntity`].
     ty: ValType,
-    /// The underlying items of the instance element segment.
-    ///
-    /// # Note
-    ///
-    /// These items are just readable after instantiation.
-    /// Using Wasm `elem.drop` simply replaces the instance
-    /// with an empty one.
-    items: Option<ElementSegmentItems>,
-}
-
-impl From<&'_ module::ElementSegment> for ElementSegmentEntity {
-    fn from(segment: &'_ module::ElementSegment) -> Self {
-        let ty = segment.ty();
-        match segment.kind() {
-            module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => Self {
-                ty,
-                items: Some(segment.items_cloned()),
-            },
-            module::ElementSegmentKind::Declared => Self::empty(ty),
-        }
-    }
+    /// Pre-resolved untyped items of the Wasm element segment.
+    items: Box<[UntypedVal]>,
 }
 
 impl ElementSegmentEntity {
+    pub fn new(
+        elem: &'_ module::ElementSegment,
+        get_func: impl Fn(u32) -> FuncRef,
+        get_global: impl Fn(u32) -> Val,
+    ) -> Self {
+        let ty = elem.ty();
+        match elem.kind() {
+            module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => {
+                let items = elem
+                    .items()
+                    .iter()
+                    .map(|const_expr| {
+                        const_expr.eval_with_context(&get_global, &get_func).unwrap_or_else(|| {
+                            panic!("unexpected failed initialization of constant expression: {const_expr:?}")
+                        })
+                }).collect::<Box<[_]>>();
+                Self {
+                    ty,
+                    // items: Some(elem.items_cloned()),
+                    items,
+                }
+            }
+            module::ElementSegmentKind::Declared => Self::empty(ty),
+        }
+    }
+
     /// Create an empty [`ElementSegmentEntity`] representing dropped element segments.
     fn empty(ty: ValType) -> Self {
-        Self { ty, items: None }
+        Self {
+            ty,
+            items: [].into(),
+        }
     }
 
     /// Returns the [`ValType`] of elements in the [`ElementSegmentEntity`].
@@ -124,15 +136,12 @@ impl ElementSegmentEntity {
     }
 
     /// Returns the items of the [`ElementSegmentEntity`].
-    pub fn items(&self) -> &[ConstExpr] {
-        self.items
-            .as_ref()
-            .map(ElementSegmentItems::items)
-            .unwrap_or(&[])
+    pub fn items(&self) -> &[UntypedVal] {
+        &self.items[..]
     }
 
     /// Drops the items of the [`ElementSegmentEntity`].
     pub fn drop_items(&mut self) {
-        self.items = None;
+        self.items = [].into();
     }
 }
