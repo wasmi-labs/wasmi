@@ -168,7 +168,9 @@ pub trait Wrap<T> {
 
 impl<T> Wrap<T> for T {
     #[inline]
-    fn wrap(self) -> T { self }
+    fn wrap(self) -> T {
+        self
+    }
 }
 
 macro_rules! impl_wrap_for {
