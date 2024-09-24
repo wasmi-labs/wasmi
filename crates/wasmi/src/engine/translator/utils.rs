@@ -159,3 +159,41 @@ impl FromProviders for BoundedRegSpan {
         Some(Self::new(RegSpan::new(Reg::from(first_index)), len))
     }
 }
+
+/// Implemented by integer types to wrap them to another (smaller) integer type.
+pub trait Wrap<T> {
+    /// Wraps `self` into a value of type `T`.
+    fn wrap(self) -> T;
+}
+
+impl<T> Wrap<T> for T {
+    #[inline]
+    fn wrap(self) -> T { self }
+}
+
+macro_rules! impl_wrap_for {
+    ( $($from_ty:ty => $to_ty:ty),* $(,)? ) => {
+        $(
+            impl Wrap<$to_ty> for $from_ty {
+                #[inline]
+                fn wrap(self) -> $to_ty { self as _ }
+            }
+        )*
+    };
+}
+impl_wrap_for! {
+    // signed
+    i16 => i8,
+    i32 => i8,
+    i32 => i16,
+    i64 => i8,
+    i64 => i16,
+    i64 => i32,
+    // unsigned
+    u16 => u8,
+    u32 => u8,
+    u32 => u16,
+    u64 => u8,
+    u64 => u16,
+    u64 => u32,
+}
