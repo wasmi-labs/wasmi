@@ -11,12 +11,35 @@ fn reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm() {
-    test_store_imm::<i32>(WASM_OP, 0, Instruction::i32_store8);
-    test_store_imm::<i32>(WASM_OP, 1, Instruction::i32_store8);
-    test_store_imm::<i32>(WASM_OP, -1, Instruction::i32_store8);
-    test_store_imm::<i32>(WASM_OP, 42, Instruction::i32_store8);
-    test_store_imm::<i32>(WASM_OP, i32::MIN, Instruction::i32_store8);
-    test_store_imm::<i32>(WASM_OP, i32::MAX, Instruction::i32_store8);
+    let values = [
+        i32::from(i16::MIN) - 1,
+        i32::from(i16::MAX) + 1,
+        i32::MIN,
+        i32::MIN + 1,
+        i32::MAX,
+        i32::MAX - 1,
+    ];
+    for value in values {
+        test_store_imm::<i32>(WASM_OP, value, Instruction::i32_store8);
+    }
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn imm16() {
+    let values = [
+        0,
+        1,
+        -1,
+        42,
+        (i16::MIN + 1) as i8,
+        (i16::MIN) as i8,
+        (i16::MAX - 1) as i8,
+        (i16::MAX) as i8,
+    ];
+    for value in values {
+        test_store_imm16::<i8>(WASM_OP, Instruction::i32_store8_imm, value);
+    }
 }
 
 #[test]

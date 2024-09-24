@@ -20,6 +20,8 @@ macro_rules! for_each_index {
             InternalFunc(pub(crate) u32);
             /// A Wasm global variable index.
             Global(pub(crate) u32);
+            /// A Wasm linear memory index.
+            Memory(pub(crate) u32);
             /// A Wasm table index.
             Table(pub(crate) u32);
             /// A Wasm data segment index.
@@ -28,6 +30,13 @@ macro_rules! for_each_index {
             Elem(pub(crate) u32);
         }
     };
+}
+
+impl Memory {
+    /// Returns `true` if `self` refers to the default linear memory which always is at index 0.
+    pub fn is_default(&self) -> bool {
+        self.0 == 0
+    }
 }
 
 macro_rules! define_index {

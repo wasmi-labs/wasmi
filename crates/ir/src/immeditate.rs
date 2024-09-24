@@ -448,6 +448,12 @@ impl TryFrom<NonZeroU64> for AnyConst16 {
     }
 }
 
+impl From<i8> for AnyConst16 {
+    fn from(value: i8) -> Self {
+        Self(value as u8 as u16 as i16)
+    }
+}
+
 impl From<i16> for AnyConst16 {
     fn from(value: i16) -> Self {
         Self(value)
@@ -457,6 +463,18 @@ impl From<i16> for AnyConst16 {
 impl From<u16> for AnyConst16 {
     fn from(value: u16) -> Self {
         Self::from(value as i16)
+    }
+}
+
+impl From<AnyConst16> for i8 {
+    fn from(value: AnyConst16) -> Self {
+        value.0 as i8
+    }
+}
+
+impl From<AnyConst16> for i16 {
+    fn from(value: AnyConst16) -> Self {
+        value.0
     }
 }
 

@@ -1,4 +1,5 @@
 use super::*;
+use crate::ir::index::Memory;
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -14,6 +15,7 @@ fn reg() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::memory_grow(Reg::from(1), Reg::from(0)),
+            Instruction::memory_index(0),
             Instruction::return_reg(Reg::from(1)),
         ])
         .run();
@@ -34,6 +36,7 @@ fn test_imm16(delta: u32) {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::memory_grow_by(Reg::from(0), u32imm16(delta)),
+            Instruction::memory_index(0),
             Instruction::return_reg(Reg::from(0)),
         ])
         .run();
@@ -61,7 +64,7 @@ fn imm_zero() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::memory_size(Reg::from(0)),
+            Instruction::memory_size(Reg::from(0), Memory::from(0)),
             Instruction::return_reg(Reg::from(0)),
         ])
         .run();
@@ -82,6 +85,7 @@ fn test_imm(delta: u32) {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::memory_grow(Reg::from(0), Reg::from(-1)),
+                Instruction::memory_index(0),
                 Instruction::return_reg(Reg::from(0)),
             ])
             .consts([delta]),

@@ -22,6 +22,7 @@ use crate::{
         BlockType,
         FuelCosts,
     },
+    ir::index,
     module::{self, FuncIdx, WasmiValueType},
     Error,
     ExternRef,
@@ -889,6 +890,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i32, i16>(
             memarg,
             Instruction::i32_store,
+            Instruction::i32_store_imm16,
             Instruction::i32_store_offset16,
             Instruction::i32_store_offset16_imm16,
             Instruction::i32_store_at,
@@ -900,6 +902,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i64, i16>(
             memarg,
             Instruction::i64_store,
+            Instruction::i64_store_imm16,
             Instruction::i64_store_offset16,
             Instruction::i64_store_offset16_imm16,
             Instruction::i64_store_at,
@@ -929,6 +932,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i32, i8>(
             memarg,
             Instruction::i32_store8,
+            Instruction::i32_store8_imm,
             Instruction::i32_store8_offset16,
             Instruction::i32_store8_offset16_imm,
             Instruction::i32_store8_at,
@@ -940,6 +944,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i32, i16>(
             memarg,
             Instruction::i32_store16,
+            Instruction::i32_store16_imm,
             Instruction::i32_store16_offset16,
             Instruction::i32_store16_offset16_imm,
             Instruction::i32_store16_at,
@@ -951,6 +956,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i64, i8>(
             memarg,
             Instruction::i64_store8,
+            Instruction::i64_store8_imm,
             Instruction::i64_store8_offset16,
             Instruction::i64_store8_offset16_imm,
             Instruction::i64_store8_at,
@@ -962,6 +968,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i64, i16>(
             memarg,
             Instruction::i64_store16,
+            Instruction::i64_store16_imm,
             Instruction::i64_store16_offset16,
             Instruction::i64_store16_offset16_imm,
             Instruction::i64_store16_at,
@@ -973,6 +980,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_istore::<i64, i16>(
             memarg,
             Instruction::i64_store32,
+            Instruction::i64_store32_imm16,
             Instruction::i64_store32_offset16,
             Instruction::i64_store32_offset16_imm16,
             Instruction::i64_store32_at,
@@ -981,34 +989,39 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_memory_size(&mut self, mem: u32, _mem_byte: u8) -> Self::Output {
-        debug_assert_eq!(
-            mem, 0,
-            "wasmi does not yet support the multi-memory Wasm proposal"
-        );
         bail_unreachable!(self);
+        let memory = index::Memory::from(mem);
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(Instruction::memory_size(result), FuelCosts::entity)?;
+        self.push_fueled_instr(Instruction::memory_size(result, memory), FuelCosts::entity)?;
         Ok(())
     }
 
-    fn visit_memory_grow(&mut self, _mem: u32, _mem_byte: u8) -> Self::Output {
+    fn visit_memory_grow(&mut self, mem: u32, _mem_byte: u8) -> Self::Output {
         bail_unreachable!(self);
         let delta = self.alloc.stack.pop();
         let delta = <Provider<Const16<u32>>>::new(delta, &mut self.alloc.stack)?;
+        let memory = index::Memory::from(mem);
         let result = self.alloc.stack.push_dynamic()?;
         let instr = match delta {
-            Provider::Register(delta) => Instruction::memory_grow(result, delta),
             Provider::Const(delta) if u32::from(delta) == 0 => {
                 // Case: growing by 0 pages.
                 //
                 // Since `memory.grow` returns the `memory.size` before the
                 // operation a `memory.grow` with `delta` of 0 can be translated
                 // as `memory.size` instruction instead.
-                Instruction::memory_size(result)
+                self.push_fueled_instr(
+                    Instruction::memory_size(result, memory),
+                    FuelCosts::entity,
+                )?;
+                return Ok(());
             }
             Provider::Const(delta) => Instruction::memory_grow_by(result, delta),
+            Provider::Register(delta) => Instruction::memory_grow(result, delta),
         };
         self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::memory_index(memory))?;
         Ok(())
     }
 
@@ -3049,8 +3062,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         )
     }
 
-    fn visit_memory_init(&mut self, data_index: u32, _mem: u32) -> Self::Output {
+    fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
         bail_unreachable!(self);
+        let memory = index::Memory::from(mem);
         let (dst, src, len) = self.alloc.stack.pop3();
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
         let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
@@ -3084,6 +3098,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc
             .instr_encoder
+            .append_instr(Instruction::memory_index(memory))?;
+        self.alloc
+            .instr_encoder
             .append_instr(Instruction::data_index(data_index))?;
         Ok(())
     }
@@ -3094,8 +3111,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_memory_copy(&mut self, _dst_mem: u32, _src_mem: u32) -> Self::Output {
+    fn visit_memory_copy(&mut self, dst_mem: u32, src_mem: u32) -> Self::Output {
         bail_unreachable!(self);
+        let dst_memory = index::Memory::from(dst_mem);
+        let src_memory = index::Memory::from(src_mem);
         let (dst, src, len) = self.alloc.stack.pop3();
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
         let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
@@ -3127,11 +3146,18 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
         };
         self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::memory_index(dst_memory))?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::memory_index(src_memory))?;
         Ok(())
     }
 
-    fn visit_memory_fill(&mut self, _mem: u32) -> Self::Output {
+    fn visit_memory_fill(&mut self, mem: u32) -> Self::Output {
         bail_unreachable!(self);
+        let memory = index::Memory::from(mem);
         let (dst, value, len) = self.alloc.stack.pop3();
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
         let value = <Provider<u8>>::new(value);
@@ -3163,6 +3189,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             }
         };
         self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::memory_index(memory))?;
         Ok(())
     }
 

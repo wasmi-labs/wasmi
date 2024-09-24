@@ -23,6 +23,8 @@ pub struct Config {
     saturating_float_to_int: bool,
     /// Is `true` if the [`multi-value`] Wasm proposal is enabled.
     multi_value: bool,
+    /// Is `true` if the [`multi-memory`] Wasm proposal is enabled.
+    multi_memory: bool,
     /// Is `true` if the [`bulk-memory`] Wasm proposal is enabled.
     bulk_memory: bool,
     /// Is `true` if the [`reference-types`] Wasm proposal is enabled.
@@ -176,6 +178,7 @@ impl Default for Config {
             sign_extension: true,
             saturating_float_to_int: true,
             multi_value: true,
+            multi_memory: true,
             bulk_memory: true,
             reference_types: true,
             tail_call: true,
@@ -263,6 +266,18 @@ impl Config {
     /// [`multi-value`]: https://github.com/WebAssembly/multi-value
     pub fn wasm_multi_value(&mut self, enable: bool) -> &mut Self {
         self.multi_value = enable;
+        self
+    }
+
+    /// Enable or disable the [`multi-memory`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Enabled by default.
+    ///
+    /// [`multi-memory`]: https://github.com/WebAssembly/multi-memory
+    pub fn wasm_multi_memory(&mut self, enable: bool) -> &mut Self {
+        self.multi_memory = enable;
         self
     }
 
@@ -419,7 +434,7 @@ impl Config {
             simd: false,
             relaxed_simd: false,
             threads: false,
-            multi_memory: false,
+            multi_memory: self.multi_memory,
             exceptions: false,
             memory64: false,
             memory_control: false,
