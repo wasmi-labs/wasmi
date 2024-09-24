@@ -690,11 +690,11 @@ impl StoreInner {
         segment: &ElementSegment,
     ) -> (&mut TableEntity, &ElementSegmentEntity, &mut Fuel) {
         let mem_idx = self.unwrap_stored(table.as_inner());
-        let data_idx = segment.as_inner();
-        let data = self.resolve(data_idx, &self.elems);
+        let elem_idx = segment.as_inner();
+        let elem = self.resolve(elem_idx, &self.elems);
         let mem = Self::resolve_mut(mem_idx, &mut self.tables);
         let fuel = &mut self.fuel;
-        (mem, data, fuel)
+        (mem, elem, fuel)
     }
 
     /// Returns a shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
