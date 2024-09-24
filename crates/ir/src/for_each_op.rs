@@ -5623,7 +5623,7 @@ macro_rules! for_each_op {
             MemoryGrowBy {
                 @result: Reg,
                 /// The number of pages to add to the memory.
-                delta: Const16<u32>,
+                delta: u32,
             },
 
             /// Wasm `memory.copy` instruction.

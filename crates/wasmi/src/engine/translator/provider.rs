@@ -50,6 +50,14 @@ impl<T> Provider<T> {
             Self::Const(_) => None,
         }
     }
+
+    /// Maps the constant value with `f` if `self` is [`Provider::Const`] and returns the result.
+    pub fn map_const<U>(self, f: impl FnOnce(T) -> U) -> Provider<U> {
+        match self {
+            Provider::Register(reg) => Provider::Register(reg),
+            Provider::Const(value) => Provider::Const(f(value)),
+        }
+    }
 }
 
 /// An untyped [`Provider`].
