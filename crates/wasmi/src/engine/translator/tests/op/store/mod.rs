@@ -3,6 +3,7 @@
 use super::*;
 use crate::{
     core::UntypedVal,
+    engine::translator::utils::Wrap,
     ir::{index::Memory, AnyConst16},
 };
 
@@ -177,6 +178,59 @@ fn test_store_offset16_imm16<T>(
     test_store_offset16_imm16_for(wasm_op, 0, value, make_instr);
     test_store_offset16_imm16_for(wasm_op, u16::MAX - 1, value, make_instr);
     test_store_offset16_imm16_for(wasm_op, u16::MAX, value, make_instr);
+}
+
+fn test_store_wrap_imm_for<Src, Wrapped, Field>(
+    wasm_op: WasmOp,
+    offset: u32,
+    value: Src,
+    make_instr: fn(ptr: Reg, memory: Memory) -> Instruction,
+) where
+    Src: Copy + Into<UntypedVal> + Wrap<Wrapped>,
+    Field: TryFrom<Wrapped> + Into<AnyConst16>,
+    DisplayWasm<Src>: Display,
+{
+    assert!(
+        u16::try_from(offset).is_err(),
+        "this test requires non-16 bit offsets but found {offset}"
+    );
+    let param_ty = wasm_op.param_ty();
+    let display_value = DisplayWasm::from(value);
+    let wasm = format!(
+        r#"
+        (module
+            (memory 1)
+            (func (param $ptr i32)
+                local.get $ptr
+                {param_ty}.const {display_value}
+                {wasm_op} offset={offset}
+            )
+        )
+    "#
+    );
+    let value = Field::try_from(value.wrap()).ok().unwrap();
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([
+            make_instr(Reg::from(0), Memory::from(0)),
+            Instruction::imm16_and_imm32(value, offset),
+            Instruction::Return,
+        ])
+        .run();
+}
+
+fn test_store_wrap_imm<Src, Wrapped, Field>(
+    wasm_op: WasmOp,
+    value: Src,
+    make_instr: fn(ptr: Reg, memory: Memory) -> Instruction,
+) where
+    Src: Copy + Into<UntypedVal> + Wrap<Wrapped>,
+    Field: TryFrom<Wrapped> + Into<AnyConst16>,
+    DisplayWasm<Src>: Display,
+{
+    let offsets = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
+    for offset in offsets {
+        test_store_wrap_imm_for::<Src, Wrapped, Field>(wasm_op, offset, value, make_instr);
+    }
 }
 
 fn test_store_imm_for<T>(
