@@ -22,7 +22,7 @@ fn reg() {
 }
 
 fn test_imm16(delta: u32) {
-    assert!(1 <= delta && delta <= u32::from(u16::MAX));
+    assert!(delta != 0);
     let wasm = &format!(
         r"
         (module
@@ -35,7 +35,7 @@ fn test_imm16(delta: u32) {
     );
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::memory_grow_by(Reg::from(0), u32imm16(delta)),
+            Instruction::memory_grow_by(Reg::from(0), delta),
             Instruction::memory_index(0),
             Instruction::return_reg(Reg::from(0)),
         ])
@@ -49,6 +49,9 @@ fn imm16() {
     test_imm16(42);
     test_imm16(u32::from(u16::MAX) - 1);
     test_imm16(u32::from(u16::MAX));
+    test_imm16(u32::from(u16::MAX) + 1);
+    test_imm16(u32::MAX - 1);
+    test_imm16(u32::MAX);
 }
 
 #[test]
@@ -68,35 +71,4 @@ fn imm_zero() {
             Instruction::return_reg(Reg::from(0)),
         ])
         .run();
-}
-
-fn test_imm(delta: u32) {
-    let wasm = &format!(
-        r"
-        (module
-            (memory $m 10)
-            (func (result i32)
-                (i32.const {delta})
-                (memory.grow $m)
-            )
-        )",
-    );
-    TranslationTest::from_wat(wasm)
-        .expect_func(
-            ExpectedFunc::new([
-                Instruction::memory_grow(Reg::from(0), Reg::from(-1)),
-                Instruction::memory_index(0),
-                Instruction::return_reg(Reg::from(0)),
-            ])
-            .consts([delta]),
-        )
-        .run();
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn imm() {
-    test_imm(u32::from(u16::MAX) + 1);
-    test_imm(u32::MAX - 1);
-    test_imm(u32::MAX);
 }

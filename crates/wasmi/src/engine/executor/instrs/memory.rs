@@ -76,9 +76,8 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut Store<T>,
         result: Reg,
-        delta: Const16<u32>,
+        delta: u32,
     ) -> Result<(), Error> {
-        let delta: u32 = delta.into();
         let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
         self.execute_memory_grow_impl(store, result, delta, &mut resource_limiter)
     }
