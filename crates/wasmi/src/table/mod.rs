@@ -7,11 +7,8 @@ use crate::{
     collections::arena::ArenaIndex,
     core::{TrapCode, UntypedVal, ValType},
     error::EntityGrowError,
-    module::FuncIdx,
     store::{Fuel, FuelError, ResourceLimiterRef},
     value::WithType,
-    Func,
-    FuncRef,
     Val,
 };
 use core::cmp::max;
@@ -337,21 +334,59 @@ impl TableEntity {
         Ok(())
     }
 
-    /// Initialize `len` elements from `src_element[src_index..]` into
-    /// `dst_table[dst_index..]`.
-    ///
-    /// Uses the `instance` to resolve function indices of the element to [`Func`][`crate::Func`].
+    /// Initialize `self[dst_index..]` from `elements`.
     ///
     /// # Errors
     ///
-    /// Returns an error if the range is out of bounds
-    /// of either the source or destination tables.
+    /// Returns an error if the range is out of bounds of either the source or destination tables.
     ///
     /// # Panics
     ///
     /// - Panics if the `instance` cannot resolve all the `element` func indices.
     /// - If the [`ElementSegmentEntity`] element type does not match the [`Table`] element type.
     ///   Note: This is a panic instead of an error since it is asserted at Wasm validation time.
+    pub fn init_untyped(
+        &mut self,
+        dst_index: u32,
+        elements: &[UntypedVal],
+        fuel: Option<&mut Fuel>,
+    ) -> Result<(), TrapCode> {
+        let table_type = self.ty();
+        assert!(
+            table_type.element().is_ref(),
+            "table.init currently only works on reftypes"
+        );
+        // Convert parameters to indices.
+        let dst_index = dst_index as usize;
+        let len = elements.len();
+        let dst_items = self
+            .elements
+            .get_mut(dst_index..)
+            .and_then(|items| items.get_mut(..len))
+            .ok_or(TrapCode::TableOutOfBounds)?;
+        if len == 0 {
+            // Bail out early if nothing needs to be initialized.
+            // The Wasm spec demands to still perform the bounds check
+            // so we cannot bail out earlier.
+            return Ok(());
+        }
+        if let Some(fuel) = fuel {
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
+        }
+        dst_items.copy_from_slice(elements);
+        Ok(())
+    }
+
+    /// Initialize `len` elements from `src_element[src_index..]` into `self[dst_index..]`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the range is out of bounds of either the source or destination tables.
+    ///
+    /// # Panics
+    ///
+    /// If the [`ElementSegmentEntity`] element type does not match the [`Table`] element type.
+    /// Note: This is a panic instead of an error since it is asserted at Wasm validation time.
     pub fn init(
         &mut self,
         dst_index: u32,
@@ -359,7 +394,6 @@ impl TableEntity {
         src_index: u32,
         len: u32,
         fuel: Option<&mut Fuel>,
-        get_func: impl Fn(u32) -> Func,
     ) -> Result<(), TrapCode> {
         let table_type = self.ty();
         assert!(
@@ -394,22 +428,7 @@ impl TableEntity {
             fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len as u64))?;
         }
         // Perform the actual table initialization.
-        match table_type.element() {
-            ValType::FuncRef => {
-                // Initialize element interpreted as Wasm `funrefs`.
-                dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
-                    let func_or_null = src.funcref().map(FuncIdx::into_u32).map(&get_func);
-                    *dst = FuncRef::new(func_or_null).into();
-                });
-            }
-            ValType::ExternRef => {
-                // Initialize element interpreted as Wasm `externrefs`.
-                dst_items.iter_mut().zip(src_items).for_each(|(dst, src)| {
-                    *dst = src.eval_const().expect("must evaluate to some value");
-                });
-            }
-            _ => panic!("table.init currently only works on reftypes"),
-        };
+        dst_items.copy_from_slice(src_items);
         Ok(())
     }
 

@@ -629,7 +629,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_drop(&mut self) -> Self::Output {
         bail_unreachable!(self);
-        self.alloc.stack.pop();
+        self.alloc.stack.drop();
         Ok(())
     }
 
@@ -1062,6 +1062,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_ref_is_null(&mut self) -> Self::Output {
+        bail_unreachable!(self);
+        let input = self.alloc.stack.peek();
+        if let Provider::Const(input) = input {
+            self.alloc.stack.drop();
+            let untyped = input.untyped();
+            let is_null = match input.ty() {
+                ValType::FuncRef => FuncRef::from(untyped).is_null(),
+                ValType::ExternRef => ExternRef::from(untyped).is_null(),
+                invalid => panic!("ref.is_null: encountered invalid input type: {invalid:?}"),
+            };
+            self.alloc.stack.push_const(i32::from(is_null));
+            return Ok(());
+        }
         // Note: Since `funcref` and `externref` both serialize to `UntypedValue`
         //       as raw `u64` values we can use `i64.eqz` translation for `ref.is_null`.
         self.visit_i64_eqz()
