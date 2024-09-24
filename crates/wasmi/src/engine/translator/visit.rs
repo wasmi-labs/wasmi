@@ -3156,7 +3156,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let memory = index::Memory::from(mem);
         let (dst, value, len) = self.alloc.stack.pop3();
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
-        let value = <Provider<u8>>::new(value);
+        let value = value.map_const(|value| u32::from(value) as u8);
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
         let instr = match (dst, value, len) {
             (Provider::Register(dst), Provider::Register(value), Provider::Register(len)) => {

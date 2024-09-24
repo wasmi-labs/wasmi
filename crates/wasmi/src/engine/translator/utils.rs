@@ -100,16 +100,6 @@ impl WasmFloat for f64 {
     }
 }
 
-impl Provider<u8> {
-    /// Creates a new `memory` value [`Provider`] from the general [`TypedProvider`].
-    pub fn new(provider: TypedProvider) -> Self {
-        match provider {
-            TypedProvider::Const(value) => Self::Const(u32::from(value) as u8),
-            TypedProvider::Register(register) => Self::Register(register),
-        }
-    }
-}
-
 impl Provider<Const16<u32>> {
     /// Creates a new `table` or `memory` index [`Provider`] from the general [`TypedProvider`].
     ///
