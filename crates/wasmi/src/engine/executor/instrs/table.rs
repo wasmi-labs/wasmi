@@ -399,23 +399,11 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
-        let (instance, table, element, fuel) = store.resolve_table_init_params(
-            self.stack.calls.instance_expect(),
+        let (table, element, fuel) = store.resolve_table_init_params(
             &self.get_table(table_index),
             &self.get_element_segment(element_index),
         );
-        table.init(
-            dst_index,
-            element,
-            src_index,
-            len,
-            Some(fuel),
-            |func_index| {
-                instance
-                    .get_func(func_index)
-                    .unwrap_or_else(|| panic!("missing function at index {func_index}"))
-            },
-        )?;
+        table.init(dst_index, element, src_index, len, Some(fuel))?;
         self.try_next_instr_at(3)
     }
 
