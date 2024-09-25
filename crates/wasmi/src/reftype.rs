@@ -1,4 +1,5 @@
-use crate::core::UntypedVal;
+use crate::{core::UntypedVal, ExternRef, FuncRef};
+use core::mem;
 
 /// Utility type used to convert between `reftype` and [`UntypedVal`].
 ///
@@ -28,17 +29,26 @@ impl<T: Copy> Transposer<T> {
     pub fn new(reftype: T) -> Self {
         Transposer { reftype }
     }
-
-    /// Returns the value of type `u64` from `self`.
-    pub unsafe fn value(self) -> u64 {
-        unsafe { self.value }
-    }
-
-    /// Returns the value of type `T` from `self`.
-    pub unsafe fn reftype(self) -> T {
-        unsafe { self.reftype }
-    }
 }
+
+macro_rules! impl_getters {
+    ( $($ty:ty),* $(,)? ) => {
+        $(
+            impl Transposer<$ty> {
+                /// Returns the value of type `u64` from `self`.
+                pub unsafe fn value(self) -> u64 {
+                    unsafe { mem::transmute::<$ty, u64>(self.reftype) }
+                }
+
+                /// Returns the value of type `T` from `self`.
+                pub unsafe fn reftype(self) -> $ty {
+                    unsafe { mem::transmute::<u64, $ty>(self.value) }
+                }
+            }
+        )*
+    };
+}
+impl_getters!(FuncRef, ExternRef);
 
 impl<T: Copy> From<UntypedVal> for Transposer<T> {
     fn from(untyped: UntypedVal) -> Self {
