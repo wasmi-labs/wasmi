@@ -6,6 +6,7 @@ use crate::{
     engine::translator::utils::Wrap,
     ir::{index::Memory, AnyConst16},
 };
+use std::vec;
 
 mod f32_store;
 mod f64_store;
@@ -399,9 +400,10 @@ fn test_store_at_overflow_for(wasm_op: WasmOp, ptr: u32, offset: u32) {
 }
 
 fn test_store_at_overflow(wasm_op: WasmOp) {
-    test_store_at_overflow_for(wasm_op, 1, u32::MAX);
-    test_store_at_overflow_for(wasm_op, u32::MAX, 1);
-    test_store_at_overflow_for(wasm_op, u32::MAX, u32::MAX);
+    let ptrs_and_offsets = [(1, u32::MAX), (u32::MAX, 1), (u32::MAX, u32::MAX)];
+    for (ptr, offset) in ptrs_and_offsets {
+        test_store_at_overflow_for(wasm_op, ptr, offset);
+    }
 }
 
 fn test_store_at_imm_for<T>(
@@ -458,7 +460,79 @@ fn test_store_at_imm<T>(
     test_store_at_imm_for(wasm_op, u32::MAX, 0, value, make_instr);
 }
 
-fn test_store_at_imm_overflow_for<T>(wasm_op: WasmOp, ptr: u32, offset: u32, value: T)
+fn test_store_wrap_at_imm_for<Src, Wrapped, Field>(
+    wasm_op: WasmOp,
+    mem_idx: u32,
+    ptr: u32,
+    offset: u32,
+    value: Src,
+    make_instr: fn(value: Field, address: u32) -> Instruction,
+) where
+    Src: Copy + Into<UntypedVal> + Wrap<Wrapped>,
+    Field: TryFrom<Wrapped> + Into<AnyConst16>,
+    DisplayWasm<Src>: Display,
+{
+    let address = ptr
+        .checked_add(offset)
+        .expect("testcase requires valid ptr+offset address");
+    let mem = format!("$mem{mem_idx}");
+    let display_value = DisplayWasm::from(value);
+    let param_ty = wasm_op.param_ty();
+    let wasm = format!(
+        r#"
+        (module
+            (memory $mem0 1)
+            (memory $mem1 1)
+            (func
+                i32.const {ptr}
+                {param_ty}.const {display_value}
+                {wasm_op} {mem} offset={offset}
+            )
+        )
+    "#
+    );
+    let value = Field::try_from(value.wrap()).ok().unwrap();
+    let mut instrs = vec![make_instr(value, address)];
+    if mem_idx != 0 {
+        instrs.push(Instruction::memory_index(mem_idx));
+    }
+    instrs.push(Instruction::Return);
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs(instrs)
+        .run();
+}
+
+fn test_store_wrap_at_imm<Src, Wrapped, Field>(
+    wasm_op: WasmOp,
+    value: Src,
+    make_instr: fn(value: Field, address: u32) -> Instruction,
+) where
+    Src: Copy + Into<UntypedVal> + Wrap<Wrapped>,
+    Field: TryFrom<Wrapped> + Into<AnyConst16>,
+    DisplayWasm<Src>: Display,
+{
+    let ptrs_and_offsets = [
+        (0, 0),
+        (0, 1),
+        (1, 0),
+        (1, 1),
+        (1000, 1000),
+        (1, u32::MAX - 1),
+        (u32::MAX - 1, 1),
+        (0, u32::MAX),
+        (u32::MAX, 0),
+    ];
+    for (ptr, offset) in ptrs_and_offsets {
+        test_store_wrap_at_imm_for::<Src, Wrapped, Field>(
+            wasm_op, 0, ptr, offset, value, make_instr,
+        );
+        test_store_wrap_at_imm_for::<Src, Wrapped, Field>(
+            wasm_op, 1, ptr, offset, value, make_instr,
+        );
+    }
+}
+
+fn test_store_at_imm_overflow_for<T>(wasm_op: WasmOp, mem: u8, ptr: u32, offset: u32, value: T)
 where
     T: Copy,
     DisplayWasm<T>: Display,
@@ -469,14 +543,16 @@ where
     );
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
+    let mem = format!("$mem{mem}");
     let wasm = format!(
         r#"
         (module
-            (memory 1)
+            (memory $mem0 1)
+            (memory $mem1 1)
             (func
                 i32.const {ptr}
                 {param_ty}.const {display_value}
-                {wasm_op} offset={offset}
+                {wasm_op} {mem} offset={offset}
             )
         )
     "#
@@ -491,7 +567,9 @@ where
     T: Copy,
     DisplayWasm<T>: Display,
 {
-    test_store_at_imm_overflow_for(wasm_op, 1, u32::MAX, value);
-    test_store_at_imm_overflow_for(wasm_op, u32::MAX, 1, value);
-    test_store_at_imm_overflow_for(wasm_op, u32::MAX, u32::MAX, value);
+    let ptrs_and_offsets = [(1, u32::MAX), (u32::MAX, 1), (u32::MAX, u32::MAX)];
+    for (ptr, offset) in ptrs_and_offsets {
+        test_store_at_imm_overflow_for(wasm_op, 0, ptr, offset, value);
+        test_store_at_imm_overflow_for(wasm_op, 1, ptr, offset, value);
+    }
 }

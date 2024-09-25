@@ -78,9 +78,21 @@ fn at_overflow() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn at_imm() {
-    let values = [i32::from(i16::MAX) + 1, i32::MAX - 1, i32::MAX];
+    let values = [
+        0,
+        1,
+        -1000,
+        1000,
+        i32::from(i16::MAX) - 1,
+        i32::from(i16::MAX),
+        i32::from(i16::MAX) + 1,
+        i32::MIN,
+        i32::MIN + 1,
+        i32::MAX - 1,
+        i32::MAX,
+    ];
     for value in values {
-        test_store_at_imm::<i32>(WASM_OP, value, Instruction::i32_store8_at);
+        test_store_wrap_at_imm::<i32, i8, i8>(WASM_OP, value, Instruction::i32_store8_at_imm);
     }
 }
 
