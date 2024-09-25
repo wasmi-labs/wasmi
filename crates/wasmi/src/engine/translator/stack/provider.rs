@@ -76,7 +76,6 @@ impl ProviderStack {
         if self.use_locals || self.providers.len() < Self::PRESERVE_THRESHOLD {
             return;
         }
-        self.use_locals = true;
         for (index, provider) in self.providers.iter().enumerate() {
             let TaggedProvider::Local(local) = provider else {
                 continue;
