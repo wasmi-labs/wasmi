@@ -12,7 +12,15 @@ fn reg() {
 #[cfg_attr(miri, ignore)]
 fn imm() {
     let values = [
+        0,
+        1,
+        -1,
+        42,
         i32::from(i16::MIN) - 1,
+        i32::from(i16::MIN),
+        i32::from(i16::MIN + 1),
+        i32::from(i16::MAX - 1),
+        i32::from(i16::MAX),
         i32::from(i16::MAX) + 1,
         i32::MIN,
         i32::MIN + 1,
@@ -20,16 +28,7 @@ fn imm() {
         i32::MAX - 1,
     ];
     for value in values {
-        test_store_imm::<i32>(WASM_OP, value, Instruction::i32_store16);
-    }
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn imm16() {
-    let values = [0, 1, -1, 42, i16::MIN + 1, i16::MIN, i16::MAX - 1, i16::MAX];
-    for value in values {
-        test_store_imm16::<i16>(WASM_OP, Instruction::i32_store16_imm, value);
+        test_store_wrap_imm::<i32, i16, i16>(WASM_OP, value, Instruction::i32_store16_imm);
     }
 }
 
@@ -42,32 +41,36 @@ fn offset16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn offset16_imm() {
-    test_store_offset16_imm::<i32>(
-        WASM_OP,
+    let values = [
+        0,
+        1,
+        -1,
+        -1000,
+        1000,
+        i32::from(i8::MIN) - 1,
+        i32::from(i8::MIN),
+        i32::from(i8::MIN) + 1,
+        i32::from(i8::MAX) - 1,
+        i32::from(i8::MAX),
+        i32::from(i8::MAX) + 1,
         i32::from(i16::MIN) - 1,
-        Instruction::i32_store16_offset16,
-    );
-    test_store_offset16_imm::<i32>(
-        WASM_OP,
+        i32::from(i16::MIN),
+        i32::from(i16::MIN) + 1,
+        i32::from(i16::MAX) - 1,
+        i32::from(i16::MAX),
         i32::from(i16::MAX) + 1,
-        Instruction::i32_store16_offset16,
-    );
-    test_store_offset16_imm::<i32>(WASM_OP, i32::MIN + 1, Instruction::i32_store16_offset16);
-    test_store_offset16_imm::<i32>(WASM_OP, i32::MAX - 1, Instruction::i32_store16_offset16);
-    test_store_offset16_imm::<i32>(WASM_OP, i32::MIN, Instruction::i32_store16_offset16);
-    test_store_offset16_imm::<i32>(WASM_OP, i32::MAX, Instruction::i32_store16_offset16);
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn offset16_imm16() {
-    test_store_offset16_imm16::<i16>(WASM_OP, 0, Instruction::i32_store16_offset16_imm);
-    test_store_offset16_imm16::<i16>(WASM_OP, 1, Instruction::i32_store16_offset16_imm);
-    test_store_offset16_imm16::<i16>(WASM_OP, -1, Instruction::i32_store16_offset16_imm);
-    test_store_offset16_imm16::<i16>(WASM_OP, i16::MIN + 1, Instruction::i32_store16_offset16_imm);
-    test_store_offset16_imm16::<i16>(WASM_OP, i16::MAX - 1, Instruction::i32_store16_offset16_imm);
-    test_store_offset16_imm16::<i16>(WASM_OP, i16::MIN, Instruction::i32_store16_offset16_imm);
-    test_store_offset16_imm16::<i16>(WASM_OP, i16::MAX, Instruction::i32_store16_offset16_imm);
+        i32::MIN,
+        i32::MIN + 1,
+        i32::MAX - 1,
+        i32::MAX,
+    ];
+    for value in values {
+        test_store_wrap_offset16_imm::<i32, i16, i16>(
+            WASM_OP,
+            value,
+            Instruction::i32_store16_offset16_imm,
+        );
+    }
 }
 
 #[test]
@@ -85,22 +88,29 @@ fn at_overflow() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn at_imm() {
-    test_store_at_imm::<i32>(
-        WASM_OP,
+    let values = [
+        0,
+        1,
+        -1000,
+        1000,
+        i32::from(i16::MAX) - 1,
+        i32::from(i16::MAX),
         i32::from(i16::MAX) + 1,
-        Instruction::i32_store16_at,
-    );
-    test_store_at_imm::<i32>(WASM_OP, i32::MAX - 1, Instruction::i32_store16_at);
-    test_store_at_imm::<i32>(WASM_OP, i32::MAX, Instruction::i32_store16_at);
+        i32::MIN,
+        i32::MIN + 1,
+        i32::MAX - 1,
+        i32::MAX,
+    ];
+    for value in values {
+        test_store_wrap_at_imm::<i32, i16, i16>(WASM_OP, value, Instruction::i32_store16_at_imm);
+    }
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm_at_overflow() {
-    test_store_at_imm_overflow(WASM_OP, 0);
-    test_store_at_imm_overflow(WASM_OP, 1);
-    test_store_at_imm_overflow(WASM_OP, -1);
-    test_store_at_imm_overflow(WASM_OP, 42);
-    test_store_at_imm_overflow(WASM_OP, i32::MIN);
-    test_store_at_imm_overflow(WASM_OP, i32::MAX);
+    let values = [0, 1, -1, i32::MIN, i32::MAX];
+    for value in values {
+        test_store_at_imm_overflow(WASM_OP, value);
+    }
 }
