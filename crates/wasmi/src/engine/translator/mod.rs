@@ -60,6 +60,7 @@ use crate::{
 };
 use core::fmt;
 use std::vec::Vec;
+use utils::Wrap;
 use wasmparser::{
     BinaryReaderError,
     FuncToValidate,
@@ -1918,6 +1919,37 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Translates non-wrapping Wasm integer `store` to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// Convenience method that simply forwards to [`Self::translate_istore_wrap`].
+    #[allow(clippy::too_many_arguments)]
+    fn translate_istore<Src, Field>(
+        &mut self,
+        memarg: MemArg,
+        make_instr: fn(ptr: Reg, memory: index::Memory) -> Instruction,
+        make_instr_imm: fn(ptr: Reg, memory: index::Memory) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Reg, offset: u16, value: Field) -> Instruction,
+        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: u32) -> Instruction,
+    ) -> Result<(), Error>
+    where
+        Src: Copy + From<TypedVal>,
+        Field: TryFrom<Src> + Into<AnyConst16>,
+    {
+        self.translate_istore_wrap::<Src, Src, Field>(
+            memarg,
+            make_instr,
+            make_instr_imm,
+            make_instr_offset16,
+            make_instr_offset16_imm,
+            make_instr_at,
+            make_instr_at_imm,
+        )
+    }
+
     /// Translates Wasm integer `store` and `storeN` instructions to Wasmi bytecode.
     ///
     /// # Note
@@ -1931,19 +1963,19 @@ impl FuncTranslator {
     ///
     /// - `{i32, i64}.{store, store8, store16, store32}`
     #[allow(clippy::too_many_arguments)]
-    fn translate_istore<T, U>(
+    fn translate_istore_wrap<Src, Wrapped, Field>(
         &mut self,
         memarg: MemArg,
         make_instr: fn(ptr: Reg, memory: index::Memory) -> Instruction,
         make_instr_imm: fn(ptr: Reg, memory: index::Memory) -> Instruction,
         make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
-        make_instr_offset16_imm: fn(ptr: Reg, offset: u16, value: U) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Reg, offset: u16, value: Field) -> Instruction,
         make_instr_at: fn(value: Reg, address: u32) -> Instruction,
-        make_instr_at_imm: fn(value: U, address: u32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: u32) -> Instruction,
     ) -> Result<(), Error>
     where
-        T: Copy + From<TypedVal>,
-        U: TryFrom<T> + Into<AnyConst16>,
+        Src: Copy + Wrap<Wrapped> + From<TypedVal>,
+        Field: TryFrom<Wrapped> + Into<AnyConst16>,
     {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -1951,7 +1983,7 @@ impl FuncTranslator {
         let ptr = match ptr {
             Provider::Register(ptr) => ptr,
             Provider::Const(ptr) => {
-                return self.translate_istore_at::<T, U>(
+                return self.translate_istore_wrap_at::<Src, Wrapped, Field>(
                     memory,
                     u32::from(ptr),
                     offset,
@@ -1962,7 +1994,7 @@ impl FuncTranslator {
             }
         };
         if memory.is_default() {
-            if let Some(_instr) = self.translate_istore_mem0::<T, U>(
+            if let Some(_instr) = self.translate_istore_wrap_mem0::<Src, Wrapped, Field>(
                 ptr,
                 offset,
                 value,
@@ -1977,7 +2009,7 @@ impl FuncTranslator {
                 make_instr(ptr, memory),
                 Instruction::register_and_imm32(value, offset),
             ),
-            TypedProvider::Const(value) => match U::try_from(T::from(value)).ok() {
+            TypedProvider::Const(value) => match Field::try_from(Src::from(value).wrap()).ok() {
                 Some(value) => (
                     make_instr_imm(ptr, memory),
                     Instruction::imm16_and_imm32(value, offset),
@@ -1998,18 +2030,18 @@ impl FuncTranslator {
     /// # Note
     ///
     /// This is used in cases where the `ptr` is a known constant value.
-    fn translate_istore_at<T, U>(
+    fn translate_istore_wrap_at<Src, Wrapped, Field>(
         &mut self,
         memory: index::Memory,
         ptr: u32,
         offset: u32,
         value: TypedProvider,
         make_instr_at: fn(value: Reg, address: u32) -> Instruction,
-        make_instr_at_imm: fn(value: U, address: u32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: u32) -> Instruction,
     ) -> Result<(), Error>
     where
-        T: Copy + From<TypedVal>,
-        U: TryFrom<T>,
+        Src: Copy + From<TypedVal> + Wrap<Wrapped>,
+        Field: TryFrom<Wrapped>,
     {
         let Some(address) = Self::effective_address(ptr, offset) else {
             return self.translate_trap(TrapCode::MemoryOutOfBounds);
@@ -2019,7 +2051,7 @@ impl FuncTranslator {
                 self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
             }
             Provider::Const(value) => {
-                if let Ok(value) = U::try_from(T::from(value)) {
+                if let Ok(value) = Field::try_from(Src::from(value).wrap()) {
                     self.push_fueled_instr(make_instr_at_imm(value, address), FuelCosts::store)?;
                 } else {
                     let value = self.alloc.stack.alloc_const(value)?;
@@ -2042,17 +2074,17 @@ impl FuncTranslator {
     /// This optimizes for cases where the Wasm linear memory that is operated on is known
     /// to be the default memory.
     /// Returns `Some` in case the optimized instructions have been encoded.
-    fn translate_istore_mem0<T, U>(
+    fn translate_istore_wrap_mem0<Src, Wrapped, Field>(
         &mut self,
         ptr: Reg,
         offset: u32,
         value: TypedProvider,
         make_instr_offset16: fn(Reg, u16, Reg) -> Instruction,
-        make_instr_offset16_imm: fn(Reg, u16, U) -> Instruction,
+        make_instr_offset16_imm: fn(Reg, u16, Field) -> Instruction,
     ) -> Result<Option<Instr>, Error>
     where
-        T: Copy + From<TypedVal>,
-        U: TryFrom<T>,
+        Src: Copy + From<TypedVal> + Wrap<Wrapped>,
+        Field: TryFrom<Wrapped>,
     {
         let Ok(offset16) = u16::try_from(offset) else {
             return Ok(None);
@@ -2061,7 +2093,7 @@ impl FuncTranslator {
             Provider::Register(value) => {
                 self.push_fueled_instr(make_instr_offset16(ptr, offset16, value), FuelCosts::store)?
             }
-            Provider::Const(value) => match U::try_from(T::from(value)) {
+            Provider::Const(value) => match Field::try_from(Src::from(value).wrap()) {
                 Ok(value) => self.push_fueled_instr(
                     make_instr_offset16_imm(ptr, offset16, value),
                     FuelCosts::store,

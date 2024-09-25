@@ -100,16 +100,6 @@ impl WasmFloat for f64 {
     }
 }
 
-impl Provider<u8> {
-    /// Creates a new `memory` value [`Provider`] from the general [`TypedProvider`].
-    pub fn new(provider: TypedProvider) -> Self {
-        match provider {
-            TypedProvider::Const(value) => Self::Const(u32::from(value) as u8),
-            TypedProvider::Register(register) => Self::Register(register),
-        }
-    }
-}
-
 impl Provider<Const16<u32>> {
     /// Creates a new `table` or `memory` index [`Provider`] from the general [`TypedProvider`].
     ///
@@ -168,4 +158,44 @@ impl FromProviders for BoundedRegSpan {
         let len = (end_index - first_index) as u16;
         Some(Self::new(RegSpan::new(Reg::from(first_index)), len))
     }
+}
+
+/// Implemented by integer types to wrap them to another (smaller) integer type.
+pub trait Wrap<T> {
+    /// Wraps `self` into a value of type `T`.
+    fn wrap(self) -> T;
+}
+
+impl<T> Wrap<T> for T {
+    #[inline]
+    fn wrap(self) -> T {
+        self
+    }
+}
+
+macro_rules! impl_wrap_for {
+    ( $($from_ty:ty => $to_ty:ty),* $(,)? ) => {
+        $(
+            impl Wrap<$to_ty> for $from_ty {
+                #[inline]
+                fn wrap(self) -> $to_ty { self as _ }
+            }
+        )*
+    };
+}
+impl_wrap_for! {
+    // signed
+    i16 => i8,
+    i32 => i8,
+    i32 => i16,
+    i64 => i8,
+    i64 => i16,
+    i64 => i32,
+    // unsigned
+    u16 => u8,
+    u32 => u8,
+    u32 => u16,
+    u64 => u8,
+    u64 => u16,
+    u64 => u32,
 }

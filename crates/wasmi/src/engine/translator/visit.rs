@@ -929,7 +929,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore::<i32, i8>(
+        self.translate_istore_wrap::<i32, i8, i8>(
             memarg,
             Instruction::i32_store8,
             Instruction::i32_store8_imm,
@@ -941,7 +941,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore::<i32, i16>(
+        self.translate_istore_wrap::<i32, i16, i16>(
             memarg,
             Instruction::i32_store16,
             Instruction::i32_store16_imm,
@@ -953,7 +953,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_store8(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore::<i64, i8>(
+        self.translate_istore_wrap::<i64, i8, i8>(
             memarg,
             Instruction::i64_store8,
             Instruction::i64_store8_imm,
@@ -965,7 +965,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_store16(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore::<i64, i16>(
+        self.translate_istore_wrap::<i64, i16, i16>(
             memarg,
             Instruction::i64_store16,
             Instruction::i64_store16_imm,
@@ -977,7 +977,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_store32(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_istore::<i64, i16>(
+        self.translate_istore_wrap::<i64, i32, i16>(
             memarg,
             Instruction::i64_store32,
             Instruction::i64_store32_imm16,
@@ -3156,7 +3156,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let memory = index::Memory::from(mem);
         let (dst, value, len) = self.alloc.stack.pop3();
         let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
-        let value = <Provider<u8>>::new(value);
+        let value = value.map_const(|value| u32::from(value) as u8);
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
         let instr = match (dst, value, len) {
             (Provider::Register(dst), Provider::Register(value), Provider::Register(len)) => {
