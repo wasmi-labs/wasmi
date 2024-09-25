@@ -122,7 +122,7 @@ impl From<UntypedVal> for ExternRef {
         //         this operation cannot produce invalid [`ExternRef`]
         //         instances even though the input [`UntypedVal`]
         //         was modified arbitrarily.
-        unsafe { <Transposer<Self>>::from(untyped).reftype }.canonicalize()
+        unsafe { <Transposer<Self>>::from(untyped).reftype() }.canonicalize()
     }
 }
 
@@ -134,7 +134,7 @@ impl From<ExternRef> for UntypedVal {
         //         this operation cannot produce invalid [`UntypedVal`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`ExternRef`] instance.
-        Self::from(unsafe { <Transposer<ExternRef>>::new(externref).value })
+        Self::from(unsafe { <Transposer<ExternRef>>::new(externref).value() })
     }
 }
 
@@ -165,7 +165,7 @@ impl ExternRef {
         if self.is_null() {
             // Safety: This is safe since `0u64` can be bit
             //         interpreted as a valid `ExternRef` value.
-            return unsafe { <Transposer<Self>>::null().reftype };
+            return unsafe { <Transposer<Self>>::null().reftype() };
         }
         self
     }

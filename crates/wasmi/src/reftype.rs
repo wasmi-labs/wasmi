@@ -28,6 +28,16 @@ impl<T: Copy> Transposer<T> {
     pub fn new(reftype: T) -> Self {
         Transposer { reftype }
     }
+
+    /// Returns the value of type `u64` from `self`.
+    pub unsafe fn value(self) -> u64 {
+        unsafe { self.value }
+    }
+
+    /// Returns the value of type `T` from `self`.
+    pub unsafe fn reftype(self) -> T {
+        unsafe { self.reftype }
+    }
 }
 
 impl<T: Copy> From<UntypedVal> for Transposer<T> {

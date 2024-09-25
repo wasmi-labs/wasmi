@@ -40,7 +40,7 @@ impl From<UntypedVal> for FuncRef {
         //         this operation cannot produce invalid [`FuncRef`]
         //         instances even though the input [`UntypedVal`]
         //         was modified arbitrarily.
-        unsafe { <Transposer<Self>>::from(untyped).reftype }.canonicalize()
+        unsafe { <Transposer<Self>>::from(untyped).reftype() }.canonicalize()
     }
 }
 
@@ -52,7 +52,7 @@ impl From<FuncRef> for UntypedVal {
         //         this operation cannot produce invalid [`UntypedVal`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`FuncRef`] instance.
-        Self::from(unsafe { <Transposer<FuncRef>>::new(funcref).value })
+        Self::from(unsafe { <Transposer<FuncRef>>::new(funcref).value() })
     }
 }
 
@@ -75,7 +75,7 @@ impl FuncRef {
         if self.is_null() {
             // Safety: This is safe since `0u64` can be bit
             //         interpreted as a valid `FuncRef` value.
-            return unsafe { <Transposer<Self>>::null().reftype };
+            return unsafe { <Transposer<Self>>::null().reftype() };
         }
         self
     }
