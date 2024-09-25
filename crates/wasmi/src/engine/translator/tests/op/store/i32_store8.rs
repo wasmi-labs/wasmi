@@ -42,7 +42,22 @@ fn offset16() {
 #[cfg_attr(miri, ignore)]
 fn offset16_imm() {
     let values = [
+        0,
+        1,
+        -1,
+        -1000,
+        1000,
+        i32::from(i8::MIN) - 1,
+        i32::from(i8::MIN),
+        i32::from(i8::MIN) + 1,
+        i32::from(i8::MAX) - 1,
+        i32::from(i8::MAX),
+        i32::from(i8::MAX) + 1,
         i32::from(i16::MIN) - 1,
+        i32::from(i16::MIN),
+        i32::from(i16::MIN) + 1,
+        i32::from(i16::MAX) - 1,
+        i32::from(i16::MAX),
         i32::from(i16::MAX) + 1,
         i32::MIN,
         i32::MIN + 1,
@@ -50,16 +65,11 @@ fn offset16_imm() {
         i32::MAX,
     ];
     for value in values {
-        test_store_offset16_imm::<i32>(WASM_OP, value, Instruction::i32_store8_offset16);
-    }
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn offset16_imm16() {
-    let values = [0, 1, -1, i8::MIN, i8::MIN + 1, i8::MAX - 1, i8::MAX];
-    for value in values {
-        test_store_offset16_imm16::<i8>(WASM_OP, value, Instruction::i32_store8_offset16_imm);
+        test_store_wrap_offset16_imm::<i32, i8, i8>(
+            WASM_OP,
+            value,
+            Instruction::i32_store8_offset16_imm,
+        );
     }
 }
 
