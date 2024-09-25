@@ -8,6 +8,7 @@ use crate::core::UntypedVal;
 ///
 /// [`FuncRef`]: [`crate::FuncRef`]
 /// [`ExternRef`]: [`crate::ExternRef`]
+#[repr(C)]
 pub union Transposer<T: Copy> {
     /// The `reftype` based representation.
     pub reftype: T,
