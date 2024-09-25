@@ -67,6 +67,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`component-model`] | 📅 | Planned but not yet implemented. [(#897)] |
 | [`exception-handling`] | 📅 | Planned but not yet implemented. [(#1037)] |
 | [`branch-hinting`] | 📅 | Planned but not yet implemented. [(#1036)] |
+| [`custom-page-sizes`] | 📅 | Planned but not yet implemented. [(#1197)] |
 | | |
 | [WASI] | 👨‍🔬 | Experimental support for WASI (`wasip1`) via the [`wasmi_wasi` crate]. |
 | [C-API] | 👨‍🔬 | Experimental support for the official Wasm C-API via the [`wasmi_c_api_impl` crate]. |
@@ -88,6 +89,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [`component-model`]: https://github.com/WebAssembly/component-model
 [`exception-handling`]: https://github.com/WebAssembly/exception-handling
 [`branch-hinting`]: https://github.com/WebAssembly/branch-hinting
+[`custom-page-sizes`]: https://github.com/WebAssembly/custom-page-sizes
 
 [WASI]: https://github.com/WebAssembly/WASI
 [C-API]: https://github.com/WebAssembly/wasm-c-api
@@ -109,6 +111,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#897)]: https://github.com/wasmi-labs/wasmi/pull/897
 [(#1036)]: https://github.com/wasmi-labs/wasmi/issues/1136
 [(#1037)]: https://github.com/wasmi-labs/wasmi/issues/1137
+[(#1197)]: https://github.com/wasmi-labs/wasmi/issues/1197
 
 ## Development
 
