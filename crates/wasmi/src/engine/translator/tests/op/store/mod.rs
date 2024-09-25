@@ -326,7 +326,7 @@ fn test_store_imm<T>(
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
-    let offsets = [u32::from(u16::MAX), u32::MAX - 1, u32::MAX];
+    let offsets = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
     for offset in offsets {
         test_store_imm_for::<T>(wasm_op, offset, value, make_instr);
     }
