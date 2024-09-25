@@ -28,10 +28,6 @@ Version `0.31.0` has been [audited by SRLabs].
 [Wasmtime]: https://github.com/bytecodealliance/wasmtime
 [audited by SRLabs]: ./resources/security-audit-2023-12-20.pdf
 
-## Announcement: Transfer of Ownership
-
-As of 2024-02-01, the original owner and maintainer of the Wasmi project, Parity Technologies, has officially transferred ownership of the project to me, Robin Freyler. Read more about this transfer [here](NEWS.md#announcement-transfer-of-ownership).
-
 ## Distinct Features
 
 The following list states some of the distinct features of Wasmi.
