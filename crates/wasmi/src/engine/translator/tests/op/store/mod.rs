@@ -475,7 +475,6 @@ fn test_store_wrap_at_imm_for<Src, Wrapped, Field>(
     let address = ptr
         .checked_add(offset)
         .expect("testcase requires valid ptr+offset address");
-    let mem = format!("$mem{mem_idx}");
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
     let wasm = format!(
@@ -486,7 +485,7 @@ fn test_store_wrap_at_imm_for<Src, Wrapped, Field>(
             (func
                 i32.const {ptr}
                 {param_ty}.const {display_value}
-                {wasm_op} {mem} offset={offset}
+                {wasm_op} $mem{mem_idx} offset={offset}
             )
         )
     "#
@@ -532,7 +531,7 @@ fn test_store_wrap_at_imm<Src, Wrapped, Field>(
     }
 }
 
-fn test_store_at_imm_overflow_for<T>(wasm_op: WasmOp, mem: u8, ptr: u32, offset: u32, value: T)
+fn test_store_at_imm_overflow_for<T>(wasm_op: WasmOp, mem_idx: u8, ptr: u32, offset: u32, value: T)
 where
     T: Copy,
     DisplayWasm<T>: Display,
@@ -543,7 +542,6 @@ where
     );
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
-    let mem = format!("$mem{mem}");
     let wasm = format!(
         r#"
         (module
@@ -552,7 +550,7 @@ where
             (func
                 i32.const {ptr}
                 {param_ty}.const {display_value}
-                {wasm_op} {mem} offset={offset}
+                {wasm_op} $mem{mem_idx} offset={offset}
             )
         )
     "#
