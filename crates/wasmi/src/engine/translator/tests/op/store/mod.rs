@@ -421,7 +421,7 @@ fn test_store_at(wasm_op: WasmOp, make_instr: fn(value: Reg, address: u32) -> In
     test_store_at_for(wasm_op, u32::MAX, 0, make_instr);
 }
 
-fn test_store_at_overflow_for(wasm_op: WasmOp, ptr: u32, offset: u32) {
+fn test_store_at_overflow_for(wasm_op: WasmOp, mem_idx: u32, ptr: u32, offset: u32) {
     assert!(
         ptr.checked_add(offset).is_none(),
         "testcase expects overflowing ptr+offset address"
@@ -430,11 +430,12 @@ fn test_store_at_overflow_for(wasm_op: WasmOp, ptr: u32, offset: u32) {
     let wasm = format!(
         r#"
         (module
-            (memory 1)
+            (memory $mem0 1)
+            (memory $mem1 1)
             (func (param $value {param_ty})
                 i32.const {ptr}
                 local.get $value
-                {wasm_op} offset={offset}
+                {wasm_op} $mem{mem_idx} offset={offset}
             )
         )
     "#
@@ -447,7 +448,8 @@ fn test_store_at_overflow_for(wasm_op: WasmOp, ptr: u32, offset: u32) {
 fn test_store_at_overflow(wasm_op: WasmOp) {
     let ptrs_and_offsets = [(1, u32::MAX), (u32::MAX, 1), (u32::MAX, u32::MAX)];
     for (ptr, offset) in ptrs_and_offsets {
-        test_store_at_overflow_for(wasm_op, ptr, offset);
+        test_store_at_overflow_for(wasm_op, 0, ptr, offset);
+        test_store_at_overflow_for(wasm_op, 1, ptr, offset);
     }
 }
 
