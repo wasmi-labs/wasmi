@@ -39,8 +39,6 @@ fn test_verbose() {
     assert!(contains_slice(stdout, b"proc_exit.wat\")::()"));
 }
 
-/// UTILS
-
 /// gets the path to a wasm binary given it's name
 fn get_bin_path(name: &str) -> PathBuf {
     let mut path = PathBuf::new();

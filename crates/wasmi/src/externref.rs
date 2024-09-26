@@ -1,12 +1,11 @@
 use crate::{
     collections::arena::ArenaIndex,
     core::UntypedVal,
-    reftype::Transposer,
     store::Stored,
     AsContextMut,
     StoreContext,
 };
-use core::{any::Any, num::NonZeroU32};
+use core::{any::Any, mem, num::NonZeroU32};
 use std::boxed::Box;
 
 /// A raw index to a function entity.
@@ -117,24 +116,30 @@ fn externref_null_to_zero() {
 
 impl From<UntypedVal> for ExternRef {
     fn from(untyped: UntypedVal) -> Self {
+        if u64::from(untyped) == 0 {
+            return ExternRef::null();
+        }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`ExternRef`] instances. Therefore
         //         this operation cannot produce invalid [`ExternRef`]
         //         instances even though the input [`UntypedVal`]
         //         was modified arbitrarily.
-        unsafe { <Transposer<Self>>::from(untyped).reftype }.canonicalize()
+        unsafe { mem::transmute::<u64, Self>(untyped.into()) }
     }
 }
 
 impl From<ExternRef> for UntypedVal {
     fn from(externref: ExternRef) -> Self {
-        let externref = externref.canonicalize();
+        if externref.is_null() {
+            return UntypedVal::from(0_u64);
+        }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`UntypedVal`] instances. Therefore
         //         this operation cannot produce invalid [`UntypedVal`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`ExternRef`] instance.
-        Self::from(unsafe { <Transposer<ExternRef>>::new(externref).value })
+        let bits = unsafe { mem::transmute::<ExternRef, u64>(externref) };
+        UntypedVal::from(bits)
     }
 }
 
@@ -149,25 +154,6 @@ impl ExternRef {
             .map(|object| ExternObject::new(ctx, object))
             .map(Self::from_object)
             .unwrap_or_else(Self::null)
-            .canonicalize()
-    }
-
-    /// Canonicalize `self` so that all `null` values have the same representation.
-    ///
-    /// # Note
-    ///
-    /// The underlying issue is that `ExternRef` has many possible values for the
-    /// `null` value. However, to simplify operating on encoded `ExternRef` instances
-    /// (encoded as `UntypedValue`) we want it to encode to exactly one `null`
-    /// value. The most trivial of all possible `null` values is `0_u64`, therefore
-    /// we canonicalize all `null` values to be represented by `0_u64`.
-    fn canonicalize(self) -> Self {
-        if self.is_null() {
-            // Safety: This is safe since `0u64` can be bit
-            //         interpreted as a valid `ExternRef` value.
-            return unsafe { <Transposer<Self>>::null().reftype };
-        }
-        self
     }
 
     /// Creates a new [`ExternRef`] to the given [`ExternObject`].
@@ -177,14 +163,14 @@ impl ExternRef {
         }
     }
 
-    /// Creates a new [`ExternRef`] which is `null`.
-    pub fn null() -> Self {
-        Self { inner: None }.canonicalize()
-    }
-
     /// Returns `true` if [`ExternRef`] is `null`.
     pub fn is_null(&self) -> bool {
         self.inner.is_none()
+    }
+
+    /// Creates a new [`ExternRef`] which is `null`.
+    pub fn null() -> Self {
+        Self { inner: None }
     }
 
     /// Returns a shared reference to the underlying data for this [`ExternRef`].
