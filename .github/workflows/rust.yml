@@ -207,6 +207,7 @@ jobs:
           submodules: true
       - uses: dtolnay/rust-toolchain@master
         with:
+          # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
           toolchain: nightly-2024-09-24
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
@@ -235,6 +236,7 @@ jobs:
           submodules: true
       - uses: dtolnay/rust-toolchain@master
         with:
+          # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
           toolchain: nightly-2024-09-24
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
@@ -260,6 +262,7 @@ jobs:
           submodules: true
       - uses: dtolnay/rust-toolchain@master
         with:
+          # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
           toolchain: nightly-2024-09-24
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
