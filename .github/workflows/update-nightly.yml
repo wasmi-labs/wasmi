@@ -1,0 +1,44 @@
+# GitHub Actions CI job to update the Rust toolchain nightly versions used in `rust.yml` every 2 weeks.
+# 
+# Note: This particularly affects the fuzzing CI jobs that have to pin a nightly
+#       release in order to not invalidate their caches on a daily basis.
+
+name: Update Rust Nightly Version
+
+on:
+  schedule:
+    - cron: '0 0 */14 * *'  # Every 2 weeks
+  workflow_dispatch:        # Allows to trigger this CI job via GitHub UI
+
+jobs:
+  update-nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install the latest Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Get the latest Rust nightly version
+        run: |
+          # Fetch the Rust version, e.g., rustc 1.81.0-nightly (eeb90cda1 2024-09-04)
+          RUSTC_VERSION=$(rustc --version)
+          echo "Rustc Version: $RUSTC_VERSION"
+
+          # Extract the nightly version date (2024-09-04)
+          LATEST_NIGHTLY=$(echo $RUSTC_VERSION | grep -Po '\d{4}-\d{2}-\d{2}')
+          echo "LATEST_NIGHTLY=$LATEST_NIGHTLY" >> $GITHUB_ENV
+
+      - name: Update nightly version in CI workflow
+        run: |
+          FILE=".github/workflows/rust.yml"
+          sed -i "s/toolchain: nightly-[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}/toolchain: nightly-$LATEST_NIGHTLY/" $FILE
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .github/workflows/rust.yml
+          git commit -m "Update Rust nightly version to $LATEST_NIGHTLY"
+          git push
