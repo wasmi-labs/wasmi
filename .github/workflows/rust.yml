@@ -205,7 +205,7 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly-2024-09-26
+      - uses: dtolnay/rust-toolchain@nightly-2024-09-24
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -231,7 +231,7 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly-2024-09-26
+      - uses: dtolnay/rust-toolchain@nightly-2024-09-24
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -254,7 +254,7 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly-2024-09-26
+      - uses: dtolnay/rust-toolchain@nightly-2024-09-24
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         with:
