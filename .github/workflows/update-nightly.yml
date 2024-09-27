@@ -1,9 +1,14 @@
+# GitHub Actions CI job to update the Rust toolchain nightly versions used in `rust.yml` every 2 weeks.
+# 
+# Note: This particularly affects the fuzzing CI jobs that have to pin a nightly
+#       release in order to not invalidate their caches on a daily basis.
+
 name: Update Rust Nightly Version
 
 on:
   schedule:
     - cron: '0 0 */14 * *'  # Every 2 weeks
-  workflow_dispatch:
+  workflow_dispatch:        # Allows to trigger this CI job via GitHub UI
 
 jobs:
   update-nightly:
