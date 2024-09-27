@@ -22,7 +22,6 @@ impl<'engine> Executor<'engine> {
     /// # Note
     ///
     /// Offsets the instruction pointer using the given [`BranchOffset`].
-    #[inline(always)]
     fn branch_to(&mut self, offset: BranchOffset) {
         self.ip.offset(offset.to_i32() as isize)
     }
@@ -32,17 +31,14 @@ impl<'engine> Executor<'engine> {
     /// # Note
     ///
     /// Offsets the instruction pointer using the given [`BranchOffset`].
-    #[inline(always)]
     fn branch_to16(&mut self, offset: BranchOffset16) {
         self.ip.offset(offset.to_i16() as isize)
     }
 
-    #[inline(always)]
     pub fn execute_branch(&mut self, offset: BranchOffset) {
         self.branch_to(offset)
     }
 
-    #[inline(always)]
     pub fn execute_branch_table(&mut self, index: Register, len_targets: Const32<u32>) {
         let index: u32 = self.get_register_as(index);
         // The index of the default target which is the last target of the slice.
@@ -92,7 +88,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction.
-    #[inline(always)]
     fn execute_branch_binop<T>(&mut self, instr: BranchBinOpInstr, f: fn(T, T) -> bool)
     where
         T: From<UntypedVal>,
@@ -101,7 +96,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with raw inputs.
-    #[inline(always)]
     fn execute_branch_binop_raw<T>(
         &mut self,
         lhs: Register,
@@ -120,7 +114,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
-    #[inline(always)]
     fn execute_branch_binop_imm<T>(&mut self, instr: BranchBinOpInstrImm16<T>, f: fn(T, T) -> bool)
     where
         T: From<UntypedVal> + From<Const16<T>>,
@@ -205,7 +198,6 @@ macro_rules! impl_execute_branch_binop {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
-                #[inline(always)]
                 pub fn $fn_name(&mut self, instr: BranchBinOpInstr) {
                     self.execute_branch_binop::<$ty>(instr, $op)
                 }
@@ -262,7 +254,6 @@ macro_rules! impl_execute_branch_binop_imm {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
-                #[inline(always)]
                 pub fn $fn_name(&mut self, instr: BranchBinOpInstrImm16<$ty>) {
                     self.execute_branch_binop_imm::<$ty>(instr, $op)
                 }

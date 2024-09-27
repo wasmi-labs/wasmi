@@ -8,7 +8,6 @@ use smallvec::SmallVec;
 
 impl<'engine> Executor<'engine> {
     /// Executes a generic `copy` [`Instruction`].
-    #[inline(always)]
     fn execute_copy_impl<T>(
         &mut self,
         result: Register,
@@ -21,13 +20,11 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::Copy`].
-    #[inline(always)]
     pub fn execute_copy(&mut self, result: Register, value: Register) {
         self.execute_copy_impl(result, value, |this, value| this.get_register(value))
     }
 
     /// Executes an [`Instruction::Copy2`].
-    #[inline(always)]
     pub fn execute_copy_2(&mut self, results: RegisterSpan, values: [Register; 2]) {
         let result0 = results.head();
         let result1 = result0.next();
@@ -39,19 +36,16 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CopyImm32`].
-    #[inline(always)]
     pub fn execute_copy_imm32(&mut self, result: Register, value: AnyConst32) {
         self.execute_copy_impl(result, value, |_, value| UntypedVal::from(u32::from(value)))
     }
 
     /// Executes an [`Instruction::CopyI64Imm32`].
-    #[inline(always)]
     pub fn execute_copy_i64imm32(&mut self, result: Register, value: Const32<i64>) {
         self.execute_copy_impl(result, value, |_, value| UntypedVal::from(i64::from(value)))
     }
 
     /// Executes an [`Instruction::CopyF64Imm32`].
-    #[inline(always)]
     pub fn execute_copy_f64imm32(&mut self, result: Register, value: Const32<f64>) {
         self.execute_copy_impl(result, value, |_, value| UntypedVal::from(f64::from(value)))
     }
@@ -64,7 +58,6 @@ impl<'engine> Executor<'engine> {
     ///   and thus requires a costly temporary buffer to avoid overwriting
     ///   intermediate copy results.
     /// - If `results` and `values` do _not_ overlap [`Instruction::CopySpanNonOverlapping`] is used.
-    #[inline(always)]
     pub fn execute_copy_span(&mut self, results: RegisterSpan, values: RegisterSpan, len: u16) {
         let results = results.iter_u16(len);
         let values = values.iter_u16(len);
@@ -83,7 +76,6 @@ impl<'engine> Executor<'engine> {
     /// - This instruction assumes that `results` and `values` do _not_ overlap
     ///   and thus can copy all the elements without a costly temporary buffer.
     /// - If `results` and `values` _do_ overlap [`Instruction::CopySpan`] is used.
-    #[inline(always)]
     pub fn execute_copy_span_non_overlapping(
         &mut self,
         results: RegisterSpan,
@@ -100,7 +92,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CopyMany`].
-    #[inline(always)]
     pub fn execute_copy_many(&mut self, results: RegisterSpan, values: [Register; 2]) {
         // We need `tmp` since `values[n]` might be overwritten by previous copies.
         let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
@@ -126,7 +117,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CopyManyNonOverlapping`].
-    #[inline(always)]
     pub fn execute_copy_many_non_overlapping(
         &mut self,
         results: RegisterSpan,

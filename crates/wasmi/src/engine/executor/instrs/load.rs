@@ -26,7 +26,6 @@ impl<'engine> Executor<'engine> {
     /// - `{i32, i64}.load16_u`
     /// - `i64.load32_s`
     /// - `i64.load32_u`
-    #[inline(always)]
     fn execute_load_extend(
         &mut self,
         result: Register,
@@ -43,7 +42,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load` [`Instruction`].
-    #[inline(always)]
     fn execute_load_impl(
         &mut self,
         instr: LoadInstr,
@@ -56,7 +54,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load_at` [`Instruction`].
-    #[inline(always)]
     fn execute_load_at_impl(
         &mut self,
         instr: LoadAtInstr,
@@ -68,7 +65,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load_offset16` [`Instruction`].
-    #[inline(always)]
     fn execute_load_offset16_impl(
         &mut self,
         instr: LoadOffset16Instr,
@@ -92,19 +88,16 @@ macro_rules! impl_execute_load {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load), "`].")]
-            #[inline(always)]
             pub fn $fn_load(&mut self, instr: LoadInstr) -> Result<(), Error> {
                 self.execute_load_impl(instr, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
-            #[inline(always)]
             pub fn $fn_load_at(&mut self, instr: LoadAtInstr) -> Result<(), Error> {
                 self.execute_load_at_impl(instr, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]
-            #[inline(always)]
             pub fn $fn_load_off16(&mut self, instr: LoadOffset16Instr) -> Result<(), Error> {
                 self.execute_load_offset16_impl(instr, $impl_fn)
             }

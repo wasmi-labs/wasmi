@@ -10,7 +10,6 @@ use crate::engine::bytecode::Instruction;
 
 impl<'engine> Executor<'engine> {
     /// Executes an [`Instruction::GlobalGet`].
-    #[inline(always)]
     pub fn execute_global_get(&mut self, store: &StoreInner, result: Register, global: GlobalIdx) {
         let value = match u32::from(global) {
             0 => unsafe { self.cache.global.get() },
@@ -25,7 +24,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::GlobalSet`].
-    #[inline(always)]
     pub fn execute_global_set(
         &mut self,
         store: &mut StoreInner,
@@ -37,7 +35,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::GlobalSetI32Imm16`].
-    #[inline(always)]
     pub fn execute_global_set_i32imm16(
         &mut self,
         store: &mut StoreInner,
@@ -49,7 +46,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::GlobalSetI64Imm16`].
-    #[inline(always)]
     pub fn execute_global_set_i64imm16(
         &mut self,
         store: &mut StoreInner,
@@ -61,7 +57,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `global.set` instruction.
-    #[inline(always)]
     fn execute_global_set_impl(
         &mut self,
         store: &mut StoreInner,
