@@ -18,7 +18,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install the latest Rust nightly
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@master
+        with:
+            toolchain: nightly 3 days ago
 
       - name: Get the latest Rust nightly version
         run: |
