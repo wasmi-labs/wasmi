@@ -346,8 +346,8 @@ impl TableEntity {
     /// Note: This is a panic instead of an error since it is asserted at Wasm validation time.
     pub fn init(
         &mut self,
-        dst_index: u32,
         element: &ElementSegmentEntity,
+        dst_index: u32,
         src_index: u32,
         len: u32,
         fuel: Option<&mut Fuel>,
