@@ -403,7 +403,7 @@ impl<'engine> Executor<'engine> {
             &self.get_table(table_index),
             &self.get_element_segment(element_index),
         );
-        table.init(dst_index, element, src_index, len, Some(fuel))?;
+        table.init(element, dst_index, src_index, len, Some(fuel))?;
         self.try_next_instr_at(3)
     }
 
