@@ -254,6 +254,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.copy` instruction.
+    #[inline(never)]
     fn execute_table_copy_impl(
         &mut self,
         store: &mut StoreInner,
@@ -401,6 +402,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.init` instruction.
+    #[inline(never)]
     fn execute_table_init_impl(
         &mut self,
         store: &mut StoreInner,
@@ -475,6 +477,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.fill` instruction.
+    #[inline(never)]
     fn execute_table_fill_impl(
         &mut self,
         store: &mut StoreInner,
@@ -519,6 +522,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.grow` instruction.
+    #[inline(never)]
     fn execute_table_grow_impl<'store>(
         &mut self,
         store: &'store mut StoreInner,

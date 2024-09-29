@@ -83,6 +83,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `memory.grow` instruction.
+    #[inline(never)]
     fn execute_memory_grow_impl<'store>(
         &mut self,
         store: &'store mut StoreInner,
