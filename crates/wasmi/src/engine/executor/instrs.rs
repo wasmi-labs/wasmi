@@ -2,7 +2,7 @@ pub use self::call::{dispatch_host_func, ResumableHostError};
 use self::return_::ReturnOutcome;
 use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
-    core::{TrapCode, UntypedVal},
+    core::{hint, TrapCode, UntypedVal},
     engine::{
         bytecode::{index, BlockFuel, Const16, Instruction, Reg},
         code_map::CodeMap,
@@ -1684,6 +1684,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Skips all [`Instruction`]s belonging to an [`Instruction::RegisterList`] encoding.
+    #[inline(always)]
     fn skip_register_list(ip: InstructionPtr) -> InstructionPtr {
         let mut ip = ip;
         while let Instruction::RegisterList { .. } = *ip.get() {
@@ -1705,19 +1706,16 @@ impl<'engine> Executor<'engine> {
     ///
     /// This includes [`Instruction`] variants such as [`Instruction::TableIndex`]
     /// that primarily carry parameters for actually executable [`Instruction`].
-    #[inline(always)]
     fn invalid_instruction_word(&mut self) -> Result<(), Error> {
         self.execute_trap(TrapCode::UnreachableCodeReached)
     }
 
     /// Executes a Wasm `unreachable` instruction.
-    #[inline(always)]
     fn execute_trap(&mut self, trap_code: TrapCode) -> Result<(), Error> {
         Err(Error::from(trap_code))
     }
 
     /// Executes an [`Instruction::ConsumeFuel`].
-    #[inline(always)]
     fn execute_consume_fuel(
         &mut self,
         store: &mut StoreInner,
@@ -1733,7 +1731,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::RefFunc`].
-    #[inline(always)]
     fn execute_ref_func(&mut self, result: Reg, func_index: index::Func) {
         let func = self.get_func(func_index);
         let funcref = FuncRef::new(func);
@@ -1747,12 +1744,13 @@ impl<'engine> Executor<'engine> {
     ///
     /// - Returns the default [`index::Memory`] if the parameter is missing.
     /// - Bumps `self.ip` if a [`Instruction::MemoryIndex`] parameter was found.
-    #[inline]
+    #[inline(always)]
     fn fetch_optional_memory(&mut self) -> index::Memory {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
             Instruction::MemoryIndex { index } => {
+                hint::cold();
                 self.ip = addr;
                 index
             }

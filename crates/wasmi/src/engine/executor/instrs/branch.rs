@@ -19,7 +19,6 @@ impl<'engine> Executor<'engine> {
     /// # Note
     ///
     /// Offsets the instruction pointer using the given [`BranchOffset`].
-    #[inline(always)]
     fn branch_to(&mut self, offset: BranchOffset) {
         self.ip.offset(offset.to_i32() as isize)
     }
@@ -29,12 +28,10 @@ impl<'engine> Executor<'engine> {
     /// # Note
     ///
     /// Offsets the instruction pointer using the given [`BranchOffset`].
-    #[inline(always)]
     fn branch_to16(&mut self, offset: BranchOffset16) {
         self.ip.offset(offset.to_i16() as isize)
     }
 
-    #[inline(always)]
     pub fn execute_branch(&mut self, offset: BranchOffset) {
         self.branch_to(offset)
     }
@@ -48,13 +45,11 @@ impl<'engine> Executor<'engine> {
         cmp::min(index, max_index) as usize + 1
     }
 
-    #[inline(always)]
     pub fn execute_branch_table_0(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(offset);
     }
 
-    #[inline(always)]
     pub fn execute_branch_table_1(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
@@ -74,7 +69,6 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    #[inline(always)]
     pub fn execute_branch_table_2(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
@@ -94,7 +88,6 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    #[inline(always)]
     pub fn execute_branch_table_3(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
@@ -114,7 +107,6 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    #[inline(always)]
     pub fn execute_branch_table_span(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
@@ -139,7 +131,6 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    #[inline(always)]
     pub fn execute_branch_table_many(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets) - 1;
         self.ip.add(1);
@@ -168,7 +159,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with raw inputs.
-    #[inline(always)]
     fn execute_branch_binop<T>(
         &mut self,
         lhs: Reg,
@@ -187,7 +177,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
-    #[inline(always)]
     fn execute_branch_binop_imm<T>(
         &mut self,
         lhs: Reg,
@@ -277,7 +266,6 @@ macro_rules! impl_execute_branch_binop {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
-                #[inline(always)]
                 pub fn $fn_name(&mut self, lhs: Reg, rhs: Reg, offset: BranchOffset16) {
                     self.execute_branch_binop::<$ty>(lhs, rhs, offset, $op)
                 }
@@ -334,7 +322,6 @@ macro_rules! impl_execute_branch_binop_imm {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
-                #[inline(always)]
                 pub fn $fn_name(&mut self, lhs: Reg, rhs: Const16<$ty>, offset: BranchOffset16) {
                     self.execute_branch_binop_imm::<$ty>(lhs, rhs, offset, $op)
                 }

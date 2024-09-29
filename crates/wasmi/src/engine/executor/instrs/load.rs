@@ -16,7 +16,6 @@ type WasmLoadOp =
 
 impl<'engine> Executor<'engine> {
     /// Returns the `ptr` and `offset` parameters for a `load` [`Instruction`].
-    #[inline(always)]
     fn fetch_ptr_and_offset(&self) -> (Reg, u32) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
@@ -29,7 +28,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Fetches the bytes of the default memory at index 0.
-    #[inline(always)]
     fn fetch_default_memory_bytes(&self) -> &[u8] {
         // Safety: the `self.cache.memory` pointer is always synchronized
         //         conservatively whenever it could have been invalidated.
@@ -37,7 +35,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Fetches the bytes of the given `memory`.
-    #[inline(always)]
     fn fetch_memory_bytes<'exec, 'store, 'bytes>(
         &'exec self,
         memory: Memory,
@@ -86,7 +83,6 @@ impl<'engine> Executor<'engine> {
     /// - `{i32, i64}.load16_u`
     /// - `i64.load32_s`
     /// - `i64.load32_u`
-    #[inline(always)]
     fn execute_load_extend(
         &mut self,
         store: &StoreInner,
@@ -115,7 +111,6 @@ impl<'engine> Executor<'engine> {
     /// - `{i32, i64}.load16_u`
     /// - `i64.load32_s`
     /// - `i64.load32_u`
-    #[inline(always)]
     fn execute_load_extend_mem0(
         &mut self,
         result: Reg,
@@ -130,7 +125,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load` [`Instruction`].
-    #[inline(always)]
     fn execute_load_impl(
         &mut self,
         store: &StoreInner,
@@ -145,7 +139,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load_at` [`Instruction`].
-    #[inline(always)]
     fn execute_load_at_impl(
         &mut self,
         store: &StoreInner,
@@ -167,7 +160,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load_offset16` [`Instruction`].
-    #[inline(always)]
     fn execute_load_offset16_impl(
         &mut self,
         result: Reg,
@@ -193,19 +185,16 @@ macro_rules! impl_execute_load {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load), "`].")]
-            #[inline(always)]
             pub fn $fn_load(&mut self, store: &StoreInner, result: Reg, memory: Memory) -> Result<(), Error> {
                 self.execute_load_impl(store, result, memory, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
-            #[inline(always)]
             pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: u32) -> Result<(), Error> {
                 self.execute_load_at_impl(store, result, address, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]
-            #[inline(always)]
             pub fn $fn_load_off16(&mut self, result: Reg, ptr: Reg, offset: Const16<u32>) -> Result<(), Error> {
                 self.execute_load_offset16_impl(result, ptr, offset, $impl_fn)
             }
