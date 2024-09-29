@@ -1697,6 +1697,26 @@ impl<'engine> Executor<'engine> {
         ip.add(1);
         ip
     }
+
+    /// Returns the optional `memory` parameter for a `load_at` [`Instruction`].
+    ///
+    /// # Note
+    ///
+    /// - Returns the default [`index::Memory`] if the parameter is missing.
+    /// - Bumps `self.ip` if a [`Instruction::MemoryIndex`] parameter was found.
+    #[inline(always)]
+    fn fetch_optional_memory(&mut self) -> index::Memory {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(1);
+        match *addr.get() {
+            Instruction::MemoryIndex { index } => {
+                hint::cold();
+                self.ip = addr;
+                index
+            }
+            _ => index::Memory::from(0),
+        }
+    }
 }
 
 impl<'engine> Executor<'engine> {
@@ -1736,26 +1756,6 @@ impl<'engine> Executor<'engine> {
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);
         self.next_instr();
-    }
-
-    /// Returns the optional `memory` parameter for a `load_at` [`Instruction`].
-    ///
-    /// # Note
-    ///
-    /// - Returns the default [`index::Memory`] if the parameter is missing.
-    /// - Bumps `self.ip` if a [`Instruction::MemoryIndex`] parameter was found.
-    #[inline(always)]
-    fn fetch_optional_memory(&mut self) -> index::Memory {
-        let mut addr: InstructionPtr = self.ip;
-        addr.add(1);
-        match *addr.get() {
-            Instruction::MemoryIndex { index } => {
-                hint::cold();
-                self.ip = addr;
-                index
-            }
-            _ => index::Memory::from(0),
-        }
     }
 }
 
