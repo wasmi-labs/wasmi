@@ -40,7 +40,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableGet`].
-    #[inline(always)]
     pub fn execute_table_get(
         &mut self,
         store: &StoreInner,
@@ -52,7 +51,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableGetImm`].
-    #[inline(always)]
     pub fn execute_table_get_imm(
         &mut self,
         store: &StoreInner,
@@ -80,7 +78,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableSize`].
-    #[inline(always)]
     pub fn execute_table_size(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
         self.execute_table_size_impl(store, result, table_index);
         self.next_instr();
@@ -94,7 +91,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableSet`].
-    #[inline(always)]
     pub fn execute_table_set(
         &mut self,
         store: &mut StoreInner,
@@ -106,7 +102,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableSetAt`].
-    #[inline(always)]
     pub fn execute_table_set_at(
         &mut self,
         store: &mut StoreInner,
@@ -134,7 +129,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopy`].
-    #[inline(always)]
     pub fn execute_table_copy(
         &mut self,
         store: &mut StoreInner,
@@ -149,7 +143,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyTo`].
-    #[inline(always)]
     pub fn execute_table_copy_to(
         &mut self,
         store: &mut StoreInner,
@@ -164,7 +157,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyFrom`].
-    #[inline(always)]
     pub fn execute_table_copy_from(
         &mut self,
         store: &mut StoreInner,
@@ -179,7 +171,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyFromTo`].
-    #[inline(always)]
     pub fn execute_table_copy_from_to(
         &mut self,
         store: &mut StoreInner,
@@ -194,7 +185,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyExact`].
-    #[inline(always)]
     pub fn execute_table_copy_exact(
         &mut self,
         store: &mut StoreInner,
@@ -209,7 +199,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyToExact`].
-    #[inline(always)]
     pub fn execute_table_copy_to_exact(
         &mut self,
         store: &mut StoreInner,
@@ -224,7 +213,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyFromExact`].
-    #[inline(always)]
     pub fn execute_table_copy_from_exact(
         &mut self,
         store: &mut StoreInner,
@@ -239,7 +227,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyFromToExact`].
-    #[inline(always)]
     pub fn execute_table_copy_from_to_exact(
         &mut self,
         store: &mut StoreInner,
@@ -254,6 +241,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.copy` instruction.
+    #[inline(never)]
     fn execute_table_copy_impl(
         &mut self,
         store: &mut StoreInner,
@@ -281,7 +269,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInit`].
-    #[inline(always)]
     pub fn execute_table_init(
         &mut self,
         store: &mut StoreInner,
@@ -296,7 +283,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitTo`].
-    #[inline(always)]
     pub fn execute_table_init_to(
         &mut self,
         store: &mut StoreInner,
@@ -311,7 +297,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitFrom`].
-    #[inline(always)]
     pub fn execute_table_init_from(
         &mut self,
         store: &mut StoreInner,
@@ -326,7 +311,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitFromTo`].
-    #[inline(always)]
     pub fn execute_table_init_from_to(
         &mut self,
         store: &mut StoreInner,
@@ -341,7 +325,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitExact`].
-    #[inline(always)]
     pub fn execute_table_init_exact(
         &mut self,
         store: &mut StoreInner,
@@ -356,7 +339,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitToExact`].
-    #[inline(always)]
     pub fn execute_table_init_to_exact(
         &mut self,
         store: &mut StoreInner,
@@ -371,7 +353,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitFromExact`].
-    #[inline(always)]
     pub fn execute_table_init_from_exact(
         &mut self,
         store: &mut StoreInner,
@@ -386,7 +367,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitFromToExact`].
-    #[inline(always)]
     pub fn execute_table_init_from_to_exact(
         &mut self,
         store: &mut StoreInner,
@@ -401,6 +381,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.init` instruction.
+    #[inline(never)]
     fn execute_table_init_impl(
         &mut self,
         store: &mut StoreInner,
@@ -419,7 +400,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableFill`].
-    #[inline(always)]
     pub fn execute_table_fill(
         &mut self,
         store: &mut StoreInner,
@@ -433,7 +413,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableFillAt`].
-    #[inline(always)]
     pub fn execute_table_fill_at(
         &mut self,
         store: &mut StoreInner,
@@ -447,7 +426,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableFillExact`].
-    #[inline(always)]
     pub fn execute_table_fill_exact(
         &mut self,
         store: &mut StoreInner,
@@ -461,7 +439,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableFillAtExact`].
-    #[inline(always)]
     pub fn execute_table_fill_at_exact(
         &mut self,
         store: &mut StoreInner,
@@ -475,6 +452,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.fill` instruction.
+    #[inline(never)]
     fn execute_table_fill_impl(
         &mut self,
         store: &mut StoreInner,
@@ -491,7 +469,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableGrow`].
-    #[inline(always)]
     pub fn execute_table_grow<T>(
         &mut self,
         store: &mut Store<T>,
@@ -505,7 +482,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableGrowImm`].
-    #[inline(always)]
     pub fn execute_table_grow_imm<T>(
         &mut self,
         store: &mut Store<T>,
@@ -519,6 +495,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.grow` instruction.
+    #[inline(never)]
     fn execute_table_grow_impl<'store>(
         &mut self,
         store: &'store mut StoreInner,
@@ -547,7 +524,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::ElemDrop`].
-    #[inline(always)]
     pub fn execute_element_drop(&mut self, store: &mut StoreInner, segment_index: Elem) {
         let segment = self.get_element_segment(segment_index);
         store.resolve_element_segment_mut(&segment).drop_items();

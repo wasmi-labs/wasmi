@@ -46,16 +46,28 @@ impl<'engine> Executor<'engine> {
     {
         match memory.is_default() {
             true => self.fetch_default_memory_bytes(),
-            false => {
-                // Safety: the underlying instance of `self.cache` is always kept up-to-date conservatively.
-                let memory = unsafe {
-                    self.cache
-                        .get_memory(memory)
-                        .unwrap_or_else(|| panic!("missing linear memory for {memory:?}"))
-                };
-                store.resolve_memory(&memory).data()
-            }
+            false => self.fetch_non_default_memory_bytes(memory, store),
         }
+    }
+
+    /// Fetches the bytes of the given non-default `memory`.
+    #[cold]
+    fn fetch_non_default_memory_bytes<'exec, 'store, 'bytes>(
+        &'exec self,
+        memory: Memory,
+        store: &'store StoreInner,
+    ) -> &'bytes [u8]
+    where
+        'exec: 'bytes,
+        'store: 'bytes,
+    {
+        // Safety: the underlying instance of `self.cache` is always kept up-to-date conservatively.
+        let memory = unsafe {
+            self.cache
+                .get_memory(memory)
+                .unwrap_or_else(|| panic!("missing linear memory for {memory:?}"))
+        };
+        store.resolve_memory(&memory).data()
     }
 
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
@@ -71,7 +83,6 @@ impl<'engine> Executor<'engine> {
     /// - `{i32, i64}.load16_u`
     /// - `i64.load32_s`
     /// - `i64.load32_u`
-    #[inline(always)]
     fn execute_load_extend(
         &mut self,
         store: &StoreInner,
@@ -100,7 +111,6 @@ impl<'engine> Executor<'engine> {
     /// - `{i32, i64}.load16_u`
     /// - `i64.load32_s`
     /// - `i64.load32_u`
-    #[inline(always)]
     fn execute_load_extend_mem0(
         &mut self,
         result: Reg,
@@ -115,7 +125,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load` [`Instruction`].
-    #[inline(always)]
     fn execute_load_impl(
         &mut self,
         store: &StoreInner,
@@ -130,7 +139,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load_at` [`Instruction`].
-    #[inline(always)]
     fn execute_load_at_impl(
         &mut self,
         store: &StoreInner,
@@ -152,7 +160,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `load_offset16` [`Instruction`].
-    #[inline(always)]
     fn execute_load_offset16_impl(
         &mut self,
         result: Reg,
@@ -178,19 +185,16 @@ macro_rules! impl_execute_load {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load), "`].")]
-            #[inline(always)]
             pub fn $fn_load(&mut self, store: &StoreInner, result: Reg, memory: Memory) -> Result<(), Error> {
                 self.execute_load_impl(store, result, memory, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
-            #[inline(always)]
             pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: u32) -> Result<(), Error> {
                 self.execute_load_at_impl(store, result, address, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]
-            #[inline(always)]
             pub fn $fn_load_off16(&mut self, result: Reg, ptr: Reg, offset: Const16<u32>) -> Result<(), Error> {
                 self.execute_load_offset16_impl(result, ptr, offset, $impl_fn)
             }

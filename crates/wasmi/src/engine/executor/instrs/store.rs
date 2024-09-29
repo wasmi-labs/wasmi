@@ -62,16 +62,28 @@ impl<'engine> Executor<'engine> {
     {
         match memory.is_default() {
             true => self.fetch_default_memory_bytes_mut(),
-            false => {
-                // Safety: the underlying instance of `self.cache` is always kept up-to-date conservatively.
-                let memory = unsafe {
-                    self.cache
-                        .get_memory(memory)
-                        .unwrap_or_else(|| panic!("missing linear memory for {memory:?}"))
-                };
-                store.resolve_memory_mut(&memory).data_mut()
-            }
+            false => self.fetch_non_default_memory_bytes_mut(memory, store),
         }
+    }
+
+    /// Fetches the bytes of the given non-default `memory`.
+    #[cold]
+    fn fetch_non_default_memory_bytes_mut<'exec, 'store, 'bytes>(
+        &'exec mut self,
+        memory: Memory,
+        store: &'store mut StoreInner,
+    ) -> &'bytes mut [u8]
+    where
+        'exec: 'bytes,
+        'store: 'bytes,
+    {
+        // Safety: the underlying instance of `self.cache` is always kept up-to-date conservatively.
+        let memory = unsafe {
+            self.cache
+                .get_memory(memory)
+                .unwrap_or_else(|| panic!("missing linear memory for {memory:?}"))
+        };
+        store.resolve_memory_mut(&memory).data_mut()
     }
 
     /// Executes a generic Wasm `store[N]` operation.
@@ -84,7 +96,6 @@ impl<'engine> Executor<'engine> {
     /// - `{i32, i64}.store8`
     /// - `{i32, i64}.store16`
     /// - `i64.store32`
-    #[inline(always)]
     fn execute_store_wrap(
         &mut self,
         store: &mut StoreInner,
@@ -109,7 +120,6 @@ impl<'engine> Executor<'engine> {
     /// - `{i32, i64}.store8`
     /// - `{i32, i64}.store16`
     /// - `i64.store32`
-    #[inline(always)]
     fn execute_store_wrap_mem0(
         &mut self,
         address: UntypedVal,
@@ -122,7 +132,6 @@ impl<'engine> Executor<'engine> {
         Ok(())
     }
 
-    #[inline(always)]
     fn execute_store(
         &mut self,
         store: &mut StoreInner,
@@ -142,7 +151,6 @@ impl<'engine> Executor<'engine> {
         self.try_next_instr_at(2)
     }
 
-    #[inline(always)]
     fn execute_store_imm<T>(
         &mut self,
         store: &mut StoreInner,
@@ -165,7 +173,6 @@ impl<'engine> Executor<'engine> {
         self.try_next_instr_at(2)
     }
 
-    #[inline(always)]
     fn execute_store_offset16(
         &mut self,
         ptr: Reg,
@@ -182,7 +189,6 @@ impl<'engine> Executor<'engine> {
         self.try_next_instr()
     }
 
-    #[inline(always)]
     fn execute_store_offset16_imm16<T, V>(
         &mut self,
         ptr: Reg,
@@ -202,7 +208,6 @@ impl<'engine> Executor<'engine> {
         self.try_next_instr()
     }
 
-    #[inline(always)]
     fn execute_store_at(
         &mut self,
         store: &mut StoreInner,
@@ -222,7 +227,6 @@ impl<'engine> Executor<'engine> {
         self.try_next_instr()
     }
 
-    #[inline(always)]
     fn execute_store_at_imm16<T, V>(
         &mut self,
         store: &mut StoreInner,
@@ -261,19 +265,16 @@ macro_rules! impl_execute_istore {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
-            #[inline(always)]
             pub fn $fn_store(&mut self, store: &mut StoreInner, ptr: Reg, memory: Memory) -> Result<(), Error> {
                 self.execute_store(store, ptr, memory, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_imm), "`].")]
-            #[inline(always)]
             pub fn $fn_store_imm(&mut self, store: &mut StoreInner, ptr: Reg, memory: Memory) -> Result<(), Error> {
                 self.execute_store_imm::<$to_ty>(store, ptr, memory, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
-            #[inline(always)]
             pub fn $fn_store_off16(
                 &mut self,
                 ptr: Reg,
@@ -284,7 +285,6 @@ macro_rules! impl_execute_istore {
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16_imm16), "`].")]
-            #[inline(always)]
             pub fn $fn_store_off16_imm16(
                 &mut self,
                 ptr: Reg,
@@ -295,13 +295,11 @@ macro_rules! impl_execute_istore {
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
-            #[inline(always)]
             pub fn $fn_store_at(&mut self, store: &mut StoreInner, address: u32, value: Reg) -> Result<(), Error> {
                 self.execute_store_at(store, address, value, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at_imm16), "`].")]
-            #[inline(always)]
             pub fn $fn_store_at_imm16(
                 &mut self,
                 store: &mut StoreInner,
@@ -399,13 +397,11 @@ macro_rules! impl_execute_fstore {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
-            #[inline(always)]
             pub fn $fn_store(&mut self, store: &mut StoreInner, ptr: Reg, memory: Memory) -> Result<(), Error> {
                 self.execute_store(store, ptr, memory, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
-            #[inline(always)]
             pub fn $fn_store_off16(
                 &mut self,
                 ptr: Reg,
@@ -416,7 +412,6 @@ macro_rules! impl_execute_fstore {
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
-            #[inline(always)]
             pub fn $fn_store_at(&mut self, store: &mut StoreInner,address: u32, value: Reg) -> Result<(), Error> {
                 self.execute_store_at(store, address, value, $impl_fn)
             }

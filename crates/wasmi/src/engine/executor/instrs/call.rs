@@ -27,7 +27,6 @@ use std::fmt;
 /// # Errors
 ///
 /// Returns the error of the host function if an error occurred.
-#[inline(always)]
 pub fn dispatch_host_func<T>(
     store: &mut Store<T>,
     value_stack: &mut ValueStack,
@@ -155,7 +154,6 @@ impl<'engine> Executor<'engine> {
     /// # Note
     ///
     /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
-    #[inline(always)]
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
         // other parts of the code more fragile with respect to instruction ordering.
@@ -217,7 +215,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Creates a [`CallFrame`] for calling the [`EngineFunc`].
-    #[inline(always)]
     fn dispatch_compiled_func<C: CallContext>(
         &mut self,
         results: RegSpan,
@@ -247,7 +244,6 @@ impl<'engine> Executor<'engine> {
     ///
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
-    #[inline(always)]
     fn copy_call_params(&mut self, uninit_params: &mut FrameParams) {
         self.ip.add(1);
         if let Instruction::RegisterList { .. } = self.ip.get() {
@@ -272,7 +268,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Copies an array of [`Reg`] to the `dst` [`Reg`] span.
-    #[inline(always)]
     fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Reg; N]) {
         for value in regs {
             let value = self.get_register(*value);
@@ -289,7 +284,6 @@ impl<'engine> Executor<'engine> {
     ///
     /// This will make the [`InstructionPtr`] point to the [`Instruction`] following the
     /// last [`Instruction::RegisterList`] if any.
-    #[inline(always)]
     #[cold]
     fn copy_call_params_list(&mut self, uninit_params: &mut FrameParams) {
         while let Instruction::RegisterList { regs } = self.ip.get() {
@@ -299,7 +293,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Prepares a [`EngineFunc`] call with optional call parameters.
-    #[inline(always)]
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
@@ -337,7 +330,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal0`].
-    #[inline(always)]
     pub fn execute_return_call_internal_0(
         &mut self,
         store: &mut StoreInner,
@@ -347,7 +339,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`].
-    #[inline(always)]
     pub fn execute_return_call_internal(
         &mut self,
         store: &mut StoreInner,
@@ -383,7 +374,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallInternal0`].
-    #[inline(always)]
     pub fn execute_call_internal_0(
         &mut self,
         store: &mut StoreInner,
@@ -394,7 +384,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallInternal`].
-    #[inline(always)]
     pub fn execute_call_internal(
         &mut self,
         store: &mut StoreInner,
@@ -405,7 +394,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
-    #[inline(always)]
     pub fn execute_return_call_imported_0<T>(
         &mut self,
         store: &mut Store<T>,
@@ -415,7 +403,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
-    #[inline(always)]
     pub fn execute_return_call_imported<T>(
         &mut self,
         store: &mut Store<T>,
@@ -436,7 +423,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallImported0`].
-    #[inline(always)]
     pub fn execute_call_imported_0<T>(
         &mut self,
         store: &mut Store<T>,
@@ -448,7 +434,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallImported`].
-    #[inline(always)]
     pub fn execute_call_imported<T>(
         &mut self,
         store: &mut Store<T>,
@@ -501,7 +486,6 @@ impl<'engine> Executor<'engine> {
     /// execution at a later point in time.
     ///
     /// [`ErrorKind::ResumableHost`]: crate::error::ErrorKind::ResumableHost
-    #[inline(always)]
     fn execute_host_func<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
@@ -554,7 +538,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
-    #[inline(always)]
     fn dispatch_host_func<T>(
         &mut self,
         store: &mut Store<T>,
@@ -565,7 +548,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(always)]
     pub fn execute_return_call_indirect_0<T>(
         &mut self,
         store: &mut Store<T>,
@@ -579,7 +561,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
-    #[inline(always)]
     pub fn execute_return_call_indirect_0_imm16<T>(
         &mut self,
         store: &mut Store<T>,
@@ -593,7 +574,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(always)]
     pub fn execute_return_call_indirect<T>(
         &mut self,
         store: &mut Store<T>,
@@ -607,7 +587,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
-    #[inline(always)]
     pub fn execute_return_call_indirect_imm16<T>(
         &mut self,
         store: &mut Store<T>,
@@ -621,7 +600,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(always)]
     pub fn execute_call_indirect_0<T>(
         &mut self,
         store: &mut Store<T>,
@@ -635,7 +613,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
-    #[inline(always)]
     pub fn execute_call_indirect_0_imm16<T>(
         &mut self,
         store: &mut Store<T>,
@@ -649,7 +626,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect`].
-    #[inline(always)]
     pub fn execute_call_indirect<T>(
         &mut self,
         store: &mut Store<T>,
@@ -663,7 +639,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirectImm16`].
-    #[inline(always)]
     pub fn execute_call_indirect_imm16<T>(
         &mut self,
         store: &mut Store<T>,

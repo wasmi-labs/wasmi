@@ -23,7 +23,6 @@ impl<'engine> Executor<'engine> {
     ///
     /// Any return values are expected to already have been transferred
     /// from the returning callee to the caller.
-    #[inline(always)]
     fn return_impl(&mut self, store: &mut StoreInner) -> ReturnOutcome {
         let (returned, popped_instance) = self
             .stack
@@ -50,7 +49,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::Return`].
-    #[inline(always)]
     pub fn execute_return(&mut self, store: &mut StoreInner) -> ReturnOutcome {
         self.return_impl(store)
     }
@@ -58,7 +56,6 @@ impl<'engine> Executor<'engine> {
     /// Returns the [`FrameRegisters`] of the caller and the [`RegSpan`] of the results.
     ///
     /// The returned [`FrameRegisters`] is valid for all [`Reg`] in the returned [`RegSpan`].
-    #[inline(always)]
     fn return_caller_results(&mut self) -> (FrameRegisters, RegSpan) {
         let (callee, caller) = self
             .stack
@@ -91,7 +88,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute a generic return [`Instruction`] returning a single value.
-    #[inline(always)]
     fn execute_return_value<T>(
         &mut self,
         store: &mut StoreInner,
@@ -109,13 +105,11 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnReg`] returning a single [`Reg`] value.
-    #[inline(always)]
     pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Reg) -> ReturnOutcome {
         self.execute_return_value(store, value, Self::get_register)
     }
 
     /// Execute an [`Instruction::ReturnReg2`] returning two [`Reg`] values.
-    #[inline(always)]
     pub fn execute_return_reg2(
         &mut self,
         store: &mut StoreInner,
@@ -125,7 +119,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnReg3`] returning three [`Reg`] values.
-    #[inline(always)]
     pub fn execute_return_reg3(
         &mut self,
         store: &mut StoreInner,
@@ -135,7 +128,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::ReturnReg2`] or [`Instruction::ReturnReg3`] generically.
-    #[inline(always)]
     fn execute_return_reg_n_impl<const N: usize>(
         &mut self,
         store: &mut StoreInner,
@@ -155,7 +147,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
-    #[inline(always)]
     pub fn execute_return_imm32(
         &mut self,
         store: &mut StoreInner,
@@ -165,7 +156,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnI64Imm32`] returning a single 32-bit encoded `i64` value.
-    #[inline(always)]
     pub fn execute_return_i64imm32(
         &mut self,
         store: &mut StoreInner,
@@ -175,7 +165,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnF64Imm32`] returning a single 32-bit encoded `f64` value.
-    #[inline(always)]
     pub fn execute_return_f64imm32(
         &mut self,
         store: &mut StoreInner,
@@ -185,7 +174,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnSpan`] returning many values.
-    #[inline(always)]
     pub fn execute_return_span(
         &mut self,
         store: &mut StoreInner,
@@ -205,7 +193,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnMany`] returning many values.
-    #[inline(always)]
     pub fn execute_return_many(
         &mut self,
         store: &mut StoreInner,
@@ -255,7 +242,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute a generic conditional return [`Instruction`].
-    #[inline(always)]
     fn execute_return_nez_impl<T>(
         &mut self,
         store: &mut StoreInner,
@@ -274,7 +260,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::Return`].
-    #[inline(always)]
     pub fn execute_return_nez(&mut self, store: &mut StoreInner, condition: Reg) -> ReturnOutcome {
         self.execute_return_nez_impl(store, condition, (), |this, store, _| {
             this.execute_return(store)
@@ -282,7 +267,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Reg`] value.
-    #[inline(always)]
     pub fn execute_return_nez_reg(
         &mut self,
         store: &mut StoreInner,
@@ -293,7 +277,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Reg`] value.
-    #[inline(always)]
     pub fn execute_return_nez_reg2(
         &mut self,
         store: &mut StoreInner,
@@ -304,7 +287,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezImm32`] returning a single 32-bit constant value.
-    #[inline(always)]
     pub fn execute_return_nez_imm32(
         &mut self,
         store: &mut StoreInner,
@@ -315,7 +297,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezI64Imm32`] returning a single 32-bit encoded constant `i64` value.
-    #[inline(always)]
     pub fn execute_return_nez_i64imm32(
         &mut self,
         store: &mut StoreInner,
@@ -326,7 +307,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezF64Imm32`] returning a single 32-bit encoded constant `f64` value.
-    #[inline(always)]
     pub fn execute_return_nez_f64imm32(
         &mut self,
         store: &mut StoreInner,
@@ -337,7 +317,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezSpan`] returning many values.
-    #[inline(always)]
     pub fn execute_return_nez_span(
         &mut self,
         store: &mut StoreInner,
@@ -348,7 +327,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Execute an [`Instruction::ReturnNezMany`] returning many values.
-    #[inline(always)]
     pub fn execute_return_nez_many(
         &mut self,
         store: &mut StoreInner,
