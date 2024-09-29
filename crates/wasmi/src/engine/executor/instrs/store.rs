@@ -17,6 +17,7 @@ type WasmStoreOp = fn(
 
 impl<'engine> Executor<'engine> {
     /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
+    #[inline(always)]
     fn fetch_value_and_offset(&self) -> (Reg, u32) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
@@ -29,6 +30,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Returns the immediate `value` and `offset` parameters for a `load` [`Instruction`].
+    #[inline(always)]
     fn fetch_value_and_offset_imm<T>(&self) -> (T, u32)
     where
         T: From<AnyConst16>,
@@ -44,6 +46,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Fetches the bytes of the default memory at index 0.
+    #[inline(always)]
     fn fetch_default_memory_bytes_mut(&mut self) -> &mut [u8] {
         // Safety: the `self.cache.memory` pointer is always synchronized
         //         conservatively whenever it could have been invalidated.
@@ -51,6 +54,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Fetches the bytes of the given `memory`.
+    #[inline(always)]
     fn fetch_memory_bytes_mut<'exec, 'store, 'bytes>(
         &'exec mut self,
         memory: Memory,
@@ -62,16 +66,28 @@ impl<'engine> Executor<'engine> {
     {
         match memory.is_default() {
             true => self.fetch_default_memory_bytes_mut(),
-            false => {
-                // Safety: the underlying instance of `self.cache` is always kept up-to-date conservatively.
-                let memory = unsafe {
-                    self.cache
-                        .get_memory(memory)
-                        .unwrap_or_else(|| panic!("missing linear memory for {memory:?}"))
-                };
-                store.resolve_memory_mut(&memory).data_mut()
-            }
+            false => self.fetch_non_default_memory_bytes_mut(memory, store),
         }
+    }
+
+    /// Fetches the bytes of the given non-default `memory`.
+    #[cold]
+    fn fetch_non_default_memory_bytes_mut<'exec, 'store, 'bytes>(
+        &'exec mut self,
+        memory: Memory,
+        store: &'store mut StoreInner,
+    ) -> &'bytes mut [u8]
+    where
+        'exec: 'bytes,
+        'store: 'bytes,
+    {
+        // Safety: the underlying instance of `self.cache` is always kept up-to-date conservatively.
+        let memory = unsafe {
+            self.cache
+                .get_memory(memory)
+                .unwrap_or_else(|| panic!("missing linear memory for {memory:?}"))
+        };
+        store.resolve_memory_mut(&memory).data_mut()
     }
 
     /// Executes a generic Wasm `store[N]` operation.
