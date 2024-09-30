@@ -59,7 +59,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`simd`] | ❌ | Unlikely to be supported. |
 | [`tail-calls`] | ✅ | Since version `0.28.0`. [(#683)] |
 | [`extended-const`] | ✅ | Since version `0.29.0`. [(#707)] |
-| [`multi-memory`] | ✅ | Implemented but not yet released. Use `main` branch. |
+| [`multi-memory`] | ✅ | Since version `0.37.0`. [(#1191)] |
 | [`function-references`] | 📅 | Planned but not yet implemented. [(#774)] |
 | [`gc`] | 📅 | Planned but not yet implemented. [(#775)] |
 | [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
@@ -112,6 +112,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#1036)]: https://github.com/wasmi-labs/wasmi/issues/1136
 [(#1037)]: https://github.com/wasmi-labs/wasmi/issues/1137
 [(#1197)]: https://github.com/wasmi-labs/wasmi/issues/1197
+[(#1191)]: https://github.com/wasmi-labs/wasmi/issues/1191
 
 ## Development
 
