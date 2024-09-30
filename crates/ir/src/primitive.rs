@@ -152,10 +152,6 @@ impl BranchOffset {
     /// # Errors
     ///
     /// If the resulting [`BranchOffset`] is out of bounds.
-    ///
-    /// # Panics
-    ///
-    /// If the resulting [`BranchOffset`] is uninitialized, aka equal to 0.
     pub fn from_src_to_dst(src: Instr, dst: Instr) -> Result<Self, Error> {
         let src = i64::from(u32::from(src));
         let dst = i64::from(u32::from(dst));
