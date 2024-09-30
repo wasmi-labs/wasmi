@@ -8,6 +8,53 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.37.0`] - 2024-30-09
+
+### Added
+
+- Added support for Wasm `multi-value` proposal. [#1191]
+- Added `Store::call_hook` API. [#1144]
+  - Contributed by [emiltayl](https://github.com/emiltayl).
+
+### Changed
+
+- Updated WASI dependencies. [#1140]
+  - This fixes some long-standing bugs in the `wasmi_wasi` crate.
+
+### Fixed
+
+- This release includes all fixes that have been backported to `v0.36.1` and `v0.36.2`.
+
+### Internal
+
+- Add new Wasmi bytecode. [#1152]
+  - This was a major undertaking with lots of sub-issues and PRs.
+  - The Wasmi bytecode definitions now reside in their own [`wasmi_ir` crate].
+  - Most of the definitions are sourced from a single Rust macro to reduce maintenance friction.
+- Remove unnecessary `iextend` instructions. [#1147]
+- Changed encoding for Wasmi `call_indirect` instructions. [#1156]
+  - The new encoding improves performance and reduces the number of function local constants.
+- Changed encoding for Wasmi `select` instructions. [#1157]
+  - The new encoding is more straight-forward and aims to simplify the Wasmi executor and translator.
+- Changed encoding for Wasmi `br_table` instruction. [#1158]
+  - The new encoding improves performance and memory consumption for certain use cases.
+- Minor improvements to Wasmi bytecode.
+  - `MemoryGrowBy` now takes `u32` delta. [#1193]
+  - Improved `storeN` encoding with immediates. [#1194]
+
+[#1144]: https://github.com/wasmi-labs/wasmi/pull/1144
+[#1147]: https://github.com/wasmi-labs/wasmi/pull/1147
+[#1140]: https://github.com/wasmi-labs/wasmi/pull/1140
+[#1152]: https://github.com/wasmi-labs/wasmi/pull/1152
+[#1156]: https://github.com/wasmi-labs/wasmi/pull/1156
+[#1157]: https://github.com/wasmi-labs/wasmi/pull/1157
+[#1158]: https://github.com/wasmi-labs/wasmi/pull/1158
+[#1191]: https://github.com/wasmi-labs/wasmi/pull/1191
+[#1193]: https://github.com/wasmi-labs/wasmi/pull/1193
+[#1194]: https://github.com/wasmi-labs/wasmi/pull/1194
+
+[`wasmi_ir` crate]: https://crates.io/crates/wasmi_ir
+
 ## [`0.36.2`] - 2024-28-09
 
 ### Fixed
