@@ -12,7 +12,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Added
 
-- Added support for Wasm `multi-value` proposal. [#1191]
+- Added support for Wasm `multi-memory` proposal. [#1191]
 - Added `Store::call_hook` API. [#1144]
   - Contributed by [emiltayl](https://github.com/emiltayl).
 
