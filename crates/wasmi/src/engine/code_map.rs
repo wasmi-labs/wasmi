@@ -15,7 +15,10 @@ use super::{
 use crate::{
     collections::arena::{Arena, ArenaIndex},
     core::{TrapCode, UntypedVal},
-    engine::bytecode::{index::InternalFunc, Instruction},
+    engine::{
+        bytecode::{index::InternalFunc, Instruction},
+        utils::unreachable_unchecked,
+    },
     module::{FuncIdx, ModuleHeader},
     store::{Fuel, FuelError},
     Config,
@@ -306,7 +309,9 @@ impl CodeMap {
             // Safety: this is just called internally with function indices
             //         that are known to be valid. Since this is a performance
             //         critical path we need to leave out this check.
-            unsafe { core::hint::unreachable_unchecked() }
+            unsafe {
+                unreachable_unchecked!("encountered invalid function index for engine: {func:?}")
+            }
         };
         let cref = entity.get_compiled()?;
         Some(self.adjust_cref_lifetime(cref))
