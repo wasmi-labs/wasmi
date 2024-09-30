@@ -530,9 +530,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.bump_fuel_consumption(FuelCosts::call)?;
         let type_index = FuncType::from(type_index);
         let func_type = self.func_type_at(type_index);
-        let (params, results) = func_type.params_results();
         let index = self.alloc.stack.pop();
         let indirect_params = self.call_indirect_params(index, table_index)?;
+        let (params, results) = func_type.params_results();
         let provider_params = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(params.len(), provider_params);
         let results = self.alloc.stack.push_dynamic_n(results.len())?;

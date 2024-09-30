@@ -18,7 +18,6 @@ use crate::{
         TranslationError,
     },
     Error,
-    FuncType,
 };
 use std::vec::Vec;
 
@@ -81,33 +80,6 @@ impl ValueStack {
         while self.height() != height {
             self.drop();
         }
-    }
-
-    /// Adjusts the [`ValueStack`] given the [`FuncType`] of the call.
-    ///
-    /// - Returns the [`RegSpan`] for the `call` results.
-    /// - The `provider_buffer` will hold all [`Provider`] call parameters.
-    /// - The `params_buffer` will hold all call parameters converted to [`Reg`]. \
-    ///   Any constant value parameter will be allocated as function local constant.
-    ///
-    /// # Note
-    ///
-    /// Both `provider_buffer` and `params_buffer` will be cleared before this operation.
-    ///
-    /// # Errors
-    ///
-    /// - If not enough call parameters are on the [`ValueStack`].
-    /// - If too many function local constants are being registered as call parameters.
-    /// - If too many registers are registered as call results.
-    pub fn adjust_for_call(
-        &mut self,
-        func_type: &FuncType,
-        provider_buffer: &mut Vec<TypedProvider>,
-    ) -> Result<RegSpan, Error> {
-        let (params, results) = func_type.params_results();
-        self.pop_n(params.len(), provider_buffer);
-        let results = self.push_dynamic_n(results.len())?;
-        Ok(results)
     }
 
     /// Preserves `local.get` on the [`ProviderStack`] by shifting to the preservation space.

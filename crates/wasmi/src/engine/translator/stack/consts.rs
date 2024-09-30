@@ -46,9 +46,8 @@ impl FuncLocalConsts {
     ///
     /// # Note
     ///
-    /// The minimum index is the last index to be assignable to a function local
-    /// constant value. Once it has been assigned no more function local constant
-    /// values can be assigned anymore.
+    /// This index is not assignable to a function local constant value and acts
+    /// as a bound to guard against overflowing the range of indices.
     fn last_index() -> i16 {
         i16::MIN
     }

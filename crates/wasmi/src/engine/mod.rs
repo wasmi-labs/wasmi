@@ -10,6 +10,7 @@ mod limits;
 mod resumable;
 mod traits;
 mod translator;
+mod utils;
 
 #[cfg(test)]
 mod tests;

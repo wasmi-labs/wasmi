@@ -70,7 +70,7 @@ impl<'engine> Executor<'engine> {
         store.resolve_memory(&memory).data()
     }
 
-    /// Executes a generic Wasm `store[N_{s|u}]` operation.
+    /// Executes a generic Wasm `load[N_{s|u}]` operation.
     ///
     /// # Note
     ///

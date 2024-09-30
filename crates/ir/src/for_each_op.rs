@@ -3726,7 +3726,7 @@ macro_rules! for_each_op {
                 rhs: Const16<i32>,
             },
 
-            /// `i32` singed-division instruction: `r0 = r1 / r2`
+            /// `i32` signed-division instruction: `r0 = r1 / r2`
             #[snake_name(i32_div_s)]
             I32DivS {
                 @result: Reg,
@@ -3735,7 +3735,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` singed-division immediate instruction: `r0 = r1 / c0`
+            /// `i32` signed-division immediate instruction: `r0 = r1 / c0`
             ///
             /// # Note
             ///
@@ -3749,7 +3749,7 @@ macro_rules! for_each_op {
                 /// The 16-bit immediate value.
                 rhs: Const16<NonZeroI32>,
             },
-            /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
+            /// `i32` signed-division immediate instruction: `r0 = c0 / r1`
             ///
             /// # Note
             ///
@@ -3765,7 +3765,7 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
 
-            /// `i32` unsinged-division instruction: `r0 = r1 / r2`
+            /// `i32` unsigned-division instruction: `r0 = r1 / r2`
             #[snake_name(i32_div_u)]
             I32DivU {
                 @result: Reg,
@@ -3774,7 +3774,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` unsinged-division immediate instruction: `r0 = r1 / c0`
+            /// `i32` unsigned-division immediate instruction: `r0 = r1 / c0`
             ///
             /// # Note
             ///
@@ -3791,7 +3791,7 @@ macro_rules! for_each_op {
                 /// The 16-bit immediate value.
                 rhs: Const16<NonZeroU32>,
             },
-            /// `i32` unsinged-division immediate instruction: `r0 = c0 / r1`
+            /// `i32` unsigned-division immediate instruction: `r0 = c0 / r1`
             ///
             /// # Note
             ///
@@ -3807,7 +3807,7 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
 
-            /// `i32` singed-remainder instruction: `r0 = r1 % r2`
+            /// `i32` signed-remainder instruction: `r0 = r1 % r2`
             #[snake_name(i32_rem_s)]
             I32RemS {
                 @result: Reg,
@@ -3816,7 +3816,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` singed-remainder immediate instruction: `r0 = r1 % c0`
+            /// `i32` signed-remainder immediate instruction: `r0 = r1 % c0`
             ///
             /// # Note
             ///
@@ -3830,7 +3830,7 @@ macro_rules! for_each_op {
                 /// The 16-bit immediate value.
                 rhs: Const16<NonZeroI32>,
             },
-            /// `i32` singed-remainder immediate instruction: `r0 = c0 % r1`
+            /// `i32` signed-remainder immediate instruction: `r0 = c0 % r1`
             ///
             /// # Note
             ///
@@ -3855,7 +3855,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` singed-remainder immediate instruction: `r0 = r1 % c0`
+            /// `i32` signed-remainder immediate instruction: `r0 = r1 % c0`
             ///
             /// # Note
             ///
@@ -4240,7 +4240,7 @@ macro_rules! for_each_op {
                 rhs: Const16<i64>,
             },
 
-            /// `i64` singed-division instruction: `r0 = r1 / r2`
+            /// `i64` signed-division instruction: `r0 = r1 / r2`
             #[snake_name(i64_div_s)]
             I64DivS {
                 @result: Reg,
@@ -4249,7 +4249,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` singed-division immediate instruction: `r0 = r1 / c0`
+            /// `i64` signed-division immediate instruction: `r0 = r1 / c0`
             ///
             /// # Note
             ///
@@ -4263,7 +4263,7 @@ macro_rules! for_each_op {
                 /// The 16-bit immediate value.
                 rhs: Const16<NonZeroI64>,
             },
-            /// `i32` singed-division immediate instruction: `r0 = c0 / r1`
+            /// `i32` signed-division immediate instruction: `r0 = c0 / r1`
             ///
             /// # Note
             ///
@@ -4279,7 +4279,7 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
 
-            /// `i64` unsinged-division instruction: `r0 = r1 / r2`
+            /// `i64` unsigned-division instruction: `r0 = r1 / r2`
             #[snake_name(i64_div_u)]
             I64DivU {
                 @result: Reg,
@@ -4288,7 +4288,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` unsinged-division immediate instruction: `r0 = r1 / c0`
+            /// `i64` unsigned-division immediate instruction: `r0 = r1 / c0`
             ///
             /// # Note
             ///
@@ -4305,7 +4305,7 @@ macro_rules! for_each_op {
                 /// The 16-bit immediate value.
                 rhs: Const16<NonZeroU64>,
             },
-            /// `i64` unsinged-division immediate instruction: `r0 = c0 / r1`
+            /// `i64` unsigned-division immediate instruction: `r0 = c0 / r1`
             ///
             /// # Note
             ///
@@ -4321,7 +4321,7 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
 
-            /// `i64` singed-remainder instruction: `r0 = r1 % r2`
+            /// `i64` signed-remainder instruction: `r0 = r1 % r2`
             #[snake_name(i64_rem_s)]
             I64RemS {
                 @result: Reg,
@@ -4330,7 +4330,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
+            /// `i64` signed-remainder immediate instruction: `r0 = r1 % c0`
             ///
             /// # Note
             ///
@@ -4344,7 +4344,7 @@ macro_rules! for_each_op {
                 /// The 16-bit immediate value.
                 rhs: Const16<NonZeroI64>,
             },
-            /// `i64` singed-remainder immediate instruction: `r0 = c0 % r1`
+            /// `i64` signed-remainder immediate instruction: `r0 = c0 % r1`
             ///
             /// # Note
             ///
@@ -4369,7 +4369,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` singed-remainder immediate instruction: `r0 = r1 % c0`
+            /// `i64` signed-remainder immediate instruction: `r0 = r1 % c0`
             ///
             /// # Note
             ///
