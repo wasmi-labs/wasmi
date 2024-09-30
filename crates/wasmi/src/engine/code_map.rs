@@ -739,7 +739,7 @@ impl CompiledFuncEntity {
     /// # Panics
     ///
     /// - If `instrs` is empty.
-    /// - If `instrs` contains more than `u32::MAX` instructions.
+    /// - If `instrs` contains more than `i32::MAX` instructions.
     pub fn new<I, C>(len_registers: u16, instrs: I, consts: C) -> Self
     where
         I: IntoIterator<Item = Instruction>,
@@ -750,6 +750,15 @@ impl CompiledFuncEntity {
         assert!(
             !instrs.is_empty(),
             "compiled functions must have at least one instruction"
+        );
+        assert!(
+            // Generally, Wasmi has no issues with more than `i32::MAX` instructions.
+            // However, Wasmi's branch instructions can jump across at most `i32::MAX`
+            // forwards or `i32::MIN` instructions backwards and thus having more than
+            // `i32::MAX` instructions might introduce problems.
+            instrs.len() <= i32::MAX as usize,
+            "compiled function has too many instructions: {}",
+            instrs.len(),
         );
         Self {
             instrs,
