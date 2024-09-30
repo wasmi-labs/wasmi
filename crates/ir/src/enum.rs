@@ -23,17 +23,19 @@ macro_rules! define_enum {
     ) => {
         /// A Wasmi instruction.
         ///
-        /// Actually Wasmi instructions are composed of so-called instruction words.
-        /// In fact this type represents single instruction words but for simplicity
-        /// we call the type [`Instruction`] still.
-        /// Most instructions are composed of a single instruction words. An example of
-        /// this is [`Instruction::I32Add`]. However, some instructions like
-        /// [`Instruction::Select`] are composed of two or more instruction words.
-        /// The Wasmi bytecode translation phase makes sure that those instruction words
-        /// always appear in valid sequences. The Wasmi executor relies on this guarantee.
-        /// The documentation of each [`Instruction`] variant describes its encoding in the
+        /// Wasmi instructions are composed of so-called instruction words.
+        /// This type represents all such words and for simplicity we call the type [`Instruction`], still.
+        ///
+        /// Most instructions are composed of a single instruction word. An example of
+        /// this is [`Instruction::I32Add`]. However, some instructions, like
+        /// [`Instruction::Select`], are composed of two or more instruction words.
+        ///
+        /// The Wasmi bytecode translation makes sure that instructions always appear in valid sequences.
+        /// The Wasmi executor relies on the guarantees that the Wasmi translator provides.
+        ///
+        /// The documentation of each [`Instruction`] describes its encoding in the
         /// `#Encoding` section of its documentation if it requires more than a single
-        /// instruction word for its encoding.
+        /// instruction for its encoding.
         #[derive(Debug, Copy, Clone, PartialEq, Eq)]
         #[repr(u16)]
         pub enum Instruction {
