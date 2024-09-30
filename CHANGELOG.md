@@ -12,7 +12,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Fixed
 
-- Fix miri reported UB in FuncRef and ExternRef conversions. [#1201]
+- Fix miri reported UB in `FuncRef` and `ExternRef` conversions. [#1201]
 - Fix bug in `table.init` from imported `global.get` values. [#1192]
 
 ### Changed
