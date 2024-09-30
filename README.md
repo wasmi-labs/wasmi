@@ -50,16 +50,16 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 
 | WebAssembly Proposal | Status | Comment |
 |:--|:--:|:--|
-| [`mutable-global`] | ✅ | Since version `0.14.0`. |
-| [`saturating-float-to-int`] | ✅ | Since version `0.14.0`. |
-| [`sign-extension`] | ✅ | Since version `0.14.0`. |
-| [`multi-value`] | ✅ | Since version `0.14.0`. |
-| [`bulk-memory`] | ✅ | Since version `0.24.0`. [(#628)] |
-| [`reference-types`] | ✅ | Since version `0.24.0`. [(#635)] |
+| [`mutable-global`] | ✅ | ≥ `0.14.0`. |
+| [`saturating-float-to-int`] | ✅ | ≥ `0.14.0`. |
+| [`sign-extension`] | ✅ | ≥ `0.14.0`. |
+| [`multi-value`] | ✅ | ≥ `0.14.0`. |
+| [`bulk-memory`] | ✅ | ≥ `0.24.0`. [(#628)] |
+| [`reference-types`] | ✅ | ≥ `0.24.0`. [(#635)] |
 | [`simd`] | ❌ | Unlikely to be supported. |
-| [`tail-calls`] | ✅ | Since version `0.28.0`. [(#683)] |
-| [`extended-const`] | ✅ | Since version `0.29.0`. [(#707)] |
-| [`multi-memory`] | ✅ | Since version `0.37.0`. [(#1191)] |
+| [`tail-calls`] | ✅ | ≥ `0.28.0`. [(#683)] |
+| [`extended-const`] | ✅ | ≥ `0.29.0`. [(#707)] |
+| [`multi-memory`] | ✅ | ≥ `0.37.0`. [(#1191)] |
 | [`function-references`] | 📅 | Planned but not yet implemented. [(#774)] |
 | [`gc`] | 📅 | Planned but not yet implemented. [(#775)] |
 | [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
