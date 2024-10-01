@@ -8,7 +8,7 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
-## [`0.36.2`] - 2024-28-09
+## [`0.36.2`] - 2024-09-28
 
 ### Fixed
 
@@ -24,7 +24,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1201]: https://github.com/wasmi-labs/wasmi/pull/1201
 [#commit-b4e78d]: https://github.com/wasmi-labs/wasmi/commit/b4e78d23451cb40a7b43404f8e6e868a362b7985
 
-## [`0.36.1`] - 2024-20-09
+## [`0.36.1`] - 2024-09-20
 
 ### Fixed
 
