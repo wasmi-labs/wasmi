@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.37.1`] - 2024-10-01
+
+### Fixed
+
+- Fixed a bug in `select` translation constant propagation. [#1213]
+
+[#1213]: https://github.com/wasmi-labs/wasmi/pull/1213
+
 ## [`0.37.0`] - 2024-09-30
 
 ### Added
