@@ -47,6 +47,7 @@ use crate::{
             Const16,
             Const32,
             Instruction,
+            Provider,
             Register,
             RegisterSpan,
             RegisterSpanIter,
@@ -2193,310 +2194,311 @@ impl FuncTranslator {
 
         bail_unreachable!(self);
         let (lhs, rhs, condition) = self.alloc.stack.pop3();
-        match condition {
-            TypedProvider::Const(condition) => match (bool::from(condition), lhs, rhs) {
-                // # Optimization
-                //
-                // Since the `condition` is a constant value we can forward `lhs` or `rhs` statically.
-                (true, TypedProvider::Register(reg), _)
-                | (false, _, TypedProvider::Register(reg)) => {
-                    self.alloc.stack.push_register(reg)?;
-                    Ok(())
-                }
-                (true, TypedProvider::Const(value), _)
-                | (false, _, TypedProvider::Const(value)) => {
-                    self.alloc.stack.push_const(value);
-                    Ok(())
-                }
-            },
-            TypedProvider::Register(condition) => {
-                match (lhs, rhs) {
-                    (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
-                        if lhs == rhs {
-                            // # Optimization
-                            //
-                            // Both `lhs` and `rhs` are equal registers
-                            // and thus will always yield the same value.
-                            self.alloc.stack.push_register(lhs)?;
-                            return Ok(());
-                        }
+        let condition = match condition {
+            Provider::Register(condition) => condition,
+            Provider::Const(condition) => {
+                let selected = match i32::from(condition) != 0 {
+                    true => lhs,
+                    false => rhs,
+                };
+                if let Provider::Register(reg) = selected {
+                    if matches!(
+                        self.alloc.stack.get_register_space(reg),
+                        RegisterSpace::Dynamic | RegisterSpace::Preserve
+                    ) {
+                        // Case: constant propagating a dynamic or preserved register might overwrite it in
+                        //       future instruction translation steps and thus we may require a copy instruction
+                        //       to prevent this from happening.
                         let result = self.alloc.stack.push_dynamic()?;
-                        self.push_fueled_instr(
-                            Instruction::select(result, condition, lhs),
-                            FuelCosts::base,
+                        let fuel_info = self.fuel_info();
+                        self.alloc.instr_encoder.encode_copy(
+                            &mut self.alloc.stack,
+                            result,
+                            selected,
+                            fuel_info,
                         )?;
-                        self.alloc
-                            .instr_encoder
-                            .append_instr(Instruction::Register(rhs))?;
-                        Ok(())
+                        return Ok(());
                     }
-                    (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
-                        if let Some(type_hint) = type_hint {
-                            debug_assert_eq!(rhs.ty(), type_hint);
-                        }
-                        let result = self.alloc.stack.push_dynamic()?;
-                        match rhs.ty() {
-                            ValType::I32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                i32::from(rhs),
-                                Instruction::select,
-                            ),
-                            ValType::F32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                f32::from(rhs),
-                                Instruction::select,
-                            ),
-                            ValType::I64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                i64::from(rhs),
-                                Instruction::select,
-                                Instruction::i64const32,
-                            ),
-                            ValType::F64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                f64::from(rhs),
-                                Instruction::select,
-                                Instruction::f64const32,
-                            ),
-                            ValType::FuncRef | ValType::ExternRef => encode_select_imm(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                rhs,
-                                Instruction::select,
-                            ),
-                        }
+                }
+                self.alloc.stack.push_provider(selected)?;
+                return Ok(());
+            }
+        };
+        match (lhs, rhs) {
+            (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
+                if lhs == rhs {
+                    // # Optimization
+                    //
+                    // Both `lhs` and `rhs` are equal registers
+                    // and thus will always yield the same value.
+                    self.alloc.stack.push_register(lhs)?;
+                    return Ok(());
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                self.push_fueled_instr(
+                    Instruction::select(result, condition, lhs),
+                    FuelCosts::base,
+                )?;
+                self.alloc
+                    .instr_encoder
+                    .append_instr(Instruction::Register(rhs))?;
+                Ok(())
+            }
+            (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
+                if let Some(type_hint) = type_hint {
+                    debug_assert_eq!(rhs.ty(), type_hint);
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                match rhs.ty() {
+                    ValType::I32 => encode_select_imm32(
+                        self,
+                        result,
+                        condition,
+                        lhs,
+                        i32::from(rhs),
+                        Instruction::select,
+                    ),
+                    ValType::F32 => encode_select_imm32(
+                        self,
+                        result,
+                        condition,
+                        lhs,
+                        f32::from(rhs),
+                        Instruction::select,
+                    ),
+                    ValType::I64 => encode_select_imm64(
+                        self,
+                        result,
+                        condition,
+                        lhs,
+                        i64::from(rhs),
+                        Instruction::select,
+                        Instruction::i64const32,
+                    ),
+                    ValType::F64 => encode_select_imm64(
+                        self,
+                        result,
+                        condition,
+                        lhs,
+                        f64::from(rhs),
+                        Instruction::select,
+                        Instruction::f64const32,
+                    ),
+                    ValType::FuncRef | ValType::ExternRef => {
+                        encode_select_imm(self, result, condition, lhs, rhs, Instruction::select)
                     }
-                    (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
-                        if let Some(type_hint) = type_hint {
-                            debug_assert_eq!(lhs.ty(), type_hint);
-                        }
-                        let result = self.alloc.stack.push_dynamic()?;
-                        match lhs.ty() {
-                            ValType::I32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                i32::from(lhs),
-                                Instruction::select_rev,
-                            ),
-                            ValType::F32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                f32::from(lhs),
-                                Instruction::select_rev,
-                            ),
-                            ValType::I64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                i64::from(lhs),
-                                Instruction::select_rev,
-                                Instruction::i64const32,
-                            ),
-                            ValType::F64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                f64::from(lhs),
-                                Instruction::select_rev,
-                                Instruction::f64const32,
-                            ),
-                            ValType::FuncRef | ValType::ExternRef => encode_select_imm(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                lhs,
-                                Instruction::select_rev,
-                            ),
-                        }
-                    }
-                    (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
-                        /// Convenience function to encode a `select` instruction.
-                        ///
-                        /// # Note
-                        ///
-                        /// Helper for `select` instructions where both
-                        /// `lhs` and `rhs` are 32-bit constant values.
-                        fn encode_select_imm32<T: Into<AnyConst32>>(
-                            this: &mut FuncTranslator,
-                            result: Register,
-                            condition: Register,
-                            lhs: T,
-                            rhs: T,
-                        ) -> Result<(), Error> {
-                            this.push_fueled_instr(
-                                Instruction::select_imm32(result, lhs),
-                                FuelCosts::base,
-                            )?;
+                }
+            }
+            (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
+                if let Some(type_hint) = type_hint {
+                    debug_assert_eq!(lhs.ty(), type_hint);
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                match lhs.ty() {
+                    ValType::I32 => encode_select_imm32(
+                        self,
+                        result,
+                        condition,
+                        rhs,
+                        i32::from(lhs),
+                        Instruction::select_rev,
+                    ),
+                    ValType::F32 => encode_select_imm32(
+                        self,
+                        result,
+                        condition,
+                        rhs,
+                        f32::from(lhs),
+                        Instruction::select_rev,
+                    ),
+                    ValType::I64 => encode_select_imm64(
+                        self,
+                        result,
+                        condition,
+                        rhs,
+                        i64::from(lhs),
+                        Instruction::select_rev,
+                        Instruction::i64const32,
+                    ),
+                    ValType::F64 => encode_select_imm64(
+                        self,
+                        result,
+                        condition,
+                        rhs,
+                        f64::from(lhs),
+                        Instruction::select_rev,
+                        Instruction::f64const32,
+                    ),
+                    ValType::FuncRef | ValType::ExternRef => encode_select_imm(
+                        self,
+                        result,
+                        condition,
+                        rhs,
+                        lhs,
+                        Instruction::select_rev,
+                    ),
+                }
+            }
+            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
+                /// Convenience function to encode a `select` instruction.
+                ///
+                /// # Note
+                ///
+                /// Helper for `select` instructions where both
+                /// `lhs` and `rhs` are 32-bit constant values.
+                fn encode_select_imm32<T: Into<AnyConst32>>(
+                    this: &mut FuncTranslator,
+                    result: Register,
+                    condition: Register,
+                    lhs: T,
+                    rhs: T,
+                ) -> Result<(), Error> {
+                    this.push_fueled_instr(
+                        Instruction::select_imm32(result, lhs),
+                        FuelCosts::base,
+                    )?;
+                    this.alloc
+                        .instr_encoder
+                        .append_instr(Instruction::select_imm32(condition, rhs))?;
+                    Ok(())
+                }
+
+                /// Convenience function to encode a `select` instruction.
+                ///
+                /// # Note
+                ///
+                /// Helper for `select` instructions where both
+                /// `lhs` and `rhs` are 64-bit constant values.
+                fn encode_select_imm64<T>(
+                    this: &mut FuncTranslator,
+                    result: Register,
+                    condition: Register,
+                    lhs: T,
+                    rhs: T,
+                    make_instr: fn(
+                        result_or_condition: Register,
+                        lhs_or_rhs: Const32<T>,
+                    ) -> Instruction,
+                    make_param: fn(Const32<T>) -> Instruction,
+                ) -> Result<(), Error>
+                where
+                    T: Copy + Into<UntypedVal>,
+                    Const32<T>: TryFrom<T>,
+                {
+                    let lhs32 = <Const32<T>>::try_from(lhs).ok();
+                    let rhs32 = <Const32<T>>::try_from(rhs).ok();
+                    match (lhs32, rhs32) {
+                        (Some(lhs), Some(rhs)) => {
+                            this.push_fueled_instr(make_instr(result, lhs), FuelCosts::base)?;
                             this.alloc
                                 .instr_encoder
-                                .append_instr(Instruction::select_imm32(condition, rhs))?;
+                                .append_instr(make_instr(condition, rhs))?;
                             Ok(())
                         }
-
-                        /// Convenience function to encode a `select` instruction.
-                        ///
-                        /// # Note
-                        ///
-                        /// Helper for `select` instructions where both
-                        /// `lhs` and `rhs` are 64-bit constant values.
-                        fn encode_select_imm64<T>(
-                            this: &mut FuncTranslator,
-                            result: Register,
-                            condition: Register,
-                            lhs: T,
-                            rhs: T,
-                            make_instr: fn(
-                                result_or_condition: Register,
-                                lhs_or_rhs: Const32<T>,
-                            ) -> Instruction,
-                            make_param: fn(Const32<T>) -> Instruction,
-                        ) -> Result<(), Error>
-                        where
-                            T: Copy + Into<UntypedVal>,
-                            Const32<T>: TryFrom<T>,
-                        {
-                            let lhs32 = <Const32<T>>::try_from(lhs).ok();
-                            let rhs32 = <Const32<T>>::try_from(rhs).ok();
-                            match (lhs32, rhs32) {
-                                (Some(lhs), Some(rhs)) => {
-                                    this.push_fueled_instr(
-                                        make_instr(result, lhs),
-                                        FuelCosts::base,
-                                    )?;
-                                    this.alloc
-                                        .instr_encoder
-                                        .append_instr(make_instr(condition, rhs))?;
-                                    Ok(())
-                                }
-                                (Some(lhs), None) => {
-                                    let rhs = this.alloc.stack.alloc_const(rhs)?;
-                                    this.push_fueled_instr(
-                                        Instruction::select_rev(result, condition, rhs),
-                                        FuelCosts::base,
-                                    )?;
-                                    this.alloc.instr_encoder.append_instr(make_param(lhs))?;
-                                    Ok(())
-                                }
-                                (None, Some(rhs)) => {
-                                    let lhs = this.alloc.stack.alloc_const(lhs)?;
-                                    this.push_fueled_instr(
-                                        Instruction::select(result, condition, lhs),
-                                        FuelCosts::base,
-                                    )?;
-                                    this.alloc.instr_encoder.append_instr(make_param(rhs))?;
-                                    Ok(())
-                                }
-                                (None, None) => {
-                                    encode_select_imm(this, result, condition, lhs, rhs)
-                                }
-                            }
-                        }
-
-                        /// Convenience function to encode a `select` instruction.
-                        ///
-                        /// # Note
-                        ///
-                        /// Helper for `select` instructions where both `lhs`
-                        /// and `rhs` are function local constant values.
-                        fn encode_select_imm<T>(
-                            this: &mut FuncTranslator,
-                            result: Register,
-                            condition: Register,
-                            lhs: T,
-                            rhs: T,
-                        ) -> Result<(), Error>
-                        where
-                            T: Into<UntypedVal>,
-                        {
-                            let lhs = this.alloc.stack.alloc_const(lhs)?;
+                        (Some(lhs), None) => {
                             let rhs = this.alloc.stack.alloc_const(rhs)?;
+                            this.push_fueled_instr(
+                                Instruction::select_rev(result, condition, rhs),
+                                FuelCosts::base,
+                            )?;
+                            this.alloc.instr_encoder.append_instr(make_param(lhs))?;
+                            Ok(())
+                        }
+                        (None, Some(rhs)) => {
+                            let lhs = this.alloc.stack.alloc_const(lhs)?;
                             this.push_fueled_instr(
                                 Instruction::select(result, condition, lhs),
                                 FuelCosts::base,
                             )?;
-                            this.alloc
-                                .instr_encoder
-                                .append_instr(Instruction::Register(rhs))?;
+                            this.alloc.instr_encoder.append_instr(make_param(rhs))?;
                             Ok(())
                         }
+                        (None, None) => encode_select_imm(this, result, condition, lhs, rhs),
+                    }
+                }
 
-                        debug_assert_eq!(lhs.ty(), rhs.ty());
-                        if let Some(type_hint) = type_hint {
-                            debug_assert_eq!(lhs.ty(), type_hint);
-                        }
-                        if lhs == rhs {
-                            // # Optimization
-                            //
-                            // Both `lhs` and `rhs` are equal constant values
-                            // and thus will always yield the same value.
-                            self.alloc.stack.push_const(lhs);
-                            return Ok(());
-                        }
-                        let result = self.alloc.stack.push_dynamic()?;
-                        match lhs.ty() {
-                            ValType::I32 => {
-                                encode_select_imm32(
-                                    self,
-                                    result,
-                                    condition,
-                                    i32::from(lhs),
-                                    i32::from(rhs),
-                                )?;
-                                Ok(())
-                            }
-                            ValType::F32 => {
-                                encode_select_imm32(
-                                    self,
-                                    result,
-                                    condition,
-                                    f32::from(lhs),
-                                    f32::from(rhs),
-                                )?;
-                                Ok(())
-                            }
-                            ValType::I64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                i64::from(lhs),
-                                i64::from(rhs),
-                                Instruction::select_i64imm32,
-                                Instruction::i64const32,
-                            ),
-                            ValType::F64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                f64::from(lhs),
-                                f64::from(rhs),
-                                Instruction::select_f64imm32,
-                                Instruction::f64const32,
-                            ),
-                            ValType::FuncRef | ValType::ExternRef => {
-                                encode_select_imm(self, result, condition, lhs, rhs)
-                            }
-                        }
+                /// Convenience function to encode a `select` instruction.
+                ///
+                /// # Note
+                ///
+                /// Helper for `select` instructions where both `lhs`
+                /// and `rhs` are function local constant values.
+                fn encode_select_imm<T>(
+                    this: &mut FuncTranslator,
+                    result: Register,
+                    condition: Register,
+                    lhs: T,
+                    rhs: T,
+                ) -> Result<(), Error>
+                where
+                    T: Into<UntypedVal>,
+                {
+                    let lhs = this.alloc.stack.alloc_const(lhs)?;
+                    let rhs = this.alloc.stack.alloc_const(rhs)?;
+                    this.push_fueled_instr(
+                        Instruction::select(result, condition, lhs),
+                        FuelCosts::base,
+                    )?;
+                    this.alloc
+                        .instr_encoder
+                        .append_instr(Instruction::Register(rhs))?;
+                    Ok(())
+                }
+
+                debug_assert_eq!(lhs.ty(), rhs.ty());
+                if let Some(type_hint) = type_hint {
+                    debug_assert_eq!(lhs.ty(), type_hint);
+                }
+                if lhs == rhs {
+                    // # Optimization
+                    //
+                    // Both `lhs` and `rhs` are equal constant values
+                    // and thus will always yield the same value.
+                    self.alloc.stack.push_const(lhs);
+                    return Ok(());
+                }
+                let result = self.alloc.stack.push_dynamic()?;
+                match lhs.ty() {
+                    ValType::I32 => {
+                        encode_select_imm32(
+                            self,
+                            result,
+                            condition,
+                            i32::from(lhs),
+                            i32::from(rhs),
+                        )?;
+                        Ok(())
+                    }
+                    ValType::F32 => {
+                        encode_select_imm32(
+                            self,
+                            result,
+                            condition,
+                            f32::from(lhs),
+                            f32::from(rhs),
+                        )?;
+                        Ok(())
+                    }
+                    ValType::I64 => encode_select_imm64(
+                        self,
+                        result,
+                        condition,
+                        i64::from(lhs),
+                        i64::from(rhs),
+                        Instruction::select_i64imm32,
+                        Instruction::i64const32,
+                    ),
+                    ValType::F64 => encode_select_imm64(
+                        self,
+                        result,
+                        condition,
+                        f64::from(lhs),
+                        f64::from(rhs),
+                        Instruction::select_f64imm32,
+                        Instruction::f64const32,
+                    ),
+                    ValType::FuncRef | ValType::ExternRef => {
+                        encode_select_imm(self, result, condition, lhs, rhs)
                     }
                 }
             }
