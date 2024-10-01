@@ -63,6 +63,7 @@ use crate::{
     FuncType,
 };
 use core::fmt;
+use stack::RegisterSpace;
 use std::vec::Vec;
 use wasmparser::{
     BinaryReaderError,
