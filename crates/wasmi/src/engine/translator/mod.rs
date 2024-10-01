@@ -59,6 +59,7 @@ use crate::{
     FuncType,
 };
 use core::fmt;
+use stack::RegisterSpace;
 use std::vec::Vec;
 use utils::Wrap;
 use wasmparser::{
@@ -2203,10 +2204,30 @@ impl FuncTranslator {
             Provider::Const(condition) => {
                 // Optimization: since condition is a constant value we can const-fold the `select`
                 //               instruction and simply push the selected value back to the provider stack.
-                match i32::from(condition) != 0 {
-                    true => self.alloc.stack.push_provider(lhs)?,
-                    false => self.alloc.stack.push_provider(rhs)?,
+                let selected = match i32::from(condition) != 0 {
+                    true => lhs,
+                    false => rhs,
                 };
+                if let Provider::Register(reg) = selected {
+                    if matches!(
+                        self.alloc.stack.get_register_space(reg),
+                        RegisterSpace::Dynamic | RegisterSpace::Preserve
+                    ) {
+                        // Case: constant propagating a dynamic or preserved register might overwrite it in
+                        //       future instruction translation steps and thus we may require a copy instruction
+                        //       to prevent this from happening.
+                        let result = self.alloc.stack.push_dynamic()?;
+                        let fuel_info = self.fuel_info();
+                        self.alloc.instr_encoder.encode_copy(
+                            &mut self.alloc.stack,
+                            result,
+                            selected,
+                            fuel_info,
+                        )?;
+                        return Ok(());
+                    }
+                }
+                self.alloc.stack.push_provider(selected)?;
                 return Ok(());
             }
         };
