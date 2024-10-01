@@ -1400,7 +1400,7 @@ impl<'engine> Executor<'engine> {
 macro_rules! get_entity {
     (
         $(
-            fn $name:ident(&self, store: &StoreInner, index: $index_ty:ty) -> $id_ty:ty;
+            fn $name:ident(&self, index: $index_ty:ty) -> $id_ty:ty;
         )*
     ) => {
         $(
@@ -1429,13 +1429,13 @@ macro_rules! get_entity {
 
 impl<'engine> Executor<'engine> {
     get_entity! {
-        fn get_func(&self, store: &StoreInner, index: index::Func) -> Func;
-        fn get_func_type_dedup(&self, store: &StoreInner, index: index::FuncType) -> DedupFuncType;
-        fn get_memory(&self, store: &StoreInner, index: index::Memory) -> Memory;
-        fn get_table(&self, store: &StoreInner, index: index::Table) -> Table;
-        fn get_global(&self, store: &StoreInner, index: index::Global) -> Global;
-        fn get_data_segment(&self, store: &StoreInner, index: index::Data) -> DataSegment;
-        fn get_element_segment(&self, store: &StoreInner, index: index::Elem) -> ElementSegment;
+        fn get_func(&self, index: index::Func) -> Func;
+        fn get_func_type_dedup(&self, index: index::FuncType) -> DedupFuncType;
+        fn get_memory(&self, index: index::Memory) -> Memory;
+        fn get_table(&self, index: index::Table) -> Table;
+        fn get_global(&self, index: index::Global) -> Global;
+        fn get_data_segment(&self, index: index::Data) -> DataSegment;
+        fn get_element_segment(&self, index: index::Elem) -> ElementSegment;
     }
 
     /// Returns the [`Reg`] value.
