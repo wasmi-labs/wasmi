@@ -809,7 +809,7 @@ fn fuzz_fail_01() {
             )
         )
     "#;
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::i32_popcnt(1, 0),
             Instruction::i32_eq_imm16(2, 0, 0_i16),
