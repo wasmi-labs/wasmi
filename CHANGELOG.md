@@ -63,6 +63,14 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 [`wasmi_ir` crate]: https://crates.io/crates/wasmi_ir
 
+## [`0.36.3`] - 2024-10-01
+
+### Fixed
+
+- Fixed a bug in `select` translation constant propagation. [#1213]
+
+[#1213]: https://github.com/wasmi-labs/wasmi/pull/1213
+
 ## [`0.36.2`] - 2024-09-28
 
 ### Fixed
