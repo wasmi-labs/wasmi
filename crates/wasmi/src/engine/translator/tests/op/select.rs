@@ -793,6 +793,10 @@ fn both_f64imm32() {
     test_for(f64::NAN, f64::EPSILON);
 }
 
+fn r(index: i16) -> Register {
+    Register::from_i16(index)
+}
+
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_fail_01() {
@@ -811,14 +815,14 @@ fn fuzz_fail_01() {
     "#;
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::i32_popcnt(1, 0),
-            Instruction::i32_eq_imm16(2, 0, 0_i16),
-            Instruction::i32_clz(2, 2),
-            Instruction::copy(1, 2),
-            Instruction::i32_eq_imm16(2, 0, 0_i16),
-            Instruction::select_imm32_rhs(1, 1),
-            Instruction::register_and_imm32(2, 0_i32),
-            Instruction::return_reg(1),
+            Instruction::i32_popcnt(r(1), r(0)),
+            Instruction::i32_eq_imm16(r(2), r(0), 0_i16),
+            Instruction::i32_clz(r(2), r(2)),
+            Instruction::copy(r(1), r(2)),
+            Instruction::i32_eq_imm16(r(2), r(0), 0_i16),
+            Instruction::select(r(1), r(2), r(1)),
+            Instruction::const32(0_i32),
+            Instruction::return_reg(r(1)),
         ])
         .run();
 }
