@@ -792,3 +792,33 @@ fn both_f64imm32() {
     test_for(f64::NEG_INFINITY, f64::INFINITY);
     test_for(f64::NAN, f64::EPSILON);
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn fuzz_fail_01() {
+    let wasm = r#"
+        (module
+            (func (export "test") (param i32) (result i32)
+                (i32.popcnt (local.get 0))        ;; case: true  (i32.const  0)
+                (i32.clz (i32.eqz (local.get 0))) ;; case: false (i32.const 31)
+                (i32.const 0)                     ;; condition   (i32.const  0)
+                (select)                          ;; case: true  (i32.const 31)
+                (i32.const 0)                     ;; case: false (i32.const  0)
+                (i32.eqz (local.get 0))           ;; condition   (i32.const  1)
+                (select)
+            )
+        )
+    "#;
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::i32_popcnt(1, 0),
+            Instruction::i32_eq_imm16(2, 0, 0_i16),
+            Instruction::i32_clz(2, 2),
+            Instruction::copy(1, 2),
+            Instruction::i32_eq_imm16(2, 0, 0_i16),
+            Instruction::select_imm32_rhs(1, 1),
+            Instruction::register_and_imm32(2, 0_i32),
+            Instruction::return_reg(1),
+        ])
+        .run();
+}
