@@ -1733,7 +1733,13 @@ impl<'engine> Executor<'engine> {
     /// This includes [`Instruction`] variants such as [`Instruction::TableIndex`]
     /// that primarily carry parameters for actually executable [`Instruction`].
     fn invalid_instruction_word(&mut self) -> Result<(), Error> {
-        self.execute_trap(TrapCode::UnreachableCodeReached)
+        // Safety: Wasmi translation guarantees that branches are never taken to instruction parameters directly.
+        unsafe {
+            unreachable_unchecked!(
+                "expected instruction but found instruction parameter: {:?}",
+                *self.ip.get()
+            )
+        }
     }
 
     /// Executes a Wasm `unreachable` instruction.
