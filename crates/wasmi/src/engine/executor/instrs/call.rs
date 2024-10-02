@@ -5,6 +5,7 @@ use crate::{
         bytecode::{index, Instruction, Reg, RegSpan},
         code_map::CompiledFuncRef,
         executor::stack::{CallFrame, FrameParams, ValueStack},
+        utils::unreachable_unchecked,
         EngineFunc,
         FuncParams,
     },
@@ -184,9 +185,14 @@ impl<'engine> Executor<'engine> {
                 let index = u32::from(self.get_register(index));
                 (index, table)
             }
-            unexpected => unreachable!(
-                "expected `Instruction::CallIndirectParams[Imm16]` but found {unexpected:?}"
-            ),
+            unexpected => {
+                // Safety: Wasmi translation guarantees that correct instruction parameter follows.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::CallIndirectParams` but found {unexpected:?}"
+                    )
+                }
+            }
         }
     }
 
@@ -208,9 +214,14 @@ impl<'engine> Executor<'engine> {
                 let index = u32::from(index);
                 (index, table)
             }
-            unexpected => unreachable!(
-                "expected `Instruction::CallIndirectParams[Imm16]` but found {unexpected:?}"
-            ),
+            unexpected => {
+                // Safety: Wasmi translation guarantees that correct instruction parameter follows.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::CallIndirectParamsImm16` but found {unexpected:?}"
+                    )
+                }
+            }
         }
     }
 
@@ -260,9 +271,12 @@ impl<'engine> Executor<'engine> {
                 self.copy_regs(uninit_params, regs);
             }
             unexpected => {
-                unreachable!(
-                    "unexpected Instruction found while copying call parameters: {unexpected:?}"
-                )
+                // Safety: Wasmi translation guarantees that register list finalizer exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected register-list finalizer but found: {unexpected:?}"
+                    )
+                }
             }
         }
     }
