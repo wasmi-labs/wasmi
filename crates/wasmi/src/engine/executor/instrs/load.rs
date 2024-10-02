@@ -4,6 +4,7 @@ use crate::{
     engine::{
         bytecode::{Const16, Reg},
         executor::instr_ptr::InstructionPtr,
+        utils::unreachable_unchecked,
     },
     ir::{index::Memory, Instruction},
     store::StoreInner,
@@ -22,7 +23,12 @@ impl<'engine> Executor<'engine> {
         match *addr.get() {
             Instruction::RegisterAndImm32 { reg, imm } => (reg, u32::from(imm)),
             instr => {
-                unreachable!("expected an `Instruction::RegisterAndImm32` but found: {instr:?}")
+                // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
+                    )
+                }
             }
         }
     }
