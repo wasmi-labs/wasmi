@@ -1,7 +1,10 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
-    engine::bytecode::{index::Data, Const16, Instruction, Reg},
+    engine::{
+        bytecode::{index::Data, Const16, Instruction, Reg},
+        utils::unreachable_unchecked,
+    },
     error::EntityGrowError,
     ir::index::Memory,
     store::{ResourceLimiterRef, StoreInner},
@@ -17,7 +20,12 @@ impl<'engine> Executor<'engine> {
         match *addr.get() {
             Instruction::MemoryIndex { index } => index,
             unexpected => {
-                unreachable!("expected `Instruction::MemoryIndex` but found: {unexpected:?}")
+                // Safety: Wasmi translation guarantees that [`Instruction::MemoryIndex`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::MemoryIndex` but found: {unexpected:?}"
+                    )
+                }
             }
         }
     }
@@ -29,7 +37,12 @@ impl<'engine> Executor<'engine> {
         match *addr.get() {
             Instruction::DataIndex { index } => index,
             unexpected => {
-                unreachable!("expected `Instruction::DataIndex` but found: {unexpected:?}")
+                // Safety: Wasmi translation guarantees that [`Instruction::DataIndex`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::DataIndex` but found: {unexpected:?}"
+                    )
+                }
             }
         }
     }
