@@ -1,11 +1,14 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
-    engine::bytecode::{
-        index::{Elem, Table},
-        Const16,
-        Instruction,
-        Reg,
+    engine::{
+        bytecode::{
+            index::{Elem, Table},
+            Const16,
+            Instruction,
+            Reg,
+        },
+        utils::unreachable_unchecked,
     },
     error::EntityGrowError,
     store::{ResourceLimiterRef, StoreInner},
@@ -22,7 +25,12 @@ impl<'engine> Executor<'engine> {
         match *addr.get() {
             Instruction::TableIndex { index } => index,
             unexpected => {
-                unreachable!("expected `Instruction::TableIndex` but found: {unexpected:?}")
+                // Safety: Wasmi translation guarantees that [`Instruction::TableIndex`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::TableIndex` but found: {unexpected:?}"
+                    )
+                }
             }
         }
     }
@@ -34,7 +42,12 @@ impl<'engine> Executor<'engine> {
         match *addr.get() {
             Instruction::ElemIndex { index } => index,
             unexpected => {
-                unreachable!("expected `Instruction::ElemIndex` but found: {unexpected:?}")
+                // Safety: Wasmi translation guarantees that [`Instruction::ElemIndex`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::ElemIndex` but found: {unexpected:?}"
+                    )
+                }
             }
         }
     }
