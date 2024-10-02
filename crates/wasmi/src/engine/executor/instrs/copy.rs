@@ -1,7 +1,10 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{AnyConst32, Const32, FixedRegSpan, Instruction, Reg, RegSpan},
+    engine::{
+        bytecode::{AnyConst32, Const32, FixedRegSpan, Instruction, Reg, RegSpan},
+        utils::unreachable_unchecked,
+    },
 };
 use core::slice;
 use smallvec::SmallVec;
@@ -132,9 +135,14 @@ impl<'engine> Executor<'engine> {
             Instruction::Register { reg } => slice::from_ref(reg),
             Instruction::Register2 { regs } => regs,
             Instruction::Register3 { regs } => regs,
-            unexpected => unreachable!(
-                "unexpected Instruction found while copying many values: {unexpected:?}"
-            ),
+            unexpected => {
+                // Safety: Wasmi translator guarantees that register-list finalizer exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected register-list finalizer but found: {unexpected:?}"
+                    )
+                }
+            }
         };
         tmp.extend(values.iter().map(|value| self.get_register(*value)));
         for (result, value) in results.iter_sized(tmp.len()).zip(tmp) {
@@ -175,7 +183,14 @@ impl<'engine> Executor<'engine> {
             Instruction::Register { reg } => slice::from_ref(reg),
             Instruction::Register2 { regs } => regs,
             Instruction::Register3 { regs } => regs,
-            unexpected => unreachable!("unexpected Instruction found while copying many non-overlapping values: {unexpected:?}"),
+            unexpected => {
+                // Safety: Wasmi translator guarantees that register-list finalizer exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected register-list finalizer but found: {unexpected:?}"
+                    )
+                }
+            }
         };
         copy_values(values);
         ip
