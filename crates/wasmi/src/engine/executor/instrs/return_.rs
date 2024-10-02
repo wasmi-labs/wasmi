@@ -4,6 +4,7 @@ use crate::{
     engine::{
         bytecode::{AnyConst32, BoundedRegSpan, Const32, Instruction, Reg, RegSpan},
         executor::stack::FrameRegisters,
+        utils::unreachable_unchecked,
     },
     store::StoreInner,
 };
@@ -236,7 +237,14 @@ impl<'engine> Executor<'engine> {
             Instruction::Register { reg } => slice::from_ref(reg),
             Instruction::Register2 { regs } => regs,
             Instruction::Register3 { regs } => regs,
-            unexpected => unreachable!("unexpected `Instruction` found while executing `Instruction::ReturnMany`: {unexpected:?}"),
+            unexpected => {
+                // Safety: Wasmi translation guarantees that a register-list finalizer exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "unexpected register-list finalizer but found: {unexpected:?}"
+                    )
+                }
+            }
         };
         copy_results(values);
     }
