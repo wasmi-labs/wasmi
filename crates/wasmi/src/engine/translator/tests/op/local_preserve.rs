@@ -607,3 +607,33 @@ fn concat_local_tee_pair() {
         ])
         .run()
 }
+
+#[test]
+fn loop_iter_1() {
+    let wasm = r#"
+        (module
+            (func (export "test") (param i32) (result i32)
+                (local.set 0 (i32.const 0))
+                (local.get 0)
+                (loop $continue
+                    (if (i32.eqz (local.get 0))
+                        (then
+                            (local.set 0 (i32.const 1))
+                            (br $continue)
+                        )
+                    )
+                )
+            )
+        )
+    "#;
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy_imm32(0, 0_i32),
+            Instruction::copy(2, 0),
+            Instruction::branch_i32_ne_imm(0, 0_i16, BranchOffset16::from(3)),
+            Instruction::copy_imm32(0, 1),
+            Instruction::branch(BranchOffset::from(-2)),
+            Instruction::return_reg(2),
+        ])
+        .run()
+}
