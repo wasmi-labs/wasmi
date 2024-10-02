@@ -57,6 +57,18 @@ std = [
 # An example of such an environment is `wasm32-unknown-unknown`.
 no-hash-maps = ["wasmi_collections/no-hash-maps"]
 
+# Enables extra checks performed during Wasmi bytecode execution.
+#
+# These checks are unnecessary as long as Wasmi translation works as intended.
+# If Wasmi translation invariants are broken due to bugs, these checks prevent
+# Wasmi execution to exhibit undefined behavior (UB) in certain cases.
+#
+# Expected execution overhead is upt to 20%, if enabled.
+#
+# - Enable if your focus is on safety.
+# - Disable if your focus is on execution speed.
+extra-checks = []
+
 [[bench]]
 name = "benches"
 harness = false
