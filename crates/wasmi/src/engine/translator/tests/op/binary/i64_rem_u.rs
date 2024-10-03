@@ -28,8 +28,8 @@ fn reg_imm16() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev::<u64>(WASM_OP, 100, Instruction::i64_rem_u_imm16_rev)
+fn reg_imm16_lhs() {
+    test_binary_reg_imm16_lhs::<u64>(WASM_OP, 100, Instruction::i64_rem_u_imm16_lhs)
 }
 
 #[test]
@@ -40,8 +40,8 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, i64::MAX, Instruction::i64_rem_u)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs(WASM_OP, i64::MAX, Instruction::i64_rem_u)
 }
 
 #[test]

@@ -468,7 +468,7 @@ fn merge_overwriting_local_set() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn merge_overwriting_local_set_rev() {
+fn merge_overwriting_local_set_lhs() {
     let wasm = r"
         (module
             (func (result i32)
@@ -526,7 +526,7 @@ fn merge_overwriting_local_set_3() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn merge_overwriting_local_set_3_rev() {
+fn merge_overwriting_local_set_3_lhs() {
     let wasm = r"
         (module
             (func (result i32)

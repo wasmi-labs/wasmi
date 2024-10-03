@@ -10,14 +10,14 @@ fn reg_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, i64::MAX, Instruction::i64_shr_u)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs(WASM_OP, i64::MAX, Instruction::i64_shr_u)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev::<i64>(WASM_OP, 100, Instruction::i64_shr_u_imm16_rev)
+fn reg_imm16_lhs() {
+    test_binary_reg_imm16_lhs::<i64>(WASM_OP, 100, Instruction::i64_shr_u_imm16_lhs)
 }
 
 #[test]
@@ -52,7 +52,7 @@ fn reg_1_after_mod32() {
 #[cfg_attr(miri, ignore)]
 fn zero_reg() {
     let expected = [return_i64imm32_instr(0)];
-    test_binary_reg_imm_rev_with(WASM_OP, 0_i32, expected).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, 0_i32, expected).run()
 }
 
 #[test]

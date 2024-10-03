@@ -10,14 +10,14 @@ fn reg_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, i32::MAX, Instruction::i32_rotl)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs(WASM_OP, i32::MAX, Instruction::i32_rotl)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev::<i32>(WASM_OP, 100, Instruction::i32_rotl_imm16_rev)
+fn reg_imm16_lhs() {
+    test_binary_reg_imm16_lhs::<i32>(WASM_OP, 100, Instruction::i32_rotl_imm16_lhs)
 }
 
 #[test]
@@ -54,7 +54,7 @@ fn zero_reg() {
     let expected = [Instruction::ReturnImm32 {
         value: AnyConst32::from(0_i32),
     }];
-    test_binary_reg_imm_rev_with(WASM_OP, 0_i32, expected).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, 0_i32, expected).run()
 }
 
 #[test]
@@ -63,7 +63,7 @@ fn minus_one_reg() {
     let expected = [Instruction::ReturnImm32 {
         value: AnyConst32::from(-1_i32),
     }];
-    test_binary_reg_imm_rev_with(WASM_OP, -1_i32, expected).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, -1_i32, expected).run()
 }
 
 #[test]

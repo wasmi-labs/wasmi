@@ -16,8 +16,8 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev_commutative(WASM_OP, 1.0_f64, Instruction::f64_add)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs_commutative(WASM_OP, 1.0_f64, Instruction::f64_add)
 }
 
 #[test]
@@ -51,7 +51,7 @@ fn reg_zero() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_zero_rev() {
+fn reg_zero_lhs() {
     // We cannot optimize `0 + x` -> `x` because `0 + -0` -> `0` according to IEEE.
     let expected = [
         Instruction::f64_add(Reg::from(1), Reg::from(0), Reg::from(-1)),

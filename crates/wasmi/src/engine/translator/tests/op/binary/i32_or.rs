@@ -23,8 +23,8 @@ fn reg_imm16() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev::<i32>(WASM_OP, 100, swap_ops!(Instruction::i32_or_imm16))
+fn reg_imm16_lhs() {
+    test_binary_reg_imm16_lhs::<i32>(WASM_OP, 100, swap_ops!(Instruction::i32_or_imm16))
 }
 
 #[test]
@@ -35,8 +35,8 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev_commutative(WASM_OP, i32::MAX, Instruction::i32_or)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs_commutative(WASM_OP, i32::MAX, Instruction::i32_or)
 }
 
 #[test]
@@ -48,9 +48,9 @@ fn reg_zero() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_zero_rev() {
+fn reg_zero_lhs() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_rev_with(WASM_OP, 0i32, expected).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, 0i32, expected).run()
 }
 
 #[test]
@@ -64,11 +64,11 @@ fn reg_ones() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_ones_rev() {
+fn reg_ones_lhs() {
     let expected = [Instruction::ReturnImm32 {
         value: AnyConst32::from(-1),
     }];
-    test_binary_reg_imm_rev_with(WASM_OP, -1_i32, expected).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, -1_i32, expected).run()
 }
 
 #[test]

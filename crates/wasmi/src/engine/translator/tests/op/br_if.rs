@@ -483,7 +483,7 @@ fn return_if_results_2() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn return_if_results_2_rev() {
+fn return_if_results_2_lhs() {
     let wasm = r"
         (module
             (func (param i32 i32 i32) (result i32 i32)

@@ -263,7 +263,7 @@ fn test_binary_reg_imm16<T>(
 }
 
 /// Variant of [`test_binary_reg_imm16`] where both operands are swapped.
-fn test_binary_reg_imm16_rev<T>(
+fn test_binary_reg_imm16_lhs<T>(
     wasm_op: WasmOp,
     value: T,
     make_instr: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
@@ -278,7 +278,7 @@ fn test_binary_reg_imm16_rev<T>(
         make_instr(Reg::from(1), immediate, Reg::from(0)),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_rev_with(wasm_op, value, expected).run()
+    test_binary_reg_imm_lhs_with(wasm_op, value, expected).run()
 }
 
 fn test_binary_reg_imm32<T>(
@@ -299,7 +299,7 @@ fn test_binary_reg_imm32<T>(
 }
 
 /// Variant of [`test_binary_reg_imm32`] where both operands are swapped.
-fn test_binary_reg_imm32_rev<T>(
+fn test_binary_reg_imm32_lhs<T>(
     wasm_op: WasmOp,
     value: T,
     make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
@@ -317,7 +317,7 @@ fn test_binary_reg_imm32_rev<T>(
 }
 
 /// Variant of [`test_binary_reg_imm32`] where both operands are swapped.
-fn test_binary_reg_imm32_rev_commutative<T>(
+fn test_binary_reg_imm32_lhs_commutative<T>(
     wasm_op: WasmOp,
     value: T,
     make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
@@ -346,7 +346,7 @@ where
     testcase
 }
 
-fn test_binary_reg_imm_rev_with<T, E>(wasm_op: WasmOp, value: T, expected: E) -> TranslationTest
+fn test_binary_reg_imm_lhs_with<T, E>(wasm_op: WasmOp, value: T, expected: E) -> TranslationTest
 where
     T: Copy,
     DisplayWasm<T>: Display,
