@@ -63,6 +63,14 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 [`wasmi_ir` crate]: https://crates.io/crates/wasmi_ir
 
+## [`0.36.4`] - 2024-10-03
+
+### Fixed
+
+- Fixed a bug in local preservation when translating Wasm `loop` control flow. [#1218]
+
+[#1217]: https://github.com/wasmi-labs/wasmi/pull/1217
+
 ## [`0.36.3`] - 2024-10-01
 
 ### Fixed
