@@ -7,6 +7,7 @@ use crate::{
         bytecode::{index, BlockFuel, Const16, Instruction, Reg},
         code_map::CodeMap,
         executor::stack::{CallFrame, FrameRegisters, ValueStack},
+        utils::unreachable_unchecked,
         DedupFuncType,
         EngineFunc,
     },
@@ -1418,9 +1419,14 @@ macro_rules! get_entity {
                 unsafe { self.cache.$name(index) }
                     .unwrap_or_else(|| {
                         const ENTITY_NAME: &'static str = ::core::stringify!($id_ty);
-                        ::core::unreachable!(
-                            "missing {ENTITY_NAME} at index {index:?} for the currently used instance",
-                        )
+                        // Safety: within the Wasmi executor it is assumed that store entity
+                        //         indices within the Wasmi bytecode are always valid for the
+                        //         store. This is an invariant of the Wasmi translation.
+                        unsafe {
+                            unreachable_unchecked!(
+                                "missing {ENTITY_NAME} at index {index:?} for the currently used instance",
+                            )
+                        }
                     })
             }
         )*
@@ -1727,7 +1733,13 @@ impl<'engine> Executor<'engine> {
     /// This includes [`Instruction`] variants such as [`Instruction::TableIndex`]
     /// that primarily carry parameters for actually executable [`Instruction`].
     fn invalid_instruction_word(&mut self) -> Result<(), Error> {
-        self.execute_trap(TrapCode::UnreachableCodeReached)
+        // Safety: Wasmi translation guarantees that branches are never taken to instruction parameters directly.
+        unsafe {
+            unreachable_unchecked!(
+                "expected instruction but found instruction parameter: {:?}",
+                *self.ip.get()
+            )
+        }
     }
 
     /// Executes a Wasm `unreachable` instruction.

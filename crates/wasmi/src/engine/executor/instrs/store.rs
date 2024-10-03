@@ -1,7 +1,10 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::bytecode::{Const16, Instruction, Reg},
+    engine::{
+        bytecode::{Const16, Instruction, Reg},
+        utils::unreachable_unchecked,
+    },
     ir::{index::Memory, AnyConst16},
     store::StoreInner,
     Error,
@@ -22,8 +25,13 @@ impl<'engine> Executor<'engine> {
         addr.add(1);
         match *addr.get() {
             Instruction::RegisterAndImm32 { reg, imm } => (reg, u32::from(imm)),
-            instr => {
-                unreachable!("expected an `Instruction::RegisterAndImm32` but found: {instr:?}")
+            unexpected => {
+                // Safety: Wasmi translation guarantees that [`Instruction::RegisterAndImm32`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::RegisterAndImm32` but found {unexpected:?}"
+                    )
+                }
             }
         }
     }
@@ -37,8 +45,13 @@ impl<'engine> Executor<'engine> {
         addr.add(1);
         match *addr.get() {
             Instruction::Imm16AndImm32 { imm16, imm32 } => (T::from(imm16), u32::from(imm32)),
-            instr => {
-                unreachable!("expected an `Instruction::Imm16AndImm32` but found: {instr:?}")
+            unexpected => {
+                // Safety: Wasmi translation guarantees that [`Instruction::Imm16AndImm32`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::Imm16AndImm32` but found {unexpected:?}"
+                    )
+                }
             }
         }
     }

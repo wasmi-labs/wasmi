@@ -487,7 +487,9 @@ impl FuncEntity {
                 // Safety: we just asserted that `self` must be an uncompiled function
                 //         since otherwise we would have returned `None` above.
                 //         Since this is a performance critical path we need to leave out this check.
-                unsafe { core::hint::unreachable_unchecked() }
+                unsafe {
+                    unreachable_unchecked!("expected uncompiled function but found: {self:?}")
+                }
             }
         }
     }

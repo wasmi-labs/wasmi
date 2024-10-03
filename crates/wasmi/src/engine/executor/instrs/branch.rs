@@ -1,14 +1,17 @@
 use super::Executor;
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{
-        BranchOffset,
-        BranchOffset16,
-        Comparator,
-        ComparatorAndOffset,
-        Const16,
-        Instruction,
-        Reg,
+    engine::{
+        bytecode::{
+            BranchOffset,
+            BranchOffset16,
+            Comparator,
+            ComparatorAndOffset,
+            Const16,
+            Instruction,
+            Reg,
+        },
+        utils::unreachable_unchecked,
     },
 };
 use core::cmp;
@@ -58,7 +61,14 @@ impl<'engine> Executor<'engine> {
             Instruction::Const32 { value } => UntypedVal::from(u32::from(value)),
             Instruction::I64Const32 { value } => UntypedVal::from(i64::from(value)),
             Instruction::F64Const32 { value } => UntypedVal::from(f64::from(value)),
-            _ => unreachable!(),
+            unexpected => {
+                // Safety: one of the above instruction parameters is guaranteed to exist by the Wasmi translation.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected instruction parameter for `Instruction::BranchTable1` but found: {unexpected:?}"
+                    )
+                }
+            }
         };
         self.ip.add(offset);
         if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
@@ -72,8 +82,16 @@ impl<'engine> Executor<'engine> {
     pub fn execute_branch_table_2(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
-        let Instruction::Register2 { regs } = *self.ip.get() else {
-            unreachable!()
+        let regs = match *self.ip.get() {
+            Instruction::Register2 { regs } => regs,
+            unexpected => {
+                // Safety: Wasmi translation guarantees that `Instruction::Register2` follows.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::Register2` but found: {unexpected:?}"
+                    )
+                }
+            }
         };
         self.ip.add(offset);
         if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
@@ -91,8 +109,16 @@ impl<'engine> Executor<'engine> {
     pub fn execute_branch_table_3(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
-        let Instruction::Register3 { regs } = *self.ip.get() else {
-            unreachable!()
+        let regs = match *self.ip.get() {
+            Instruction::Register3 { regs } => regs,
+            unexpected => {
+                // Safety: Wasmi translation guarantees that `Instruction::Register3` follows.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::Register3` but found: {unexpected:?}"
+                    )
+                }
+            }
         };
         self.ip.add(offset);
         if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
@@ -110,8 +136,16 @@ impl<'engine> Executor<'engine> {
     pub fn execute_branch_table_span(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
-        let Instruction::RegisterSpan { span: values } = *self.ip.get() else {
-            unreachable!()
+        let values = match *self.ip.get() {
+            Instruction::RegisterSpan { span } => span,
+            unexpected => {
+                // Safety: Wasmi translation guarantees that `Instruction::RegisterSpan` follows.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::RegisterSpan` but found: {unexpected:?}"
+                    )
+                }
+            }
         };
         let len = values.len();
         let values = values.span();
@@ -154,7 +188,12 @@ impl<'engine> Executor<'engine> {
                 // will point to `Instruction::Return` which does the job for us.
                 // This has some technical advantages for us.
             }
-            _ => unreachable!(),
+            unexpected => {
+                // Safety: Wasmi translator guarantees that one of the above `Instruction` variants exists.
+                unsafe {
+                    unreachable_unchecked!("expected target for `Instruction::BranchTableMany` but found: {unexpected:?}")
+                }
+            }
         }
     }
 
