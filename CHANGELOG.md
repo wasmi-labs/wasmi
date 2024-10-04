@@ -8,6 +8,23 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.37.2`] - 2024-10-04
+
+### Added
+
+- Added a new `extra-checks` crate feature to the `wasmi` crate. [#1217]
+
+    - This improves unreachability checks in when `debug-assertions` or `extra-checks` are enabled.
+    - If `extra-checks` are disabled, some technically unnecessary runtime checks are no longer performed.
+    - Use `extra-checks` if your focus is on safety, disable if your focus is on performance.
+
+### Fixed
+
+- Fixed a bug in local preservation when translating Wasm `loop` control flow. [#1218]
+
+[#1217]: https://github.com/wasmi-labs/wasmi/pull/1217
+[#1218]: https://github.com/wasmi-labs/wasmi/pull/1218
+
 ## [`0.37.1`] - 2024-10-01
 
 ### Fixed
