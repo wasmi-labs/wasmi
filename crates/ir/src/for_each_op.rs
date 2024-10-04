@@ -4024,7 +4024,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: ShiftAmount<i32>,
             },
             /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `lhs` operand.
             #[snake_name(i32_shl_imm16_lhs)]
@@ -4052,7 +4052,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: ShiftAmount<i32>,
             },
             /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i32_shr_u_imm16_lhs)]
@@ -4080,7 +4080,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: ShiftAmount<i32>,
             },
             /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i32_shr_s_imm16_lhs)]
@@ -4108,7 +4108,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: ShiftAmount<i32>,
             },
             /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i32_rotl_imm16_lhs)]
@@ -4136,7 +4136,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: ShiftAmount<i32>,
             },
             /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i32_rotr_imm16_lhs)]
@@ -4484,7 +4484,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: ShiftAmount<i64>,
             },
             /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i64_shl_imm16_lhs)]
@@ -4512,7 +4512,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: ShiftAmount<i64>,
             },
             /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i64_shr_u_imm16_lhs)]
@@ -4540,7 +4540,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: ShiftAmount<i64>,
             },
             /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i64_shr_s_imm16_lhs)]
@@ -4568,7 +4568,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: ShiftAmount<i64>,
             },
             /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i64_rotl_imm16_lhs)]
@@ -4596,7 +4596,7 @@ macro_rules! for_each_op {
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: ShiftAmount<i64>,
             },
             /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
             #[snake_name(i64_rotr_imm16_lhs)]

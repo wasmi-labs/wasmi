@@ -11,6 +11,7 @@ use crate::{
         DedupFuncType,
         EngineFunc,
     },
+    ir::ShiftAmount,
     memory::DataSegment,
     store::StoreInner,
     table::ElementSegment,
@@ -1616,6 +1617,24 @@ impl Executor<'_> {
     {
         let lhs = UntypedVal::from(<T>::from(lhs));
         let rhs = self.get_register(rhs);
+        self.set_register(result, op(lhs, rhs));
+        self.next_instr();
+    }
+
+    /// Executes a generic shift or rotate [`Instruction`].
+    #[inline(always)]
+    fn execute_shift_by<T>(
+        &mut self,
+        result: Reg,
+        lhs: Reg,
+        rhs: ShiftAmount<T>,
+        op: fn(UntypedVal, UntypedVal) -> UntypedVal,
+    ) where
+        T: From<ShiftAmount<T>>,
+        UntypedVal: From<T>,
+    {
+        let lhs = self.get_register(lhs);
+        let rhs = UntypedVal::from(<T>::from(rhs));
         self.set_register(result, op(lhs, rhs));
         self.next_instr();
     }

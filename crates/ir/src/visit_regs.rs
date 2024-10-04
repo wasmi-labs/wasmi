@@ -91,6 +91,7 @@ impl_host_visitor_for!(
     Const16<T>,
     Const32<T>,
     Sign<T>,
+    ShiftAmount<T>,
 );
 
 /// Type-wrapper to signal that the wrapped [`Reg`], [`RegSpan`] (etc.) is a result.

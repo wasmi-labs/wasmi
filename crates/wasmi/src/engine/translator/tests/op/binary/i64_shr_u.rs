@@ -40,7 +40,7 @@ fn reg_0_after_mod32() {
 #[cfg_attr(miri, ignore)]
 fn reg_1_after_mod32() {
     let expected = [
-        Instruction::i64_shr_u_imm(Reg::from(1), Reg::from(0), <Const16<i64>>::from(1)),
+        Instruction::i64_shr_u_imm(Reg::from(1), Reg::from(0), shamt(1)),
         Instruction::return_reg(1),
     ];
     test_binary_reg_imm_with(WASM_OP, 1_i32, expected).run();

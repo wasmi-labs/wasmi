@@ -12,56 +12,29 @@ use crate::{
 pub trait WasmInteger:
     Copy + Eq + From<TypedVal> + Into<TypedVal> + TryInto<Const16<Self>>
 {
-    /// Returns the `i16` shift amount.
-    ///
-    /// This computes `self % bitwsize<Self>` and returns the result as `i16` value.
-    ///
-    /// # Note
-    ///
-    /// This is commonly needed for Wasm translations of shift and rotate instructions
-    /// since Wasm mandates that the shift amount operand is taken modulo the bitsize
-    /// of the shifted value type.
-    fn as_shift_amount(self) -> i16;
-
     /// Returns `true` if `self` is equal to zero (0).
     fn eq_zero(self) -> bool;
 }
 
 impl WasmInteger for i32 {
-    fn as_shift_amount(self) -> i16 {
-        (self % 32) as i16
-    }
-
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for u32 {
-    fn as_shift_amount(self) -> i16 {
-        (self % 32) as i16
-    }
-
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for i64 {
-    fn as_shift_amount(self) -> i16 {
-        (self % 64) as i16
-    }
-
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for u64 {
-    fn as_shift_amount(self) -> i16 {
-        (self % 64) as i16
-    }
-
     fn eq_zero(self) -> bool {
         self == 0
     }

@@ -2,6 +2,7 @@ use super::{Executor, UntypedValueExt};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::bytecode::{Const16, Reg, Sign},
+    ir::ShiftAmount,
     Error,
 };
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
@@ -94,7 +95,21 @@ impl Executor<'_> {
         (i64, Instruction::I64AndImm16, execute_i64_and_imm16, UntypedVal::i64_and),
         (i64, Instruction::I64OrImm16, execute_i64_or_imm16, UntypedVal::i64_or),
         (i64, Instruction::I64XorImm16, execute_i64_xor_imm16, UntypedVal::i64_xor),
+    }
+}
 
+macro_rules! impl_shift_by {
+    ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: ShiftAmount<$ty>) {
+                self.execute_shift_by(result, lhs, rhs, $op)
+            }
+        )*
+    };
+}
+impl Executor<'_> {
+    impl_shift_by! {
         (i32, Instruction::I32ShlImm, execute_i32_shl_imm, UntypedVal::i32_shl),
         (i32, Instruction::I32ShrUImm, execute_i32_shr_u_imm, UntypedVal::i32_shr_u),
         (i32, Instruction::I32ShrSImm, execute_i32_shr_s_imm, UntypedVal::i32_shr_s),
