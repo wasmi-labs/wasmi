@@ -77,7 +77,7 @@ pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 /// both to make types a little easier to read and to provide a `Debug` impl so
 /// that `#[derive(Debug)]` works on structs that contain it.
 pub struct ResourceLimiterRef<'a>(Option<&'a mut (dyn ResourceLimiter)>);
-impl<'a> Debug for ResourceLimiterRef<'a> {
+impl Debug for ResourceLimiterRef<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ResourceLimiterRef(...)")
     }
@@ -1104,7 +1104,7 @@ pub struct StoreContext<'a, T> {
     pub(crate) store: &'a Store<T>,
 }
 
-impl<'a, T> StoreContext<'a, T> {
+impl<T> StoreContext<'_, T> {
     /// Returns the underlying [`Engine`] this store is connected to.
     pub fn engine(&self) -> &Engine {
         self.store.engine()
@@ -1160,7 +1160,7 @@ pub struct StoreContextMut<'a, T> {
     pub(crate) store: &'a mut Store<T>,
 }
 
-impl<'a, T> StoreContextMut<'a, T> {
+impl<T> StoreContextMut<'_, T> {
     /// Returns the underlying [`Engine`] this store is connected to.
     pub fn engine(&self) -> &Engine {
         self.store.engine()

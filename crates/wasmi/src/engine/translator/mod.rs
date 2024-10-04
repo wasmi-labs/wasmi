@@ -421,7 +421,7 @@ impl LazyFuncTranslator {
     }
 }
 
-impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
+impl WasmTranslator<'_> for LazyFuncTranslator {
     type Allocations = ();
 
     fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error> {
@@ -519,7 +519,7 @@ pub struct FuncTranslator {
     alloc: FuncTranslatorAllocations,
 }
 
-impl<'parser> WasmTranslator<'parser> for FuncTranslator {
+impl WasmTranslator<'_> for FuncTranslator {
     type Allocations = FuncTranslatorAllocations;
 
     fn setup(&mut self, _bytes: &[u8]) -> Result<bool, Error> {

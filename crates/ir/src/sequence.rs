@@ -184,13 +184,13 @@ impl<'a> Iterator for InstrIter<'a> {
     }
 }
 
-impl<'a> DoubleEndedIterator for InstrIter<'a> {
+impl DoubleEndedIterator for InstrIter<'_> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.instrs.next_back()
     }
 }
 
-impl<'a> ExactSizeIterator for InstrIter<'a> {}
+impl ExactSizeIterator for InstrIter<'_> {}
 
 /// Iterator yielding the [`Instruction`]s of an [`InstrSequence`] mutably.
 #[derive(Debug)]
@@ -220,10 +220,10 @@ impl<'a> Iterator for InstrIterMut<'a> {
     }
 }
 
-impl<'a> DoubleEndedIterator for InstrIterMut<'a> {
+impl DoubleEndedIterator for InstrIterMut<'_> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.instrs.next_back()
     }
 }
 
-impl<'a> ExactSizeIterator for InstrIterMut<'a> {}
+impl ExactSizeIterator for InstrIterMut<'_> {}

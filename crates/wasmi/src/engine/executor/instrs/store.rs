@@ -18,7 +18,7 @@ type WasmStoreOp = fn(
     value: UntypedVal,
 ) -> Result<(), TrapCode>;
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
     fn fetch_value_and_offset(&self) -> (Reg, u32) {
         let mut addr: InstructionPtr = self.ip;
@@ -324,7 +324,7 @@ macro_rules! impl_execute_istore {
         )*
     };
 }
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_execute_istore! {
         (
             (Const16<i32> => i32),
@@ -432,7 +432,7 @@ macro_rules! impl_execute_fstore {
     }
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_execute_fstore! {
         (
             (Instruction::F32Store, execute_f32_store),

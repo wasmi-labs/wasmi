@@ -19,7 +19,7 @@ pub enum ReturnOutcome {
     Host,
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Returns the execution to the caller.
     ///
     /// Any return values are expected to already have been transferred

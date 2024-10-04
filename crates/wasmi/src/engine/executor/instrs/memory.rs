@@ -12,7 +12,7 @@ use crate::{
     Store,
 };
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Returns the [`Instruction::MemoryIndex`] parameter for an [`Instruction`].
     fn fetch_memory_index(&self, offset: usize) -> Memory {
         let mut addr: InstructionPtr = self.ip;

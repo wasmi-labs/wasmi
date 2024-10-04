@@ -17,7 +17,7 @@ use crate::{
     Store,
 };
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Returns the [`Instruction::TableIndex`] parameter for an [`Instruction`].
     fn fetch_table_index(&self, offset: usize) -> Table {
         let mut addr: InstructionPtr = self.ip;

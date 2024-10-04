@@ -195,7 +195,7 @@ pub struct ResolvedUserIter<'a> {
     registry: &'a LabelRegistry,
 }
 
-impl<'a> Iterator for ResolvedUserIter<'a> {
+impl Iterator for ResolvedUserIter<'_> {
     type Item = (Instr, Result<BranchOffset, Error>);
 
     fn next(&mut self) -> Option<Self::Item> {

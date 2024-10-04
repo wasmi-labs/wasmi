@@ -15,7 +15,7 @@ macro_rules! impl_unary_impls {
     };
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_unary_impls! {
         (Instruction::I32Clz, execute_i32_clz, UntypedVal::i32_clz),
         (Instruction::I32Ctz, execute_i32_ctz, UntypedVal::i32_ctz),
