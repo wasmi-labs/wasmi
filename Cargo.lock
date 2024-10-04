@@ -1839,7 +1839,7 @@ dependencies = [
 
 [[package]]
 name = "wasmi"
-version = "0.37.1"
+version = "0.37.2"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1849,7 +1849,7 @@ dependencies = [
  "smallvec",
  "spin",
  "wasmi_collections",
- "wasmi_core 0.37.1",
+ "wasmi_core 0.37.2",
  "wasmi_ir",
  "wasmparser-nostd",
  "wast 70.0.2",
@@ -1864,22 +1864,22 @@ checksum = "104a7f73be44570cac297b3035d76b169d6599637631cf37a1703326a0727073"
 
 [[package]]
 name = "wasmi_c_api"
-version = "0.37.1"
+version = "0.37.2"
 dependencies = [
  "wasmi_c_api_impl",
 ]
 
 [[package]]
 name = "wasmi_c_api_impl"
-version = "0.37.1"
+version = "0.37.2"
 dependencies = [
- "wasmi 0.37.1",
+ "wasmi 0.37.2",
  "wasmi_c_api_macros",
 ]
 
 [[package]]
 name = "wasmi_c_api_macros"
-version = "0.37.1"
+version = "0.37.2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1887,19 +1887,19 @@ dependencies = [
 
 [[package]]
 name = "wasmi_cli"
-version = "0.37.1"
+version = "0.37.2"
 dependencies = [
  "anyhow",
  "assert_cmd",
  "clap",
- "wasmi 0.37.1",
+ "wasmi 0.37.2",
  "wasmi_wasi",
  "wat",
 ]
 
 [[package]]
 name = "wasmi_collections"
-version = "0.37.1"
+version = "0.37.2"
 dependencies = [
  "ahash",
  "hashbrown 0.14.5",
@@ -1920,7 +1920,7 @@ dependencies = [
 
 [[package]]
 name = "wasmi_core"
-version = "0.37.1"
+version = "0.37.2"
 dependencies = [
  "downcast-rs",
  "libm",
@@ -1937,23 +1937,23 @@ dependencies = [
  "libfuzzer-sys",
  "wasm-smith",
  "wasmi 0.31.2",
- "wasmi 0.37.1",
+ "wasmi 0.37.2",
  "wasmtime",
 ]
 
 [[package]]
 name = "wasmi_ir"
-version = "0.37.1"
+version = "0.37.2"
 dependencies = [
- "wasmi_core 0.37.1",
+ "wasmi_core 0.37.2",
 ]
 
 [[package]]
 name = "wasmi_wasi"
-version = "0.37.1"
+version = "0.37.2"
 dependencies = [
  "wasi-common",
- "wasmi 0.37.1",
+ "wasmi 0.37.2",
  "wat",
  "wiggle",
 ]
