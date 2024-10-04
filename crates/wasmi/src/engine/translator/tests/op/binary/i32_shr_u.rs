@@ -17,7 +17,7 @@ fn reg_imm_lhs() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16_lhs() {
-    test_binary_reg_imm16_lhs::<i32>(WASM_OP, 100, Instruction::i32_shr_u_imm16_lhs)
+    test_binary_reg_imm16_lhs::<i32>(WASM_OP, 100, Instruction::i32_shr_u_imm16)
 }
 
 #[test]

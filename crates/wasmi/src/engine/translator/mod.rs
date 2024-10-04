@@ -1676,7 +1676,7 @@ impl FuncTranslator {
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
         make_instr_by: fn(result: Reg, lhs: Reg, rhs: ShiftAmount<T>) -> Instruction,
-        make_instr_imm16_rev: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        make_instr_imm16: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
     ) -> Result<(), Error>
@@ -1709,7 +1709,7 @@ impl FuncTranslator {
                     self.alloc.stack.push_const(lhs);
                     return Ok(());
                 }
-                if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_rev)? {
+                if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16)? {
                     // Optimization was applied: return early.
                     return Ok(());
                 }

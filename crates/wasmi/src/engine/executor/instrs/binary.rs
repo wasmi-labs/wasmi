@@ -140,17 +140,17 @@ impl Executor<'_> {
         (i32, Instruction::I32SubImm16Rev, execute_i32_sub_imm16_lhs, UntypedVal::i32_sub),
         (i64, Instruction::I64SubImm16Rev, execute_i64_sub_imm16_lhs, UntypedVal::i64_sub),
 
-        (i32, Instruction::I32ShlImm16Rev, execute_i32_shl_imm16_lhs, UntypedVal::i32_shl),
-        (i32, Instruction::I32ShrUImm16Rev, execute_i32_shr_u_imm16_lhs, UntypedVal::i32_shr_u),
-        (i32, Instruction::I32ShrSImm16Rev, execute_i32_shr_s_imm16_lhs, UntypedVal::i32_shr_s),
-        (i32, Instruction::I32RotlImm16Rev, execute_i32_rotl_imm16_lhs, UntypedVal::i32_rotl),
-        (i32, Instruction::I32RotrImm16Rev, execute_i32_rotr_imm16_lhs, UntypedVal::i32_rotr),
+        (i32, Instruction::I32ShlImm16Rev, execute_i32_shl_imm16, UntypedVal::i32_shl),
+        (i32, Instruction::I32ShrUImm16Rev, execute_i32_shr_u_imm16, UntypedVal::i32_shr_u),
+        (i32, Instruction::I32ShrSImm16Rev, execute_i32_shr_s_imm16, UntypedVal::i32_shr_s),
+        (i32, Instruction::I32RotlImm16Rev, execute_i32_rotl_imm16, UntypedVal::i32_rotl),
+        (i32, Instruction::I32RotrImm16Rev, execute_i32_rotr_imm16, UntypedVal::i32_rotr),
 
-        (i64, Instruction::I64ShlImm16Rev, execute_i64_shl_imm16_lhs, UntypedVal::i64_shl),
-        (i64, Instruction::I64ShrUImm16Rev, execute_i64_shr_u_imm16_lhs, UntypedVal::i64_shr_u),
-        (i64, Instruction::I64ShrSImm16Rev, execute_i64_shr_s_imm16_lhs, UntypedVal::i64_shr_s),
-        (i64, Instruction::I64RotlImm16Rev, execute_i64_rotl_imm16_lhs, UntypedVal::i64_rotl),
-        (i64, Instruction::I64RotrImm16Rev, execute_i64_rotr_imm16_lhs, UntypedVal::i64_rotr),
+        (i64, Instruction::I64ShlImm16Rev, execute_i64_shl_imm16, UntypedVal::i64_shl),
+        (i64, Instruction::I64ShrUImm16Rev, execute_i64_shr_u_imm16, UntypedVal::i64_shr_u),
+        (i64, Instruction::I64ShrSImm16Rev, execute_i64_shr_s_imm16, UntypedVal::i64_shr_s),
+        (i64, Instruction::I64RotlImm16Rev, execute_i64_rotl_imm16, UntypedVal::i64_rotl),
+        (i64, Instruction::I64RotrImm16Rev, execute_i64_rotr_imm16, UntypedVal::i64_rotr),
     }
 }
 

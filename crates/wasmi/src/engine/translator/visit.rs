@@ -2274,7 +2274,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_shift::<i32>(
             Instruction::i32_shl,
             Instruction::i32_shl_by,
-            Instruction::i32_shl_imm16_lhs,
+            Instruction::i32_shl_imm16,
             TypedVal::i32_shl,
             Self::no_custom_opt,
         )
@@ -2284,7 +2284,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_shift(
             Instruction::i32_shr_s,
             Instruction::i32_shr_s_by,
-            Instruction::i32_shr_s_imm16_lhs,
+            Instruction::i32_shr_s_imm16,
             TypedVal::i32_shr_s,
             |this, lhs: i32, _rhs: Reg| {
                 if lhs == -1 {
@@ -2301,7 +2301,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_shift::<i32>(
             Instruction::i32_shr_u,
             Instruction::i32_shr_u_by,
-            Instruction::i32_shr_u_imm16_lhs,
+            Instruction::i32_shr_u_imm16,
             TypedVal::i32_shr_u,
             Self::no_custom_opt,
         )
@@ -2311,7 +2311,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_shift(
             Instruction::i32_rotl,
             Instruction::i32_rotl_by,
-            Instruction::i32_rotl_imm16_lhs,
+            Instruction::i32_rotl_imm16,
             TypedVal::i32_rotl,
             |this, lhs: i32, _rhs: Reg| {
                 if lhs == -1 {
@@ -2328,7 +2328,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_shift(
             Instruction::i32_rotr,
             Instruction::i32_rotr_by,
-            Instruction::i32_rotr_imm16_lhs,
+            Instruction::i32_rotr_imm16,
             TypedVal::i32_rotr,
             |this, lhs: i32, _rhs: Reg| {
                 if lhs == -1 {
@@ -2591,7 +2591,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_shift::<i64>(
             Instruction::i64_shl,
             Instruction::i64_shl_by,
-            Instruction::i64_shl_imm16_lhs,
+            Instruction::i64_shl_imm16,
             TypedVal::i64_shl,
             Self::no_custom_opt,
         )
@@ -2601,7 +2601,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_shift(
             Instruction::i64_shr_s,
             Instruction::i64_shr_s_by,
-            Instruction::i64_shr_s_imm16_lhs,
+            Instruction::i64_shr_s_imm16,
             TypedVal::i64_shr_s,
             |this, lhs: i64, _rhs: Reg| {
                 if lhs == -1 {
@@ -2618,7 +2618,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_shift::<i64>(
             Instruction::i64_shr_u,
             Instruction::i64_shr_u_by,
-            Instruction::i64_shr_u_imm16_lhs,
+            Instruction::i64_shr_u_imm16,
             TypedVal::i64_shr_u,
             Self::no_custom_opt,
         )
@@ -2628,7 +2628,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_shift(
             Instruction::i64_rotl,
             Instruction::i64_rotl_by,
-            Instruction::i64_rotl_imm16_lhs,
+            Instruction::i64_rotl_imm16,
             TypedVal::i64_rotl,
             |this, lhs: i64, _rhs: Reg| {
                 if lhs == -1 {
@@ -2645,7 +2645,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_shift(
             Instruction::i64_rotr,
             Instruction::i64_rotr_by,
-            Instruction::i64_rotr_imm16_lhs,
+            Instruction::i64_rotr_imm16,
             TypedVal::i64_rotr,
             |this, lhs: i64, _rhs: Reg| {
                 if lhs == -1 {
