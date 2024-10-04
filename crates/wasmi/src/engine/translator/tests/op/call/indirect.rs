@@ -277,7 +277,7 @@ fn two_reg_params_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn two_reg_params_reg_rev() {
+fn two_reg_params_reg_lhs() {
     let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
@@ -373,7 +373,7 @@ fn two_reg_params_imm16() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn two_reg_params_rev_imm16() {
+fn two_reg_params_lhs_imm16() {
     fn test_with(index: u32) {
         let wasm = format!(
             r#"
@@ -479,7 +479,7 @@ fn three_reg_params_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn three_reg_params_reg_rev() {
+fn three_reg_params_reg_lhs() {
     let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))

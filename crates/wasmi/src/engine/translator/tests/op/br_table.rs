@@ -726,7 +726,7 @@ fn i64imm32_ok() {
                 Instruction::return_reg(1),
                 Instruction::i64_mul_imm16(Reg::from(1), Reg::from(1), 2_i16),
                 Instruction::return_reg(1),
-                Instruction::i64_div_s_imm16(
+                Instruction::i64_div_s_imm16_rhs(
                     Reg::from(1),
                     Reg::from(1),
                     NonZeroI16::new(2).unwrap(),
@@ -787,7 +787,7 @@ fn i64imm32_err() {
                     Instruction::return_reg(1),
                     Instruction::i64_mul_imm16(Reg::from(1), Reg::from(1), 2_i16),
                     Instruction::return_reg(1),
-                    Instruction::i64_div_s_imm16(
+                    Instruction::i64_div_s_imm16_rhs(
                         Reg::from(1),
                         Reg::from(1),
                         NonZeroI16::new(2).unwrap(),

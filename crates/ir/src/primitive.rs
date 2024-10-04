@@ -1,4 +1,4 @@
-use crate::{core::UntypedVal, Error, Instr};
+use crate::{core::UntypedVal, Const16, Error, Instr};
 use core::marker::PhantomData;
 
 /// The sign of a value.
@@ -365,4 +365,52 @@ impl From<ComparatorAndOffset> for UntypedVal {
     fn from(params: ComparatorAndOffset) -> Self {
         Self::from(params.as_u64())
     }
+}
+
+/// A typed shift amount for shift and rotate instructions.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct ShiftAmount<T> {
+    /// The underlying wrapped shift amount.
+    value: Const16<T>,
+}
+
+/// Integer ypes that can be used as shift amount in shift or rotate instructions.
+pub trait IntoShiftAmount: Sized {
+    /// Converts `self` into a [`ShiftAmount`] if possible.
+    fn into_shift_amount(self) -> Option<ShiftAmount<Self>>;
+}
+
+macro_rules! impl_shift_amount {
+    ( $( ($ty:ty, $bits:literal) ),* $(,)? ) => {
+        $(
+            impl IntoShiftAmount for $ty {
+                fn into_shift_amount(self) -> Option<ShiftAmount<Self>> {
+                    <ShiftAmount<$ty>>::new(self)
+                }
+            }
+
+            impl ShiftAmount<$ty> {
+                /// Creates a new [`ShiftAmount`] for the given `value`.
+                ///
+                /// Returns `None` if `value` causes a no-op shift.
+                pub fn new(value: $ty) -> Option<Self> {
+                    let value = (value % $bits) as i16;
+                    if value == 0 {
+                        return None
+                    }
+                    Some(Self { value: Const16::from(value) })
+                }
+            }
+
+            impl From<ShiftAmount<$ty>> for $ty {
+                fn from(shamt: ShiftAmount<$ty>) -> Self {
+                    shamt.value.into()
+                }
+            }
+        )*
+    };
+}
+impl_shift_amount! {
+    (i32, 32),
+    (i64, 64),
 }

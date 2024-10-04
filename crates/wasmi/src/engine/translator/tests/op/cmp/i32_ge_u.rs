@@ -20,13 +20,13 @@ fn reg_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16() {
-    test_binary_reg_imm16::<u32>(WASM_OP, 100, Instruction::i32_ge_u_imm16)
+    test_binary_reg_imm16_rhs::<u32>(WASM_OP, 100, Instruction::i32_ge_u_imm16)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev::<u32>(WASM_OP, 100, swap_ops!(Instruction::i32_le_u_imm16))
+fn reg_imm16_lhs() {
+    test_binary_reg_imm16_lhs::<u32>(WASM_OP, 100, swap_ops!(Instruction::i32_le_u_imm16))
 }
 
 #[test]
@@ -37,8 +37,8 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, 100_000, Instruction::i32_ge_u)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs(WASM_OP, 100_000, Instruction::i32_ge_u)
 }
 
 #[test]
@@ -56,7 +56,7 @@ fn max_reg() {
     let expected = [Instruction::ReturnImm32 {
         value: AnyConst32::from(true),
     }];
-    test_binary_reg_imm_rev_with(WASM_OP, u32::MAX, expected).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, u32::MAX, expected).run()
 }
 
 #[test]

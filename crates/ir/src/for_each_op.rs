@@ -3694,8 +3694,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I32Sub`] for 16-bit constant values.
             /// - Required instruction since subtraction is not commutative.
-            #[snake_name(i32_sub_imm16_rev)]
-            I32SubImm16Rev {
+            #[snake_name(i32_sub_imm16_lhs)]
+            I32SubImm16Lhs {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i32>,
@@ -3741,8 +3741,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I32DivS`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i32_div_s_imm16)]
-            I32DivSImm16 {
+            #[snake_name(i32_div_s_imm16_rhs)]
+            I32DivSImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3756,8 +3756,8 @@ macro_rules! for_each_op {
             /// - Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
             /// - Required instruction since signed-division is not commutative.
-            #[snake_name(i32_div_s_imm16_rev)]
-            I32DivSImm16Rev {
+            #[snake_name(i32_div_s_imm16_lhs)]
+            I32DivSImm16Lhs {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i32>,
@@ -3783,8 +3783,8 @@ macro_rules! for_each_op {
             /// # Encoding
             ///
             /// Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
-            #[snake_name(i32_div_u_imm16)]
-            I32DivUImm16 {
+            #[snake_name(i32_div_u_imm16_rhs)]
+            I32DivUImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3798,8 +3798,8 @@ macro_rules! for_each_op {
             /// - Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
             /// - Required instruction since `i32` unsigned-division is not commutative.
-            #[snake_name(i32_div_u_imm16_rev)]
-            I32DivUImm16Rev {
+            #[snake_name(i32_div_u_imm16_lhs)]
+            I32DivUImm16Lhs {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<u32>,
@@ -3822,8 +3822,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i32_rem_s_imm16)]
-            I32RemSImm16 {
+            #[snake_name(i32_rem_s_imm16_rhs)]
+            I32RemSImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3837,8 +3837,8 @@ macro_rules! for_each_op {
             /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
             /// - Required instruction since `i32` signed-remainder is not commutative.
-            #[snake_name(i32_rem_s_imm16_rev)]
-            I32RemSImm16Rev {
+            #[snake_name(i32_rem_s_imm16_lhs)]
+            I32RemSImm16Lhs {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i32>,
@@ -3861,8 +3861,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i32_rem_u_imm16)]
-            I32RemUImm16 {
+            #[snake_name(i32_rem_u_imm16_rhs)]
+            I32RemUImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3876,8 +3876,8 @@ macro_rules! for_each_op {
             /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
             /// - Required instruction since unsigned-remainder is not commutative.
-            #[snake_name(i32_rem_u_imm16_rev)]
-            I32RemUImm16Rev {
+            #[snake_name(i32_rem_u_imm16_lhs)]
+            I32RemUImm16Lhs {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<u32>,
@@ -4018,17 +4018,17 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` operand.
-            #[snake_name(i32_shl_imm)]
-            I32ShlImm {
+            #[snake_name(i32_shl_by)]
+            I32ShlBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: ShiftAmount<i32>,
             },
             /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `lhs` operand.
-            #[snake_name(i32_shl_imm16_rev)]
-            I32ShlImm16Rev {
+            #[snake_name(i32_shl_imm16)]
+            I32ShlImm16 {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i32>,
@@ -4046,17 +4046,17 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_shr_u_imm)]
-            I32ShrUImm {
+            #[snake_name(i32_shr_u_by)]
+            I32ShrUBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: ShiftAmount<i32>,
             },
             /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
-            #[snake_name(i32_shr_u_imm16_rev)]
-            I32ShrUImm16Rev {
+            #[snake_name(i32_shr_u_imm16)]
+            I32ShrUImm16 {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i32>,
@@ -4074,17 +4074,17 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_shr_s_imm)]
-            I32ShrSImm {
+            #[snake_name(i32_shr_s_by)]
+            I32ShrSBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: ShiftAmount<i32>,
             },
             /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
-            #[snake_name(i32_shr_s_imm16_rev)]
-            I32ShrSImm16Rev {
+            #[snake_name(i32_shr_s_imm16)]
+            I32ShrSImm16 {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i32>,
@@ -4102,17 +4102,17 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_rotl_imm)]
-            I32RotlImm {
+            #[snake_name(i32_rotl_by)]
+            I32RotlBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: ShiftAmount<i32>,
             },
             /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
-            #[snake_name(i32_rotl_imm16_rev)]
-            I32RotlImm16Rev {
+            #[snake_name(i32_rotl_imm16)]
+            I32RotlImm16 {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i32>,
@@ -4130,17 +4130,17 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_rotr_imm)]
-            I32RotrImm {
+            #[snake_name(i32_rotr_by)]
+            I32RotrBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i32>,
+                rhs: ShiftAmount<i32>,
             },
             /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
-            #[snake_name(i32_rotr_imm16_rev)]
-            I32RotrImm16Rev {
+            #[snake_name(i32_rotr_imm16)]
+            I32RotrImm16 {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i32>,
@@ -4208,8 +4208,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I64Sub`] for 16-bit constant values.
             /// - Required instruction since subtraction is not commutative.
-            #[snake_name(i64_sub_imm16_rev)]
-            I64SubImm16Rev {
+            #[snake_name(i64_sub_imm16_lhs)]
+            I64SubImm16Lhs {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i64>,
@@ -4255,8 +4255,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I64DivS`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i64_div_s_imm16)]
-            I64DivSImm16 {
+            #[snake_name(i64_div_s_imm16_rhs)]
+            I64DivSImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4270,8 +4270,8 @@ macro_rules! for_each_op {
             /// - Guarantees that the right-hand side operand is not zero.
             /// - Required instruction since signed-division is not commutative.
             /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-            #[snake_name(i64_div_s_imm16_rev)]
-            I64DivSImm16Rev {
+            #[snake_name(i64_div_s_imm16_lhs)]
+            I64DivSImm16Lhs {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i64>,
@@ -4297,8 +4297,8 @@ macro_rules! for_each_op {
             /// # Encoding
             ///
             /// Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-            #[snake_name(i64_div_u_imm16)]
-            I64DivUImm16 {
+            #[snake_name(i64_div_u_imm16_rhs)]
+            I64DivUImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4312,8 +4312,8 @@ macro_rules! for_each_op {
             /// - Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
             /// - Required instruction since unsigned-division is not commutative.
-            #[snake_name(i64_div_u_imm16_rev)]
-            I64DivUImm16Rev {
+            #[snake_name(i64_div_u_imm16_lhs)]
+            I64DivUImm16Lhs {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<u64>,
@@ -4336,8 +4336,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i64_rem_s_imm16)]
-            I64RemSImm16 {
+            #[snake_name(i64_rem_s_imm16_rhs)]
+            I64RemSImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4351,8 +4351,8 @@ macro_rules! for_each_op {
             /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
             /// - Required instruction since signed-remainder is not commutative.
-            #[snake_name(i64_rem_s_imm16_rev)]
-            I64RemSImm16Rev {
+            #[snake_name(i64_rem_s_imm16_lhs)]
+            I64RemSImm16Lhs {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i64>,
@@ -4375,8 +4375,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i64_rem_u_imm16)]
-            I64RemUImm16 {
+            #[snake_name(i64_rem_u_imm16_rhs)]
+            I64RemUImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4390,8 +4390,8 @@ macro_rules! for_each_op {
             /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
             /// - Required instruction since unsigned-remainder is not commutative.
-            #[snake_name(i64_rem_u_imm16_rev)]
-            I64RemUImm16Rev {
+            #[snake_name(i64_rem_u_imm16_lhs)]
+            I64RemUImm16Lhs {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<u64>,
@@ -4478,17 +4478,17 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_shl_imm)]
-            I64ShlImm {
+            #[snake_name(i64_shl_by)]
+            I64ShlBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: ShiftAmount<i64>,
             },
             /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
-            #[snake_name(i64_shl_imm16_rev)]
-            I64ShlImm16Rev {
+            #[snake_name(i64_shl_imm16)]
+            I64ShlImm16 {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i64>,
@@ -4506,17 +4506,17 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_shr_u_imm)]
-            I64ShrUImm {
+            #[snake_name(i64_shr_u_by)]
+            I64ShrUBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: ShiftAmount<i64>,
             },
             /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
-            #[snake_name(i64_shr_u_imm16_rev)]
-            I64ShrUImm16Rev {
+            #[snake_name(i64_shr_u_imm16)]
+            I64ShrUImm16 {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i64>,
@@ -4534,17 +4534,17 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_shr_s_imm)]
-            I64ShrSImm {
+            #[snake_name(i64_shr_s_by)]
+            I64ShrSBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: ShiftAmount<i64>,
             },
             /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
-            #[snake_name(i64_shr_s_imm16_rev)]
-            I64ShrSImm16Rev {
+            #[snake_name(i64_shr_s_imm16)]
+            I64ShrSImm16 {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i64>,
@@ -4562,17 +4562,17 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_rotl_imm)]
-            I64RotlImm {
+            #[snake_name(i64_rotl_by)]
+            I64RotlBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: ShiftAmount<i64>,
             },
             /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
-            #[snake_name(i64_rotl_imm16_rev)]
-            I64RotlImm16Rev {
+            #[snake_name(i64_rotl_imm16)]
+            I64RotlImm16 {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i64>,
@@ -4590,17 +4590,17 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_rotr_imm)]
-            I64RotrImm {
+            #[snake_name(i64_rotr_by)]
+            I64RotrBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
                 /// The 16-bit immediate value.
-                rhs: Const16<i64>,
+                rhs: ShiftAmount<i64>,
             },
             /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
-            #[snake_name(i64_rotr_imm16_rev)]
-            I64RotrImm16Rev {
+            #[snake_name(i64_rotr_imm16)]
+            I64RotrImm16 {
                 @result: Reg,
                 /// The 16-bit immediate value.
                 lhs: Const16<i64>,

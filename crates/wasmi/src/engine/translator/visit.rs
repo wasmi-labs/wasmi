@@ -2057,7 +2057,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_binary(
             Instruction::i32_sub,
             |_, _, _| unreachable!("`i32.sub r c` is translated as `i32.add r -c`"),
-            Instruction::i32_sub_imm16_rev,
+            Instruction::i32_sub_imm16_lhs,
             TypedVal::i32_sub,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -2113,8 +2113,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_div_s(&mut self) -> Self::Output {
         self.translate_divrem(
             Instruction::i32_div_s,
-            Instruction::i32_div_s_imm16,
-            Instruction::i32_div_s_imm16_rev,
+            Instruction::i32_div_s_imm16_rhs,
+            Instruction::i32_div_s_imm16_lhs,
             TypedVal::i32_div_s,
             Self::no_custom_opt,
             |this, lhs: Reg, rhs: i32| {
@@ -2131,8 +2131,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_div_u(&mut self) -> Self::Output {
         self.translate_divrem::<u32, NonZeroU32>(
             Instruction::i32_div_u,
-            Instruction::i32_div_u_imm16,
-            Instruction::i32_div_u_imm16_rev,
+            Instruction::i32_div_u_imm16_rhs,
+            Instruction::i32_div_u_imm16_lhs,
             TypedVal::i32_div_u,
             Self::no_custom_opt,
             |this, lhs: Reg, rhs: u32| {
@@ -2149,8 +2149,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_rem_s(&mut self) -> Self::Output {
         self.translate_divrem(
             Instruction::i32_rem_s,
-            Instruction::i32_rem_s_imm16,
-            Instruction::i32_rem_s_imm16_rev,
+            Instruction::i32_rem_s_imm16_rhs,
+            Instruction::i32_rem_s_imm16_lhs,
             TypedVal::i32_rem_s,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: i32| {
@@ -2167,8 +2167,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_rem_u(&mut self) -> Self::Output {
         self.translate_divrem::<u32, NonZeroU32>(
             Instruction::i32_rem_u,
-            Instruction::i32_rem_u_imm16,
-            Instruction::i32_rem_u_imm16_rev,
+            Instruction::i32_rem_u_imm16_rhs,
+            Instruction::i32_rem_u_imm16_lhs,
             TypedVal::i32_rem_u,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: u32| {
@@ -2273,8 +2273,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_shl(&mut self) -> Self::Output {
         self.translate_shift::<i32>(
             Instruction::i32_shl,
-            Instruction::i32_shl_imm,
-            Instruction::i32_shl_imm16_rev,
+            Instruction::i32_shl_by,
+            Instruction::i32_shl_imm16,
             TypedVal::i32_shl,
             Self::no_custom_opt,
         )
@@ -2283,8 +2283,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_shr_s(&mut self) -> Self::Output {
         self.translate_shift(
             Instruction::i32_shr_s,
-            Instruction::i32_shr_s_imm,
-            Instruction::i32_shr_s_imm16_rev,
+            Instruction::i32_shr_s_by,
+            Instruction::i32_shr_s_imm16,
             TypedVal::i32_shr_s,
             |this, lhs: i32, _rhs: Reg| {
                 if lhs == -1 {
@@ -2300,8 +2300,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_shr_u(&mut self) -> Self::Output {
         self.translate_shift::<i32>(
             Instruction::i32_shr_u,
-            Instruction::i32_shr_u_imm,
-            Instruction::i32_shr_u_imm16_rev,
+            Instruction::i32_shr_u_by,
+            Instruction::i32_shr_u_imm16,
             TypedVal::i32_shr_u,
             Self::no_custom_opt,
         )
@@ -2310,8 +2310,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_rotl(&mut self) -> Self::Output {
         self.translate_shift(
             Instruction::i32_rotl,
-            Instruction::i32_rotl_imm,
-            Instruction::i32_rotl_imm16_rev,
+            Instruction::i32_rotl_by,
+            Instruction::i32_rotl_imm16,
             TypedVal::i32_rotl,
             |this, lhs: i32, _rhs: Reg| {
                 if lhs == -1 {
@@ -2327,8 +2327,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_rotr(&mut self) -> Self::Output {
         self.translate_shift(
             Instruction::i32_rotr,
-            Instruction::i32_rotr_imm,
-            Instruction::i32_rotr_imm16_rev,
+            Instruction::i32_rotr_by,
+            Instruction::i32_rotr_imm16,
             TypedVal::i32_rotr,
             |this, lhs: i32, _rhs: Reg| {
                 if lhs == -1 {
@@ -2374,7 +2374,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_binary(
             Instruction::i64_sub,
             |_, _, _| unreachable!("`i64.sub r c` is translated as `i64.add r -c`"),
-            Instruction::i64_sub_imm16_rev,
+            Instruction::i64_sub_imm16_lhs,
             TypedVal::i64_sub,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -2430,8 +2430,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_div_s(&mut self) -> Self::Output {
         self.translate_divrem(
             Instruction::i64_div_s,
-            Instruction::i64_div_s_imm16,
-            Instruction::i64_div_s_imm16_rev,
+            Instruction::i64_div_s_imm16_rhs,
+            Instruction::i64_div_s_imm16_lhs,
             TypedVal::i64_div_s,
             Self::no_custom_opt,
             |this, lhs: Reg, rhs: i64| {
@@ -2448,8 +2448,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_div_u(&mut self) -> Self::Output {
         self.translate_divrem::<u64, NonZeroU64>(
             Instruction::i64_div_u,
-            Instruction::i64_div_u_imm16,
-            Instruction::i64_div_u_imm16_rev,
+            Instruction::i64_div_u_imm16_rhs,
+            Instruction::i64_div_u_imm16_lhs,
             TypedVal::i64_div_u,
             Self::no_custom_opt,
             |this, lhs: Reg, rhs: u64| {
@@ -2466,8 +2466,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_rem_s(&mut self) -> Self::Output {
         self.translate_divrem(
             Instruction::i64_rem_s,
-            Instruction::i64_rem_s_imm16,
-            Instruction::i64_rem_s_imm16_rev,
+            Instruction::i64_rem_s_imm16_rhs,
+            Instruction::i64_rem_s_imm16_lhs,
             TypedVal::i64_rem_s,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: i64| {
@@ -2484,8 +2484,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_rem_u(&mut self) -> Self::Output {
         self.translate_divrem::<u64, NonZeroU64>(
             Instruction::i64_rem_u,
-            Instruction::i64_rem_u_imm16,
-            Instruction::i64_rem_u_imm16_rev,
+            Instruction::i64_rem_u_imm16_rhs,
+            Instruction::i64_rem_u_imm16_lhs,
             TypedVal::i64_rem_u,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: u64| {
@@ -2590,8 +2590,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_shl(&mut self) -> Self::Output {
         self.translate_shift::<i64>(
             Instruction::i64_shl,
-            Instruction::i64_shl_imm,
-            Instruction::i64_shl_imm16_rev,
+            Instruction::i64_shl_by,
+            Instruction::i64_shl_imm16,
             TypedVal::i64_shl,
             Self::no_custom_opt,
         )
@@ -2600,8 +2600,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_shr_s(&mut self) -> Self::Output {
         self.translate_shift(
             Instruction::i64_shr_s,
-            Instruction::i64_shr_s_imm,
-            Instruction::i64_shr_s_imm16_rev,
+            Instruction::i64_shr_s_by,
+            Instruction::i64_shr_s_imm16,
             TypedVal::i64_shr_s,
             |this, lhs: i64, _rhs: Reg| {
                 if lhs == -1 {
@@ -2617,8 +2617,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_shr_u(&mut self) -> Self::Output {
         self.translate_shift::<i64>(
             Instruction::i64_shr_u,
-            Instruction::i64_shr_u_imm,
-            Instruction::i64_shr_u_imm16_rev,
+            Instruction::i64_shr_u_by,
+            Instruction::i64_shr_u_imm16,
             TypedVal::i64_shr_u,
             Self::no_custom_opt,
         )
@@ -2627,8 +2627,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_rotl(&mut self) -> Self::Output {
         self.translate_shift(
             Instruction::i64_rotl,
-            Instruction::i64_rotl_imm,
-            Instruction::i64_rotl_imm16_rev,
+            Instruction::i64_rotl_by,
+            Instruction::i64_rotl_imm16,
             TypedVal::i64_rotl,
             |this, lhs: i64, _rhs: Reg| {
                 if lhs == -1 {
@@ -2644,8 +2644,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_rotr(&mut self) -> Self::Output {
         self.translate_shift(
             Instruction::i64_rotr,
-            Instruction::i64_rotr_imm,
-            Instruction::i64_rotr_imm16_rev,
+            Instruction::i64_rotr_by,
+            Instruction::i64_rotr_imm16,
             TypedVal::i64_rotr,
             |this, lhs: i64, _rhs: Reg| {
                 if lhs == -1 {
