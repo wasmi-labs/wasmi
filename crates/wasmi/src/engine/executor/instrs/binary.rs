@@ -110,17 +110,17 @@ macro_rules! impl_shift_by {
 }
 impl Executor<'_> {
     impl_shift_by! {
-        (i32, Instruction::I32ShlImm, execute_i32_shl_by, UntypedVal::i32_shl),
-        (i32, Instruction::I32ShrUImm, execute_i32_shr_u_by, UntypedVal::i32_shr_u),
-        (i32, Instruction::I32ShrSImm, execute_i32_shr_s_by, UntypedVal::i32_shr_s),
-        (i32, Instruction::I32RotlImm, execute_i32_rotl_by, UntypedVal::i32_rotl),
-        (i32, Instruction::I32RotrImm, execute_i32_rotr_by, UntypedVal::i32_rotr),
+        (i32, Instruction::I32ShlBy, execute_i32_shl_by, UntypedVal::i32_shl),
+        (i32, Instruction::I32ShrUBy, execute_i32_shr_u_by, UntypedVal::i32_shr_u),
+        (i32, Instruction::I32ShrSBy, execute_i32_shr_s_by, UntypedVal::i32_shr_s),
+        (i32, Instruction::I32RotlBy, execute_i32_rotl_by, UntypedVal::i32_rotl),
+        (i32, Instruction::I32RotrBy, execute_i32_rotr_by, UntypedVal::i32_rotr),
 
-        (i64, Instruction::I64ShlImm, execute_i64_shl_by, UntypedVal::i64_shl),
-        (i64, Instruction::I64ShrUImm, execute_i64_shr_u_by, UntypedVal::i64_shr_u),
-        (i64, Instruction::I64ShrSImm, execute_i64_shr_s_by, UntypedVal::i64_shr_s),
-        (i64, Instruction::I64RotlImm, execute_i64_rotl_by, UntypedVal::i64_rotl),
-        (i64, Instruction::I64RotrImm, execute_i64_rotr_by, UntypedVal::i64_rotr),
+        (i64, Instruction::I64ShlBy, execute_i64_shl_by, UntypedVal::i64_shl),
+        (i64, Instruction::I64ShrUBy, execute_i64_shr_u_by, UntypedVal::i64_shr_u),
+        (i64, Instruction::I64ShrSBy, execute_i64_shr_s_by, UntypedVal::i64_shr_s),
+        (i64, Instruction::I64RotlBy, execute_i64_rotl_by, UntypedVal::i64_rotl),
+        (i64, Instruction::I64RotrBy, execute_i64_rotr_by, UntypedVal::i64_rotr),
 
     }
 }
@@ -137,20 +137,20 @@ macro_rules! impl_binary_imm16_lhs {
 }
 impl Executor<'_> {
     impl_binary_imm16_lhs! {
-        (i32, Instruction::I32SubImm16Rev, execute_i32_sub_imm16_lhs, UntypedVal::i32_sub),
-        (i64, Instruction::I64SubImm16Rev, execute_i64_sub_imm16_lhs, UntypedVal::i64_sub),
+        (i32, Instruction::I32SubImm16Lhs, execute_i32_sub_imm16_lhs, UntypedVal::i32_sub),
+        (i64, Instruction::I64SubImm16Lhs, execute_i64_sub_imm16_lhs, UntypedVal::i64_sub),
 
-        (i32, Instruction::I32ShlImm16Rev, execute_i32_shl_imm16, UntypedVal::i32_shl),
-        (i32, Instruction::I32ShrUImm16Rev, execute_i32_shr_u_imm16, UntypedVal::i32_shr_u),
-        (i32, Instruction::I32ShrSImm16Rev, execute_i32_shr_s_imm16, UntypedVal::i32_shr_s),
-        (i32, Instruction::I32RotlImm16Rev, execute_i32_rotl_imm16, UntypedVal::i32_rotl),
-        (i32, Instruction::I32RotrImm16Rev, execute_i32_rotr_imm16, UntypedVal::i32_rotr),
+        (i32, Instruction::I32ShlImm16, execute_i32_shl_imm16, UntypedVal::i32_shl),
+        (i32, Instruction::I32ShrUImm16, execute_i32_shr_u_imm16, UntypedVal::i32_shr_u),
+        (i32, Instruction::I32ShrSImm16, execute_i32_shr_s_imm16, UntypedVal::i32_shr_s),
+        (i32, Instruction::I32RotlImm16, execute_i32_rotl_imm16, UntypedVal::i32_rotl),
+        (i32, Instruction::I32RotrImm16, execute_i32_rotr_imm16, UntypedVal::i32_rotr),
 
-        (i64, Instruction::I64ShlImm16Rev, execute_i64_shl_imm16, UntypedVal::i64_shl),
-        (i64, Instruction::I64ShrUImm16Rev, execute_i64_shr_u_imm16, UntypedVal::i64_shr_u),
-        (i64, Instruction::I64ShrSImm16Rev, execute_i64_shr_s_imm16, UntypedVal::i64_shr_s),
-        (i64, Instruction::I64RotlImm16Rev, execute_i64_rotl_imm16, UntypedVal::i64_rotl),
-        (i64, Instruction::I64RotrImm16Rev, execute_i64_rotr_imm16, UntypedVal::i64_rotr),
+        (i64, Instruction::I64ShlImm16, execute_i64_shl_imm16, UntypedVal::i64_shl),
+        (i64, Instruction::I64ShrUImm16, execute_i64_shr_u_imm16, UntypedVal::i64_shr_u),
+        (i64, Instruction::I64ShrSImm16, execute_i64_shr_s_imm16, UntypedVal::i64_shr_s),
+        (i64, Instruction::I64RotlImm16, execute_i64_rotl_imm16, UntypedVal::i64_rotl),
+        (i64, Instruction::I64RotrImm16, execute_i64_rotr_imm16, UntypedVal::i64_rotr),
     }
 }
 
