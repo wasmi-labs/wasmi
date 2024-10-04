@@ -1675,7 +1675,7 @@ impl FuncTranslator {
     fn translate_shift<T>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: ShiftAmount<T>) -> Instruction,
+        make_instr_by: fn(result: Reg, lhs: Reg, rhs: ShiftAmount<T>) -> Instruction,
         make_instr_imm16_rev: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
@@ -1696,7 +1696,7 @@ impl FuncTranslator {
                     return Ok(());
                 };
                 let result = self.alloc.stack.push_dynamic()?;
-                self.push_fueled_instr(make_instr_imm(result, lhs, rhs), FuelCosts::base)?;
+                self.push_fueled_instr(make_instr_by(result, lhs, rhs), FuelCosts::base)?;
                 Ok(())
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {

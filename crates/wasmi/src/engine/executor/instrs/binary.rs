@@ -110,17 +110,17 @@ macro_rules! impl_shift_by {
 }
 impl Executor<'_> {
     impl_shift_by! {
-        (i32, Instruction::I32ShlImm, execute_i32_shl_imm, UntypedVal::i32_shl),
-        (i32, Instruction::I32ShrUImm, execute_i32_shr_u_imm, UntypedVal::i32_shr_u),
-        (i32, Instruction::I32ShrSImm, execute_i32_shr_s_imm, UntypedVal::i32_shr_s),
-        (i32, Instruction::I32RotlImm, execute_i32_rotl_imm, UntypedVal::i32_rotl),
-        (i32, Instruction::I32RotrImm, execute_i32_rotr_imm, UntypedVal::i32_rotr),
+        (i32, Instruction::I32ShlImm, execute_i32_shl_by, UntypedVal::i32_shl),
+        (i32, Instruction::I32ShrUImm, execute_i32_shr_u_by, UntypedVal::i32_shr_u),
+        (i32, Instruction::I32ShrSImm, execute_i32_shr_s_by, UntypedVal::i32_shr_s),
+        (i32, Instruction::I32RotlImm, execute_i32_rotl_by, UntypedVal::i32_rotl),
+        (i32, Instruction::I32RotrImm, execute_i32_rotr_by, UntypedVal::i32_rotr),
 
-        (i64, Instruction::I64ShlImm, execute_i64_shl_imm, UntypedVal::i64_shl),
-        (i64, Instruction::I64ShrUImm, execute_i64_shr_u_imm, UntypedVal::i64_shr_u),
-        (i64, Instruction::I64ShrSImm, execute_i64_shr_s_imm, UntypedVal::i64_shr_s),
-        (i64, Instruction::I64RotlImm, execute_i64_rotl_imm, UntypedVal::i64_rotl),
-        (i64, Instruction::I64RotrImm, execute_i64_rotr_imm, UntypedVal::i64_rotr),
+        (i64, Instruction::I64ShlImm, execute_i64_shl_by, UntypedVal::i64_shl),
+        (i64, Instruction::I64ShrUImm, execute_i64_shr_u_by, UntypedVal::i64_shr_u),
+        (i64, Instruction::I64ShrSImm, execute_i64_shr_s_by, UntypedVal::i64_shr_s),
+        (i64, Instruction::I64RotlImm, execute_i64_rotl_by, UntypedVal::i64_rotl),
+        (i64, Instruction::I64RotrImm, execute_i64_rotr_by, UntypedVal::i64_rotr),
 
     }
 }

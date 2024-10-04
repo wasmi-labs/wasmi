@@ -4018,8 +4018,8 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` operand.
-            #[snake_name(i32_shl_imm)]
-            I32ShlImm {
+            #[snake_name(i32_shl_by)]
+            I32ShlBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4046,8 +4046,8 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_shr_u_imm)]
-            I32ShrUImm {
+            #[snake_name(i32_shr_u_by)]
+            I32ShrUBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4074,8 +4074,8 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_shr_s_imm)]
-            I32ShrSImm {
+            #[snake_name(i32_shr_s_by)]
+            I32ShrSBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4102,8 +4102,8 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_rotl_imm)]
-            I32RotlImm {
+            #[snake_name(i32_rotl_by)]
+            I32RotlBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4130,8 +4130,8 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_rotr_imm)]
-            I32RotrImm {
+            #[snake_name(i32_rotr_by)]
+            I32RotrBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4478,8 +4478,8 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_shl_imm)]
-            I64ShlImm {
+            #[snake_name(i64_shl_by)]
+            I64ShlBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4506,8 +4506,8 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_shr_u_imm)]
-            I64ShrUImm {
+            #[snake_name(i64_shr_u_by)]
+            I64ShrUBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4534,8 +4534,8 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_shr_s_imm)]
-            I64ShrSImm {
+            #[snake_name(i64_shr_s_by)]
+            I64ShrSBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4562,8 +4562,8 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_rotl_imm)]
-            I64RotlImm {
+            #[snake_name(i64_rotl_by)]
+            I64RotlBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4590,8 +4590,8 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
             /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_rotr_imm)]
-            I64RotrImm {
+            #[snake_name(i64_rotr_by)]
+            I64RotrBy {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
