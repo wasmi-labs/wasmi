@@ -15,7 +15,7 @@ use crate::{
 type WasmLoadOp =
     fn(memory: &[u8], address: UntypedVal, offset: u32) -> Result<UntypedVal, TrapCode>;
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Returns the `ptr` and `offset` parameters for a `load` [`Instruction`].
     fn fetch_ptr_and_offset(&self) -> (Reg, u32) {
         let mut addr: InstructionPtr = self.ip;
@@ -208,7 +208,7 @@ macro_rules! impl_execute_load {
     }
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_execute_load! {
         (
             (Instruction::I32Load, execute_i32_load),

@@ -31,7 +31,7 @@ where
 
 struct DebugComponents<'a, T>(&'a [Option<T>]);
 
-impl<'a, T> Debug for DebugComponents<'a, T>
+impl<T> Debug for DebugComponents<'_, T>
 where
     T: Debug,
 {

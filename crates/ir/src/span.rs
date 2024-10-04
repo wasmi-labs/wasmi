@@ -118,7 +118,7 @@ impl<const N: u16> FixedRegSpan<N> {
     }
 }
 
-impl<'a, const N: u16> IntoIterator for &'a FixedRegSpan<N> {
+impl<const N: u16> IntoIterator for &FixedRegSpan<N> {
     type Item = Reg;
     type IntoIter = RegSpanIter;
 
@@ -187,7 +187,7 @@ impl BoundedRegSpan {
     }
 }
 
-impl<'a> IntoIterator for &'a BoundedRegSpan {
+impl IntoIterator for &BoundedRegSpan {
     type Item = Reg;
     type IntoIter = RegSpanIter;
 

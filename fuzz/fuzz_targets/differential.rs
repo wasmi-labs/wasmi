@@ -668,7 +668,7 @@ impl PartialEq for FuzzValue {
     }
 }
 
-impl<'a> From<&'a wasmi_reg::Val> for FuzzValue {
+impl From<&wasmi_reg::Val> for FuzzValue {
     fn from(value: &wasmi_reg::Val) -> Self {
         match value {
             wasmi_reg::Val::I32(value) => Self::I32(*value),
@@ -680,7 +680,7 @@ impl<'a> From<&'a wasmi_reg::Val> for FuzzValue {
     }
 }
 
-impl<'a> From<&'a wasmi_stack::Value> for FuzzValue {
+impl From<&wasmi_stack::Value> for FuzzValue {
     fn from(value: &wasmi_stack::Value) -> Self {
         match value {
             wasmi_stack::Value::I32(value) => Self::I32(*value),
@@ -692,7 +692,7 @@ impl<'a> From<&'a wasmi_stack::Value> for FuzzValue {
     }
 }
 
-impl<'a> From<&'a wasmtime::Val> for FuzzValue {
+impl From<&wasmtime::Val> for FuzzValue {
     fn from(value: &wasmtime::Val) -> Self {
         match value {
             wasmtime::Val::I32(value) => Self::I32(*value),

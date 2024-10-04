@@ -120,7 +120,7 @@ impl<'a> FuncLocalConstsIter<'a> {
     }
 }
 
-impl<'a> Iterator for FuncLocalConstsIter<'a> {
+impl Iterator for FuncLocalConstsIter<'_> {
     type Item = UntypedVal;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -128,13 +128,13 @@ impl<'a> Iterator for FuncLocalConstsIter<'a> {
     }
 }
 
-impl<'a> DoubleEndedIterator for FuncLocalConstsIter<'a> {
+impl DoubleEndedIterator for FuncLocalConstsIter<'_> {
     fn next_back(&mut self) -> Option<Self::Item> {
         self.iter.next_back().copied()
     }
 }
 
-impl<'a> ExactSizeIterator for FuncLocalConstsIter<'a> {
+impl ExactSizeIterator for FuncLocalConstsIter<'_> {
     fn len(&self) -> usize {
         self.iter.len()
     }
