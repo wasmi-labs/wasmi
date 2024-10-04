@@ -983,38 +983,8 @@ impl FuncTranslator {
         debug_assert!(frame.is_then_reachable());
         debug_assert!(!frame.is_else_reachable());
         debug_assert!(frame.else_label().is_none());
-        // Note: `if_end_of_then_reachable` returns `None` if `else` was never visited.
         let end_of_then_reachable = frame.is_end_of_then_reachable().unwrap_or(self.reachable);
-        if end_of_then_reachable && frame.is_branched_to() {
-            // If the end of the `if` is reachable AND
-            // there are branches to the end of the `block`
-            // prior, we need to copy the results to the
-            // block result registers.
-            //
-            // # Note
-            //
-            // We can skip this step if the above condition is
-            // not met since the code at this point is either
-            // unreachable OR there is only one source of results
-            // and thus there is no need to copy the results around.
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
-        }
-        // Since the `if` is now sealed we can pin its `end` label.
-        self.alloc.instr_encoder.pin_label(frame.end_label());
-        if frame.is_branched_to() {
-            // Case: branches to this block exist so we cannot treat the
-            //       basic block as a no-op and instead have to put its
-            //       block results on top of the stack.
-            self.alloc
-                .stack
-                .trunc(frame.block_height().into_u16() as usize);
-            for result in frame.branch_params(self.engine()) {
-                self.alloc.stack.push_register(result)?;
-            }
-        }
-        // We reset reachability in case the end of the `block` was reachable.
-        self.reachable = end_of_then_reachable || frame.is_branched_to();
-        Ok(())
+        self.translate_end_if_then_or_else_only(frame, end_of_then_reachable)
     }
 
     /// Translates the `end` of a Wasm `if` [`ControlFrame`] were only `else` is reachable.
@@ -1043,9 +1013,17 @@ impl FuncTranslator {
         debug_assert!(!frame.is_then_reachable());
         debug_assert!(frame.is_else_reachable());
         debug_assert!(frame.else_label().is_none());
-        // Note: `if_end_of_then_reachable` returns `None` if `else` was never visited.
         let end_of_else_reachable = self.reachable || !frame.has_visited_else();
-        if end_of_else_reachable && frame.is_branched_to() {
+        self.translate_end_if_then_or_else_only(frame, end_of_else_reachable)
+    }
+
+    /// Translates the `end` of a Wasm `if` [`ControlFrame`] were only `then` xor `else` is reachable.
+    fn translate_end_if_then_or_else_only(
+        &mut self,
+        frame: IfControlFrame,
+        end_is_reachable: bool,
+    ) -> Result<(), Error> {
+        if end_is_reachable && frame.is_branched_to() {
             // If the end of the `if` is reachable AND
             // there are branches to the end of the `block`
             // prior, we need to copy the results to the
@@ -1073,7 +1051,7 @@ impl FuncTranslator {
             }
         }
         // We reset reachability in case the end of the `block` was reachable.
-        self.reachable = end_of_else_reachable || frame.is_branched_to();
+        self.reachable = end_is_reachable || frame.is_branched_to();
         Ok(())
     }
 

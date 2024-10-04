@@ -634,18 +634,6 @@ impl ControlFrame {
         }
     }
 
-    /// Returns the number of branches to the [`ControlFrame`].
-    fn len_branches(&self) -> usize {
-        match self {
-            Self::Block(frame) => frame.len_branches(),
-            Self::Loop(frame) => frame.len_branches(),
-            Self::If(frame) => frame.len_branches(),
-            Self::Unreachable(frame) => {
-                panic!("tried to call `len_branches` for an unreachable control frame: {frame:?}")
-            }
-        }
-    }
-
     /// Bumps the number of branches to this [`ControlFrame`] by 1.
     pub fn bump_branches(&mut self) {
         match self {
