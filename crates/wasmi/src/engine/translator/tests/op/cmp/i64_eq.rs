@@ -20,7 +20,7 @@ fn reg_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16() {
-    test_binary_reg_imm16::<i64>(WASM_OP, 100, Instruction::i64_eq_imm16)
+    test_binary_reg_imm16_rhs::<i64>(WASM_OP, 100, Instruction::i64_eq_imm16)
 }
 
 #[test]

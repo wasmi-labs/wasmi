@@ -2113,7 +2113,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_div_s(&mut self) -> Self::Output {
         self.translate_divrem(
             Instruction::i32_div_s,
-            Instruction::i32_div_s_imm16,
+            Instruction::i32_div_s_imm16_rhs,
             Instruction::i32_div_s_imm16_lhs,
             TypedVal::i32_div_s,
             Self::no_custom_opt,
@@ -2131,7 +2131,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_div_u(&mut self) -> Self::Output {
         self.translate_divrem::<u32, NonZeroU32>(
             Instruction::i32_div_u,
-            Instruction::i32_div_u_imm16,
+            Instruction::i32_div_u_imm16_rhs,
             Instruction::i32_div_u_imm16_lhs,
             TypedVal::i32_div_u,
             Self::no_custom_opt,
@@ -2149,7 +2149,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_rem_s(&mut self) -> Self::Output {
         self.translate_divrem(
             Instruction::i32_rem_s,
-            Instruction::i32_rem_s_imm16,
+            Instruction::i32_rem_s_imm16_rhs,
             Instruction::i32_rem_s_imm16_lhs,
             TypedVal::i32_rem_s,
             Self::no_custom_opt,
@@ -2167,7 +2167,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_rem_u(&mut self) -> Self::Output {
         self.translate_divrem::<u32, NonZeroU32>(
             Instruction::i32_rem_u,
-            Instruction::i32_rem_u_imm16,
+            Instruction::i32_rem_u_imm16_rhs,
             Instruction::i32_rem_u_imm16_lhs,
             TypedVal::i32_rem_u,
             Self::no_custom_opt,
@@ -2430,7 +2430,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_div_s(&mut self) -> Self::Output {
         self.translate_divrem(
             Instruction::i64_div_s,
-            Instruction::i64_div_s_imm16,
+            Instruction::i64_div_s_imm16_rhs,
             Instruction::i64_div_s_imm16_lhs,
             TypedVal::i64_div_s,
             Self::no_custom_opt,
@@ -2448,7 +2448,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_div_u(&mut self) -> Self::Output {
         self.translate_divrem::<u64, NonZeroU64>(
             Instruction::i64_div_u,
-            Instruction::i64_div_u_imm16,
+            Instruction::i64_div_u_imm16_rhs,
             Instruction::i64_div_u_imm16_lhs,
             TypedVal::i64_div_u,
             Self::no_custom_opt,
@@ -2466,7 +2466,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_rem_s(&mut self) -> Self::Output {
         self.translate_divrem(
             Instruction::i64_rem_s,
-            Instruction::i64_rem_s_imm16,
+            Instruction::i64_rem_s_imm16_rhs,
             Instruction::i64_rem_s_imm16_lhs,
             TypedVal::i64_rem_s,
             Self::no_custom_opt,
@@ -2484,7 +2484,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_rem_u(&mut self) -> Self::Output {
         self.translate_divrem::<u64, NonZeroU64>(
             Instruction::i64_rem_u,
-            Instruction::i64_rem_u_imm16,
+            Instruction::i64_rem_u_imm16_rhs,
             Instruction::i64_rem_u_imm16_lhs,
             TypedVal::i64_rem_u,
             Self::no_custom_opt,

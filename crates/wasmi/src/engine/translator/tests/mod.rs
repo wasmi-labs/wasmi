@@ -244,7 +244,8 @@ where
     TranslationTest::from_wat(&wasm)
 }
 
-fn test_binary_reg_imm16<T>(
+/// Variant of [`test_binary_reg_imm16`] where the `rhs` operand is an immediate value.
+fn test_binary_reg_imm16_rhs<T>(
     wasm_op: WasmOp,
     value: T,
     make_instr: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
@@ -262,7 +263,7 @@ fn test_binary_reg_imm16<T>(
     test_binary_reg_imm_with(wasm_op, value, expected).run()
 }
 
-/// Variant of [`test_binary_reg_imm16`] where both operands are swapped.
+/// Variant of [`test_binary_reg_imm16`] where the `lhs` operand is an immediate value.
 fn test_binary_reg_imm16_lhs<T>(
     wasm_op: WasmOp,
     value: T,

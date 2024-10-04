@@ -230,43 +230,43 @@ impl DivRemExt for UntypedVal {
     }
 }
 
-macro_rules! impl_divrem_s_imm16 {
+macro_rules! impl_divrem_s_imm16_rhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) -> Result<(), Error> {
-                self.try_execute_divrem_imm16(result, lhs, rhs, $op)
+                self.try_execute_divrem_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
     };
 }
 impl Executor<'_> {
-    impl_divrem_s_imm16! {
-        (NonZeroI32, Instruction::I32DivSImm16, execute_i32_div_s_imm16, <UntypedVal as DivRemExt>::i32_div_s),
-        (NonZeroI32, Instruction::I32RemSImm16, execute_i32_rem_s_imm16, <UntypedVal as DivRemExt>::i32_rem_s),
+    impl_divrem_s_imm16_rhs! {
+        (NonZeroI32, Instruction::I32DivSImm16Rhs, execute_i32_div_s_imm16_rhs, <UntypedVal as DivRemExt>::i32_div_s),
+        (NonZeroI32, Instruction::I32RemSImm16Rhs, execute_i32_rem_s_imm16_rhs, <UntypedVal as DivRemExt>::i32_rem_s),
 
-        (NonZeroI64, Instruction::I64DivSImm16, execute_i64_div_s_imm16, <UntypedVal as DivRemExt>::i64_div_s),
-        (NonZeroI64, Instruction::I64RemSImm16, execute_i64_rem_s_imm16, <UntypedVal as DivRemExt>::i64_rem_s),
+        (NonZeroI64, Instruction::I64DivSImm16Rhs, execute_i64_div_s_imm16_rhs, <UntypedVal as DivRemExt>::i64_div_s),
+        (NonZeroI64, Instruction::I64RemSImm16Rhs, execute_i64_rem_s_imm16_rhs, <UntypedVal as DivRemExt>::i64_rem_s),
     }
 }
 
-macro_rules! impl_divrem_u_imm16 {
+macro_rules! impl_divrem_u_imm16_rhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
-                self.execute_divrem_imm16(result, lhs, rhs, $op)
+                self.execute_divrem_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
     };
 }
 impl Executor<'_> {
-    impl_divrem_u_imm16! {
-        (NonZeroU32, Instruction::I32DivUImm16, execute_i32_div_u_imm16, <UntypedVal as DivRemExt>::i32_div_u),
-        (NonZeroU32, Instruction::I32RemUImm16, execute_i32_rem_u_imm16, <UntypedVal as DivRemExt>::i32_rem_u),
+    impl_divrem_u_imm16_rhs! {
+        (NonZeroU32, Instruction::I32DivUImm16Rhs, execute_i32_div_u_imm16_rhs, <UntypedVal as DivRemExt>::i32_div_u),
+        (NonZeroU32, Instruction::I32RemUImm16Rhs, execute_i32_rem_u_imm16_rhs, <UntypedVal as DivRemExt>::i32_rem_u),
 
-        (NonZeroU64, Instruction::I64DivUImm16, execute_i64_div_u_imm16, <UntypedVal as DivRemExt>::i64_div_u),
-        (NonZeroU64, Instruction::I64RemUImm16, execute_i64_rem_u_imm16, <UntypedVal as DivRemExt>::i64_rem_u),
+        (NonZeroU64, Instruction::I64DivUImm16Rhs, execute_i64_div_u_imm16_rhs, <UntypedVal as DivRemExt>::i64_div_u),
+        (NonZeroU64, Instruction::I64RemUImm16Rhs, execute_i64_rem_u_imm16_rhs, <UntypedVal as DivRemExt>::i64_rem_u),
     }
 }
 
@@ -282,15 +282,15 @@ macro_rules! impl_fallible_binary_imm16_lhs {
 }
 impl Executor<'_> {
     impl_fallible_binary_imm16_lhs! {
-        (i32, Instruction::I32DivSImm16Rev, execute_i32_div_s_imm16_lhs, UntypedVal::i32_div_s),
-        (u32, Instruction::I32DivUImm16Rev, execute_i32_div_u_imm16_lhs, UntypedVal::i32_div_u),
-        (i32, Instruction::I32RemSImm16Rev, execute_i32_rem_s_imm16_lhs, UntypedVal::i32_rem_s),
-        (u32, Instruction::I32RemUImm16Rev, execute_i32_rem_u_imm16_lhs, UntypedVal::i32_rem_u),
+        (i32, Instruction::I32DivSImm16Lhs, execute_i32_div_s_imm16_lhs, UntypedVal::i32_div_s),
+        (u32, Instruction::I32DivUImm16Lhs, execute_i32_div_u_imm16_lhs, UntypedVal::i32_div_u),
+        (i32, Instruction::I32RemSImm16Lhs, execute_i32_rem_s_imm16_lhs, UntypedVal::i32_rem_s),
+        (u32, Instruction::I32RemUImm16Lhs, execute_i32_rem_u_imm16_lhs, UntypedVal::i32_rem_u),
 
-        (i64, Instruction::I64DivSImm16Rev, execute_i64_div_s_imm16_lhs, UntypedVal::i64_div_s),
-        (u64, Instruction::I64DivUImm16Rev, execute_i64_div_u_imm16_lhs, UntypedVal::i64_div_u),
-        (i64, Instruction::I64RemSImm16Rev, execute_i64_rem_s_imm16_lhs, UntypedVal::i64_rem_s),
-        (u64, Instruction::I64RemUImm16Rev, execute_i64_rem_u_imm16_lhs, UntypedVal::i64_rem_u),
+        (i64, Instruction::I64DivSImm16Lhs, execute_i64_div_s_imm16_lhs, UntypedVal::i64_div_s),
+        (u64, Instruction::I64DivUImm16Lhs, execute_i64_div_u_imm16_lhs, UntypedVal::i64_div_u),
+        (i64, Instruction::I64RemSImm16Lhs, execute_i64_rem_s_imm16_lhs, UntypedVal::i64_rem_s),
+        (u64, Instruction::I64RemUImm16Lhs, execute_i64_rem_u_imm16_lhs, UntypedVal::i64_rem_u),
     }
 }
 

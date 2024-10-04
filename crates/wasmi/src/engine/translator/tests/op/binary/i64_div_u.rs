@@ -23,7 +23,11 @@ fn reg_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16() {
-    test_binary_reg_imm16::<NonZeroU64>(WASM_OP, nonzero_u64(100), Instruction::i64_div_u_imm16)
+    test_binary_reg_imm16_rhs::<NonZeroU64>(
+        WASM_OP,
+        nonzero_u64(100),
+        Instruction::i64_div_u_imm16_rhs,
+    )
 }
 
 #[test]

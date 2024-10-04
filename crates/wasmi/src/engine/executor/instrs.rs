@@ -915,29 +915,29 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32_mul_imm16(result, lhs, rhs)
                 }
                 Instr::I32DivS { result, lhs, rhs } => self.execute_i32_div_s(result, lhs, rhs)?,
-                Instr::I32DivSImm16 { result, lhs, rhs } => {
-                    self.execute_i32_div_s_imm16(result, lhs, rhs)?
+                Instr::I32DivSImm16Rhs { result, lhs, rhs } => {
+                    self.execute_i32_div_s_imm16_rhs(result, lhs, rhs)?
                 }
                 Instr::I32DivSImm16Lhs { result, lhs, rhs } => {
                     self.execute_i32_div_s_imm16_lhs(result, lhs, rhs)?
                 }
                 Instr::I32DivU { result, lhs, rhs } => self.execute_i32_div_u(result, lhs, rhs)?,
-                Instr::I32DivUImm16 { result, lhs, rhs } => {
-                    self.execute_i32_div_u_imm16(result, lhs, rhs)
+                Instr::I32DivUImm16Rhs { result, lhs, rhs } => {
+                    self.execute_i32_div_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I32DivUImm16Lhs { result, lhs, rhs } => {
                     self.execute_i32_div_u_imm16_lhs(result, lhs, rhs)?
                 }
                 Instr::I32RemS { result, lhs, rhs } => self.execute_i32_rem_s(result, lhs, rhs)?,
-                Instr::I32RemSImm16 { result, lhs, rhs } => {
-                    self.execute_i32_rem_s_imm16(result, lhs, rhs)?
+                Instr::I32RemSImm16Rhs { result, lhs, rhs } => {
+                    self.execute_i32_rem_s_imm16_rhs(result, lhs, rhs)?
                 }
                 Instr::I32RemSImm16Lhs { result, lhs, rhs } => {
                     self.execute_i32_rem_s_imm16_lhs(result, lhs, rhs)?
                 }
                 Instr::I32RemU { result, lhs, rhs } => self.execute_i32_rem_u(result, lhs, rhs)?,
-                Instr::I32RemUImm16 { result, lhs, rhs } => {
-                    self.execute_i32_rem_u_imm16(result, lhs, rhs)
+                Instr::I32RemUImm16Rhs { result, lhs, rhs } => {
+                    self.execute_i32_rem_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I32RemUImm16Lhs { result, lhs, rhs } => {
                     self.execute_i32_rem_u_imm16_lhs(result, lhs, rhs)?
@@ -1015,29 +1015,29 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_mul_imm16(result, lhs, rhs)
                 }
                 Instr::I64DivS { result, lhs, rhs } => self.execute_i64_div_s(result, lhs, rhs)?,
-                Instr::I64DivSImm16 { result, lhs, rhs } => {
-                    self.execute_i64_div_s_imm16(result, lhs, rhs)?
+                Instr::I64DivSImm16Rhs { result, lhs, rhs } => {
+                    self.execute_i64_div_s_imm16_rhs(result, lhs, rhs)?
                 }
                 Instr::I64DivSImm16Lhs { result, lhs, rhs } => {
                     self.execute_i64_div_s_imm16_lhs(result, lhs, rhs)?
                 }
                 Instr::I64DivU { result, lhs, rhs } => self.execute_i64_div_u(result, lhs, rhs)?,
-                Instr::I64DivUImm16 { result, lhs, rhs } => {
-                    self.execute_i64_div_u_imm16(result, lhs, rhs)
+                Instr::I64DivUImm16Rhs { result, lhs, rhs } => {
+                    self.execute_i64_div_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I64DivUImm16Lhs { result, lhs, rhs } => {
                     self.execute_i64_div_u_imm16_lhs(result, lhs, rhs)?
                 }
                 Instr::I64RemS { result, lhs, rhs } => self.execute_i64_rem_s(result, lhs, rhs)?,
-                Instr::I64RemSImm16 { result, lhs, rhs } => {
-                    self.execute_i64_rem_s_imm16(result, lhs, rhs)?
+                Instr::I64RemSImm16Rhs { result, lhs, rhs } => {
+                    self.execute_i64_rem_s_imm16_rhs(result, lhs, rhs)?
                 }
                 Instr::I64RemSImm16Lhs { result, lhs, rhs } => {
                     self.execute_i64_rem_s_imm16_lhs(result, lhs, rhs)?
                 }
                 Instr::I64RemU { result, lhs, rhs } => self.execute_i64_rem_u(result, lhs, rhs)?,
-                Instr::I64RemUImm16 { result, lhs, rhs } => {
-                    self.execute_i64_rem_u_imm16(result, lhs, rhs)
+                Instr::I64RemUImm16Rhs { result, lhs, rhs } => {
+                    self.execute_i64_rem_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I64RemUImm16Lhs { result, lhs, rhs } => {
                     self.execute_i64_rem_u_imm16_lhs(result, lhs, rhs)?
@@ -1637,7 +1637,7 @@ impl Executor<'_> {
 
     /// Executes a fallible generic binary [`Instruction`].
     #[inline(always)]
-    fn try_execute_divrem_imm16<NonZeroT>(
+    fn try_execute_divrem_imm16_rhs<NonZeroT>(
         &mut self,
         result: Reg,
         lhs: Reg,
@@ -1655,7 +1655,7 @@ impl Executor<'_> {
 
     /// Executes a fallible generic binary [`Instruction`].
     #[inline(always)]
-    fn execute_divrem_imm16<NonZeroT>(
+    fn execute_divrem_imm16_rhs<NonZeroT>(
         &mut self,
         result: Reg,
         lhs: Reg,

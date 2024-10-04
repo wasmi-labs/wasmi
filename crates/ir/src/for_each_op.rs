@@ -3741,8 +3741,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I32DivS`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i32_div_s_imm16)]
-            I32DivSImm16 {
+            #[snake_name(i32_div_s_imm16_rhs)]
+            I32DivSImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3783,8 +3783,8 @@ macro_rules! for_each_op {
             /// # Encoding
             ///
             /// Optimized variant of [`Instruction::I32DivU`] for 16-bit constant values.
-            #[snake_name(i32_div_u_imm16)]
-            I32DivUImm16 {
+            #[snake_name(i32_div_u_imm16_rhs)]
+            I32DivUImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3822,8 +3822,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I32RemS`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i32_rem_s_imm16)]
-            I32RemSImm16 {
+            #[snake_name(i32_rem_s_imm16_rhs)]
+            I32RemSImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3861,8 +3861,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I32RemU`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i32_rem_u_imm16)]
-            I32RemUImm16 {
+            #[snake_name(i32_rem_u_imm16_rhs)]
+            I32RemUImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4255,8 +4255,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I64DivS`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i64_div_s_imm16)]
-            I64DivSImm16 {
+            #[snake_name(i64_div_s_imm16_rhs)]
+            I64DivSImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4297,8 +4297,8 @@ macro_rules! for_each_op {
             /// # Encoding
             ///
             /// Optimized variant of [`Instruction::I64DivU`] for 16-bit constant values.
-            #[snake_name(i64_div_u_imm16)]
-            I64DivUImm16 {
+            #[snake_name(i64_div_u_imm16_rhs)]
+            I64DivUImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4336,8 +4336,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I64RemS`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i64_rem_s_imm16)]
-            I64RemSImm16 {
+            #[snake_name(i64_rem_s_imm16_rhs)]
+            I64RemSImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -4375,8 +4375,8 @@ macro_rules! for_each_op {
             ///
             /// - Optimized variant of [`Instruction::I64RemU`] for 16-bit constant values.
             /// - Guarantees that the right-hand side operand is not zero.
-            #[snake_name(i64_rem_u_imm16)]
-            I64RemUImm16 {
+            #[snake_name(i64_rem_u_imm16_rhs)]
+            I64RemUImm16Rhs {
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
