@@ -49,15 +49,11 @@ macro_rules! forward_return {
     }};
 }
 
-/// Executes compiled function instructions until either
-///
-/// - returning from the root function
-/// - calling a host function
-/// - encountering a trap
+/// Executes compiled function instructions until execution returns from the root function.
 ///
 /// # Errors
 ///
-/// If the execution traps.
+/// If the execution encounters a trap.
 #[inline(never)]
 pub fn execute_instrs<'engine, T>(
     store: &mut Store<T>,
