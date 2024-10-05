@@ -57,6 +57,7 @@ impl Executor<'_> {
     }
 
     /// Fetches the bytes of the default memory at index 0.
+    #[inline]
     fn fetch_default_memory_bytes_mut(&mut self) -> &mut [u8] {
         // Safety: the `self.cache.memory` pointer is always synchronized
         //         conservatively whenever it could have been invalidated.
@@ -64,6 +65,7 @@ impl Executor<'_> {
     }
 
     /// Fetches the bytes of the given `memory`.
+    #[inline]
     fn fetch_memory_bytes_mut<'exec, 'store, 'bytes>(
         &'exec mut self,
         memory: Memory,
@@ -81,6 +83,7 @@ impl Executor<'_> {
 
     /// Fetches the bytes of the given non-default `memory`.
     #[cold]
+    #[inline]
     fn fetch_non_default_memory_bytes_mut<'exec, 'store, 'bytes>(
         &'exec mut self,
         memory: Memory,
