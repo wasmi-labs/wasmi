@@ -10,21 +10,15 @@ use crate::{
 };
 use core::slice;
 
-/// The outcome of a Wasm return statement.
-#[derive(Debug, Copy, Clone)]
-pub enum ReturnOutcome {
-    /// The call returns to a nested Wasm caller.
-    Wasm,
-    /// The call returns back to the host.
-    Host,
-}
+/// Tells if execution loop shall continue or break (return) to the execution's caller.
+type ControlFlow = ::core::ops::ControlFlow<(), ()>;
 
 impl Executor<'_> {
     /// Returns the execution to the caller.
     ///
     /// Any return values are expected to already have been transferred
     /// from the returning callee to the caller.
-    fn return_impl(&mut self, store: &mut StoreInner) -> ReturnOutcome {
+    fn return_impl(&mut self, store: &mut StoreInner) -> ControlFlow {
         let (returned, popped_instance) = self
             .stack
             .calls
@@ -43,14 +37,14 @@ impl Executor<'_> {
                     &mut self.ip,
                     caller,
                 );
-                ReturnOutcome::Wasm
+                ControlFlow::Continue(())
             }
-            None => ReturnOutcome::Host,
+            None => ControlFlow::Break(()),
         }
     }
 
     /// Execute an [`Instruction::Return`].
-    pub fn execute_return(&mut self, store: &mut StoreInner) -> ReturnOutcome {
+    pub fn execute_return(&mut self, store: &mut StoreInner) -> ControlFlow {
         self.return_impl(store)
     }
 
@@ -94,7 +88,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         value: T,
         f: fn(&Self, T) -> UntypedVal,
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         let (mut caller_sp, results) = self.return_caller_results();
         let value = f(self, value);
         // Safety: The `callee.results()` always refer to a span of valid
@@ -106,25 +100,17 @@ impl Executor<'_> {
     }
 
     /// Execute an [`Instruction::ReturnReg`] returning a single [`Reg`] value.
-    pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Reg) -> ReturnOutcome {
+    pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Reg) -> ControlFlow {
         self.execute_return_value(store, value, Self::get_register)
     }
 
     /// Execute an [`Instruction::ReturnReg2`] returning two [`Reg`] values.
-    pub fn execute_return_reg2(
-        &mut self,
-        store: &mut StoreInner,
-        values: [Reg; 2],
-    ) -> ReturnOutcome {
+    pub fn execute_return_reg2(&mut self, store: &mut StoreInner, values: [Reg; 2]) -> ControlFlow {
         self.execute_return_reg_n_impl::<2>(store, values)
     }
 
     /// Execute an [`Instruction::ReturnReg3`] returning three [`Reg`] values.
-    pub fn execute_return_reg3(
-        &mut self,
-        store: &mut StoreInner,
-        values: [Reg; 3],
-    ) -> ReturnOutcome {
+    pub fn execute_return_reg3(&mut self, store: &mut StoreInner, values: [Reg; 3]) -> ControlFlow {
         self.execute_return_reg_n_impl::<3>(store, values)
     }
 
@@ -133,7 +119,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         values: [Reg; N],
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         let (mut caller_sp, results) = self.return_caller_results();
         debug_assert!(u16::try_from(N).is_ok());
         for (result, value) in results.iter(N as u16).zip(values) {
@@ -152,7 +138,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         value: AnyConst32,
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         self.execute_return_value(store, value, |_, value| u32::from(value).into())
     }
 
@@ -161,7 +147,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         value: Const32<i64>,
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         self.execute_return_value(store, value, |_, value| i64::from(value).into())
     }
 
@@ -170,7 +156,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         value: Const32<f64>,
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         self.execute_return_value(store, value, |_, value| f64::from(value).into())
     }
 
@@ -179,7 +165,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         values: BoundedRegSpan,
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         let (mut caller_sp, results) = self.return_caller_results();
         let results = results.iter(values.len());
         for (result, value) in results.zip(values) {
@@ -194,11 +180,7 @@ impl Executor<'_> {
     }
 
     /// Execute an [`Instruction::ReturnMany`] returning many values.
-    pub fn execute_return_many(
-        &mut self,
-        store: &mut StoreInner,
-        values: [Reg; 3],
-    ) -> ReturnOutcome {
+    pub fn execute_return_many(&mut self, store: &mut StoreInner, values: [Reg; 3]) -> ControlFlow {
         self.ip.add(1);
         self.copy_many_return_values(self.ip, &values);
         self.return_impl(store)
@@ -255,20 +237,20 @@ impl Executor<'_> {
         store: &mut StoreInner,
         condition: Reg,
         value: T,
-        f: fn(&mut Self, &mut StoreInner, T) -> ReturnOutcome,
-    ) -> ReturnOutcome {
+        f: fn(&mut Self, &mut StoreInner, T) -> ControlFlow,
+    ) -> ControlFlow {
         let condition = self.get_register(condition);
         match bool::from(condition) {
             true => f(self, store, value),
             false => {
                 self.next_instr();
-                ReturnOutcome::Wasm
+                ControlFlow::Continue(())
             }
         }
     }
 
     /// Execute an [`Instruction::Return`].
-    pub fn execute_return_nez(&mut self, store: &mut StoreInner, condition: Reg) -> ReturnOutcome {
+    pub fn execute_return_nez(&mut self, store: &mut StoreInner, condition: Reg) -> ControlFlow {
         self.execute_return_nez_impl(store, condition, (), |this, store, _| {
             this.execute_return(store)
         })
@@ -280,7 +262,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         condition: Reg,
         value: Reg,
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg)
     }
 
@@ -290,7 +272,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         condition: Reg,
         value: [Reg; 2],
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg2)
     }
 
@@ -300,7 +282,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         condition: Reg,
         value: AnyConst32,
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_imm32)
     }
 
@@ -310,7 +292,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         condition: Reg,
         value: Const32<i64>,
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_i64imm32)
     }
 
@@ -320,7 +302,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         condition: Reg,
         value: Const32<f64>,
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_f64imm32)
     }
 
@@ -330,7 +312,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         condition: Reg,
         values: BoundedRegSpan,
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         self.execute_return_nez_impl(store, condition, values, Self::execute_return_span)
     }
 
@@ -340,7 +322,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         condition: Reg,
         values: [Reg; 2],
-    ) -> ReturnOutcome {
+    ) -> ControlFlow {
         let condition = self.get_register(condition);
         self.ip.add(1);
         match bool::from(condition) {
@@ -350,7 +332,7 @@ impl Executor<'_> {
             }
             false => {
                 self.ip = Self::skip_register_list(self.ip);
-                ReturnOutcome::Wasm
+                ControlFlow::Continue(())
             }
         }
     }

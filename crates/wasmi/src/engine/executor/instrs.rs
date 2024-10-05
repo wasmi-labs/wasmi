@@ -1,5 +1,4 @@
 pub use self::call::{dispatch_host_func, ResumableHostError};
-use self::return_::ReturnOutcome;
 use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
     core::{hint, TrapCode, UntypedVal},
@@ -44,21 +43,17 @@ mod unary;
 
 macro_rules! forward_return {
     ($expr:expr) => {{
-        if let ReturnOutcome::Host = $expr {
+        if hint::unlikely($expr.is_break()) {
             return Ok(());
         }
     }};
 }
 
-/// Executes compiled function instructions until either
-///
-/// - returning from the root function
-/// - calling a host function
-/// - encountering a trap
+/// Executes compiled function instructions until execution returns from the root function.
 ///
 /// # Errors
 ///
-/// If the execution traps.
+/// If the execution encounters a trap.
 #[inline(never)]
 pub fn execute_instrs<'engine, T>(
     store: &mut Store<T>,
