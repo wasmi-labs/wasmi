@@ -16,7 +16,7 @@ exclude.workspace = true
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-wasmi = { workspace = true }
+wasmi = { workspace = true, features = ["no-hash-maps"] }
 wasmi_wasi = { workspace = true }
 wat = "1"
 
