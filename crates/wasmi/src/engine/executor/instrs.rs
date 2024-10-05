@@ -1,5 +1,4 @@
 pub use self::call::{dispatch_host_func, ResumableHostError};
-use self::return_::ReturnOutcome;
 use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
     core::{hint, TrapCode, UntypedVal},
@@ -44,7 +43,7 @@ mod unary;
 
 macro_rules! forward_return {
     ($expr:expr) => {{
-        if let ReturnOutcome::Host = $expr {
+        if $expr.is_break() {
             return Ok(());
         }
     }};
