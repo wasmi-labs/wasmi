@@ -43,7 +43,7 @@ mod unary;
 
 macro_rules! forward_return {
     ($expr:expr) => {{
-        if $expr.is_break() {
+        if hint::unlikely($expr.is_break()) {
             return Ok(());
         }
     }};
