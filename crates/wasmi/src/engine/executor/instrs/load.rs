@@ -67,12 +67,7 @@ impl Executor<'_> {
         'exec: 'bytes,
         'store: 'bytes,
     {
-        // Safety: the underlying instance of `self.cache` is always kept up-to-date conservatively.
-        let memory = unsafe {
-            self.cache
-                .get_memory(memory)
-                .unwrap_or_else(|| panic!("missing linear memory for {memory:?}"))
-        };
+        let memory = self.get_memory(memory);
         store.resolve_memory(&memory).data()
     }
 
