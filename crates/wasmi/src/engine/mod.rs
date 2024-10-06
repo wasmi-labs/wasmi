@@ -622,6 +622,7 @@ impl EngineInner {
         module: ModuleHeader,
         func_to_validate: Option<FuncToValidate<ValidatorResources>>,
     ) -> Result<(), Error> {
+        let features = self.config().wasm_features();
         match (self.config.get_compilation_mode(), func_to_validate) {
             (CompilationMode::Eager, Some(func_to_validate)) => {
                 let (translation_allocs, validation_allocs) = self.get_allocs();
@@ -641,7 +642,8 @@ impl EngineInner {
             }
             (CompilationMode::LazyTranslation, Some(func_to_validate)) => {
                 let allocs = self.get_validation_allocs();
-                let translator = LazyFuncTranslator::new(func_index, engine_func, module, None);
+                let translator =
+                    LazyFuncTranslator::new(func_index, engine_func, module, None, features);
                 let validator = func_to_validate.into_validator(allocs);
                 let translator = ValidatingFuncTranslator::new(validator, translator)?;
                 let allocs = FuncTranslationDriver::new(offset, bytes, translator)?
@@ -649,8 +651,13 @@ impl EngineInner {
                 self.recycle_validation_allocs(allocs.validation);
             }
             (CompilationMode::Lazy | CompilationMode::LazyTranslation, func_to_validate) => {
-                let translator =
-                    LazyFuncTranslator::new(func_index, engine_func, module, func_to_validate);
+                let translator = LazyFuncTranslator::new(
+                    func_index,
+                    engine_func,
+                    module,
+                    func_to_validate,
+                    features,
+                );
                 FuncTranslationDriver::new(offset, bytes, translator)?
                     .translate(|func_entity| self.init_func(engine_func, func_entity))?;
             }

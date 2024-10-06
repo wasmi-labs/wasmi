@@ -1,5 +1,5 @@
 use super::{ConstExpr, TableIdx};
-use crate::{core::ValType, module::utils::WasmiValueType};
+use crate::core::ValType;
 use std::boxed::Box;
 
 /// A table element segment within a [`Module`].
@@ -9,8 +9,17 @@ use std::boxed::Box;
 pub struct ElementSegment {
     /// The kind of the [`ElementSegment`].
     kind: ElementSegmentKind,
+    /// The type of elements of the [`ElementSegment`].
+    ty: ValType,
     /// The items of the [`ElementSegment`].
     items: Box<[ConstExpr]>,
+}
+
+impl ElementSegment {
+    /// Returns the [`ValType`] of elements in the [`ElementSegment`].
+    pub fn ty(&self) -> ValType {
+        self.ty
+    }
 }
 
 /// The kind of a Wasm [`ElementSegment`].
@@ -68,22 +77,32 @@ impl From<wasmparser::ElementKind<'_>> for ElementSegmentKind {
 impl From<wasmparser::Element<'_>> for ElementSegment {
     fn from(element: wasmparser::Element<'_>) -> Self {
         let kind = ElementSegmentKind::from(element.kind);
-        let ty = WasmiValueType::from(element.ty).into_inner();
-        let items = match element.items {
-            wasmparser::ElementItems::Functions(items) => items
-                .into_iter()
-                .map(|item| {
-                    item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
-                })
-                .map(ConstExpr::new_funcref)
-                .collect::<Box<[_]>>(),
-            wasmparser::ElementItems::Expressions(items) => items
-                .into_iter()
-                .map(|item| {
-                    item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
-                })
-                .map(ConstExpr::new)
-                .collect::<Box<[_]>>(),
+        let (items, ty) = match element.items {
+            wasmparser::ElementItems::Functions(items) => {
+                let items = items
+                    .into_iter()
+                    .map(|item| {
+                        item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
+                    })
+                    .map(ConstExpr::new_funcref)
+                    .collect::<Box<[_]>>();
+                (items, ValType::FuncRef)
+            }
+            wasmparser::ElementItems::Expressions(ref_ty, items) => {
+                let ty = match ref_ty {
+                    ty if ty.is_func_ref() => ValType::FuncRef,
+                    ty if ty.is_extern_ref() => ValType::ExternRef,
+                    _ => panic!("unsupported Wasm reference type"),
+                };
+                let items = items
+                    .into_iter()
+                    .map(|item| {
+                        item.unwrap_or_else(|error| panic!("failed to parse element item: {error}"))
+                    })
+                    .map(ConstExpr::new)
+                    .collect::<Box<[_]>>();
+                (items, ty)
+            }
         };
         Self { kind, ty, items }
     }
