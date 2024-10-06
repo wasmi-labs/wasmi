@@ -23,6 +23,10 @@ wat = "1"
 [dev-dependencies]
 assert_cmd = "2.0.7"
 
+[features]
+default = ["no-hash-maps"]
+no-hash-maps = ["wasmi/no-hash-maps"]
+
 # We need to put this [profile.release] section due to this bug in Cargo:
 # https://github.com/rust-lang/cargo/issues/8264
 # Uncomment the lines below before publishing a new `wasmi_cli` release to crates.io.
