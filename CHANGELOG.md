@@ -8,6 +8,23 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.38.0`] - 2024-10-06
+
+### Added
+
+- Add `no-hash-maps` crate feature to Wasmi CLI and enable it by default. [#1225]
+
+### Internal
+
+- Rename various instructions and add `ShiftAmount` abstraction. [#1221]
+- Use Rust's `ControlFlow` utility. [#1223]
+- Use `get_memory` in `load` and `store` execution handlers. [#1224]
+
+[#1221]: https://github.com/wasmi-labs/wasmi/pull/1221
+[#1223]: https://github.com/wasmi-labs/wasmi/pull/1223
+[#1224]: https://github.com/wasmi-labs/wasmi/pull/1224
+[#1225]: https://github.com/wasmi-labs/wasmi/pull/1225
+
 ## [`0.37.2`] - 2024-10-04
 
 ### Added
