@@ -156,24 +156,24 @@ fn bench_translate_for(
     c: &mut Criterion,
     name: &str,
     path: &str,
-    validation: Validation,
     mode: CompilationMode,
+    validation: Validation,
     fuel_metering: FuelMetering,
 ) {
-    let validation_id = match validation {
-        Validation::Checked => "checked",
-        Validation::Unchecked => "unchecked",
-    };
     let mode_id = match mode {
         CompilationMode::Eager => "eager",
         CompilationMode::LazyTranslation => "lazy-translation",
         CompilationMode::Lazy => "lazy",
     };
-    let fuel_id = match fuel_metering {
-        FuelMetering::Enabled => "fuel",
-        FuelMetering::Disabled => "default",
+    let validation_id = match validation {
+        Validation::Checked => "checked",
+        Validation::Unchecked => "unchecked",
     };
-    let bench_id = format!("translate/{name}/{validation_id}/{mode_id}/{fuel_id}");
+    let fuel_id = match fuel_metering {
+        FuelMetering::Enabled => "+metered",
+        FuelMetering::Disabled => "",
+    };
+    let bench_id = format!("translate/{name}/{mode_id}/{validation_id}{fuel_id}");
     c.bench_function(&bench_id, |b| {
         let mut config = bench_config();
         if matches!(fuel_metering, FuelMetering::Enabled) {
@@ -202,40 +202,48 @@ fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
         c,
         name,
         path,
-        Validation::Checked,
         CompilationMode::Eager,
+        Validation::Checked,
         FuelMetering::Disabled,
     );
     bench_translate_for(
         c,
         name,
         path,
-        Validation::Checked,
         CompilationMode::Eager,
+        Validation::Checked,
         FuelMetering::Enabled,
     );
     bench_translate_for(
         c,
         name,
         path,
-        Validation::Checked,
-        CompilationMode::LazyTranslation,
-        FuelMetering::Disabled,
-    );
-    bench_translate_for(
-        c,
-        name,
-        path,
-        Validation::Checked,
-        CompilationMode::Lazy,
-        FuelMetering::Disabled,
-    );
-    bench_translate_for(
-        c,
-        name,
-        path,
-        Validation::Unchecked,
         CompilationMode::Eager,
+        Validation::Unchecked,
+        FuelMetering::Disabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        CompilationMode::LazyTranslation,
+        Validation::Checked,
+        FuelMetering::Disabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        CompilationMode::Lazy,
+        Validation::Checked,
+        FuelMetering::Disabled,
+    );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        CompilationMode::Lazy,
+        Validation::Unchecked,
         FuelMetering::Disabled,
     );
 }
