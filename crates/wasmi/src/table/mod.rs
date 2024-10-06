@@ -357,7 +357,6 @@ impl TableEntity {
             table_type.element().is_ref(),
             "table.init currently only works on reftypes"
         );
-        // Removed because Element lost its type field in a wasmparser update.
         table_type
             .matches_element_type(element.ty())
             .map_err(|_| TrapCode::BadSignature)?;
