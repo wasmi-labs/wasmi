@@ -1,8 +1,6 @@
 use crate::{
-    engine::{
-        bytecode::{index, Instruction, Reg, RegSpan, VisitRegs},
-        EngineFunc,
-    },
+    engine::EngineFunc,
+    ir::{index, Instruction, Reg, RegSpan, VisitRegs},
     module::ModuleHeader,
     Engine,
     Error,

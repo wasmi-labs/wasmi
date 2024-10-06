@@ -1,4 +1,4 @@
-use crate::{engine::bytecode::Reg, Error};
+use crate::{ir::Reg, Error};
 use core::mem;
 use std::{
     collections::{btree_map, BTreeMap},

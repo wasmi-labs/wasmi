@@ -1,4 +1,4 @@
-use crate::engine::bytecode::{Instruction, Reg, RegSpan, VisitRegs};
+use crate::ir::{Instruction, Reg, RegSpan, VisitRegs};
 
 /// Extension-trait for [`Instruction`] to only visit certain [`Reg`]s via closure.
 pub trait VisitInputRegisters {

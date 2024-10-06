@@ -1,4 +1,4 @@
-use crate::engine::bytecode::Instruction;
+use crate::ir::Instruction;
 
 /// The instruction pointer to the instruction of a function on the call stack.
 #[derive(Debug, Copy, Clone)]

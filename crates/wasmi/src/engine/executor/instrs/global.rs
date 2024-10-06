@@ -1,12 +1,12 @@
 use super::Executor;
 use crate::{
     core::{hint, UntypedVal},
-    engine::bytecode::{index, Const16, Reg},
+    ir::{index, Const16, Reg},
     store::StoreInner,
 };
 
 #[cfg(doc)]
-use crate::engine::bytecode::Instruction;
+use crate::ir::Instruction;
 
 impl Executor<'_> {
     /// Executes an [`Instruction::GlobalGet`].

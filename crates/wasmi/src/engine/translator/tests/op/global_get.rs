@@ -1,6 +1,6 @@
 use super::*;
 
-use crate::engine::bytecode::index::Global;
+use crate::ir::index::Global;
 use core::fmt::Display;
 use wasm_type::WasmTy;
 

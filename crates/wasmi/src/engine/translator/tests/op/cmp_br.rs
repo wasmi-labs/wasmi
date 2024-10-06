@@ -1,7 +1,7 @@
 use super::{wasm_type::WasmTy, *};
 use crate::{
     core::ValType,
-    engine::bytecode::{index::Global, BranchOffset, BranchOffset16},
+    ir::{index::Global, BranchOffset, BranchOffset16},
 };
 use std::fmt::{Debug, Display};
 

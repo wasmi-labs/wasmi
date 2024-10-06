@@ -38,19 +38,24 @@ pub use self::{
     instr_encoder::{Instr, InstrEncoder},
     stack::TypedProvider,
 };
-use super::{
-    bytecode::{index, BoundedRegSpan, BranchOffset},
-    code_map::CompiledFuncEntity,
-};
+use super::code_map::CompiledFuncEntity;
 use crate::{
     core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
-    engine::{
-        bytecode::{Const16, Const32, Instruction, Reg, RegSpan, Sign},
-        config::FuelCosts,
-        BlockType,
-        EngineFunc,
+    engine::{config::FuelCosts, BlockType, EngineFunc},
+    ir::{
+        index,
+        AnyConst16,
+        BoundedRegSpan,
+        BranchOffset,
+        Const16,
+        Const32,
+        Instruction,
+        IntoShiftAmount,
+        Reg,
+        RegSpan,
+        ShiftAmount,
+        Sign,
     },
-    ir::{AnyConst16, IntoShiftAmount, ShiftAmount},
     module::{FuncIdx, FuncTypeIdx, ModuleHeader},
     Engine,
     Error,

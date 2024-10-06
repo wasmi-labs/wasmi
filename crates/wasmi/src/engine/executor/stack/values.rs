@@ -1,7 +1,8 @@
 use super::{err_stack_overflow, StackOffsets};
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::{bytecode::Reg, code_map::CompiledFuncRef},
+    engine::code_map::CompiledFuncRef,
+    ir::Reg,
 };
 use core::{
     fmt::{self, Debug},

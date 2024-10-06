@@ -116,10 +116,11 @@ use wasmi_ir as ir;
 /// Defines some errors that may occur upon interaction with Wasmi.
 pub mod errors {
     pub use super::{
-        engine::{bytecode::Error as IrError, EnforcedLimitsError},
+        engine::EnforcedLimitsError,
         error::ErrorKind,
         func::FuncError,
         global::GlobalError,
+        ir::Error as IrError,
         linker::LinkerError,
         memory::MemoryError,
         module::{InstantiationError, ReadError},

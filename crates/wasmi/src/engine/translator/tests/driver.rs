@@ -1,7 +1,8 @@
 use super::create_module;
 use crate::{
     core::UntypedVal,
-    engine::{bytecode::Instruction, DedupFuncType, EngineFunc},
+    engine::{DedupFuncType, EngineFunc},
+    ir::Instruction,
     Config,
     Engine,
     Module,

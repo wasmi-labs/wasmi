@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::{bytecode::index::Func, RegSpan};
+use crate::ir::{index::Func, RegSpan};
 
 #[test]
 #[cfg_attr(miri, ignore)]

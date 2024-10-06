@@ -1,14 +1,13 @@
 use super::{Executor, UntypedValueExt};
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::bytecode::{Const16, Reg, Sign},
-    ir::ShiftAmount,
+    ir::{Const16, Reg, ShiftAmount, Sign},
     Error,
 };
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
 #[cfg(doc)]
-use crate::engine::bytecode::Instruction;
+use crate::ir::Instruction;
 
 macro_rules! impl_binary {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
