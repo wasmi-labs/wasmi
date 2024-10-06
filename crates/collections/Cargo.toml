@@ -29,3 +29,9 @@ std = ["string-interner/std"]
 #
 # An example of such an environment is `wasm32-unknown-unknown`.
 no-hash-maps = []
+
+[package.metadata.cargo-udeps.ignore]
+normal = [
+    # The string-interner dependency is always specified even though it is unused when no-hash-maps is enabled.
+    "string-interner"
+]
