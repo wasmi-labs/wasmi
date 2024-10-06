@@ -328,7 +328,7 @@ where
 }
 
 macro_rules! impl_visit_operator {
-    ( @mvp BrTable { $arg:ident: $argty:ty } => $visit:ident $($rest:tt)* ) => {
+    ( @mvp BrTable { $arg:ident: $argty:ty } => $visit:ident $_ann:tt $($rest:tt)* ) => {
         // We need to special case the `BrTable` operand since its
         // arguments (a.k.a. `BrTable<'a>`) are not `Copy` which all
         // the other impls make use of.
@@ -359,7 +359,7 @@ macro_rules! impl_visit_operator {
     ( @tail_call $($rest:tt)* ) => {
         impl_visit_operator!(@@supported $($rest)*);
     };
-    ( @@supported $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @@supported $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         fn $visit(&mut self $($(,$arg: $argty)*)?) -> Self::Output {
             let offset = self.current_pos();
             self.validate_then_translate(
@@ -369,7 +369,7 @@ macro_rules! impl_visit_operator {
         }
         impl_visit_operator!($($rest)*);
     };
-    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $ann:tt $($rest:tt)* ) => {
         // Wildcard match arm for all the other (yet) unsupported Wasm proposals.
         fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
             let offset = self.current_pos();
@@ -493,7 +493,7 @@ impl WasmTranslator<'_> for LazyFuncTranslator {
 }
 
 macro_rules! impl_visit_operator {
-    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $ann:tt $($rest:tt)* ) => {
         #[inline]
         fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
             Ok(())

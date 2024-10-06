@@ -26,7 +26,7 @@ where
     ) -> Result<Self, Error> {
         let offset = offset.into().unwrap_or(0);
         let features = translator.features();
-        let reader = BinaryReader::new(bytes, offset, features);
+        let reader = BinaryReader::new_features(bytes, offset, features);
         let func_body = FunctionBody::new(reader);
         Ok(Self {
             func_body,

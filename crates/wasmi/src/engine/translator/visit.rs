@@ -58,11 +58,11 @@ macro_rules! impl_visit_operator {
     ( @tail_call $($rest:tt)* ) => {
         impl_visit_operator!(@@skipped $($rest)*);
     };
-    ( @@skipped $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @@skipped $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         // We skip Wasm operators that we already implement manually.
         impl_visit_operator!($($rest)*);
     };
-    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         // Wildcard match arm for all the other (yet) unsupported Wasm proposals.
         fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
             self.unsupported_operator(stringify!($op))
