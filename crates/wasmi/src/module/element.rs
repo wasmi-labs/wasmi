@@ -15,13 +15,6 @@ pub struct ElementSegment {
     items: Box<[ConstExpr]>,
 }
 
-impl ElementSegment {
-    /// Returns the [`ValType`] of elements in the [`ElementSegment`].
-    pub fn ty(&self) -> ValType {
-        self.ty
-    }
-}
-
 /// The kind of a Wasm [`ElementSegment`].
 #[derive(Debug)]
 pub enum ElementSegmentKind {
@@ -112,6 +105,11 @@ impl ElementSegment {
     /// Returns the offset expression of the [`ElementSegment`].
     pub fn kind(&self) -> &ElementSegmentKind {
         &self.kind
+    }
+
+    /// Returns the [`ValType`] of the [`ElementSegment`].
+    pub fn ty(&self) -> ValType {
+        self.ty
     }
 
     /// Returns the element items of the [`ElementSegment`].
