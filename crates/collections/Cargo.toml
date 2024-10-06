@@ -19,7 +19,7 @@ string-interner = { version = "0.17", default-features = false, features = ["inl
 ahash = { version = "0.8.11", default-features = false }
 
 [features]
-default = ["std"]
+default = ["std", "no-hash-maps"]
 std = ["string-interner/std"]
 # Tells the `wasmi_collections` crate to avoid using hash based maps and sets.
 # 
