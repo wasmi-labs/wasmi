@@ -10,8 +10,8 @@ use std::vec::Vec;
 
 #[cfg(doc)]
 use crate::{
-    engine::bytecode::Instruction,
-    engine::bytecode::Reg,
+    ir::Instruction,
+    ir::Reg,
     engine::executor::stack::ValueStack,
     engine::EngineFunc,
     Global,

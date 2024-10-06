@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[cfg(doc)]
-use crate::engine::bytecode::Instruction;
+use crate::ir::Instruction;
 
 impl Executor<'_> {
     /// Executes an [`Instruction::GlobalGet`].

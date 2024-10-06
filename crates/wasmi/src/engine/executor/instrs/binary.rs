@@ -7,7 +7,7 @@ use crate::{
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
 #[cfg(doc)]
-use crate::engine::bytecode::Instruction;
+use crate::ir::Instruction;
 
 macro_rules! impl_binary {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
