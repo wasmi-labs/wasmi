@@ -358,9 +358,9 @@ impl TableEntity {
             "table.init currently only works on reftypes"
         );
         // Removed because Element lost its type field in a wasmparser update.
-        // table_type
-        //     .matches_element_type(element.ty())
-        //     .map_err(|_| TrapCode::BadSignature)?;
+        table_type
+            .matches_element_type(element.ty())
+            .map_err(|_| TrapCode::BadSignature)?;
         // Convert parameters to indices.
         let dst_index = dst_index as usize;
         let src_index = src_index as usize;
