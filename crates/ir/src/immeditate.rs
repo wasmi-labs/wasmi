@@ -448,6 +448,12 @@ impl TryFrom<NonZeroU64> for AnyConst16 {
     }
 }
 
+impl From<i8> for AnyConst16 {
+    fn from(value: i8) -> Self {
+        Self(value as u8 as u16 as i16)
+    }
+}
+
 impl From<i16> for AnyConst16 {
     fn from(value: i16) -> Self {
         Self(value)
@@ -457,6 +463,18 @@ impl From<i16> for AnyConst16 {
 impl From<u16> for AnyConst16 {
     fn from(value: u16) -> Self {
         Self::from(value as i16)
+    }
+}
+
+impl From<AnyConst16> for i8 {
+    fn from(value: AnyConst16) -> Self {
+        value.0 as i8
+    }
+}
+
+impl From<AnyConst16> for i16 {
+    fn from(value: AnyConst16) -> Self {
+        value.0
     }
 }
 
@@ -492,8 +510,7 @@ impl From<AnyConst16> for u64 {
 /// Upon use the small 32-bit value has to be sign-extended to
 /// the actual integer type, e.g. `i32` or `i64`.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(align(2))] // 2-byte alignment is sufficient for Wasmi bytecode
-pub struct AnyConst32([u8; 4]);
+pub struct AnyConst32(u32);
 
 impl TryFrom<u64> for AnyConst32 {
     type Error = OutOfBoundsConst;
@@ -527,6 +544,12 @@ impl TryFrom<f64> for AnyConst32 {
     }
 }
 
+impl<T> From<Const32<T>> for AnyConst32 {
+    fn from(value: Const32<T>) -> Self {
+        value.inner
+    }
+}
+
 impl From<bool> for AnyConst32 {
     fn from(value: bool) -> Self {
         Self::from(u32::from(value))
@@ -553,7 +576,7 @@ impl From<i32> for AnyConst32 {
 
 impl From<u32> for AnyConst32 {
     fn from(value: u32) -> Self {
-        Self(value.to_ne_bytes())
+        Self(value)
     }
 }
 
@@ -571,13 +594,13 @@ impl From<F32> for AnyConst32 {
 
 impl From<AnyConst32> for i32 {
     fn from(value: AnyConst32) -> Self {
-        Self::from_ne_bytes(value.0)
+        value.0 as _
     }
 }
 
 impl From<AnyConst32> for u32 {
     fn from(value: AnyConst32) -> Self {
-        Self::from_ne_bytes(value.0)
+        value.0
     }
 }
 

@@ -1,28 +1,27 @@
 use super::Executor;
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{
-        BranchBinOpInstr,
-        BranchBinOpInstrImm16,
-        BranchComparator,
-        BranchOffset,
-        BranchOffset16,
-        ComparatorOffsetParam,
-        Const16,
-        Const32,
-        Instruction,
-        Register,
+    engine::{
+        bytecode::{
+            BranchOffset,
+            BranchOffset16,
+            Comparator,
+            ComparatorAndOffset,
+            Const16,
+            Instruction,
+            Reg,
+        },
+        utils::unreachable_unchecked,
     },
 };
 use core::cmp;
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Branches and adjusts the value stack.
     ///
     /// # Note
     ///
     /// Offsets the instruction pointer using the given [`BranchOffset`].
-    #[inline(always)]
     fn branch_to(&mut self, offset: BranchOffset) {
         self.ip.offset(offset.to_i32() as isize)
     }
@@ -32,80 +31,177 @@ impl<'engine> Executor<'engine> {
     /// # Note
     ///
     /// Offsets the instruction pointer using the given [`BranchOffset`].
-    #[inline(always)]
     fn branch_to16(&mut self, offset: BranchOffset16) {
         self.ip.offset(offset.to_i16() as isize)
     }
 
-    #[inline(always)]
     pub fn execute_branch(&mut self, offset: BranchOffset) {
         self.branch_to(offset)
     }
 
-    #[inline(always)]
-    pub fn execute_branch_table(&mut self, index: Register, len_targets: Const32<u32>) {
+    /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
+    fn fetch_branch_table_offset(&self, index: Reg, len_targets: u32) -> usize {
         let index: u32 = self.get_register_as(index);
         // The index of the default target which is the last target of the slice.
-        let max_index = u32::from(len_targets) - 1;
+        let max_index = len_targets - 1;
         // A normalized index will always yield a target without panicking.
-        let normalized_index = cmp::min(index, max_index);
-        // Check if the next instruction is a copy instruction and execute it if so.
-        self.ip.add(1);
-        self.execute_optional_copy_instr();
-        // Update `pc`:
-        self.ip.add(normalized_index as usize);
+        cmp::min(index, max_index) as usize + 1
     }
 
-    /// Executes an optional copy instruction at `ip`.
-    ///
-    /// Does nothing if there is no `copy` instruction at `ip`.
-    #[inline(never)]
-    fn execute_optional_copy_instr(&mut self) {
-        match *self.ip.get() {
-            Instruction::Copy { result, value } => self.execute_copy(result, value),
-            Instruction::Copy2 { results, values } => self.execute_copy_2(results, values),
-            Instruction::CopyImm32 { result, value } => self.execute_copy_imm32(result, value),
-            Instruction::CopyI64Imm32 { result, value } => {
-                self.execute_copy_i64imm32(result, value)
-            }
-            Instruction::CopyF64Imm32 { result, value } => {
-                self.execute_copy_f64imm32(result, value)
-            }
-            Instruction::CopySpan {
-                results,
-                values,
-                len,
-            } => self.execute_copy_span(results, values, len),
-            Instruction::CopySpanNonOverlapping {
-                results,
-                values,
-                len,
-            } => self.execute_copy_span_non_overlapping(results, values, len),
-            Instruction::CopyMany { results, values } => self.execute_copy_many(results, values),
-            Instruction::CopyManyNonOverlapping { results, values } => {
-                self.execute_copy_many_non_overlapping(results, values)
-            }
-            _ => {
-                // Nothing to do if there is no `copy` instruction.
+    pub fn execute_branch_table_0(&mut self, index: Reg, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets);
+        self.ip.add(offset);
+    }
+
+    pub fn execute_branch_table_1(&mut self, index: Reg, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets);
+        self.ip.add(1);
+        let value = match *self.ip.get() {
+            Instruction::Register { reg } => self.get_register(reg),
+            Instruction::Const32 { value } => UntypedVal::from(u32::from(value)),
+            Instruction::I64Const32 { value } => UntypedVal::from(i64::from(value)),
+            Instruction::F64Const32 { value } => UntypedVal::from(f64::from(value)),
+            unexpected => {
+                // Safety: one of the above instruction parameters is guaranteed to exist by the Wasmi translation.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected instruction parameter for `Instruction::BranchTable1` but found: {unexpected:?}"
+                    )
+                }
             }
         };
+        self.ip.add(offset);
+        if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
+            // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
+            //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
+            self.set_register(results.head(), value);
+            self.execute_branch(offset)
+        }
     }
 
-    /// Executes a generic fused compare and branch instruction.
-    #[inline(always)]
-    fn execute_branch_binop<T>(&mut self, instr: BranchBinOpInstr, f: fn(T, T) -> bool)
-    where
-        T: From<UntypedVal>,
-    {
-        self.execute_branch_binop_raw::<T>(instr.lhs, instr.rhs, instr.offset, f)
+    pub fn execute_branch_table_2(&mut self, index: Reg, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets);
+        self.ip.add(1);
+        let regs = match *self.ip.get() {
+            Instruction::Register2 { regs } => regs,
+            unexpected => {
+                // Safety: Wasmi translation guarantees that `Instruction::Register2` follows.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::Register2` but found: {unexpected:?}"
+                    )
+                }
+            }
+        };
+        self.ip.add(offset);
+        if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
+            // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
+            //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
+            let values = [0, 1].map(|i| self.get_register(regs[i]));
+            let results = results.iter(2);
+            for (result, value) in results.zip(values) {
+                self.set_register(result, value);
+            }
+            self.execute_branch(offset)
+        }
+    }
+
+    pub fn execute_branch_table_3(&mut self, index: Reg, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets);
+        self.ip.add(1);
+        let regs = match *self.ip.get() {
+            Instruction::Register3 { regs } => regs,
+            unexpected => {
+                // Safety: Wasmi translation guarantees that `Instruction::Register3` follows.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::Register3` but found: {unexpected:?}"
+                    )
+                }
+            }
+        };
+        self.ip.add(offset);
+        if let Instruction::BranchTableTarget { results, offset } = *self.ip.get() {
+            // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
+            //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
+            let values = [0, 1, 2].map(|i| self.get_register(regs[i]));
+            let results = results.iter(3);
+            for (result, value) in results.zip(values) {
+                self.set_register(result, value);
+            }
+            self.execute_branch(offset)
+        }
+    }
+
+    pub fn execute_branch_table_span(&mut self, index: Reg, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets);
+        self.ip.add(1);
+        let values = match *self.ip.get() {
+            Instruction::RegisterSpan { span } => span,
+            unexpected => {
+                // Safety: Wasmi translation guarantees that `Instruction::RegisterSpan` follows.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::RegisterSpan` but found: {unexpected:?}"
+                    )
+                }
+            }
+        };
+        let len = values.len();
+        let values = values.span();
+        self.ip.add(offset);
+        match *self.ip.get() {
+            // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
+            //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
+            Instruction::BranchTableTarget { results, offset } => {
+                self.execute_copy_span_impl(results, values, len);
+                self.execute_branch(offset)
+            }
+            Instruction::BranchTableTargetNonOverlapping { results, offset } => {
+                self.execute_copy_span_non_overlapping_impl(results, values, len);
+                self.execute_branch(offset)
+            }
+            _ => {}
+        }
+    }
+
+    pub fn execute_branch_table_many(&mut self, index: Reg, len_targets: u32) {
+        let offset = self.fetch_branch_table_offset(index, len_targets) - 1;
+        self.ip.add(1);
+        let ip_list = self.ip;
+        self.ip = Self::skip_register_list(self.ip);
+        self.ip.add(offset);
+        match *self.ip.get() {
+            // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
+            //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
+            Instruction::BranchTableTarget { results, offset } => {
+                self.execute_copy_many_impl(ip_list, results, &[]);
+                self.execute_branch(offset)
+            }
+            Instruction::BranchTableTargetNonOverlapping { results, offset } => {
+                self.execute_copy_many_non_overlapping_impl(ip_list, results, &[]);
+                self.execute_branch(offset)
+            }
+            Instruction::Return => {
+                self.copy_many_return_values(ip_list, &[]);
+                // We do not return from this instruction but use the fact that `self.ip`
+                // will point to `Instruction::Return` which does the job for us.
+                // This has some technical advantages for us.
+            }
+            unexpected => {
+                // Safety: Wasmi translator guarantees that one of the above `Instruction` variants exists.
+                unsafe {
+                    unreachable_unchecked!("expected target for `Instruction::BranchTableMany` but found: {unexpected:?}")
+                }
+            }
+        }
     }
 
     /// Executes a generic fused compare and branch instruction with raw inputs.
-    #[inline(always)]
-    fn execute_branch_binop_raw<T>(
+    fn execute_branch_binop<T>(
         &mut self,
-        lhs: Register,
-        rhs: Register,
+        lhs: Reg,
+        rhs: Reg,
         offset: impl Into<BranchOffset>,
         f: fn(T, T) -> bool,
     ) where
@@ -120,15 +216,19 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
-    #[inline(always)]
-    fn execute_branch_binop_imm<T>(&mut self, instr: BranchBinOpInstrImm16<T>, f: fn(T, T) -> bool)
-    where
+    fn execute_branch_binop_imm<T>(
+        &mut self,
+        lhs: Reg,
+        rhs: Const16<T>,
+        offset: BranchOffset16,
+        f: fn(T, T) -> bool,
+    ) where
         T: From<UntypedVal> + From<Const16<T>>,
     {
-        let lhs: T = self.get_register_as(instr.lhs);
-        let rhs = T::from(instr.rhs);
+        let lhs: T = self.get_register_as(lhs);
+        let rhs = T::from(rhs);
         if f(lhs, rhs) {
-            return self.branch_to16(instr.offset);
+            return self.branch_to16(offset);
         }
         self.next_instr()
     }
@@ -205,9 +305,8 @@ macro_rules! impl_execute_branch_binop {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
-                #[inline(always)]
-                pub fn $fn_name(&mut self, instr: BranchBinOpInstr) {
-                    self.execute_branch_binop::<$ty>(instr, $op)
+                pub fn $fn_name(&mut self, lhs: Reg, rhs: Reg, offset: BranchOffset16) {
+                    self.execute_branch_binop::<$ty>(lhs, rhs, offset, $op)
                 }
             )*
         }
@@ -262,9 +361,8 @@ macro_rules! impl_execute_branch_binop_imm {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
-                #[inline(always)]
-                pub fn $fn_name(&mut self, instr: BranchBinOpInstrImm16<$ty>) {
-                    self.execute_branch_binop_imm::<$ty>(instr, $op)
+                pub fn $fn_name(&mut self, lhs: Reg, rhs: Const16<$ty>, offset: BranchOffset16) {
+                    self.execute_branch_binop_imm::<$ty>(lhs, rhs, offset, $op)
                 }
             )*
         }
@@ -300,54 +398,54 @@ impl_execute_branch_binop_imm! {
     (u64, Instruction::BranchI64GeUImm, execute_branch_i64_ge_u_imm, cmp_ge),
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Executes an [`Instruction::BranchCmpFallback`].
-    pub fn execute_branch_cmp_fallback(&mut self, lhs: Register, rhs: Register, params: Register) {
-        use BranchComparator as C;
+    pub fn execute_branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
+        use Comparator as C;
         let params = self.get_register(params);
-        let Some(params) = ComparatorOffsetParam::from_untyped(params) else {
+        let Some(params) = ComparatorAndOffset::from_untyped(params) else {
             panic!("encountered invalidaly encoded ComparatorOffsetParam: {params:?}")
         };
         let offset = params.offset;
         match params.cmp {
-            C::I32Eq => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_eq),
-            C::I32Ne => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_ne),
-            C::I32LtS => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_lt),
-            C::I32LtU => self.execute_branch_binop_raw::<u32>(lhs, rhs, offset, cmp_lt),
-            C::I32LeS => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_le),
-            C::I32LeU => self.execute_branch_binop_raw::<u32>(lhs, rhs, offset, cmp_le),
-            C::I32GtS => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_gt),
-            C::I32GtU => self.execute_branch_binop_raw::<u32>(lhs, rhs, offset, cmp_gt),
-            C::I32GeS => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_ge),
-            C::I32GeU => self.execute_branch_binop_raw::<u32>(lhs, rhs, offset, cmp_ge),
-            C::I32And => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_i32_and),
-            C::I32Or => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_i32_or),
-            C::I32Xor => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_i32_xor),
-            C::I32AndEqz => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_i32_and_eqz),
-            C::I32OrEqz => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_i32_or_eqz),
-            C::I32XorEqz => self.execute_branch_binop_raw::<i32>(lhs, rhs, offset, cmp_i32_xor_eqz),
-            C::I64Eq => self.execute_branch_binop_raw::<i64>(lhs, rhs, offset, cmp_eq),
-            C::I64Ne => self.execute_branch_binop_raw::<i64>(lhs, rhs, offset, cmp_ne),
-            C::I64LtS => self.execute_branch_binop_raw::<i64>(lhs, rhs, offset, cmp_lt),
-            C::I64LtU => self.execute_branch_binop_raw::<u64>(lhs, rhs, offset, cmp_lt),
-            C::I64LeS => self.execute_branch_binop_raw::<i64>(lhs, rhs, offset, cmp_le),
-            C::I64LeU => self.execute_branch_binop_raw::<u64>(lhs, rhs, offset, cmp_le),
-            C::I64GtS => self.execute_branch_binop_raw::<i64>(lhs, rhs, offset, cmp_gt),
-            C::I64GtU => self.execute_branch_binop_raw::<u64>(lhs, rhs, offset, cmp_gt),
-            C::I64GeS => self.execute_branch_binop_raw::<i64>(lhs, rhs, offset, cmp_ge),
-            C::I64GeU => self.execute_branch_binop_raw::<u64>(lhs, rhs, offset, cmp_ge),
-            C::F32Eq => self.execute_branch_binop_raw::<f32>(lhs, rhs, offset, cmp_eq),
-            C::F32Ne => self.execute_branch_binop_raw::<f32>(lhs, rhs, offset, cmp_ne),
-            C::F32Lt => self.execute_branch_binop_raw::<f32>(lhs, rhs, offset, cmp_lt),
-            C::F32Le => self.execute_branch_binop_raw::<f32>(lhs, rhs, offset, cmp_le),
-            C::F32Gt => self.execute_branch_binop_raw::<f32>(lhs, rhs, offset, cmp_gt),
-            C::F32Ge => self.execute_branch_binop_raw::<f32>(lhs, rhs, offset, cmp_ge),
-            C::F64Eq => self.execute_branch_binop_raw::<f64>(lhs, rhs, offset, cmp_eq),
-            C::F64Ne => self.execute_branch_binop_raw::<f64>(lhs, rhs, offset, cmp_ne),
-            C::F64Lt => self.execute_branch_binop_raw::<f64>(lhs, rhs, offset, cmp_lt),
-            C::F64Le => self.execute_branch_binop_raw::<f64>(lhs, rhs, offset, cmp_le),
-            C::F64Gt => self.execute_branch_binop_raw::<f64>(lhs, rhs, offset, cmp_gt),
-            C::F64Ge => self.execute_branch_binop_raw::<f64>(lhs, rhs, offset, cmp_ge),
+            C::I32Eq => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_eq),
+            C::I32Ne => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_ne),
+            C::I32LtS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_lt),
+            C::I32LtU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_lt),
+            C::I32LeS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_le),
+            C::I32LeU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_le),
+            C::I32GtS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_gt),
+            C::I32GtU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_gt),
+            C::I32GeS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_ge),
+            C::I32GeU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_ge),
+            C::I32And => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_and),
+            C::I32Or => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_or),
+            C::I32Xor => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_xor),
+            C::I32AndEqz => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_and_eqz),
+            C::I32OrEqz => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_or_eqz),
+            C::I32XorEqz => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_xor_eqz),
+            C::I64Eq => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_eq),
+            C::I64Ne => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_ne),
+            C::I64LtS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_lt),
+            C::I64LtU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_lt),
+            C::I64LeS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_le),
+            C::I64LeU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_le),
+            C::I64GtS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_gt),
+            C::I64GtU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_gt),
+            C::I64GeS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_ge),
+            C::I64GeU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_ge),
+            C::F32Eq => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_eq),
+            C::F32Ne => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_ne),
+            C::F32Lt => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_lt),
+            C::F32Le => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_le),
+            C::F32Gt => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_gt),
+            C::F32Ge => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_ge),
+            C::F64Eq => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_eq),
+            C::F64Ne => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_ne),
+            C::F64Lt => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_lt),
+            C::F64Le => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_le),
+            C::F64Gt => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_gt),
+            C::F64Ge => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_ge),
         };
     }
 }

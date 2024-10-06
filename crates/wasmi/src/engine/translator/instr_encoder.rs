@@ -1,27 +1,29 @@
 use super::{
-    visit_register::VisitInputRegisters,
+    relink_result::RelinkResult as _,
+    utils::FromProviders as _,
+    visit_register::VisitInputRegisters as _,
+    BumpFuelConsumption as _,
     FuelInfo,
     LabelRef,
     LabelRegistry,
+    Provider,
     TypedProvider,
 };
 use crate::{
     core::{UntypedVal, ValType, F32},
     engine::{
         bytecode::{
-            BinInstr,
-            BinInstrImm16,
-            BranchComparator,
+            self,
+            BoundedRegSpan,
             BranchOffset,
             BranchOffset16,
-            ComparatorOffsetParam,
+            Comparator,
+            ComparatorAndOffset,
             Const16,
             Const32,
             Instruction,
-            Provider,
-            Register,
-            RegisterSpan,
-            RegisterSpanIter,
+            Reg,
+            RegSpan,
         },
         translator::{stack::RegisterSpace, ValueStack},
         FuelCosts,
@@ -36,6 +38,18 @@ use std::vec::{Drain, Vec};
 /// constructed function body of the [`InstrEncoder`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Instr(u32);
+
+impl From<bytecode::Instr> for Instr {
+    fn from(instr: bytecode::Instr) -> Self {
+        Self(u32::from(instr))
+    }
+}
+
+impl From<Instr> for bytecode::Instr {
+    fn from(instr: Instr) -> Self {
+        Self::from(instr.0)
+    }
+}
 
 impl Instr {
     /// Creates an [`Instr`] from the given `usize` value.
@@ -157,7 +171,7 @@ impl InstrSequence {
     /// # Panics
     ///
     /// If no [`Instruction`] is associated to the [`Instr`] for this [`InstrSequence`].
-    fn get(&mut self, instr: Instr) -> &Instruction {
+    fn get(&self, instr: Instr) -> &Instruction {
         &self.instrs[instr.into_usize()]
     }
 
@@ -212,7 +226,7 @@ impl InstrEncoder {
     /// # Note
     ///
     /// The `last_instr` information is used for an optimization with `local.set`
-    /// and `local.tee` translation to replace the result [`Register`] of the
+    /// and `local.tee` translation to replace the result [`Reg`] of the
     /// last created [`Instruction`] instead of creating another copy [`Instruction`].
     ///
     /// Whenever ending a control block during Wasm translation the `last_instr`
@@ -312,6 +326,24 @@ impl InstrEncoder {
         Ok(last_instr)
     }
 
+    /// Utility function for pushing a new [`Instruction`] with fuel costs.
+    ///
+    /// # Note
+    ///
+    /// Fuel metering is only encoded or adjusted if it is enabled.
+    pub fn push_fueled_instr<F>(
+        &mut self,
+        instr: Instruction,
+        fuel_info: FuelInfo,
+        f: F,
+    ) -> Result<Instr, Error>
+    where
+        F: FnOnce(&FuelCosts) -> u64,
+    {
+        self.bump_fuel_consumption(fuel_info, f)?;
+        self.push_instr(instr)
+    }
+
     /// Appends the [`Instruction`] to the last [`Instruction`] created via [`InstrEncoder::push_instr`].
     ///
     /// # Note
@@ -327,7 +359,7 @@ impl InstrEncoder {
     ///
     /// - Returns `None` if merging of the copy instruction was not possible.
     /// - Returns the `Instr` of the merged `copy2` instruction if merging was successful.
-    fn merge_copy_instrs(&mut self, result: Register, value: TypedProvider) -> Option<Instr> {
+    fn merge_copy_instrs(&mut self, result: Reg, value: TypedProvider) -> Option<Instr> {
         let TypedProvider::Register(mut value) = value else {
             // Case: cannot merge copies with immediate values at the moment.
             //
@@ -363,7 +395,7 @@ impl InstrEncoder {
             (result, value, last_value)
         };
 
-        let merged_copy = Instruction::copy2(RegisterSpan::new(merged_result), value0, value1);
+        let merged_copy = Instruction::copy2_ext(RegSpan::new(merged_result), value0, value1);
         *self.instrs.get_mut(last_instr) = merged_copy;
         Some(last_instr)
     }
@@ -377,14 +409,14 @@ impl InstrEncoder {
     pub fn encode_copy(
         &mut self,
         stack: &mut ValueStack,
-        result: Register,
+        result: Reg,
         value: TypedProvider,
         fuel_info: FuelInfo,
     ) -> Result<Option<Instr>, Error> {
         /// Convenience to create an [`Instruction::Copy`] to copy a constant value.
         fn copy_imm(
             stack: &mut ValueStack,
-            result: Register,
+            result: Reg,
             value: impl Into<UntypedVal>,
         ) -> Result<Instruction, Error> {
             let cref = stack.alloc_const(value.into())?;
@@ -430,21 +462,21 @@ impl InstrEncoder {
     pub fn encode_copies(
         &mut self,
         stack: &mut ValueStack,
-        mut results: RegisterSpanIter,
+        mut results: BoundedRegSpan,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
     ) -> Result<Option<Instr>, Error> {
-        assert_eq!(results.len(), values.len());
+        assert_eq!(usize::from(results.len()), values.len());
+        let result = results.span().head();
         if let Some((TypedProvider::Register(value), rest)) = values.split_first() {
-            if results.span().head() == *value {
+            if result == *value {
                 // Case: `result` and `value` are equal thus this is a no-op copy which we can avoid.
                 //       Applied recursively we thereby remove all no-op copies at the start of the
                 //       copy sequence until the first actual copy.
-                results.next();
+                results = BoundedRegSpan::new(RegSpan::new(result.next()), results.len() - 1);
                 return self.encode_copies(stack, results, rest, fuel_info);
             }
         }
-        let result = results.span().head();
         match values {
             [] => {
                 // The copy sequence is empty, nothing to encode in this case.
@@ -457,10 +489,10 @@ impl InstrEncoder {
                     // Note: we already asserted that the first copy is not a no-op
                     return self.encode_copy(stack, result, *v0, fuel_info);
                 }
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
-                let instr = self.push_instr(Instruction::copy2(results.span(), reg0, reg1))?;
+                let instr = self.push_instr(Instruction::copy2_ext(results.span(), reg0, reg1))?;
                 Ok(Some(instr))
             }
             [v0, v1, rest @ ..] => {
@@ -472,7 +504,7 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(values) = RegisterSpanIter::from_providers(values) {
+                if let Some(values) = BoundedRegSpan::from_providers(values) {
                     let make_instr = match Self::has_overlapping_copy_spans(
                         results.span(),
                         values.span(),
@@ -481,19 +513,16 @@ impl InstrEncoder {
                         true => Instruction::copy_span,
                         false => Instruction::copy_span_non_overlapping,
                     };
-                    let instr = self.push_instr(make_instr(
-                        results.span(),
-                        values.span(),
-                        values.len_as_u16(),
-                    ))?;
+                    let instr =
+                        self.push_instr(make_instr(results.span(), values.span(), values.len()))?;
                     return Ok(Some(instr));
                 }
                 let make_instr = match Self::has_overlapping_copies(results, values) {
-                    true => Instruction::copy_many,
-                    false => Instruction::copy_many_non_overlapping,
+                    true => Instruction::copy_many_ext,
+                    false => Instruction::copy_many_non_overlapping_ext,
                 };
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
                 let instr = self.push_instr(make_instr(results.span(), reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
                 Ok(Some(instr))
@@ -509,8 +538,8 @@ impl InstrEncoder {
     /// - `[ 1 <- 0 ]`: single element never overlaps
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
-    fn has_overlapping_copy_spans(results: RegisterSpan, values: RegisterSpan, len: usize) -> bool {
-        RegisterSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
+    pub fn has_overlapping_copy_spans(results: RegSpan, values: RegSpan, len: u16) -> bool {
+        RegSpan::has_overlapping_copies(results, values, len)
     }
 
     /// Returns `true` if the `copy results <- values` instruction has overlaps.
@@ -522,14 +551,14 @@ impl InstrEncoder {
     ///   is written to in the first copy but read from in the next.
     /// - The sequence `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since register `3`
     ///   is written to in the first copy but read from in the third.
-    fn has_overlapping_copies(results: RegisterSpanIter, values: &[TypedProvider]) -> bool {
-        debug_assert_eq!(results.len(), values.len());
+    pub fn has_overlapping_copies(results: BoundedRegSpan, values: &[TypedProvider]) -> bool {
+        debug_assert_eq!(usize::from(results.len()), values.len());
         if results.is_empty() {
             // Note: An empty set of copies can never have overlapping copies.
             return false;
         }
         let result0 = results.span().head();
-        for (result, value) in results.zip(values) {
+        for (result, value) in results.iter().zip(values) {
             // Note: We only have to check the register case since constant value
             //       copies can never overlap.
             if let TypedProvider::Register(value) = *value {
@@ -589,15 +618,15 @@ impl InstrEncoder {
                 }
             },
             [v0, v1] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                Instruction::return_reg2(reg0, reg1)
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
+                Instruction::return_reg2_ext(reg0, reg1)
             }
             [v0, v1, v2] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                let reg2 = Self::provider2reg(stack, v2)?;
-                Instruction::return_reg3(reg0, reg1, reg2)
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
+                let reg2 = stack.provider2reg(v2)?;
+                Instruction::return_reg3_ext(reg0, reg1, reg2)
             }
             [v0, v1, v2, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
@@ -608,14 +637,14 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(span) = RegisterSpanIter::from_providers(values) {
+                if let Some(span) = BoundedRegSpan::from_providers(values) {
                     self.push_instr(Instruction::return_span(span))?;
                     return Ok(());
                 }
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                let reg2 = Self::provider2reg(stack, v2)?;
-                self.push_instr(Instruction::return_many(reg0, reg1, reg2))?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
+                let reg2 = stack.provider2reg(v2)?;
+                self.push_instr(Instruction::return_many_ext(reg0, reg1, reg2))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
             }
@@ -629,7 +658,7 @@ impl InstrEncoder {
     pub fn encode_return_nez(
         &mut self,
         stack: &mut ValueStack,
-        condition: Register,
+        condition: Reg,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
     ) -> Result<(), Error> {
@@ -657,9 +686,9 @@ impl InstrEncoder {
                 }
             },
             [v0, v1] => {
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                Instruction::return_nez_reg2(condition, reg0, reg1)
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
+                Instruction::return_nez_reg2_ext(condition, reg0, reg1)
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
@@ -670,13 +699,13 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(span) = RegisterSpanIter::from_providers(values) {
+                if let Some(span) = BoundedRegSpan::from_providers(values) {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
                     return Ok(());
                 }
-                let reg0 = Self::provider2reg(stack, v0)?;
-                let reg1 = Self::provider2reg(stack, v1)?;
-                self.push_instr(Instruction::return_nez_many(condition, reg0, reg1))?;
+                let reg0 = stack.provider2reg(v0)?;
+                let reg1 = stack.provider2reg(v1)?;
+                self.push_instr(Instruction::return_nez_many_ext(condition, reg0, reg1))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
             }
@@ -686,17 +715,7 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Converts a [`TypedProvider`] into a [`Register`].
-    ///
-    /// This allocates constant values for [`TypedProvider::Const`].
-    fn provider2reg(stack: &mut ValueStack, provider: &TypedProvider) -> Result<Register, Error> {
-        match provider {
-            Provider::Register(register) => Ok(*register),
-            Provider::Const(value) => stack.alloc_const(*value),
-        }
-    }
-
-    /// Encode the given slice of [`TypedProvider`] as a list of [`Register`].
+    /// Encode the given slice of [`TypedProvider`] as a list of [`Reg`].
     ///
     /// # Note
     ///
@@ -717,64 +736,63 @@ impl InstrEncoder {
         inputs: &[TypedProvider],
     ) -> Result<(), Error> {
         let mut remaining = inputs;
-        loop {
+        let instr = loop {
             match remaining {
                 [] => return Ok(()),
-                [v0] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    self.instrs.push(Instruction::register(v0))?;
-                    return Ok(());
-                }
+                [v0] => break Instruction::register(stack.provider2reg(v0)?),
                 [v0, v1] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    let v1 = Self::provider2reg(stack, v1)?;
-                    self.instrs.push(Instruction::register2(v0, v1))?;
-                    return Ok(());
+                    break Instruction::register2_ext(
+                        stack.provider2reg(v0)?,
+                        stack.provider2reg(v1)?,
+                    )
                 }
                 [v0, v1, v2] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    let v1 = Self::provider2reg(stack, v1)?;
-                    let v2 = Self::provider2reg(stack, v2)?;
-                    self.instrs.push(Instruction::register3(v0, v1, v2))?;
-                    return Ok(());
+                    break Instruction::register3_ext(
+                        stack.provider2reg(v0)?,
+                        stack.provider2reg(v1)?,
+                        stack.provider2reg(v2)?,
+                    );
                 }
                 [v0, v1, v2, rest @ ..] => {
-                    let v0 = Self::provider2reg(stack, v0)?;
-                    let v1 = Self::provider2reg(stack, v1)?;
-                    let v2 = Self::provider2reg(stack, v2)?;
-                    self.instrs.push(Instruction::register_list(v0, v1, v2))?;
+                    self.instrs.push(Instruction::register_list_ext(
+                        stack.provider2reg(v0)?,
+                        stack.provider2reg(v1)?,
+                        stack.provider2reg(v2)?,
+                    ))?;
                     remaining = rest;
                 }
-            }
-        }
+            };
+        };
+        self.instrs.push(instr)?;
+        Ok(())
     }
 
     /// Encode a `local.set` or `local.tee` instruction.
     ///
     /// This also applies an optimization in that the previous instruction
-    /// result is replaced with the `local` [`Register`] instead of encoding
+    /// result is replaced with the `local` [`Reg`] instead of encoding
     /// another `copy` instruction if the `local.set` or `local.tee` belongs
     /// to the same basic block.
     ///
     /// # Note
     ///
-    /// - If `value` is a [`Register`] it usually is equal to the
-    ///   result [`Register`] of the previous instruction.
+    /// - If `value` is a [`Reg`] it usually is equal to the
+    ///   result [`Reg`] of the previous instruction.
     pub fn encode_local_set(
         &mut self,
         stack: &mut ValueStack,
         res: &ModuleHeader,
-        local: Register,
+        local: Reg,
         value: TypedProvider,
-        preserved: Option<Register>,
+        preserved: Option<Reg>,
         fuel_info: FuelInfo,
     ) -> Result<(), Error> {
         fn fallback_case(
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
-            local: Register,
+            local: Reg,
             value: TypedProvider,
-            preserved: Option<Register>,
+            preserved: Option<Reg>,
             fuel_info: FuelInfo,
         ) -> Result<(), Error> {
             if let Some(preserved) = preserved {
@@ -796,10 +814,10 @@ impl InstrEncoder {
         };
         if matches!(
             stack.get_register_space(returned_value),
-            RegisterSpace::Local
+            RegisterSpace::Local | RegisterSpace::Preserve
         ) {
             // Can only apply the optimization if the returned value of `last_instr`
-            // is _NOT_ itself a local register due to observable behavior.
+            // is _NOT_ itself a local register due to observable behavior or already preserved.
             return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
         let Some(last_instr) = self.last_instr else {
@@ -903,41 +921,35 @@ impl InstrEncoder {
     pub fn fuse_i32_eqz(&mut self, stack: &mut ValueStack) -> bool {
         /// Fuse a `i32.{and,or,xor}` instruction with `i32.eqz`.
         macro_rules! fuse {
-            ($instr:ident, $stack:ident, $input:ident, $make_fuse:expr) => {{
-                if matches!(
-                    $stack.get_register_space($instr.result),
-                    RegisterSpace::Local
-                ) {
+            ($result:expr, $lhs:expr, $rhs:expr, $stack:ident, $input:ident, $make_fuse:expr) => {{
+                if matches!($stack.get_register_space($result), RegisterSpace::Local) {
                     // The instruction stores its result into a local variable which
                     // is an observable side effect which we are not allowed to mutate.
                     return false;
                 }
-                if $instr.result != $input {
+                if $result != $input {
                     // The result of the instruction and the current input are not equal
                     // thus indicating that we cannot fuse the instructions.
                     return false;
                 }
-                $make_fuse($instr.result, $instr.lhs, $instr.rhs)
+                $make_fuse($result, $lhs, $rhs)
             }};
         }
 
         /// Fuse a `i32.{and,or,xor}` instruction with 16-bit encoded immediate parameter with `i32.eqz`.
         macro_rules! fuse_imm16 {
-            ($instr:ident, $stack:ident, $input:ident, $make_fuse:expr) => {{
-                if matches!(
-                    $stack.get_register_space($instr.result),
-                    RegisterSpace::Local
-                ) {
+            ($result:expr, $lhs:expr, $rhs:expr, $stack:ident, $input:ident, $make_fuse:expr) => {{
+                if matches!($stack.get_register_space($result), RegisterSpace::Local) {
                     // The instruction stores its result into a local variable which
                     // is an observable side effect which we are not allowed to mutate.
                     return false;
                 }
-                if $instr.result != $input {
+                if $result != $input {
                     // The result of the instruction and the current input are not equal
                     // thus indicating that we cannot fuse the instructions.
                     return false;
                 }
-                $make_fuse($instr.result, $instr.reg_in, $instr.imm_in)
+                $make_fuse($result, $lhs, $rhs)
             }};
         }
 
@@ -947,18 +959,45 @@ impl InstrEncoder {
         let Some(last_instr) = self.last_instr else {
             return false;
         };
-        let fused_instr = match self.instrs.get(last_instr) {
-            Instruction::I32And(instr) => fuse!(instr, stack, input, Instruction::i32_and_eqz),
-            Instruction::I32AndImm16(instr) => {
-                fuse_imm16!(instr, stack, input, Instruction::i32_and_eqz_imm16)
+        let fused_instr = match *self.instrs.get(last_instr) {
+            Instruction::I32And { result, lhs, rhs } => {
+                fuse!(result, lhs, rhs, stack, input, Instruction::i32_and_eqz)
             }
-            Instruction::I32Or(instr) => fuse!(instr, stack, input, Instruction::i32_or_eqz),
-            Instruction::I32OrImm16(instr) => {
-                fuse_imm16!(instr, stack, input, Instruction::i32_or_eqz_imm16)
+            Instruction::I32AndImm16 { result, lhs, rhs } => {
+                fuse_imm16!(
+                    result,
+                    lhs,
+                    rhs,
+                    stack,
+                    input,
+                    Instruction::i32_and_eqz_imm16
+                )
             }
-            Instruction::I32Xor(instr) => fuse!(instr, stack, input, Instruction::i32_xor_eqz),
-            Instruction::I32XorImm16(instr) => {
-                fuse_imm16!(instr, stack, input, Instruction::i32_xor_eqz_imm16)
+            Instruction::I32Or { result, lhs, rhs } => {
+                fuse!(result, lhs, rhs, stack, input, Instruction::i32_or_eqz)
+            }
+            Instruction::I32OrImm16 { result, lhs, rhs } => {
+                fuse_imm16!(
+                    result,
+                    lhs,
+                    rhs,
+                    stack,
+                    input,
+                    Instruction::i32_or_eqz_imm16
+                )
+            }
+            Instruction::I32Xor { result, lhs, rhs } => {
+                fuse!(result, lhs, rhs, stack, input, Instruction::i32_xor_eqz)
+            }
+            Instruction::I32XorImm16 { result, lhs, rhs } => {
+                fuse_imm16!(
+                    result,
+                    lhs,
+                    rhs,
+                    stack,
+                    input,
+                    Instruction::i32_xor_eqz_imm16
+                )
             }
             _ => return false,
         };
@@ -970,21 +1009,21 @@ impl InstrEncoder {
     pub fn encode_branch_eqz(
         &mut self,
         stack: &mut ValueStack,
-        condition: Register,
+        condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        type BranchCmpConstructor = fn(Register, Register, BranchOffset16) -> Instruction;
-        type BranchCmpImmConstructor<T> = fn(Register, Const16<T>, BranchOffset16) -> Instruction;
+        type BranchCmpConstructor = fn(Reg, Reg, BranchOffset16) -> Instruction;
+        type BranchCmpImmConstructor<T> = fn(Reg, Const16<T>, BranchOffset16) -> Instruction;
 
         /// Create an [`Instruction::BranchCmpFallback`].
         fn make_branch_cmp_fallback(
             stack: &mut ValueStack,
-            cmp: BranchComparator,
-            lhs: Register,
-            rhs: Register,
+            cmp: Comparator,
+            lhs: Reg,
+            rhs: Reg,
             offset: BranchOffset,
         ) -> Result<Instruction, Error> {
-            let params = stack.alloc_const(ComparatorOffsetParam::new(cmp, offset))?;
+            let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
             Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
         }
 
@@ -994,21 +1033,15 @@ impl InstrEncoder {
         fn encode_branch_eqz_fallback(
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
-            condition: Register,
+            condition: Reg,
             label: LabelRef,
         ) -> Result<(), Error> {
             let offset = this.try_resolve_label(label)?;
             let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => Instruction::branch_i32_eqz(condition, offset),
+                Ok(offset) => Instruction::branch_i32_eq_imm(condition, 0, offset),
                 Err(_) => {
                     let zero = stack.alloc_const(0_i32)?;
-                    make_branch_cmp_fallback(
-                        stack,
-                        BranchComparator::I32Eq,
-                        condition,
-                        zero,
-                        offset,
-                    )?
+                    make_branch_cmp_fallback(stack, Comparator::I32Eq, condition, zero, offset)?
                 }
             };
             this.push_instr(instr)?;
@@ -1023,27 +1056,29 @@ impl InstrEncoder {
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
             last_instr: Instr,
-            condition: Register,
-            instr: BinInstr,
+            condition: Reg,
+            result: Reg,
+            lhs: Reg,
+            rhs: Reg,
             label: LabelRef,
-            cmp: BranchComparator,
+            cmp: Comparator,
             make_instr: BranchCmpConstructor,
         ) -> Result<Option<Instruction>, Error> {
-            if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
+            if matches!(stack.get_register_space(result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
                 // into a local register slot because they introduce observable behavior
                 // which a fused cmp+branch instruction would remove.
                 return Ok(None);
             }
-            if instr.result != condition {
+            if result != condition {
                 // We cannot fuse the instructions since the result of the compare instruction
                 // does not match the input of the conditional branch instruction.
                 return Ok(None);
             }
             let offset = this.try_resolve_label_for(label, last_instr)?;
             let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => make_instr(instr.lhs, instr.rhs, offset),
-                Err(_) => make_branch_cmp_fallback(stack, cmp, instr.lhs, instr.rhs, offset)?,
+                Ok(offset) => make_instr(lhs, rhs, offset),
+                Err(_) => make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
             };
             Ok(Some(instr))
         }
@@ -1056,37 +1091,39 @@ impl InstrEncoder {
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
             last_instr: Instr,
-            condition: Register,
-            instr: BinInstrImm16<T>,
+            condition: Reg,
+            result: Reg,
+            lhs: Reg,
+            rhs: Const16<T>,
             label: LabelRef,
-            cmp: BranchComparator,
+            cmp: Comparator,
             make_instr: BranchCmpImmConstructor<T>,
         ) -> Result<Option<Instruction>, Error>
         where
             T: From<Const16<T>> + Into<UntypedVal>,
         {
-            if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
+            if matches!(stack.get_register_space(result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
                 // into a local register slot because they introduce observable behavior
                 // which a fused cmp+branch instruction would remove.
                 return Ok(None);
             }
-            if instr.result != condition {
+            if result != condition {
                 // We cannot fuse the instructions since the result of the compare instruction
                 // does not match the input of the conditional branch instruction.
                 return Ok(None);
             }
             let offset = this.try_resolve_label_for(label, last_instr)?;
             let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => make_instr(instr.reg_in, instr.imm_in, offset),
+                Ok(offset) => make_instr(lhs, rhs, offset),
                 Err(_) => {
-                    let rhs = stack.alloc_const(T::from(instr.imm_in))?;
-                    make_branch_cmp_fallback(stack, cmp, instr.reg_in, rhs, offset)?
+                    let rhs = stack.alloc_const(T::from(rhs))?;
+                    make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?
                 }
             };
             Ok(Some(instr))
         }
-        use BranchComparator as Cmp;
+        use Comparator as Cmp;
         use Instruction as I;
 
         let Some(last_instr) = self.last_instr else {
@@ -1095,61 +1132,61 @@ impl InstrEncoder {
 
         #[rustfmt::skip]
         let fused_instr = match *self.instrs.get(last_instr) {
-            I::I32And(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32AndEqz, I::branch_i32_and_eqz as _)?,
-            I::I32Or(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32OrEqz, I::branch_i32_or_eqz as _)?,
-            I::I32Xor(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz as _)?,
-            I::I32AndEqz(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32And, I::branch_i32_and as _)?,
-            I::I32OrEqz(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32Or, I::branch_i32_or as _)?,
-            I::I32XorEqz(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32Xor, I::branch_i32_xor as _)?,
-            I::I32Eq(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32Ne, I::branch_i32_ne as _)?,
-            I::I32Ne(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32Eq, I::branch_i32_eq as _)?,
-            I::I32LtS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32GeS, I::branch_i32_ge_s as _)?,
-            I::I32LtU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32GeU, I::branch_i32_ge_u as _)?,
-            I::I32LeS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32GtS, I::branch_i32_gt_s as _)?,
-            I::I32LeU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32GtU, I::branch_i32_gt_u as _)?,
-            I::I32GtS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32LeS, I::branch_i32_le_s as _)?,
-            I::I32GtU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32LeU, I::branch_i32_le_u as _)?,
-            I::I32GeS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32LtS, I::branch_i32_lt_s as _)?,
-            I::I32GeU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32LtU, I::branch_i32_lt_u as _)?,
-            I::I64Eq(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64Ne, I::branch_i64_ne as _)?,
-            I::I64Ne(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64Eq, I::branch_i64_eq as _)?,
-            I::I64LtS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64GeS, I::branch_i64_ge_s as _)?,
-            I::I64LtU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64GeU, I::branch_i64_ge_u as _)?,
-            I::I64LeS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64GtS, I::branch_i64_gt_s as _)?,
-            I::I64LeU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64GtU, I::branch_i64_gt_u as _)?,
-            I::I64GtS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64LeS, I::branch_i64_le_s as _)?,
-            I::I64GtU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64LeU, I::branch_i64_le_u as _)?,
-            I::I64GeS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64LtS, I::branch_i64_lt_s as _)?,
-            I::I64GeU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64LtU, I::branch_i64_lt_u as _)?,
-            I::F32Eq(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F32Ne, I::branch_f32_ne as _)?,
-            I::F32Ne(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F32Eq, I::branch_f32_eq as _)?,
+            I::I32And { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32AndEqz, I::branch_i32_and_eqz as _)?,
+            I::I32Or { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32OrEqz, I::branch_i32_or_eqz as _)?,
+            I::I32Xor { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz as _)?,
+            I::I32AndEqz { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32And, I::branch_i32_and as _)?,
+            I::I32OrEqz { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Or, I::branch_i32_or as _)?,
+            I::I32XorEqz { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Xor, I::branch_i32_xor as _)?,
+            I::I32Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Ne, I::branch_i32_ne as _)?,
+            I::I32Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Eq, I::branch_i32_eq as _)?,
+            I::I32LtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeS, I::branch_i32_ge_s as _)?,
+            I::I32LtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeU, I::branch_i32_ge_u as _)?,
+            I::I32LeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtS, I::branch_i32_gt_s as _)?,
+            I::I32LeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtU, I::branch_i32_gt_u as _)?,
+            I::I32GtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeS, I::branch_i32_le_s as _)?,
+            I::I32GtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeU, I::branch_i32_le_u as _)?,
+            I::I32GeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtS, I::branch_i32_lt_s as _)?,
+            I::I32GeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtU, I::branch_i32_lt_u as _)?,
+            I::I64Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Ne, I::branch_i64_ne as _)?,
+            I::I64Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Eq, I::branch_i64_eq as _)?,
+            I::I64LtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeS, I::branch_i64_ge_s as _)?,
+            I::I64LtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeU, I::branch_i64_ge_u as _)?,
+            I::I64LeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtS, I::branch_i64_gt_s as _)?,
+            I::I64LeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtU, I::branch_i64_gt_u as _)?,
+            I::I64GtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeS, I::branch_i64_le_s as _)?,
+            I::I64GtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeU, I::branch_i64_le_u as _)?,
+            I::I64GeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtS, I::branch_i64_lt_s as _)?,
+            I::I64GeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtU, I::branch_i64_lt_u as _)?,
+            I::F32Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Ne, I::branch_f32_ne as _)?,
+            I::F32Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Eq, I::branch_f32_eq as _)?,
             // Note: We cannot fuse cmp+branch for float comparison operators due to how NaN values are treated.
-            I::I32AndImm16(instr) => fuse_imm::<i32>(self, stack, last_instr, condition, instr, label, Cmp::I32AndEqz, I::branch_i32_and_eqz_imm as _)?,
-            I::I32OrImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32OrEqz, I::branch_i32_or_eqz_imm as _)?,
-            I::I32XorImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz_imm as _)?,
-            I::I32AndEqzImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32And, I::branch_i32_and_imm as _)?,
-            I::I32OrEqzImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32Or, I::branch_i32_or_imm as _)?,
-            I::I32XorEqzImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32Xor, I::branch_i32_xor_imm as _)?,
-            I::I32EqImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32Ne, I::branch_i32_ne_imm as _)?,
-            I::I32NeImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32Eq, I::branch_i32_eq_imm as _)?,
-            I::I32LtSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32GeS, I::branch_i32_ge_s_imm as _)?,
-            I::I32LtUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32GeU, I::branch_i32_ge_u_imm as _)?,
-            I::I32LeSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32GtS, I::branch_i32_gt_s_imm as _)?,
-            I::I32LeUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32GtU, I::branch_i32_gt_u_imm as _)?,
-            I::I32GtSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32LeS, I::branch_i32_le_s_imm as _)?,
-            I::I32GtUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32LeU, I::branch_i32_le_u_imm as _)?,
-            I::I32GeSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32LtS, I::branch_i32_lt_s_imm as _)?,
-            I::I32GeUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32LtU, I::branch_i32_lt_u_imm as _)?,
-            I::I64EqImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64Ne, I::branch_i64_ne_imm as _)?,
-            I::I64NeImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64Eq, I::branch_i64_eq_imm as _)?,
-            I::I64LtSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64GeS, I::branch_i64_ge_s_imm as _)?,
-            I::I64LtUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64GeU, I::branch_i64_ge_u_imm as _)?,
-            I::I64LeSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64GtS, I::branch_i64_gt_s_imm as _)?,
-            I::I64LeUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64GtU, I::branch_i64_gt_u_imm as _)?,
-            I::I64GtSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64LeS, I::branch_i64_le_s_imm as _)?,
-            I::I64GtUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64LeU, I::branch_i64_le_u_imm as _)?,
-            I::I64GeSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64LtS, I::branch_i64_lt_s_imm as _)?,
-            I::I64GeUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64LtU, I::branch_i64_lt_u_imm as _)?,
+            I::I32AndImm16 { result, lhs, rhs } => fuse_imm::<i32>(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32AndEqz, I::branch_i32_and_eqz_imm as _)?,
+            I::I32OrImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32OrEqz, I::branch_i32_or_eqz_imm as _)?,
+            I::I32XorImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz_imm as _)?,
+            I::I32AndEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32And, I::branch_i32_and_imm as _)?,
+            I::I32OrEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Or, I::branch_i32_or_imm as _)?,
+            I::I32XorEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Xor, I::branch_i32_xor_imm as _)?,
+            I::I32EqImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Ne, I::branch_i32_ne_imm as _)?,
+            I::I32NeImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Eq, I::branch_i32_eq_imm as _)?,
+            I::I32LtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeS, I::branch_i32_ge_s_imm as _)?,
+            I::I32LtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeU, I::branch_i32_ge_u_imm as _)?,
+            I::I32LeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtS, I::branch_i32_gt_s_imm as _)?,
+            I::I32LeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtU, I::branch_i32_gt_u_imm as _)?,
+            I::I32GtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeS, I::branch_i32_le_s_imm as _)?,
+            I::I32GtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeU, I::branch_i32_le_u_imm as _)?,
+            I::I32GeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtS, I::branch_i32_lt_s_imm as _)?,
+            I::I32GeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtU, I::branch_i32_lt_u_imm as _)?,
+            I::I64EqImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Ne, I::branch_i64_ne_imm as _)?,
+            I::I64NeImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Eq, I::branch_i64_eq_imm as _)?,
+            I::I64LtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeS, I::branch_i64_ge_s_imm as _)?,
+            I::I64LtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeU, I::branch_i64_ge_u_imm as _)?,
+            I::I64LeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtS, I::branch_i64_gt_s_imm as _)?,
+            I::I64LeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtU, I::branch_i64_gt_u_imm as _)?,
+            I::I64GtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeS, I::branch_i64_le_s_imm as _)?,
+            I::I64GtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeU, I::branch_i64_le_u_imm as _)?,
+            I::I64GeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtS, I::branch_i64_lt_s_imm as _)?,
+            I::I64GeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtU, I::branch_i64_lt_u_imm as _)?,
             _ => None,
         };
         if let Some(fused_instr) = fused_instr {
@@ -1163,21 +1200,21 @@ impl InstrEncoder {
     pub fn encode_branch_nez(
         &mut self,
         stack: &mut ValueStack,
-        condition: Register,
+        condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        type BranchCmpConstructor = fn(Register, Register, BranchOffset16) -> Instruction;
-        type BranchCmpImmConstructor<T> = fn(Register, Const16<T>, BranchOffset16) -> Instruction;
+        type BranchCmpConstructor = fn(Reg, Reg, BranchOffset16) -> Instruction;
+        type BranchCmpImmConstructor<T> = fn(Reg, Const16<T>, BranchOffset16) -> Instruction;
 
         /// Create an [`Instruction::BranchCmpFallback`].
         fn make_branch_cmp_fallback(
             stack: &mut ValueStack,
-            cmp: BranchComparator,
-            lhs: Register,
-            rhs: Register,
+            cmp: Comparator,
+            lhs: Reg,
+            rhs: Reg,
             offset: BranchOffset,
         ) -> Result<Instruction, Error> {
-            let params = stack.alloc_const(ComparatorOffsetParam::new(cmp, offset))?;
+            let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
             Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
         }
 
@@ -1187,21 +1224,15 @@ impl InstrEncoder {
         fn encode_branch_nez_fallback(
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
-            condition: Register,
+            condition: Reg,
             label: LabelRef,
         ) -> Result<(), Error> {
             let offset = this.try_resolve_label(label)?;
             let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => Instruction::branch_i32_nez(condition, offset),
+                Ok(offset) => Instruction::branch_i32_ne_imm(condition, 0, offset),
                 Err(_) => {
                     let zero = stack.alloc_const(0_i32)?;
-                    make_branch_cmp_fallback(
-                        stack,
-                        BranchComparator::I32Ne,
-                        condition,
-                        zero,
-                        offset,
-                    )?
+                    make_branch_cmp_fallback(stack, Comparator::I32Ne, condition, zero, offset)?
                 }
             };
             this.push_instr(instr)?;
@@ -1216,27 +1247,29 @@ impl InstrEncoder {
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
             last_instr: Instr,
-            condition: Register,
-            instr: BinInstr,
+            condition: Reg,
+            result: Reg,
+            lhs: Reg,
+            rhs: Reg,
             label: LabelRef,
-            cmp: BranchComparator,
+            cmp: Comparator,
             make_instr: BranchCmpConstructor,
         ) -> Result<Option<Instruction>, Error> {
-            if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
+            if matches!(stack.get_register_space(result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
                 // into a local register slot because they introduce observable behavior
                 // which a fused cmp+branch instruction would remove.
                 return Ok(None);
             }
-            if instr.result != condition {
+            if result != condition {
                 // We cannot fuse the instructions since the result of the compare instruction
                 // does not match the input of the conditional branch instruction.
                 return Ok(None);
             }
             let offset = this.try_resolve_label_for(label, last_instr)?;
             let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => make_instr(instr.lhs, instr.rhs, offset),
-                Err(_) => make_branch_cmp_fallback(stack, cmp, instr.lhs, instr.rhs, offset)?,
+                Ok(offset) => make_instr(lhs, rhs, offset),
+                Err(_) => make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
             };
             Ok(Some(instr))
         }
@@ -1249,37 +1282,39 @@ impl InstrEncoder {
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
             last_instr: Instr,
-            condition: Register,
-            instr: BinInstrImm16<T>,
+            condition: Reg,
+            result: Reg,
+            lhs: Reg,
+            rhs: Const16<T>,
             label: LabelRef,
-            cmp: BranchComparator,
+            cmp: Comparator,
             make_instr: BranchCmpImmConstructor<T>,
         ) -> Result<Option<Instruction>, Error>
         where
             T: From<Const16<T>> + Into<UntypedVal>,
         {
-            if matches!(stack.get_register_space(instr.result), RegisterSpace::Local) {
+            if matches!(stack.get_register_space(result), RegisterSpace::Local) {
                 // We need to filter out instructions that store their result
                 // into a local register slot because they introduce observable behavior
                 // which a fused cmp+branch instruction would remove.
                 return Ok(None);
             }
-            if instr.result != condition {
+            if result != condition {
                 // We cannot fuse the instructions since the result of the compare instruction
                 // does not match the input of the conditional branch instruction.
                 return Ok(None);
             }
             let offset = this.try_resolve_label_for(label, last_instr)?;
             let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => make_instr(instr.reg_in, instr.imm_in, offset),
+                Ok(offset) => make_instr(lhs, rhs, offset),
                 Err(_) => {
-                    let rhs = stack.alloc_const(T::from(instr.imm_in))?;
-                    make_branch_cmp_fallback(stack, cmp, instr.reg_in, rhs, offset)?
+                    let rhs = stack.alloc_const(T::from(rhs))?;
+                    make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?
                 }
             };
             Ok(Some(instr))
         }
-        use BranchComparator as Cmp;
+        use Comparator as Cmp;
         use Instruction as I;
 
         let Some(last_instr) = self.last_instr else {
@@ -1288,70 +1323,70 @@ impl InstrEncoder {
 
         #[rustfmt::skip]
         let fused_instr = match *self.instrs.get(last_instr) {
-            I::I32And(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32And, I::branch_i32_and as _)?,
-            I::I32Or(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32Or, I::branch_i32_or as _)?,
-            I::I32Xor(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32Xor, I::branch_i32_xor as _)?,
-            I::I32AndEqz(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32AndEqz, I::branch_i32_and_eqz as _)?,
-            I::I32OrEqz(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32OrEqz, I::branch_i32_or_eqz as _)?,
-            I::I32XorEqz(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz as _)?,
-            I::I32Eq(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32Eq, I::branch_i32_eq as _)?,
-            I::I32Ne(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32Ne, I::branch_i32_ne as _)?,
-            I::I32LtS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32LtS, I::branch_i32_lt_s as _)?,
-            I::I32LtU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32LtU, I::branch_i32_lt_u as _)?,
-            I::I32LeS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32LeS, I::branch_i32_le_s as _)?,
-            I::I32LeU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32LeU, I::branch_i32_le_u as _)?,
-            I::I32GtS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32GtS, I::branch_i32_gt_s as _)?,
-            I::I32GtU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32GtU, I::branch_i32_gt_u as _)?,
-            I::I32GeS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32GeS, I::branch_i32_ge_s as _)?,
-            I::I32GeU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I32GeU, I::branch_i32_ge_u as _)?,
-            I::I64Eq(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64Eq, I::branch_i64_eq as _)?,
-            I::I64Ne(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64Ne, I::branch_i64_ne as _)?,
-            I::I64LtS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64LtS, I::branch_i64_lt_s as _)?,
-            I::I64LtU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64LtU, I::branch_i64_lt_u as _)?,
-            I::I64LeS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64LeS, I::branch_i64_le_s as _)?,
-            I::I64LeU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64LeU, I::branch_i64_le_u as _)?,
-            I::I64GtS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64GtS, I::branch_i64_gt_s as _)?,
-            I::I64GtU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64GtU, I::branch_i64_gt_u as _)?,
-            I::I64GeS(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64GeS, I::branch_i64_ge_s as _)?,
-            I::I64GeU(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::I64GeU, I::branch_i64_ge_u as _)?,
-            I::F32Eq(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F32Eq, I::branch_f32_eq as _)?,
-            I::F32Ne(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F32Ne, I::branch_f32_ne as _)?,
-            I::F32Lt(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F32Lt, I::branch_f32_lt as _)?,
-            I::F32Le(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F32Le, I::branch_f32_le as _)?,
-            I::F32Gt(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F32Gt, I::branch_f32_gt as _)?,
-            I::F32Ge(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F32Ge, I::branch_f32_ge as _)?,
-            I::F64Eq(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F64Eq, I::branch_f64_eq as _)?,
-            I::F64Ne(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F64Ne, I::branch_f64_ne as _)?,
-            I::F64Lt(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F64Lt, I::branch_f64_lt as _)?,
-            I::F64Le(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F64Le, I::branch_f64_le as _)?,
-            I::F64Gt(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F64Gt, I::branch_f64_gt as _)?,
-            I::F64Ge(instr) => fuse(self, stack, last_instr, condition, instr, label, Cmp::F64Ge, I::branch_f64_ge as _)?,
-            I::I32AndImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32And, I::branch_i32_and_imm as _)?,
-            I::I32OrImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32Or, I::branch_i32_or_imm as _)?,
-            I::I32XorImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32Xor, I::branch_i32_xor_imm as _)?,
-            I::I32AndEqzImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32AndEqz, I::branch_i32_and_eqz_imm as _)?,
-            I::I32OrEqzImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32OrEqz, I::branch_i32_or_eqz_imm as _)?,
-            I::I32XorEqzImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz_imm as _)?,
-            I::I32EqImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32Eq, I::branch_i32_eq_imm as _)?,
-            I::I32NeImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32Ne, I::branch_i32_ne_imm as _)?,
-            I::I32LtSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32LtS, I::branch_i32_lt_s_imm as _)?,
-            I::I32LtUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32LtU, I::branch_i32_lt_u_imm as _)?,
-            I::I32LeSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32LeS, I::branch_i32_le_s_imm as _)?,
-            I::I32LeUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32LeU, I::branch_i32_le_u_imm as _)?,
-            I::I32GtSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32GtS, I::branch_i32_gt_s_imm as _)?,
-            I::I32GtUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32GtU, I::branch_i32_gt_u_imm as _)?,
-            I::I32GeSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32GeS, I::branch_i32_ge_s_imm as _)?,
-            I::I32GeUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I32GeU, I::branch_i32_ge_u_imm as _)?,
-            I::I64EqImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64Eq, I::branch_i64_eq_imm as _)?,
-            I::I64NeImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64Ne, I::branch_i64_ne_imm as _)?,
-            I::I64LtSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64LtS, I::branch_i64_lt_s_imm as _)?,
-            I::I64LtUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64LtU, I::branch_i64_lt_u_imm as _)?,
-            I::I64LeSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64LeS, I::branch_i64_le_s_imm as _)?,
-            I::I64LeUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64LeU, I::branch_i64_le_u_imm as _)?,
-            I::I64GtSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64GtS, I::branch_i64_gt_s_imm as _)?,
-            I::I64GtUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64GtU, I::branch_i64_gt_u_imm as _)?,
-            I::I64GeSImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64GeS, I::branch_i64_ge_s_imm as _)?,
-            I::I64GeUImm16(instr) => fuse_imm(self, stack, last_instr, condition, instr, label, Cmp::I64GeU, I::branch_i64_ge_u_imm as _)?,
+            I::I32And { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32And, I::branch_i32_and as _)?,
+            I::I32Or { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Or, I::branch_i32_or as _)?,
+            I::I32Xor { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Xor, I::branch_i32_xor as _)?,
+            I::I32AndEqz { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32AndEqz, I::branch_i32_and_eqz as _)?,
+            I::I32OrEqz { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32OrEqz, I::branch_i32_or_eqz as _)?,
+            I::I32XorEqz { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz as _)?,
+            I::I32Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Eq, I::branch_i32_eq as _)?,
+            I::I32Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Ne, I::branch_i32_ne as _)?,
+            I::I32LtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtS, I::branch_i32_lt_s as _)?,
+            I::I32LtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtU, I::branch_i32_lt_u as _)?,
+            I::I32LeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeS, I::branch_i32_le_s as _)?,
+            I::I32LeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeU, I::branch_i32_le_u as _)?,
+            I::I32GtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtS, I::branch_i32_gt_s as _)?,
+            I::I32GtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtU, I::branch_i32_gt_u as _)?,
+            I::I32GeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeS, I::branch_i32_ge_s as _)?,
+            I::I32GeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeU, I::branch_i32_ge_u as _)?,
+            I::I64Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Eq, I::branch_i64_eq as _)?,
+            I::I64Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Ne, I::branch_i64_ne as _)?,
+            I::I64LtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtS, I::branch_i64_lt_s as _)?,
+            I::I64LtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtU, I::branch_i64_lt_u as _)?,
+            I::I64LeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeS, I::branch_i64_le_s as _)?,
+            I::I64LeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeU, I::branch_i64_le_u as _)?,
+            I::I64GtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtS, I::branch_i64_gt_s as _)?,
+            I::I64GtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtU, I::branch_i64_gt_u as _)?,
+            I::I64GeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeS, I::branch_i64_ge_s as _)?,
+            I::I64GeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeU, I::branch_i64_ge_u as _)?,
+            I::F32Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Eq, I::branch_f32_eq as _)?,
+            I::F32Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Ne, I::branch_f32_ne as _)?,
+            I::F32Lt { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Lt, I::branch_f32_lt as _)?,
+            I::F32Le { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Le, I::branch_f32_le as _)?,
+            I::F32Gt { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Gt, I::branch_f32_gt as _)?,
+            I::F32Ge { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Ge, I::branch_f32_ge as _)?,
+            I::F64Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Eq, I::branch_f64_eq as _)?,
+            I::F64Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Ne, I::branch_f64_ne as _)?,
+            I::F64Lt { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Lt, I::branch_f64_lt as _)?,
+            I::F64Le { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Le, I::branch_f64_le as _)?,
+            I::F64Gt { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Gt, I::branch_f64_gt as _)?,
+            I::F64Ge { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Ge, I::branch_f64_ge as _)?,
+            I::I32AndImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32And, I::branch_i32_and_imm as _)?,
+            I::I32OrImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Or, I::branch_i32_or_imm as _)?,
+            I::I32XorImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Xor, I::branch_i32_xor_imm as _)?,
+            I::I32AndEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32AndEqz, I::branch_i32_and_eqz_imm as _)?,
+            I::I32OrEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32OrEqz, I::branch_i32_or_eqz_imm as _)?,
+            I::I32XorEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz_imm as _)?,
+            I::I32EqImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Eq, I::branch_i32_eq_imm as _)?,
+            I::I32NeImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Ne, I::branch_i32_ne_imm as _)?,
+            I::I32LtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtS, I::branch_i32_lt_s_imm as _)?,
+            I::I32LtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtU, I::branch_i32_lt_u_imm as _)?,
+            I::I32LeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeS, I::branch_i32_le_s_imm as _)?,
+            I::I32LeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeU, I::branch_i32_le_u_imm as _)?,
+            I::I32GtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtS, I::branch_i32_gt_s_imm as _)?,
+            I::I32GtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtU, I::branch_i32_gt_u_imm as _)?,
+            I::I32GeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeS, I::branch_i32_ge_s_imm as _)?,
+            I::I32GeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeU, I::branch_i32_ge_u_imm as _)?,
+            I::I64EqImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Eq, I::branch_i64_eq_imm as _)?,
+            I::I64NeImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Ne, I::branch_i64_ne_imm as _)?,
+            I::I64LtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtS, I::branch_i64_lt_s_imm as _)?,
+            I::I64LtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtU, I::branch_i64_lt_u_imm as _)?,
+            I::I64LeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeS, I::branch_i64_le_s_imm as _)?,
+            I::I64LeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeU, I::branch_i64_le_u_imm as _)?,
+            I::I64GtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtS, I::branch_i64_gt_s_imm as _)?,
+            I::I64GtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtU, I::branch_i64_gt_u_imm as _)?,
+            I::I64GeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeS, I::branch_i64_ge_s_imm as _)?,
+            I::I64GeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeU, I::branch_i64_ge_u_imm as _)?,
             _ => None,
         };
         if let Some(fused_instr) = fused_instr {
@@ -1362,109 +1397,120 @@ impl InstrEncoder {
     }
 }
 
-impl Instruction {
+/// Extension trait to update the branch offset of an [`Instruction`].
+trait UpdateBranchOffset {
     /// Updates the [`BranchOffset`] for the branch [`Instruction].
     ///
     /// # Panics
     ///
     /// If `self` is not a branch [`Instruction`].
+    fn update_branch_offset(
+        &mut self,
+        stack: &mut ValueStack,
+        new_offset: BranchOffset,
+    ) -> Result<(), Error>;
+}
+
+impl UpdateBranchOffset for Instruction {
     #[rustfmt::skip]
-    pub fn update_branch_offset(&mut self, stack: &mut ValueStack, new_offset: BranchOffset) -> Result<(), Error> {
+    fn update_branch_offset(&mut self, stack: &mut ValueStack, new_offset: BranchOffset) -> Result<(), Error> {
         /// Initializes the 16-bit offset of `instr` if possible.
         /// 
         /// If `new_offset` cannot be encoded as 16-bit offset `self` is replaced with a fallback instruction.
         macro_rules! init_offset {
-            ($instr:expr, $new_offset:expr, $cmp:expr) => {{
-                if let Err(_) = $instr.offset.init($new_offset) {
-                    let params = stack.alloc_const(ComparatorOffsetParam::new($cmp, $new_offset))?;
-                    *self = Instruction::branch_cmp_fallback($instr.lhs, $instr.rhs, params);
+            ($lhs:expr, $rhs:expr, $offset:expr, $new_offset:expr, $cmp:expr) => {{
+                if let Err(_) = $offset.init($new_offset) {
+                    let params = stack.alloc_const(ComparatorAndOffset::new($cmp, $new_offset))?;
+                    *self = Instruction::branch_cmp_fallback(*$lhs, *$rhs, params);
                 }
                 Ok(())
             }}
         }
 
         macro_rules! init_offset_imm {
-            ($ty:ty, $instr:expr, $new_offset:expr, $cmp:expr) => {{
-                if let Err(_) = $instr.offset.init($new_offset) {
-                    let rhs = stack.alloc_const(<$ty>::from($instr.rhs))?;
-                    let params = stack.alloc_const(ComparatorOffsetParam::new($cmp, $new_offset))?;
-                    *self = Instruction::branch_cmp_fallback($instr.lhs, rhs, params);
+            ($ty:ty, $lhs:expr, $rhs:expr, $offset:expr, $new_offset:expr, $cmp:expr) => {{
+                if let Err(_) = $offset.init($new_offset) {
+                    let rhs = stack.alloc_const(<$ty>::from(*$rhs))?;
+                    let params = stack.alloc_const(ComparatorAndOffset::new($cmp, $new_offset))?;
+                    *self = Instruction::branch_cmp_fallback(*$lhs, rhs, params);
                 }
                 Ok(())
             }};
         }
 
         use Instruction as I;
-        use BranchComparator as Cmp;
+        use Comparator as Cmp;
         match self {
-            Instruction::Branch { offset } => {
+            Instruction::Branch { offset } |
+            Instruction::BranchTableTarget { offset, .. } |
+            Instruction::BranchTableTargetNonOverlapping { offset, .. } => {
                 offset.init(new_offset);
                 Ok(())
             }
-            I::BranchI32And(instr) => init_offset!(instr, new_offset, Cmp::I32And),
-            I::BranchI32Or(instr) => init_offset!(instr, new_offset, Cmp::I32Or),
-            I::BranchI32Xor(instr) => init_offset!(instr, new_offset, Cmp::I32Xor),
-            I::BranchI32AndEqz(instr) => init_offset!(instr, new_offset, Cmp::I32AndEqz),
-            I::BranchI32OrEqz(instr) => init_offset!(instr, new_offset, Cmp::I32OrEqz),
-            I::BranchI32XorEqz(instr) => init_offset!(instr, new_offset, Cmp::I32XorEqz),
-            I::BranchI32Eq(instr) => init_offset!(instr, new_offset, Cmp::I32Eq),
-            I::BranchI32Ne(instr) => init_offset!(instr, new_offset, Cmp::I32Ne),
-            I::BranchI32LtS(instr) => init_offset!(instr, new_offset, Cmp::I32LtS),
-            I::BranchI32LtU(instr) => init_offset!(instr, new_offset, Cmp::I32LtU),
-            I::BranchI32LeS(instr) => init_offset!(instr, new_offset, Cmp::I32LeS),
-            I::BranchI32LeU(instr) => init_offset!(instr, new_offset, Cmp::I32LeU),
-            I::BranchI32GtS(instr) => init_offset!(instr, new_offset, Cmp::I32GtS),
-            I::BranchI32GtU(instr) => init_offset!(instr, new_offset, Cmp::I32GtU),
-            I::BranchI32GeS(instr) => init_offset!(instr, new_offset, Cmp::I32GeS),
-            I::BranchI32GeU(instr) => init_offset!(instr, new_offset, Cmp::I32GeU),
-            I::BranchI64Eq(instr) => init_offset!(instr, new_offset, Cmp::I64Eq),
-            I::BranchI64Ne(instr) => init_offset!(instr, new_offset, Cmp::I64Ne),
-            I::BranchI64LtS(instr) => init_offset!(instr, new_offset, Cmp::I64LtS),
-            I::BranchI64LtU(instr) => init_offset!(instr, new_offset, Cmp::I64LtU),
-            I::BranchI64LeS(instr) => init_offset!(instr, new_offset, Cmp::I64LeS),
-            I::BranchI64LeU(instr) => init_offset!(instr, new_offset, Cmp::I64LeU),
-            I::BranchI64GtS(instr) => init_offset!(instr, new_offset, Cmp::I64GtS),
-            I::BranchI64GtU(instr) => init_offset!(instr, new_offset, Cmp::I64GtU),
-            I::BranchI64GeS(instr) => init_offset!(instr, new_offset, Cmp::I64GeS),
-            I::BranchI64GeU(instr) => init_offset!(instr, new_offset, Cmp::I64GeU),
-            I::BranchF32Eq(instr) => init_offset!(instr, new_offset, Cmp::F32Eq),
-            I::BranchF32Ne(instr) => init_offset!(instr, new_offset, Cmp::F32Ne),
-            I::BranchF32Lt(instr) => init_offset!(instr, new_offset, Cmp::F32Lt),
-            I::BranchF32Le(instr) => init_offset!(instr, new_offset, Cmp::F32Le),
-            I::BranchF32Gt(instr) => init_offset!(instr, new_offset, Cmp::F32Gt),
-            I::BranchF32Ge(instr) => init_offset!(instr, new_offset, Cmp::F32Ge),
-            I::BranchF64Eq(instr) => init_offset!(instr, new_offset, Cmp::F64Eq),
-            I::BranchF64Ne(instr) => init_offset!(instr, new_offset, Cmp::F64Ne),
-            I::BranchF64Lt(instr) => init_offset!(instr, new_offset, Cmp::F64Lt),
-            I::BranchF64Le(instr) => init_offset!(instr, new_offset, Cmp::F64Le),
-            I::BranchF64Gt(instr) => init_offset!(instr, new_offset, Cmp::F64Gt),
-            I::BranchF64Ge(instr) => init_offset!(instr, new_offset, Cmp::F64Ge),
-            I::BranchI32AndImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32And),
-            I::BranchI32OrImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Or),
-            I::BranchI32XorImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Xor),
-            I::BranchI32AndEqzImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32AndEqz),
-            I::BranchI32OrEqzImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32OrEqz),
-            I::BranchI32XorEqzImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32XorEqz),
-            I::BranchI32EqImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Eq),
-            I::BranchI32NeImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32Ne),
-            I::BranchI32LtSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32LtS),
-            I::BranchI32LeSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32LeS),
-            I::BranchI32GtSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32GtS),
-            I::BranchI32GeSImm(instr) => init_offset_imm!(i32, instr, new_offset, Cmp::I32GeS),
-            I::BranchI32LtUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32LtU),
-            I::BranchI32LeUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32LeU),
-            I::BranchI32GtUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32GtU),
-            I::BranchI32GeUImm(instr) => init_offset_imm!(u32, instr, new_offset, Cmp::I32GeU),
-            I::BranchI64EqImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64Eq),
-            I::BranchI64NeImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64Ne),
-            I::BranchI64LtSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64LtS),
-            I::BranchI64LeSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64LeS),
-            I::BranchI64GtSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64GtS),
-            I::BranchI64GeSImm(instr) => init_offset_imm!(i64, instr, new_offset, Cmp::I64GeS),
-            I::BranchI64LtUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64LtU),
-            I::BranchI64LeUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64LeU),
-            I::BranchI64GtUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64GtU),
-            I::BranchI64GeUImm(instr) => init_offset_imm!(u64, instr, new_offset, Cmp::I64GeU),
+            I::BranchI32And { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32And),
+            I::BranchI32Or { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32Or),
+            I::BranchI32Xor { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32Xor),
+            I::BranchI32AndEqz { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32AndEqz),
+            I::BranchI32OrEqz { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32OrEqz),
+            I::BranchI32XorEqz { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32XorEqz),
+            I::BranchI32Eq { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32Eq),
+            I::BranchI32Ne { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32Ne),
+            I::BranchI32LtS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32LtS),
+            I::BranchI32LtU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32LtU),
+            I::BranchI32LeS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32LeS),
+            I::BranchI32LeU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32LeU),
+            I::BranchI32GtS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32GtS),
+            I::BranchI32GtU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32GtU),
+            I::BranchI32GeS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32GeS),
+            I::BranchI32GeU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I32GeU),
+            I::BranchI64Eq { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64Eq),
+            I::BranchI64Ne { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64Ne),
+            I::BranchI64LtS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64LtS),
+            I::BranchI64LtU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64LtU),
+            I::BranchI64LeS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64LeS),
+            I::BranchI64LeU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64LeU),
+            I::BranchI64GtS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64GtS),
+            I::BranchI64GtU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64GtU),
+            I::BranchI64GeS { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64GeS),
+            I::BranchI64GeU { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::I64GeU),
+            I::BranchF32Eq { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Eq),
+            I::BranchF32Ne { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Ne),
+            I::BranchF32Lt { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Lt),
+            I::BranchF32Le { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Le),
+            I::BranchF32Gt { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Gt),
+            I::BranchF32Ge { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F32Ge),
+            I::BranchF64Eq { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Eq),
+            I::BranchF64Ne { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Ne),
+            I::BranchF64Lt { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Lt),
+            I::BranchF64Le { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Le),
+            I::BranchF64Gt { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Gt),
+            I::BranchF64Ge { lhs, rhs, offset } => init_offset!(lhs, rhs, offset, new_offset, Cmp::F64Ge),
+            I::BranchI32AndImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32And),
+            I::BranchI32OrImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32Or),
+            I::BranchI32XorImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32Xor),
+            I::BranchI32AndEqzImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32AndEqz),
+            I::BranchI32OrEqzImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32OrEqz),
+            I::BranchI32XorEqzImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32XorEqz),
+            I::BranchI32EqImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32Eq),
+            I::BranchI32NeImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32Ne),
+            I::BranchI32LtSImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32LtS),
+            I::BranchI32LeSImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32LeS),
+            I::BranchI32GtSImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32GtS),
+            I::BranchI32GeSImm { lhs, rhs, offset } => init_offset_imm!(i32, lhs, rhs, offset, new_offset, Cmp::I32GeS),
+            I::BranchI32LtUImm { lhs, rhs, offset } => init_offset_imm!(u32, lhs, rhs, offset, new_offset, Cmp::I32LtU),
+            I::BranchI32LeUImm { lhs, rhs, offset } => init_offset_imm!(u32, lhs, rhs, offset, new_offset, Cmp::I32LeU),
+            I::BranchI32GtUImm { lhs, rhs, offset } => init_offset_imm!(u32, lhs, rhs, offset, new_offset, Cmp::I32GtU),
+            I::BranchI32GeUImm { lhs, rhs, offset } => init_offset_imm!(u32, lhs, rhs, offset, new_offset, Cmp::I32GeU),
+            I::BranchI64EqImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64Eq),
+            I::BranchI64NeImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64Ne),
+            I::BranchI64LtSImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64LtS),
+            I::BranchI64LeSImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64LeS),
+            I::BranchI64GtSImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64GtS),
+            I::BranchI64GeSImm { lhs, rhs, offset } => init_offset_imm!(i64, lhs, rhs, offset, new_offset, Cmp::I64GeS),
+            I::BranchI64LtUImm { lhs, rhs, offset } => init_offset_imm!(u64, lhs, rhs, offset, new_offset, Cmp::I64LtU),
+            I::BranchI64LeUImm { lhs, rhs, offset } => init_offset_imm!(u64, lhs, rhs, offset, new_offset, Cmp::I64LeU),
+            I::BranchI64GtUImm { lhs, rhs, offset } => init_offset_imm!(u64, lhs, rhs, offset, new_offset, Cmp::I64GtU),
+            I::BranchI64GeUImm { lhs, rhs, offset } => init_offset_imm!(u64, lhs, rhs, offset, new_offset, Cmp::I64GeU),
             _ => panic!("tried to update branch offset of a non-branch instruction: {self:?}"),
         }
     }
@@ -1473,38 +1519,39 @@ impl Instruction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::translator::typed_value::TypedVal;
+    use crate::core::TypedVal;
+
+    fn bspan(reg: i16, len: u16) -> BoundedRegSpan {
+        BoundedRegSpan::new(RegSpan::new(Reg::from(reg)), len)
+    }
 
     #[test]
     fn has_overlapping_copies_works() {
+        assert!(!InstrEncoder::has_overlapping_copies(bspan(0, 0), &[],));
         assert!(!InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(0)).iter(0),
-            &[],
-        ));
-        assert!(!InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            bspan(0, 2),
             &[TypedProvider::register(0), TypedProvider::register(1),],
         ));
         assert!(!InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            bspan(0, 2),
             &[
                 TypedProvider::Const(TypedVal::from(10_i32)),
                 TypedProvider::Const(TypedVal::from(20_i32)),
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            bspan(0, 2),
             &[
                 TypedProvider::Const(TypedVal::from(10_i32)),
                 TypedProvider::register(0),
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(0)).iter(2),
+            bspan(0, 2),
             &[TypedProvider::register(0), TypedProvider::register(0),],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(3)).iter(3),
+            bspan(3, 3),
             &[
                 TypedProvider::register(2),
                 TypedProvider::register(3),
@@ -1512,7 +1559,7 @@ mod tests {
             ],
         ));
         assert!(InstrEncoder::has_overlapping_copies(
-            RegisterSpan::new(Register::from_i16(3)).iter(4),
+            bspan(3, 4),
             &[
                 TypedProvider::register(-1),
                 TypedProvider::register(10),

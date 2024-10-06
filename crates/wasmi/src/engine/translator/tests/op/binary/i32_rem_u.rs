@@ -8,12 +8,8 @@ const WASM_OP: WasmOp = WasmOp::binary(WasmType::I32, "rem_u");
 fn same_reg() {
     // Note: we cannot optimize for `x % x` since `x == 0` has to trap.
     let expected = [
-        Instruction::i32_rem_u(
-            Register::from_i16(1),
-            Register::from_i16(0),
-            Register::from_i16(0),
-        ),
-        Instruction::return_reg(Register::from_i16(1)),
+        Instruction::i32_rem_u(Reg::from(1), Reg::from(0), Reg::from(0)),
+        Instruction::return_reg(Reg::from(1)),
     ];
     test_binary_same_reg(WASM_OP, expected)
 }
@@ -27,13 +23,17 @@ fn reg_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16() {
-    test_binary_reg_imm16::<NonZeroU32>(WASM_OP, nonzero_u32(100), Instruction::i32_rem_u_imm16)
+    test_binary_reg_imm16_rhs::<NonZeroU32>(
+        WASM_OP,
+        nonzero_u32(100),
+        Instruction::i32_rem_u_imm16_rhs,
+    )
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev::<u32>(WASM_OP, 100, Instruction::i32_rem_u_imm16_rev)
+fn reg_imm16_lhs() {
+    test_binary_reg_imm16_lhs::<u32>(WASM_OP, 100, Instruction::i32_rem_u_imm16_lhs)
 }
 
 #[test]
@@ -44,14 +44,14 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, i32::MAX, Instruction::i32_rem_u)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs(WASM_OP, i32::MAX, Instruction::i32_rem_u)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_zero() {
-    let expected = [Instruction::Trap(TrapCode::IntegerDivisionByZero)];
+    let expected = [Instruction::trap(TrapCode::IntegerDivisionByZero)];
     test_binary_reg_imm_with(WASM_OP, 0_i32, expected).run()
 }
 
@@ -88,6 +88,6 @@ fn consteval_div_by_zero() {
         WASM_OP,
         lhs,
         rhs,
-        [Instruction::Trap(TrapCode::IntegerDivisionByZero)],
+        [Instruction::trap(TrapCode::IntegerDivisionByZero)],
     )
 }

@@ -26,7 +26,7 @@ fn reg_imm16() {
         WASM_OP,
         i32::from(value),
         [
-            Instruction::i32_add_imm16(Register::from_i16(1), Register::from_i16(0), rhs),
+            Instruction::i32_add_imm16(Reg::from(1), Reg::from(0), rhs),
             Instruction::return_reg(1),
         ],
     )
@@ -35,8 +35,8 @@ fn reg_imm16() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm16_rev() {
-    test_binary_reg_imm16_rev::<i32>(WASM_OP, 100, Instruction::i32_sub_imm16_rev)
+fn reg_imm16_lhs() {
+    test_binary_reg_imm16_lhs::<i32>(WASM_OP, 100, Instruction::i32_sub_imm16_lhs)
 }
 
 #[test]
@@ -54,12 +54,8 @@ fn test_reg_imm(value: i32) {
     let mut testcase = testcase_binary_reg_imm(WASM_OP, value);
     testcase.expect_func(
         ExpectedFunc::new([
-            Instruction::i32_add(
-                Register::from_i16(1),
-                Register::from_i16(0),
-                Register::from_i16(-1),
-            ),
-            Instruction::return_reg(Register::from_i16(1)),
+            Instruction::i32_add(Reg::from(1), Reg::from(0), Reg::from(-1)),
+            Instruction::return_reg(Reg::from(1)),
         ])
         .consts([value.wrapping_neg()]),
     );
@@ -68,8 +64,8 @@ fn test_reg_imm(value: i32) {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, i32::MAX, Instruction::i32_sub)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs(WASM_OP, i32::MAX, Instruction::i32_sub)
 }
 
 #[test]

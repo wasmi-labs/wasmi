@@ -19,7 +19,7 @@ string-interner = { version = "0.17", default-features = false, features = ["inl
 ahash = { version = "0.8.11", default-features = false }
 
 [features]
-default = ["std"]
+default = ["std", "no-hash-maps"]
 std = ["string-interner/std"]
 # Tells the `wasmi_collections` crate to avoid using hash based maps and sets.
 # 
@@ -29,3 +29,9 @@ std = ["string-interner/std"]
 #
 # An example of such an environment is `wasm32-unknown-unknown`.
 no-hash-maps = []
+
+[package.metadata.cargo-udeps.ignore]
+normal = [
+    # The string-interner dependency is always specified even though it is unused when no-hash-maps is enabled.
+    "string-interner"
+]

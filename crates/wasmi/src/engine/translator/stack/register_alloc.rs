@@ -1,7 +1,7 @@
 use super::{TaggedProvider, TypedProvider};
 use crate::{
     engine::{
-        bytecode::{Register, RegisterSpan},
+        bytecode::{Reg, RegSpan},
         TranslationError,
     },
     Error,
@@ -113,7 +113,7 @@ enum AllocPhase {
     Defrag,
 }
 
-/// The [`RegisterSpace`] of a [`Register`].
+/// The [`RegisterSpace`] of a [`Reg`].
 #[derive(Debug, Copy, Clone)]
 pub enum RegisterSpace {
     /// Function local constant values are assigned to this [`RegisterSpace`].
@@ -161,8 +161,8 @@ impl RegisterAlloc {
         }
     }
 
-    /// Returns the [`RegisterSpace`] for the given [`Register`].
-    pub fn register_space(&self, register: Register) -> RegisterSpace {
+    /// Returns the [`RegisterSpace`] for the given [`Reg`].
+    pub fn register_space(&self, register: Reg) -> RegisterSpace {
         if register.is_const() {
             return RegisterSpace::Const;
         }
@@ -180,7 +180,7 @@ impl RegisterAlloc {
         self.len_locals
     }
 
-    /// Returns the minimum index of any dynamically allocated [`Register`].
+    /// Returns the minimum index of any dynamically allocated [`Reg`].
     fn min_dynamic(&self) -> i16 {
         self.len_locals() as i16
     }
@@ -236,7 +236,7 @@ impl RegisterAlloc {
         assert!(matches!(self.phase, AllocPhase::Alloc));
     }
 
-    /// Allocates a new [`Register`] on the dynamic allocation stack and returns it.
+    /// Allocates a new [`Reg`] on the dynamic allocation stack and returns it.
     ///
     /// # Errors
     ///
@@ -245,18 +245,18 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn push_dynamic(&mut self) -> Result<Register, Error> {
+    pub fn push_dynamic(&mut self) -> Result<Reg, Error> {
         self.assert_alloc_phase();
         if self.next_dynamic == self.min_preserve {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         }
-        let reg = Register::from_i16(self.next_dynamic);
+        let reg = Reg::from(self.next_dynamic);
         self.next_dynamic += 1;
         self.max_dynamic = max(self.max_dynamic, self.next_dynamic);
         Ok(reg)
     }
 
-    /// Allocates `n` new [`Register`] on the dynamic allocation stack and returns them.
+    /// Allocates `n` new [`Reg`] on the dynamic allocation stack and returns them.
     ///
     /// # Errors
     ///
@@ -265,14 +265,14 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegisterSpan, Error> {
-        fn next_dynamic_n(this: &mut RegisterAlloc, n: usize) -> Option<RegisterSpan> {
+    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegSpan, Error> {
+        fn next_dynamic_n(this: &mut RegisterAlloc, n: usize) -> Option<RegSpan> {
             let n = i16::try_from(n).ok()?;
             let next_dynamic = this.next_dynamic.checked_add(n)?;
             if next_dynamic >= this.min_preserve {
                 return None;
             }
-            let register = RegisterSpan::new(Register::from_i16(this.next_dynamic));
+            let register = RegSpan::new(Reg::from(this.next_dynamic));
             this.next_dynamic += n;
             this.max_dynamic = max(this.max_dynamic, this.next_dynamic);
             Some(register)
@@ -282,7 +282,7 @@ impl RegisterAlloc {
             .ok_or_else(|| Error::from(TranslationError::AllocatedTooManyRegisters))
     }
 
-    /// Pops the top-most dynamically allocated [`Register`] from the allocation stack.
+    /// Pops the top-most dynamically allocated [`Reg`] from the allocation stack.
     ///
     /// # Panics
     ///
@@ -298,7 +298,7 @@ impl RegisterAlloc {
         self.next_dynamic -= 1;
     }
 
-    /// Pops the `n` top-most dynamically allocated [`Register`] from the allocation stack.
+    /// Pops the `n` top-most dynamically allocated [`Reg`] from the allocation stack.
     ///
     /// # Panics
     ///
@@ -318,7 +318,7 @@ impl RegisterAlloc {
         pop_impl(self, n).expect("dynamic register underflow")
     }
 
-    /// Allocates a new [`Register`] on the preservation stack and returns it.
+    /// Allocates a new [`Reg`] on the preservation stack and returns it.
     ///
     /// # Note
     ///
@@ -332,7 +332,7 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn push_preserved(&mut self) -> Result<Register, Error> {
+    pub fn push_preserved(&mut self) -> Result<Reg, Error> {
         const NZ_TWO: NonZeroUsize = match NonZeroUsize::new(2) {
             Some(value) => value,
             None => unreachable!(),
@@ -370,12 +370,12 @@ impl RegisterAlloc {
         }
     }
 
-    /// Bumps the [`Register`] quantity on the preservation stack by one.
+    /// Bumps the [`Reg`] quantity on the preservation stack by one.
     ///
     /// # Panics
     ///
-    /// If `register` is not a preservation [`Register`].
-    pub fn bump_preserved(&mut self, register: Register) {
+    /// If `register` is not a preservation [`Reg`].
+    pub fn bump_preserved(&mut self, register: Reg) {
         debug_assert!(matches!(
             self.register_space(register),
             RegisterSpace::Preserve
@@ -389,13 +389,13 @@ impl RegisterAlloc {
         );
     }
 
-    /// Pops the [`Register`] from the preservation stack.
+    /// Pops the [`Reg`] from the preservation stack.
     ///
     /// # Panics
     ///
     /// - If the dynamic register allocation stack is empty.
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    fn pop_preserved(&mut self, register: Register) {
+    fn pop_preserved(&mut self, register: Reg) {
         self.assert_alloc_phase();
         let key = Self::reg2key(register);
         self.removed_preserved.insert(key);
@@ -404,26 +404,26 @@ impl RegisterAlloc {
             .unwrap_or_else(|| panic!("missing preservation slot for {register:?}"));
     }
 
-    /// Updates the minimum preservation [`Register`] index if needed.
-    fn update_min_preserved(&mut self, register: Register) -> Result<(), Error> {
-        self.min_preserve = min(self.min_preserve, register.to_i16());
+    /// Updates the minimum preservation [`Reg`] index if needed.
+    fn update_min_preserved(&mut self, register: Reg) -> Result<(), Error> {
+        self.min_preserve = min(self.min_preserve, i16::from(register));
         if self.next_dynamic == self.min_preserve {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         }
         Ok(())
     }
 
-    /// Converts a preservation [`Register`] into a [`StashKey`].
-    fn reg2key(register: Register) -> StashKey {
-        let reg_index = Self::INITIAL_PRESERVATION_INDEX - register.to_i16();
+    /// Converts a preservation [`Reg`] into a [`StashKey`].
+    fn reg2key(register: Reg) -> StashKey {
+        let reg_index = Self::INITIAL_PRESERVATION_INDEX - i16::from(register);
         let key_index = usize::try_from(reg_index).unwrap_or_else(|error| {
             panic!("reg_index ({reg_index}) must be convertible to usize: {error}")
         });
         StashKey::from(key_index)
     }
 
-    /// Converts a [`StashKey`] into a preservation [`Register`].
-    fn key2reg(key: StashKey) -> Register {
+    /// Converts a [`StashKey`] into a preservation [`Reg`].
+    fn key2reg(key: StashKey) -> Reg {
         let key_index = usize::from(key);
         let reg_index = Self::INITIAL_PRESERVATION_INDEX
             - i16::try_from(key_index).unwrap_or_else(|error| {
@@ -431,17 +431,17 @@ impl RegisterAlloc {
                     "key_index ({key_index}) must be convertible to positive i16 integer: {error}"
                 )
             });
-        Register::from_i16(reg_index)
+        Reg::from(reg_index)
     }
 
-    /// Returns `true` if the [`Register`] is allocated in the [`RegisterSpace::Local`].
-    pub fn is_local(&self, reg: Register) -> bool {
-        !reg.is_const() && reg.to_i16() < self.min_dynamic()
+    /// Returns `true` if the [`Reg`] is allocated in the [`RegisterSpace::Local`].
+    pub fn is_local(&self, reg: Reg) -> bool {
+        !reg.is_const() && i16::from(reg) < self.min_dynamic()
     }
 
-    /// Returns `true` if the [`Register`] is allocated in the [`RegisterSpace::Preserve`].
-    fn is_preserved(&self, reg: Register) -> bool {
-        self.min_preserve < reg.to_i16()
+    /// Returns `true` if the [`Reg`] is allocated in the [`RegisterSpace::Preserve`].
+    fn is_preserved(&self, reg: Reg) -> bool {
+        self.min_preserve < i16::from(reg)
     }
 
     /// Finalizes register allocation and allows to defragment the register space.
@@ -451,36 +451,36 @@ impl RegisterAlloc {
         self.defrag_offset = (self.min_preserve - self.max_dynamic).saturating_add(1);
     }
 
-    /// Returns the defragmented [`Register`].
-    pub fn defrag_register(&self, register: Register) -> Register {
+    /// Returns the defragmented [`Reg`].
+    pub fn defrag_register(&self, register: Reg) -> Reg {
         assert!(matches!(self.phase, AllocPhase::Defrag));
         if !self.is_preserved(register) {
             // Only registers allocated to the preservation space need defragmentation.
             return register;
         }
-        Register::from_i16(register.to_i16() - self.defrag_offset)
+        Reg::from(i16::from(register) - self.defrag_offset)
     }
 
-    /// Increase preservation [`Register`] usage.
+    /// Increase preservation [`Reg`] usage.
     ///
     /// # Note
     ///
     /// - This is mainly used to extend the lifetime of `else` providers on the stack.
-    /// - This does nothing if `register` is not a preservation [`Register`].
-    pub fn inc_register_usage(&mut self, register: Register) {
+    /// - This does nothing if `register` is not a preservation [`Reg`].
+    pub fn inc_register_usage(&mut self, register: Reg) {
         if !self.is_preserved(register) {
             return;
         }
         self.bump_preserved(register)
     }
 
-    /// Decrease preservation [`Register`] usage.
+    /// Decrease preservation [`Reg`] usage.
     ///
     /// # Note
     ///
     /// - This is mainly used to shorten the lifetime of `else` providers on the stack.
-    /// - This does nothing if `register` is not a preservation [`Register`].
-    pub fn dec_register_usage(&mut self, register: Register) {
+    /// - This does nothing if `register` is not a preservation [`Reg`].
+    pub fn dec_register_usage(&mut self, register: Reg) {
         if !self.is_preserved(register) {
             return;
         }

@@ -1,7 +1,8 @@
 use super::{Executor, UntypedValueExt};
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::bytecode::{BinInstr, BinInstrImm, BinInstrImm16, Sign},
+    engine::bytecode::{Const16, Reg, Sign},
+    ir::ShiftAmount,
     Error,
 };
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
@@ -13,14 +14,13 @@ macro_rules! impl_binary {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstr) {
-                self.execute_binary(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
+                self.execute_binary(result, lhs, rhs, $op)
             }
         )*
     };
 }
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_binary! {
         (Instruction::I32Add, execute_i32_add, UntypedVal::i32_add),
         (Instruction::I32Sub, execute_i32_sub, UntypedVal::i32_sub),
@@ -73,14 +73,13 @@ macro_rules! impl_binary_imm16 {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
-                self.execute_binary_imm16(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
+                self.execute_binary_imm16(result, lhs, rhs, $op)
             }
         )*
     };
 }
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_binary_imm16! {
         (i32, Instruction::I32AddImm16, execute_i32_add_imm16, UntypedVal::i32_add),
         (i32, Instruction::I32MulImm16, execute_i32_mul_imm16, UntypedVal::i32_mul),
@@ -96,49 +95,62 @@ impl<'engine> Executor<'engine> {
         (i64, Instruction::I64AndImm16, execute_i64_and_imm16, UntypedVal::i64_and),
         (i64, Instruction::I64OrImm16, execute_i64_or_imm16, UntypedVal::i64_or),
         (i64, Instruction::I64XorImm16, execute_i64_xor_imm16, UntypedVal::i64_xor),
-
-        (i32, Instruction::I32ShlImm, execute_i32_shl_imm, UntypedVal::i32_shl),
-        (i32, Instruction::I32ShrUImm, execute_i32_shr_u_imm, UntypedVal::i32_shr_u),
-        (i32, Instruction::I32ShrSImm, execute_i32_shr_s_imm, UntypedVal::i32_shr_s),
-        (i32, Instruction::I32RotlImm, execute_i32_rotl_imm, UntypedVal::i32_rotl),
-        (i32, Instruction::I32RotrImm, execute_i32_rotr_imm, UntypedVal::i32_rotr),
-
-        (i64, Instruction::I64ShlImm, execute_i64_shl_imm, UntypedVal::i64_shl),
-        (i64, Instruction::I64ShrUImm, execute_i64_shr_u_imm, UntypedVal::i64_shr_u),
-        (i64, Instruction::I64ShrSImm, execute_i64_shr_s_imm, UntypedVal::i64_shr_s),
-        (i64, Instruction::I64RotlImm, execute_i64_rotl_imm, UntypedVal::i64_rotl),
-        (i64, Instruction::I64RotrImm, execute_i64_rotr_imm, UntypedVal::i64_rotr),
-
     }
 }
 
-macro_rules! impl_binary_imm16_rev {
+macro_rules! impl_shift_by {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
-                self.execute_binary_imm16_rev(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: ShiftAmount<$ty>) {
+                self.execute_shift_by(result, lhs, rhs, $op)
             }
         )*
     };
 }
-impl<'engine> Executor<'engine> {
-    impl_binary_imm16_rev! {
-        (i32, Instruction::I32SubImm16Rev, execute_i32_sub_imm16_rev, UntypedVal::i32_sub),
-        (i64, Instruction::I64SubImm16Rev, execute_i64_sub_imm16_rev, UntypedVal::i64_sub),
+impl Executor<'_> {
+    impl_shift_by! {
+        (i32, Instruction::I32ShlBy, execute_i32_shl_by, UntypedVal::i32_shl),
+        (i32, Instruction::I32ShrUBy, execute_i32_shr_u_by, UntypedVal::i32_shr_u),
+        (i32, Instruction::I32ShrSBy, execute_i32_shr_s_by, UntypedVal::i32_shr_s),
+        (i32, Instruction::I32RotlBy, execute_i32_rotl_by, UntypedVal::i32_rotl),
+        (i32, Instruction::I32RotrBy, execute_i32_rotr_by, UntypedVal::i32_rotr),
 
-        (i32, Instruction::I32ShlImm16Rev, execute_i32_shl_imm16_rev, UntypedVal::i32_shl),
-        (i32, Instruction::I32ShrUImm16Rev, execute_i32_shr_u_imm16_rev, UntypedVal::i32_shr_u),
-        (i32, Instruction::I32ShrSImm16Rev, execute_i32_shr_s_imm16_rev, UntypedVal::i32_shr_s),
-        (i32, Instruction::I32RotlImm16Rev, execute_i32_rotl_imm16_rev, UntypedVal::i32_rotl),
-        (i32, Instruction::I32RotrImm16Rev, execute_i32_rotr_imm16_rev, UntypedVal::i32_rotr),
+        (i64, Instruction::I64ShlBy, execute_i64_shl_by, UntypedVal::i64_shl),
+        (i64, Instruction::I64ShrUBy, execute_i64_shr_u_by, UntypedVal::i64_shr_u),
+        (i64, Instruction::I64ShrSBy, execute_i64_shr_s_by, UntypedVal::i64_shr_s),
+        (i64, Instruction::I64RotlBy, execute_i64_rotl_by, UntypedVal::i64_rotl),
+        (i64, Instruction::I64RotrBy, execute_i64_rotr_by, UntypedVal::i64_rotr),
 
-        (i64, Instruction::I64ShlImm16Rev, execute_i64_shl_imm16_rev, UntypedVal::i64_shl),
-        (i64, Instruction::I64ShrUImm16Rev, execute_i64_shr_u_imm16_rev, UntypedVal::i64_shr_u),
-        (i64, Instruction::I64ShrSImm16Rev, execute_i64_shr_s_imm16_rev, UntypedVal::i64_shr_s),
-        (i64, Instruction::I64RotlImm16Rev, execute_i64_rotl_imm16_rev, UntypedVal::i64_rotl),
-        (i64, Instruction::I64RotrImm16Rev, execute_i64_rotr_imm16_rev, UntypedVal::i64_rotr),
+    }
+}
+
+macro_rules! impl_binary_imm16_lhs {
+    ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
+            pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) {
+                self.execute_binary_imm16_lhs(result, lhs, rhs, $op)
+            }
+        )*
+    };
+}
+impl Executor<'_> {
+    impl_binary_imm16_lhs! {
+        (i32, Instruction::I32SubImm16Lhs, execute_i32_sub_imm16_lhs, UntypedVal::i32_sub),
+        (i64, Instruction::I64SubImm16Lhs, execute_i64_sub_imm16_lhs, UntypedVal::i64_sub),
+
+        (i32, Instruction::I32ShlImm16, execute_i32_shl_imm16, UntypedVal::i32_shl),
+        (i32, Instruction::I32ShrUImm16, execute_i32_shr_u_imm16, UntypedVal::i32_shr_u),
+        (i32, Instruction::I32ShrSImm16, execute_i32_shr_s_imm16, UntypedVal::i32_shr_s),
+        (i32, Instruction::I32RotlImm16, execute_i32_rotl_imm16, UntypedVal::i32_rotl),
+        (i32, Instruction::I32RotrImm16, execute_i32_rotr_imm16, UntypedVal::i32_rotr),
+
+        (i64, Instruction::I64ShlImm16, execute_i64_shl_imm16, UntypedVal::i64_shl),
+        (i64, Instruction::I64ShrUImm16, execute_i64_shr_u_imm16, UntypedVal::i64_shr_u),
+        (i64, Instruction::I64ShrSImm16, execute_i64_shr_s_imm16, UntypedVal::i64_shr_s),
+        (i64, Instruction::I64RotlImm16, execute_i64_rotl_imm16, UntypedVal::i64_rotl),
+        (i64, Instruction::I64RotrImm16, execute_i64_rotr_imm16, UntypedVal::i64_rotr),
     }
 }
 
@@ -146,14 +158,13 @@ macro_rules! impl_fallible_binary {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstr) -> Result<(), Error> {
-                self.try_execute_binary(instr, $op).map_err(Into::into)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) -> Result<(), Error> {
+                self.try_execute_binary(result, lhs, rhs, $op).map_err(Into::into)
             }
         )*
     };
 }
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_fallible_binary! {
         (Instruction::I32DivS, execute_i32_div_s, UntypedVal::i32_div_s),
         (Instruction::I32DivU, execute_i32_div_u, UntypedVal::i32_div_u),
@@ -234,89 +245,84 @@ impl DivRemExt for UntypedVal {
     }
 }
 
-macro_rules! impl_divrem_s_imm16 {
+macro_rules! impl_divrem_s_imm16_rhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), Error> {
-                self.try_execute_divrem_imm16(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) -> Result<(), Error> {
+                self.try_execute_divrem_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
     };
 }
-impl<'engine> Executor<'engine> {
-    impl_divrem_s_imm16! {
-        (NonZeroI32, Instruction::I32DivSImm16, execute_i32_div_s_imm16, <UntypedVal as DivRemExt>::i32_div_s),
-        (NonZeroI32, Instruction::I32RemSImm16, execute_i32_rem_s_imm16, <UntypedVal as DivRemExt>::i32_rem_s),
+impl Executor<'_> {
+    impl_divrem_s_imm16_rhs! {
+        (NonZeroI32, Instruction::I32DivSImm16Rhs, execute_i32_div_s_imm16_rhs, <UntypedVal as DivRemExt>::i32_div_s),
+        (NonZeroI32, Instruction::I32RemSImm16Rhs, execute_i32_rem_s_imm16_rhs, <UntypedVal as DivRemExt>::i32_rem_s),
 
-        (NonZeroI64, Instruction::I64DivSImm16, execute_i64_div_s_imm16, <UntypedVal as DivRemExt>::i64_div_s),
-        (NonZeroI64, Instruction::I64RemSImm16, execute_i64_rem_s_imm16, <UntypedVal as DivRemExt>::i64_rem_s),
+        (NonZeroI64, Instruction::I64DivSImm16Rhs, execute_i64_div_s_imm16_rhs, <UntypedVal as DivRemExt>::i64_div_s),
+        (NonZeroI64, Instruction::I64RemSImm16Rhs, execute_i64_rem_s_imm16_rhs, <UntypedVal as DivRemExt>::i64_rem_s),
     }
 }
 
-macro_rules! impl_divrem_u_imm16 {
+macro_rules! impl_divrem_u_imm16_rhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
-                self.execute_divrem_imm16(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
+                self.execute_divrem_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
     };
 }
-impl<'engine> Executor<'engine> {
-    impl_divrem_u_imm16! {
-        (NonZeroU32, Instruction::I32DivUImm16, execute_i32_div_u_imm16, <UntypedVal as DivRemExt>::i32_div_u),
-        (NonZeroU32, Instruction::I32RemUImm16, execute_i32_rem_u_imm16, <UntypedVal as DivRemExt>::i32_rem_u),
+impl Executor<'_> {
+    impl_divrem_u_imm16_rhs! {
+        (NonZeroU32, Instruction::I32DivUImm16Rhs, execute_i32_div_u_imm16_rhs, <UntypedVal as DivRemExt>::i32_div_u),
+        (NonZeroU32, Instruction::I32RemUImm16Rhs, execute_i32_rem_u_imm16_rhs, <UntypedVal as DivRemExt>::i32_rem_u),
 
-        (NonZeroU64, Instruction::I64DivUImm16, execute_i64_div_u_imm16, <UntypedVal as DivRemExt>::i64_div_u),
-        (NonZeroU64, Instruction::I64RemUImm16, execute_i64_rem_u_imm16, <UntypedVal as DivRemExt>::i64_rem_u),
+        (NonZeroU64, Instruction::I64DivUImm16Rhs, execute_i64_div_u_imm16_rhs, <UntypedVal as DivRemExt>::i64_div_u),
+        (NonZeroU64, Instruction::I64RemUImm16Rhs, execute_i64_rem_u_imm16_rhs, <UntypedVal as DivRemExt>::i64_rem_u),
     }
 }
 
-macro_rules! impl_fallible_binary_imm16_rev {
+macro_rules! impl_fallible_binary_imm16_lhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) -> Result<(), Error> {
-                self.try_execute_binary_imm16_rev(instr, $op).map_err(Into::into)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) -> Result<(), Error> {
+                self.try_execute_binary_imm16_lhs(result, lhs, rhs, $op).map_err(Into::into)
             }
         )*
     };
 }
-impl<'engine> Executor<'engine> {
-    impl_fallible_binary_imm16_rev! {
-        (i32, Instruction::I32DivSImm16Rev, execute_i32_div_s_imm16_rev, UntypedVal::i32_div_s),
-        (u32, Instruction::I32DivUImm16Rev, execute_i32_div_u_imm16_rev, UntypedVal::i32_div_u),
-        (i32, Instruction::I32RemSImm16Rev, execute_i32_rem_s_imm16_rev, UntypedVal::i32_rem_s),
-        (u32, Instruction::I32RemUImm16Rev, execute_i32_rem_u_imm16_rev, UntypedVal::i32_rem_u),
+impl Executor<'_> {
+    impl_fallible_binary_imm16_lhs! {
+        (i32, Instruction::I32DivSImm16Lhs, execute_i32_div_s_imm16_lhs, UntypedVal::i32_div_s),
+        (u32, Instruction::I32DivUImm16Lhs, execute_i32_div_u_imm16_lhs, UntypedVal::i32_div_u),
+        (i32, Instruction::I32RemSImm16Lhs, execute_i32_rem_s_imm16_lhs, UntypedVal::i32_rem_s),
+        (u32, Instruction::I32RemUImm16Lhs, execute_i32_rem_u_imm16_lhs, UntypedVal::i32_rem_u),
 
-        (i64, Instruction::I64DivSImm16Rev, execute_i64_div_s_imm16_rev, UntypedVal::i64_div_s),
-        (u64, Instruction::I64DivUImm16Rev, execute_i64_div_u_imm16_rev, UntypedVal::i64_div_u),
-        (i64, Instruction::I64RemSImm16Rev, execute_i64_rem_s_imm16_rev, UntypedVal::i64_rem_s),
-        (u64, Instruction::I64RemUImm16Rev, execute_i64_rem_u_imm16_rev, UntypedVal::i64_rem_u),
+        (i64, Instruction::I64DivSImm16Lhs, execute_i64_div_s_imm16_lhs, UntypedVal::i64_div_s),
+        (u64, Instruction::I64DivUImm16Lhs, execute_i64_div_u_imm16_lhs, UntypedVal::i64_div_u),
+        (i64, Instruction::I64RemSImm16Lhs, execute_i64_rem_s_imm16_lhs, UntypedVal::i64_rem_s),
+        (u64, Instruction::I64RemUImm16Lhs, execute_i64_rem_u_imm16_lhs, UntypedVal::i64_rem_u),
     }
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Executes an [`Instruction::F32CopysignImm`].
-    #[inline(always)]
-    pub fn execute_f32_copysign_imm(&mut self, instr: BinInstrImm<Sign>) {
-        let lhs = self.get_register(instr.reg_in);
-        let rhs = instr.imm_in.to_f32();
-        self.set_register(instr.result, UntypedVal::f32_copysign(lhs, rhs.into()));
+    pub fn execute_f32_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f32>) {
+        let lhs = self.get_register(lhs);
+        let rhs = f32::from(rhs);
+        self.set_register(result, UntypedVal::f32_copysign(lhs, rhs.into()));
         self.next_instr()
     }
 
     /// Executes an [`Instruction::F64CopysignImm`].
-    #[inline(always)]
-    pub fn execute_f64_copysign_imm(&mut self, instr: BinInstrImm<Sign>) {
-        let lhs = self.get_register(instr.reg_in);
-        let rhs = instr.imm_in.to_f64();
-        self.set_register(instr.result, UntypedVal::f64_copysign(lhs, rhs.into()));
+    pub fn execute_f64_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f64>) {
+        let lhs = self.get_register(lhs);
+        let rhs = f64::from(rhs);
+        self.set_register(result, UntypedVal::f64_copysign(lhs, rhs.into()));
         self.next_instr()
     }
 }

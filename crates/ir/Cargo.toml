@@ -1,0 +1,28 @@
+[package]
+name = "wasmi_ir"
+version.workspace = true
+rust-version.workspace = true
+documentation = "https://docs.rs/wasmi_ir/"
+description = "WebAssembly interpreter internal bytecode representation"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude = [
+    "benches/wat",
+    "benches/wasm",
+    "tests/spec/testsuite",
+    "**.wast",
+]
+
+[dependencies]
+wasmi_core = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "wasmi_core/std",
+]

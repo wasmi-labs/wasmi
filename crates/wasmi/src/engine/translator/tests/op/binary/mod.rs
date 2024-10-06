@@ -5,6 +5,7 @@
 //! These tests include Wasm arithmetic, logical, bitwise, shift and rotate instructions.
 
 use super::*;
+use crate::ir::{IntoShiftAmount, ShiftAmount};
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
 mod f32_add;
@@ -70,6 +71,14 @@ fn nonzero_i64(value: i64) -> NonZeroI64 {
 /// Helper to create a [`NonZeroU64`].
 fn nonzero_u64(value: u64) -> NonZeroU64 {
     NonZeroU64::new(value).unwrap()
+}
+
+/// Helper to create a [`ShiftAmount`].
+fn shamt<T>(value: T) -> ShiftAmount<T>
+where
+    T: IntoShiftAmount,
+{
+    value.into_shift_amount().unwrap()
 }
 
 /// Creates an [`Instruction::ReturnF64Imm32`] from the given `f64` value.

@@ -1,5 +1,6 @@
 use super::Func;
-use crate::{core::UntypedVal, reftype::Transposer};
+use crate::core::UntypedVal;
+use core::mem;
 
 /// A nullable [`Func`] reference.
 #[derive(Debug, Default, Copy, Clone)]
@@ -35,24 +36,30 @@ fn funcref_null_to_zero() {
 
 impl From<UntypedVal> for FuncRef {
     fn from(untyped: UntypedVal) -> Self {
+        if u64::from(untyped) == 0 {
+            return FuncRef::null();
+        }
         // Safety: This union access is safe since there are no invalid
         //         bit patterns for [`FuncRef`] instances. Therefore
         //         this operation cannot produce invalid [`FuncRef`]
         //         instances even though the input [`UntypedVal`]
         //         was modified arbitrarily.
-        unsafe { <Transposer<Self>>::from(untyped).reftype }.canonicalize()
+        unsafe { mem::transmute::<u64, Self>(untyped.into()) }
     }
 }
 
 impl From<FuncRef> for UntypedVal {
     fn from(funcref: FuncRef) -> Self {
-        let funcref = funcref.canonicalize();
+        if funcref.is_null() {
+            return UntypedVal::from(0_u64);
+        }
         // Safety: This operation is safe since there are no invalid
         //         bit patterns for [`UntypedVal`] instances. Therefore
         //         this operation cannot produce invalid [`UntypedVal`]
         //         instances even if it was possible to arbitrarily modify
         //         the input [`FuncRef`] instance.
-        Self::from(unsafe { <Transposer<FuncRef>>::new(funcref).value })
+        let bits = unsafe { mem::transmute::<FuncRef, u64>(funcref) };
+        UntypedVal::from(bits)
     }
 }
 
@@ -62,22 +69,9 @@ impl FuncRef {
         self.inner.is_none()
     }
 
-    /// Canonicalize `self` so that all `null` values have the same representation.
-    ///
-    /// # Note
-    ///
-    /// The underlying issue is that `FuncRef` has many possible values for the
-    /// `null` value. However, to simplify operating on encoded `FuncRef` instances
-    /// (encoded as `UntypedValue`) we want it to encode to exactly one `null`
-    /// value. The most trivial of all possible `null` values is `0_u64`, therefore
-    /// we canonicalize all `null` values to be represented by `0_u64`.
-    fn canonicalize(self) -> Self {
-        if self.is_null() {
-            // Safety: This is safe since `0u64` can be bit
-            //         interpreted as a valid `FuncRef` value.
-            return unsafe { <Transposer<Self>>::null().reftype };
-        }
-        self
+    /// Creates a `null` [`FuncRef`].
+    pub fn null() -> Self {
+        Self::new(None)
     }
 
     /// Creates a new [`FuncRef`].
@@ -95,7 +89,6 @@ impl FuncRef {
         Self {
             inner: nullable_func.into(),
         }
-        .canonicalize()
     }
 
     /// Returns the inner [`Func`] if [`FuncRef`] is not `null`.
@@ -103,10 +96,5 @@ impl FuncRef {
     /// Otherwise returns `None`.
     pub fn func(&self) -> Option<&Func> {
         self.inner.as_ref()
-    }
-
-    /// Creates a `null` [`FuncRef`].
-    pub fn null() -> Self {
-        Self::new(None).canonicalize()
     }
 }

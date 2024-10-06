@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::{bytecode::RegisterSpan, translator::tests::wasm_type::WasmTy};
+use crate::engine::translator::tests::wasm_type::WasmTy;
 use core::fmt::Display;
 
 #[test]
@@ -27,7 +27,7 @@ fn return_1() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_reg(Register::from_i16(0))])
+        .expect_func_instrs([Instruction::return_reg(Reg::from(0))])
         .run()
 }
 
@@ -52,8 +52,7 @@ fn return_1_imm() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func(
-                ExpectedFunc::new([Instruction::return_reg(Register::from_i16(-1))])
-                    .consts([value.into()]),
+                ExpectedFunc::new([Instruction::return_reg(Reg::from(-1))]).consts([value.into()]),
             )
             .run()
     }
@@ -162,7 +161,7 @@ fn return_2() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_reg2(0, 0)])
+        .expect_func_instrs([Instruction::return_reg2_ext(0, 0)])
         .run()
 }
 
@@ -178,7 +177,7 @@ fn return_2_imm() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func(ExpectedFunc::new([Instruction::return_reg2(-1, -2)]).consts([10_i32, 20]))
+        .expect_func(ExpectedFunc::new([Instruction::return_reg2_ext(-1, -2)]).consts([10_i32, 20]))
         .run()
 }
 
@@ -194,7 +193,7 @@ fn return_2_mixed() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func(ExpectedFunc::new([Instruction::return_reg2(-1, 0)]).consts([10_i32]))
+        .expect_func(ExpectedFunc::new([Instruction::return_reg2_ext(-1, 0)]).consts([10_i32]))
         .run()
 }
 
@@ -211,7 +210,7 @@ fn return_3() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_reg3(0, 0, 0)])
+        .expect_func_instrs([Instruction::return_reg3_ext(0, 0, 0)])
         .run()
 }
 
@@ -229,7 +228,7 @@ fn return_3_imm() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func(
-            ExpectedFunc::new([Instruction::return_reg3(-1, -2, -3)]).consts([10_i32, 20, 30]),
+            ExpectedFunc::new([Instruction::return_reg3_ext(-1, -2, -3)]).consts([10_i32, 20, 30]),
         )
         .run()
 }
@@ -247,7 +246,7 @@ fn return_3_mixed() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func(ExpectedFunc::new([Instruction::return_reg3(-1, 0, -1)]).consts([10_i32]))
+        .expect_func(ExpectedFunc::new([Instruction::return_reg3_ext(-1, 0, -1)]).consts([10_i32]))
         .run()
 }
 
@@ -265,9 +264,7 @@ fn return_4_span() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(4),
-        )])
+        .expect_func_instrs([Instruction::return_span(bspan(0, 4))])
         .run()
 }
 
@@ -285,7 +282,10 @@ fn return_4() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_many(0, 0, 0), Instruction::register(0)])
+        .expect_func_instrs([
+            Instruction::return_many_ext(0, 0, 0),
+            Instruction::register(0),
+        ])
         .run()
 }
 
@@ -304,9 +304,7 @@ fn return_5_span() {
             )
         )";
     TranslationTest::from_wat(wasm)
-        .expect_func_instrs([Instruction::return_span(
-            RegisterSpan::new(Register::from_i16(0)).iter(5),
-        )])
+        .expect_func_instrs([Instruction::return_span(bspan(0, 5))])
         .run()
 }
 
@@ -326,8 +324,8 @@ fn return_5() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_many(0, 1, 0),
-            Instruction::register2(1, 0),
+            Instruction::return_many_ext(0, 1, 0),
+            Instruction::register2_ext(1, 0),
         ])
         .run()
 }
@@ -349,8 +347,8 @@ fn return_6() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_many(0, 1, 0),
-            Instruction::register3(1, 0, 1),
+            Instruction::return_many_ext(0, 1, 0),
+            Instruction::register3_ext(1, 0, 1),
         ])
         .run()
 }
@@ -373,8 +371,8 @@ fn return_7() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_many(0, 1, 0),
-            Instruction::register_list(1, 0, 1),
+            Instruction::return_many_ext(0, 1, 0),
+            Instruction::register_list_ext(1, 0, 1),
             Instruction::register(0),
         ])
         .run()
@@ -399,9 +397,9 @@ fn return_8() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_many(0, 1, 0),
-            Instruction::register_list(1, 0, 1),
-            Instruction::register2(0, 1),
+            Instruction::return_many_ext(0, 1, 0),
+            Instruction::register_list_ext(1, 0, 1),
+            Instruction::register2_ext(0, 1),
         ])
         .run()
 }
@@ -426,9 +424,9 @@ fn return_9() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::return_many(0, 1, 0),
-            Instruction::register_list(1, 0, 1),
-            Instruction::register3(0, 1, 0),
+            Instruction::return_many_ext(0, 1, 0),
+            Instruction::register_list_ext(1, 0, 1),
+            Instruction::register3_ext(0, 1, 0),
         ])
         .run()
 }

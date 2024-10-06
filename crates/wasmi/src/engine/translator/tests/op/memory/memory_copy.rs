@@ -5,21 +5,20 @@ use super::*;
 fn copy() {
     let wasm = r"
         (module
-            (memory $m1 10)
+            (memory $mem0 1)
+            (memory $mem1 1)
             (func (param $dst i32) (param $src i32) (param $len i32)
                 (local.get $dst)
                 (local.get $src)
                 (local.get $len)
-                (memory.copy)
+                (memory.copy $mem0 $mem1)
             )
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::memory_copy(
-                Register::from_i16(0),
-                Register::from_i16(1),
-                Register::from_i16(2),
-            ),
+            Instruction::memory_copy(Reg::from(0), Reg::from(1), Reg::from(2)),
+            Instruction::memory_index(0),
+            Instruction::memory_index(1),
             Instruction::Return,
         ])
         .run()
@@ -29,12 +28,13 @@ fn testcase_copy_exact(len: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory $mem0 1)
+            (memory $mem1 1)
             (func (param $dst i32) (param $src i32)
                 (local.get $dst)
                 (local.get $src)
                 (i32.const {len})
-                (memory.copy)
+                (memory.copy $mem0 $mem1)
             )
         )",
     );
@@ -44,11 +44,9 @@ fn testcase_copy_exact(len: u32) -> TranslationTest {
 fn test_copy_exact16(len: u32) {
     testcase_copy_exact(len)
         .expect_func_instrs([
-            Instruction::memory_copy_exact(
-                Register::from_i16(0),
-                Register::from_i16(1),
-                u32imm16(len),
-            ),
+            Instruction::memory_copy_exact(Reg::from(0), Reg::from(1), u32imm16(len)),
+            Instruction::memory_index(0),
+            Instruction::memory_index(1),
             Instruction::Return,
         ])
         .run()
@@ -67,11 +65,9 @@ fn test_copy_exact(len: u32) {
     testcase_copy_exact(len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(0),
-                    Register::from_i16(1),
-                    Register::from_i16(-1),
-                ),
+                Instruction::memory_copy(Reg::from(0), Reg::from(1), Reg::from(-1)),
+                Instruction::memory_index(0),
+                Instruction::memory_index(1),
                 Instruction::Return,
             ])
             .consts([len]),
@@ -90,12 +86,13 @@ fn testcase_copy_from(src: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory $mem0 1)
+            (memory $mem1 1)
             (func (param $dst i32) (param $len i32)
                 (local.get $dst)
                 (i32.const {src})
                 (local.get $len)
-                (memory.copy)
+                (memory.copy $mem0 $mem1)
             )
         )",
     );
@@ -105,11 +102,9 @@ fn testcase_copy_from(src: u32) -> TranslationTest {
 fn test_copy_from16(src: u32) {
     testcase_copy_from(src)
         .expect_func_instrs([
-            Instruction::memory_copy_from(
-                Register::from_i16(0),
-                u32imm16(src),
-                Register::from_i16(1),
-            ),
+            Instruction::memory_copy_from(Reg::from(0), u32imm16(src), Reg::from(1)),
+            Instruction::memory_index(0),
+            Instruction::memory_index(1),
             Instruction::Return,
         ])
         .run()
@@ -126,11 +121,9 @@ fn test_copy_from(src: u32) {
     testcase_copy_from(src)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(0),
-                    Register::from_i16(-1),
-                    Register::from_i16(1),
-                ),
+                Instruction::memory_copy(Reg::from(0), Reg::from(-1), Reg::from(1)),
+                Instruction::memory_index(0),
+                Instruction::memory_index(1),
                 Instruction::Return,
             ])
             .consts([src]),
@@ -149,12 +142,13 @@ fn testcase_copy_to(dst: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory $mem0 1)
+            (memory $mem1 1)
             (func (param $src i32) (param $len i32)
                 (i32.const {dst})
                 (local.get $src)
                 (local.get $len)
-                (memory.copy)
+                (memory.copy $mem0 $mem1)
             )
         )",
     );
@@ -164,11 +158,9 @@ fn testcase_copy_to(dst: u32) -> TranslationTest {
 fn test_copy_to16(dst: u32) {
     testcase_copy_to(dst)
         .expect_func_instrs([
-            Instruction::memory_copy_to(
-                u32imm16(dst),
-                Register::from_i16(0),
-                Register::from_i16(1),
-            ),
+            Instruction::memory_copy_to(u32imm16(dst), Reg::from(0), Reg::from(1)),
+            Instruction::memory_index(0),
+            Instruction::memory_index(1),
             Instruction::Return,
         ])
         .run()
@@ -185,11 +177,9 @@ fn test_copy_to(dst: u32) {
     testcase_copy_to(dst)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(-1),
-                    Register::from_i16(0),
-                    Register::from_i16(1),
-                ),
+                Instruction::memory_copy(Reg::from(-1), Reg::from(0), Reg::from(1)),
+                Instruction::memory_index(0),
+                Instruction::memory_index(1),
                 Instruction::Return,
             ])
             .consts([dst]),
@@ -208,12 +198,13 @@ fn testcase_copy_from_to(dst: u32, src: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory $mem0 1)
+            (memory $mem1 1)
             (func (param $len i32)
                 (i32.const {dst})
                 (i32.const {src})
                 (local.get $len)
-                (memory.copy)
+                (memory.copy $mem0 $mem1)
             )
         )",
     );
@@ -223,7 +214,9 @@ fn testcase_copy_from_to(dst: u32, src: u32) -> TranslationTest {
 fn test_copy_from_to16(dst: u32, src: u32) {
     testcase_copy_from_to(dst, src)
         .expect_func_instrs([
-            Instruction::memory_copy_from_to(u32imm16(dst), u32imm16(src), Register::from_i16(0)),
+            Instruction::memory_copy_from_to(u32imm16(dst), u32imm16(src), Reg::from(0)),
+            Instruction::memory_index(0),
+            Instruction::memory_index(1),
             Instruction::Return,
         ])
         .run()
@@ -244,11 +237,9 @@ fn test_copy_from_to(dst: u32, src: u32) {
     testcase_copy_from_to(dst, src)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(-1),
-                    Register::from_i16(-2),
-                    Register::from_i16(0),
-                ),
+                Instruction::memory_copy(Reg::from(-1), Reg::from(-2), Reg::from(0)),
+                Instruction::memory_index(0),
+                Instruction::memory_index(1),
                 Instruction::Return,
             ])
             .consts([dst, src]),
@@ -278,12 +269,13 @@ fn testcase_copy_to_exact(dst: u32, len: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory $mem0 1)
+            (memory $mem1 1)
             (func (param $src i32)
                 (i32.const {dst})
                 (local.get $src)
                 (i32.const {len})
-                (memory.copy)
+                (memory.copy $mem0 $mem1)
             )
         )",
     );
@@ -293,7 +285,9 @@ fn testcase_copy_to_exact(dst: u32, len: u32) -> TranslationTest {
 fn test_copy_to_exact16(dst: u32, len: u32) {
     testcase_copy_to_exact(dst, len)
         .expect_func_instrs([
-            Instruction::memory_copy_to_exact(u32imm16(dst), Register::from_i16(0), u32imm16(len)),
+            Instruction::memory_copy_to_exact(u32imm16(dst), Reg::from(0), u32imm16(len)),
+            Instruction::memory_index(0),
+            Instruction::memory_index(1),
             Instruction::Return,
         ])
         .run()
@@ -314,11 +308,9 @@ fn test_copy_to_exact(dst: u32, len: u32) {
     testcase_copy_to_exact(dst, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(-1),
-                    Register::from_i16(0),
-                    Register::from_i16(-2),
-                ),
+                Instruction::memory_copy(Reg::from(-1), Reg::from(0), Reg::from(-2)),
+                Instruction::memory_index(0),
+                Instruction::memory_index(1),
                 Instruction::Return,
             ])
             .consts([dst, len]),
@@ -348,12 +340,13 @@ fn testcase_copy_from_exact(src: u32, len: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory $mem0 1)
+            (memory $mem1 1)
             (func (param $dst i32)
                 (local.get $dst)
                 (i32.const {src})
                 (i32.const {len})
-                (memory.copy)
+                (memory.copy $mem0 $mem1)
             )
         )",
     );
@@ -363,11 +356,9 @@ fn testcase_copy_from_exact(src: u32, len: u32) -> TranslationTest {
 fn test_copy_from_exact16(src: u32, len: u32) {
     testcase_copy_from_exact(src, len)
         .expect_func_instrs([
-            Instruction::memory_copy_from_exact(
-                Register::from_i16(0),
-                u32imm16(src),
-                u32imm16(len),
-            ),
+            Instruction::memory_copy_from_exact(Reg::from(0), u32imm16(src), u32imm16(len)),
+            Instruction::memory_index(0),
+            Instruction::memory_index(1),
             Instruction::Return,
         ])
         .run()
@@ -388,11 +379,9 @@ fn test_copy_from_exact(src: u32, len: u32) {
     testcase_copy_from_exact(src, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(0),
-                    Register::from_i16(-1),
-                    Register::from_i16(-2),
-                ),
+                Instruction::memory_copy(Reg::from(0), Reg::from(-1), Reg::from(-2)),
+                Instruction::memory_index(0),
+                Instruction::memory_index(1),
                 Instruction::Return,
             ])
             .consts([src, len]),
@@ -422,12 +411,13 @@ fn testcase_copy_from_to_exact(dst: u32, src: u32, len: u32) -> TranslationTest 
     let wasm = &format!(
         r"
         (module
-            (memory $m1 10)
+            (memory $mem0 1)
+            (memory $mem1 1)
             (func
                 (i32.const {dst})
                 (i32.const {src})
                 (i32.const {len})
-                (memory.copy)
+                (memory.copy $mem0 $mem1)
             )
         )",
     );
@@ -438,6 +428,8 @@ fn test_copy_from_to_exact16(dst: u32, src: u32, len: u32) {
     testcase_copy_from_to_exact(dst, src, len)
         .expect_func_instrs([
             Instruction::memory_copy_from_to_exact(u32imm16(dst), u32imm16(src), u32imm16(len)),
+            Instruction::memory_index(0),
+            Instruction::memory_index(1),
             Instruction::Return,
         ])
         .run()
@@ -460,11 +452,9 @@ fn test_copy_from_to_exact(dst: u32, src: u32, len: u32) {
     testcase_copy_from_to_exact(dst, src, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::memory_copy(
-                    Register::from_i16(-1),
-                    Register::from_i16(-2),
-                    Register::from_i16(-3),
-                ),
+                Instruction::memory_copy(Reg::from(-1), Reg::from(-2), Reg::from(-3)),
+                Instruction::memory_index(0),
+                Instruction::memory_index(1),
                 Instruction::Return,
             ])
             .consts([dst, src, len]),

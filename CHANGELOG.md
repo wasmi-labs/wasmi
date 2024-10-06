@@ -8,6 +8,140 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.38.0`] - 2024-10-06
+
+### Added
+
+- Add `no-hash-maps` crate feature to Wasmi CLI and enable it by default. [#1225]
+
+### Internal
+
+- Rename various instructions and add `ShiftAmount` abstraction. [#1221]
+- Use Rust's `ControlFlow` utility. [#1223]
+- Use `get_memory` in `load` and `store` execution handlers. [#1224]
+
+[#1221]: https://github.com/wasmi-labs/wasmi/pull/1221
+[#1223]: https://github.com/wasmi-labs/wasmi/pull/1223
+[#1224]: https://github.com/wasmi-labs/wasmi/pull/1224
+[#1225]: https://github.com/wasmi-labs/wasmi/pull/1225
+
+## [`0.37.2`] - 2024-10-04
+
+### Added
+
+- Added a new `extra-checks` crate feature to the `wasmi` crate. [#1217]
+
+    - This improves unreachability checks in when `debug-assertions` or `extra-checks` are enabled.
+    - If `extra-checks` are disabled, some technically unnecessary runtime checks are no longer performed.
+    - Use `extra-checks` if your focus is on safety, disable if your focus is on performance.
+
+### Fixed
+
+- Fixed a bug in local preservation when translating Wasm `loop` control flow. [#1218]
+
+[#1217]: https://github.com/wasmi-labs/wasmi/pull/1217
+[#1218]: https://github.com/wasmi-labs/wasmi/pull/1218
+
+## [`0.37.1`] - 2024-10-01
+
+### Fixed
+
+- Fixed a bug in `select` translation constant propagation. [#1213]
+
+[#1213]: https://github.com/wasmi-labs/wasmi/pull/1213
+
+## [`0.37.0`] - 2024-09-30
+
+### Added
+
+- Added support for Wasm `multi-memory` proposal. [#1191]
+- Added `Store::call_hook` API. [#1144]
+  - Contributed by [emiltayl](https://github.com/emiltayl).
+
+### Changed
+
+- Updated WASI dependencies. [#1140]
+  - This fixes some long-standing bugs in the `wasmi_wasi` crate.
+
+### Fixed
+
+- This release includes all fixes that have been backported to `v0.36.1` and `v0.36.2`.
+
+### Internal
+
+- Add new Wasmi bytecode. [#1152]
+  - This was a major undertaking with lots of sub-issues and PRs.
+  - The Wasmi bytecode definitions now reside in their own [`wasmi_ir` crate].
+  - Most of the definitions are sourced from a single Rust macro to reduce maintenance friction.
+- Remove unnecessary `iextend` instructions. [#1147]
+- Changed encoding for Wasmi `call_indirect` instructions. [#1156]
+  - The new encoding improves performance and reduces the number of function local constants.
+- Changed encoding for Wasmi `select` instructions. [#1157]
+  - The new encoding is more straight-forward and aims to simplify the Wasmi executor and translator.
+- Changed encoding for Wasmi `br_table` instruction. [#1158]
+  - The new encoding improves performance and memory consumption for certain use cases.
+- Minor improvements to Wasmi bytecode.
+  - `MemoryGrowBy` now takes `u32` delta. [#1193]
+  - Improved `storeN` encoding with immediates. [#1194]
+
+[#1144]: https://github.com/wasmi-labs/wasmi/pull/1144
+[#1147]: https://github.com/wasmi-labs/wasmi/pull/1147
+[#1140]: https://github.com/wasmi-labs/wasmi/pull/1140
+[#1152]: https://github.com/wasmi-labs/wasmi/pull/1152
+[#1156]: https://github.com/wasmi-labs/wasmi/pull/1156
+[#1157]: https://github.com/wasmi-labs/wasmi/pull/1157
+[#1158]: https://github.com/wasmi-labs/wasmi/pull/1158
+[#1191]: https://github.com/wasmi-labs/wasmi/pull/1191
+[#1193]: https://github.com/wasmi-labs/wasmi/pull/1193
+[#1194]: https://github.com/wasmi-labs/wasmi/pull/1194
+
+[`wasmi_ir` crate]: https://crates.io/crates/wasmi_ir
+
+## [`0.36.4`] - 2024-10-03
+
+### Fixed
+
+- Fixed a bug in local preservation when translating Wasm `loop` control flow. [#1218]
+
+[#1218]: https://github.com/wasmi-labs/wasmi/pull/1218
+
+## [`0.36.3`] - 2024-10-01
+
+### Fixed
+
+- Fixed a bug in `select` translation constant propagation. [#1213]
+
+[#1213]: https://github.com/wasmi-labs/wasmi/pull/1213
+
+## [`0.36.2`] - 2024-09-28
+
+### Fixed
+
+- Fix miri reported UB in `FuncRef` and `ExternRef` conversions. [#1201]
+- Fix bug in `table.init` from imported `global.get` values. [#1192]
+
+### Changed
+
+- Changed some `inline` annotations in the Wasmi executor. [#commit-b4e78d]
+    - This change had minor positive effects on the performance of commonly executed Wasmi instructions.
+
+[#1192]: https://github.com/wasmi-labs/wasmi/pull/1192
+[#1201]: https://github.com/wasmi-labs/wasmi/pull/1201
+[#commit-b4e78d]: https://github.com/wasmi-labs/wasmi/commit/b4e78d23451cb40a7b43404f8e6e868a362b7985
+
+## [`0.36.1`] - 2024-09-20
+
+### Fixed
+
+- Fixed `ref.is_null` translation constant propagation issue. [#1189]
+- Fixed invalid overwrite of preserved local register. [#1177]
+- Removed faulty `br_table` optimization.
+    - [Link to Commit](https://github.com/wasmi-labs/wasmi/commit/a646d27a4d69e73dffb30bf706bfb394dfa6a27f)
+- Fix a few `clippy` warnings.
+
+[#1177]: https://github.com/wasmi-labs/wasmi/pull/1177
+[#1189]: https://github.com/wasmi-labs/wasmi/pull/1189
+
 ## [`0.36.0`] - 2024-07-24
 
 ### Added

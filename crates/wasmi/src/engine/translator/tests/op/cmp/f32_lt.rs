@@ -25,8 +25,8 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, 1.0_f32, Instruction::f32_lt)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs(WASM_OP, 1.0_f32, Instruction::f32_lt)
 }
 
 #[test]
@@ -45,7 +45,7 @@ fn reg_neg_inf() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn pos_inf_reg() {
-    test_binary_reg_imm_rev_with(
+    test_binary_reg_imm_lhs_with(
         WASM_OP,
         f32::INFINITY,
         [Instruction::ReturnImm32 {
@@ -64,7 +64,7 @@ fn reg_nan() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn nan_reg() {
-    test_binary_reg_imm_rev_with(WASM_OP, f32::NAN, [Instruction::return_imm32(false)]).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, f32::NAN, [Instruction::return_imm32(false)]).run()
 }
 
 #[test]

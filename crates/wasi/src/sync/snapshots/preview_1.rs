@@ -3,10 +3,7 @@ use std::{
     pin::Pin,
     task::{Context, RawWaker, RawWakerVTable, Waker},
 };
-use wasi_common::{
-    snapshots::preview_1::wasi_snapshot_preview1::{UserErrorConversion, WasiSnapshotPreview1},
-    Error,
-};
+use wasi_common::{snapshots::preview_1::wasi_snapshot_preview1::WasiSnapshotPreview1, Error};
 use wasmi::{state::Constructing, Caller, Extern, Linker, LinkerBuilder};
 
 // Creates a dummy `RawWaker`. We can only create Wakers from `RawWaker`s
@@ -45,7 +42,7 @@ pub trait AddWasi<T> {
         wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
     ) -> Result<(), Error>
     where
-        U: WasiSnapshotPreview1 + UserErrorConversion;
+        U: WasiSnapshotPreview1;
 }
 
 /// Adds the entire WASI API to the Wasmi [`Linker`].
@@ -66,7 +63,7 @@ pub fn add_wasi_snapshot_preview1_to_linker<T, U>(
     wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
 ) -> Result<(), Error>
 where
-    U: WasiSnapshotPreview1 + UserErrorConversion,
+    U: WasiSnapshotPreview1,
 {
     <Linker<T> as AddWasi<T>>::add_wasi(linker, wasi_ctx)
 }
@@ -79,7 +76,7 @@ pub fn add_wasi_snapshot_preview1_to_linker_builder<T, U>(
     wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
 ) -> Result<(), Error>
 where
-    U: WasiSnapshotPreview1 + UserErrorConversion,
+    U: WasiSnapshotPreview1,
 {
     <LinkerBuilder<Constructing, T> as AddWasi<T>>::add_wasi(linker, wasi_ctx)
 }
@@ -100,7 +97,7 @@ macro_rules! add_funcs_to_linker {
                 wasi_ctx: impl Fn(&mut T) -> &mut U + Send + Sync + Copy + 'static,
             ) -> Result<(), Error>
             where
-                U: WasiSnapshotPreview1 + UserErrorConversion,
+                U: WasiSnapshotPreview1,
             {
                 $(
                     // $(#[$docs])* // TODO: find place for docs
@@ -115,16 +112,18 @@ macro_rules! add_funcs_to_linker {
                                 };
                                 let(memory, ctx) = memory.data_and_store_mut(&mut caller);
                                 let ctx = wasi_ctx(ctx);
-                                let memory = WasmiGuestMemory::new(memory);
-                                match wasi_common::snapshots::preview_1::wasi_snapshot_preview1::$fname(ctx, &memory, $($arg,)*).await {
+                                let mut memory = WasmiGuestMemory::Unshared(memory);
+                                match wasi_common::snapshots::preview_1::wasi_snapshot_preview1::$fname(ctx, &mut memory, $($arg,)*).await {
                                     Ok(r) => Ok(<$ret>::from(r)),
-                                    Err(wiggle::Trap::String(err)) => Err(wasmi::Error::new(err)),
-                                    Err(wiggle::Trap::I32Exit(i)) => Err(wasmi::Error::i32_exit(i)),
+                                    Err(e) => match e.downcast::<wasi_common::I32Exit>() {
+                                        Ok(wasi_common::I32Exit(status)) => Err(wasmi::Error::i32_exit(status)),
+                                        Err(e) => Err(wasmi::Error::new(e.to_string())),
+                                    }
                                 }
                             };
                             run_in_dummy_executor(result)?
                         }
-                    )?;
+                    ).map_err(wiggle::anyhow::Error::from).map_err(wasi_common::Error::trap)?;
                 )*
                 Ok(())
             }

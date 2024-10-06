@@ -97,7 +97,6 @@ mod limits;
 mod linker;
 mod memory;
 mod module;
-mod reftype;
 mod store;
 mod table;
 mod value;
@@ -110,10 +109,14 @@ pub use wasmi_core as core;
 #[doc(inline)]
 use wasmi_collections as collections;
 
+/// Definitions from the `wasmi_collections` crate.
+#[doc(inline)]
+use wasmi_ir as ir;
+
 /// Defines some errors that may occur upon interaction with Wasmi.
 pub mod errors {
     pub use super::{
-        engine::EnforcedLimitsError,
+        engine::{bytecode::Error as IrError, EnforcedLimitsError},
         error::ErrorKind,
         func::FuncError,
         global::GlobalError,
@@ -169,7 +172,7 @@ pub use self::{
         ModuleImportsIter,
         Read,
     },
-    store::{AsContext, AsContextMut, Store, StoreContext, StoreContextMut},
+    store::{AsContext, AsContextMut, CallHook, Store, StoreContext, StoreContextMut},
     table::{Table, TableType},
     value::Val,
 };

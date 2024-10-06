@@ -172,6 +172,7 @@ impl Config {
         let mut features = WasmFeatures::empty();
         features.set(WasmFeatures::MUTABLE_GLOBAL, true);
         features.set(WasmFeatures::MULTI_VALUE, true);
+        features.set(WasmFeatures::MULTI_MEMORY, true);
         features.set(WasmFeatures::SATURATING_FLOAT_TO_INT, true);
         features.set(WasmFeatures::SIGN_EXTENSION, true);
         features.set(WasmFeatures::BULK_MEMORY, true);
@@ -255,6 +256,18 @@ impl Config {
     /// [`multi-value`]: https://github.com/WebAssembly/multi-value
     pub fn wasm_multi_value(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::MULTI_VALUE, enable);
+        self
+    }
+
+    /// Enable or disable the [`multi-memory`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Enabled by default.
+    ///
+    /// [`multi-memory`]: https://github.com/WebAssembly/multi-memory
+    pub fn wasm_multi_memory(&mut self, enable: bool) -> &mut Self {
+        self.features.set(WasmFeatures::MULTI_MEMORY, enable);
         self
     }
 

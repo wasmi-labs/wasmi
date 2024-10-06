@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{BinInstr, BinInstrImm16},
+    engine::bytecode::{Const16, Reg},
 };
 
 #[cfg(doc)]
@@ -11,15 +11,14 @@ macro_rules! impl_comparison {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstr) {
-                self.execute_binary(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
+                self.execute_binary(result, lhs, rhs, $op)
             }
         )*
     };
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_comparison! {
         (Instruction::I32Eq, execute_i32_eq, UntypedVal::i32_eq),
         (Instruction::I32Ne, execute_i32_ne, UntypedVal::i32_ne),
@@ -63,15 +62,14 @@ macro_rules! impl_comparison_imm16 {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            #[inline(always)]
-            pub fn $fn_name(&mut self, instr: BinInstrImm16<$ty>) {
-                self.execute_binary_imm16(instr, $op)
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
+                self.execute_binary_imm16(result, lhs, rhs, $op)
             }
         )*
     };
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_comparison_imm16! {
         (i32, Instruction::I32EqImm16, execute_i32_eq_imm16, UntypedVal::i32_eq),
         (i32, Instruction::I32NeImm16, execute_i32_ne_imm16, UntypedVal::i32_ne),

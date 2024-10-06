@@ -1,24 +1,13 @@
-use super::*;
-use core::mem::size_of;
-
-#[test]
-fn bytecode_size() {
-    assert_eq!(size_of::<Register>(), 2);
-    assert_eq!(size_of::<UnaryInstr>(), 4);
-    assert_eq!(size_of::<BinInstr>(), 6);
-    assert_eq!(size_of::<BinInstrImm16<i32>>(), 6);
-    assert_eq!(size_of::<BinInstrImm16<i64>>(), 6);
-    assert_eq!(size_of::<Instruction>(), 8);
-}
+use crate::{Reg, RegSpan, RegSpanIter};
 
 #[test]
 fn has_overlapping_copy_spans_works() {
-    fn span(register: impl Into<Register>) -> RegisterSpan {
-        RegisterSpan::new(register.into())
+    fn span(reg: impl Into<Reg>) -> RegSpan {
+        RegSpan::new(reg.into())
     }
 
-    fn has_overlapping_copy_spans(results: RegisterSpan, values: RegisterSpan, len: u16) -> bool {
-        RegisterSpanIter::has_overlapping_copies(results.iter_u16(len), values.iter_u16(len))
+    fn has_overlapping_copy_spans(results: RegSpan, values: RegSpan, len: u16) -> bool {
+        RegSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 
     // len == 0

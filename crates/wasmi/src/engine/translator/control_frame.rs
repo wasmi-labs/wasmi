@@ -5,7 +5,7 @@ use super::LabelRef;
 use super::ValueStack;
 use crate::{
     engine::{
-        bytecode::{RegisterSpan, RegisterSpanIter},
+        bytecode::{BoundedRegSpan, RegSpan},
         BlockType,
         Instr,
         TranslationError,
@@ -27,7 +27,7 @@ impl BlockHeight {
     /// Creates a new [`BlockHeight`] for the given [`ValueStack`] `height` and [`BlockType`].
     pub fn new(engine: &Engine, height: usize, block_type: BlockType) -> Result<Self, Error> {
         fn new_impl(engine: &Engine, height: usize, block_type: BlockType) -> Option<BlockHeight> {
-            let len_params = u16::try_from(block_type.len_params(engine)).ok()?;
+            let len_params = block_type.len_params(engine);
             let height = u16::try_from(height).ok()?;
             let block_height = height.checked_sub(len_params)?;
             Some(BlockHeight(block_height))
@@ -61,7 +61,7 @@ pub struct BlockControlFrame {
     /// These are the registers that store the results of
     /// the [`BlockControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`BlockControlFrame`] exits it.
-    branch_params: RegisterSpan,
+    branch_params: RegSpan,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// # Note
@@ -76,7 +76,7 @@ impl BlockControlFrame {
     pub fn new(
         block_type: BlockType,
         end_label: LabelRef,
-        branch_params: RegisterSpan,
+        branch_params: RegSpan,
         stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
     ) -> Self {
@@ -106,9 +106,8 @@ impl BlockControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`BlockControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegisterSpanIter {
-        self.branch_params
-            .iter(self.block_type().len_results(engine))
+    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+        BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
     }
 
     /// Returns the label for the branch destination of the [`BlockControlFrame`].
@@ -167,7 +166,7 @@ pub struct LoopControlFrame {
     /// These are the registers that store the inputs of
     /// the [`LoopControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`LoopControlFrame`] re-enters it.
-    branch_params: RegisterSpan,
+    branch_params: RegSpan,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// # Note
@@ -182,7 +181,7 @@ impl LoopControlFrame {
         block_type: BlockType,
         head_label: LabelRef,
         stack_height: BlockHeight,
-        branch_params: RegisterSpan,
+        branch_params: RegSpan,
         consume_fuel: Option<Instr>,
     ) -> Self {
         Self {
@@ -211,9 +210,8 @@ impl LoopControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`LoopControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegisterSpanIter {
-        self.branch_params
-            .iter(self.block_type().len_params(engine))
+    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+        BoundedRegSpan::new(self.branch_params, self.block_type().len_params(engine))
     }
 
     /// Returns the label for the branch destination of the [`LoopControlFrame`].
@@ -264,7 +262,7 @@ pub struct IfControlFrame {
     /// the [`IfControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`IfControlFrame`] exits it.
     /// The behavior is the same for the `then` and `else` blocks.
-    branch_params: RegisterSpan,
+    branch_params: RegSpan,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// This is used for both `then` and `else` branches. When entering the `else`
@@ -337,7 +335,7 @@ impl IfControlFrame {
     pub fn new(
         block_type: BlockType,
         end_label: LabelRef,
-        branch_params: RegisterSpan,
+        branch_params: RegSpan,
         stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
         reachability: IfReachability,
@@ -381,9 +379,8 @@ impl IfControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branching parameters of the [`IfControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegisterSpanIter {
-        self.branch_params
-            .iter(self.block_type().len_results(engine))
+    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+        BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
     }
 
     /// Returns the label for the branch destination of the [`IfControlFrame`].
@@ -602,7 +599,7 @@ impl ControlFrame {
     }
 
     /// Returns an iterator over the registers holding the branch parameters of the [`ControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> RegisterSpanIter {
+    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
         match self {
             Self::Block(frame) => frame.branch_params(engine),
             Self::Loop(frame) => frame.branch_params(engine),
@@ -633,18 +630,6 @@ impl ControlFrame {
             Self::If(frame) => frame.is_branched_to(),
             Self::Unreachable(frame) => {
                 panic!("tried to call `is_branched_to` for an unreachable control frame: {frame:?}")
-            }
-        }
-    }
-
-    /// Returns the number of branches to the [`ControlFrame`].
-    fn len_branches(&self) -> usize {
-        match self {
-            Self::Block(frame) => frame.len_branches(),
-            Self::Loop(frame) => frame.len_branches(),
-            Self::If(frame) => frame.len_branches(),
-            Self::Unreachable(frame) => {
-                panic!("tried to call `len_branches` for an unreachable control frame: {frame:?}")
             }
         }
     }

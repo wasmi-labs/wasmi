@@ -1,4 +1,4 @@
-use crate::{engine::bytecode::Register, Error};
+use crate::{engine::bytecode::Reg, Error};
 use core::mem;
 use std::{
     collections::{btree_map, BTreeMap},
@@ -25,7 +25,7 @@ type EntryIndex = usize;
 #[derive(Debug, Default)]
 pub struct LocalRefs {
     /// The last local added to [`LocalRefs`] per local variable if any.
-    locals_last: BTreeMap<Register, EntryIndex>,
+    locals_last: BTreeMap<Reg, EntryIndex>,
     /// The entries of the [`LocalRefs`] data structure.
     entries: LocalRefsEntries,
 }
@@ -142,7 +142,7 @@ impl LocalRefs {
     }
 
     /// Updates the last index for `local` to `index` and returns the previous last index.
-    fn update_last(&mut self, index: EntryIndex, local: Register) -> Option<EntryIndex> {
+    fn update_last(&mut self, index: EntryIndex, local: Reg) -> Option<EntryIndex> {
         match self.locals_last.entry(local) {
             btree_map::Entry::Vacant(entry) => {
                 entry.insert(index);
@@ -161,7 +161,7 @@ impl LocalRefs {
     /// # Panics
     ///
     /// If the `local` index is out of bounds.
-    pub fn push_at(&mut self, local: Register, slot: StackIndex) {
+    pub fn push_at(&mut self, local: Reg, slot: StackIndex) {
         match self.entries.next_free() {
             Some(index) => {
                 let prev = self.update_last(index, local);
@@ -196,7 +196,7 @@ impl LocalRefs {
     ///
     /// - If the `local` index is out of bounds.
     /// - If there is no `local.get` stack index on the stack.
-    pub fn pop_at(&mut self, local: Register) -> StackIndex {
+    pub fn pop_at(&mut self, local: Reg) -> StackIndex {
         let btree_map::Entry::Occupied(mut last) = self.locals_last.entry(local) else {
             panic!("missing stack index for local on the provider stack: {local:?}")
         };
@@ -217,7 +217,7 @@ impl LocalRefs {
     /// Calls `f` with the index of each local on the [`ProviderStack`] that matches `local`.
     pub fn drain_at(
         &mut self,
-        local: Register,
+        local: Reg,
         f: impl FnMut(StackIndex) -> Result<(), Error>,
     ) -> Result<(), Error> {
         let Some(last) = self.locals_last.remove(&local) else {
@@ -235,7 +235,7 @@ impl LocalRefs {
     /// Calls `f` with the pair of local and its index of each local on the [`ProviderStack`].
     pub fn drain_all(
         &mut self,
-        mut f: impl FnMut(Register, StackIndex) -> Result<(), Error>,
+        mut f: impl FnMut(Reg, StackIndex) -> Result<(), Error>,
     ) -> Result<(), Error> {
         let local_last = mem::take(&mut self.locals_last);
         for (local, last) in &local_last {
@@ -269,8 +269,8 @@ impl LocalRefs {
 mod tests {
     use super::*;
 
-    fn reg(index: i16) -> Register {
-        Register::from_i16(index)
+    fn reg(index: i16) -> Reg {
+        Reg::from(index)
     }
 
     #[test]

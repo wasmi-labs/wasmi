@@ -16,8 +16,8 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev_commutative(WASM_OP, 1.0_f64, Instruction::f64_mul)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs_commutative(WASM_OP, 1.0_f64, Instruction::f64_mul)
 }
 
 #[test]

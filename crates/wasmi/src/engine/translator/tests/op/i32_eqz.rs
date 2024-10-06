@@ -3,10 +3,7 @@ use super::*;
 #[test]
 #[cfg_attr(miri, ignore)]
 fn binop_i32_eqz() {
-    fn test_for(
-        op: &str,
-        expect_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-    ) {
+    fn test_for(op: &str, expect_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction) {
         let wasm = &format!(
             r"
             (module
@@ -20,11 +17,7 @@ fn binop_i32_eqz() {
         );
         TranslationTest::from_wat(wasm)
             .expect_func_instrs([
-                expect_instr(
-                    Register::from_i16(2),
-                    Register::from_i16(0),
-                    Register::from_i16(1),
-                ),
+                expect_instr(Reg::from(2), Reg::from(0), Reg::from(1)),
                 Instruction::return_reg(2),
             ])
             .run()
@@ -39,7 +32,7 @@ fn binop_i32_eqz() {
 fn binop_imm_i32_eqz() {
     fn test_for(
         op: &str,
-        expect_instr: fn(result: Register, lhs: Register, rhs: Const16<i32>) -> Instruction,
+        expect_instr: fn(result: Reg, lhs: Reg, rhs: Const16<i32>) -> Instruction,
     ) {
         let wasm = &format!(
             r"
@@ -54,11 +47,7 @@ fn binop_imm_i32_eqz() {
         );
         TranslationTest::from_wat(wasm)
             .expect_func_instrs([
-                expect_instr(
-                    Register::from_i16(2),
-                    Register::from_i16(0),
-                    Const16::from(1),
-                ),
+                expect_instr(Reg::from(2), Reg::from(0), Const16::from(1)),
                 Instruction::return_reg(2),
             ])
             .run()

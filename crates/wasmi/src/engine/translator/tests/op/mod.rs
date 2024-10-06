@@ -16,6 +16,7 @@ mod local_preserve;
 mod local_set;
 mod loop_;
 mod memory;
+mod ref_;
 mod return_;
 mod return_call;
 mod select;
@@ -24,16 +25,17 @@ mod table;
 mod unary;
 
 use super::{
+    bspan,
     display_wasm::DisplayValueType,
     driver::ExpectedFunc,
     swap_ops,
     test_binary_consteval,
-    test_binary_reg_imm16,
-    test_binary_reg_imm16_rev,
+    test_binary_reg_imm16_lhs,
+    test_binary_reg_imm16_rhs,
     test_binary_reg_imm32,
-    test_binary_reg_imm32_rev,
-    test_binary_reg_imm32_rev_commutative,
-    test_binary_reg_imm_rev_with,
+    test_binary_reg_imm32_lhs,
+    test_binary_reg_imm32_lhs_commutative,
+    test_binary_reg_imm_lhs_with,
     test_binary_reg_imm_with,
     test_binary_reg_reg,
     test_binary_same_reg,
@@ -46,7 +48,7 @@ use super::{
     Const32,
     DisplayWasm,
     Instruction,
-    Register,
+    Reg,
     TranslationTest,
     WasmOp,
     WasmType,
@@ -98,26 +100,6 @@ fn f64imm32(value: f64) -> Const32<f64> {
         .unwrap_or_else(|_| panic!("value must be 32-bit encodable: {}", value))
 }
 
-/// Creates an [`Instruction::I64Imm32`] from the given `i64` value.
-///
-/// # Panics
-///
-/// If the `value` cannot be converted into `i32` losslessly.
-#[track_caller]
-fn i64imm32_instr(value: i64) -> Instruction {
-    Instruction::I64Const32(i64imm32(value))
-}
-
-/// Creates an [`Instruction::F64Imm32`] from the given `i64` value.
-///
-/// # Panics
-///
-/// If the `value` cannot be converted into `i32` losslessly.
-#[track_caller]
-fn f64imm32_instr(value: f64) -> Instruction {
-    Instruction::F64Const32(f64imm32(value))
-}
-
 /// Creates an [`Instruction::ReturnI64Imm32`] from the given `i64` value.
 ///
 /// # Panics
@@ -134,7 +116,7 @@ fn return_i64imm32_instr(value: i64) -> Instruction {
 ///
 /// If the `value` cannot be converted into `i32` losslessly.
 #[track_caller]
-fn return_nez_i64imm32_instr(condition: Register, value: i64) -> Instruction {
+fn return_nez_i64imm32_instr(condition: Reg, value: i64) -> Instruction {
     Instruction::return_nez_i64imm32(condition, i64imm32(value))
 }
 
@@ -154,6 +136,6 @@ fn return_f64imm32_instr(value: f64) -> Instruction {
 ///
 /// If the `value` cannot be converted into `f32` losslessly.
 #[track_caller]
-fn return_nez_f64imm32_instr(condition: Register, value: f64) -> Instruction {
+fn return_nez_f64imm32_instr(condition: Reg, value: f64) -> Instruction {
     Instruction::return_nez_f64imm32(condition, f64imm32(value))
 }

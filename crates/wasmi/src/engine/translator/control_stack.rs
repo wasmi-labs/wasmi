@@ -1,6 +1,7 @@
-use super::{typed_value::TypedVal, ControlFrame};
+use super::ControlFrame;
 use crate::{
-    engine::bytecode::{Provider, ProviderSliceStack},
+    core::TypedVal,
+    engine::translator::{Provider, ProviderSliceStack},
     Error,
 };
 use std::vec::{Drain, Vec};

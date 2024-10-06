@@ -1,14 +1,14 @@
-use super::Executor;
+use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
-    engine::bytecode::{
-        Const16,
-        Const32,
-        ElementSegmentIdx,
-        Instruction,
-        InstructionPtr,
-        Register,
-        TableIdx,
+    engine::{
+        bytecode::{
+            index::{Elem, Table},
+            Const16,
+            Instruction,
+            Reg,
+        },
+        utils::unreachable_unchecked,
     },
     error::EntityGrowError,
     store::{ResourceLimiterRef, StoreInner},
@@ -17,55 +17,67 @@ use crate::{
     Store,
 };
 
-impl<'engine> Executor<'engine> {
-    /// Returns the [`Instruction::TableIdx`] parameter for an [`Instruction`].
-    fn fetch_table_index(&self, offset: usize) -> TableIdx {
+impl Executor<'_> {
+    /// Returns the [`Instruction::TableIndex`] parameter for an [`Instruction`].
+    fn fetch_table_index(&self, offset: usize) -> Table {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
-            Instruction::TableIdx(table_index) => table_index,
-            _ => unreachable!("expected an Instruction::TableIdx instruction word"),
+            Instruction::TableIndex { index } => index,
+            unexpected => {
+                // Safety: Wasmi translation guarantees that [`Instruction::TableIndex`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::TableIndex` but found: {unexpected:?}"
+                    )
+                }
+            }
         }
     }
 
-    /// Returns the [`Instruction::ElementSegmentIdx`] parameter for an [`Instruction`].
-    fn fetch_element_segment_index(&self, offset: usize) -> ElementSegmentIdx {
+    /// Returns the [`Instruction::ElemIndex`] parameter for an [`Instruction`].
+    fn fetch_element_segment_index(&self, offset: usize) -> Elem {
         let mut addr: InstructionPtr = self.ip;
         addr.add(offset);
         match *addr.get() {
-            Instruction::ElementSegmentIdx(segment_index) => segment_index,
-            _ => unreachable!("expected an Instruction::ElementSegmentIdx instruction word"),
+            Instruction::ElemIndex { index } => index,
+            unexpected => {
+                // Safety: Wasmi translation guarantees that [`Instruction::ElemIndex`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::ElemIndex` but found: {unexpected:?}"
+                    )
+                }
+            }
         }
     }
 
     /// Executes an [`Instruction::TableGet`].
-    #[inline(always)]
     pub fn execute_table_get(
         &mut self,
         store: &StoreInner,
-        result: Register,
-        index: Register,
+        result: Reg,
+        index: Reg,
     ) -> Result<(), Error> {
         let index: u32 = self.get_register_as(index);
         self.execute_table_get_impl(store, result, index)
     }
 
     /// Executes an [`Instruction::TableGetImm`].
-    #[inline(always)]
     pub fn execute_table_get_imm(
         &mut self,
         store: &StoreInner,
-        result: Register,
-        index: Const32<u32>,
+        result: Reg,
+        index: u32,
     ) -> Result<(), Error> {
-        self.execute_table_get_impl(store, result, u32::from(index))
+        self.execute_table_get_impl(store, result, index)
     }
 
     /// Executes a `table.get` instruction generically.
     fn execute_table_get_impl(
         &mut self,
         store: &StoreInner,
-        result: Register,
+        result: Reg,
         index: u32,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
@@ -79,50 +91,36 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableSize`].
-    #[inline(always)]
-    pub fn execute_table_size(
-        &mut self,
-        store: &StoreInner,
-        result: Register,
-        table_index: TableIdx,
-    ) {
+    pub fn execute_table_size(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
         self.execute_table_size_impl(store, result, table_index);
         self.next_instr();
     }
 
     /// Executes a generic `table.size` instruction.
-    fn execute_table_size_impl(
-        &mut self,
-        store: &StoreInner,
-        result: Register,
-        table_index: TableIdx,
-    ) {
+    fn execute_table_size_impl(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
         let table = self.get_table(table_index);
         let size = store.resolve_table(&table).size();
         self.set_register(result, size);
     }
 
     /// Executes an [`Instruction::TableSet`].
-    #[inline(always)]
     pub fn execute_table_set(
         &mut self,
         store: &mut StoreInner,
-        index: Register,
-        value: Register,
+        index: Reg,
+        value: Reg,
     ) -> Result<(), Error> {
         let index: u32 = self.get_register_as(index);
         self.execute_table_set_impl(store, index, value)
     }
 
     /// Executes an [`Instruction::TableSetAt`].
-    #[inline(always)]
     pub fn execute_table_set_at(
         &mut self,
         store: &mut StoreInner,
-        index: Const32<u32>,
-        value: Register,
+        index: u32,
+        value: Reg,
     ) -> Result<(), Error> {
-        let index = u32::from(index);
         self.execute_table_set_impl(store, index, value)
     }
 
@@ -131,7 +129,7 @@ impl<'engine> Executor<'engine> {
         &mut self,
         store: &mut StoreInner,
         index: u32,
-        value: Register,
+        value: Reg,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let table = self.get_table(table_index);
@@ -144,13 +142,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopy`].
-    #[inline(always)]
     pub fn execute_table_copy(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        src: Register,
-        len: Register,
+        dst: Reg,
+        src: Reg,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
@@ -159,13 +156,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyTo`].
-    #[inline(always)]
     pub fn execute_table_copy_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        src: Register,
-        len: Register,
+        src: Reg,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
@@ -174,13 +170,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyFrom`].
-    #[inline(always)]
     pub fn execute_table_copy_from(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         src: Const16<u32>,
-        len: Register,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
@@ -189,13 +184,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyFromTo`].
-    #[inline(always)]
     pub fn execute_table_copy_from_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
         src: Const16<u32>,
-        len: Register,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
@@ -204,12 +198,11 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyExact`].
-    #[inline(always)]
     pub fn execute_table_copy_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        src: Register,
+        dst: Reg,
+        src: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
@@ -219,12 +212,11 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyToExact`].
-    #[inline(always)]
     pub fn execute_table_copy_to_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        src: Register,
+        src: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
@@ -234,11 +226,10 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyFromExact`].
-    #[inline(always)]
     pub fn execute_table_copy_from_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         src: Const16<u32>,
         len: Const16<u32>,
     ) -> Result<(), Error> {
@@ -249,7 +240,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableCopyFromToExact`].
-    #[inline(always)]
     pub fn execute_table_copy_from_to_exact(
         &mut self,
         store: &mut StoreInner,
@@ -264,6 +254,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.copy` instruction.
+    #[inline(never)]
     fn execute_table_copy_impl(
         &mut self,
         store: &mut StoreInner,
@@ -291,13 +282,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInit`].
-    #[inline(always)]
     pub fn execute_table_init(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        src: Register,
-        len: Register,
+        dst: Reg,
+        src: Reg,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
@@ -306,13 +296,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitTo`].
-    #[inline(always)]
     pub fn execute_table_init_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        src: Register,
-        len: Register,
+        src: Reg,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = self.get_register_as(src);
@@ -321,13 +310,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitFrom`].
-    #[inline(always)]
     pub fn execute_table_init_from(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         src: Const16<u32>,
-        len: Register,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let src: u32 = src.into();
@@ -336,13 +324,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitFromTo`].
-    #[inline(always)]
     pub fn execute_table_init_from_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
         src: Const16<u32>,
-        len: Register,
+        len: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let src: u32 = src.into();
@@ -351,12 +338,11 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitExact`].
-    #[inline(always)]
     pub fn execute_table_init_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        src: Register,
+        dst: Reg,
+        src: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
@@ -366,12 +352,11 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitToExact`].
-    #[inline(always)]
     pub fn execute_table_init_to_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        src: Register,
+        src: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
@@ -381,11 +366,10 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitFromExact`].
-    #[inline(always)]
     pub fn execute_table_init_from_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         src: Const16<u32>,
         len: Const16<u32>,
     ) -> Result<(), Error> {
@@ -396,7 +380,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableInitFromToExact`].
-    #[inline(always)]
     pub fn execute_table_init_from_to_exact(
         &mut self,
         store: &mut StoreInner,
@@ -411,6 +394,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.init` instruction.
+    #[inline(never)]
     fn execute_table_init_impl(
         &mut self,
         store: &mut StoreInner,
@@ -420,34 +404,21 @@ impl<'engine> Executor<'engine> {
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let element_index = self.fetch_element_segment_index(2);
-        let (instance, table, element, fuel) = store.resolve_table_init_params(
-            self.stack.calls.instance_expect(),
+        let (table, element, fuel) = store.resolve_table_init_params(
             &self.get_table(table_index),
             &self.get_element_segment(element_index),
         );
-        table.init(
-            dst_index,
-            element,
-            src_index,
-            len,
-            Some(fuel),
-            |func_index| {
-                instance
-                    .get_func(func_index)
-                    .unwrap_or_else(|| panic!("missing function at index {func_index}"))
-            },
-        )?;
+        table.init(element, dst_index, src_index, len, Some(fuel))?;
         self.try_next_instr_at(3)
     }
 
     /// Executes an [`Instruction::TableFill`].
-    #[inline(always)]
     pub fn execute_table_fill(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
-        len: Register,
-        value: Register,
+        dst: Reg,
+        len: Reg,
+        value: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let len: u32 = self.get_register_as(len);
@@ -455,13 +426,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableFillAt`].
-    #[inline(always)]
     pub fn execute_table_fill_at(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
-        len: Register,
-        value: Register,
+        len: Reg,
+        value: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let len: u32 = self.get_register_as(len);
@@ -469,13 +439,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableFillExact`].
-    #[inline(always)]
     pub fn execute_table_fill_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Register,
+        dst: Reg,
         len: Const16<u32>,
-        value: Register,
+        value: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = self.get_register_as(dst);
         let len: u32 = len.into();
@@ -483,13 +452,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableFillAtExact`].
-    #[inline(always)]
     pub fn execute_table_fill_at_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
         len: Const16<u32>,
-        value: Register,
+        value: Reg,
     ) -> Result<(), Error> {
         let dst: u32 = dst.into();
         let len: u32 = len.into();
@@ -497,12 +465,13 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.fill` instruction.
+    #[inline(never)]
     fn execute_table_fill_impl(
         &mut self,
         store: &mut StoreInner,
         dst: u32,
         len: u32,
-        value: Register,
+        value: Reg,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let value = self.get_register(value);
@@ -513,13 +482,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableGrow`].
-    #[inline(always)]
     pub fn execute_table_grow<T>(
         &mut self,
         store: &mut Store<T>,
-        result: Register,
-        delta: Register,
-        value: Register,
+        result: Reg,
+        delta: Reg,
+        value: Reg,
     ) -> Result<(), Error> {
         let delta: u32 = self.get_register_as(delta);
         let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
@@ -527,13 +495,12 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::TableGrowImm`].
-    #[inline(always)]
     pub fn execute_table_grow_imm<T>(
         &mut self,
         store: &mut Store<T>,
-        result: Register,
+        result: Reg,
         delta: Const16<u32>,
-        value: Register,
+        value: Reg,
     ) -> Result<(), Error> {
         let delta: u32 = delta.into();
         let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
@@ -541,12 +508,13 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes a generic `table.grow` instruction.
+    #[inline(never)]
     fn execute_table_grow_impl<'store>(
         &mut self,
         store: &'store mut StoreInner,
-        result: Register,
+        result: Reg,
         delta: u32,
-        value: Register,
+        value: Reg,
         resource_limiter: &mut ResourceLimiterRef<'store>,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
@@ -569,12 +537,7 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::ElemDrop`].
-    #[inline(always)]
-    pub fn execute_element_drop(
-        &mut self,
-        store: &mut StoreInner,
-        segment_index: ElementSegmentIdx,
-    ) {
+    pub fn execute_element_drop(&mut self, store: &mut StoreInner, segment_index: Elem) {
         let segment = self.get_element_segment(segment_index);
         store.resolve_element_segment_mut(&segment).drop_items();
         self.next_instr();

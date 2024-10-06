@@ -33,22 +33,20 @@ where
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
-fn conversion_reg<I, O>(
-    wasm_op: &str,
-    make_instr: fn(result: Register, input: Register) -> Instruction,
-) where
+fn conversion_reg<I, O>(wasm_op: &str, make_instr: fn(result: Reg, input: Reg) -> Instruction)
+where
     I: WasmTy,
     O: WasmTy,
 {
     let expected = [
-        make_instr(Register::from_i16(1), Register::from_i16(0)),
+        make_instr(Reg::from(1), Reg::from(0)),
         Instruction::return_reg(1),
     ];
     conversion_reg_with::<I, O, _>(wasm_op, expected)
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
-fn unary_reg<T>(wasm_op: &str, make_instr: fn(result: Register, input: Register) -> Instruction)
+fn unary_reg<T>(wasm_op: &str, make_instr: fn(result: Reg, input: Reg) -> Instruction)
 where
     T: WasmTy,
 {
@@ -118,6 +116,6 @@ where
     );
     let trap_code = eval(input);
     TranslationTest::from_wat(&wasm)
-        .expect_func_instrs([Instruction::Trap(trap_code)])
+        .expect_func_instrs([Instruction::trap(trap_code)])
         .run();
 }

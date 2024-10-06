@@ -16,8 +16,8 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev_commutative(WASM_OP, 1.0_f64, Instruction::f64_max)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs_commutative(WASM_OP, 1.0_f64, Instruction::f64_max)
 }
 
 #[test]
@@ -45,9 +45,9 @@ fn reg_neg_infinity() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_neg_infinity_rev() {
+fn reg_neg_infinity_lhs() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_rev_with(WASM_OP, f64::NEG_INFINITY, expected).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, f64::NEG_INFINITY, expected).run()
 }
 
 #[test]

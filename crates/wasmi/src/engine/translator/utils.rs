@@ -1,6 +1,6 @@
-use super::{stack::ValueStack, TypedProvider, TypedVal};
+use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
-    engine::bytecode::{AnyConst16, Const16, Provider, Register, RegisterSpanIter, Sign},
+    engine::bytecode::{BoundedRegSpan, Const16, Reg, RegSpan, Sign},
     Error,
 };
 
@@ -10,58 +10,31 @@ use crate::{
 ///
 /// This trait provides some utility methods useful for translation.
 pub trait WasmInteger:
-    Copy + Eq + From<TypedVal> + Into<TypedVal> + TryInto<AnyConst16> + TryInto<Const16<Self>>
+    Copy + Eq + From<TypedVal> + Into<TypedVal> + TryInto<Const16<Self>>
 {
-    /// Returns the `i16` shift amount.
-    ///
-    /// This computes `self % bitwsize<Self>` and returns the result as `i16` value.
-    ///
-    /// # Note
-    ///
-    /// This is commonly needed for Wasm translations of shift and rotate instructions
-    /// since Wasm mandates that the shift amount operand is taken modulo the bitsize
-    /// of the shifted value type.
-    fn as_shift_amount(self) -> i16;
-
     /// Returns `true` if `self` is equal to zero (0).
     fn eq_zero(self) -> bool;
 }
 
 impl WasmInteger for i32 {
-    fn as_shift_amount(self) -> i16 {
-        (self % 32) as i16
-    }
-
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for u32 {
-    fn as_shift_amount(self) -> i16 {
-        (self % 32) as i16
-    }
-
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for i64 {
-    fn as_shift_amount(self) -> i16 {
-        (self % 64) as i16
-    }
-
     fn eq_zero(self) -> bool {
         self == 0
     }
 }
 
 impl WasmInteger for u64 {
-    fn as_shift_amount(self) -> i16 {
-        (self % 64) as i16
-    }
-
     fn eq_zero(self) -> bool {
         self == 0
     }
@@ -77,7 +50,7 @@ pub trait WasmFloat: Copy + Into<TypedVal> + From<TypedVal> {
     fn is_nan(self) -> bool;
 
     /// Returns the [`Sign`] of `self`.
-    fn sign(self) -> Sign;
+    fn sign(self) -> Sign<Self>;
 }
 
 impl WasmFloat for f32 {
@@ -85,11 +58,8 @@ impl WasmFloat for f32 {
         self.is_nan()
     }
 
-    fn sign(self) -> Sign {
-        match self.is_sign_positive() {
-            true => Sign::Pos,
-            false => Sign::Neg,
-        }
+    fn sign(self) -> Sign<Self> {
+        Sign::from(self)
     }
 }
 
@@ -98,21 +68,8 @@ impl WasmFloat for f64 {
         self.is_nan()
     }
 
-    fn sign(self) -> Sign {
-        match self.is_sign_positive() {
-            true => Sign::Pos,
-            false => Sign::Neg,
-        }
-    }
-}
-
-impl Provider<u8> {
-    /// Creates a new `memory` value [`Provider`] from the general [`TypedProvider`].
-    pub fn new(provider: TypedProvider) -> Self {
-        match provider {
-            TypedProvider::Const(value) => Self::Const(u32::from(value) as u8),
-            TypedProvider::Register(register) => Self::Register(register),
-        }
+    fn sign(self) -> Sign<Self> {
+        Sign::from(self)
     }
 }
 
@@ -137,35 +94,81 @@ impl Provider<Const16<u32>> {
     }
 }
 
-impl RegisterSpanIter {
-    /// Creates a [`RegisterSpanIter`] from the given slice of [`TypedProvider`] if possible.
+impl TypedProvider {
+    /// Returns the `i16` [`Reg`] index if the [`TypedProvider`] is a [`Reg`].
+    fn register_index(&self) -> Option<i16> {
+        match self {
+            TypedProvider::Register(index) => Some(i16::from(*index)),
+            TypedProvider::Const(_) => None,
+        }
+    }
+}
+
+/// Extension trait to create a [`BoundedRegSpan`] from a slice of [`TypedProvider`]s.
+pub trait FromProviders: Sized {
+    /// Creates a [`BoundedRegSpan`] from the given slice of [`TypedProvider`] if possible.
     ///
-    /// All [`TypedProvider`] must be [`Register`] and have
+    /// All [`TypedProvider`] must be [`Reg`] and have
     /// contiguous indices for the conversion to succeed.
     ///
     /// Returns `None` if the `providers` slice is empty.
-    pub fn from_providers(providers: &[TypedProvider]) -> Option<Self> {
-        /// Returns the `i16` [`Register`] index if the [`TypedProvider`] is a [`Register`].
-        fn register_index(provider: &TypedProvider) -> Option<i16> {
-            match provider {
-                TypedProvider::Register(index) => Some(index.to_i16()),
-                TypedProvider::Const(_) => None,
-            }
-        }
+    fn from_providers(providers: &[TypedProvider]) -> Option<Self>;
+}
+
+impl FromProviders for BoundedRegSpan {
+    fn from_providers(providers: &[TypedProvider]) -> Option<Self> {
         let (first, rest) = providers.split_first()?;
-        let first_index = register_index(first)?;
+        let first_index = first.register_index()?;
         let mut prev_index = first_index;
         for next in rest {
-            let next_index = register_index(next)?;
+            let next_index = next.register_index()?;
             if next_index.checked_sub(prev_index)? != 1 {
                 return None;
             }
             prev_index = next_index;
         }
         let end_index = prev_index.checked_add(1)?;
-        Some(Self::from_raw_parts(
-            Register::from_i16(first_index),
-            Register::from_i16(end_index),
-        ))
+        let len = (end_index - first_index) as u16;
+        Some(Self::new(RegSpan::new(Reg::from(first_index)), len))
     }
+}
+
+/// Implemented by integer types to wrap them to another (smaller) integer type.
+pub trait Wrap<T> {
+    /// Wraps `self` into a value of type `T`.
+    fn wrap(self) -> T;
+}
+
+impl<T> Wrap<T> for T {
+    #[inline]
+    fn wrap(self) -> T {
+        self
+    }
+}
+
+macro_rules! impl_wrap_for {
+    ( $($from_ty:ty => $to_ty:ty),* $(,)? ) => {
+        $(
+            impl Wrap<$to_ty> for $from_ty {
+                #[inline]
+                fn wrap(self) -> $to_ty { self as _ }
+            }
+        )*
+    };
+}
+impl_wrap_for! {
+    // signed
+    i16 => i8,
+    i32 => i8,
+    i32 => i16,
+    i64 => i8,
+    i64 => i16,
+    i64 => i32,
+    // unsigned
+    u16 => u8,
+    u32 => u8,
+    u32 => u16,
+    u64 => u8,
+    u64 => u16,
+    u64 => u32,
 }

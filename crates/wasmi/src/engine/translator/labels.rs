@@ -148,7 +148,7 @@ impl LabelRegistry {
         user: Instr,
     ) -> Result<BranchOffset, Error> {
         let offset = match *self.get_label(label) {
-            Label::Pinned(target) => BranchOffset::from_src_to_dst(user, target)?,
+            Label::Pinned(target) => BranchOffset::from_src_to_dst(user.into(), target.into())?,
             Label::Unpinned => {
                 self.users.push(LabelUser::new(label, user));
                 BranchOffset::uninit()
@@ -195,7 +195,7 @@ pub struct ResolvedUserIter<'a> {
     registry: &'a LabelRegistry,
 }
 
-impl<'a> Iterator for ResolvedUserIter<'a> {
+impl Iterator for ResolvedUserIter<'_> {
     type Item = (Instr, Result<BranchOffset, Error>);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -205,7 +205,7 @@ impl<'a> Iterator for ResolvedUserIter<'a> {
             .registry
             .resolve_label(next.label)
             .unwrap_or_else(|err| panic!("failed to resolve user: {err}"));
-        let offset = BranchOffset::from_src_to_dst(src, dst);
+        let offset = BranchOffset::from_src_to_dst(src.into(), dst.into()).map_err(Into::into);
         Some((src, offset))
     }
 }

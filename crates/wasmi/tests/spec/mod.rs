@@ -60,7 +60,8 @@ fn mvp_config() -> Config {
         .wasm_mutable_global(false)
         .wasm_saturating_float_to_int(false)
         .wasm_sign_extension(false)
-        .wasm_multi_value(false);
+        .wasm_multi_value(false)
+        .wasm_multi_memory(false);
     config
 }
 
@@ -79,6 +80,7 @@ fn test_config(consume_fuel: bool, mode: ParsingMode) -> RunnerConfig {
         .wasm_saturating_float_to_int(true)
         .wasm_sign_extension(true)
         .wasm_multi_value(true)
+        .wasm_multi_memory(false)
         .wasm_bulk_memory(true)
         .wasm_reference_types(true)
         .wasm_tail_call(true)
@@ -207,19 +209,98 @@ macro_rules! include_wasm_blobs {
     };
 }
 
+expand_tests! {
+    define_spec_tests,
+
+    let config = test_config(false, ParsingMode::Buffered);
+    let runner = run::run_wasm_spec_test;
+}
+
+macro_rules! expand_tests_mm {
+    ( $mac:ident, $( $args:tt )* ) => {
+        $mac! {
+            $( $args )*
+
+            fn wasm_multi_memory_address0("proposals/multi-memory/address0");
+            fn wasm_multi_memory_address1("proposals/multi-memory/address1");
+            fn wasm_multi_memory_align0("proposals/multi-memory/align0");
+            fn wasm_multi_memory_binary("proposals/multi-memory/binary");
+            fn wasm_multi_memory_binary0("proposals/multi-memory/binary0");
+            fn wasm_multi_memory_data_drop0("proposals/multi-memory/data_drop0");
+            fn wasm_multi_memory_data("proposals/multi-memory/data");
+            fn wasm_multi_memory_data0("proposals/multi-memory/data0");
+            fn wasm_multi_memory_data1("proposals/multi-memory/data1");
+            fn wasm_multi_memory_exports0("proposals/multi-memory/exports0");
+            fn wasm_multi_memory_float_exprs0("proposals/multi-memory/float_exprs0");
+            fn wasm_multi_memory_float_exprs1("proposals/multi-memory/float_exprs1");
+            fn wasm_multi_memory_float_memory0("proposals/multi-memory/float_memory0");
+            fn wasm_multi_memory_imports("proposals/multi-memory/imports");
+            fn wasm_multi_memory_imports0("proposals/multi-memory/imports0");
+            fn wasm_multi_memory_imports1("proposals/multi-memory/imports1");
+            fn wasm_multi_memory_imports2("proposals/multi-memory/imports2");
+            fn wasm_multi_memory_imports3("proposals/multi-memory/imports3");
+            fn wasm_multi_memory_imports4("proposals/multi-memory/imports4");
+            fn wasm_multi_memory_linking0("proposals/multi-memory/linking0");
+            fn wasm_multi_memory_linking1("proposals/multi-memory/linking1");
+            fn wasm_multi_memory_linking2("proposals/multi-memory/linking2");
+            fn wasm_multi_memory_linking3("proposals/multi-memory/linking3");
+            fn wasm_multi_memory_load("proposals/multi-memory/load");
+            fn wasm_multi_memory_load0("proposals/multi-memory/load0");
+            fn wasm_multi_memory_load1("proposals/multi-memory/load1");
+            fn wasm_multi_memory_load2("proposals/multi-memory/load2");
+            fn wasm_multi_memory_memory_copy0("proposals/multi-memory/memory_copy0");
+            fn wasm_multi_memory_memory_copy1("proposals/multi-memory/memory_copy1");
+            fn wasm_multi_memory_memory_fill0("proposals/multi-memory/memory_fill0");
+            fn wasm_multi_memory_memory_grow("proposals/multi-memory/memory_grow");
+            fn wasm_multi_memory_memory_init0("proposals/multi-memory/memory_init0");
+            fn wasm_multi_memory_memory_size("proposals/multi-memory/memory_size");
+            fn wasm_multi_memory_memory_size0("proposals/multi-memory/memory_size0");
+            fn wasm_multi_memory_memory_size1("proposals/multi-memory/memory_size1");
+            fn wasm_multi_memory_memory_size2("proposals/multi-memory/memory_size2");
+            fn wasm_multi_memory_memory_size3("proposals/multi-memory/memory_size3");
+            fn wasm_multi_memory_memory_trap0("proposals/multi-memory/memory_trap0");
+            fn wasm_multi_memory_memory_trap1("proposals/multi-memory/memory_trap1");
+            fn wasm_multi_memory_memory_multi("proposals/multi-memory/memory-multi");
+            fn wasm_multi_memory_memory("proposals/multi-memory/memory");
+            // fn wasm_multi_memory_simd_memory("proposals/multi-memory/simd_memory-multi");
+            fn wasm_multi_memory_start0("proposals/multi-memory/start0");
+            fn wasm_multi_memory_store("proposals/multi-memory/store");
+            fn wasm_multi_memory_store0("proposals/multi-memory/store0");
+            fn wasm_multi_memory_store1("proposals/multi-memory/store1");
+            fn wasm_multi_memory_traps0("proposals/multi-memory/traps0");
+        }
+    };
+}
+
 mod blobs {
     expand_tests! {
         include_wasm_blobs,
 
         let folder = "testsuite";
     }
+
+    expand_tests_mm! {
+        include_wasm_blobs,
+
+        let folder = "testsuite";
+    }
 }
 
-expand_tests! {
-    define_spec_tests,
+mod multi_memory {
+    use super::*;
 
-    let config = test_config(false, ParsingMode::Buffered);
-    let runner = run::run_wasm_spec_test;
+    fn test_config() -> RunnerConfig {
+        let config = Config::default();
+        let mode = ParsingMode::Buffered;
+        RunnerConfig { config, mode }
+    }
+
+    expand_tests_mm! {
+        define_spec_tests,
+
+        let config = test_config();
+        let runner = run::run_wasm_spec_test;
+    }
 }
 
 mod fueled {

@@ -6,9 +6,9 @@ mod driver;
 mod error;
 mod instr_encoder;
 mod labels;
+mod provider;
 mod relink_result;
 mod stack;
-mod typed_value;
 mod utils;
 mod visit;
 mod visit_register;
@@ -26,9 +26,9 @@ use self::{
     },
     control_stack::AcquiredTarget,
     labels::{LabelRef, LabelRegistry},
+    provider::{Provider, ProviderSliceStack, UntypedProvider},
     stack::ValueStack,
-    typed_value::TypedVal,
-    utils::{WasmFloat, WasmInteger},
+    utils::{FromProviders as _, WasmFloat, WasmInteger},
 };
 pub use self::{
     control_frame::{ControlFrame, ControlFrameKind},
@@ -38,32 +38,30 @@ pub use self::{
     instr_encoder::{Instr, InstrEncoder},
     stack::TypedProvider,
 };
-use super::code_map::CompiledFuncEntity;
+use super::{
+    bytecode::{index, BoundedRegSpan, BranchOffset},
+    code_map::CompiledFuncEntity,
+};
 use crate::{
-    core::{TrapCode, UntypedVal, ValType},
+    core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
     engine::{
-        bytecode::{
-            AnyConst32,
-            Const16,
-            Const32,
-            Instruction,
-            Register,
-            RegisterSpan,
-            RegisterSpanIter,
-            Sign,
-            SignatureIdx,
-        },
+        bytecode::{Const16, Const32, Instruction, Reg, RegSpan, Sign},
         config::FuelCosts,
         BlockType,
         EngineFunc,
     },
+    ir::{AnyConst16, IntoShiftAmount, ShiftAmount},
     module::{FuncIdx, FuncTypeIdx, ModuleHeader},
     Engine,
     Error,
+    ExternRef,
+    FuncRef,
     FuncType,
 };
 use core::fmt;
+use stack::RegisterSpace;
 use std::vec::Vec;
+use utils::Wrap;
 use wasmparser::{
     BinaryReaderError,
     FuncToValidate,
@@ -73,6 +71,33 @@ use wasmparser::{
     VisitOperator,
     WasmFeatures,
 };
+
+macro_rules! impl_typed_for {
+    ( $( $ty:ident ),* $(,)? ) => {
+        $(
+            impl Typed for $ty {
+                const TY: ValType = crate::core::ValType::$ty;
+            }
+
+            impl From<TypedVal> for $ty {
+                fn from(typed_value: TypedVal) -> Self {
+                    // # Note
+                    //
+                    // We only use a `debug_assert` here instead of a proper `assert`
+                    // since the whole translation process assumes that Wasm validation
+                    // was already performed and thus type checking does not necessarily
+                    // need to happen redundantly outside of debug builds.
+                    debug_assert!(matches!(typed_value.ty(), <$ty as Typed>::TY));
+                    Self::from(typed_value.untyped())
+                }
+            }
+        )*
+    };
+}
+impl_typed_for! {
+    FuncRef,
+    ExternRef,
+}
 
 /// Reusable allocations of a [`FuncTranslator`].
 #[derive(Debug, Default)]
@@ -94,20 +119,20 @@ pub struct TranslationBuffers {
     providers: Vec<TypedProvider>,
     /// Buffer to temporarily hold `br_table` target depths.
     br_table_targets: Vec<u32>,
-    /// Buffer to temporarily hold a bunch of preserved [`Register`] locals.
+    /// Buffer to temporarily hold a bunch of preserved [`Reg`] locals.
     preserved: Vec<PreservedLocal>,
 }
 
-/// A pair of local [`Register`] and its preserved [`Register`].
+/// A pair of local [`Reg`] and its preserved [`Reg`].
 #[derive(Debug, Copy, Clone)]
 pub struct PreservedLocal {
-    local: Register,
-    preserved: Register,
+    local: Reg,
+    preserved: Reg,
 }
 
 impl PreservedLocal {
     /// Creates a new [`PreservedLocal`].
-    pub fn new(local: Register, preserved: Register) -> Self {
+    pub fn new(local: Reg, preserved: Reg) -> Self {
         Self { local, preserved }
     }
 }
@@ -413,7 +438,7 @@ impl LazyFuncTranslator {
     }
 }
 
-impl<'parser> WasmTranslator<'parser> for LazyFuncTranslator {
+impl WasmTranslator<'_> for LazyFuncTranslator {
     type Allocations = ();
 
     fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error> {
@@ -516,7 +541,7 @@ pub struct FuncTranslator {
     alloc: FuncTranslatorAllocations,
 }
 
-impl<'parser> WasmTranslator<'parser> for FuncTranslator {
+impl WasmTranslator<'_> for FuncTranslator {
     type Allocations = FuncTranslatorAllocations;
 
     fn setup(&mut self, _bytes: &[u8]) -> Result<bool, Error> {
@@ -663,11 +688,11 @@ impl FuncTranslator {
         let block_type = BlockType::func_type(func_type);
         let end_label = self.alloc.instr_encoder.new_label();
         let consume_fuel = self.make_fuel_instr()?;
-        // Note: we use a dummy `RegisterSpan` as placeholder.
+        // Note: we use a dummy `RegSpan` as placeholder.
         //
         // We can do this since the branch parameters of the function enclosing block
         // are never used due to optimizations to directly return to the caller instead.
-        let branch_params = RegisterSpan::new(Register::from_i16(0));
+        let branch_params = RegSpan::new(Reg::from(0));
         let block_frame = BlockControlFrame::new(
             block_type,
             end_label,
@@ -700,7 +725,7 @@ impl FuncTranslator {
     }
 
     /// Resolves the [`FuncType`] of the given [`FuncTypeIdx`].
-    fn func_type_at(&self, func_type_index: SignatureIdx) -> FuncType {
+    fn func_type_at(&self, func_type_index: index::FuncType) -> FuncType {
         let func_type_index = FuncTypeIdx::from(u32::from(func_type_index));
         let dedup_func_type = self.module.get_func_type(func_type_index);
         self.engine()
@@ -755,8 +780,9 @@ impl FuncTranslator {
             // Fuel metering is disabled so there is no need to create an `Instruction::ConsumeFuel`.
             return Ok(None);
         };
-        let fuel_instr = Instruction::consume_fuel(fuel_costs.base())
+        let base = u32::try_from(fuel_costs.base())
             .expect("base fuel must be valid for creating `Instruction::ConsumeFuel`");
+        let fuel_instr = Instruction::consume_fuel(base);
         let instr = self.alloc.instr_encoder.push_instr(fuel_instr)?;
         Ok(Some(instr))
     }
@@ -826,11 +852,17 @@ impl FuncTranslator {
             // At the time of this writing the author was not sure if all result registers
             // of all preserved locals are always continuous so this can be understood as
             // a safety guard.
-            (b.preserved.to_i16() - a.preserved.to_i16()) == 1
+            (i16::from(b.preserved) - i16::from(a.preserved)) == 1
         });
         for copy_group in copy_groups {
-            let len = copy_group.len();
-            let results = RegisterSpan::new(copy_group[0].preserved).iter(len);
+            let len = u16::try_from(copy_group.len()).unwrap_or_else(|error| {
+                panic!(
+                    "too many ({}) registers in copy group: {}",
+                    copy_group.len(),
+                    error
+                )
+            });
+            let results = BoundedRegSpan::new(RegSpan::new(copy_group[0].preserved), len);
             let providers = &mut self.alloc.buffer.providers;
             providers.clear();
             providers.extend(
@@ -853,17 +885,16 @@ impl FuncTranslator {
     }
 
     /// Convenience function to copy the parameters when branching to a control frame.
-    fn translate_copy_branch_params(
-        &mut self,
-        branch_params: RegisterSpanIter,
-    ) -> Result<(), Error> {
+    fn translate_copy_branch_params(&mut self, branch_params: BoundedRegSpan) -> Result<(), Error> {
         if branch_params.is_empty() {
             // If the block does not have branch parameters there is no need to copy anything.
             return Ok(());
         }
         let fuel_info = self.fuel_info();
         let params = &mut self.alloc.buffer.providers;
-        self.alloc.stack.pop_n(branch_params.len(), params);
+        self.alloc
+            .stack
+            .pop_n(usize::from(branch_params.len()), params);
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
             branch_params,
@@ -979,38 +1010,8 @@ impl FuncTranslator {
         debug_assert!(frame.is_then_reachable());
         debug_assert!(!frame.is_else_reachable());
         debug_assert!(frame.else_label().is_none());
-        // Note: `if_end_of_then_reachable` returns `None` if `else` was never visited.
         let end_of_then_reachable = frame.is_end_of_then_reachable().unwrap_or(self.reachable);
-        if end_of_then_reachable && frame.is_branched_to() {
-            // If the end of the `if` is reachable AND
-            // there are branches to the end of the `block`
-            // prior, we need to copy the results to the
-            // block result registers.
-            //
-            // # Note
-            //
-            // We can skip this step if the above condition is
-            // not met since the code at this point is either
-            // unreachable OR there is only one source of results
-            // and thus there is no need to copy the results around.
-            self.translate_copy_branch_params(frame.branch_params(self.engine()))?;
-        }
-        // Since the `if` is now sealed we can pin its `end` label.
-        self.alloc.instr_encoder.pin_label(frame.end_label());
-        if frame.is_branched_to() {
-            // Case: branches to this block exist so we cannot treat the
-            //       basic block as a no-op and instead have to put its
-            //       block results on top of the stack.
-            self.alloc
-                .stack
-                .trunc(frame.block_height().into_u16() as usize);
-            for result in frame.branch_params(self.engine()) {
-                self.alloc.stack.push_register(result)?;
-            }
-        }
-        // We reset reachability in case the end of the `block` was reachable.
-        self.reachable = end_of_then_reachable || frame.is_branched_to();
-        Ok(())
+        self.translate_end_if_then_or_else_only(frame, end_of_then_reachable)
     }
 
     /// Translates the `end` of a Wasm `if` [`ControlFrame`] were only `else` is reachable.
@@ -1039,9 +1040,17 @@ impl FuncTranslator {
         debug_assert!(!frame.is_then_reachable());
         debug_assert!(frame.is_else_reachable());
         debug_assert!(frame.else_label().is_none());
-        // Note: `if_end_of_then_reachable` returns `None` if `else` was never visited.
         let end_of_else_reachable = self.reachable || !frame.has_visited_else();
-        if end_of_else_reachable && frame.is_branched_to() {
+        self.translate_end_if_then_or_else_only(frame, end_of_else_reachable)
+    }
+
+    /// Translates the `end` of a Wasm `if` [`ControlFrame`] were only `then` xor `else` is reachable.
+    fn translate_end_if_then_or_else_only(
+        &mut self,
+        frame: IfControlFrame,
+        end_is_reachable: bool,
+    ) -> Result<(), Error> {
+        if end_is_reachable && frame.is_branched_to() {
             // If the end of the `if` is reachable AND
             // there are branches to the end of the `block`
             // prior, we need to copy the results to the
@@ -1069,7 +1078,7 @@ impl FuncTranslator {
             }
         }
         // We reset reachability in case the end of the `block` was reachable.
-        self.reachable = end_of_else_reachable || frame.is_branched_to();
+        self.reachable = end_is_reachable || frame.is_branched_to();
         Ok(())
     }
 
@@ -1195,7 +1204,7 @@ impl FuncTranslator {
     ///    - Note: All dynamically allocated registers must be contiguous.
     ///    - These registers serve as the registers and to hold the branch
     ///      parameters upon branching to the control flow block and are
-    ///      going to be returned via [`RegisterSpan`].
+    ///      going to be returned via [`RegSpan`].
     /// 3. Drop all dynamically allocated branch parameter registers again.
     /// 4. Push the block parameters stored in the `buffer` back onto the stack.
     /// 5. Return the result registers of step 2.
@@ -1213,14 +1222,19 @@ impl FuncTranslator {
     /// If this procedure would allocate more registers than are available.
     fn alloc_branch_params(
         &mut self,
-        len_block_params: usize,
-        len_branch_params: usize,
-    ) -> Result<RegisterSpan, Error> {
+        len_block_params: u16,
+        len_branch_params: u16,
+    ) -> Result<RegSpan, Error> {
         let params = &mut self.alloc.buffer.providers;
         // Pop the block parameters off the stack.
-        self.alloc.stack.pop_n(len_block_params, params);
+        self.alloc
+            .stack
+            .pop_n(usize::from(len_block_params), params);
         // Peek the branch parameter registers which are going to be returned.
-        let branch_params = self.alloc.stack.peek_dynamic_n(len_branch_params)?;
+        let branch_params = self
+            .alloc
+            .stack
+            .peek_dynamic_n(usize::from(len_branch_params))?;
         // Push the block parameters onto the stack again as if nothing happened.
         self.alloc.stack.push_n(params)?;
         params.clear();
@@ -1230,9 +1244,9 @@ impl FuncTranslator {
     /// Pushes a binary instruction with two register inputs `lhs` and `rhs`.
     fn push_binary_instr(
         &mut self,
-        lhs: Register,
-        rhs: Register,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        lhs: Reg,
+        rhs: Reg,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
     ) -> Result<(), Error> {
         let result = self.alloc.stack.push_dynamic()?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
@@ -1248,9 +1262,9 @@ impl FuncTranslator {
     /// - Returns `Err(_)` if a translation error occurred.
     fn try_push_binary_instr_imm16<T>(
         &mut self,
-        lhs: Register,
+        lhs: Reg,
         rhs: T,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
+        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
     ) -> Result<bool, Error>
     where
         T: Copy + TryInto<Const16<T>>,
@@ -1268,8 +1282,8 @@ impl FuncTranslator {
     fn try_push_binary_instr_imm16_rev<T>(
         &mut self,
         lhs: T,
-        rhs: Register,
-        make_instr_imm16: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
+        rhs: Reg,
+        make_instr_imm16: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
     ) -> Result<bool, Error>
     where
         T: Copy + TryInto<Const16<T>>,
@@ -1302,9 +1316,9 @@ impl FuncTranslator {
     /// words for its encoding in the [`Instruction`] sequence.
     fn push_binary_instr_imm<T>(
         &mut self,
-        lhs: Register,
+        lhs: Reg,
         rhs: T,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
     ) -> Result<(), Error>
     where
         T: Into<UntypedVal>,
@@ -1324,8 +1338,8 @@ impl FuncTranslator {
     fn push_binary_instr_imm_rev<T>(
         &mut self,
         lhs: T,
-        rhs: Register,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        rhs: Reg,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
     ) -> Result<(), Error>
     where
         T: Into<UntypedVal>,
@@ -1339,7 +1353,7 @@ impl FuncTranslator {
     /// Translates a [`TrapCode`] as [`Instruction`].
     fn translate_trap(&mut self, trap_code: TrapCode) -> Result<(), Error> {
         bail_unreachable!(self);
-        self.push_fueled_instr(Instruction::Trap(trap_code), FuelCosts::base)?;
+        self.push_fueled_instr(Instruction::trap(trap_code), FuelCosts::base)?;
         self.reachable = false;
         Ok(())
     }
@@ -1368,13 +1382,13 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_binary<T>(
         &mut self,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
-        make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        make_instr_imm16_rev: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
-        make_instr_reg_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
-        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Register) -> Result<bool, Error>,
+        make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
+        make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
+        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: Copy + From<TypedVal> + Into<TypedVal> + TryInto<Const16<T>>,
@@ -1440,11 +1454,11 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_fbinary<T>(
         &mut self,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
-        make_instr_reg_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
-        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Register) -> Result<bool, Error>,
+        make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
+        make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
+        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmFloat,
@@ -1496,8 +1510,8 @@ impl FuncTranslator {
     /// - Applies constant evaluation if both operands are constant values.
     fn translate_fcopysign<T>(
         &mut self,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register, rhs: Sign) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: Sign<T>) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
     ) -> Result<(), Error>
     where
@@ -1552,11 +1566,11 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_binary_commutative<T>(
         &mut self,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm16: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
-        make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
+        make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
+        make_instr_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: Copy + From<TypedVal> + TryInto<Const16<T>>,
@@ -1610,10 +1624,10 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_fbinary_commutative<T>(
         &mut self,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
-        make_instr_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
+        make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
+        make_instr_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmFloat,
@@ -1665,14 +1679,14 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_shift<T>(
         &mut self,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm: fn(result: Register, lhs: Register, rhs: Const16<T>) -> Instruction,
-        make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr_by: fn(result: Reg, lhs: Reg, rhs: ShiftAmount<T>) -> Instruction,
+        make_instr_imm16: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Register) -> Result<bool, Error>,
+        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T: WasmInteger,
+        T: WasmInteger + IntoShiftAmount,
         Const16<T>: From<i16>,
     {
         bail_unreachable!(self);
@@ -1681,17 +1695,13 @@ impl FuncTranslator {
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
             (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
-                let rhs = T::from(rhs).as_shift_amount();
-                if rhs == 0 {
+                let Some(rhs) = T::from(rhs).into_shift_amount() else {
                     // Optimization: Shifting or rotating by zero bits is a no-op.
                     self.alloc.stack.push_register(lhs)?;
                     return Ok(());
-                }
+                };
                 let result = self.alloc.stack.push_dynamic()?;
-                self.push_fueled_instr(
-                    make_instr_imm(result, lhs, <Const16<T>>::from(rhs)),
-                    FuelCosts::base,
-                )?;
+                self.push_fueled_instr(make_instr_by(result, lhs, rhs), FuelCosts::base)?;
                 Ok(())
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
@@ -1704,7 +1714,7 @@ impl FuncTranslator {
                     self.alloc.stack.push_const(lhs);
                     return Ok(());
                 }
-                if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_rev)? {
+                if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16)? {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
@@ -1735,16 +1745,12 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_divrem<T, NonZeroT>(
         &mut self,
-        make_instr: fn(result: Register, lhs: Register, rhs: Register) -> Instruction,
-        make_instr_imm16: fn(
-            result: Register,
-            lhs: Register,
-            rhs: Const16<NonZeroT>,
-        ) -> Instruction,
-        make_instr_imm16_rev: fn(result: Register, lhs: Const16<T>, rhs: Register) -> Instruction,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<NonZeroT>) -> Instruction,
+        make_instr_imm16_rev: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> Result<TypedVal, TrapCode>,
-        make_instr_opt: fn(&mut Self, lhs: Register, rhs: Register) -> Result<bool, Error>,
-        make_instr_reg_imm_opt: fn(&mut Self, lhs: Register, rhs: T) -> Result<bool, Error>,
+        make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
+        make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmInteger,
@@ -1800,7 +1806,7 @@ impl FuncTranslator {
     /// Translates a unary Wasm instruction to Wasmi bytecode.
     fn translate_unary(
         &mut self,
-        make_instr: fn(result: Register, input: Register) -> Instruction,
+        make_instr: fn(result: Reg, input: Reg) -> Instruction,
         consteval: fn(input: TypedVal) -> TypedVal,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -1820,7 +1826,7 @@ impl FuncTranslator {
     /// Translates a fallible unary Wasm instruction to Wasmi bytecode.
     fn translate_unary_fallible(
         &mut self,
-        make_instr: fn(result: Register, input: Register) -> Instruction,
+        make_instr: fn(result: Reg, input: Reg) -> Instruction,
         consteval: fn(input: TypedVal) -> Result<TypedVal, TrapCode>,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -1840,33 +1846,25 @@ impl FuncTranslator {
         }
     }
 
-    /// Returns the 32-bit [`MemArg`] offset.
+    /// Returns the [`MemArg`] linear `memory` index and load/store `offset`.
     ///
     /// # Panics
     ///
     /// If the [`MemArg`] offset is not 32-bit.
-    fn memarg_offset(memarg: MemArg) -> u32 {
-        u32::try_from(memarg.offset).unwrap_or_else(|_| {
+    fn decode_memarg(memarg: MemArg) -> (index::Memory, u32) {
+        let memory = index::Memory::from(memarg.memory);
+        let offset = u32::try_from(memarg.offset).unwrap_or_else(|_| {
             panic!(
                 "encountered 64-bit memory load/store offset: {}",
                 memarg.offset
             )
-        })
+        });
+        (memory, offset)
     }
 
-    /// Calculates the effective address `ptr+offset` and calls `f(address)` if valid.
-    ///
-    /// Encodes a [`TrapCode::MemoryOutOfBounds`] trap instruction if the effective address is invalid.
-    fn effective_address_and(
-        &mut self,
-        ptr: TypedVal,
-        offset: u32,
-        f: impl FnOnce(&mut Self, u32) -> Result<(), Error>,
-    ) -> Result<(), Error> {
-        match u32::from(ptr).checked_add(offset) {
-            Some(address) => f(self, address),
-            None => self.translate_trap(TrapCode::MemoryOutOfBounds),
-        }
+    /// Returns the effective address `ptr+offset` if it is valid.
+    fn effective_address(ptr: u32, offset: u32) -> Option<u32> {
+        ptr.checked_add(offset)
     }
 
     /// Translates a Wasm `load` instruction to Wasmi bytecode.
@@ -1886,44 +1884,72 @@ impl FuncTranslator {
     fn translate_load(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(result: Register, ptr: Register) -> Instruction,
-        make_instr_offset16: fn(
-            result: Register,
-            ptr: Register,
-            offset: Const16<u32>,
-        ) -> Instruction,
-        make_instr_at: fn(result: Register, address: Const32<u32>) -> Instruction,
+        make_instr: fn(result: Reg, memory: index::Memory) -> Instruction,
+        make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Const16<u32>) -> Instruction,
+        make_instr_at: fn(result: Reg, address: u32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let offset = Self::memarg_offset(memarg);
-        match self.alloc.stack.pop() {
-            TypedProvider::Register(ptr) => {
-                if let Ok(offset) = <Const16<u32>>::try_from(offset) {
-                    let result = self.alloc.stack.push_dynamic()?;
-                    self.push_fueled_instr(
-                        make_instr_offset16(result, ptr, offset),
-                        FuelCosts::load,
-                    )?;
-                    return Ok(());
-                }
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let ptr = self.alloc.stack.pop();
+        let ptr = match ptr {
+            Provider::Register(ptr) => ptr,
+            Provider::Const(ptr) => {
+                let Some(address) = Self::effective_address(u32::from(ptr), offset) else {
+                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
+                };
                 let result = self.alloc.stack.push_dynamic()?;
-                self.push_fueled_instr(make_instr(result, ptr), FuelCosts::load)?;
-                self.alloc
-                    .instr_encoder
-                    .append_instr(Instruction::const32(offset))?;
-                Ok(())
+                self.push_fueled_instr(make_instr_at(result, address), FuelCosts::load)?;
+                if !memory.is_default() {
+                    self.alloc
+                        .instr_encoder
+                        .append_instr(Instruction::memory_index(memory))?;
+                }
+                return Ok(());
             }
-            TypedProvider::Const(ptr) => {
-                self.effective_address_and(ptr, offset, |this, address| {
-                    let result = this.alloc.stack.push_dynamic()?;
-                    this.push_fueled_instr(
-                        make_instr_at(result, Const32::from(address)),
-                        FuelCosts::load,
-                    )?;
-                    Ok(())
-                })
+        };
+        let result = self.alloc.stack.push_dynamic()?;
+        if memory.is_default() {
+            if let Ok(offset) = <Const16<u32>>::try_from(offset) {
+                self.push_fueled_instr(make_instr_offset16(result, ptr, offset), FuelCosts::load)?;
+                return Ok(());
             }
         }
+        self.push_fueled_instr(make_instr(result, memory), FuelCosts::load)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register_and_imm32(ptr, offset))?;
+        Ok(())
+    }
+
+    /// Translates non-wrapping Wasm integer `store` to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// Convenience method that simply forwards to [`Self::translate_istore_wrap`].
+    #[allow(clippy::too_many_arguments)]
+    fn translate_istore<Src, Field>(
+        &mut self,
+        memarg: MemArg,
+        make_instr: fn(ptr: Reg, memory: index::Memory) -> Instruction,
+        make_instr_imm: fn(ptr: Reg, memory: index::Memory) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Reg, offset: u16, value: Field) -> Instruction,
+        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: u32) -> Instruction,
+    ) -> Result<(), Error>
+    where
+        Src: Copy + From<TypedVal>,
+        Field: TryFrom<Src> + Into<AnyConst16>,
+    {
+        self.translate_istore_wrap::<Src, Src, Field>(
+            memarg,
+            make_instr,
+            make_instr_imm,
+            make_instr_offset16,
+            make_instr_offset16_imm,
+            make_instr_at,
+            make_instr_at_imm,
+        )
     }
 
     /// Translates Wasm integer `store` and `storeN` instructions to Wasmi bytecode.
@@ -1938,100 +1964,152 @@ impl FuncTranslator {
     /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
     /// - `{i32, i64}.{store, store8, store16, store32}`
-    fn translate_istore<T, U>(
+    #[allow(clippy::too_many_arguments)]
+    fn translate_istore_wrap<Src, Wrapped, Field>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
-        make_instr_offset16: fn(ptr: Register, offset: u16, value: Register) -> Instruction,
-        make_instr_offset16_imm: fn(ptr: Register, offset: u16, value: U) -> Instruction,
-        make_instr_at: fn(address: Const32<u32>, value: Register) -> Instruction,
-        make_instr_at_imm: fn(address: Const32<u32>, value: U) -> Instruction,
+        make_instr: fn(ptr: Reg, memory: index::Memory) -> Instruction,
+        make_instr_imm: fn(ptr: Reg, memory: index::Memory) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Reg, offset: u16, value: Field) -> Instruction,
+        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: u32) -> Instruction,
     ) -> Result<(), Error>
     where
-        T: Copy + From<TypedVal>,
-        U: TryFrom<T>,
+        Src: Copy + Wrap<Wrapped> + From<TypedVal>,
+        Field: TryFrom<Wrapped> + Into<AnyConst16>,
     {
         bail_unreachable!(self);
-        let offset = Self::memarg_offset(memarg);
-        match self.alloc.stack.pop2() {
-            (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
-                if let Ok(offset) = u16::try_from(offset) {
-                    self.push_fueled_instr(
-                        make_instr_offset16(ptr, offset, value),
-                        FuelCosts::store,
-                    )?;
-                    Ok(())
-                } else {
-                    self.push_fueled_instr(
-                        make_instr(ptr, Const32::from(offset)),
-                        FuelCosts::store,
-                    )?;
-                    self.alloc
-                        .instr_encoder
-                        .append_instr(Instruction::Register(value))?;
-                    Ok(())
-                }
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let (ptr, value) = self.alloc.stack.pop2();
+        let ptr = match ptr {
+            Provider::Register(ptr) => ptr,
+            Provider::Const(ptr) => {
+                return self.translate_istore_wrap_at::<Src, Wrapped, Field>(
+                    memory,
+                    u32::from(ptr),
+                    offset,
+                    value,
+                    make_instr_at,
+                    make_instr_at_imm,
+                )
             }
-            (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
-                let offset16 = u16::try_from(offset);
-                let value16 = U::try_from(T::from(value));
-                match (offset16, value16) {
-                    (Ok(offset), Ok(value)) => {
-                        self.push_fueled_instr(
-                            make_instr_offset16_imm(ptr, offset, value),
-                            FuelCosts::store,
-                        )?;
-                        Ok(())
-                    }
-                    (Ok(offset), Err(_)) => {
-                        let value = self.alloc.stack.alloc_const(value)?;
-                        self.push_fueled_instr(
-                            make_instr_offset16(ptr, offset, value),
-                            FuelCosts::store,
-                        )?;
-                        Ok(())
-                    }
-                    (Err(_), _) => {
-                        self.push_fueled_instr(
-                            make_instr(ptr, Const32::from(offset)),
-                            FuelCosts::store,
-                        )?;
-                        self.alloc
-                            .instr_encoder
-                            .append_instr(Instruction::Register(
-                                self.alloc.stack.alloc_const(value)?,
-                            ))?;
-                        Ok(())
-                    }
-                }
-            }
-            (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
-                .effective_address_and(ptr, offset, |this, address| {
-                    this.push_fueled_instr(
-                        make_instr_at(Const32::from(address), value),
-                        FuelCosts::store,
-                    )?;
-                    Ok(())
-                }),
-            (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
-                self.effective_address_and(ptr, offset, |this, address| {
-                    if let Ok(value) = U::try_from(T::from(value)) {
-                        this.push_fueled_instr(
-                            make_instr_at_imm(Const32::from(address), value),
-                            FuelCosts::store,
-                        )?;
-                        Ok(())
-                    } else {
-                        let value = this.alloc.stack.alloc_const(value)?;
-                        this.push_fueled_instr(
-                            make_instr_at(Const32::from(address), value),
-                            FuelCosts::store,
-                        )?;
-                        Ok(())
-                    }
-                })
+        };
+        if memory.is_default() {
+            if let Some(_instr) = self.translate_istore_wrap_mem0::<Src, Wrapped, Field>(
+                ptr,
+                offset,
+                value,
+                make_instr_offset16,
+                make_instr_offset16_imm,
+            )? {
+                return Ok(());
             }
         }
+        let (instr, param) = match value {
+            TypedProvider::Register(value) => (
+                make_instr(ptr, memory),
+                Instruction::register_and_imm32(value, offset),
+            ),
+            TypedProvider::Const(value) => match Field::try_from(Src::from(value).wrap()).ok() {
+                Some(value) => (
+                    make_instr_imm(ptr, memory),
+                    Instruction::imm16_and_imm32(value, offset),
+                ),
+                None => (
+                    make_instr(ptr, memory),
+                    Instruction::register_and_imm32(self.alloc.stack.alloc_const(value)?, offset),
+                ),
+            },
+        };
+        self.push_fueled_instr(instr, FuelCosts::store)?;
+        self.alloc.instr_encoder.append_instr(param)?;
+        Ok(())
+    }
+
+    /// Translates Wasm integer `store` and `storeN` instructions to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This is used in cases where the `ptr` is a known constant value.
+    fn translate_istore_wrap_at<Src, Wrapped, Field>(
+        &mut self,
+        memory: index::Memory,
+        ptr: u32,
+        offset: u32,
+        value: TypedProvider,
+        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: u32) -> Instruction,
+    ) -> Result<(), Error>
+    where
+        Src: Copy + From<TypedVal> + Wrap<Wrapped>,
+        Field: TryFrom<Wrapped>,
+    {
+        let Some(address) = Self::effective_address(ptr, offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
+        match value {
+            Provider::Register(value) => {
+                self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
+            }
+            Provider::Const(value) => {
+                if let Ok(value) = Field::try_from(Src::from(value).wrap()) {
+                    self.push_fueled_instr(make_instr_at_imm(value, address), FuelCosts::store)?;
+                } else {
+                    let value = self.alloc.stack.alloc_const(value)?;
+                    self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
+                }
+            }
+        }
+        if !memory.is_default() {
+            self.alloc
+                .instr_encoder
+                .append_instr(Instruction::memory_index(memory))?;
+        }
+        Ok(())
+    }
+
+    /// Translates Wasm integer `store` and `storeN` instructions to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This optimizes for cases where the Wasm linear memory that is operated on is known
+    /// to be the default memory.
+    /// Returns `Some` in case the optimized instructions have been encoded.
+    fn translate_istore_wrap_mem0<Src, Wrapped, Field>(
+        &mut self,
+        ptr: Reg,
+        offset: u32,
+        value: TypedProvider,
+        make_instr_offset16: fn(Reg, u16, Reg) -> Instruction,
+        make_instr_offset16_imm: fn(Reg, u16, Field) -> Instruction,
+    ) -> Result<Option<Instr>, Error>
+    where
+        Src: Copy + From<TypedVal> + Wrap<Wrapped>,
+        Field: TryFrom<Wrapped>,
+    {
+        let Ok(offset16) = u16::try_from(offset) else {
+            return Ok(None);
+        };
+        let instr = match value {
+            Provider::Register(value) => {
+                self.push_fueled_instr(make_instr_offset16(ptr, offset16, value), FuelCosts::store)?
+            }
+            Provider::Const(value) => match Field::try_from(Src::from(value).wrap()) {
+                Ok(value) => self.push_fueled_instr(
+                    make_instr_offset16_imm(ptr, offset16, value),
+                    FuelCosts::store,
+                )?,
+                Err(_) => {
+                    let value = self.alloc.stack.alloc_const(value)?;
+                    self.push_fueled_instr(
+                        make_instr_offset16(ptr, offset16, value),
+                        FuelCosts::store,
+                    )?
+                }
+            },
+        };
+        Ok(Some(instr))
     }
 
     /// Translates Wasm float `store` instructions to Wasmi bytecode.
@@ -2049,75 +2127,63 @@ impl FuncTranslator {
     fn translate_fstore(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Register, offset: Const32<u32>) -> Instruction,
-        make_instr_offset16: fn(ptr: Register, offset: u16, value: Register) -> Instruction,
-        make_instr_at: fn(address: Const32<u32>, value: Register) -> Instruction,
+        make_instr: fn(ptr: Reg, memory: index::Memory) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
+        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let offset = Self::memarg_offset(memarg);
-        match self.alloc.stack.pop2() {
-            (TypedProvider::Register(ptr), TypedProvider::Register(value)) => {
-                if let Ok(offset) = u16::try_from(offset) {
-                    self.push_fueled_instr(
-                        make_instr_offset16(ptr, offset, value),
-                        FuelCosts::store,
-                    )?;
-                    Ok(())
-                } else {
-                    self.push_fueled_instr(
-                        make_instr(ptr, Const32::from(offset)),
-                        FuelCosts::store,
-                    )?;
-                    self.alloc
-                        .instr_encoder
-                        .append_instr(Instruction::Register(value))?;
-                    Ok(())
-                }
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let (ptr, value) = self.alloc.stack.pop2();
+        let ptr = match ptr {
+            Provider::Register(ptr) => ptr,
+            Provider::Const(ptr) => {
+                return self.translate_fstore_at(
+                    memory,
+                    u32::from(ptr),
+                    offset,
+                    value,
+                    make_instr_at,
+                )
             }
-            (TypedProvider::Register(ptr), TypedProvider::Const(value)) => {
-                let offset16 = u16::try_from(offset);
-                match offset16 {
-                    Ok(offset) => {
-                        let value = self.alloc.stack.alloc_const(value)?;
-                        self.push_fueled_instr(
-                            make_instr_offset16(ptr, offset, value),
-                            FuelCosts::store,
-                        )?;
-                        Ok(())
-                    }
-                    Err(_) => {
-                        self.push_fueled_instr(
-                            make_instr(ptr, Const32::from(offset)),
-                            FuelCosts::store,
-                        )?;
-                        self.alloc
-                            .instr_encoder
-                            .append_instr(Instruction::Register(
-                                self.alloc.stack.alloc_const(value)?,
-                            ))?;
-                        Ok(())
-                    }
-                }
-            }
-            (TypedProvider::Const(ptr), TypedProvider::Register(value)) => self
-                .effective_address_and(ptr, offset, |this, address| {
-                    this.push_fueled_instr(
-                        make_instr_at(Const32::from(address), value),
-                        FuelCosts::store,
-                    )?;
-                    Ok(())
-                }),
-            (TypedProvider::Const(ptr), TypedProvider::Const(value)) => {
-                self.effective_address_and(ptr, offset, |this, address| {
-                    let value = this.alloc.stack.alloc_const(value)?;
-                    this.push_fueled_instr(
-                        make_instr_at(Const32::from(address), value),
-                        FuelCosts::store,
-                    )?;
-                    Ok(())
-                })
+        };
+        let value = self.alloc.stack.provider2reg(&value)?;
+        if memory.is_default() {
+            if let Ok(offset) = u16::try_from(offset) {
+                self.push_fueled_instr(make_instr_offset16(ptr, offset, value), FuelCosts::store)?;
+                return Ok(());
             }
         }
+        self.push_fueled_instr(make_instr(ptr, memory), FuelCosts::store)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register_and_imm32(value, offset))?;
+        Ok(())
+    }
+
+    /// Translates Wasm float `store` instructions to Wasmi bytecode.
+    ///
+    /// # Note
+    ///
+    /// This is used in cases where the `ptr` is a known constant value.
+    fn translate_fstore_at(
+        &mut self,
+        memory: index::Memory,
+        ptr: u32,
+        offset: u32,
+        value: TypedProvider,
+        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
+    ) -> Result<(), Error> {
+        let Some(address) = Self::effective_address(ptr, offset) else {
+            return self.translate_trap(TrapCode::MemoryOutOfBounds);
+        };
+        let value = self.alloc.stack.provider2reg(&value)?;
+        self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
+        if !memory.is_default() {
+            self.alloc
+                .instr_encoder
+                .append_instr(Instruction::memory_index(memory))?;
+        }
+        Ok(())
     }
 
     /// Translates a Wasm `select` or `select <ty>` instruction.
@@ -2129,404 +2195,237 @@ impl FuncTranslator {
     /// - Properly chooses the correct `select` instruction encoding and optimizes for
     ///   cases with 32-bit constant values.
     fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
-        /// Convenience function to encode a `select` instruction.
-        ///
-        /// # Note
-        ///
-        /// Helper for `select` instructions where one of `lhs` and `rhs`
-        /// is a [`Register`] and the other a function local constant value.
-        fn encode_select_imm(
-            this: &mut FuncTranslator,
-            result: Register,
-            condition: Register,
-            reg_in: Register,
-            imm_in: impl Into<UntypedVal>,
-            make_instr: fn(
-                result: Register,
-                condition: Register,
-                lhs_or_rhs: Register,
-            ) -> Instruction,
-        ) -> Result<(), Error> {
-            this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
-            let rhs = this.alloc.stack.alloc_const(imm_in)?;
-            this.alloc
-                .instr_encoder
-                .append_instr(Instruction::Register(rhs))?;
-            Ok(())
-        }
-
-        /// Convenience function to encode a `select` instruction.
-        ///
-        /// # Note
-        ///
-        /// Helper for `select` instructions where one of `lhs` and `rhs`
-        /// is a [`Register`] and the other a 32-bit constant value.
-        fn encode_select_imm32(
-            this: &mut FuncTranslator,
-            result: Register,
-            condition: Register,
-            reg_in: Register,
-            imm_in: impl Into<AnyConst32>,
-            make_instr: fn(
-                result: Register,
-                condition: Register,
-                lhs_or_rhs: Register,
-            ) -> Instruction,
-        ) -> Result<(), Error> {
-            this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
-            this.alloc
-                .instr_encoder
-                .append_instr(Instruction::const32(imm_in))?;
-            Ok(())
-        }
-
-        /// Convenience function to encode a `select` instruction.
-        ///
-        /// # Note
-        ///
-        /// Helper for `select` instructions where one of `lhs` and `rhs`
-        /// is a [`Register`] and the other a 64-bit constant value.
-        fn encode_select_imm64<T>(
-            this: &mut FuncTranslator,
-            result: Register,
-            condition: Register,
-            reg_in: Register,
-            imm_in: T,
-            make_instr: fn(
-                result: Register,
-                condition: Register,
-                lhs_or_rhs: Register,
-            ) -> Instruction,
-            make_instr_param: fn(Const32<T>) -> Instruction,
-        ) -> Result<(), Error>
-        where
-            T: Copy + Into<UntypedVal>,
-            Const32<T>: TryFrom<T>,
-        {
-            match <Const32<T>>::try_from(imm_in) {
-                Ok(imm_in) => {
-                    this.push_fueled_instr(make_instr(result, condition, reg_in), FuelCosts::base)?;
-                    this.alloc
-                        .instr_encoder
-                        .append_instr(make_instr_param(imm_in))?;
-                }
-                Err(_) => {
-                    encode_select_imm(this, result, condition, reg_in, imm_in, make_instr)?;
-                }
-            }
-            Ok(())
-        }
-
         bail_unreachable!(self);
         let (lhs, rhs, condition) = self.alloc.stack.pop3();
-        match condition {
-            TypedProvider::Const(condition) => match (bool::from(condition), lhs, rhs) {
-                // # Optimization
-                //
-                // Since the `condition` is a constant value we can forward `lhs` or `rhs` statically.
-                (true, TypedProvider::Register(reg), _)
-                | (false, _, TypedProvider::Register(reg)) => {
-                    self.alloc.stack.push_register(reg)?;
-                    Ok(())
-                }
-                (true, TypedProvider::Const(value), _)
-                | (false, _, TypedProvider::Const(value)) => {
-                    self.alloc.stack.push_const(value);
-                    Ok(())
-                }
-            },
-            TypedProvider::Register(condition) => {
-                match (lhs, rhs) {
-                    (TypedProvider::Register(lhs), TypedProvider::Register(rhs)) => {
-                        if lhs == rhs {
-                            // # Optimization
-                            //
-                            // Both `lhs` and `rhs` are equal registers
-                            // and thus will always yield the same value.
-                            self.alloc.stack.push_register(lhs)?;
-                            return Ok(());
-                        }
+        let condition = match condition {
+            Provider::Register(condition) => {
+                // TODO: technically we could look through function local constant values here.
+                condition
+            }
+            Provider::Const(condition) => {
+                // Optimization: since condition is a constant value we can const-fold the `select`
+                //               instruction and simply push the selected value back to the provider stack.
+                let selected = match i32::from(condition) != 0 {
+                    true => lhs,
+                    false => rhs,
+                };
+                if let Provider::Register(reg) = selected {
+                    if matches!(
+                        self.alloc.stack.get_register_space(reg),
+                        RegisterSpace::Dynamic | RegisterSpace::Preserve
+                    ) {
+                        // Case: constant propagating a dynamic or preserved register might overwrite it in
+                        //       future instruction translation steps and thus we may require a copy instruction
+                        //       to prevent this from happening.
                         let result = self.alloc.stack.push_dynamic()?;
-                        self.push_fueled_instr(
-                            Instruction::select(result, condition, lhs),
-                            FuelCosts::base,
+                        let fuel_info = self.fuel_info();
+                        self.alloc.instr_encoder.encode_copy(
+                            &mut self.alloc.stack,
+                            result,
+                            selected,
+                            fuel_info,
                         )?;
-                        self.alloc
-                            .instr_encoder
-                            .append_instr(Instruction::Register(rhs))?;
-                        Ok(())
-                    }
-                    (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
-                        if let Some(type_hint) = type_hint {
-                            debug_assert_eq!(rhs.ty(), type_hint);
-                        }
-                        let result = self.alloc.stack.push_dynamic()?;
-                        match rhs.ty() {
-                            ValType::I32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                i32::from(rhs),
-                                Instruction::select,
-                            ),
-                            ValType::F32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                f32::from(rhs),
-                                Instruction::select,
-                            ),
-                            ValType::I64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                i64::from(rhs),
-                                Instruction::select,
-                                Instruction::i64const32,
-                            ),
-                            ValType::F64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                f64::from(rhs),
-                                Instruction::select,
-                                Instruction::f64const32,
-                            ),
-                            ValType::FuncRef | ValType::ExternRef => encode_select_imm(
-                                self,
-                                result,
-                                condition,
-                                lhs,
-                                rhs,
-                                Instruction::select,
-                            ),
-                        }
-                    }
-                    (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
-                        if let Some(type_hint) = type_hint {
-                            debug_assert_eq!(lhs.ty(), type_hint);
-                        }
-                        let result = self.alloc.stack.push_dynamic()?;
-                        match lhs.ty() {
-                            ValType::I32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                i32::from(lhs),
-                                Instruction::select_rev,
-                            ),
-                            ValType::F32 => encode_select_imm32(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                f32::from(lhs),
-                                Instruction::select_rev,
-                            ),
-                            ValType::I64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                i64::from(lhs),
-                                Instruction::select_rev,
-                                Instruction::i64const32,
-                            ),
-                            ValType::F64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                f64::from(lhs),
-                                Instruction::select_rev,
-                                Instruction::f64const32,
-                            ),
-                            ValType::FuncRef | ValType::ExternRef => encode_select_imm(
-                                self,
-                                result,
-                                condition,
-                                rhs,
-                                lhs,
-                                Instruction::select_rev,
-                            ),
-                        }
-                    }
-                    (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
-                        /// Convenience function to encode a `select` instruction.
-                        ///
-                        /// # Note
-                        ///
-                        /// Helper for `select` instructions where both
-                        /// `lhs` and `rhs` are 32-bit constant values.
-                        fn encode_select_imm32<T: Into<AnyConst32>>(
-                            this: &mut FuncTranslator,
-                            result: Register,
-                            condition: Register,
-                            lhs: T,
-                            rhs: T,
-                        ) -> Result<(), Error> {
-                            this.push_fueled_instr(
-                                Instruction::select_imm32(result, lhs),
-                                FuelCosts::base,
-                            )?;
-                            this.alloc
-                                .instr_encoder
-                                .append_instr(Instruction::select_imm32(condition, rhs))?;
-                            Ok(())
-                        }
-
-                        /// Convenience function to encode a `select` instruction.
-                        ///
-                        /// # Note
-                        ///
-                        /// Helper for `select` instructions where both
-                        /// `lhs` and `rhs` are 64-bit constant values.
-                        fn encode_select_imm64<T>(
-                            this: &mut FuncTranslator,
-                            result: Register,
-                            condition: Register,
-                            lhs: T,
-                            rhs: T,
-                            make_instr: fn(
-                                result_or_condition: Register,
-                                lhs_or_rhs: Const32<T>,
-                            ) -> Instruction,
-                            make_param: fn(Const32<T>) -> Instruction,
-                        ) -> Result<(), Error>
-                        where
-                            T: Copy + Into<UntypedVal>,
-                            Const32<T>: TryFrom<T>,
-                        {
-                            let lhs32 = <Const32<T>>::try_from(lhs).ok();
-                            let rhs32 = <Const32<T>>::try_from(rhs).ok();
-                            match (lhs32, rhs32) {
-                                (Some(lhs), Some(rhs)) => {
-                                    this.push_fueled_instr(
-                                        make_instr(result, lhs),
-                                        FuelCosts::base,
-                                    )?;
-                                    this.alloc
-                                        .instr_encoder
-                                        .append_instr(make_instr(condition, rhs))?;
-                                    Ok(())
-                                }
-                                (Some(lhs), None) => {
-                                    let rhs = this.alloc.stack.alloc_const(rhs)?;
-                                    this.push_fueled_instr(
-                                        Instruction::select_rev(result, condition, rhs),
-                                        FuelCosts::base,
-                                    )?;
-                                    this.alloc.instr_encoder.append_instr(make_param(lhs))?;
-                                    Ok(())
-                                }
-                                (None, Some(rhs)) => {
-                                    let lhs = this.alloc.stack.alloc_const(lhs)?;
-                                    this.push_fueled_instr(
-                                        Instruction::select(result, condition, lhs),
-                                        FuelCosts::base,
-                                    )?;
-                                    this.alloc.instr_encoder.append_instr(make_param(rhs))?;
-                                    Ok(())
-                                }
-                                (None, None) => {
-                                    encode_select_imm(this, result, condition, lhs, rhs)
-                                }
-                            }
-                        }
-
-                        /// Convenience function to encode a `select` instruction.
-                        ///
-                        /// # Note
-                        ///
-                        /// Helper for `select` instructions where both `lhs`
-                        /// and `rhs` are function local constant values.
-                        fn encode_select_imm<T>(
-                            this: &mut FuncTranslator,
-                            result: Register,
-                            condition: Register,
-                            lhs: T,
-                            rhs: T,
-                        ) -> Result<(), Error>
-                        where
-                            T: Into<UntypedVal>,
-                        {
-                            let lhs = this.alloc.stack.alloc_const(lhs)?;
-                            let rhs = this.alloc.stack.alloc_const(rhs)?;
-                            this.push_fueled_instr(
-                                Instruction::select(result, condition, lhs),
-                                FuelCosts::base,
-                            )?;
-                            this.alloc
-                                .instr_encoder
-                                .append_instr(Instruction::Register(rhs))?;
-                            Ok(())
-                        }
-
-                        debug_assert_eq!(lhs.ty(), rhs.ty());
-                        if let Some(type_hint) = type_hint {
-                            debug_assert_eq!(lhs.ty(), type_hint);
-                        }
-                        if lhs == rhs {
-                            // # Optimization
-                            //
-                            // Both `lhs` and `rhs` are equal constant values
-                            // and thus will always yield the same value.
-                            self.alloc.stack.push_const(lhs);
-                            return Ok(());
-                        }
-                        let result = self.alloc.stack.push_dynamic()?;
-                        match lhs.ty() {
-                            ValType::I32 => {
-                                encode_select_imm32(
-                                    self,
-                                    result,
-                                    condition,
-                                    i32::from(lhs),
-                                    i32::from(rhs),
-                                )?;
-                                Ok(())
-                            }
-                            ValType::F32 => {
-                                encode_select_imm32(
-                                    self,
-                                    result,
-                                    condition,
-                                    f32::from(lhs),
-                                    f32::from(rhs),
-                                )?;
-                                Ok(())
-                            }
-                            ValType::I64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                i64::from(lhs),
-                                i64::from(rhs),
-                                Instruction::select_i64imm32,
-                                Instruction::i64const32,
-                            ),
-                            ValType::F64 => encode_select_imm64(
-                                self,
-                                result,
-                                condition,
-                                f64::from(lhs),
-                                f64::from(rhs),
-                                Instruction::select_f64imm32,
-                                Instruction::f64const32,
-                            ),
-                            ValType::FuncRef | ValType::ExternRef => {
-                                encode_select_imm(self, result, condition, lhs, rhs)
-                            }
-                        }
+                        return Ok(());
                     }
                 }
+                self.alloc.stack.push_provider(selected)?;
+                return Ok(());
+            }
+        };
+        if lhs == rhs {
+            // Optimization: both `lhs` and `rhs` either are the same register or constant values and
+            //               thus `select` will always yield this same value irrespective of the condition.
+            //
+            // TODO: we could technically look through registers representing function local constants and
+            //       check whether they are equal to a given constant in cases where `lhs` and `rhs` are referring
+            //       to a function local register and a constant value or vice versa.
+            self.alloc.stack.push_provider(lhs)?;
+            return Ok(());
+        }
+        let type_infer = match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                let result = self.alloc.stack.push_dynamic()?;
+                return self.translate_select_regs(result, condition, lhs, rhs);
+            }
+            (Provider::Register(_), Provider::Const(rhs)) => rhs.ty(),
+            (Provider::Const(lhs), Provider::Register(_)) => lhs.ty(),
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                debug_assert_eq!(lhs.ty(), rhs.ty());
+                lhs.ty()
+            }
+        };
+        if let Some(type_hint) = type_hint {
+            assert_eq!(type_hint, type_infer);
+        }
+        let result = self.alloc.stack.push_dynamic()?;
+        match type_infer {
+            ValType::I32 | ValType::F32 => self.translate_select_32(result, condition, lhs, rhs),
+            ValType::I64 => self.translate_select_i64(result, condition, lhs, rhs),
+            ValType::F64 => self.translate_select_f64(result, condition, lhs, rhs),
+            ValType::FuncRef | ValType::ExternRef => {
+                self.translate_select_reftype(result, condition, lhs, rhs)
             }
         }
+    }
+
+    fn translate_select_regs(
+        &mut self,
+        result: Reg,
+        condition: Reg,
+        lhs: Reg,
+        rhs: Reg,
+    ) -> Result<(), Error> {
+        debug_assert_ne!(lhs, rhs);
+        self.push_fueled_instr(Instruction::select(result, lhs), FuelCosts::base)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register2_ext(condition, rhs))?;
+        Ok(())
+    }
+
+    fn translate_select_32(
+        &mut self,
+        result: Reg,
+        condition: Reg,
+        lhs: Provider<TypedVal>,
+        rhs: Provider<TypedVal>,
+    ) -> Result<(), Error> {
+        debug_assert_ne!(lhs, rhs);
+        let (instr, param) = match (lhs, rhs) {
+            (Provider::Register(_), Provider::Register(_)) => unreachable!(),
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                debug_assert!(matches!(rhs.ty(), ValType::I32 | ValType::F32));
+                (
+                    Instruction::select_imm32_rhs(result, lhs),
+                    Instruction::register_and_imm32(condition, u32::from(rhs.untyped())),
+                )
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => {
+                debug_assert!(matches!(lhs.ty(), ValType::I32 | ValType::F32));
+                (
+                    Instruction::select_imm32_lhs(result, u32::from(lhs.untyped())),
+                    Instruction::register2_ext(condition, rhs),
+                )
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                debug_assert!(matches!(lhs.ty(), ValType::I32 | ValType::F32));
+                debug_assert!(matches!(rhs.ty(), ValType::I32 | ValType::F32));
+                (
+                    Instruction::select_imm32(result, u32::from(lhs.untyped())),
+                    Instruction::register_and_imm32(condition, u32::from(rhs.untyped())),
+                )
+            }
+        };
+        self.push_fueled_instr(instr, FuelCosts::base)?;
+        self.alloc.instr_encoder.append_instr(param)?;
+        Ok(())
+    }
+
+    fn translate_select_i64(
+        &mut self,
+        result: Reg,
+        condition: Reg,
+        lhs: Provider<TypedVal>,
+        rhs: Provider<TypedVal>,
+    ) -> Result<(), Error> {
+        debug_assert_ne!(lhs, rhs);
+        let lhs = match lhs {
+            Provider::Register(lhs) => Provider::Register(lhs),
+            Provider::Const(lhs) => match <Const32<i64>>::try_from(i64::from(lhs)) {
+                Ok(lhs) => Provider::Const(lhs),
+                Err(_) => Provider::Register(self.alloc.stack.alloc_const(lhs)?),
+            },
+        };
+        let rhs = match rhs {
+            Provider::Register(rhs) => Provider::Register(rhs),
+            Provider::Const(rhs) => match <Const32<i64>>::try_from(i64::from(rhs)) {
+                Ok(rhs) => Provider::Const(rhs),
+                Err(_) => Provider::Register(self.alloc.stack.alloc_const(rhs)?),
+            },
+        };
+        let (instr, param) = match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                return self.translate_select_regs(result, condition, lhs, rhs)
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => (
+                Instruction::select_i64imm32_rhs(result, lhs),
+                Instruction::register_and_imm32(condition, rhs),
+            ),
+            (Provider::Const(lhs), Provider::Register(rhs)) => (
+                Instruction::select_i64imm32_lhs(result, lhs),
+                Instruction::register2_ext(condition, rhs),
+            ),
+            (Provider::Const(lhs), Provider::Const(rhs)) => (
+                Instruction::select_i64imm32(result, lhs),
+                Instruction::register_and_imm32(condition, rhs),
+            ),
+        };
+        self.push_fueled_instr(instr, FuelCosts::base)?;
+        self.alloc.instr_encoder.append_instr(param)?;
+        Ok(())
+    }
+
+    fn translate_select_f64(
+        &mut self,
+        result: Reg,
+        condition: Reg,
+        lhs: Provider<TypedVal>,
+        rhs: Provider<TypedVal>,
+    ) -> Result<(), Error> {
+        debug_assert_ne!(lhs, rhs);
+        let lhs = match lhs {
+            Provider::Register(lhs) => Provider::Register(lhs),
+            Provider::Const(lhs) => match <Const32<f64>>::try_from(f64::from(lhs)) {
+                Ok(lhs) => Provider::Const(lhs),
+                Err(_) => Provider::Register(self.alloc.stack.alloc_const(lhs)?),
+            },
+        };
+        let rhs = match rhs {
+            Provider::Register(rhs) => Provider::Register(rhs),
+            Provider::Const(rhs) => match <Const32<f64>>::try_from(f64::from(rhs)) {
+                Ok(rhs) => Provider::Const(rhs),
+                Err(_) => Provider::Register(self.alloc.stack.alloc_const(rhs)?),
+            },
+        };
+        let (instr, param) = match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => {
+                return self.translate_select_regs(result, condition, lhs, rhs)
+            }
+            (Provider::Register(lhs), Provider::Const(rhs)) => (
+                Instruction::select_f64imm32_rhs(result, lhs),
+                Instruction::register_and_imm32(condition, rhs),
+            ),
+            (Provider::Const(lhs), Provider::Register(rhs)) => (
+                Instruction::select_f64imm32_lhs(result, lhs),
+                Instruction::register2_ext(condition, rhs),
+            ),
+            (Provider::Const(lhs), Provider::Const(rhs)) => (
+                Instruction::select_f64imm32(result, lhs),
+                Instruction::register_and_imm32(condition, rhs),
+            ),
+        };
+        self.push_fueled_instr(instr, FuelCosts::base)?;
+        self.alloc.instr_encoder.append_instr(param)?;
+        Ok(())
+    }
+
+    fn translate_select_reftype(
+        &mut self,
+        result: Reg,
+        condition: Reg,
+        lhs: Provider<TypedVal>,
+        rhs: Provider<TypedVal>,
+    ) -> Result<(), Error> {
+        debug_assert_ne!(lhs, rhs);
+        let lhs = match lhs {
+            Provider::Register(lhs) => lhs,
+            Provider::Const(lhs) => self.alloc.stack.alloc_const(lhs)?,
+        };
+        let rhs: Reg = match rhs {
+            Provider::Register(rhs) => rhs,
+            Provider::Const(rhs) => self.alloc.stack.alloc_const(rhs)?,
+        };
+        self.translate_select_regs(result, condition, lhs, rhs)
     }
 
     /// Translates a Wasm `reinterpret` instruction.
@@ -2544,6 +2443,25 @@ impl FuncTranslator {
             panic!("the top-most stack item was asserted to be a constant value but a register was found")
         };
         self.alloc.stack.push_const(value.reinterpret(ty));
+        Ok(())
+    }
+
+    /// Translates a Wasm `i64.extend_i32_u` instruction.
+    fn translate_i64_extend_i32_u(&mut self) -> Result<(), Error> {
+        bail_unreachable!(self);
+        if let TypedProvider::Register(_) = self.alloc.stack.peek() {
+            // Nothing to do.
+            //
+            // We try to not manipulate the emulation stack if not needed.
+            return Ok(());
+        }
+        // Case: At this point we know that the top-most stack item is a constant value.
+        //       We pop it, change its type and push it back onto the stack.
+        let TypedProvider::Const(value) = self.alloc.stack.pop() else {
+            panic!("the top-most stack item was asserted to be a constant value but a register was found")
+        };
+        debug_assert_eq!(value.ty(), ValType::I32);
+        self.alloc.stack.push_const(u64::from(u32::from(value)));
         Ok(())
     }
 
@@ -2567,7 +2485,7 @@ impl FuncTranslator {
     }
 
     /// Translates a conditional `br_if` that targets the function enclosing `block`.
-    fn translate_return_if(&mut self, condition: Register) -> Result<(), Error> {
+    fn translate_return_if(&mut self, condition: Reg) -> Result<(), Error> {
         bail_unreachable!(self);
         let len_results = self.func_type().results().len();
         let fuel_info = self.fuel_info();
@@ -2579,5 +2497,361 @@ impl FuncTranslator {
             values,
             fuel_info,
         )
+    }
+
+    /// Create either [`Instruction::CallIndirectParams`] or [`Instruction::CallIndirectParamsImm16`] depending on the inputs.
+    fn call_indirect_params(
+        &mut self,
+        index: Provider<TypedVal>,
+        table_index: u32,
+    ) -> Result<Instruction, Error> {
+        let instr = match index {
+            TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
+                Some(index) => {
+                    // Case: the index is encodable as 16-bit constant value
+                    //       which allows us to use an optimized instruction.
+                    Instruction::call_indirect_params_imm16(index, table_index)
+                }
+                None => {
+                    // Case: the index is not encodable as 16-bit constant value
+                    //       and we need to allocate it as function local constant.
+                    let index = self.alloc.stack.alloc_const(index)?;
+                    Instruction::call_indirect_params(index, table_index)
+                }
+            },
+            TypedProvider::Register(index) => Instruction::call_indirect_params(index, table_index),
+        };
+        Ok(instr)
+    }
+
+    /// Translates a Wasm `br` instruction with its `relative_depth`.
+    fn translate_br(&mut self, relative_depth: u32) -> Result<(), Error> {
+        let engine = self.engine().clone();
+        match self.alloc.control_stack.acquire_target(relative_depth) {
+            AcquiredTarget::Return(_frame) => self.translate_return(),
+            AcquiredTarget::Branch(frame) => {
+                frame.bump_branches();
+                let branch_dst = frame.branch_destination();
+                let branch_params = frame.branch_params(&engine);
+                self.translate_copy_branch_params(branch_params)?;
+                let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                self.push_base_instr(Instruction::branch(branch_offset))?;
+                self.reachable = false;
+                Ok(())
+            }
+        }
+    }
+
+    /// Populate the `buffer` with the `table` targets including the `table` default target.
+    ///
+    /// Returns a shared slice to the `buffer` after it has been filled.
+    ///
+    /// # Note
+    ///
+    /// The `table` default target is pushed last to the `buffer`.
+    fn populate_br_table_buffer<'a>(
+        buffer: &'a mut Vec<u32>,
+        table: &wasmparser::BrTable,
+    ) -> Result<&'a [u32], Error> {
+        let default_target = table.default();
+        buffer.clear();
+        for target in table.targets() {
+            buffer.push(target?);
+        }
+        buffer.push(default_target);
+        Ok(buffer)
+    }
+
+    /// Convenience method to allow inspecting the provider buffer while manipulating `self` circumventing the borrow checker.
+    fn apply_providers_buffer<R>(&mut self, f: impl FnOnce(&mut Self, &[TypedProvider]) -> R) -> R {
+        let values = core::mem::take(&mut self.alloc.buffer.providers);
+        let result = f(self, &values[..]);
+        let _ = core::mem::replace(&mut self.alloc.buffer.providers, values);
+        result
+    }
+
+    /// Translates a Wasm `br_table` instruction with its branching targets.
+    fn translate_br_table(&mut self, table: wasmparser::BrTable) -> Result<(), Error> {
+        let engine = self.engine().clone();
+        let index = self.alloc.stack.pop();
+        let default_target = table.default();
+        if table.is_empty() {
+            // Case: the `br_table` only has a single target `t` which is equal to a `br t`.
+            return self.translate_br(default_target);
+        }
+        let index: Reg = match index {
+            TypedProvider::Register(index) => index,
+            TypedProvider::Const(index) => {
+                // Case: the `br_table` index is a constant value, therefore always taking the same branch.
+                let chosen_index = u32::from(index) as usize;
+                let chosen_target = table
+                    .targets()
+                    .nth(chosen_index)
+                    .transpose()?
+                    .unwrap_or(default_target);
+                return self.translate_br(chosen_target);
+            }
+        };
+        let targets = &mut self.alloc.buffer.br_table_targets;
+        Self::populate_br_table_buffer(targets, &table)?;
+        if targets.iter().all(|&target| target == default_target) {
+            // Case: all targets are the same and thus the `br_table` is equal to a `br`.
+            return self.translate_br(default_target);
+        }
+        // Note: The Wasm spec mandates that all `br_table` targets manipulate the
+        //       Wasm value stack the same. This implies for Wasmi that all `br_table`
+        //       targets have the same branch parameter arity.
+        let branch_params = self
+            .alloc
+            .control_stack
+            .acquire_target(default_target)
+            .control_frame()
+            .branch_params(&engine);
+        match branch_params.len() {
+            0 => self.translate_br_table_0(index),
+            1 => self.translate_br_table_1(index),
+            2 => self.translate_br_table_2(index),
+            3 => self.translate_br_table_3(index),
+            n => self.translate_br_table_n(index, n),
+        }
+    }
+
+    /// Translates the branching targets of a Wasm `br_table` instruction for simple cases without value copying.
+    fn translate_br_table_targets_simple(&mut self, values: &[TypedProvider]) -> Result<(), Error> {
+        self.translate_br_table_targets(values, |_, _| unreachable!())
+    }
+
+    /// Translates the branching targets of a Wasm `br_table` instruction.
+    ///
+    /// The `make_target` closure allows to define the branch table target instruction being used
+    /// for each branch that copies 4 or more values to the destination.
+    fn translate_br_table_targets(
+        &mut self,
+        values: &[TypedProvider],
+        make_target: impl Fn(BoundedRegSpan, BranchOffset) -> Instruction,
+    ) -> Result<(), Error> {
+        let engine = self.engine().clone();
+        let fuel_info = self.fuel_info();
+        let targets = &self.alloc.buffer.br_table_targets;
+        for &target in targets {
+            match self.alloc.control_stack.acquire_target(target) {
+                AcquiredTarget::Return(_) => {
+                    self.alloc.instr_encoder.encode_return(
+                        &mut self.alloc.stack,
+                        values,
+                        fuel_info,
+                    )?;
+                }
+                AcquiredTarget::Branch(frame) => {
+                    frame.bump_branches();
+                    let branch_params = frame.branch_params(&engine);
+                    let branch_dst = frame.branch_destination();
+                    let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+                    let instr = match branch_params.len() {
+                        0 => Instruction::branch(branch_offset),
+                        1..=3 => {
+                            Instruction::branch_table_target(branch_params.span(), branch_offset)
+                        }
+                        _ => make_target(branch_params, branch_offset),
+                    };
+                    self.alloc.instr_encoder.append_instr(instr)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction without inputs.
+    fn translate_br_table_0(&mut self, index: Reg) -> Result<(), Error> {
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_0(index, len_targets),
+            self.fuel_info(),
+            FuelCosts::base,
+        )?;
+        self.translate_br_table_targets_simple(&[])?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction with a single input.
+    fn translate_br_table_1(&mut self, index: Reg) -> Result<(), Error> {
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let fuel_info = self.fuel_info();
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_1(index, len_targets),
+            fuel_info,
+            FuelCosts::base,
+        )?;
+        let stack = &mut self.alloc.stack;
+        let value = stack.pop();
+        let param_instr = match value {
+            TypedProvider::Register(register) => Instruction::register(register),
+            TypedProvider::Const(immediate) => match immediate.ty() {
+                ValType::I32 | ValType::F32 => Instruction::const32(u32::from(immediate.untyped())),
+                ValType::I64 => match <Const32<i64>>::try_from(i64::from(immediate)) {
+                    Ok(value) => Instruction::i64const32(value),
+                    Err(_) => {
+                        let register = self.alloc.stack.provider2reg(&value)?;
+                        Instruction::register(register)
+                    }
+                },
+                ValType::F64 => match <Const32<f64>>::try_from(f64::from(immediate)) {
+                    Ok(value) => Instruction::f64const32(value),
+                    Err(_) => {
+                        let register = self.alloc.stack.provider2reg(&value)?;
+                        Instruction::register(register)
+                    }
+                },
+                ValType::ExternRef | ValType::FuncRef => {
+                    let register = self.alloc.stack.provider2reg(&value)?;
+                    Instruction::register(register)
+                }
+            },
+        };
+        self.alloc.instr_encoder.append_instr(param_instr)?;
+        self.translate_br_table_targets_simple(&[value])?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction with exactly two inputs.
+    fn translate_br_table_2(&mut self, index: Reg) -> Result<(), Error> {
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let fuel_info = self.fuel_info();
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_2(index, len_targets),
+            fuel_info,
+            FuelCosts::base,
+        )?;
+        let stack = &mut self.alloc.stack;
+        let (v0, v1) = stack.pop2();
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register2_ext(
+                stack.provider2reg(&v0)?,
+                stack.provider2reg(&v1)?,
+            ))?;
+        self.translate_br_table_targets_simple(&[v0, v1])?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction with exactly three inputs.
+    fn translate_br_table_3(&mut self, index: Reg) -> Result<(), Error> {
+        let targets = &self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let fuel_info = self.fuel_info();
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_3(index, len_targets),
+            fuel_info,
+            FuelCosts::base,
+        )?;
+        let stack = &mut self.alloc.stack;
+        let (v0, v1, v2) = stack.pop3();
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register3_ext(
+                stack.provider2reg(&v0)?,
+                stack.provider2reg(&v1)?,
+                stack.provider2reg(&v2)?,
+            ))?;
+        self.translate_br_table_targets_simple(&[v0, v1, v2])?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs.
+    fn translate_br_table_n(&mut self, index: Reg, len_values: u16) -> Result<(), Error> {
+        debug_assert!(len_values > 3);
+        let values = &mut self.alloc.buffer.providers;
+        self.alloc.stack.pop_n(usize::from(len_values), values);
+        match BoundedRegSpan::from_providers(values) {
+            Some(span) => self.translate_br_table_span(index, span),
+            None => self.translate_br_table_many(index),
+        }
+    }
+
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs that form a [`RegSpan`].
+    fn translate_br_table_span(&mut self, index: Reg, values: BoundedRegSpan) -> Result<(), Error> {
+        debug_assert!(values.len() > 3);
+        let fuel_info = self.fuel_info();
+        let targets = &mut self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_span(index, len_targets),
+            fuel_info,
+            FuelCosts::base,
+        )?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register_span(values))?;
+        self.apply_providers_buffer(|this, buffer| {
+            this.translate_br_table_targets(buffer, |branch_params, branch_offset| {
+                debug_assert_eq!(values.len(), branch_params.len());
+                let len = values.len();
+                let results = branch_params.span();
+                let values = values.span();
+                let make_instr =
+                    match InstrEncoder::has_overlapping_copy_spans(results, values, len) {
+                        true => Instruction::branch_table_target,
+                        false => Instruction::branch_table_target_non_overlapping,
+                    };
+                make_instr(branch_params.span(), branch_offset)
+            })
+        })?;
+        self.reachable = false;
+        Ok(())
+    }
+
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs that cannot form a [`RegSpan`].
+    fn translate_br_table_many(&mut self, index: Reg) -> Result<(), Error> {
+        let targets = &mut self.alloc.buffer.br_table_targets;
+        let len_targets = targets.len() as u32;
+        let fuel_info = self.fuel_info();
+        self.alloc.instr_encoder.push_fueled_instr(
+            Instruction::branch_table_many(index, len_targets),
+            fuel_info,
+            FuelCosts::base,
+        )?;
+        let stack = &mut self.alloc.stack;
+        let values = &self.alloc.buffer.providers[..];
+        debug_assert!(values.len() > 3);
+        self.alloc
+            .instr_encoder
+            .encode_register_list(stack, values)?;
+        self.apply_providers_buffer(|this, values| {
+            this.translate_br_table_targets(&[], |branch_params, branch_offset| {
+                let make_instr = match InstrEncoder::has_overlapping_copies(branch_params, values) {
+                    true => Instruction::branch_table_target,
+                    false => Instruction::branch_table_target_non_overlapping,
+                };
+                make_instr(branch_params.span(), branch_offset)
+            })
+        })?;
+        self.reachable = false;
+        Ok(())
+    }
+}
+
+trait BumpFuelConsumption {
+    /// Increases the fuel consumption of the [`Instruction::ConsumeFuel`] instruction by `delta`.
+    ///
+    /// # Error
+    ///
+    /// - If `self` is not a [`Instruction::ConsumeFuel`] instruction.
+    /// - If the new fuel consumption overflows the internal `u64` value.
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error>;
+}
+
+impl BumpFuelConsumption for Instruction {
+    fn bump_fuel_consumption(&mut self, delta: u64) -> Result<(), Error> {
+        match self {
+            Self::ConsumeFuel { block_fuel } => block_fuel.bump_by(delta).map_err(Into::into),
+            instr => panic!("expected `Instruction::ConsumeFuel` but found: {instr:?}"),
+        }
     }
 }

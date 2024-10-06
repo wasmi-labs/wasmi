@@ -77,7 +77,7 @@ pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
 /// both to make types a little easier to read and to provide a `Debug` impl so
 /// that `#[derive(Debug)]` works on structs that contain it.
 pub struct ResourceLimiterRef<'a>(Option<&'a mut (dyn ResourceLimiter)>);
-impl<'a> Debug for ResourceLimiterRef<'a> {
+impl Debug for ResourceLimiterRef<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ResourceLimiterRef(...)")
     }
@@ -103,6 +103,19 @@ impl<T> Debug for ResourceLimiterQuery<T> {
     }
 }
 
+/// A wrapper used to store hooks added with [`Store::call_hook`], containing a
+/// boxed `FnMut(&mut T, CallHook) -> Result<(), Error>`.
+///
+/// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
+/// works for [`Store`].
+#[allow(clippy::type_complexity)]
+struct CallHookWrapper<T>(Box<dyn FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync>);
+impl<T> Debug for CallHookWrapper<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "CallHook(...)")
+    }
+}
+
 /// The store that owns all data associated to Wasm modules.
 #[derive(Debug)]
 pub struct Store<T> {
@@ -119,6 +132,10 @@ pub struct Store<T> {
     data: T,
     /// User provided hook to retrieve a [`ResourceLimiter`].
     limiter: Option<ResourceLimiterQuery<T>>,
+    /// User provided callback called when a host calls a WebAssembly function
+    /// or a WebAssembly function calls a host function, or these functions
+    /// return.
+    call_hook: Option<CallHookWrapper<T>>,
 }
 
 /// The inner store that owns all data not associated to the host state.
@@ -164,6 +181,20 @@ fn test_store_is_send_sync() {
         let _ = assert_send::<Store<()>>;
         let _ = assert_sync::<Store<()>>;
     };
+}
+
+/// Argument to the callback set by [`Store::call_hook`] to indicate why the
+/// callback was invoked.
+#[derive(Debug)]
+pub enum CallHook {
+    /// Indicates that a WebAssembly function is being called from the host.
+    CallingWasm,
+    /// Indicates that a WebAssembly function called from the host is returning.
+    ReturningFromWasm,
+    /// Indicates that a host function is being called from a WebAssembly function.
+    CallingHost,
+    /// Indicates that a host function called from a WebAssembly function is returning.
+    ReturningFromHost,
 }
 
 /// An error that may be encountered when operating on the [`Store`].
@@ -577,6 +608,26 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.tables)
     }
 
+    /// Returns an exclusive reference to the [`TableEntity`] and [`ElementSegmentEntity`] associated to `table` and `elem`.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Table`] does not originate from this [`Store`].
+    /// - If the [`Table`] cannot be resolved to its entity.
+    /// - If the [`ElementSegment`] does not originate from this [`Store`].
+    /// - If the [`ElementSegment`] cannot be resolved to its entity.
+    pub fn resolve_table_and_element_mut(
+        &mut self,
+        table: &Table,
+        elem: &ElementSegment,
+    ) -> (&mut TableEntity, &mut ElementSegmentEntity) {
+        let table_idx = self.unwrap_stored(table.as_inner());
+        let elem_idx = self.unwrap_stored(elem.as_inner());
+        let table = Self::resolve_mut(table_idx, &mut self.tables);
+        let elem = Self::resolve_mut(elem_idx, &mut self.elems);
+        (table, elem)
+    }
+
     /// Returns both
     ///
     /// - an exclusive reference to the [`TableEntity`] associated to the given [`Table`]
@@ -613,34 +664,6 @@ impl StoreInner {
         (fst, snd, fuel)
     }
 
-    /// Returns a triple of:
-    ///
-    /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
-    /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
-    ///
-    /// # Note
-    ///
-    /// This method exists to properly handle use cases where
-    /// otherwise the Rust borrow-checker would not accept.
-    ///
-    /// # Panics
-    ///
-    /// - If the [`Table`] does not originate from this [`Store`].
-    /// - If the [`Table`] cannot be resolved to its entity.
-    /// - If the [`ElementSegment`] does not originate from this [`Store`].
-    /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub(super) fn resolve_table_element(
-        &mut self,
-        table: &Table,
-        segment: &ElementSegment,
-    ) -> (&mut TableEntity, &ElementSegmentEntity) {
-        let table_idx = self.unwrap_stored(table.as_inner());
-        let elem_idx = segment.as_inner();
-        let elem = self.resolve(elem_idx, &self.elems);
-        let table = Self::resolve_mut(table_idx, &mut self.tables);
-        (table, elem)
-    }
-
     /// Returns the following data:
     ///
     /// - A shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
@@ -663,23 +686,15 @@ impl StoreInner {
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
     pub(super) fn resolve_table_init_params(
         &mut self,
-        instance: &Instance,
         table: &Table,
         segment: &ElementSegment,
-    ) -> (
-        &InstanceEntity,
-        &mut TableEntity,
-        &ElementSegmentEntity,
-        &mut Fuel,
-    ) {
+    ) -> (&mut TableEntity, &ElementSegmentEntity, &mut Fuel) {
         let mem_idx = self.unwrap_stored(table.as_inner());
-        let data_idx = segment.as_inner();
-        let instance_idx = instance.as_inner();
-        let instance = self.resolve(instance_idx, &self.instances);
-        let data = self.resolve(data_idx, &self.elems);
+        let elem_idx = segment.as_inner();
+        let elem = self.resolve(elem_idx, &self.elems);
         let mem = Self::resolve_mut(mem_idx, &mut self.tables);
         let fuel = &mut self.fuel;
-        (instance, mem, data, fuel)
+        (mem, elem, fuel)
     }
 
     /// Returns a shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
@@ -712,7 +727,7 @@ impl StoreInner {
     ///
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory(&self, memory: &Memory) -> &MemoryEntity {
+    pub fn resolve_memory<'a>(&'a self, memory: &Memory) -> &'a MemoryEntity {
         self.resolve(memory.as_inner(), &self.memories)
     }
 
@@ -722,7 +737,7 @@ impl StoreInner {
     ///
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory_mut(&mut self, memory: &Memory) -> &mut MemoryEntity {
+    pub fn resolve_memory_mut<'a>(&'a mut self, memory: &Memory) -> &'a mut MemoryEntity {
         let idx = self.unwrap_stored(memory.as_inner());
         Self::resolve_mut(idx, &mut self.memories)
     }
@@ -743,20 +758,54 @@ impl StoreInner {
         (memory, fuel)
     }
 
-    /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`Memory`].
+    /// Returns the following data:
+    ///
+    /// - An exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// - A shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
+    /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
+    ///
+    /// # Note
+    ///
+    /// This method exists to properly handle use cases where
+    /// otherwise the Rust borrow-checker would not accept.
     ///
     /// # Panics
     ///
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
     /// - If the [`DataSegment`] does not originate from this [`Store`].
     /// - If the [`DataSegment`] cannot be resolved to its entity.
-    pub fn resolve_data_and_fuel_mut(
+    pub(super) fn resolve_memory_init_params(
         &mut self,
-        data: &DataSegment,
-    ) -> (&mut DataSegmentEntity, &mut Fuel) {
-        let idx = self.unwrap_stored(data.as_inner());
-        let data_segment = Self::resolve_mut(idx, &mut self.datas);
+        memory: &Memory,
+        segment: &DataSegment,
+    ) -> (&mut MemoryEntity, &DataSegmentEntity, &mut Fuel) {
+        let mem_idx = self.unwrap_stored(memory.as_inner());
+        let data_idx = segment.as_inner();
+        let data = self.resolve(data_idx, &self.datas);
+        let mem = Self::resolve_mut(mem_idx, &mut self.memories);
         let fuel = &mut self.fuel;
-        (data_segment, fuel)
+        (mem, data, fuel)
+    }
+
+    /// Returns an exclusive pair of references to the [`MemoryEntity`] associated to the given [`Memory`]s.
+    ///
+    /// # Panics
+    ///
+    /// - If the [`Memory`] does not originate from this [`Store`].
+    /// - If the [`Memory`] cannot be resolved to its entity.
+    pub(super) fn resolve_memory_pair_and_fuel(
+        &mut self,
+        fst: &Memory,
+        snd: &Memory,
+    ) -> (&mut MemoryEntity, &mut MemoryEntity, &mut Fuel) {
+        let fst = self.unwrap_stored(fst.as_inner());
+        let snd = self.unwrap_stored(snd.as_inner());
+        let (fst, snd) = self.memories.get_pair_mut(fst, snd).unwrap_or_else(|| {
+            panic!("failed to resolve stored pair of entities: {fst:?} and {snd:?}")
+        });
+        let fuel = &mut self.fuel;
+        (fst, snd, fuel)
     }
 
     /// Returns an exclusive reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
@@ -821,6 +870,7 @@ where
             trampolines: Arena::new(),
             data: T::default(),
             limiter: None,
+            call_hook: None,
         }
     }
 }
@@ -833,6 +883,7 @@ impl<T> Store<T> {
             trampolines: Arena::new(),
             data,
             limiter: None,
+            call_hook: None,
         }
     }
 
@@ -978,6 +1029,54 @@ impl<T> Store<T> {
             .get(entity_index)
             .unwrap_or_else(|| panic!("failed to resolve stored host function: {entity_index:?}"))
     }
+
+    /// Sets a callback function that is executed whenever a WebAssembly
+    /// function is called from the host or a host function is called from
+    /// WebAssembly, or these functions return.
+    ///
+    /// The function is passed a `&mut T` to the underlying store, and a
+    /// [`CallHook`]. [`CallHook`] can be used to find out what kind of function
+    /// is being called or returned from.
+    ///
+    /// The callback can either return `Ok(())` or an `Err` with an
+    /// [`Error`]. If an error is returned, it is returned to the host
+    /// caller. If there are nested calls, only the most recent host caller
+    /// receives the error and it is not propagated further automatically. The
+    /// hook may be invoked again as new functions are called and returned from.
+    pub fn call_hook(
+        &mut self,
+        hook: impl FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync + 'static,
+    ) {
+        self.call_hook = Some(CallHookWrapper(Box::new(hook)));
+    }
+
+    /// Executes the callback set by [`Store::call_hook`] if any has been set.
+    ///
+    /// # Note
+    ///
+    /// - Returns the value returned by the call hook.
+    /// - Returns `Ok(())` if no call hook exists.
+    #[inline]
+    pub(crate) fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error> {
+        match self.call_hook.as_mut() {
+            None => Ok(()),
+            Some(call_hook) => Self::invoke_call_hook_impl(&mut self.data, call_type, call_hook),
+        }
+    }
+
+    /// Utility function to invoke the [`Store::call_hook`] that is asserted to
+    /// be available in this case.
+    ///
+    /// This is kept as a separate `#[cold]` function to help the compiler speed
+    /// up the code path without any call hooks.
+    #[cold]
+    fn invoke_call_hook_impl(
+        data: &mut T,
+        call_type: CallHook,
+        call_hook: &mut CallHookWrapper<T>,
+    ) -> Result<(), Error> {
+        call_hook.0(data, call_type)
+    }
 }
 
 /// A trait used to get shared access to a [`Store`] in Wasmi.
@@ -1005,7 +1104,7 @@ pub struct StoreContext<'a, T> {
     pub(crate) store: &'a Store<T>,
 }
 
-impl<'a, T> StoreContext<'a, T> {
+impl<T> StoreContext<'_, T> {
     /// Returns the underlying [`Engine`] this store is connected to.
     pub fn engine(&self) -> &Engine {
         self.store.engine()
@@ -1061,7 +1160,7 @@ pub struct StoreContextMut<'a, T> {
     pub(crate) store: &'a mut Store<T>,
 }
 
-impl<'a, T> StoreContextMut<'a, T> {
+impl<T> StoreContextMut<'_, T> {
     /// Returns the underlying [`Engine`] this store is connected to.
     pub fn engine(&self) -> &Engine {
         self.store.engine()

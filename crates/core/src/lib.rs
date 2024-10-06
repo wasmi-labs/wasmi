@@ -15,6 +15,7 @@ pub mod hint;
 mod host_error;
 mod nan_preserving_float;
 mod trap;
+mod typed;
 mod units;
 mod untyped;
 mod value;
@@ -40,6 +41,7 @@ pub use self::{
     host_error::HostError,
     nan_preserving_float::{F32, F64},
     trap::{Trap, TrapCode},
+    typed::{Typed, TypedVal},
     units::Pages,
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedVal},
     value::ValType,

@@ -7,12 +7,8 @@ const WASM_OP: WasmOp = WasmOp::cmp(WasmType::F64, "eq");
 fn same_reg() {
     // We cannot optimize `x == x` to `true` since `x == Nan` or `Nan == x` is always `false`.
     let expected = [
-        Instruction::f64_eq(
-            Register::from_i16(1),
-            Register::from_i16(0),
-            Register::from_i16(0),
-        ),
-        Instruction::return_reg(Register::from_i16(1)),
+        Instruction::f64_eq(Reg::from(1), Reg::from(0), Reg::from(0)),
+        Instruction::return_reg(Reg::from(1)),
     ];
     test_binary_same_reg(WASM_OP, expected)
 }
@@ -31,8 +27,8 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev_commutative(WASM_OP, 1.0_f64, Instruction::f64_eq)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs_commutative(WASM_OP, 1.0_f64, Instruction::f64_eq)
 }
 
 #[test]
@@ -44,7 +40,7 @@ fn reg_nan() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn nan_reg() {
-    test_binary_reg_imm_rev_with(WASM_OP, f64::NAN, [Instruction::return_imm32(false)]).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, f64::NAN, [Instruction::return_imm32(false)]).run()
 }
 
 #[test]

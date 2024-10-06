@@ -29,7 +29,7 @@ pub use self::{
 };
 pub(crate) use self::{
     data::{DataSegment, DataSegments, InitDataSegment, PassiveDataSegmentBytes},
-    element::{ElementSegment, ElementSegmentItems, ElementSegmentKind},
+    element::{ElementSegment, ElementSegmentKind},
     init_expr::ConstExpr,
     utils::WasmiValueType,
 };
@@ -537,7 +537,7 @@ impl<'a> Iterator for ModuleImportsIter<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for ModuleImportsIter<'a> {
+impl ExactSizeIterator for ModuleImportsIter<'_> {
     fn len(&self) -> usize {
         ExactSizeIterator::len(&self.names)
     }
@@ -595,7 +595,7 @@ pub struct InternalFuncsIter<'a> {
     iter: iter::Zip<SliceIter<'a, DedupFuncType>, EngineFuncSpanIter>,
 }
 
-impl<'a> Iterator for InternalFuncsIter<'a> {
+impl Iterator for InternalFuncsIter<'_> {
     type Item = (DedupFuncType, EngineFunc);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -609,7 +609,7 @@ impl<'a> Iterator for InternalFuncsIter<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for InternalFuncsIter<'a> {
+impl ExactSizeIterator for InternalFuncsIter<'_> {
     fn len(&self) -> usize {
         ExactSizeIterator::len(&self.iter)
     }
@@ -633,7 +633,7 @@ impl<'a> Iterator for InternalGlobalsIter<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for InternalGlobalsIter<'a> {
+impl ExactSizeIterator for InternalGlobalsIter<'_> {
     fn len(&self) -> usize {
         ExactSizeIterator::len(&self.iter)
     }

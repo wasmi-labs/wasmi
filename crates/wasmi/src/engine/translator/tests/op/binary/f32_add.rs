@@ -16,8 +16,8 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev_commutative(WASM_OP, 1.0_f32, Instruction::f32_add)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs_commutative(WASM_OP, 1.0_f32, Instruction::f32_add)
 }
 
 #[test]
@@ -29,7 +29,7 @@ fn reg_nan() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn nan_reg() {
-    test_binary_reg_imm_rev_with(WASM_OP, f32::NAN, [Instruction::return_imm32(f32::NAN)]).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, f32::NAN, [Instruction::return_imm32(f32::NAN)]).run()
 }
 
 #[test]
@@ -37,11 +37,7 @@ fn nan_reg() {
 fn reg_zero() {
     // We cannot optimize `x + 0` -> `x` because `-0 + 0` -> `0` according to IEEE.
     let expected = [
-        Instruction::f32_add(
-            Register::from_i16(1),
-            Register::from_i16(0),
-            Register::from_i16(-1),
-        ),
+        Instruction::f32_add(Reg::from(1), Reg::from(0), Reg::from(-1)),
         Instruction::return_reg(1),
     ];
     testcase_binary_reg_imm(WASM_OP, 0.0_f32)
@@ -51,14 +47,10 @@ fn reg_zero() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_zero_rev() {
+fn reg_zero_lhs() {
     // We cannot optimize `0 + x` -> `x` because `0 + -0` -> `0` according to IEEE.
     let expected = [
-        Instruction::f32_add(
-            Register::from_i16(1),
-            Register::from_i16(0),
-            Register::from_i16(-1),
-        ),
+        Instruction::f32_add(Reg::from(1), Reg::from(0), Reg::from(-1)),
         Instruction::return_reg(1),
     ];
     testcase_binary_imm_reg(WASM_OP, 0.0_f32)

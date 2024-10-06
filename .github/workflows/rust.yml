@@ -78,12 +78,21 @@ jobs:
         run: rustup component add rust-src --toolchain nightly-x86_64-unknown-linux-gnu
       - name: Build Tests
         env:
-          RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
+          RUSTFLAGS: "-C debug-assertions -Zsanitizer=address"
         run: cargo build --tests --workspace --locked -Zbuild-std --target x86_64-unknown-linux-gnu --verbose
       - name: Test
         env:
-          RUSTFLAGS: "--cfg debug_assertions -Zsanitizer=address"
+          RUSTFLAGS: "-C debug-assertions -Zsanitizer=address"
         run: cargo test --workspace --locked --tests -Zbuild-std --target x86_64-unknown-linux-gnu
+
+  min-version:
+    name: Check mininum supported Rust version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.79.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --workspace
 
   test:
     name: Test
@@ -196,7 +205,10 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
+          toolchain: nightly-2024-09-24
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -222,7 +234,10 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
+          toolchain: nightly-2024-09-24
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -245,7 +260,10 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
+          toolchain: nightly-2024-09-24
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -355,7 +373,7 @@ jobs:
           version: "0.18.0"
           args: --workspace --locked
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v4.5.0
+        uses: codecov/codecov-action@v4.6.0
         with:
           token: ${{secrets.CODECOV_TOKEN}}
       - name: Archive code coverage results

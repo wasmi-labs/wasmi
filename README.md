@@ -28,10 +28,6 @@ Version `0.31.0` has been [audited by SRLabs].
 [Wasmtime]: https://github.com/bytecodealliance/wasmtime
 [audited by SRLabs]: ./resources/security-audit-2023-12-20.pdf
 
-## Announcement: Transfer of Ownership
-
-As of 2024-02-01, the original owner and maintainer of the Wasmi project, Parity Technologies, has officially transferred ownership of the project to me, Robin Freyler. Read more about this transfer [here](NEWS.md#announcement-transfer-of-ownership).
-
 ## Distinct Features
 
 The following list states some of the distinct features of Wasmi.
@@ -54,23 +50,24 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 
 | WebAssembly Proposal | Status | Comment |
 |:--|:--:|:--|
-| [`mutable-global`] | ✅ | Since version `0.14.0`. |
-| [`saturating-float-to-int`] | ✅ | Since version `0.14.0`. |
-| [`sign-extension`] | ✅ | Since version `0.14.0`. |
-| [`multi-value`] | ✅ | Since version `0.14.0`. |
-| [`bulk-memory`] | ✅ | Since version `0.24.0`. [(#628)] |
-| [`reference-types`] | ✅ | Since version `0.24.0`. [(#635)] |
+| [`mutable-global`] | ✅ | ≥ `0.14.0`. |
+| [`saturating-float-to-int`] | ✅ | ≥ `0.14.0`. |
+| [`sign-extension`] | ✅ | ≥ `0.14.0`. |
+| [`multi-value`] | ✅ | ≥ `0.14.0`. |
+| [`bulk-memory`] | ✅ | ≥ `0.24.0`. [(#628)] |
+| [`reference-types`] | ✅ | ≥ `0.24.0`. [(#635)] |
 | [`simd`] | ❌ | Unlikely to be supported. |
-| [`tail-calls`] | ✅ | Since version `0.28.0`. [(#683)] |
-| [`extended-const`] | ✅ | Since version `0.29.0`. [(#707)] |
+| [`tail-calls`] | ✅ | ≥ `0.28.0`. [(#683)] |
+| [`extended-const`] | ✅ | ≥ `0.29.0`. [(#707)] |
+| [`multi-memory`] | ✅ | ≥ `0.37.0`. [(#1191)] |
 | [`function-references`] | 📅 | Planned but not yet implemented. [(#774)] |
 | [`gc`] | 📅 | Planned but not yet implemented. [(#775)] |
-| [`multi-memory`] | 📅 | Planned but not yet implemented. [(#776)] |
 | [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
 | [`relaxed-simd`] | ❌ | Unlikely to be supported since `simd` is unlikely to be supported. |
 | [`component-model`] | 📅 | Planned but not yet implemented. [(#897)] |
 | [`exception-handling`] | 📅 | Planned but not yet implemented. [(#1037)] |
 | [`branch-hinting`] | 📅 | Planned but not yet implemented. [(#1036)] |
+| [`custom-page-sizes`] | 📅 | Planned but not yet implemented. [(#1197)] |
 | | |
 | [WASI] | 👨‍🔬 | Experimental support for WASI (`wasip1`) via the [`wasmi_wasi` crate]. |
 | [C-API] | 👨‍🔬 | Experimental support for the official Wasm C-API via the [`wasmi_c_api_impl` crate]. |
@@ -92,6 +89,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [`component-model`]: https://github.com/WebAssembly/component-model
 [`exception-handling`]: https://github.com/WebAssembly/exception-handling
 [`branch-hinting`]: https://github.com/WebAssembly/branch-hinting
+[`custom-page-sizes`]: https://github.com/WebAssembly/custom-page-sizes
 
 [WASI]: https://github.com/WebAssembly/WASI
 [C-API]: https://github.com/WebAssembly/wasm-c-api
@@ -113,6 +111,8 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#897)]: https://github.com/wasmi-labs/wasmi/pull/897
 [(#1036)]: https://github.com/wasmi-labs/wasmi/issues/1136
 [(#1037)]: https://github.com/wasmi-labs/wasmi/issues/1137
+[(#1197)]: https://github.com/wasmi-labs/wasmi/issues/1197
+[(#1191)]: https://github.com/wasmi-labs/wasmi/issues/1191
 
 ## Development
 

@@ -1,12 +1,13 @@
 pub use self::instrs::ResumableHostError;
 pub(crate) use self::stack::Stack;
 use self::{
+    instr_ptr::InstructionPtr,
     instrs::{dispatch_host_func, execute_instrs},
     stack::CallFrame,
 };
 use crate::{
     engine::{
-        bytecode::{InstructionPtr, Register, RegisterSpan},
+        bytecode::{Reg, RegSpan},
         CallParams,
         CallResults,
         EngineInner,
@@ -14,6 +15,7 @@ use crate::{
         ResumableInvocation,
     },
     func::HostFuncEntity,
+    CallHook,
     Error,
     Func,
     FuncEntity,
@@ -27,6 +29,7 @@ use crate::engine::StackLimits;
 use super::code_map::CodeMap;
 
 mod cache;
+mod instr_ptr;
 mod instrs;
 mod stack;
 
@@ -215,11 +218,13 @@ impl<'engine> EngineExecutor<'engine> {
                     CallFrame::new(
                         InstructionPtr::new(compiled_func.instrs().as_ptr()),
                         offsets,
-                        RegisterSpan::new(Register::from_i16(0)),
+                        RegSpan::new(Reg::from(0)),
                     ),
                     Some(instance),
                 )?;
+                store.invoke_call_hook(CallHook::CallingWasm)?;
                 self.execute_func(store)?;
+                store.invoke_call_hook(CallHook::ReturningFromWasm)?;
             }
             FuncEntity::Host(host_func) => {
                 // The host function signature is required for properly
@@ -258,7 +263,7 @@ impl<'engine> EngineExecutor<'engine> {
         store: &mut Store<T>,
         _host_func: Func,
         params: impl CallParams,
-        caller_results: RegisterSpan,
+        caller_results: RegSpan,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Error>
     where
@@ -272,7 +277,7 @@ impl<'engine> EngineExecutor<'engine> {
         let mut caller_sp = unsafe { self.stack.values.stack_ptr_at(caller.base_offset()) };
         let call_params = params.call_params();
         let len_params = call_params.len();
-        for (result, param) in caller_results.iter(len_params).zip(call_params) {
+        for (result, param) in caller_results.iter_sized(len_params).zip(call_params) {
             unsafe { caller_sp.set(result, param) };
         }
         self.execute_func(store)?;

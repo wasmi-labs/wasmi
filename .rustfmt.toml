@@ -1,3 +1,4 @@
 imports_granularity = "Crate"
 imports_layout = "HorizontalVertical"
 edition = "2021"
+match_arm_leading_pipes = "Preserve"

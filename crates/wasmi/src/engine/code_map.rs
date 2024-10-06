@@ -15,7 +15,10 @@ use super::{
 use crate::{
     collections::arena::{Arena, ArenaIndex},
     core::{TrapCode, UntypedVal},
-    engine::bytecode::Instruction,
+    engine::{
+        bytecode::{index::InternalFunc, Instruction},
+        utils::unreachable_unchecked,
+    },
     module::{FuncIdx, ModuleHeader},
     store::{Fuel, FuelError},
     Config,
@@ -35,6 +38,18 @@ use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EngineFunc(u32);
+
+impl From<EngineFunc> for InternalFunc {
+    fn from(value: EngineFunc) -> Self {
+        InternalFunc::from(value.0)
+    }
+}
+
+impl From<InternalFunc> for EngineFunc {
+    fn from(index: InternalFunc) -> Self {
+        Self(u32::from(index))
+    }
+}
 
 impl EngineFunc {
     /// Creates a new [`EngineFunc`] from the given `u32` index.
@@ -294,7 +309,9 @@ impl CodeMap {
             // Safety: this is just called internally with function indices
             //         that are known to be valid. Since this is a performance
             //         critical path we need to leave out this check.
-            unsafe { core::hint::unreachable_unchecked() }
+            unsafe {
+                unreachable_unchecked!("encountered invalid function index for engine: {func:?}")
+            }
         };
         let cref = entity.get_compiled()?;
         Some(self.adjust_cref_lifetime(cref))
@@ -470,7 +487,9 @@ impl FuncEntity {
                 // Safety: we just asserted that `self` must be an uncompiled function
                 //         since otherwise we would have returned `None` above.
                 //         Since this is a performance critical path we need to leave out this check.
-                unsafe { core::hint::unreachable_unchecked() }
+                unsafe {
+                    unreachable_unchecked!("expected uncompiled function but found: {self:?}")
+                }
             }
         }
     }
@@ -727,7 +746,7 @@ impl CompiledFuncEntity {
     /// # Panics
     ///
     /// - If `instrs` is empty.
-    /// - If `instrs` contains more than `u32::MAX` instructions.
+    /// - If `instrs` contains more than `i32::MAX` instructions.
     pub fn new<I, C>(len_registers: u16, instrs: I, consts: C) -> Self
     where
         I: IntoIterator<Item = Instruction>,
@@ -738,6 +757,15 @@ impl CompiledFuncEntity {
         assert!(
             !instrs.is_empty(),
             "compiled functions must have at least one instruction"
+        );
+        assert!(
+            // Generally, Wasmi has no issues with more than `i32::MAX` instructions.
+            // However, Wasmi's branch instructions can jump across at most `i32::MAX`
+            // forwards or `i32::MIN` instructions backwards and thus having more than
+            // `i32::MAX` instructions might introduce problems.
+            instrs.len() <= i32::MAX as usize,
+            "compiled function has too many instructions: {}",
+            instrs.len(),
         );
         Self {
             instrs,

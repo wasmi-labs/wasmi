@@ -233,7 +233,7 @@ where
     }
 }
 
-impl<'a, Idx, T> DoubleEndedIterator for Iter<'a, Idx, T>
+impl<Idx, T> DoubleEndedIterator for Iter<'_, Idx, T>
 where
     Idx: ArenaIndex,
 {
@@ -245,7 +245,7 @@ where
     }
 }
 
-impl<'a, Idx, T> ExactSizeIterator for Iter<'a, Idx, T>
+impl<Idx, T> ExactSizeIterator for Iter<'_, Idx, T>
 where
     Idx: ArenaIndex,
 {
@@ -281,7 +281,7 @@ where
     }
 }
 
-impl<'a, Idx, T> DoubleEndedIterator for IterMut<'a, Idx, T>
+impl<Idx, T> DoubleEndedIterator for IterMut<'_, Idx, T>
 where
     Idx: ArenaIndex,
 {
@@ -293,7 +293,7 @@ where
     }
 }
 
-impl<'a, Idx, T> ExactSizeIterator for IterMut<'a, Idx, T>
+impl<Idx, T> ExactSizeIterator for IterMut<'_, Idx, T>
 where
     Idx: ArenaIndex,
 {

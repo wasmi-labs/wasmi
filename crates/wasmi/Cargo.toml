@@ -22,6 +22,7 @@ exclude = [
 wasmparser = { version = "0.214.0", default-features = false, features = ["validate"] }
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
+wasmi_ir = { workspace = true }
 spin = { version = "0.9", default-features = false, features = [
     "mutex",
     "spin_mutex",
@@ -29,8 +30,6 @@ spin = { version = "0.9", default-features = false, features = [
 ] }
 smallvec = { version = "1.13.1", features = ["union"] }
 multi-stash = { version = "0.2.0" }
-num-traits = { workspace = true }
-num-derive = "0.4"
 arrayvec = { version = "0.7.4", default-features = false }
 
 [dev-dependencies]
@@ -41,13 +40,12 @@ anyhow = "1.0"
 criterion = { version = "0.5", default-features = false }
 
 [features]
-default = ["std"]
+default = ["std", "no-hash-maps"]
 std = [
     "wasmi_core/std",
     "wasmi_collections/std",
     "wasmparser/std",
     "spin/std",
-    "num-traits/std",
     "arrayvec/std",
 ]
 # Tells the `wasmi` crate to avoid using hash based data structures.
@@ -61,6 +59,18 @@ no-hash-maps = [
     "wasmi_collections/no-hash-maps",
     "wasmparser/no-hash-maps",
 ]
+
+# Enables extra checks performed during Wasmi bytecode execution.
+#
+# These checks are unnecessary as long as Wasmi translation works as intended.
+# If Wasmi translation invariants are broken due to bugs, these checks prevent
+# Wasmi execution to exhibit undefined behavior (UB) in certain cases.
+#
+# Expected execution overhead is upt to 20%, if enabled.
+#
+# - Enable if your focus is on safety.
+# - Disable if your focus is on execution speed.
+extra-checks = []
 
 [[bench]]
 name = "benches"

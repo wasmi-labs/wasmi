@@ -1,4 +1,5 @@
 use super::*;
+use crate::ir::index::Memory;
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -13,14 +14,15 @@ fn reg() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::memory_grow(Register::from_i16(1), Register::from_i16(0)),
-            Instruction::return_reg(Register::from_i16(1)),
+            Instruction::memory_grow(Reg::from(1), Reg::from(0)),
+            Instruction::memory_index(0),
+            Instruction::return_reg(Reg::from(1)),
         ])
         .run();
 }
 
 fn test_imm16(delta: u32) {
-    assert!(1 <= delta && delta <= u32::from(u16::MAX));
+    assert!(delta != 0);
     let wasm = &format!(
         r"
         (module
@@ -33,8 +35,9 @@ fn test_imm16(delta: u32) {
     );
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::memory_grow_by(Register::from_i16(0), u32imm16(delta)),
-            Instruction::return_reg(Register::from_i16(0)),
+            Instruction::memory_grow_by(Reg::from(0), delta),
+            Instruction::memory_index(0),
+            Instruction::return_reg(Reg::from(0)),
         ])
         .run();
 }
@@ -46,6 +49,9 @@ fn imm16() {
     test_imm16(42);
     test_imm16(u32::from(u16::MAX) - 1);
     test_imm16(u32::from(u16::MAX));
+    test_imm16(u32::from(u16::MAX) + 1);
+    test_imm16(u32::MAX - 1);
+    test_imm16(u32::MAX);
 }
 
 #[test]
@@ -61,38 +67,8 @@ fn imm_zero() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::memory_size(Register::from_i16(0)),
-            Instruction::return_reg(Register::from_i16(0)),
+            Instruction::memory_size(Reg::from(0), Memory::from(0)),
+            Instruction::return_reg(Reg::from(0)),
         ])
         .run();
-}
-
-fn test_imm(delta: u32) {
-    let wasm = &format!(
-        r"
-        (module
-            (memory $m 10)
-            (func (result i32)
-                (i32.const {delta})
-                (memory.grow $m)
-            )
-        )",
-    );
-    TranslationTest::from_wat(wasm)
-        .expect_func(
-            ExpectedFunc::new([
-                Instruction::memory_grow(Register::from_i16(0), Register::from_i16(-1)),
-                Instruction::return_reg(Register::from_i16(0)),
-            ])
-            .consts([delta]),
-        )
-        .run();
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn imm() {
-    test_imm(u32::from(u16::MAX) + 1);
-    test_imm(u32::MAX - 1);
-    test_imm(u32::MAX);
 }

@@ -1,12 +1,12 @@
 //! Translation tests for all Wasm `load` instructions.
 
 use super::*;
-use crate::core::TrapCode;
+use crate::{core::TrapCode, ir::index::Memory};
 
-fn test_load(
+fn test_load_mem0(
     wasm_op: WasmOp,
+    make_instr: fn(result: Reg, memory: Memory) -> Instruction,
     offset: u32,
-    make_instr: fn(result: Register, ptr: Register) -> Instruction,
 ) {
     assert!(
         offset > u32::from(u16::MAX),
@@ -26,9 +26,40 @@ fn test_load(
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            make_instr(Register::from_i16(1), Register::from_i16(0)),
-            Instruction::const32(offset),
-            Instruction::return_reg(Register::from_i16(1)),
+            make_instr(Reg::from(1), Memory::from(0)),
+            Instruction::register_and_imm32(Reg::from(0), offset),
+            Instruction::return_reg(Reg::from(1)),
+        ])
+        .run();
+}
+
+fn test_load(
+    wasm_op: WasmOp,
+    make_instr: fn(result: Reg, memory: Memory) -> Instruction,
+    offset: u32,
+) {
+    assert!(
+        offset > u32::from(u16::MAX),
+        "offset must not be 16-bit encodable in this testcase"
+    );
+    let result_ty = wasm_op.result_ty();
+    let wasm = format!(
+        r#"
+        (module
+            (memory $mem0 1)
+            (memory $mem1 1)
+            (func (param $ptr i32) (result {result_ty})
+                local.get $ptr
+                {wasm_op} $mem1 offset={offset}
+            )
+        )
+    "#
+    );
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([
+            make_instr(Reg::from(1), Memory::from(1)),
+            Instruction::register_and_imm32(Reg::from(0), offset),
+            Instruction::return_reg(Reg::from(1)),
         ])
         .run();
 }
@@ -36,7 +67,7 @@ fn test_load(
 fn test_load_offset16(
     wasm_op: WasmOp,
     offset: u16,
-    make_instr_offset16: fn(result: Register, ptr: Register, offset: Const16<u32>) -> Instruction,
+    make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Const16<u32>) -> Instruction,
 ) {
     let result_ty = wasm_op.result_ty();
     let wasm = format!(
@@ -52,21 +83,17 @@ fn test_load_offset16(
     );
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            make_instr_offset16(
-                Register::from_i16(1),
-                Register::from_i16(0),
-                <Const16<u32>>::from(offset),
-            ),
-            Instruction::return_reg(Register::from_i16(1)),
+            make_instr_offset16(Reg::from(1), Reg::from(0), <Const16<u32>>::from(offset)),
+            Instruction::return_reg(Reg::from(1)),
         ])
         .run();
 }
 
-fn test_load_at(
+fn test_load_at_mem0(
     wasm_op: WasmOp,
+    make_instr_at: fn(result: Reg, address: u32) -> Instruction,
     ptr: u32,
     offset: u32,
-    make_instr_at: fn(result: Register, address: Const32<u32>) -> Instruction,
 ) {
     let result_ty = wasm_op.result_ty();
     let wasm = format!(
@@ -85,13 +112,44 @@ fn test_load_at(
         .expect("ptr+offset must be valid in this testcase");
     TranslationTest::from_wat(&wasm)
         .expect_func_instrs([
-            make_instr_at(Register::from_i16(0), Const32::from(address)),
-            Instruction::return_reg(Register::from_i16(0)),
+            make_instr_at(Reg::from(0), address),
+            Instruction::return_reg(Reg::from(0)),
         ])
         .run();
 }
 
-fn test_load_at_overflow(wasm_op: WasmOp, ptr: u32, offset: u32) {
+fn test_load_at(
+    wasm_op: WasmOp,
+    make_instr_at: fn(result: Reg, address: u32) -> Instruction,
+    ptr: u32,
+    offset: u32,
+) {
+    let result_ty = wasm_op.result_ty();
+    let wasm = format!(
+        r#"
+        (module
+            (memory $mem0 1)
+            (memory $mem1 1)
+            (func (result {result_ty})
+                i32.const {ptr}
+                {wasm_op} $mem1 offset={offset}
+            )
+        )
+    "#
+    );
+    let address = ptr
+        .checked_add(offset)
+        .expect("ptr+offset must be valid in this testcase");
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([
+            make_instr_at(Reg::from(0), address),
+            Instruction::memory_index(1),
+            Instruction::return_reg(0),
+        ])
+        .run();
+}
+
+fn test_load_at_overflow_mem0(wasm_op: WasmOp, ptr: u32, offset: u32) {
     let result_ty = wasm_op.result_ty();
     let wasm = format!(
         r#"
@@ -109,7 +167,30 @@ fn test_load_at_overflow(wasm_op: WasmOp, ptr: u32, offset: u32) {
         "ptr+offset must overflow in this testcase"
     );
     TranslationTest::from_wat(&wasm)
-        .expect_func_instrs([Instruction::Trap(TrapCode::MemoryOutOfBounds)])
+        .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
+        .run();
+}
+
+fn test_load_at_overflow(wasm_op: WasmOp, ptr: u32, offset: u32) {
+    let result_ty = wasm_op.result_ty();
+    let wasm = format!(
+        r#"
+        (module
+            (memory $mem0 1)
+            (memory $mem1 1)
+            (func (result {result_ty})
+                i32.const {ptr}
+                {wasm_op} $mem1 offset={offset}
+            )
+        )
+    "#
+    );
+    assert!(
+        ptr.checked_add(offset).is_none(),
+        "ptr+offset must overflow in this testcase"
+    );
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }
 
@@ -117,8 +198,18 @@ macro_rules! generate_tests {
     ( $wasm_op:ident, $make_instr:expr, $make_instr_offset16:expr, $make_instr_at:expr ) => {
         #[test]
         #[cfg_attr(miri, ignore)]
+        fn reg_mem0() {
+            test_load_mem0(WASM_OP, $make_instr, u32::from(u16::MAX) + 1);
+            test_load_mem0(WASM_OP, $make_instr, u32::MAX - 1);
+            test_load_mem0(WASM_OP, $make_instr, u32::MAX);
+        }
+
+        #[test]
+        #[cfg_attr(miri, ignore)]
         fn reg() {
-            test_load(WASM_OP, u32::MAX, $make_instr);
+            test_load(WASM_OP, $make_instr, u32::from(u16::MAX) + 1);
+            test_load(WASM_OP, $make_instr, u32::MAX - 1);
+            test_load(WASM_OP, $make_instr, u32::MAX);
         }
 
         #[test]
@@ -130,10 +221,26 @@ macro_rules! generate_tests {
 
         #[test]
         #[cfg_attr(miri, ignore)]
+        fn at_mem0() {
+            test_load_at_mem0(WASM_OP, $make_instr_at, 42, 5);
+            test_load_at_mem0(WASM_OP, $make_instr_at, u32::MAX, 0);
+            test_load_at_mem0(WASM_OP, $make_instr_at, 0, u32::MAX);
+        }
+
+        #[test]
+        #[cfg_attr(miri, ignore)]
         fn at() {
-            test_load_at(WASM_OP, 42, 5, $make_instr_at);
-            test_load_at(WASM_OP, u32::MAX, 0, $make_instr_at);
-            test_load_at(WASM_OP, 0, u32::MAX, $make_instr_at);
+            test_load_at(WASM_OP, $make_instr_at, 42, 5);
+            test_load_at(WASM_OP, $make_instr_at, u32::MAX, 0);
+            test_load_at(WASM_OP, $make_instr_at, 0, u32::MAX);
+        }
+
+        #[test]
+        #[cfg_attr(miri, ignore)]
+        fn at_overflow_mem0() {
+            test_load_at_overflow_mem0(WASM_OP, u32::MAX, 1);
+            test_load_at_overflow_mem0(WASM_OP, 1, u32::MAX);
+            test_load_at_overflow_mem0(WASM_OP, u32::MAX, u32::MAX);
         }
 
         #[test]

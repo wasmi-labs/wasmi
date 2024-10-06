@@ -32,7 +32,7 @@ mod i64_extend_i32_s {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn reg() {
-        conversion_reg::<i32, i64>(OP, Instruction::i64_extend_i32_s);
+        conversion_reg::<i32, i64>(OP, Instruction::i64_extend32_s);
     }
 
     #[test]
@@ -57,7 +57,8 @@ mod i64_extend_i32_u {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn reg() {
-        conversion_reg::<i32, i64>(OP, Instruction::i64_extend_i32_u);
+        let expected = [Instruction::return_reg(0)];
+        conversion_reg_with::<i32, i64, _>(OP, expected)
     }
 
     #[test]
@@ -321,7 +322,7 @@ macro_rules! iN_reinterpret_fN_tests {
 
                 #[test] #[cfg_attr(miri, ignore)]
                 fn reg() {
-                    conversion_reg_with::<$input_ty, $output_ty, _>(OP, [Instruction::return_reg(Register::from(0))]);
+                    conversion_reg_with::<$input_ty, $output_ty, _>(OP, [Instruction::return_reg(Reg::from(0))]);
                 }
 
                 #[test] #[cfg_attr(miri, ignore)]
@@ -355,7 +356,7 @@ macro_rules! fN_reinterpret_iN_tests {
 
                 #[test] #[cfg_attr(miri, ignore)]
                 fn reg() {
-                    conversion_reg_with::<$input_ty, $output_ty, _>(OP, [Instruction::return_reg(Register::from(0))]);
+                    conversion_reg_with::<$input_ty, $output_ty, _>(OP, [Instruction::return_reg(Reg::from(0))]);
                 }
 
                 #[test] #[cfg_attr(miri, ignore)]

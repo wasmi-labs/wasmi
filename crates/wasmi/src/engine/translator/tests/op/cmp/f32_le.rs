@@ -6,11 +6,7 @@ const WASM_OP: WasmOp = WasmOp::cmp(WasmType::F32, "le");
 #[cfg_attr(miri, ignore)]
 fn same_reg() {
     let expected = [
-        Instruction::f32_le(
-            Register::from_i16(1),
-            Register::from_i16(0),
-            Register::from_i16(0),
-        ),
+        Instruction::f32_le(Reg::from(1), Reg::from(0), Reg::from(0)),
         Instruction::return_reg(1),
     ];
     test_binary_same_reg(WASM_OP, expected)
@@ -30,8 +26,8 @@ fn reg_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_imm_rev() {
-    test_binary_reg_imm32_rev(WASM_OP, 1.0_f32, Instruction::f32_le)
+fn reg_imm_lhs() {
+    test_binary_reg_imm32_lhs(WASM_OP, 1.0_f32, Instruction::f32_le)
 }
 
 #[test]
@@ -43,7 +39,7 @@ fn reg_nan() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn nan_reg() {
-    test_binary_reg_imm_rev_with(WASM_OP, f32::NAN, [Instruction::return_imm32(false)]).run()
+    test_binary_reg_imm_lhs_with(WASM_OP, f32::NAN, [Instruction::return_imm32(false)]).run()
 }
 
 #[test]

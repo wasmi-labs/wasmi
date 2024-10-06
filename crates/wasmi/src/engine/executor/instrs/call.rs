@@ -1,23 +1,17 @@
-use super::Executor;
+use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
     engine::{
-        bytecode::{
-            FuncIdx,
-            Instruction,
-            InstructionPtr,
-            Register,
-            RegisterSpan,
-            SignatureIdx,
-            TableIdx,
-        },
+        bytecode::{index, Instruction, Reg, RegSpan},
         code_map::CompiledFuncRef,
         executor::stack::{CallFrame, FrameParams, ValueStack},
+        utils::unreachable_unchecked,
         EngineFunc,
         FuncParams,
     },
     func::{FuncEntity, HostFuncEntity},
     store::StoreInner,
+    CallHook,
     Error,
     Func,
     FuncRef,
@@ -34,7 +28,6 @@ use std::fmt;
 /// # Errors
 ///
 /// Returns the error of the host function if an error occurred.
-#[inline(always)]
 pub fn dispatch_host_func<T>(
     store: &mut Store<T>,
     value_stack: &mut ValueStack,
@@ -81,7 +74,7 @@ pub struct ResumableHostError {
     /// The host function that returned the error.
     host_func: Func,
     /// The result registers of the caller of the host function.
-    caller_results: RegisterSpan,
+    caller_results: RegSpan,
 }
 
 #[cfg(feature = "std")]
@@ -96,7 +89,7 @@ impl fmt::Display for ResumableHostError {
 impl ResumableHostError {
     /// Creates a new [`ResumableHostError`].
     #[cold]
-    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: RegisterSpan) -> Self {
+    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: RegSpan) -> Self {
         Self {
             host_error,
             host_func,
@@ -114,8 +107,8 @@ impl ResumableHostError {
         &self.host_func
     }
 
-    /// Returns the caller results [`RegisterSpan`] of the [`ResumableHostError`].
-    pub(crate) fn caller_results(&self) -> &RegisterSpan {
+    /// Returns the caller results [`RegSpan`] of the [`ResumableHostError`].
+    pub(crate) fn caller_results(&self) -> &RegSpan {
         &self.caller_results
     }
 }
@@ -156,13 +149,12 @@ mod marker {
     }
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Updates the [`InstructionPtr`] of the caller [`CallFrame`] before dispatching a call.
     ///
     /// # Note
     ///
     /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
-    #[inline(always)]
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
         // other parts of the code more fragile with respect to instruction ordering.
@@ -181,35 +173,62 @@ impl<'engine> Executor<'engine> {
     ///
     /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
     /// - This is done by encoding an [`Instruction::TableGet`] instruction
-    ///   word following the actual instruction where the [`TableIdx`]
+    ///   word following the actual instruction where the [`index::Table`]
     ///   paremeter belongs to.
     /// - This is required for some instructions that do not fit into
-    ///   a single instruction word and store a [`TableIdx`] value in
+    ///   a single instruction word and store a [`index::Table`] value in
     ///   another instruction word.
-    fn pull_call_indirect_params(&mut self) -> (u32, TableIdx) {
+    fn pull_call_indirect_params(&mut self) -> (u32, index::Table) {
         self.ip.add(1);
-        match self.ip.get() {
-            Instruction::CallIndirectParams(call_params) => {
-                let index = u32::from(self.get_register(call_params.index));
-                let table = call_params.table;
+        match *self.ip.get() {
+            Instruction::CallIndirectParams { index, table } => {
+                let index = u32::from(self.get_register(index));
                 (index, table)
             }
-            Instruction::CallIndirectParamsImm16(call_params) => {
-                let index = u32::from(call_params.index);
-                let table = call_params.table;
+            unexpected => {
+                // Safety: Wasmi translation guarantees that correct instruction parameter follows.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::CallIndirectParams` but found {unexpected:?}"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Fetches the [`Instruction::CallIndirectParamsImm16`] parameter for a call [`Instruction`].
+    ///
+    /// # Note
+    ///
+    /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
+    /// - This is done by encoding an [`Instruction::TableGet`] instruction
+    ///   word following the actual instruction where the [`index::Table`]
+    ///   paremeter belongs to.
+    /// - This is required for some instructions that do not fit into
+    ///   a single instruction word and store a [`index::Table`] value in
+    ///   another instruction word.
+    fn pull_call_indirect_params_imm16(&mut self) -> (u32, index::Table) {
+        self.ip.add(1);
+        match *self.ip.get() {
+            Instruction::CallIndirectParamsImm16 { index, table } => {
+                let index = u32::from(index);
                 (index, table)
             }
-            unexpected => unreachable!(
-                "expected `Instruction::CallIndirectParams[Imm16]` but found {unexpected:?}"
-            ),
+            unexpected => {
+                // Safety: Wasmi translation guarantees that correct instruction parameter follows.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::CallIndirectParamsImm16` but found {unexpected:?}"
+                    )
+                }
+            }
         }
     }
 
     /// Creates a [`CallFrame`] for calling the [`EngineFunc`].
-    #[inline(always)]
     fn dispatch_compiled_func<C: CallContext>(
         &mut self,
-        results: RegisterSpan,
+        results: RegSpan,
         func: CompiledFuncRef,
     ) -> Result<CallFrame, Error> {
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
@@ -236,33 +255,34 @@ impl<'engine> Executor<'engine> {
     ///
     /// This will also adjust the instruction pointer to point to the
     /// last call parameter [`Instruction`] if any.
-    #[inline(always)]
     fn copy_call_params(&mut self, uninit_params: &mut FrameParams) {
         self.ip.add(1);
-        if let Instruction::RegisterList(_) = self.ip.get() {
+        if let Instruction::RegisterList { .. } = self.ip.get() {
             self.copy_call_params_list(uninit_params);
         }
         match self.ip.get() {
-            Instruction::Register(value) => {
-                self.copy_regs(uninit_params, array::from_ref(value));
+            Instruction::Register { reg } => {
+                self.copy_regs(uninit_params, array::from_ref(reg));
             }
-            Instruction::Register2(values) => {
-                self.copy_regs(uninit_params, values);
+            Instruction::Register2 { regs } => {
+                self.copy_regs(uninit_params, regs);
             }
-            Instruction::Register3(values) => {
-                self.copy_regs(uninit_params, values);
+            Instruction::Register3 { regs } => {
+                self.copy_regs(uninit_params, regs);
             }
             unexpected => {
-                unreachable!(
-                    "unexpected Instruction found while copying call parameters: {unexpected:?}"
-                )
+                // Safety: Wasmi translation guarantees that register list finalizer exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected register-list finalizer but found: {unexpected:?}"
+                    )
+                }
             }
         }
     }
 
-    /// Copies an array of [`Register`] to the `dst` [`Register`] span.
-    #[inline(always)]
-    fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Register; N]) {
+    /// Copies an array of [`Reg`] to the `dst` [`Reg`] span.
+    fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Reg; N]) {
         for value in regs {
             let value = self.get_register(*value);
             // Safety: The `callee.results()` always refer to a span of valid
@@ -273,26 +293,24 @@ impl<'engine> Executor<'engine> {
         }
     }
 
-    /// Copies a list of [`Instruction::RegisterList`] to the `dst` [`Register`] span.
+    /// Copies a list of [`Instruction::RegisterList`] to the `dst` [`Reg`] span.
     /// Copies the parameters from `src` for the called [`CallFrame`].
     ///
     /// This will make the [`InstructionPtr`] point to the [`Instruction`] following the
     /// last [`Instruction::RegisterList`] if any.
-    #[inline(always)]
     #[cold]
     fn copy_call_params_list(&mut self, uninit_params: &mut FrameParams) {
-        while let Instruction::RegisterList(values) = self.ip.get() {
-            self.copy_regs(uninit_params, values);
+        while let Instruction::RegisterList { regs } = self.ip.get() {
+            self.copy_regs(uninit_params, regs);
             self.ip.add(1);
         }
     }
 
     /// Prepares a [`EngineFunc`] call with optional call parameters.
-    #[inline(always)]
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
-        results: RegisterSpan,
+        results: RegSpan,
         func: EngineFunc,
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
@@ -326,7 +344,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal0`].
-    #[inline(always)]
     pub fn execute_return_call_internal_0(
         &mut self,
         store: &mut StoreInner,
@@ -336,7 +353,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`].
-    #[inline(always)]
     pub fn execute_return_call_internal(
         &mut self,
         store: &mut StoreInner,
@@ -355,7 +371,7 @@ impl<'engine> Executor<'engine> {
         self.prepare_compiled_func_call::<C>(store, results, func, None)
     }
 
-    /// Returns the `results` [`RegisterSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
+    /// Returns the `results` [`RegSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
     ///
     /// # Note
     ///
@@ -363,7 +379,7 @@ impl<'engine> Executor<'engine> {
     /// tail call instructions for which the top-most [`CallFrame`] is the caller.
     ///
     /// [`CallStack`]: crate::engine::executor::stack::CallStack
-    fn caller_results(&self) -> RegisterSpan {
+    fn caller_results(&self) -> RegSpan {
         self.stack
             .calls
             .peek()
@@ -372,43 +388,39 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallInternal0`].
-    #[inline(always)]
     pub fn execute_call_internal_0(
         &mut self,
         store: &mut StoreInner,
-        results: RegisterSpan,
+        results: RegSpan,
         func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func, None)
     }
 
     /// Executes an [`Instruction::CallInternal`].
-    #[inline(always)]
     pub fn execute_call_internal(
         &mut self,
         store: &mut StoreInner,
-        results: RegisterSpan,
+        results: RegSpan,
         func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func, None)
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
-    #[inline(always)]
     pub fn execute_return_call_imported_0<T>(
         &mut self,
         store: &mut Store<T>,
-        func: FuncIdx,
+        func: index::Func,
     ) -> Result<(), Error> {
         self.execute_return_call_imported_impl::<marker::ReturnCall0, T>(store, func)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
-    #[inline(always)]
     pub fn execute_return_call_imported<T>(
         &mut self,
         store: &mut Store<T>,
-        func: FuncIdx,
+        func: index::Func,
     ) -> Result<(), Error> {
         self.execute_return_call_imported_impl::<marker::ReturnCall, T>(store, func)
     }
@@ -417,7 +429,7 @@ impl<'engine> Executor<'engine> {
     fn execute_return_call_imported_impl<C: ReturnCallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        func: FuncIdx,
+        func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
         let results = self.caller_results();
@@ -425,24 +437,22 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallImported0`].
-    #[inline(always)]
     pub fn execute_call_imported_0<T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
-        func: FuncIdx,
+        results: RegSpan,
+        func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
         self.execute_call_imported_impl::<marker::NestedCall0, T>(store, results, &func)
     }
 
     /// Executes an [`Instruction::CallImported`].
-    #[inline(always)]
     pub fn execute_call_imported<T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
-        func: FuncIdx,
+        results: RegSpan,
+        func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
         self.execute_call_imported_impl::<marker::NestedCall, T>(store, results, &func)
@@ -452,7 +462,7 @@ impl<'engine> Executor<'engine> {
     fn execute_call_imported_impl<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func: &Func,
     ) -> Result<(), Error> {
         match store.inner.resolve_func(func) {
@@ -469,7 +479,13 @@ impl<'engine> Executor<'engine> {
                 Ok(())
             }
             FuncEntity::Host(host_func) => {
-                self.execute_host_func::<C, T>(store, results, func, *host_func)
+                let host_func = *host_func;
+
+                store.invoke_call_hook(CallHook::CallingHost)?;
+                self.execute_host_func::<C, T>(store, results, func, host_func)?;
+                store.invoke_call_hook(CallHook::ReturningFromHost)?;
+
+                Ok(())
             }
         }
     }
@@ -484,17 +500,16 @@ impl<'engine> Executor<'engine> {
     /// execution at a later point in time.
     ///
     /// [`ErrorKind::ResumableHost`]: crate::error::ErrorKind::ResumableHost
-    #[inline(always)]
     fn execute_host_func<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
+        results: RegSpan,
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        let len_params = usize::from(host_func.len_params());
-        let len_results = usize::from(host_func.len_results());
-        let max_inout = len_params.max(len_results);
+        let len_params = host_func.len_params();
+        let len_results = host_func.len_results();
+        let max_inout = usize::from(len_params.max(len_results));
         let instance = *self.stack.calls.instance_expect();
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
@@ -537,7 +552,6 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
-    #[inline(always)]
     fn dispatch_host_func<T>(
         &mut self,
         store: &mut Store<T>,
@@ -548,11 +562,10 @@ impl<'engine> Executor<'engine> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(always)]
     pub fn execute_return_call_indirect_0<T>(
         &mut self,
         store: &mut Store<T>,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
@@ -561,12 +574,24 @@ impl<'engine> Executor<'engine> {
         )
     }
 
+    /// Executes an [`Instruction::CallIndirect0Imm16`].
+    pub fn execute_return_call_indirect_0_imm16<T>(
+        &mut self,
+        store: &mut Store<T>,
+        func_type: index::FuncType,
+    ) -> Result<(), Error> {
+        let (index, table) = self.pull_call_indirect_params_imm16();
+        let results = self.caller_results();
+        self.execute_call_indirect_impl::<marker::ReturnCall0, T>(
+            store, results, func_type, index, table,
+        )
+    }
+
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(always)]
     pub fn execute_return_call_indirect<T>(
         &mut self,
         store: &mut Store<T>,
-        func_type: SignatureIdx,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
@@ -575,13 +600,25 @@ impl<'engine> Executor<'engine> {
         )
     }
 
+    /// Executes an [`Instruction::CallIndirect0Imm16`].
+    pub fn execute_return_call_indirect_imm16<T>(
+        &mut self,
+        store: &mut Store<T>,
+        func_type: index::FuncType,
+    ) -> Result<(), Error> {
+        let (index, table) = self.pull_call_indirect_params_imm16();
+        let results = self.caller_results();
+        self.execute_call_indirect_impl::<marker::ReturnCall, T>(
+            store, results, func_type, index, table,
+        )
+    }
+
     /// Executes an [`Instruction::CallIndirect0`].
-    #[inline(always)]
     pub fn execute_call_indirect_0<T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
-        func_type: SignatureIdx,
+        results: RegSpan,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl::<marker::NestedCall0, T>(
@@ -589,15 +626,40 @@ impl<'engine> Executor<'engine> {
         )
     }
 
+    /// Executes an [`Instruction::CallIndirect0Imm16`].
+    pub fn execute_call_indirect_0_imm16<T>(
+        &mut self,
+        store: &mut Store<T>,
+        results: RegSpan,
+        func_type: index::FuncType,
+    ) -> Result<(), Error> {
+        let (index, table) = self.pull_call_indirect_params_imm16();
+        self.execute_call_indirect_impl::<marker::NestedCall0, T>(
+            store, results, func_type, index, table,
+        )
+    }
+
     /// Executes an [`Instruction::CallIndirect`].
-    #[inline(always)]
     pub fn execute_call_indirect<T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
-        func_type: SignatureIdx,
+        results: RegSpan,
+        func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
+        self.execute_call_indirect_impl::<marker::NestedCall, T>(
+            store, results, func_type, index, table,
+        )
+    }
+
+    /// Executes an [`Instruction::CallIndirectImm16`].
+    pub fn execute_call_indirect_imm16<T>(
+        &mut self,
+        store: &mut Store<T>,
+        results: RegSpan,
+        func_type: index::FuncType,
+    ) -> Result<(), Error> {
+        let (index, table) = self.pull_call_indirect_params_imm16();
         self.execute_call_indirect_impl::<marker::NestedCall, T>(
             store, results, func_type, index, table,
         )
@@ -607,10 +669,10 @@ impl<'engine> Executor<'engine> {
     fn execute_call_indirect_impl<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegisterSpan,
-        func_type: SignatureIdx,
+        results: RegSpan,
+        func_type: index::FuncType,
         index: u32,
-        table: TableIdx,
+        table: index::Table,
     ) -> Result<(), Error> {
         let table = self.get_table(table);
         let funcref = store

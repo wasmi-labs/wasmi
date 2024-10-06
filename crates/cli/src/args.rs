@@ -210,20 +210,20 @@ impl Args {
     pub fn wasi_context(&self) -> Result<WasiCtx, Error> {
         let mut wasi_builder = WasiCtxBuilder::new();
         for KeyValue { key, value } in &self.envs {
-            wasi_builder = wasi_builder.env(key, value)?;
+            wasi_builder.env(key, value)?;
         }
-        wasi_builder = wasi_builder.args(&self.argv())?;
+        wasi_builder.args(&self.argv())?;
         // Add pre-opened TCP sockets.
         //
         // Note that `num_fd` starts at 3 because the inherited `stdin`, `stdout` and `stderr`
         // are already mapped to `0, 1, 2` respectively.
-        wasi_builder = wasi_builder.inherit_stdio();
+        wasi_builder.inherit_stdio();
         for (socket, num_fd) in self.preopen_sockets()?.into_iter().zip(3..) {
-            wasi_builder = wasi_builder.preopened_socket(num_fd, socket)?;
+            wasi_builder.preopened_socket(num_fd, socket)?;
         }
         // Add pre-opened directories.
         for (dir_name, dir) in self.preopen_dirs()? {
-            wasi_builder = wasi_builder.preopened_dir(dir, dir_name)?;
+            wasi_builder.preopened_dir(dir, dir_name)?;
         }
         Ok(wasi_builder.build())
     }

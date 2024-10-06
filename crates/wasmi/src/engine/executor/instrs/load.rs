@@ -1,19 +1,77 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::bytecode::{LoadAtInstr, LoadInstr, LoadOffset16Instr, Register},
+    engine::{
+        bytecode::{Const16, Reg},
+        executor::instr_ptr::InstructionPtr,
+        utils::unreachable_unchecked,
+    },
+    ir::{index::Memory, Instruction},
+    store::StoreInner,
     Error,
 };
-
-#[cfg(doc)]
-use crate::engine::bytecode::Instruction;
 
 /// The function signature of Wasm load operations.
 type WasmLoadOp =
     fn(memory: &[u8], address: UntypedVal, offset: u32) -> Result<UntypedVal, TrapCode>;
 
-impl<'engine> Executor<'engine> {
-    /// Executes a generic Wasm `store[N_{s|u}]` operation.
+impl Executor<'_> {
+    /// Returns the `ptr` and `offset` parameters for a `load` [`Instruction`].
+    fn fetch_ptr_and_offset(&self) -> (Reg, u32) {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(1);
+        match *addr.get() {
+            Instruction::RegisterAndImm32 { reg, imm } => (reg, u32::from(imm)),
+            instr => {
+                // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Fetches the bytes of the default memory at index 0.
+    fn fetch_default_memory_bytes(&self) -> &[u8] {
+        // Safety: the `self.cache.memory` pointer is always synchronized
+        //         conservatively whenever it could have been invalidated.
+        unsafe { self.cache.memory.data() }
+    }
+
+    /// Fetches the bytes of the given `memory`.
+    fn fetch_memory_bytes<'exec, 'store, 'bytes>(
+        &'exec self,
+        memory: Memory,
+        store: &'store StoreInner,
+    ) -> &'bytes [u8]
+    where
+        'exec: 'bytes,
+        'store: 'bytes,
+    {
+        match memory.is_default() {
+            true => self.fetch_default_memory_bytes(),
+            false => self.fetch_non_default_memory_bytes(memory, store),
+        }
+    }
+
+    /// Fetches the bytes of the given non-default `memory`.
+    #[cold]
+    fn fetch_non_default_memory_bytes<'exec, 'store, 'bytes>(
+        &'exec self,
+        memory: Memory,
+        store: &'store StoreInner,
+    ) -> &'bytes [u8]
+    where
+        'exec: 'bytes,
+        'store: 'bytes,
+    {
+        let memory = self.get_memory(memory);
+        store.resolve_memory(&memory).data()
+    }
+
+    /// Executes a generic Wasm `load[N_{s|u}]` operation.
     ///
     /// # Note
     ///
@@ -26,57 +84,93 @@ impl<'engine> Executor<'engine> {
     /// - `{i32, i64}.load16_u`
     /// - `i64.load32_s`
     /// - `i64.load32_u`
-    #[inline(always)]
     fn execute_load_extend(
         &mut self,
-        result: Register,
+        store: &StoreInner,
+        memory: Memory,
+        result: Reg,
         address: UntypedVal,
         offset: u32,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
-        // Safety: `self.memory` is always re-loaded conservatively whenever
-        //         the heap allocations and thus the pointer might have changed.
-        let memory = unsafe { self.cache.memory.data() };
+        let memory = self.fetch_memory_bytes(memory, store);
+        let loaded_value = load_extend(memory, address, offset)?;
+        self.set_register(result, loaded_value);
+        Ok(())
+    }
+
+    /// Executes a generic Wasm `store[N_{s|u}]` operation on the default memory.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `{i32, i64, f32, f64}.load`
+    /// - `{i32, i64}.load8_s`
+    /// - `{i32, i64}.load8_u`
+    /// - `{i32, i64}.load16_s`
+    /// - `{i32, i64}.load16_u`
+    /// - `i64.load32_s`
+    /// - `i64.load32_u`
+    fn execute_load_extend_mem0(
+        &mut self,
+        result: Reg,
+        address: UntypedVal,
+        offset: u32,
+        load_extend: WasmLoadOp,
+    ) -> Result<(), Error> {
+        let memory = self.fetch_default_memory_bytes();
         let loaded_value = load_extend(memory, address, offset)?;
         self.set_register(result, loaded_value);
         Ok(())
     }
 
     /// Executes a generic `load` [`Instruction`].
-    #[inline(always)]
     fn execute_load_impl(
         &mut self,
-        instr: LoadInstr,
+        store: &StoreInner,
+        result: Reg,
+        memory: Memory,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
-        let offset = self.fetch_address_offset(1);
-        let address = self.get_register(instr.ptr);
-        self.execute_load_extend(instr.result, address, offset, load_extend)?;
+        let (ptr, offset) = self.fetch_ptr_and_offset();
+        let address = self.get_register(ptr);
+        self.execute_load_extend(store, memory, result, address, offset, load_extend)?;
         self.try_next_instr_at(2)
     }
 
     /// Executes a generic `load_at` [`Instruction`].
-    #[inline(always)]
     fn execute_load_at_impl(
         &mut self,
-        instr: LoadAtInstr,
+        store: &StoreInner,
+        result: Reg,
+        address: u32,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
-        let offset = u32::from(instr.address);
-        self.execute_load_extend(instr.result, UntypedVal::from(0u32), offset, load_extend)?;
+        let memory = self.fetch_optional_memory();
+        let offset = address;
+        self.execute_load_extend(
+            store,
+            memory,
+            result,
+            UntypedVal::from(0u32),
+            offset,
+            load_extend,
+        )?;
         self.try_next_instr()
     }
 
     /// Executes a generic `load_offset16` [`Instruction`].
-    #[inline(always)]
     fn execute_load_offset16_impl(
         &mut self,
-        instr: LoadOffset16Instr,
+        result: Reg,
+        ptr: Reg,
+        offset: Const16<u32>,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
-        let offset = u32::from(instr.offset);
-        let address = self.get_register(instr.ptr);
-        self.execute_load_extend(instr.result, address, offset, load_extend)?;
+        let offset = u32::from(offset);
+        let address = self.get_register(ptr);
+        self.execute_load_extend_mem0(result, address, offset, load_extend)?;
         self.try_next_instr()
     }
 }
@@ -92,27 +186,24 @@ macro_rules! impl_execute_load {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load), "`].")]
-            #[inline(always)]
-            pub fn $fn_load(&mut self, instr: LoadInstr) -> Result<(), Error> {
-                self.execute_load_impl(instr, $impl_fn)
+            pub fn $fn_load(&mut self, store: &StoreInner, result: Reg, memory: Memory) -> Result<(), Error> {
+                self.execute_load_impl(store, result, memory, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
-            #[inline(always)]
-            pub fn $fn_load_at(&mut self, instr: LoadAtInstr) -> Result<(), Error> {
-                self.execute_load_at_impl(instr, $impl_fn)
+            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: u32) -> Result<(), Error> {
+                self.execute_load_at_impl(store, result, address, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]
-            #[inline(always)]
-            pub fn $fn_load_off16(&mut self, instr: LoadOffset16Instr) -> Result<(), Error> {
-                self.execute_load_offset16_impl(instr, $impl_fn)
+            pub fn $fn_load_off16(&mut self, result: Reg, ptr: Reg, offset: Const16<u32>) -> Result<(), Error> {
+                self.execute_load_offset16_impl(result, ptr, offset, $impl_fn)
             }
         )*
     }
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_execute_load! {
         (
             (Instruction::I32Load, execute_i32_load),

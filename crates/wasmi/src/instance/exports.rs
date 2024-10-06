@@ -256,7 +256,7 @@ impl<'instance> ExportsIter<'instance> {
 
     /// Prepares an item to match the expected iterator `Item` signature.
     #[allow(clippy::borrowed_box)]
-    fn convert_item((name, export): (&'instance Box<str>, &'instance Extern)) -> Export {
+    fn convert_item((name, export): (&'instance Box<str>, &'instance Extern)) -> Export<'instance> {
         Export::new(name, *export)
     }
 }
