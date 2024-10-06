@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::UntypedVal,
-    engine::bytecode::{Const16, Reg},
+    ir::{Const16, Reg},
 };
 
 #[cfg(doc)]

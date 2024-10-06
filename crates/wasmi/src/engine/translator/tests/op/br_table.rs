@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::bytecode::{index::Global, BranchOffset, RegSpan};
+use crate::ir::{index::Global, BranchOffset, RegSpan};
 use core::num::NonZeroI16;
 
 #[test]

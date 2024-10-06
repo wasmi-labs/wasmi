@@ -1,7 +1,8 @@
 use crate::{
     core::UntypedVal,
-    engine::{bytecode::index, DedupFuncType},
+    engine::DedupFuncType,
     instance::InstanceEntity,
+    ir::index,
     memory::DataSegment,
     module::DEFAULT_MEMORY_INDEX,
     store::StoreInner,

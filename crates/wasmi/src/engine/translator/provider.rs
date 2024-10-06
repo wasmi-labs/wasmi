@@ -1,9 +1,7 @@
 use crate::{
     core::UntypedVal,
-    engine::{
-        bytecode::{AnyConst32, Reg},
-        translator::TranslationError,
-    },
+    engine::translator::TranslationError,
+    ir::{AnyConst32, Reg},
     Error,
 };
 use std::vec::{Drain, Vec};

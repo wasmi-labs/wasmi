@@ -1,9 +1,7 @@
 use super::{TaggedProvider, TypedProvider};
 use crate::{
-    engine::{
-        bytecode::{Reg, RegSpan},
-        TranslationError,
-    },
+    engine::TranslationError,
+    ir::{Reg, RegSpan},
     Error,
 };
 use core::{

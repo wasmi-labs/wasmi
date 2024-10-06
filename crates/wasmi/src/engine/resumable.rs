@@ -1,5 +1,14 @@
-use super::{bytecode::RegSpan, Func};
-use crate::{engine::Stack, func::CallResultsTuple, AsContextMut, Engine, Error, Val, WasmResults};
+use super::Func;
+use crate::{
+    engine::Stack,
+    func::CallResultsTuple,
+    ir::RegSpan,
+    AsContextMut,
+    Engine,
+    Error,
+    Val,
+    WasmResults,
+};
 use core::{fmt, marker::PhantomData, mem::replace, ops::Deref};
 
 /// Returned by [`Engine`] methods for calling a function in a resumable way.

@@ -12,21 +12,21 @@ use super::{
 use crate::{
     core::{UntypedVal, ValType, F32},
     engine::{
-        bytecode::{
-            self,
-            BoundedRegSpan,
-            BranchOffset,
-            BranchOffset16,
-            Comparator,
-            ComparatorAndOffset,
-            Const16,
-            Const32,
-            Instruction,
-            Reg,
-            RegSpan,
-        },
         translator::{stack::RegisterSpace, ValueStack},
         FuelCosts,
+    },
+    ir::{
+        self,
+        BoundedRegSpan,
+        BranchOffset,
+        BranchOffset16,
+        Comparator,
+        ComparatorAndOffset,
+        Const16,
+        Const32,
+        Instruction,
+        Reg,
+        RegSpan,
     },
     module::ModuleHeader,
     Error,
@@ -39,13 +39,13 @@ use std::vec::{Drain, Vec};
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Instr(u32);
 
-impl From<bytecode::Instr> for Instr {
-    fn from(instr: bytecode::Instr) -> Self {
+impl From<ir::Instr> for Instr {
+    fn from(instr: ir::Instr) -> Self {
         Self(u32::from(instr))
     }
 }
 
-impl From<Instr> for bytecode::Instr {
+impl From<Instr> for ir::Instr {
     fn from(instr: Instr) -> Self {
         Self::from(instr.0)
     }

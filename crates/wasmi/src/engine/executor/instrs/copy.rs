@@ -1,10 +1,8 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
-    engine::{
-        bytecode::{AnyConst32, Const32, FixedRegSpan, Instruction, Reg, RegSpan},
-        utils::unreachable_unchecked,
-    },
+    engine::utils::unreachable_unchecked,
+    ir::{AnyConst32, Const32, FixedRegSpan, Instruction, Reg, RegSpan},
 };
 use core::slice;
 use smallvec::SmallVec;

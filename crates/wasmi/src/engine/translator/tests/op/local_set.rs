@@ -1,10 +1,10 @@
 use super::*;
-use crate::engine::{
-    bytecode::{
+use crate::{
+    engine::EngineFunc,
+    ir::{
         index::{Func, FuncType, Table},
         RegSpan,
     },
-    EngineFunc,
 };
 
 #[test]

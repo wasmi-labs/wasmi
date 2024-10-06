@@ -13,10 +13,10 @@ use super::{PreservedLocal, TypedVal};
 use crate::{
     core::UntypedVal,
     engine::{
-        bytecode::{Reg, RegSpan},
         translator::{Provider, UntypedProvider},
         TranslationError,
     },
+    ir::{Reg, RegSpan},
     Error,
 };
 use std::vec::Vec;

@@ -1,7 +1,7 @@
 use super::*;
-use crate::engine::{
-    bytecode::{BranchOffset, BranchOffset16, RegSpan},
-    translator::tests::wasm_type::WasmTy,
+use crate::{
+    engine::translator::tests::wasm_type::WasmTy,
+    ir::{BranchOffset, BranchOffset16, RegSpan},
 };
 use std::fmt::Display;
 

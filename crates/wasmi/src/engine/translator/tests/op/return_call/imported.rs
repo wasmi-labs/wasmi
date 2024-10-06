@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::bytecode::index::Func;
+use crate::ir::index::Func;
 
 #[test]
 #[cfg_attr(miri, ignore)]

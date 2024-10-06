@@ -1,8 +1,5 @@
 use super::*;
-use crate::{
-    core::UntypedVal,
-    engine::{bytecode::BranchOffset, translator::tests::wasm_type::WasmTy},
-};
+use crate::{core::UntypedVal, engine::translator::tests::wasm_type::WasmTy, ir::BranchOffset};
 use core::fmt::Display;
 
 #[test]

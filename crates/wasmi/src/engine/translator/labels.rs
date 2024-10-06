@@ -1,5 +1,5 @@
 use super::Instr;
-use crate::{engine::bytecode::BranchOffset, Error};
+use crate::{ir::BranchOffset, Error};
 use core::{
     fmt::{self, Display},
     slice::Iter as SliceIter,

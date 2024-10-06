@@ -1,17 +1,15 @@
 use super::Executor;
 use crate::{
     core::UntypedVal,
-    engine::{
-        bytecode::{
-            BranchOffset,
-            BranchOffset16,
-            Comparator,
-            ComparatorAndOffset,
-            Const16,
-            Instruction,
-            Reg,
-        },
-        utils::unreachable_unchecked,
+    engine::utils::unreachable_unchecked,
+    ir::{
+        BranchOffset,
+        BranchOffset16,
+        Comparator,
+        ComparatorAndOffset,
+        Const16,
+        Instruction,
+        Reg,
     },
 };
 use core::cmp;

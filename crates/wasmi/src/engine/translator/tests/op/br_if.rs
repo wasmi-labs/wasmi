@@ -1,10 +1,8 @@
 use super::*;
 use crate::{
     core::UntypedVal,
-    engine::{
-        bytecode::{BranchOffset, BranchOffset16, RegSpan},
-        translator::tests::wasm_type::WasmTy,
-    },
+    engine::translator::tests::wasm_type::WasmTy,
+    ir::{BranchOffset, BranchOffset16, RegSpan},
 };
 use core::fmt::Display;
 

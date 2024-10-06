@@ -1,5 +1,5 @@
 use super::Executor;
-use crate::{core::UntypedVal, engine::bytecode::Reg};
+use crate::{core::UntypedVal, ir::Reg};
 
 #[cfg(doc)]
 use crate::engine::bytecode::Instruction;

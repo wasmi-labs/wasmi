@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{hint, UntypedVal},
-    engine::bytecode::{index, Const16, Reg},
+    ir::{index, Const16, Reg},
     store::StoreInner,
 };
 

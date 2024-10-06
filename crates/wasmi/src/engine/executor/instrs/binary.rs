@@ -1,8 +1,7 @@
 use super::{Executor, UntypedValueExt};
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::bytecode::{Const16, Reg, Sign},
-    ir::ShiftAmount,
+    ir::{Const16, Reg, ShiftAmount, Sign},
     Error,
 };
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
