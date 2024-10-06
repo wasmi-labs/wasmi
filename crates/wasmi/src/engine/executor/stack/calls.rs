@@ -10,10 +10,10 @@ use std::vec::Vec;
 
 #[cfg(doc)]
 use crate::{
-    ir::Instruction,
-    ir::Reg,
     engine::executor::stack::ValueStack,
     engine::EngineFunc,
+    ir::Instruction,
+    ir::Reg,
     Global,
     Memory,
     Table,
