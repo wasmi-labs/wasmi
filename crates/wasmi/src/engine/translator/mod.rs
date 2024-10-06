@@ -58,7 +58,7 @@ use crate::{
     FuncRef,
     FuncType,
 };
-use core::fmt;
+use core::{fmt, mem};
 use stack::RegisterSpace;
 use std::vec::Vec;
 use utils::Wrap;
@@ -390,6 +390,7 @@ where
 }
 
 /// A lazy Wasm function translator that defers translation when the function is first used.
+#[derive(Debug)]
 pub struct LazyFuncTranslator {
     /// The index of the lazily compiled function within its module.
     func_idx: FuncIdx,
@@ -397,24 +398,51 @@ pub struct LazyFuncTranslator {
     engine_func: EngineFunc,
     /// The Wasm module header information used for translation.
     module: ModuleHeader,
-    /// Optional information about lazy Wasm validation.
-    func_to_validate: Option<FuncToValidate<ValidatorResources>>,
-    /// The Wasm features used for validation and parsing.
-    ///
-    /// # ToDo
-    ///
-    /// We currently require this field since there is no way to query the
-    /// [`WasmFeatures`] of a [`FuncValidator`] even though it has one.
-    features: WasmFeatures,
+    /// Information about Wasm validation during lazy translation.
+    validation: Validation,
 }
 
-impl fmt::Debug for LazyFuncTranslator {
+/// Information about Wasm validation for lazy translation.
+enum Validation {
+    /// Wasm validation is performed.
+    Checked(FuncToValidate<ValidatorResources>),
+    /// Wasm validation is checked.
+    ///
+    /// # Dev. Note
+    ///
+    /// We still need Wasm features to properly parse the Wasm.
+    Unchecked(WasmFeatures),
+}
+
+impl Validation {
+    /// Returns `true` if `self` performs validates Wasm upon lazy translation.
+    pub fn is_checked(&self) -> bool {
+        matches!(self, Self::Checked(_))
+    }
+
+    /// Returns the [`WasmFeatures`] used for Wasm parsing and validation.
+    pub fn features(&self) -> WasmFeatures {
+        match self {
+            Validation::Checked(func_to_validate) => func_to_validate.features,
+            Validation::Unchecked(wasm_features) => *wasm_features,
+        }
+    }
+
+    /// Returns the [`FuncToValidate`] if `self` is checked.
+    pub fn take_func_to_validate(&mut self) -> Option<FuncToValidate<ValidatorResources>> {
+        let features = self.features();
+        match mem::replace(self, Self::Unchecked(features)) {
+            Self::Checked(func_to_validate) => Some(func_to_validate),
+            Self::Unchecked(_) => None,
+        }
+    }
+}
+
+impl fmt::Debug for Validation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("LazyFuncTranslator")
-            .field("func_idx", &self.func_idx)
-            .field("engine_func", &self.engine_func)
-            .field("module", &self.module)
-            .field("validate", &self.func_to_validate.is_some())
+            .field("validate", &self.is_checked())
+            .field("features", &self.features())
             .finish()
     }
 }
@@ -425,15 +453,28 @@ impl LazyFuncTranslator {
         func_idx: FuncIdx,
         engine_func: EngineFunc,
         module: ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+        func_to_validate: FuncToValidate<ValidatorResources>,
+    ) -> Self {
+        Self {
+            func_idx,
+            engine_func,
+            module,
+            validation: Validation::Checked(func_to_validate),
+        }
+    }
+
+    /// Create a new [`LazyFuncTranslator`] that does not validate Wasm upon lazy translation.
+    pub fn new_unchecked(
+        func_idx: FuncIdx,
+        engine_func: EngineFunc,
+        module: ModuleHeader,
         features: WasmFeatures,
     ) -> Self {
         Self {
             func_idx,
             engine_func,
             module,
-            func_to_validate,
-            features,
+            validation: Validation::Unchecked(features),
         }
     }
 }
@@ -456,14 +497,14 @@ impl WasmTranslator<'_> for LazyFuncTranslator {
                 self.engine_func,
                 bytes,
                 &self.module,
-                self.func_to_validate.take(),
+                self.validation.take_func_to_validate(),
             );
         Ok(true)
     }
 
     #[inline]
     fn features(&self) -> WasmFeatures {
-        self.features
+        self.validation.features()
     }
 
     #[inline]
