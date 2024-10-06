@@ -1,16 +1,14 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
-    engine::{
-        bytecode::{
-            index::{Elem, Table},
-            Const16,
-            Instruction,
-            Reg,
-        },
-        utils::unreachable_unchecked,
-    },
+    engine::utils::unreachable_unchecked,
     error::EntityGrowError,
+    ir::{
+        index::{Elem, Table},
+        Const16,
+        Instruction,
+        Reg,
+    },
     store::{ResourceLimiterRef, StoreInner},
     table::TableEntity,
     Error,

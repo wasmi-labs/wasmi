@@ -2,7 +2,6 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
     engine::{
-        bytecode::{index, Instruction, Reg, RegSpan},
         code_map::CompiledFuncRef,
         executor::stack::{CallFrame, FrameParams, ValueStack},
         utils::unreachable_unchecked,
@@ -10,6 +9,7 @@ use crate::{
         FuncParams,
     },
     func::{FuncEntity, HostFuncEntity},
+    ir::{index, Instruction, Reg, RegSpan},
     store::StoreInner,
     CallHook,
     Error,

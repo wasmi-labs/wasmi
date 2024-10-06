@@ -16,10 +16,9 @@ mod utils;
 mod tests;
 
 #[cfg(test)]
-use self::bytecode::RegSpan;
-
+use self::code_map::CompiledFuncRef;
 #[cfg(test)]
-use code_map::CompiledFuncRef;
+use crate::{core::UntypedVal, ir::Instruction, ir::RegSpan};
 
 pub(crate) use self::{
     block_type::BlockType,
@@ -50,7 +49,6 @@ pub use self::{
     traits::{CallParams, CallResults},
     translator::{Instr, TranslationError},
 };
-pub(crate) use crate::ir as bytecode;
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},
     module::{FuncIdx, ModuleHeader},
@@ -66,12 +64,6 @@ use std::{
     vec::Vec,
 };
 use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
-
-#[cfg(test)]
-use self::bytecode::Instruction;
-
-#[cfg(test)]
-use crate::core::UntypedVal;
 
 #[cfg(doc)]
 use crate::Store;

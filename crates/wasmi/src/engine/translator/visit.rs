@@ -17,12 +17,11 @@ use super::{
 use crate::{
     core::{TrapCode, ValType, F32, F64},
     engine::{
-        bytecode::{self, index::FuncType, BoundedRegSpan, Const16, Instruction, Reg},
         translator::{AcquiredTarget, Provider},
         BlockType,
         FuelCosts,
     },
-    ir::index,
+    ir::{self, index, index::FuncType, BoundedRegSpan, Const16, Instruction, Reg},
     module::{self, FuncIdx, WasmiValueType},
     Error,
     ExternRef,
@@ -705,7 +704,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         }
         // Case: The `global.get` instruction accesses a mutable or imported
         //       global variable and thus cannot be optimized away.
-        let global_idx = bytecode::index::Global::from(global_index);
+        let global_idx = ir::index::Global::from(global_index);
         let result = self.alloc.stack.push_dynamic()?;
         self.push_fueled_instr(
             Instruction::global_get(result, global_idx),
@@ -716,7 +715,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_global_set(&mut self, global_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        let global = bytecode::index::Global::from(global_index);
+        let global = ir::index::Global::from(global_index);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
                 self.push_fueled_instr(Instruction::global_set(input, global), FuelCosts::entity)?;

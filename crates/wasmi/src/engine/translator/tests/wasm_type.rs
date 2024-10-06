@@ -2,7 +2,7 @@ use crate::core::ValType;
 
 use crate::{
     core::{UntypedVal, F32},
-    engine::bytecode::{Const32, Instruction, Reg},
+    ir::{Const32, Instruction, Reg},
 };
 use core::fmt::Display;
 

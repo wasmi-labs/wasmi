@@ -3,14 +3,13 @@ use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
     core::{hint, TrapCode, UntypedVal},
     engine::{
-        bytecode::{index, BlockFuel, Const16, Instruction, Reg},
         code_map::CodeMap,
         executor::stack::{CallFrame, FrameRegisters, ValueStack},
         utils::unreachable_unchecked,
         DedupFuncType,
         EngineFunc,
     },
-    ir::ShiftAmount,
+    ir::{index, BlockFuel, Const16, Instruction, Reg, ShiftAmount},
     memory::DataSegment,
     store::StoreInner,
     table::ElementSegment,

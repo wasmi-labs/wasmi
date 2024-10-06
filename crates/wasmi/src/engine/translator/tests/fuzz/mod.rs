@@ -3,10 +3,8 @@
 use super::*;
 use crate::{
     core::{TrapCode, F32},
-    engine::{
-        bytecode::{index::Global, BranchOffset, BranchOffset16, RegSpan},
-        EngineFunc,
-    },
+    engine::EngineFunc,
+    ir::{index::Global, BranchOffset, BranchOffset16, RegSpan},
     Val,
 };
 

@@ -1,8 +1,5 @@
 use super::{LocalRefs, RegisterAlloc, TypedVal};
-use crate::{
-    engine::{bytecode::Reg, translator::PreservedLocal},
-    Error,
-};
+use crate::{engine::translator::PreservedLocal, ir::Reg, Error};
 use arrayvec::ArrayVec;
 use std::vec::Vec;
 

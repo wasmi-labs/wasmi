@@ -2,17 +2,18 @@ use super::{err_stack_overflow, BaseValueStackOffset, FrameValueStackOffset};
 use crate::{
     collections::HeadVec,
     core::TrapCode,
-    engine::{bytecode::RegSpan, executor::InstructionPtr},
+    engine::executor::InstructionPtr,
+    ir::RegSpan,
     Instance,
 };
 use std::vec::Vec;
 
 #[cfg(doc)]
 use crate::{
-    engine::bytecode::Instruction,
-    engine::bytecode::Reg,
     engine::executor::stack::ValueStack,
     engine::EngineFunc,
+    ir::Instruction,
+    ir::Reg,
     Global,
     Memory,
     Table,

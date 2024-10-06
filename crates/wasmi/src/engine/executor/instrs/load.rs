@@ -1,12 +1,8 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::{
-        bytecode::{Const16, Reg},
-        executor::instr_ptr::InstructionPtr,
-        utils::unreachable_unchecked,
-    },
-    ir::{index::Memory, Instruction},
+    engine::{executor::instr_ptr::InstructionPtr, utils::unreachable_unchecked},
+    ir::{index::Memory, Const16, Instruction, Reg},
     store::StoreInner,
     Error,
 };

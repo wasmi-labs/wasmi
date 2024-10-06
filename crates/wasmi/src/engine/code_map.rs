@@ -15,10 +15,8 @@ use super::{
 use crate::{
     collections::arena::{Arena, ArenaIndex},
     core::{TrapCode, UntypedVal},
-    engine::{
-        bytecode::{index::InternalFunc, Instruction},
-        utils::unreachable_unchecked,
-    },
+    engine::utils::unreachable_unchecked,
+    ir::{index::InternalFunc, Instruction},
     module::{FuncIdx, ModuleHeader},
     store::{Fuel, FuelError},
     Config,

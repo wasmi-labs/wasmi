@@ -1,10 +1,8 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
-    engine::{
-        bytecode::{AnyConst32, Const32, Instruction, Reg},
-        utils::unreachable_unchecked,
-    },
+    engine::utils::unreachable_unchecked,
+    ir::{AnyConst32, Const32, Instruction, Reg},
 };
 
 impl<'engine> Executor<'engine> {

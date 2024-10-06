@@ -1,11 +1,8 @@
 use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
-    engine::{
-        bytecode::{AnyConst32, BoundedRegSpan, Const32, Instruction, Reg, RegSpan},
-        executor::stack::FrameRegisters,
-        utils::unreachable_unchecked,
-    },
+    engine::{executor::stack::FrameRegisters, utils::unreachable_unchecked},
+    ir::{AnyConst32, BoundedRegSpan, Const32, Instruction, Reg, RegSpan},
     store::StoreInner,
 };
 use core::slice;

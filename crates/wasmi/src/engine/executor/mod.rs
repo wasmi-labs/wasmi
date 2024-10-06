@@ -6,15 +6,9 @@ use self::{
     stack::CallFrame,
 };
 use crate::{
-    engine::{
-        bytecode::{Reg, RegSpan},
-        CallParams,
-        CallResults,
-        EngineInner,
-        ResumableCallBase,
-        ResumableInvocation,
-    },
+    engine::{CallParams, CallResults, EngineInner, ResumableCallBase, ResumableInvocation},
     func::HostFuncEntity,
+    ir::{Reg, RegSpan},
     CallHook,
     Error,
     Func,

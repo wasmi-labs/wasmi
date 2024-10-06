@@ -1,7 +1,7 @@
 use super::*;
-use crate::engine::{
-    bytecode::{BranchOffset, BranchOffset16, RegSpan},
-    EngineFunc,
+use crate::{
+    engine::EngineFunc,
+    ir::{BranchOffset, BranchOffset16, RegSpan},
 };
 
 #[test]
