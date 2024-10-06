@@ -177,6 +177,7 @@ impl Config {
         features.set(WasmFeatures::SIGN_EXTENSION, true);
         features.set(WasmFeatures::BULK_MEMORY, true);
         features.set(WasmFeatures::REFERENCE_TYPES, true);
+        features.set(WasmFeatures::GC_TYPES, true); // required by reference-types
         features.set(WasmFeatures::TAIL_CALL, true);
         features.set(WasmFeatures::EXTENDED_CONST, true);
         features.set(WasmFeatures::FLOATS, true);
@@ -292,6 +293,7 @@ impl Config {
     /// [`reference-types`]: https://github.com/WebAssembly/reference-types
     pub fn wasm_reference_types(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::REFERENCE_TYPES, enable);
+        self.features.set(WasmFeatures::GC_TYPES, enable);
         self
     }
 
