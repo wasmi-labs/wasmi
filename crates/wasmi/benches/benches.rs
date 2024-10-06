@@ -238,6 +238,14 @@ fn bench_translate_for_all(c: &mut Criterion, name: &str, path: &str) {
         Validation::Checked,
         FuelMetering::Disabled,
     );
+    bench_translate_for(
+        c,
+        name,
+        path,
+        CompilationMode::Lazy,
+        Validation::Unchecked,
+        FuelMetering::Disabled,
+    );
 }
 
 fn bench_translate_tiny_keccak(c: &mut Criterion) {
