@@ -1,5 +1,6 @@
 //! Function translation for the register-machine bytecode based Wasmi engine.
 
+mod comparator;
 mod control_frame;
 mod control_stack;
 mod driver;
@@ -17,6 +18,7 @@ mod visit_register;
 mod tests;
 
 use self::{
+    comparator::{ComparatorExt, ComparatorExtImm},
     control_frame::{
         BlockControlFrame,
         BlockHeight,
