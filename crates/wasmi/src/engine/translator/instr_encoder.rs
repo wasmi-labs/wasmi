@@ -3,6 +3,8 @@ use super::{
     utils::FromProviders as _,
     visit_register::VisitInputRegisters as _,
     BumpFuelConsumption as _,
+    ComparatorExt as _,
+    ComparatorExtImm,
     FuelInfo,
     LabelRef,
     LabelRegistry,
@@ -1005,6 +1007,96 @@ impl InstrEncoder {
         true
     }
 
+    /// Create an [`Instruction::BranchCmpFallback`].
+    fn make_branch_cmp_fallback(
+        stack: &mut ValueStack,
+        cmp: Comparator,
+        lhs: Reg,
+        rhs: Reg,
+        offset: BranchOffset,
+    ) -> Result<Instruction, Error> {
+        let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
+        Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
+    }
+
+    /// Try to create a fused cmp+branch instruction.
+    ///
+    /// Returns `Some` `Instruction` if the cmp+branch instruction fusion was successful.
+    #[allow(clippy::too_many_arguments)]
+    fn try_fuse_branch_cmp(
+        &mut self,
+        stack: &mut ValueStack,
+        last_instr: Instr,
+        condition: Reg,
+        result: Reg,
+        lhs: Reg,
+        rhs: Reg,
+        label: LabelRef,
+        cmp: Comparator,
+    ) -> Result<Option<Instruction>, Error> {
+        if matches!(stack.get_register_space(result), RegisterSpace::Local) {
+            // We need to filter out instructions that store their result
+            // into a local register slot because they introduce observable behavior
+            // which a fused cmp+branch instruction would remove.
+            return Ok(None);
+        }
+        if result != condition {
+            // We cannot fuse the instructions since the result of the compare instruction
+            // does not match the input of the conditional branch instruction.
+            return Ok(None);
+        }
+        let offset = self.try_resolve_label_for(label, last_instr)?;
+        let instr = match BranchOffset16::try_from(offset) {
+            Ok(offset) => (cmp.branch_cmp_instr())(lhs, rhs, offset),
+            Err(_) => InstrEncoder::make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
+        };
+        Ok(Some(instr))
+    }
+
+    /// Try to create a fused cmp+branch instruction with 16-bit immediate value.
+    ///
+    /// Returns `Some` `Instruction` if the cmp+branch instruction fusion was successful.
+    #[allow(clippy::too_many_arguments)]
+    fn try_fuse_branch_cmp_imm<T>(
+        &mut self,
+        stack: &mut ValueStack,
+        last_instr: Instr,
+        condition: Reg,
+        result: Reg,
+        lhs: Reg,
+        rhs: Const16<T>,
+        label: LabelRef,
+        cmp: Comparator,
+    ) -> Result<Option<Instruction>, Error>
+    where
+        T: From<Const16<T>> + Into<UntypedVal>,
+        Comparator: ComparatorExtImm<T>,
+    {
+        if matches!(stack.get_register_space(result), RegisterSpace::Local) {
+            // We need to filter out instructions that store their result
+            // into a local register slot because they introduce observable behavior
+            // which a fused cmp+branch instruction would remove.
+            return Ok(None);
+        }
+        if result != condition {
+            // We cannot fuse the instructions since the result of the compare instruction
+            // does not match the input of the conditional branch instruction.
+            return Ok(None);
+        }
+        let Some(make_instr) = cmp.branch_cmp_instr_imm() else {
+            unreachable!("expected valid `Instruction` constructor for `T` for {cmp:?}")
+        };
+        let offset = self.try_resolve_label_for(label, last_instr)?;
+        let instr = match BranchOffset16::try_from(offset) {
+            Ok(offset) => make_instr(lhs, rhs, offset),
+            Err(_) => {
+                let rhs = stack.alloc_const(T::from(rhs))?;
+                InstrEncoder::make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?
+            }
+        };
+        Ok(Some(instr))
+    }
+
     /// Encodes a `branch_eqz` instruction and tries to fuse it with a previous comparison instruction.
     pub fn encode_branch_eqz(
         &mut self,
@@ -1012,188 +1104,50 @@ impl InstrEncoder {
         condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        type BranchCmpConstructor = fn(Reg, Reg, BranchOffset16) -> Instruction;
-        type BranchCmpImmConstructor<T> = fn(Reg, Const16<T>, BranchOffset16) -> Instruction;
-
-        /// Create an [`Instruction::BranchCmpFallback`].
-        fn make_branch_cmp_fallback(
-            stack: &mut ValueStack,
-            cmp: Comparator,
-            lhs: Reg,
-            rhs: Reg,
-            offset: BranchOffset,
-        ) -> Result<Instruction, Error> {
-            let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
-            Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
-        }
-
-        /// Encode an unoptimized `branch_eqz` instruction.
-        ///
-        /// This is used as fallback whenever fusing compare and branch instructions is not possible.
-        fn encode_branch_eqz_fallback(
-            this: &mut InstrEncoder,
-            stack: &mut ValueStack,
-            condition: Reg,
-            label: LabelRef,
-        ) -> Result<(), Error> {
-            let offset = this.try_resolve_label(label)?;
-            let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => Instruction::branch_i32_eq_imm(condition, 0, offset),
-                Err(_) => {
-                    let zero = stack.alloc_const(0_i32)?;
-                    make_branch_cmp_fallback(stack, Comparator::I32Eq, condition, zero, offset)?
-                }
-            };
-            this.push_instr(instr)?;
-            Ok(())
-        }
-
-        /// Create a fused cmp+branch instruction and wrap it in a `Some`.
-        ///
-        /// We wrap the returned value in `Some` to unify handling of a bunch of cases.
-        #[allow(clippy::too_many_arguments)]
-        fn fuse(
-            this: &mut InstrEncoder,
-            stack: &mut ValueStack,
-            last_instr: Instr,
-            condition: Reg,
-            result: Reg,
-            lhs: Reg,
-            rhs: Reg,
-            label: LabelRef,
-            cmp: Comparator,
-            make_instr: BranchCmpConstructor,
-        ) -> Result<Option<Instruction>, Error> {
-            if matches!(stack.get_register_space(result), RegisterSpace::Local) {
-                // We need to filter out instructions that store their result
-                // into a local register slot because they introduce observable behavior
-                // which a fused cmp+branch instruction would remove.
-                return Ok(None);
-            }
-            if result != condition {
-                // We cannot fuse the instructions since the result of the compare instruction
-                // does not match the input of the conditional branch instruction.
-                return Ok(None);
-            }
-            let offset = this.try_resolve_label_for(label, last_instr)?;
-            let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => make_instr(lhs, rhs, offset),
-                Err(_) => make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
-            };
-            Ok(Some(instr))
-        }
-
-        /// Create a fused cmp+branch instruction with a 16-bit immediate and wrap it in a `Some`.
-        ///
-        /// We wrap the returned value in `Some` to unify handling of a bunch of cases.
-        #[allow(clippy::too_many_arguments)]
-        fn fuse_imm<T>(
-            this: &mut InstrEncoder,
-            stack: &mut ValueStack,
-            last_instr: Instr,
-            condition: Reg,
-            result: Reg,
-            lhs: Reg,
-            rhs: Const16<T>,
-            label: LabelRef,
-            cmp: Comparator,
-            make_instr: BranchCmpImmConstructor<T>,
-        ) -> Result<Option<Instruction>, Error>
-        where
-            T: From<Const16<T>> + Into<UntypedVal>,
-        {
-            if matches!(stack.get_register_space(result), RegisterSpace::Local) {
-                // We need to filter out instructions that store their result
-                // into a local register slot because they introduce observable behavior
-                // which a fused cmp+branch instruction would remove.
-                return Ok(None);
-            }
-            if result != condition {
-                // We cannot fuse the instructions since the result of the compare instruction
-                // does not match the input of the conditional branch instruction.
-                return Ok(None);
-            }
-            let offset = this.try_resolve_label_for(label, last_instr)?;
-            let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => make_instr(lhs, rhs, offset),
-                Err(_) => {
-                    let rhs = stack.alloc_const(T::from(rhs))?;
-                    make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?
-                }
-            };
-            Ok(Some(instr))
-        }
-        use Comparator as Cmp;
-        use Instruction as I;
-
         let Some(last_instr) = self.last_instr else {
-            return encode_branch_eqz_fallback(self, stack, condition, label);
+            return self.encode_branch_eqz_unopt(stack, condition, label);
         };
-
-        #[rustfmt::skip]
-        let fused_instr = match *self.instrs.get(last_instr) {
-            I::I32And { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32AndEqz, I::branch_i32_and_eqz as _)?,
-            I::I32Or { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32OrEqz, I::branch_i32_or_eqz as _)?,
-            I::I32Xor { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz as _)?,
-            I::I32AndEqz { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32And, I::branch_i32_and as _)?,
-            I::I32OrEqz { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Or, I::branch_i32_or as _)?,
-            I::I32XorEqz { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Xor, I::branch_i32_xor as _)?,
-            I::I32Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Ne, I::branch_i32_ne as _)?,
-            I::I32Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Eq, I::branch_i32_eq as _)?,
-            I::I32LtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeS, I::branch_i32_ge_s as _)?,
-            I::I32LtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeU, I::branch_i32_ge_u as _)?,
-            I::I32LeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtS, I::branch_i32_gt_s as _)?,
-            I::I32LeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtU, I::branch_i32_gt_u as _)?,
-            I::I32GtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeS, I::branch_i32_le_s as _)?,
-            I::I32GtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeU, I::branch_i32_le_u as _)?,
-            I::I32GeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtS, I::branch_i32_lt_s as _)?,
-            I::I32GeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtU, I::branch_i32_lt_u as _)?,
-            I::I64Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Ne, I::branch_i64_ne as _)?,
-            I::I64Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Eq, I::branch_i64_eq as _)?,
-            I::I64LtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeS, I::branch_i64_ge_s as _)?,
-            I::I64LtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeU, I::branch_i64_ge_u as _)?,
-            I::I64LeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtS, I::branch_i64_gt_s as _)?,
-            I::I64LeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtU, I::branch_i64_gt_u as _)?,
-            I::I64GtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeS, I::branch_i64_le_s as _)?,
-            I::I64GtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeU, I::branch_i64_le_u as _)?,
-            I::I64GeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtS, I::branch_i64_lt_s as _)?,
-            I::I64GeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtU, I::branch_i64_lt_u as _)?,
-            I::F32Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Ne, I::branch_f32_ne as _)?,
-            I::F32Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Eq, I::branch_f32_eq as _)?,
-            // Note: We cannot fuse cmp+branch for float comparison operators due to how NaN values are treated.
-            I::I32AndImm16 { result, lhs, rhs } => fuse_imm::<i32>(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32AndEqz, I::branch_i32_and_eqz_imm as _)?,
-            I::I32OrImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32OrEqz, I::branch_i32_or_eqz_imm as _)?,
-            I::I32XorImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz_imm as _)?,
-            I::I32AndEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32And, I::branch_i32_and_imm as _)?,
-            I::I32OrEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Or, I::branch_i32_or_imm as _)?,
-            I::I32XorEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Xor, I::branch_i32_xor_imm as _)?,
-            I::I32EqImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Ne, I::branch_i32_ne_imm as _)?,
-            I::I32NeImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Eq, I::branch_i32_eq_imm as _)?,
-            I::I32LtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeS, I::branch_i32_ge_s_imm as _)?,
-            I::I32LtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeU, I::branch_i32_ge_u_imm as _)?,
-            I::I32LeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtS, I::branch_i32_gt_s_imm as _)?,
-            I::I32LeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtU, I::branch_i32_gt_u_imm as _)?,
-            I::I32GtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeS, I::branch_i32_le_s_imm as _)?,
-            I::I32GtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeU, I::branch_i32_le_u_imm as _)?,
-            I::I32GeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtS, I::branch_i32_lt_s_imm as _)?,
-            I::I32GeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtU, I::branch_i32_lt_u_imm as _)?,
-            I::I64EqImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Ne, I::branch_i64_ne_imm as _)?,
-            I::I64NeImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Eq, I::branch_i64_eq_imm as _)?,
-            I::I64LtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeS, I::branch_i64_ge_s_imm as _)?,
-            I::I64LtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeU, I::branch_i64_ge_u_imm as _)?,
-            I::I64LeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtS, I::branch_i64_gt_s_imm as _)?,
-            I::I64LeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtU, I::branch_i64_gt_u_imm as _)?,
-            I::I64GtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeS, I::branch_i64_le_s_imm as _)?,
-            I::I64GtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeU, I::branch_i64_le_u_imm as _)?,
-            I::I64GeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtS, I::branch_i64_lt_s_imm as _)?,
-            I::I64GeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtU, I::branch_i64_lt_u_imm as _)?,
-            _ => None,
+        let last_instruction = *self.instrs.get(last_instr);
+        let Some(comparator) = Comparator::from_cmp_instruction(last_instruction) else {
+            return self.encode_branch_eqz_unopt(stack, condition, label);
         };
+        let Some(comparator) = comparator.negate() else {
+            return self.encode_branch_eqz_unopt(stack, condition, label);
+        };
+        let fused_instr =
+            self.try_fuse_branch_cmp_for_instr(stack, last_instr, condition, label, comparator)?;
         if let Some(fused_instr) = fused_instr {
             _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
             return Ok(());
         }
-        encode_branch_eqz_fallback(self, stack, condition, label)
+        self.encode_branch_eqz_unopt(stack, condition, label)
+    }
+
+    /// Encode an unoptimized `branch_eqz` instruction.
+    ///
+    /// This is used as fallback whenever fusing compare and branch instructions is not possible.
+    fn encode_branch_eqz_unopt(
+        &mut self,
+        stack: &mut ValueStack,
+        condition: Reg,
+        label: LabelRef,
+    ) -> Result<(), Error> {
+        let offset = self.try_resolve_label(label)?;
+        let instr = match BranchOffset16::try_from(offset) {
+            Ok(offset) => Instruction::branch_i32_eq_imm(condition, 0, offset),
+            Err(_) => {
+                let zero = stack.alloc_const(0_i32)?;
+                InstrEncoder::make_branch_cmp_fallback(
+                    stack,
+                    Comparator::I32Eq,
+                    condition,
+                    zero,
+                    offset,
+                )?
+            }
+        };
+        self.push_instr(instr)?;
+        Ok(())
     }
 
     /// Encodes a `branch_nez` instruction and tries to fuse it with a previous comparison instruction.
@@ -1203,197 +1157,139 @@ impl InstrEncoder {
         condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        type BranchCmpConstructor = fn(Reg, Reg, BranchOffset16) -> Instruction;
-        type BranchCmpImmConstructor<T> = fn(Reg, Const16<T>, BranchOffset16) -> Instruction;
-
-        /// Create an [`Instruction::BranchCmpFallback`].
-        fn make_branch_cmp_fallback(
-            stack: &mut ValueStack,
-            cmp: Comparator,
-            lhs: Reg,
-            rhs: Reg,
-            offset: BranchOffset,
-        ) -> Result<Instruction, Error> {
-            let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
-            Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
-        }
-
-        /// Encode an unoptimized `branch_nez` instruction.
-        ///
-        /// This is used as fallback whenever fusing compare and branch instructions is not possible.
-        fn encode_branch_nez_fallback(
-            this: &mut InstrEncoder,
-            stack: &mut ValueStack,
-            condition: Reg,
-            label: LabelRef,
-        ) -> Result<(), Error> {
-            let offset = this.try_resolve_label(label)?;
-            let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => Instruction::branch_i32_ne_imm(condition, 0, offset),
-                Err(_) => {
-                    let zero = stack.alloc_const(0_i32)?;
-                    make_branch_cmp_fallback(stack, Comparator::I32Ne, condition, zero, offset)?
-                }
-            };
-            this.push_instr(instr)?;
-            Ok(())
-        }
-
-        /// Create a fused cmp+branch instruction and wrap it in a `Some`.
-        ///
-        /// We wrap the returned value in `Some` to unify handling of a bunch of cases.
-        #[allow(clippy::too_many_arguments)]
-        fn fuse(
-            this: &mut InstrEncoder,
-            stack: &mut ValueStack,
-            last_instr: Instr,
-            condition: Reg,
-            result: Reg,
-            lhs: Reg,
-            rhs: Reg,
-            label: LabelRef,
-            cmp: Comparator,
-            make_instr: BranchCmpConstructor,
-        ) -> Result<Option<Instruction>, Error> {
-            if matches!(stack.get_register_space(result), RegisterSpace::Local) {
-                // We need to filter out instructions that store their result
-                // into a local register slot because they introduce observable behavior
-                // which a fused cmp+branch instruction would remove.
-                return Ok(None);
-            }
-            if result != condition {
-                // We cannot fuse the instructions since the result of the compare instruction
-                // does not match the input of the conditional branch instruction.
-                return Ok(None);
-            }
-            let offset = this.try_resolve_label_for(label, last_instr)?;
-            let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => make_instr(lhs, rhs, offset),
-                Err(_) => make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
-            };
-            Ok(Some(instr))
-        }
-
-        /// Create a fused cmp+branch instruction with a 16-bit immediate and wrap it in a `Some`.
-        ///
-        /// We wrap the returned value in `Some` to unify handling of a bunch of cases.
-        #[allow(clippy::too_many_arguments)]
-        fn fuse_imm<T>(
-            this: &mut InstrEncoder,
-            stack: &mut ValueStack,
-            last_instr: Instr,
-            condition: Reg,
-            result: Reg,
-            lhs: Reg,
-            rhs: Const16<T>,
-            label: LabelRef,
-            cmp: Comparator,
-            make_instr: BranchCmpImmConstructor<T>,
-        ) -> Result<Option<Instruction>, Error>
-        where
-            T: From<Const16<T>> + Into<UntypedVal>,
-        {
-            if matches!(stack.get_register_space(result), RegisterSpace::Local) {
-                // We need to filter out instructions that store their result
-                // into a local register slot because they introduce observable behavior
-                // which a fused cmp+branch instruction would remove.
-                return Ok(None);
-            }
-            if result != condition {
-                // We cannot fuse the instructions since the result of the compare instruction
-                // does not match the input of the conditional branch instruction.
-                return Ok(None);
-            }
-            let offset = this.try_resolve_label_for(label, last_instr)?;
-            let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => make_instr(lhs, rhs, offset),
-                Err(_) => {
-                    let rhs = stack.alloc_const(T::from(rhs))?;
-                    make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?
-                }
-            };
-            Ok(Some(instr))
-        }
-        use Comparator as Cmp;
-        use Instruction as I;
-
         let Some(last_instr) = self.last_instr else {
-            return encode_branch_nez_fallback(self, stack, condition, label);
+            return self.encode_branch_nez_unopt(stack, condition, label);
         };
-
-        #[rustfmt::skip]
-        let fused_instr = match *self.instrs.get(last_instr) {
-            I::I32And { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32And, I::branch_i32_and as _)?,
-            I::I32Or { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Or, I::branch_i32_or as _)?,
-            I::I32Xor { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Xor, I::branch_i32_xor as _)?,
-            I::I32AndEqz { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32AndEqz, I::branch_i32_and_eqz as _)?,
-            I::I32OrEqz { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32OrEqz, I::branch_i32_or_eqz as _)?,
-            I::I32XorEqz { result, lhs, rhs} => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz as _)?,
-            I::I32Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Eq, I::branch_i32_eq as _)?,
-            I::I32Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Ne, I::branch_i32_ne as _)?,
-            I::I32LtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtS, I::branch_i32_lt_s as _)?,
-            I::I32LtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtU, I::branch_i32_lt_u as _)?,
-            I::I32LeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeS, I::branch_i32_le_s as _)?,
-            I::I32LeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeU, I::branch_i32_le_u as _)?,
-            I::I32GtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtS, I::branch_i32_gt_s as _)?,
-            I::I32GtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtU, I::branch_i32_gt_u as _)?,
-            I::I32GeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeS, I::branch_i32_ge_s as _)?,
-            I::I32GeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeU, I::branch_i32_ge_u as _)?,
-            I::I64Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Eq, I::branch_i64_eq as _)?,
-            I::I64Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Ne, I::branch_i64_ne as _)?,
-            I::I64LtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtS, I::branch_i64_lt_s as _)?,
-            I::I64LtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtU, I::branch_i64_lt_u as _)?,
-            I::I64LeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeS, I::branch_i64_le_s as _)?,
-            I::I64LeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeU, I::branch_i64_le_u as _)?,
-            I::I64GtS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtS, I::branch_i64_gt_s as _)?,
-            I::I64GtU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtU, I::branch_i64_gt_u as _)?,
-            I::I64GeS { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeS, I::branch_i64_ge_s as _)?,
-            I::I64GeU { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeU, I::branch_i64_ge_u as _)?,
-            I::F32Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Eq, I::branch_f32_eq as _)?,
-            I::F32Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Ne, I::branch_f32_ne as _)?,
-            I::F32Lt { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Lt, I::branch_f32_lt as _)?,
-            I::F32Le { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Le, I::branch_f32_le as _)?,
-            I::F32Gt { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Gt, I::branch_f32_gt as _)?,
-            I::F32Ge { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F32Ge, I::branch_f32_ge as _)?,
-            I::F64Eq { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Eq, I::branch_f64_eq as _)?,
-            I::F64Ne { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Ne, I::branch_f64_ne as _)?,
-            I::F64Lt { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Lt, I::branch_f64_lt as _)?,
-            I::F64Le { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Le, I::branch_f64_le as _)?,
-            I::F64Gt { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Gt, I::branch_f64_gt as _)?,
-            I::F64Ge { result, lhs, rhs } => fuse(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::F64Ge, I::branch_f64_ge as _)?,
-            I::I32AndImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32And, I::branch_i32_and_imm as _)?,
-            I::I32OrImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Or, I::branch_i32_or_imm as _)?,
-            I::I32XorImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Xor, I::branch_i32_xor_imm as _)?,
-            I::I32AndEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32AndEqz, I::branch_i32_and_eqz_imm as _)?,
-            I::I32OrEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32OrEqz, I::branch_i32_or_eqz_imm as _)?,
-            I::I32XorEqzImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32XorEqz, I::branch_i32_xor_eqz_imm as _)?,
-            I::I32EqImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Eq, I::branch_i32_eq_imm as _)?,
-            I::I32NeImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32Ne, I::branch_i32_ne_imm as _)?,
-            I::I32LtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtS, I::branch_i32_lt_s_imm as _)?,
-            I::I32LtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LtU, I::branch_i32_lt_u_imm as _)?,
-            I::I32LeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeS, I::branch_i32_le_s_imm as _)?,
-            I::I32LeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32LeU, I::branch_i32_le_u_imm as _)?,
-            I::I32GtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtS, I::branch_i32_gt_s_imm as _)?,
-            I::I32GtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GtU, I::branch_i32_gt_u_imm as _)?,
-            I::I32GeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeS, I::branch_i32_ge_s_imm as _)?,
-            I::I32GeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I32GeU, I::branch_i32_ge_u_imm as _)?,
-            I::I64EqImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Eq, I::branch_i64_eq_imm as _)?,
-            I::I64NeImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64Ne, I::branch_i64_ne_imm as _)?,
-            I::I64LtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtS, I::branch_i64_lt_s_imm as _)?,
-            I::I64LtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LtU, I::branch_i64_lt_u_imm as _)?,
-            I::I64LeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeS, I::branch_i64_le_s_imm as _)?,
-            I::I64LeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64LeU, I::branch_i64_le_u_imm as _)?,
-            I::I64GtSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtS, I::branch_i64_gt_s_imm as _)?,
-            I::I64GtUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GtU, I::branch_i64_gt_u_imm as _)?,
-            I::I64GeSImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeS, I::branch_i64_ge_s_imm as _)?,
-            I::I64GeUImm16 { result, lhs, rhs } => fuse_imm(self, stack, last_instr, condition, result, lhs, rhs, label, Cmp::I64GeU, I::branch_i64_ge_u_imm as _)?,
-            _ => None,
+        let last_instruction = *self.instrs.get(last_instr);
+        let Some(comparator) = Comparator::from_cmp_instruction(last_instruction) else {
+            return self.encode_branch_nez_unopt(stack, condition, label);
         };
+        let fused_instr =
+            self.try_fuse_branch_cmp_for_instr(stack, last_instr, condition, label, comparator)?;
         if let Some(fused_instr) = fused_instr {
             _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
             return Ok(());
         }
-        encode_branch_nez_fallback(self, stack, condition, label)
+        self.encode_branch_nez_unopt(stack, condition, label)
+    }
+
+    /// Try to fuse [`Instruction`] at `instr` into a branch+cmp instruction.
+    ///
+    /// Returns `Ok(Some)` if successful.
+    fn try_fuse_branch_cmp_for_instr(
+        &mut self,
+        stack: &mut ValueStack,
+        instr: Instr,
+        condition: Reg,
+        label: LabelRef,
+        comparator: Comparator,
+    ) -> Result<Option<Instruction>, Error> {
+        use Instruction as I;
+        let fused_instr = match *self.instrs.get(instr) {
+            | I::I32And { result, lhs, rhs }
+            | I::I32Or { result, lhs, rhs }
+            | I::I32Xor { result, lhs, rhs }
+            | I::I32AndEqz { result, lhs, rhs }
+            | I::I32OrEqz { result, lhs, rhs }
+            | I::I32XorEqz { result, lhs, rhs }
+            | I::I32Eq { result, lhs, rhs }
+            | I::I32Ne { result, lhs, rhs }
+            | I::I32LtS { result, lhs, rhs }
+            | I::I32LtU { result, lhs, rhs }
+            | I::I32LeS { result, lhs, rhs }
+            | I::I32LeU { result, lhs, rhs }
+            | I::I32GtS { result, lhs, rhs }
+            | I::I32GtU { result, lhs, rhs }
+            | I::I32GeS { result, lhs, rhs }
+            | I::I32GeU { result, lhs, rhs }
+            | I::I64Eq { result, lhs, rhs }
+            | I::I64Ne { result, lhs, rhs }
+            | I::I64LtS { result, lhs, rhs }
+            | I::I64LtU { result, lhs, rhs }
+            | I::I64LeS { result, lhs, rhs }
+            | I::I64LeU { result, lhs, rhs }
+            | I::I64GtS { result, lhs, rhs }
+            | I::I64GtU { result, lhs, rhs }
+            | I::I64GeS { result, lhs, rhs }
+            | I::I64GeU { result, lhs, rhs }
+            | I::F32Eq { result, lhs, rhs }
+            | I::F32Ne { result, lhs, rhs }
+            | I::F32Lt { result, lhs, rhs }
+            | I::F32Le { result, lhs, rhs }
+            | I::F32Gt { result, lhs, rhs }
+            | I::F32Ge { result, lhs, rhs }
+            | I::F64Eq { result, lhs, rhs }
+            | I::F64Ne { result, lhs, rhs }
+            | I::F64Lt { result, lhs, rhs }
+            | I::F64Le { result, lhs, rhs }
+            | I::F64Gt { result, lhs, rhs }
+            | I::F64Ge { result, lhs, rhs } => self.try_fuse_branch_cmp(
+                stack, instr, condition, result, lhs, rhs, label, comparator,
+            )?,
+            | I::I32AndImm16 { result, lhs, rhs }
+            | I::I32OrImm16 { result, lhs, rhs }
+            | I::I32XorImm16 { result, lhs, rhs }
+            | I::I32AndEqzImm16 { result, lhs, rhs }
+            | I::I32OrEqzImm16 { result, lhs, rhs }
+            | I::I32XorEqzImm16 { result, lhs, rhs }
+            | I::I32EqImm16 { result, lhs, rhs }
+            | I::I32NeImm16 { result, lhs, rhs }
+            | I::I32LtSImm16 { result, lhs, rhs }
+            | I::I32LeSImm16 { result, lhs, rhs }
+            | I::I32GtSImm16 { result, lhs, rhs }
+            | I::I32GeSImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<i32>(
+                stack, instr, condition, result, lhs, rhs, label, comparator,
+            )?,
+            | I::I32LtUImm16 { result, lhs, rhs }
+            | I::I32LeUImm16 { result, lhs, rhs }
+            | I::I32GtUImm16 { result, lhs, rhs }
+            | I::I32GeUImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<u32>(
+                stack, instr, condition, result, lhs, rhs, label, comparator,
+            )?,
+            | I::I64EqImm16 { result, lhs, rhs }
+            | I::I64NeImm16 { result, lhs, rhs }
+            | I::I64LtSImm16 { result, lhs, rhs }
+            | I::I64LeSImm16 { result, lhs, rhs }
+            | I::I64GtSImm16 { result, lhs, rhs }
+            | I::I64GeSImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<i64>(
+                stack, instr, condition, result, lhs, rhs, label, comparator,
+            )?,
+            | I::I64LtUImm16 { result, lhs, rhs }
+            | I::I64LeUImm16 { result, lhs, rhs }
+            | I::I64GtUImm16 { result, lhs, rhs }
+            | I::I64GeUImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<u64>(
+                stack, instr, condition, result, lhs, rhs, label, comparator,
+            )?,
+            _ => None,
+        };
+        Ok(fused_instr)
+    }
+
+    /// Encode an unoptimized `branch_nez` instruction.
+    ///
+    /// This is used as fallback whenever fusing compare and branch instructions is not possible.
+    fn encode_branch_nez_unopt(
+        &mut self,
+        stack: &mut ValueStack,
+        condition: Reg,
+        label: LabelRef,
+    ) -> Result<(), Error> {
+        let offset = self.try_resolve_label(label)?;
+        let instr = match BranchOffset16::try_from(offset) {
+            Ok(offset) => Instruction::branch_i32_ne_imm(condition, 0, offset),
+            Err(_) => {
+                let zero = stack.alloc_const(0_i32)?;
+                InstrEncoder::make_branch_cmp_fallback(
+                    stack,
+                    Comparator::I32Ne,
+                    condition,
+                    zero,
+                    offset,
+                )?
+            }
+        };
+        self.push_instr(instr)?;
+        Ok(())
     }
 }
 
