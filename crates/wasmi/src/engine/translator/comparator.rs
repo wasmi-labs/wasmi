@@ -1,5 +1,4 @@
-use super::Instruction;
-use crate::ir::{self, BranchOffset16, Comparator, Const16, Reg};
+use crate::ir::{self, BranchOffset16, Comparator, Const16, Instruction, Reg};
 
 /// Extensional functionality for [`Comparator`].
 pub trait ComparatorExt: Sized {
