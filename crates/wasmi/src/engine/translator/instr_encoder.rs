@@ -1576,6 +1576,12 @@ trait ComparatorExt: Sized {
     fn branch_cmp_instr(self) -> fn(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> ir::Instruction;
 }
 
+trait ComparatorExtImm<T> {
+    fn branch_cmp_instr_imm(
+        self,
+    ) -> Option<fn(lhs: Reg, rhs: Const16<T>, offset: BranchOffset16) -> ir::Instruction>;
+}
+
 impl ComparatorExt for Comparator {
     fn from_cmp_instruction(instr: Instruction) -> Option<Self> {
         use Instruction as I;
@@ -1707,5 +1713,83 @@ impl ComparatorExt for Comparator {
             Self::F64Gt => Instruction::branch_f64_gt,
             Self::F64Ge => Instruction::branch_f64_ge,
         }
+    }
+}
+
+impl ComparatorExtImm<i32> for Comparator {
+    fn branch_cmp_instr_imm(
+        self,
+    ) -> Option<fn(lhs: Reg, rhs: Const16<i32>, offset: BranchOffset16) -> wasmi_ir::Instruction>
+    {
+        use Instruction as I;
+        let make_instr = match self {
+            Self::I32And => I::branch_i32_and_imm,
+            Self::I32Or => I::branch_i32_or_imm,
+            Self::I32Xor => I::branch_i32_xor_imm,
+            Self::I32AndEqz => I::branch_i32_and_eqz_imm,
+            Self::I32OrEqz => I::branch_i32_or_eqz_imm,
+            Self::I32XorEqz => I::branch_i32_xor_eqz_imm,
+            Self::I32Eq => I::branch_i32_eq_imm,
+            Self::I32Ne => I::branch_i32_ne_imm,
+            Self::I32LtS => I::branch_i32_lt_s_imm,
+            Self::I32LeS => I::branch_i32_le_s_imm,
+            Self::I32GtS => I::branch_i32_gt_s_imm,
+            Self::I32GeS => I::branch_i32_ge_s_imm,
+            _ => return None,
+        };
+        Some(make_instr)
+    }
+}
+
+impl ComparatorExtImm<u32> for Comparator {
+    fn branch_cmp_instr_imm(
+        self,
+    ) -> Option<fn(lhs: Reg, rhs: Const16<u32>, offset: BranchOffset16) -> wasmi_ir::Instruction>
+    {
+        use Instruction as I;
+        let make_instr = match self {
+            Self::I32LtU => I::branch_i32_lt_u_imm,
+            Self::I32LeU => I::branch_i32_le_u_imm,
+            Self::I32GtU => I::branch_i32_gt_u_imm,
+            Self::I32GeU => I::branch_i32_ge_u_imm,
+            _ => return None,
+        };
+        Some(make_instr)
+    }
+}
+
+impl ComparatorExtImm<i64> for Comparator {
+    fn branch_cmp_instr_imm(
+        self,
+    ) -> Option<fn(lhs: Reg, rhs: Const16<i64>, offset: BranchOffset16) -> wasmi_ir::Instruction>
+    {
+        use Instruction as I;
+        let make_instr = match self {
+            Self::I64Eq => I::branch_i64_eq_imm,
+            Self::I64Ne => I::branch_i64_ne_imm,
+            Self::I64LtS => I::branch_i64_lt_s_imm,
+            Self::I64LeS => I::branch_i64_le_s_imm,
+            Self::I64GtS => I::branch_i64_gt_s_imm,
+            Self::I64GeS => I::branch_i64_ge_s_imm,
+            _ => return None,
+        };
+        Some(make_instr)
+    }
+}
+
+impl ComparatorExtImm<u64> for Comparator {
+    fn branch_cmp_instr_imm(
+        self,
+    ) -> Option<fn(lhs: Reg, rhs: Const16<u64>, offset: BranchOffset16) -> wasmi_ir::Instruction>
+    {
+        use Instruction as I;
+        let make_instr = match self {
+            Self::I64LtU => I::branch_i64_lt_u_imm,
+            Self::I64LeU => I::branch_i64_le_u_imm,
+            Self::I64GtU => I::branch_i64_gt_u_imm,
+            Self::I64GeU => I::branch_i64_ge_u_imm,
+            _ => return None,
+        };
+        Some(make_instr)
     }
 }
