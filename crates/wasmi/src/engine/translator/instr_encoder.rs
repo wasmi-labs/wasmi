@@ -1601,16 +1601,14 @@ impl ComparatorExt for Comparator {
 }
 
 trait ComparatorExtImm<T> {
-    fn branch_cmp_instr_imm(
-        self,
-    ) -> Option<fn(lhs: Reg, rhs: Const16<T>, offset: BranchOffset16) -> ir::Instruction>;
+    fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<T>>;
 }
 
+type MakeBranchCmpInstrImm<T> =
+    fn(lhs: Reg, rhs: Const16<T>, offset: BranchOffset16) -> ir::Instruction;
+
 impl ComparatorExtImm<i32> for Comparator {
-    fn branch_cmp_instr_imm(
-        self,
-    ) -> Option<fn(lhs: Reg, rhs: Const16<i32>, offset: BranchOffset16) -> wasmi_ir::Instruction>
-    {
+    fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<i32>> {
         use Instruction as I;
         let make_instr = match self {
             Self::I32And => I::branch_i32_and_imm,
@@ -1632,10 +1630,7 @@ impl ComparatorExtImm<i32> for Comparator {
 }
 
 impl ComparatorExtImm<u32> for Comparator {
-    fn branch_cmp_instr_imm(
-        self,
-    ) -> Option<fn(lhs: Reg, rhs: Const16<u32>, offset: BranchOffset16) -> wasmi_ir::Instruction>
-    {
+    fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<u32>> {
         use Instruction as I;
         let make_instr = match self {
             Self::I32LtU => I::branch_i32_lt_u_imm,
@@ -1649,10 +1644,7 @@ impl ComparatorExtImm<u32> for Comparator {
 }
 
 impl ComparatorExtImm<i64> for Comparator {
-    fn branch_cmp_instr_imm(
-        self,
-    ) -> Option<fn(lhs: Reg, rhs: Const16<i64>, offset: BranchOffset16) -> wasmi_ir::Instruction>
-    {
+    fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<i64>> {
         use Instruction as I;
         let make_instr = match self {
             Self::I64Eq => I::branch_i64_eq_imm,
@@ -1668,10 +1660,7 @@ impl ComparatorExtImm<i64> for Comparator {
 }
 
 impl ComparatorExtImm<u64> for Comparator {
-    fn branch_cmp_instr_imm(
-        self,
-    ) -> Option<fn(lhs: Reg, rhs: Const16<u64>, offset: BranchOffset16) -> wasmi_ir::Instruction>
-    {
+    fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<u64>> {
         use Instruction as I;
         let make_instr = match self {
             Self::I64LtU => I::branch_i64_lt_u_imm,
