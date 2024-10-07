@@ -1,9 +1,20 @@
 use super::Instruction;
 use crate::ir::{self, BranchOffset16, Comparator, Const16, Reg};
 
+/// Extensional functionality for [`Comparator`].
 pub trait ComparatorExt: Sized {
+    /// Creates a [`Comparator`] from an [`Instruction`].
     fn from_cmp_instruction(instr: Instruction) -> Option<Self>;
+
+    /// Returns the negated version of `self` if possible.
+    ///
+    /// # Note
+    ///
+    /// Comparators for `f32` and `f64` that are not symmetric (`Eq` and `Ne`)
+    /// cannot be negated since NaN value handling would not preserve semantics.
     fn negate(self) -> Option<Self>;
+
+    /// Returns the [`Instruction`] constructor for `self` without immediate value.
     fn branch_cmp_instr(self) -> fn(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> ir::Instruction;
 }
 
@@ -137,10 +148,13 @@ impl ComparatorExt for Comparator {
     }
 }
 
+/// Extensional functionality for [`Comparator`] with immediate value [`Instruction`].
 pub trait ComparatorExtImm<T> {
+    /// Returns the [`Instruction`] constructor for `self` without immediate value of type `T` if any.
     fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<T>>;
 }
 
+/// Constructor for branch+cmp [`Instruction`] with an immediate value of type `T`.
 type MakeBranchCmpInstrImm<T> =
     fn(lhs: Reg, rhs: Const16<T>, offset: BranchOffset16) -> ir::Instruction;
 
