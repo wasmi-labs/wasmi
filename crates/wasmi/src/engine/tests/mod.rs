@@ -1,8 +1,11 @@
 mod host_calls;
 mod many_inout;
 
-use super::{EngineInner, code_map::{CompiledFuncRef, EngineFunc}};
-use crate::{Engine, core::UntypedVal, ir::Instruction, Error};
+use super::{
+    code_map::{CompiledFuncRef, EngineFunc},
+    EngineInner,
+};
+use crate::{core::UntypedVal, ir::Instruction, Engine, Error};
 
 impl Engine {
     /// Resolves the [`EngineFunc`] to the underlying Wasmi bytecode instructions.
@@ -47,7 +50,11 @@ impl Engine {
     ///
     /// - If the [`EngineFunc`] is invalid for the [`Engine`].
     /// - If register machine bytecode translation is disabled.
-    pub(crate) fn get_func_const(&self, func: EngineFunc, index: usize) -> Result<Option<UntypedVal>, Error> {
+    pub(crate) fn get_func_const(
+        &self,
+        func: EngineFunc,
+        index: usize,
+    ) -> Result<Option<UntypedVal>, Error> {
         self.inner.get_func_const(func, index)
     }
 }
@@ -77,7 +84,11 @@ impl EngineInner {
     /// # Pancis
     ///
     /// If `func` cannot be resolved to a function for the [`EngineInner`].
-    pub(crate) fn resolve_instr(&self, func: EngineFunc, index: usize) -> Result<Option<Instruction>, Error> {
+    pub(crate) fn resolve_instr(
+        &self,
+        func: EngineFunc,
+        index: usize,
+    ) -> Result<Option<Instruction>, Error> {
         self.resolve_func(func, |func| func.instrs().get(index).copied())
     }
 
@@ -92,7 +103,11 @@ impl EngineInner {
     /// # Pancis
     ///
     /// If `func` cannot be resolved to a function for the [`EngineInner`].
-    pub(crate) fn get_func_const(&self, func: EngineFunc, index: usize) -> Result<Option<UntypedVal>, Error> {
+    pub(crate) fn get_func_const(
+        &self,
+        func: EngineFunc,
+        index: usize,
+    ) -> Result<Option<UntypedVal>, Error> {
         // Function local constants are stored in reverse order of their indices since
         // they are allocated in reverse order to their absolute indices during function
         // translation. That is why we need to access them in reverse order.
