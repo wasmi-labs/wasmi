@@ -1017,6 +1017,40 @@ impl InstrEncoder {
         Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
     }
 
+    /// Try to create a fused cmp+branch instruction.
+    ///
+    /// Returns `Some` `Instruction` if the cmp+branch instruction fusion was successful.
+    #[allow(clippy::too_many_arguments)]
+    fn try_fuse_branch_cmp(
+        &mut self,
+        stack: &mut ValueStack,
+        last_instr: Instr,
+        condition: Reg,
+        result: Reg,
+        lhs: Reg,
+        rhs: Reg,
+        label: LabelRef,
+        cmp: Comparator,
+    ) -> Result<Option<Instruction>, Error> {
+        if matches!(stack.get_register_space(result), RegisterSpace::Local) {
+            // We need to filter out instructions that store their result
+            // into a local register slot because they introduce observable behavior
+            // which a fused cmp+branch instruction would remove.
+            return Ok(None);
+        }
+        if result != condition {
+            // We cannot fuse the instructions since the result of the compare instruction
+            // does not match the input of the conditional branch instruction.
+            return Ok(None);
+        }
+        let offset = self.try_resolve_label_for(label, last_instr)?;
+        let instr = match BranchOffset16::try_from(offset) {
+            Ok(offset) => (cmp.branch_cmp_instr())(lhs, rhs, offset),
+            Err(_) => InstrEncoder::make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
+        };
+        Ok(Some(instr))
+    }
+
     /// Encodes a `branch_eqz` instruction and tries to fuse it with a previous comparison instruction.
     pub fn encode_branch_eqz(
         &mut self,
@@ -1049,40 +1083,6 @@ impl InstrEncoder {
             };
             this.push_instr(instr)?;
             Ok(())
-        }
-
-        /// Create a fused cmp+branch instruction and wrap it in a `Some`.
-        ///
-        /// We wrap the returned value in `Some` to unify handling of a bunch of cases.
-        #[allow(clippy::too_many_arguments)]
-        fn fuse(
-            this: &mut InstrEncoder,
-            stack: &mut ValueStack,
-            last_instr: Instr,
-            condition: Reg,
-            result: Reg,
-            lhs: Reg,
-            rhs: Reg,
-            label: LabelRef,
-            cmp: Comparator,
-        ) -> Result<Option<Instruction>, Error> {
-            if matches!(stack.get_register_space(result), RegisterSpace::Local) {
-                // We need to filter out instructions that store their result
-                // into a local register slot because they introduce observable behavior
-                // which a fused cmp+branch instruction would remove.
-                return Ok(None);
-            }
-            if result != condition {
-                // We cannot fuse the instructions since the result of the compare instruction
-                // does not match the input of the conditional branch instruction.
-                return Ok(None);
-            }
-            let offset = this.try_resolve_label_for(label, last_instr)?;
-            let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => (cmp.branch_cmp_instr())(lhs, rhs, offset),
-                Err(_) => InstrEncoder::make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
-            };
-            Ok(Some(instr))
         }
 
         /// Create a fused cmp+branch instruction with a 16-bit immediate and wrap it in a `Some`.
@@ -1166,8 +1166,8 @@ impl InstrEncoder {
             | I::I64GeS { result, lhs, rhs }
             | I::I64GeU { result, lhs, rhs }
             | I::F32Eq { result, lhs, rhs }
-            | I::F32Ne { result, lhs, rhs } => fuse(
-                self, stack, last_instr, condition, result, lhs, rhs, label, comparator,
+            | I::F32Ne { result, lhs, rhs } => self.try_fuse_branch_cmp(
+                stack, last_instr, condition, result, lhs, rhs, label, comparator,
             )?,
             // Note: We cannot fuse cmp+branch for float comparison operators due to how NaN values are treated.
             I::I32AndImm16 { result, lhs, rhs }
@@ -1245,40 +1245,6 @@ impl InstrEncoder {
             };
             this.push_instr(instr)?;
             Ok(())
-        }
-
-        /// Create a fused cmp+branch instruction and wrap it in a `Some`.
-        ///
-        /// We wrap the returned value in `Some` to unify handling of a bunch of cases.
-        #[allow(clippy::too_many_arguments)]
-        fn fuse(
-            this: &mut InstrEncoder,
-            stack: &mut ValueStack,
-            last_instr: Instr,
-            condition: Reg,
-            result: Reg,
-            lhs: Reg,
-            rhs: Reg,
-            label: LabelRef,
-            cmp: Comparator,
-        ) -> Result<Option<Instruction>, Error> {
-            if matches!(stack.get_register_space(result), RegisterSpace::Local) {
-                // We need to filter out instructions that store their result
-                // into a local register slot because they introduce observable behavior
-                // which a fused cmp+branch instruction would remove.
-                return Ok(None);
-            }
-            if result != condition {
-                // We cannot fuse the instructions since the result of the compare instruction
-                // does not match the input of the conditional branch instruction.
-                return Ok(None);
-            }
-            let offset = this.try_resolve_label_for(label, last_instr)?;
-            let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => (cmp.branch_cmp_instr())(lhs, rhs, offset),
-                Err(_) => InstrEncoder::make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
-            };
-            Ok(Some(instr))
         }
 
         /// Create a fused cmp+branch instruction with a 16-bit immediate and wrap it in a `Some`.
@@ -1371,8 +1337,8 @@ impl InstrEncoder {
             | I::F64Lt { result, lhs, rhs }
             | I::F64Le { result, lhs, rhs }
             | I::F64Gt { result, lhs, rhs }
-            | I::F64Ge { result, lhs, rhs } => fuse(
-                self, stack, last_instr, condition, result, lhs, rhs, label, comparator,
+            | I::F64Ge { result, lhs, rhs } => self.try_fuse_branch_cmp(
+                stack, last_instr, condition, result, lhs, rhs, label, comparator,
             )?,
             | I::I32AndImm16 { result, lhs, rhs }
             | I::I32OrImm16 { result, lhs, rhs }
