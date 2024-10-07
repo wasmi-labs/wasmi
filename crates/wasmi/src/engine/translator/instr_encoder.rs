@@ -1005,6 +1005,18 @@ impl InstrEncoder {
         true
     }
 
+    /// Create an [`Instruction::BranchCmpFallback`].
+    fn make_branch_cmp_fallback(
+        stack: &mut ValueStack,
+        cmp: Comparator,
+        lhs: Reg,
+        rhs: Reg,
+        offset: BranchOffset,
+    ) -> Result<Instruction, Error> {
+        let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
+        Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
+    }
+
     /// Encodes a `branch_eqz` instruction and tries to fuse it with a previous comparison instruction.
     pub fn encode_branch_eqz(
         &mut self,
@@ -1012,18 +1024,6 @@ impl InstrEncoder {
         condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        /// Create an [`Instruction::BranchCmpFallback`].
-        fn make_branch_cmp_fallback(
-            stack: &mut ValueStack,
-            cmp: Comparator,
-            lhs: Reg,
-            rhs: Reg,
-            offset: BranchOffset,
-        ) -> Result<Instruction, Error> {
-            let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
-            Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
-        }
-
         /// Encode an unoptimized `branch_eqz` instruction.
         ///
         /// This is used as fallback whenever fusing compare and branch instructions is not possible.
@@ -1038,7 +1038,13 @@ impl InstrEncoder {
                 Ok(offset) => Instruction::branch_i32_eq_imm(condition, 0, offset),
                 Err(_) => {
                     let zero = stack.alloc_const(0_i32)?;
-                    make_branch_cmp_fallback(stack, Comparator::I32Eq, condition, zero, offset)?
+                    InstrEncoder::make_branch_cmp_fallback(
+                        stack,
+                        Comparator::I32Eq,
+                        condition,
+                        zero,
+                        offset,
+                    )?
                 }
             };
             this.push_instr(instr)?;
@@ -1074,7 +1080,7 @@ impl InstrEncoder {
             let offset = this.try_resolve_label_for(label, last_instr)?;
             let instr = match BranchOffset16::try_from(offset) {
                 Ok(offset) => (cmp.branch_cmp_instr())(lhs, rhs, offset),
-                Err(_) => make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
+                Err(_) => InstrEncoder::make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
             };
             Ok(Some(instr))
         }
@@ -1117,7 +1123,7 @@ impl InstrEncoder {
                 Ok(offset) => make_instr(lhs, rhs, offset),
                 Err(_) => {
                     let rhs = stack.alloc_const(T::from(rhs))?;
-                    make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?
+                    InstrEncoder::make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?
                 }
             };
             Ok(Some(instr))
@@ -1214,18 +1220,6 @@ impl InstrEncoder {
         condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        /// Create an [`Instruction::BranchCmpFallback`].
-        fn make_branch_cmp_fallback(
-            stack: &mut ValueStack,
-            cmp: Comparator,
-            lhs: Reg,
-            rhs: Reg,
-            offset: BranchOffset,
-        ) -> Result<Instruction, Error> {
-            let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
-            Ok(Instruction::branch_cmp_fallback(lhs, rhs, params))
-        }
-
         /// Encode an unoptimized `branch_nez` instruction.
         ///
         /// This is used as fallback whenever fusing compare and branch instructions is not possible.
@@ -1240,7 +1234,13 @@ impl InstrEncoder {
                 Ok(offset) => Instruction::branch_i32_ne_imm(condition, 0, offset),
                 Err(_) => {
                     let zero = stack.alloc_const(0_i32)?;
-                    make_branch_cmp_fallback(stack, Comparator::I32Ne, condition, zero, offset)?
+                    InstrEncoder::make_branch_cmp_fallback(
+                        stack,
+                        Comparator::I32Ne,
+                        condition,
+                        zero,
+                        offset,
+                    )?
                 }
             };
             this.push_instr(instr)?;
@@ -1276,7 +1276,7 @@ impl InstrEncoder {
             let offset = this.try_resolve_label_for(label, last_instr)?;
             let instr = match BranchOffset16::try_from(offset) {
                 Ok(offset) => (cmp.branch_cmp_instr())(lhs, rhs, offset),
-                Err(_) => make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
+                Err(_) => InstrEncoder::make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?,
             };
             Ok(Some(instr))
         }
@@ -1319,7 +1319,7 @@ impl InstrEncoder {
                 Ok(offset) => make_instr(lhs, rhs, offset),
                 Err(_) => {
                     let rhs = stack.alloc_const(T::from(rhs))?;
-                    make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?
+                    InstrEncoder::make_branch_cmp_fallback(stack, cmp, lhs, rhs, offset)?
                 }
             };
             Ok(Some(instr))
