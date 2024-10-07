@@ -36,17 +36,19 @@ pub fn arbitrary_exec_module(seed: &[u8]) -> arbitrary::Result<wasm_smith::Modul
     wasm_smith::Module::new(exec_config(), &mut unstructured)
 }
 
-pub fn arbitrary_translate_module(seed: &[u8]) -> wasm_smith::Module {
+pub fn arbitrary_translate_module(seed: &[u8]) -> arbitrary::Result<wasm_smith::Module> {
     let mut unstructured = Unstructured::new(seed);
 
-    let mut config =
-        wasm_smith::Config::arbitrary(&mut unstructured).expect("Generating wasm_smith config");
-    config.gc_enabled = false;
-    config.exceptions_enabled = false;
-    config.simd_enabled = false;
-    config.threads_enabled = false;
+    let config = wasm_smith::Config::arbitrary(&mut unstructured);
 
-    wasm_smith::Module::new(config, &mut unstructured).expect("Generating wasm_smith module")
+    config.map(|mut config| {
+        config.gc_enabled = false;
+        config.exceptions_enabled = false;
+        config.simd_enabled = false;
+        config.threads_enabled = false;
+
+        wasm_smith::Module::new(config, &mut unstructured)
+    })?
 }
 
 /// Converts a [`ValType`] into a [`Val`] with default initialization of 1.
