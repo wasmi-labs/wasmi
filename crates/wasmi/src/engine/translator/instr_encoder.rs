@@ -1102,40 +1102,13 @@ impl InstrEncoder {
         condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        /// Encode an unoptimized `branch_eqz` instruction.
-        ///
-        /// This is used as fallback whenever fusing compare and branch instructions is not possible.
-        fn encode_branch_eqz_fallback(
-            this: &mut InstrEncoder,
-            stack: &mut ValueStack,
-            condition: Reg,
-            label: LabelRef,
-        ) -> Result<(), Error> {
-            let offset = this.try_resolve_label(label)?;
-            let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => Instruction::branch_i32_eq_imm(condition, 0, offset),
-                Err(_) => {
-                    let zero = stack.alloc_const(0_i32)?;
-                    InstrEncoder::make_branch_cmp_fallback(
-                        stack,
-                        Comparator::I32Eq,
-                        condition,
-                        zero,
-                        offset,
-                    )?
-                }
-            };
-            this.push_instr(instr)?;
-            Ok(())
-        }
-
         use Instruction as I;
         let Some(last_instr) = self.last_instr else {
-            return encode_branch_eqz_fallback(self, stack, condition, label);
+            return self.encode_branch_eqz_unopt(stack, condition, label);
         };
         let last_instruction = *self.instrs.get(last_instr);
         let Some(comparator) = Comparator::from_cmp_instruction(last_instruction) else {
-            return encode_branch_eqz_fallback(self, stack, condition, label);
+            return self.encode_branch_eqz_unopt(stack, condition, label);
         };
         let comparator = comparator.negate();
         let fused_instr = match *self.instrs.get(last_instr) {
@@ -1210,7 +1183,34 @@ impl InstrEncoder {
             _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
             return Ok(());
         }
-        encode_branch_eqz_fallback(self, stack, condition, label)
+        self.encode_branch_eqz_unopt(stack, condition, label)
+    }
+
+    /// Encode an unoptimized `branch_eqz` instruction.
+    ///
+    /// This is used as fallback whenever fusing compare and branch instructions is not possible.
+    fn encode_branch_eqz_unopt(
+        &mut self,
+        stack: &mut ValueStack,
+        condition: Reg,
+        label: LabelRef,
+    ) -> Result<(), Error> {
+        let offset = self.try_resolve_label(label)?;
+        let instr = match BranchOffset16::try_from(offset) {
+            Ok(offset) => Instruction::branch_i32_eq_imm(condition, 0, offset),
+            Err(_) => {
+                let zero = stack.alloc_const(0_i32)?;
+                InstrEncoder::make_branch_cmp_fallback(
+                    stack,
+                    Comparator::I32Eq,
+                    condition,
+                    zero,
+                    offset,
+                )?
+            }
+        };
+        self.push_instr(instr)?;
+        Ok(())
     }
 
     /// Encodes a `branch_nez` instruction and tries to fuse it with a previous comparison instruction.
@@ -1220,40 +1220,13 @@ impl InstrEncoder {
         condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        /// Encode an unoptimized `branch_nez` instruction.
-        ///
-        /// This is used as fallback whenever fusing compare and branch instructions is not possible.
-        fn encode_branch_nez_fallback(
-            this: &mut InstrEncoder,
-            stack: &mut ValueStack,
-            condition: Reg,
-            label: LabelRef,
-        ) -> Result<(), Error> {
-            let offset = this.try_resolve_label(label)?;
-            let instr = match BranchOffset16::try_from(offset) {
-                Ok(offset) => Instruction::branch_i32_ne_imm(condition, 0, offset),
-                Err(_) => {
-                    let zero = stack.alloc_const(0_i32)?;
-                    InstrEncoder::make_branch_cmp_fallback(
-                        stack,
-                        Comparator::I32Ne,
-                        condition,
-                        zero,
-                        offset,
-                    )?
-                }
-            };
-            this.push_instr(instr)?;
-            Ok(())
-        }
-
         use Instruction as I;
         let Some(last_instr) = self.last_instr else {
-            return encode_branch_nez_fallback(self, stack, condition, label);
+            return self.encode_branch_nez_unopt(stack, condition, label);
         };
         let last_instruction = *self.instrs.get(last_instr);
         let Some(comparator) = Comparator::from_cmp_instruction(last_instruction) else {
-            return encode_branch_nez_fallback(self, stack, condition, label);
+            return self.encode_branch_nez_unopt(stack, condition, label);
         };
         let fused_instr = match last_instruction {
             | I::I32And { result, lhs, rhs }
@@ -1336,7 +1309,34 @@ impl InstrEncoder {
             _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
             return Ok(());
         }
-        encode_branch_nez_fallback(self, stack, condition, label)
+        self.encode_branch_nez_unopt(stack, condition, label)
+    }
+
+    /// Encode an unoptimized `branch_nez` instruction.
+    ///
+    /// This is used as fallback whenever fusing compare and branch instructions is not possible.
+    fn encode_branch_nez_unopt(
+        &mut self,
+        stack: &mut ValueStack,
+        condition: Reg,
+        label: LabelRef,
+    ) -> Result<(), Error> {
+        let offset = self.try_resolve_label(label)?;
+        let instr = match BranchOffset16::try_from(offset) {
+            Ok(offset) => Instruction::branch_i32_ne_imm(condition, 0, offset),
+            Err(_) => {
+                let zero = stack.alloc_const(0_i32)?;
+                InstrEncoder::make_branch_cmp_fallback(
+                    stack,
+                    Comparator::I32Ne,
+                    condition,
+                    zero,
+                    offset,
+                )?
+            }
+        };
+        self.push_instr(instr)?;
+        Ok(())
     }
 }
 
