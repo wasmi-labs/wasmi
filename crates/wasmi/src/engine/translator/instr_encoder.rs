@@ -1110,7 +1110,9 @@ impl InstrEncoder {
         let Some(comparator) = Comparator::from_cmp_instruction(last_instruction) else {
             return self.encode_branch_eqz_unopt(stack, condition, label);
         };
-        let comparator = comparator.negate();
+        let Some(comparator) = comparator.negate() else {
+            return self.encode_branch_eqz_unopt(stack, condition, label);
+        };
         let fused_instr = match *self.instrs.get(last_instr) {
             I::I32And { result, lhs, rhs }
             | I::I32Or { result, lhs, rhs }
@@ -1517,7 +1519,7 @@ mod tests {
 
 trait ComparatorExt: Sized {
     fn from_cmp_instruction(instr: Instruction) -> Option<Self>;
-    fn negate(self) -> Self;
+    fn negate(self) -> Option<Self>;
     fn branch_cmp_instr(self) -> fn(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> ir::Instruction;
 }
 
@@ -1574,8 +1576,8 @@ impl ComparatorExt for Comparator {
         Some(cmp)
     }
 
-    fn negate(self) -> Self {
-        match self {
+    fn negate(self) -> Option<Self> {
+        let negated = match self {
             Self::I32And => Self::I32AndEqz,
             Self::I32Or => Self::I32OrEqz,
             Self::I32Xor => Self::I32XorEqz,
@@ -1604,17 +1606,13 @@ impl ComparatorExt for Comparator {
             Self::I64GeU => Self::I64LtU,
             Self::F32Eq => Self::F32Ne,
             Self::F32Ne => Self::F32Eq,
-            Self::F32Lt => Self::F32Ge,
-            Self::F32Le => Self::F32Gt,
-            Self::F32Gt => Self::F32Le,
-            Self::F32Ge => Self::F32Lt,
             Self::F64Eq => Self::F64Ne,
             Self::F64Ne => Self::F64Eq,
-            Self::F64Lt => Self::F64Ge,
-            Self::F64Le => Self::F64Gt,
-            Self::F64Gt => Self::F64Le,
-            Self::F64Ge => Self::F64Lt,
-        }
+            // Note: Due to non-semantics preserving NaN handling we cannot
+            //       negate `F{32,64}{Lt,Le,Gt,Ge}` comparators.
+            _ => return None,
+        };
+        Some(negated)
     }
 
     fn branch_cmp_instr(self) -> fn(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> ir::Instruction {
