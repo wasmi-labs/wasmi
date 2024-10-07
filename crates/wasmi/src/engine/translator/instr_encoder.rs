@@ -1470,12 +1470,6 @@ trait ComparatorExt: Sized {
     fn branch_cmp_instr(self) -> fn(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> ir::Instruction;
 }
 
-trait ComparatorExtImm<T> {
-    fn branch_cmp_instr_imm(
-        self,
-    ) -> Option<fn(lhs: Reg, rhs: Const16<T>, offset: BranchOffset16) -> ir::Instruction>;
-}
-
 impl ComparatorExt for Comparator {
     fn from_cmp_instruction(instr: Instruction) -> Option<Self> {
         use Instruction as I;
@@ -1604,6 +1598,12 @@ impl ComparatorExt for Comparator {
             Self::F64Ge => Instruction::branch_f64_ge,
         }
     }
+}
+
+trait ComparatorExtImm<T> {
+    fn branch_cmp_instr_imm(
+        self,
+    ) -> Option<fn(lhs: Reg, rhs: Const16<T>, offset: BranchOffset16) -> ir::Instruction>;
 }
 
 impl ComparatorExtImm<i32> for Comparator {
