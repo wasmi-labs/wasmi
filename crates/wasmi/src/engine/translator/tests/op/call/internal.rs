@@ -1,5 +1,5 @@
 use super::*;
-use crate::engine::{EngineFunc, RegSpan};
+use crate::{ir::RegSpan, engine::EngineFunc};
 
 #[test]
 #[cfg_attr(miri, ignore)]
