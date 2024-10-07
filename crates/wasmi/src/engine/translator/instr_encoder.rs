@@ -1174,13 +1174,13 @@ impl InstrEncoder {
     fn try_fuse_branch_cmp_for_instr(
         &mut self,
         stack: &mut ValueStack,
-        last_instr: Instr,
+        instr: Instr,
         condition: Reg,
         label: LabelRef,
         comparator: Comparator,
     ) -> Result<Option<Instruction>, Error> {
         use Instruction as I;
-        let fused_instr = match *self.instrs.get(last_instr) {
+        let fused_instr = match *self.instrs.get(instr) {
             | I::I32And { result, lhs, rhs }
             | I::I32Or { result, lhs, rhs }
             | I::I32Xor { result, lhs, rhs }
@@ -1219,7 +1219,7 @@ impl InstrEncoder {
             | I::F64Le { result, lhs, rhs }
             | I::F64Gt { result, lhs, rhs }
             | I::F64Ge { result, lhs, rhs } => self.try_fuse_branch_cmp(
-                stack, last_instr, condition, result, lhs, rhs, label, comparator,
+                stack, instr, condition, result, lhs, rhs, label, comparator,
             )?,
             | I::I32AndImm16 { result, lhs, rhs }
             | I::I32OrImm16 { result, lhs, rhs }
@@ -1233,13 +1233,13 @@ impl InstrEncoder {
             | I::I32LeSImm16 { result, lhs, rhs }
             | I::I32GtSImm16 { result, lhs, rhs }
             | I::I32GeSImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<i32>(
-                stack, last_instr, condition, result, lhs, rhs, label, comparator,
+                stack, instr, condition, result, lhs, rhs, label, comparator,
             )?,
             | I::I32LtUImm16 { result, lhs, rhs }
             | I::I32LeUImm16 { result, lhs, rhs }
             | I::I32GtUImm16 { result, lhs, rhs }
             | I::I32GeUImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<u32>(
-                stack, last_instr, condition, result, lhs, rhs, label, comparator,
+                stack, instr, condition, result, lhs, rhs, label, comparator,
             )?,
             | I::I64EqImm16 { result, lhs, rhs }
             | I::I64NeImm16 { result, lhs, rhs }
@@ -1247,13 +1247,13 @@ impl InstrEncoder {
             | I::I64LeSImm16 { result, lhs, rhs }
             | I::I64GtSImm16 { result, lhs, rhs }
             | I::I64GeSImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<i64>(
-                stack, last_instr, condition, result, lhs, rhs, label, comparator,
+                stack, instr, condition, result, lhs, rhs, label, comparator,
             )?,
             | I::I64LtUImm16 { result, lhs, rhs }
             | I::I64LeUImm16 { result, lhs, rhs }
             | I::I64GtUImm16 { result, lhs, rhs }
             | I::I64GeUImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<u64>(
-                stack, last_instr, condition, result, lhs, rhs, label, comparator,
+                stack, instr, condition, result, lhs, rhs, label, comparator,
             )?,
             _ => None,
         };
