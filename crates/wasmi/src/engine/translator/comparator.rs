@@ -2,8 +2,11 @@ use crate::ir::{self, BranchOffset16, Comparator, Const16, Instruction, Reg};
 
 /// Extensional functionality for [`Comparator`].
 pub trait ComparatorExt: Sized {
-    /// Creates a [`Comparator`] from an [`Instruction`].
+    /// Creates a [`Comparator`] from a comparison [`Instruction`].
     fn from_cmp_instruction(instr: Instruction) -> Option<Self>;
+
+    /// Creates a [`Comparator`] from a fused compare+branch [`Instruction`].
+    fn from_cmp_branch_instruction(instr: Instruction) -> Option<Self>;
 
     /// Returns the negated version of `self` if possible.
     ///
@@ -59,6 +62,52 @@ impl ComparatorExt for Comparator {
             I::F64Le { .. } => Self::F64Le,
             I::F64Gt { .. } => Self::F64Gt,
             I::F64Ge { .. } => Self::F64Ge,
+            _ => return None,
+        };
+        Some(cmp)
+    }
+
+    fn from_cmp_branch_instruction(instr: Instruction) -> Option<Self> {
+        use Instruction as I;
+        let cmp = match instr {
+            I::BranchI32And { .. } | I::BranchI32AndImm { .. } => Self::I32And,
+            I::BranchI32Or { .. } | I::BranchI32OrImm { .. } => Self::I32Or,
+            I::BranchI32Xor { .. } | I::BranchI32XorImm { .. } => Self::I32Xor,
+            I::BranchI32AndEqz { .. } | I::BranchI32AndEqzImm { .. } => Self::I32AndEqz,
+            I::BranchI32OrEqz { .. } | I::BranchI32OrEqzImm { .. } => Self::I32OrEqz,
+            I::BranchI32XorEqz { .. } | I::BranchI32XorEqzImm { .. } => Self::I32XorEqz,
+            I::BranchI32Eq { .. } | I::BranchI32EqImm { .. } => Self::I32Eq,
+            I::BranchI32Ne { .. } | I::BranchI32NeImm { .. } => Self::I32Ne,
+            I::BranchI32LtS { .. } | I::BranchI32LtSImm { .. } => Self::I32LtS,
+            I::BranchI32LtU { .. } | I::BranchI32LtUImm { .. } => Self::I32LtU,
+            I::BranchI32LeS { .. } | I::BranchI32LeSImm { .. } => Self::I32LeS,
+            I::BranchI32LeU { .. } | I::BranchI32LeUImm { .. } => Self::I32LeU,
+            I::BranchI32GtS { .. } | I::BranchI32GtSImm { .. } => Self::I32GtS,
+            I::BranchI32GtU { .. } | I::BranchI32GtUImm { .. } => Self::I32GtU,
+            I::BranchI32GeS { .. } | I::BranchI32GeSImm { .. } => Self::I32GeS,
+            I::BranchI32GeU { .. } | I::BranchI32GeUImm { .. } => Self::I32GeU,
+            I::BranchI64Eq { .. } | I::BranchI64EqImm { .. } => Self::I64Eq,
+            I::BranchI64Ne { .. } | I::BranchI64NeImm { .. } => Self::I64Ne,
+            I::BranchI64LtS { .. } | I::BranchI64LtSImm { .. } => Self::I64LtS,
+            I::BranchI64LtU { .. } | I::BranchI64LtUImm { .. } => Self::I64LtU,
+            I::BranchI64LeS { .. } | I::BranchI64LeSImm { .. } => Self::I64LeS,
+            I::BranchI64LeU { .. } | I::BranchI64LeUImm { .. } => Self::I64LeU,
+            I::BranchI64GtS { .. } | I::BranchI64GtSImm { .. } => Self::I64GtS,
+            I::BranchI64GtU { .. } | I::BranchI64GtUImm { .. } => Self::I64GtU,
+            I::BranchI64GeS { .. } | I::BranchI64GeSImm { .. } => Self::I64GeS,
+            I::BranchI64GeU { .. } | I::BranchI64GeUImm { .. } => Self::I64GeU,
+            I::BranchF32Eq { .. } => Self::F32Eq,
+            I::BranchF32Ne { .. } => Self::F32Ne,
+            I::BranchF32Lt { .. } => Self::F32Lt,
+            I::BranchF32Le { .. } => Self::F32Le,
+            I::BranchF32Gt { .. } => Self::F32Gt,
+            I::BranchF32Ge { .. } => Self::F32Ge,
+            I::BranchF64Eq { .. } => Self::F64Eq,
+            I::BranchF64Ne { .. } => Self::F64Ne,
+            I::BranchF64Lt { .. } => Self::F64Lt,
+            I::BranchF64Le { .. } => Self::F64Le,
+            I::BranchF64Gt { .. } => Self::F64Gt,
+            I::BranchF64Ge { .. } => Self::F64Ge,
             _ => return None,
         };
         Some(cmp)
