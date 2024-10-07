@@ -1,8 +1,10 @@
+#![allow(dead_code)]
+
 use arbitrary::{Arbitrary, Unstructured};
 use wasmi::{core::ValType, Val};
 
 pub fn exec_config() -> wasm_smith::Config {
-    return wasm_smith::Config {
+    wasm_smith::Config {
         export_everything: true,
         allow_start_export: false,
         reference_types_enabled: false,
@@ -26,16 +28,16 @@ pub fn exec_config() -> wasm_smith::Config {
         gc_enabled: false,
         tail_call_enabled: false,
         ..Default::default()
-    };
+    }
 }
 
 pub fn arbitrary_exec_module(seed: &[u8]) -> arbitrary::Result<wasm_smith::Module> {
-    let mut unstructured = Unstructured::new(&seed);
-    return wasm_smith::Module::new(exec_config(), &mut unstructured);
+    let mut unstructured = Unstructured::new(seed);
+    wasm_smith::Module::new(exec_config(), &mut unstructured)
 }
 
 pub fn arbitrary_translate_module(seed: &[u8]) -> wasm_smith::Module {
-    let mut unstructured = Unstructured::new(&seed);
+    let mut unstructured = Unstructured::new(seed);
 
     let mut config =
         wasm_smith::Config::arbitrary(&mut unstructured).expect("Generating wasm_smith config");
