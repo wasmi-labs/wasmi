@@ -15,11 +15,6 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
-use self::code_map::CompiledFuncRef;
-#[cfg(test)]
-use crate::{core::UntypedVal, ir::Instruction, ir::RegSpan};
-
 pub(crate) use self::{
     block_type::BlockType,
     config::FuelCosts,
@@ -272,54 +267,6 @@ impl Engine {
     ) {
         self.inner
             .init_lazy_func(func_idx, func, bytes, module, func_to_validate)
-    }
-
-    /// Resolves the [`EngineFunc`] to the underlying Wasmi bytecode instructions.
-    ///
-    /// # Note
-    ///
-    /// - This is a variant of [`Engine::resolve_instr`] that returns register
-    ///   machine based bytecode instructions.
-    /// - This API is mainly intended for unit testing purposes and shall not be used
-    ///   outside of this context. The function bodies are intended to be data private
-    ///   to the Wasmi interpreter.
-    ///
-    /// # Errors
-    ///
-    /// If the `func` fails Wasm to Wasmi bytecode translation after it was lazily initialized.
-    ///
-    /// # Panics
-    ///
-    /// - If the [`EngineFunc`] is invalid for the [`Engine`].
-    /// - If register machine bytecode translation is disabled.
-    #[cfg(test)]
-    pub(crate) fn resolve_instr(
-        &self,
-        func: EngineFunc,
-        index: usize,
-    ) -> Result<Option<Instruction>, Error> {
-        self.inner.resolve_instr(func, index)
-    }
-
-    /// Resolves the function local constant of [`EngineFunc`] at `index` if any.
-    ///
-    /// # Note
-    ///
-    /// This API is intended for unit testing purposes and shall not be used
-    /// outside of this context. The function bodies are intended to be data
-    /// private to the Wasmi interpreter.
-    ///
-    /// # Errors
-    ///
-    /// If the `func` fails Wasm to Wasmi bytecode translation after it was lazily initialized.
-    ///
-    /// # Panics
-    ///
-    /// - If the [`EngineFunc`] is invalid for the [`Engine`].
-    /// - If register machine bytecode translation is disabled.
-    #[cfg(test)]
-    fn get_func_const(&self, func: EngineFunc, index: usize) -> Result<Option<UntypedVal>, Error> {
-        self.inner.get_func_const(func, index)
     }
 
     /// Executes the given [`Func`] with parameters `params`.
@@ -737,55 +684,6 @@ impl EngineInner {
     ) {
         self.code_map
             .init_func_as_uncompiled(func, func_idx, bytes, module, func_to_validate)
-    }
-
-    /// Resolves the [`InternalFuncEntity`] for [`EngineFunc`] and applies `f` to it.
-    ///
-    /// # Panics
-    ///
-    /// If [`EngineFunc`] is invalid for [`Engine`].
-    #[cfg(test)]
-    fn resolve_func<'a, F, R>(&'a self, func: EngineFunc, f: F) -> Result<R, Error>
-    where
-        F: FnOnce(CompiledFuncRef<'a>) -> R,
-    {
-        // Note: We use `None` so this test-only function will never charge for compilation fuel.
-        Ok(f(self.code_map.get(None, func)?))
-    }
-
-    /// Returns the [`Instruction`] of `func` at `index`.
-    ///
-    /// Returns `None` if the function has no instruction at `index`.
-    ///
-    /// # Errors
-    ///
-    /// If the `func` fails Wasm to Wasmi bytecode translation after it was lazily initialized.
-    ///
-    /// # Pancis
-    ///
-    /// If `func` cannot be resolved to a function for the [`EngineInner`].
-    #[cfg(test)]
-    fn resolve_instr(&self, func: EngineFunc, index: usize) -> Result<Option<Instruction>, Error> {
-        self.resolve_func(func, |func| func.instrs().get(index).copied())
-    }
-
-    /// Returns the function local constant value of `func` at `index`.
-    ///
-    /// Returns `None` if the function has no function local constant at `index`.
-    ///
-    /// # Errors
-    ///
-    /// If the `func` fails Wasm to Wasmi bytecode translation after it was lazily initialized.
-    ///
-    /// # Pancis
-    ///
-    /// If `func` cannot be resolved to a function for the [`EngineInner`].
-    #[cfg(test)]
-    fn get_func_const(&self, func: EngineFunc, index: usize) -> Result<Option<UntypedVal>, Error> {
-        // Function local constants are stored in reverse order of their indices since
-        // they are allocated in reverse order to their absolute indices during function
-        // translation. That is why we need to access them in reverse order.
-        self.resolve_func(func, |func| func.consts().iter().rev().nth(index).copied())
     }
 
     /// Recycles the given [`Stack`].
