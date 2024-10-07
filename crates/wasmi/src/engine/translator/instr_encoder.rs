@@ -1139,7 +1139,9 @@ impl InstrEncoder {
             | I::I64GeS { result, lhs, rhs }
             | I::I64GeU { result, lhs, rhs }
             | I::F32Eq { result, lhs, rhs }
-            | I::F32Ne { result, lhs, rhs } => self.try_fuse_branch_cmp(
+            | I::F32Ne { result, lhs, rhs }
+            | I::F64Eq { result, lhs, rhs }
+            | I::F64Ne { result, lhs, rhs } => self.try_fuse_branch_cmp(
                 stack, last_instr, condition, result, lhs, rhs, label, comparator,
             )?,
             // Note: We cannot fuse cmp+branch for float comparison operators due to how NaN values are treated.
