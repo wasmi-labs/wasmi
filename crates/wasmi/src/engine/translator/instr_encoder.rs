@@ -1102,7 +1102,6 @@ impl InstrEncoder {
         condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        use Instruction as I;
         let Some(last_instr) = self.last_instr else {
             return self.encode_branch_eqz_unopt(stack, condition, label);
         };
@@ -1113,76 +1112,8 @@ impl InstrEncoder {
         let Some(comparator) = comparator.negate() else {
             return self.encode_branch_eqz_unopt(stack, condition, label);
         };
-        let fused_instr = match *self.instrs.get(last_instr) {
-            I::I32And { result, lhs, rhs }
-            | I::I32Or { result, lhs, rhs }
-            | I::I32Xor { result, lhs, rhs }
-            | I::I32AndEqz { result, lhs, rhs }
-            | I::I32OrEqz { result, lhs, rhs }
-            | I::I32XorEqz { result, lhs, rhs }
-            | I::I32Eq { result, lhs, rhs }
-            | I::I32Ne { result, lhs, rhs }
-            | I::I32LtS { result, lhs, rhs }
-            | I::I32LtU { result, lhs, rhs }
-            | I::I32LeS { result, lhs, rhs }
-            | I::I32LeU { result, lhs, rhs }
-            | I::I32GtS { result, lhs, rhs }
-            | I::I32GtU { result, lhs, rhs }
-            | I::I32GeS { result, lhs, rhs }
-            | I::I32GeU { result, lhs, rhs }
-            | I::I64Eq { result, lhs, rhs }
-            | I::I64Ne { result, lhs, rhs }
-            | I::I64LtS { result, lhs, rhs }
-            | I::I64LtU { result, lhs, rhs }
-            | I::I64LeS { result, lhs, rhs }
-            | I::I64LeU { result, lhs, rhs }
-            | I::I64GtS { result, lhs, rhs }
-            | I::I64GtU { result, lhs, rhs }
-            | I::I64GeS { result, lhs, rhs }
-            | I::I64GeU { result, lhs, rhs }
-            | I::F32Eq { result, lhs, rhs }
-            | I::F32Ne { result, lhs, rhs }
-            | I::F64Eq { result, lhs, rhs }
-            | I::F64Ne { result, lhs, rhs } => self.try_fuse_branch_cmp(
-                stack, last_instr, condition, result, lhs, rhs, label, comparator,
-            )?,
-            // Note: We cannot fuse cmp+branch for float comparison operators due to how NaN values are treated.
-            I::I32AndImm16 { result, lhs, rhs }
-            | I::I32OrImm16 { result, lhs, rhs }
-            | I::I32XorImm16 { result, lhs, rhs }
-            | I::I32AndEqzImm16 { result, lhs, rhs }
-            | I::I32OrEqzImm16 { result, lhs, rhs }
-            | I::I32XorEqzImm16 { result, lhs, rhs }
-            | I::I32EqImm16 { result, lhs, rhs }
-            | I::I32NeImm16 { result, lhs, rhs }
-            | I::I32LtSImm16 { result, lhs, rhs }
-            | I::I32LeSImm16 { result, lhs, rhs }
-            | I::I32GtSImm16 { result, lhs, rhs }
-            | I::I32GeSImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<i32>(
-                stack, last_instr, condition, result, lhs, rhs, label, comparator,
-            )?,
-            I::I32LtUImm16 { result, lhs, rhs }
-            | I::I32LeUImm16 { result, lhs, rhs }
-            | I::I32GtUImm16 { result, lhs, rhs }
-            | I::I32GeUImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<u32>(
-                stack, last_instr, condition, result, lhs, rhs, label, comparator,
-            )?,
-            I::I64EqImm16 { result, lhs, rhs }
-            | I::I64NeImm16 { result, lhs, rhs }
-            | I::I64LtSImm16 { result, lhs, rhs }
-            | I::I64LeSImm16 { result, lhs, rhs }
-            | I::I64GtSImm16 { result, lhs, rhs }
-            | I::I64GeSImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<i64>(
-                stack, last_instr, condition, result, lhs, rhs, label, comparator,
-            )?,
-            I::I64LtUImm16 { result, lhs, rhs }
-            | I::I64LeUImm16 { result, lhs, rhs }
-            | I::I64GtUImm16 { result, lhs, rhs }
-            | I::I64GeUImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<u64>(
-                stack, last_instr, condition, result, lhs, rhs, label, comparator,
-            )?,
-            _ => None,
-        };
+        let fused_instr =
+            self.try_fuse_branch_cmp_for_instr(stack, last_instr, condition, label, comparator)?;
         if let Some(fused_instr) = fused_instr {
             _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
             return Ok(());
@@ -1224,7 +1155,6 @@ impl InstrEncoder {
         condition: Reg,
         label: LabelRef,
     ) -> Result<(), Error> {
-        use Instruction as I;
         let Some(last_instr) = self.last_instr else {
             return self.encode_branch_nez_unopt(stack, condition, label);
         };
@@ -1232,7 +1162,25 @@ impl InstrEncoder {
         let Some(comparator) = Comparator::from_cmp_instruction(last_instruction) else {
             return self.encode_branch_nez_unopt(stack, condition, label);
         };
-        let fused_instr = match last_instruction {
+        let fused_instr =
+            self.try_fuse_branch_cmp_for_instr(stack, last_instr, condition, label, comparator)?;
+        if let Some(fused_instr) = fused_instr {
+            _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
+            return Ok(());
+        }
+        self.encode_branch_nez_unopt(stack, condition, label)
+    }
+
+    fn try_fuse_branch_cmp_for_instr(
+        &mut self,
+        stack: &mut ValueStack,
+        last_instr: Instr,
+        condition: Reg,
+        label: LabelRef,
+        comparator: Comparator,
+    ) -> Result<Option<Instruction>, Error> {
+        use Instruction as I;
+        let fused_instr = match *self.instrs.get(last_instr) {
             | I::I32And { result, lhs, rhs }
             | I::I32Or { result, lhs, rhs }
             | I::I32Xor { result, lhs, rhs }
@@ -1309,11 +1257,7 @@ impl InstrEncoder {
             )?,
             _ => None,
         };
-        if let Some(fused_instr) = fused_instr {
-            _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
-            return Ok(());
-        }
-        self.encode_branch_nez_unopt(stack, condition, label)
+        Ok(fused_instr)
     }
 
     /// Encode an unoptimized `branch_nez` instruction.
