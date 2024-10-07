@@ -1171,6 +1171,9 @@ impl InstrEncoder {
         self.encode_branch_nez_unopt(stack, condition, label)
     }
 
+    /// Try to fuse [`Instruction`] at `instr` into a branch+cmp instruction.
+    ///
+    /// Returns `Ok(Some)` if successful.
     fn try_fuse_branch_cmp_for_instr(
         &mut self,
         stack: &mut ValueStack,
