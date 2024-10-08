@@ -323,9 +323,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.19"
+version = "4.5.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7be5744db7978a28d9df86a214130d106a89ce49644cbc4e3f0c22c3fba30615"
+checksum = "b97f376d85a664d5837dbae44bf546e6477a679ff6610010f17276f686d867e8"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -333,9 +333,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.19"
+version = "4.5.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5fbc17d3ef8278f55b282b2a2e75ae6f6c7d4bb70ed3d0382375104bfafdb4b"
+checksum = "19bc80abd44e4bed93ca373a0704ccbd1b710dc5749406201bb018272808dc54"
 dependencies = [
  "anstream",
  "anstyle",
@@ -1207,9 +1207,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.86"
+version = "1.0.87"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e719e8df665df0d1c8fbfd238015744736151d4445ec0836b8e628aae103b77"
+checksum = "b3e4daa0dcf6feba26f985457cdf104d4b4256fc5a09547140f3631bb076b19a"
 dependencies = [
  "unicode-ident",
 ]
@@ -1810,11 +1810,12 @@ dependencies = [
 
 [[package]]
 name = "wasm-encoder"
-version = "0.218.0"
+version = "0.219.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22b896fa8ceb71091ace9bcb81e853f54043183a1c9667cf93422c40252ffa0a"
+checksum = "e2b1b95711b3ad655656a341e301cc64e33cbee94de9a99a1c5a2ab88efab79d"
 dependencies = [
  "leb128",
+ "wasmparser 0.219.0",
 ]
 
 [[package]]
@@ -1858,7 +1859,7 @@ dependencies = [
  "wasmi_collections",
  "wasmi_core 0.38.0",
  "wasmi_ir",
- "wasmparser 0.218.0",
+ "wasmparser 0.219.0",
  "wast 70.0.2",
  "wat",
 ]
@@ -1980,9 +1981,9 @@ dependencies = [
 
 [[package]]
 name = "wasmparser"
-version = "0.218.0"
+version = "0.219.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b09e46c7fceceaa72b2dd1a8a137ea7fd8f93dfaa69806010a709918e496c5dc"
+checksum = "324b4e56d24439495b88cd81439dad5e97f3c7b1eedc3c7e10455ed1e045e9a2"
 dependencies = [
  "ahash",
  "bitflags",
@@ -2287,24 +2288,24 @@ dependencies = [
 
 [[package]]
 name = "wast"
-version = "218.0.0"
+version = "219.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a53cd1f0fa505df97557e36a58bddb8296e2fcdcd089529545ebfdb18a1b9d7"
+checksum = "06880ecb25662bc21db6a83f4fcc27c41f71fbcba4f1980b650c88ada92728e1"
 dependencies = [
  "bumpalo",
  "leb128",
  "memchr",
  "unicode-width",
- "wasm-encoder 0.218.0",
+ "wasm-encoder 0.219.0",
 ]
 
 [[package]]
 name = "wat"
-version = "1.218.0"
+version = "1.219.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f87f8e14e776762e07927c27c2054d2cf678aab9aae2d431a79b3e31e4dd391"
+checksum = "11e56dbf9fc89111b0d97c91e683d7895b1a6e5633a729f2ccad2303724005b6"
 dependencies = [
- "wast 218.0.0",
+ "wast 219.0.0",
 ]
 
 [[package]]

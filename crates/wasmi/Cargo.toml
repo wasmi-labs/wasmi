@@ -19,7 +19,7 @@ exclude = [
 ]
 
 [dependencies]
-wasmparser = { version = "0.218.0", default-features = false, features = ["validate", "features"] }
+wasmparser = { version = "0.219.0", default-features = false, features = ["validate", "features"] }
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
 wasmi_ir = { workspace = true }
