@@ -582,6 +582,9 @@ impl WasmTranslator<'_> for FuncTranslator {
         finalize(CompiledFuncEntity::new(len_registers, instrs, func_consts));
         #[cfg(debug_assertions)]
         if let Err(err) = conditions::verify_translation_invariants(&self) {
+            // Note: we do not propagate these errors to the caller as usual since
+            //       breaking Wasmi translation invariants is considered a bug in Wasmi itself
+            //       that should never occur if Wasmi translation works as intended.
             panic!("{err}")
         }
         Ok(self.into_allocations())
