@@ -17,6 +17,9 @@ mod visit_register;
 #[cfg(test)]
 mod tests;
 
+#[cfg(debug_assertions)]
+mod conditions;
+
 use self::{
     comparator::{ComparatorExt, ComparatorExtImm},
     control_frame::{
@@ -577,6 +580,10 @@ impl WasmTranslator<'_> for FuncTranslator {
         let func_consts = self.alloc.stack.func_local_consts();
         let instrs = self.alloc.instr_encoder.drain_instrs();
         finalize(CompiledFuncEntity::new(len_registers, instrs, func_consts));
+        #[cfg(debug_assertions)]
+        if let Err(err) = conditions::verify_translation_invariants(&self) {
+            panic!("{err}")
+        }
         Ok(self.into_allocations())
     }
 }
