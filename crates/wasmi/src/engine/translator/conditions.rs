@@ -19,9 +19,58 @@ use core::{
     cmp,
     fmt::{self, Display},
 };
+use std::vec::Vec;
+
+/// A non-empty list of [`Error`]s.
+pub struct ErrorList<'ctx> {
+    ctx: ErrorContext<'ctx>,
+    errors: Vec<Error>,
+}
+
+impl<'ctx> ErrorList<'ctx> {
+    /// Creates a new [`ErrorList`].
+    ///
+    /// # Panics
+    ///
+    /// If `errors` is empty.
+    fn new(ctx: ErrorContext<'ctx>, errors: Vec<Error>) -> Self {
+        assert!(!errors.is_empty());
+        Self { ctx, errors }
+    }
+}
+
+impl ErrorList<'_> {
+    /// Returns `true` if `self` contains at least one [`Error`].
+    fn has_errors(&self) -> bool {
+        !self.errors.is_empty()
+    }
+
+    /// Returns the number of [`Error`]s in `self`.
+    fn len_errors(&self) -> usize {
+        self.errors.len()
+    }
+}
+
+impl Display for ErrorList<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if !self.has_errors() {
+            return writeln!(f, "all checked Wasmi translation invariants are uphold");
+        }
+        writeln!(
+            f,
+            "encountered {} broken invariants for Wasmi translation:",
+            self.len_errors()
+        )?;
+        let ctx = self.ctx;
+        for (n, error) in self.errors.iter().cloned().enumerate() {
+            write!(f, "error({n}): {}", ErrorWithContext { ctx, error })?;
+        }
+        Ok(())
+    }
+}
 
 /// An error describing a broken Wasmi translation invariant.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Error {
     /// The erraneous `Instruction` index.
     instr: Instr,
@@ -30,7 +79,7 @@ pub struct Error {
 }
 
 /// The reason behind a broken Wasmi translation invariant.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Reason {
     InvalidRegister {
         /// The invalid `Reg`.
@@ -216,6 +265,7 @@ pub struct ErrorWithContext<'ctx> {
 }
 
 /// A context to populate an [`Error`] with more information for its [`Display`] implementation.
+#[derive(Copy, Clone)]
 pub struct ErrorContext<'ctx> {
     /// The underlying Wasmi function translator that has already finished its job.
     translator: &'ctx FuncTranslator,
@@ -286,15 +336,8 @@ impl ErrorWithContext<'_> {
 /// # Errors
 ///
 /// If a Wasmi translation invariant is broken.
-pub fn verify_translation_invariants(translator: &FuncTranslator) -> Result<(), ErrorWithContext> {
-    let checker = TranslationInvariantsChecker { translator };
-    match checker.verify_translation_invariants() {
-        Ok(_) => Ok(()),
-        Err(error) => {
-            let ctx = ErrorContext { translator };
-            Err(ErrorWithContext { ctx, error })
-        }
-    }
+pub fn verify_translation_invariants(translator: &FuncTranslator) -> Result<(), ErrorList> {
+    TranslationInvariantsChecker { translator }.verify_translation_invariants()
 }
 
 /// Encapsulates state required for translation invariants checking.
@@ -303,7 +346,7 @@ struct TranslationInvariantsChecker<'translator> {
     translator: &'translator FuncTranslator,
 }
 
-impl TranslationInvariantsChecker<'_> {
+impl<'translator> TranslationInvariantsChecker<'translator> {
     /// Checks if the invariants of Wasmi function translation are uphold.
     ///
     /// Read more here: [`verify_translation_invariants`]
@@ -311,7 +354,17 @@ impl TranslationInvariantsChecker<'_> {
     /// # Errors
     ///
     /// If a Wasmi translation invariant is broken.
-    fn verify_translation_invariants(&self) -> Result<(), Error> {
-        todo!()
+    fn verify_translation_invariants(&self) -> Result<(), ErrorList<'translator>> {
+        let errors = Vec::new();
+        // TODO: perform invariant checking
+        if errors.is_empty() {
+            return Ok(());
+        }
+        Err(ErrorList::new(
+            ErrorContext {
+                translator: self.translator,
+            },
+            errors,
+        ))
     }
 }
