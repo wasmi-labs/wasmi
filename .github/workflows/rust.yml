@@ -221,7 +221,7 @@ jobs:
       - name: Install cargo-honggfuzz and dependencies
         run: |
           cargo install honggfuzz || true
-          apt-get update && apt-get install --yes binutils-dev libunwind-dev
+          sudo apt-get update && sudo apt-get install --yes binutils-dev libunwind-dev
       - name: Run HFuzz
         env:
           HFUZZ_RUN_ARGS: "--run_time 120 --verbose --quiet" # 2 minutes of fuzzing
