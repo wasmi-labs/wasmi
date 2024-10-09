@@ -8,7 +8,7 @@ use wasmi::{Config, Engine, Linker, Module, Store, StoreLimitsBuilder};
 fn main() {
     loop {
         fuzz!(|seed: &[u8]| {
-            let mut unstructured = Unstructured::new(&seed);
+            let mut unstructured = Unstructured::new(seed);
             let Ok(smith_module) = arbitrary_swarm_config_module(&mut unstructured) else {
                 return;
             };

@@ -623,7 +623,7 @@ impl FuzzContext {
 fn main() {
     loop {
         fuzz!(|seed: &[u8]| {
-            let mut unstructured = Unstructured::new(&seed);
+            let mut unstructured = Unstructured::new(seed);
             let Ok(mut smith_module) =
                 arbitrary_config(&mut unstructured).and_then(|mut config| {
                     config.reference_types_enabled = false;

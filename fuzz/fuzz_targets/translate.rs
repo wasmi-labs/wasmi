@@ -8,7 +8,7 @@ use wasmi::{Engine, Module};
 fn main() {
     loop {
         fuzz!(|seed: &[u8]| {
-            let Ok(smith_module) = arbitrary_swarm_config_module(&mut Unstructured::new(&seed))
+            let Ok(smith_module) = arbitrary_swarm_config_module(&mut Unstructured::new(seed))
             else {
                 return;
             };
