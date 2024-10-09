@@ -2,14 +2,14 @@ mod utils;
 
 use arbitrary::Unstructured;
 use honggfuzz::fuzz;
-use utils::{arbitrary_swarm_config_module, ty_to_val};
+use utils::{arbitrary_swarm_config_module, ty_to_arbitrary_val};
 use wasmi::{Engine, Linker, Module, Store, StoreLimitsBuilder};
 
 fn main() {
     loop {
         fuzz!(|seed: &[u8]| {
-            let Ok(mut smith_module) = arbitrary_swarm_config_module(&mut Unstructured::new(&seed))
-            else {
+            let mut unstructured = Unstructured::new(&seed);
+            let Ok(mut smith_module) = arbitrary_swarm_config_module(&mut unstructured) else {
                 return;
             };
 
@@ -52,8 +52,16 @@ fn main() {
                 params.clear();
                 results.clear();
                 let ty = func.ty(&store);
-                params.extend(ty.params().iter().map(ty_to_val));
-                results.extend(ty.results().iter().map(ty_to_val));
+                params.extend(
+                    ty.params()
+                        .iter()
+                        .map(|param_ty| ty_to_arbitrary_val(param_ty, &mut unstructured)),
+                );
+                results.extend(
+                    ty.results()
+                        .iter()
+                        .map(|param_ty| ty_to_arbitrary_val(param_ty, &mut unstructured)),
+                );
                 _ = func.call(&mut store, &params, &mut results);
             }
         });

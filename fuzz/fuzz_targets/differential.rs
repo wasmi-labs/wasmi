@@ -3,7 +3,7 @@ mod utils;
 use arbitrary::Unstructured;
 use honggfuzz::fuzz;
 use std::{collections::hash_map::RandomState, mem};
-use utils::{arbitrary_config, ty_to_val};
+use utils::arbitrary_config;
 use wasmi as wasmi_reg;
 use wasmi_reg::core::{F32, F64};
 
@@ -67,7 +67,15 @@ impl WasmiRegister {
     }
 
     fn type_to_value(ty: &wasmi_reg::core::ValType) -> wasmi_reg::Val {
-        ty_to_val(ty)
+        match ty {
+            wasmi_reg::core::ValType::I32 => wasmi_reg::Val::I32(1),
+            wasmi_reg::core::ValType::I64 => wasmi_reg::Val::I64(1),
+            wasmi_reg::core::ValType::F32 => wasmi_reg::Val::F32(1.0.into()),
+            wasmi_reg::core::ValType::F64 => wasmi_reg::Val::F64(1.0.into()),
+            unsupported => panic!(
+                "differential fuzzing does not support reference types, yet but found: {unsupported:?}"
+            ),
+        }
     }
 }
 
@@ -168,7 +176,7 @@ impl WasmiStack {
             ValueType::F32 => wasmi_stack::Value::F32(1.0.into()),
             ValueType::F64 => wasmi_stack::Value::F64(1.0.into()),
             unsupported => panic!(
-                "execution fuzzing does not support reference types, yet but found: {unsupported:?}"
+                "differential fuzzing does not support reference types, yet but found: {unsupported:?}"
             ),
         }
     }
@@ -253,7 +261,7 @@ impl Wasmtime {
             wasmtime::ValType::F32 => wasmtime::Val::F32(1.0_f32.to_bits()),
             wasmtime::ValType::F64 => wasmtime::Val::F64(1.0_f64.to_bits()),
             unsupported => panic!(
-                "execution fuzzing does not support reference types, yet but found: {unsupported:?}"
+                "differential fuzzing does not support reference types, yet but found: {unsupported:?}"
             ),
         }
     }
