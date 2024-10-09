@@ -2,7 +2,7 @@ mod utils;
 
 use honggfuzz::fuzz;
 use std::{collections::hash_map::RandomState, mem};
-use utils::{arbitrary_exec_module, ty_to_val};
+use utils::{arbitrary_swarm_config_module, ty_to_val};
 use wasmi as wasmi_reg;
 use wasmi_reg::core::{F32, F64};
 
@@ -614,7 +614,7 @@ impl FuzzContext {
 fn main() {
     loop {
         fuzz!(|data: &[u8]| {
-            let Ok(mut smith_module) = arbitrary_exec_module(data) else {
+            let Ok(mut smith_module) = arbitrary_swarm_config_module(data) else {
                 return;
             };
             // Note: We cannot use built-in fuel metering of the different engines since that
@@ -623,7 +623,8 @@ fn main() {
                 return;
             };
             let wasm = smith_module.to_bytes();
-            let Some(wasmi_register) = <WasmiRegister as DifferentialTarget>::setup(&wasm[..]) else {
+            let Some(wasmi_register) = <WasmiRegister as DifferentialTarget>::setup(&wasm[..])
+            else {
                 return;
             };
             let Some(wasmi_stack) = <WasmiStack as DifferentialTarget>::setup(&wasm[..]) else {
