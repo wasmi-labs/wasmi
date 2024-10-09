@@ -627,6 +627,7 @@ fn main() {
             let Ok(mut smith_module) =
                 arbitrary_config(&mut unstructured).and_then(|mut config| {
                     config.reference_types_enabled = false;
+                    config.tail_call_enabled = false;
                     wasm_smith::Module::new(config, &mut unstructured)
                 })
             else {
