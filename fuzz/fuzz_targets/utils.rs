@@ -13,40 +13,10 @@ pub fn disable_unsupported_config(config: &mut wasm_smith::Config) {
     config.threads_enabled = false;
 }
 
-pub fn default_config() -> wasm_smith::Config {
-    let mut config = wasm_smith::Config {
-        export_everything: true,
-        allow_start_export: false,
-        reference_types_enabled: true,
-        max_imports: 0,
-        max_memory32_bytes: (1 << 16) * 1_000,
-        max_data_segments: 10_000,
-        max_element_segments: 10_000,
-        max_exports: 10_000,
-        max_elements: 10_000,
-        min_funcs: 1,
-        max_funcs: 10_000,
-        max_globals: 10_000,
-        max_table_elements: 10_000,
-        max_values: 10_000,
-        max_instructions: 100_000,
-        tail_call_enabled: false,
-        ..Default::default()
-    };
-    disable_unsupported_config(&mut config);
-    config
-}
-
 pub fn arbitrary_config(unstructured: &mut Unstructured) -> arbitrary::Result<wasm_smith::Config> {
     let mut config = wasm_smith::Config::arbitrary(unstructured)?;
     disable_unsupported_config(&mut config);
     Ok(config)
-}
-
-pub fn arbitrary_default_config_module(
-    unstructured: &mut Unstructured,
-) -> arbitrary::Result<wasm_smith::Module> {
-    wasm_smith::Module::new(default_config(), unstructured)
 }
 
 pub fn arbitrary_swarm_config_module(
