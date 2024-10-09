@@ -3,24 +3,20 @@ mod utils;
 use arbitrary::Unstructured;
 use honggfuzz::fuzz;
 use utils::{arbitrary_swarm_config_module, ty_to_arbitrary_val};
-use wasmi::{Engine, Linker, Module, Store, StoreLimitsBuilder};
+use wasmi::{Config, Engine, Linker, Module, Store, StoreLimitsBuilder};
 
 fn main() {
     loop {
         fuzz!(|seed: &[u8]| {
             let mut unstructured = Unstructured::new(&seed);
-            let Ok(mut smith_module) = arbitrary_swarm_config_module(&mut unstructured) else {
-                return;
-            };
-
-            // TODO: We could use Wasmi's built-in fuel metering instead.
-            //       This would improve test coverage and may be more efficient
-            //       given that `wasm-smith`'s fuel metering uses global variables
-            //       to communicate used fuel.
-            let Ok(_) = smith_module.ensure_termination(1000 /* fuel */) else {
+            let Ok(smith_module) = arbitrary_swarm_config_module(&mut unstructured) else {
                 return;
             };
             let wasm = smith_module.to_bytes();
+
+            let mut config = Config::default();
+            config.consume_fuel(true);
+            config.compilation_mode(wasmi::CompilationMode::Lazy);
             let engine = Engine::default();
             let linker = Linker::new(&engine);
             let limiter = StoreLimitsBuilder::new()
@@ -28,6 +24,9 @@ fn main() {
                 .build();
             let mut store = Store::new(&engine, limiter);
             store.limiter(|lim| lim);
+            let Ok(_) = store.set_fuel(1000) else {
+                return;
+            };
             let module = Module::new(store.engine(), wasm.as_slice()).unwrap();
             let Ok(preinstance) = linker.instantiate(&mut store, &module) else {
                 return;
