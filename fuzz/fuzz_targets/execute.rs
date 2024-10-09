@@ -1,13 +1,15 @@
 mod utils;
 
+use arbitrary::Unstructured;
 use honggfuzz::fuzz;
-use utils::{arbitrary_exec_module, ty_to_val};
+use utils::{arbitrary_swarm_config_module, ty_to_val};
 use wasmi::{Engine, Linker, Module, Store, StoreLimitsBuilder};
 
 fn main() {
     loop {
-        fuzz!(|data: &[u8]| {
-            let Ok(mut smith_module) = arbitrary_exec_module(data) else {
+        fuzz!(|seed: &[u8]| {
+            let Ok(mut smith_module) = arbitrary_swarm_config_module(&mut Unstructured::new(&seed))
+            else {
                 return;
             };
 

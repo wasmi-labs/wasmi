@@ -1,8 +1,9 @@
 mod utils;
 
+use arbitrary::Unstructured;
 use honggfuzz::fuzz;
 use std::{collections::hash_map::RandomState, mem};
-use utils::{arbitrary_swarm_config_module, ty_to_val};
+use utils::{arbitrary_config, ty_to_val};
 use wasmi as wasmi_reg;
 use wasmi_reg::core::{F32, F64};
 
@@ -613,8 +614,14 @@ impl FuzzContext {
 
 fn main() {
     loop {
-        fuzz!(|data: &[u8]| {
-            let Ok(mut smith_module) = arbitrary_swarm_config_module(data) else {
+        fuzz!(|seed: &[u8]| {
+            let mut unstructured = Unstructured::new(&seed);
+            let Ok(mut smith_module) =
+                arbitrary_config(&mut unstructured).and_then(|mut config| {
+                    config.reference_types_enabled = false;
+                    wasm_smith::Module::new(config, &mut unstructured)
+                })
+            else {
                 return;
             };
             // Note: We cannot use built-in fuel metering of the different engines since that

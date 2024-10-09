@@ -3,15 +3,23 @@
 use arbitrary::{Arbitrary, Unstructured};
 use wasmi::{core::ValType, Val};
 
-pub fn exec_config() -> wasm_smith::Config {
-    wasm_smith::Config {
+pub fn disable_unsupported_config(config: &mut wasm_smith::Config) {
+    config.gc_enabled = false;
+    config.exceptions_enabled = false;
+    config.max_memories = 1;
+    config.memory64_enabled = false;
+    config.relaxed_simd_enabled = false;
+    config.simd_enabled = false;
+    config.threads_enabled = false;
+}
+
+pub fn default_config() -> wasm_smith::Config {
+    let mut config = wasm_smith::Config {
         export_everything: true,
         allow_start_export: false,
-        reference_types_enabled: false,
+        reference_types_enabled: true,
         max_imports: 0,
         max_memory32_bytes: (1 << 16) * 1_000,
-        // Note: wasmi does not support 64-bit memory, yet.
-        memory64_enabled: false,
         max_data_segments: 10_000,
         max_element_segments: 10_000,
         max_exports: 10_000,
@@ -22,33 +30,29 @@ pub fn exec_config() -> wasm_smith::Config {
         max_table_elements: 10_000,
         max_values: 10_000,
         max_instructions: 100_000,
-        exceptions_enabled: false,
-        simd_enabled: false,
-        threads_enabled: false,
-        gc_enabled: false,
         tail_call_enabled: false,
         ..Default::default()
-    }
+    };
+    disable_unsupported_config(&mut config);
+    config
 }
 
-pub fn arbitrary_exec_module(seed: &[u8]) -> arbitrary::Result<wasm_smith::Module> {
-    let mut unstructured = Unstructured::new(seed);
-    wasm_smith::Module::new(exec_config(), &mut unstructured)
+pub fn arbitrary_config(unstructured: &mut Unstructured) -> arbitrary::Result<wasm_smith::Config> {
+    let mut config = wasm_smith::Config::arbitrary(unstructured)?;
+    disable_unsupported_config(&mut config);
+    Ok(config)
 }
 
-pub fn arbitrary_translate_module(seed: &[u8]) -> arbitrary::Result<wasm_smith::Module> {
-    let mut unstructured = Unstructured::new(seed);
+pub fn arbitrary_default_config_module(
+    unstructured: &mut Unstructured,
+) -> arbitrary::Result<wasm_smith::Module> {
+    wasm_smith::Module::new(default_config(), unstructured)
+}
 
-    let config = wasm_smith::Config::arbitrary(&mut unstructured);
-
-    config.map(|mut config| {
-        config.gc_enabled = false;
-        config.exceptions_enabled = false;
-        config.simd_enabled = false;
-        config.threads_enabled = false;
-
-        wasm_smith::Module::new(config, &mut unstructured)
-    })?
+pub fn arbitrary_swarm_config_module(
+    unstructured: &mut Unstructured,
+) -> arbitrary::Result<wasm_smith::Module> {
+    wasm_smith::Module::new(arbitrary_config(unstructured)?, unstructured)
 }
 
 /// Converts a [`ValType`] into a [`Val`] with default initialization of 1.
