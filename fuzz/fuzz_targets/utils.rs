@@ -6,7 +6,6 @@ use wasmi::{core::ValType, ExternRef, FuncRef, Val};
 pub fn disable_unsupported_config(config: &mut wasm_smith::Config) {
     config.gc_enabled = false;
     config.exceptions_enabled = false;
-    config.max_memories = 1;
     config.memory64_enabled = false;
     config.relaxed_simd_enabled = false;
     config.simd_enabled = false;

@@ -628,6 +628,7 @@ fn main() {
                 arbitrary_config(&mut unstructured).and_then(|mut config| {
                     config.reference_types_enabled = false;
                     config.tail_call_enabled = false;
+                    config.max_memories = 1;
                     wasm_smith::Module::new(config, &mut unstructured)
                 })
             else {
