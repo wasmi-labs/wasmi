@@ -1,10 +1,9 @@
-#![no_main]
-
 mod utils;
 
-use libfuzzer_sys::fuzz_target;
+use arbitrary::Unstructured;
+use honggfuzz::fuzz;
 use std::{collections::hash_map::RandomState, mem};
-use utils::{arbitrary_exec_module, ty_to_val};
+use utils::arbitrary_config;
 use wasmi as wasmi_reg;
 use wasmi_reg::core::{F32, F64};
 
@@ -68,7 +67,15 @@ impl WasmiRegister {
     }
 
     fn type_to_value(ty: &wasmi_reg::core::ValType) -> wasmi_reg::Val {
-        ty_to_val(ty)
+        match ty {
+            wasmi_reg::core::ValType::I32 => wasmi_reg::Val::I32(1),
+            wasmi_reg::core::ValType::I64 => wasmi_reg::Val::I64(1),
+            wasmi_reg::core::ValType::F32 => wasmi_reg::Val::F32(1.0.into()),
+            wasmi_reg::core::ValType::F64 => wasmi_reg::Val::F64(1.0.into()),
+            unsupported => panic!(
+                "differential fuzzing does not support reference types, yet but found: {unsupported:?}"
+            ),
+        }
     }
 }
 
@@ -169,7 +176,7 @@ impl WasmiStack {
             ValueType::F32 => wasmi_stack::Value::F32(1.0.into()),
             ValueType::F64 => wasmi_stack::Value::F64(1.0.into()),
             unsupported => panic!(
-                "execution fuzzing does not support reference types, yet but found: {unsupported:?}"
+                "differential fuzzing does not support reference types, yet but found: {unsupported:?}"
             ),
         }
     }
@@ -254,7 +261,7 @@ impl Wasmtime {
             wasmtime::ValType::F32 => wasmtime::Val::F32(1.0_f32.to_bits()),
             wasmtime::ValType::F64 => wasmtime::Val::F64(1.0_f64.to_bits()),
             unsupported => panic!(
-                "execution fuzzing does not support reference types, yet but found: {unsupported:?}"
+                "differential fuzzing does not support reference types, yet but found: {unsupported:?}"
             ),
         }
     }
@@ -613,31 +620,44 @@ impl FuzzContext {
     }
 }
 
-fuzz_target!(|data: &[u8]| {
-    let Ok(mut smith_module) = arbitrary_exec_module(data) else {
-        return;
-    };
-    // Note: We cannot use built-in fuel metering of the different engines since that
-    //       would introduce unwanted non-determinism with respect to fuzz testing.
-    let Ok(_) = smith_module.ensure_termination(1_000 /* fuel */) else {
-        return;
-    };
-    let wasm = smith_module.to_bytes();
-    let Some(wasmi_register) = <WasmiRegister as DifferentialTarget>::setup(&wasm[..]) else {
-        return;
-    };
-    let Some(wasmi_stack) = <WasmiStack as DifferentialTarget>::setup(&wasm[..]) else {
-        panic!("wasmi (register) succeeded to create Context while wasmi (stack) failed");
-    };
-    let exports = wasmi_register.exports();
-    let mut context = FuzzContext {
-        wasm,
-        wasmi_register,
-        wasmi_stack,
-        exports,
-    };
-    context.run();
-});
+fn main() {
+    loop {
+        fuzz!(|seed: &[u8]| {
+            let mut unstructured = Unstructured::new(seed);
+            let Ok(mut smith_module) =
+                arbitrary_config(&mut unstructured).and_then(|mut config| {
+                    config.reference_types_enabled = false;
+                    config.tail_call_enabled = false;
+                    config.max_memories = 1;
+                    wasm_smith::Module::new(config, &mut unstructured)
+                })
+            else {
+                return;
+            };
+            // Note: We cannot use built-in fuel metering of the different engines since that
+            //       would introduce unwanted non-determinism with respect to fuzz testing.
+            let Ok(_) = smith_module.ensure_termination(1_000 /* fuel */) else {
+                return;
+            };
+            let wasm = smith_module.to_bytes();
+            let Some(wasmi_register) = <WasmiRegister as DifferentialTarget>::setup(&wasm[..])
+            else {
+                return;
+            };
+            let Some(wasmi_stack) = <WasmiStack as DifferentialTarget>::setup(&wasm[..]) else {
+                panic!("wasmi (register) succeeded to create Context while wasmi (stack) failed");
+            };
+            let exports = wasmi_register.exports();
+            let mut context = FuzzContext {
+                wasm,
+                wasmi_register,
+                wasmi_stack,
+                exports,
+            };
+            context.run();
+        });
+    }
+}
 
 #[derive(Debug, Copy, Clone)]
 pub enum FuzzValue {

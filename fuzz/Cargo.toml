@@ -11,7 +11,7 @@ edition.workspace = true
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.4.7"
+honggfuzz = "0.5"
 wasmi-stack = { package = "wasmi", version = "0.31.2" }
 wasmtime = "21.0.1"
 wasmi = { workspace = true, features = ["std"] }
