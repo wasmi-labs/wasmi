@@ -16,7 +16,8 @@ fn main() {
 
             let mut config = Config::default();
             config.consume_fuel(true);
-            config.compilation_mode(wasmi::CompilationMode::Lazy);
+            config.compilation_mode(wasmi::CompilationMode::Eager);
+
             let engine = Engine::default();
             let linker = Linker::new(&engine);
             let limiter = StoreLimitsBuilder::new()
