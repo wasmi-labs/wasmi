@@ -18,6 +18,7 @@ pub fn arbitrary_config(unstructured: &mut Unstructured) -> arbitrary::Result<wa
     Ok(config)
 }
 
+/// A module for "swarm" testing. Randomized configurations for the generated modules improves coverage.
 pub fn arbitrary_swarm_config_module(
     unstructured: &mut Unstructured,
 ) -> arbitrary::Result<wasm_smith::Module> {
