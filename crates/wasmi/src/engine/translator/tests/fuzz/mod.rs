@@ -545,3 +545,32 @@ fn audit_2_execution() {
         .unwrap();
     assert_eq!(results.map(|v| v.i32().unwrap()), expected,);
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn table_get_index_visitation() {
+    let wasm = r#"
+        (module
+            (type (;0;) (func))
+            (func (;0;) (type 0)
+                (local i32)
+                local.get 0
+                i32.const 0
+                local.set 0
+                table.get 0
+                drop
+            )
+            (table (;0;) 1 2 funcref)
+            (export "" (func 0))
+        )
+    "#;
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::copy(2, 0),
+            Instruction::copy_imm32(Register::from(0), 0_i32),
+            Instruction::table_get(Register::from(1), Register::from(2)),
+            Instruction::table_idx(0),
+            Instruction::Return,
+        ])
+        .run()
+}

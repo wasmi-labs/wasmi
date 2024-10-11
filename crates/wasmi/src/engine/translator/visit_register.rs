@@ -206,8 +206,8 @@ impl VisitInputRegisters for Instruction {
             Instruction::SelectImm32 { result_or_condition, .. } |
             Instruction::SelectI64Imm32 { result_or_condition, .. } |
             Instruction::SelectF64Imm32 { result_or_condition, .. } => f(result_or_condition),
-            Instruction::RefFunc { .. } |
-            Instruction::TableGet { .. } |
+            Instruction::RefFunc { .. } => {},
+            Instruction::TableGet { index, .. } => f(index),
             Instruction::TableGetImm { .. } |
             Instruction::TableSize { .. } => {},
             Instruction::TableSet { index, value } => visit_registers!(f, index, value),
