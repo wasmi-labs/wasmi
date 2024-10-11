@@ -16,7 +16,7 @@ use crate::{
 };
 use core::cmp;
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Branches and adjusts the value stack.
     ///
     /// # Note
@@ -291,7 +291,7 @@ impl_execute_branch_binop_imm! {
     (u64, Instruction::BranchI64GeUImm, execute_branch_i64_ge_u_imm, cmp_ge),
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Executes an [`Instruction::BranchCmpFallback`].
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Register, rhs: Register, params: Register) {
         use BranchComparator as C;

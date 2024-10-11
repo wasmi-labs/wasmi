@@ -891,7 +891,7 @@ macro_rules! get_entity {
     }
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     get_entity! {
         fn get_func(&self, store: &StoreInner, index: FuncIdx) -> Func;
         fn get_func_type_dedup(&self, store: &StoreInner, index: SignatureIdx) -> DedupFuncType;
@@ -1155,7 +1155,7 @@ impl<'engine> Executor<'engine> {
     }
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Used for all [`Instruction`] words that are not meant for execution.
     ///
     /// # Note

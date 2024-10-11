@@ -8,7 +8,7 @@ use crate::{
     Store,
 };
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Returns the [`Instruction::DataSegmentIdx`] parameter for an [`Instruction`].
     fn fetch_data_segment_index(&self, offset: usize) -> DataSegmentIdx {
         let mut addr: InstructionPtr = self.ip;

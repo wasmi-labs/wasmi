@@ -33,7 +33,7 @@ impl<'a> From<&'a Val> for DisplayValue<'a> {
     }
 }
 
-impl<'a> fmt::Display for DisplayValue<'a> {
+impl fmt::Display for DisplayValue<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.0 {
             Val::I32(value) => write!(f, "{value}"),

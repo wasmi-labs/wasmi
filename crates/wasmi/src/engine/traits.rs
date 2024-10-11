@@ -35,7 +35,7 @@ pub struct CallParamsValueIter<'a> {
     iter: iter::Cloned<slice::Iter<'a, Val>>,
 }
 
-impl<'a> Iterator for CallParamsValueIter<'a> {
+impl Iterator for CallParamsValueIter<'_> {
     type Item = UntypedVal;
 
     #[inline]
@@ -76,7 +76,7 @@ pub trait CallResults {
     fn call_results(self, results: &[UntypedVal]) -> Self::Results;
 }
 
-impl<'a> CallResults for &'a mut [Val] {
+impl CallResults for &mut [Val] {
     type Results = ();
 
     fn len_results(&self) -> usize {

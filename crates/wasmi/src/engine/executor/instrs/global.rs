@@ -8,7 +8,7 @@ use crate::{
 #[cfg(doc)]
 use crate::engine::bytecode::Instruction;
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Executes an [`Instruction::GlobalGet`].
     pub fn execute_global_get(&mut self, store: &StoreInner, result: Register, global: GlobalIdx) {
         let value = match u32::from(global) {

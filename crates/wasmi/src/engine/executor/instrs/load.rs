@@ -12,7 +12,7 @@ use crate::engine::bytecode::Instruction;
 type WasmLoadOp =
     fn(memory: &[u8], address: UntypedVal, offset: u32) -> Result<UntypedVal, TrapCode>;
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Executes a generic Wasm `store[N_{s|u}]` operation.
     ///
     /// # Note
@@ -105,7 +105,7 @@ macro_rules! impl_execute_load {
     }
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     impl_execute_load! {
         (
             (Instruction::I32Load, execute_i32_load),

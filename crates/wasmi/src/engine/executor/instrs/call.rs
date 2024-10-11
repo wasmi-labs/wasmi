@@ -155,7 +155,7 @@ mod marker {
     }
 }
 
-impl<'engine> Executor<'engine> {
+impl Executor<'_> {
     /// Updates the [`InstructionPtr`] of the caller [`CallFrame`] before dispatching a call.
     ///
     /// # Note
