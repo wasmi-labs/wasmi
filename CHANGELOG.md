@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.36.5`] - 2024-10-11
+
+### Fixed
+
+- Fixed a bug with `table.get` translation when `index` is a preserved register. [#commit-b4e78d]
+
+[#commit-82c938]: https://github.com/wasmi-labs/wasmi/commit/82c9388f1d54e4e74e1b581f11978b4028eeaba2
+
 ## [`0.36.4`] - 2024-10-03
 
 ### Fixed
