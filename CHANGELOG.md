@@ -65,7 +65,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Fixed
 
-- This release includes all fixes that have been backported to `v0.36.1` and `v0.36.2`.
+- This release includes all fixes that have been backported to `v0.36.1`, `v0.36.2` and `v0.36.5`.
 
 ### Internal
 
