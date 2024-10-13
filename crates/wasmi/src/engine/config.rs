@@ -39,6 +39,8 @@ pub struct Config {
     consume_fuel: bool,
     /// Is `true` if Wasmi shall ignore Wasm custom sections when parsing Wasm modules.
     ignore_custom_sections: bool,
+    /// Is `true` if Wasmi shall canonicalize NaN values.
+    canonicalize_nans: bool,
     /// The configured fuel costs of all Wasmi bytecode instructions.
     fuel_costs: FuelCosts,
     /// The mode of Wasm to Wasmi bytecode compilation.
@@ -185,6 +187,7 @@ impl Default for Config {
             extended_const: true,
             floats: true,
             consume_fuel: false,
+            canonicalize_nans: false,
             ignore_custom_sections: false,
             fuel_costs: FuelCosts::default(),
             compilation_mode: CompilationMode::default(),
@@ -337,6 +340,14 @@ impl Config {
         self
     }
 
+    /// Enable or disable NaN value canonicalization.
+    /// 
+    /// Disabled by default.
+    pub fn canonicalize_nans(&mut self, enable: bool) -> &mut Self {
+        self.canonicalize_nans = enable;
+        self
+    }
+
     /// Configures whether Wasmi will consume fuel during execution to either halt execution as desired.
     ///
     /// # Note
@@ -377,6 +388,11 @@ impl Config {
     /// Returns `true` if the [`Config`] mandates to ignore Wasm custom sections when parsing Wasm modules.
     pub(crate) fn get_ignore_custom_sections(&self) -> bool {
         self.ignore_custom_sections
+    }
+
+    /// Returns `true` if the [`Config`] mandates to canonicalize NaN values.
+    pub(crate) fn get_canonicalize_nans(&self) -> bool {
+        self.canonicalize_nans
     }
 
     /// Returns the configured [`FuelCosts`].
