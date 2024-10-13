@@ -341,7 +341,7 @@ impl Config {
     }
 
     /// Enable or disable NaN value canonicalization.
-    /// 
+    ///
     /// Disabled by default.
     pub fn canonicalize_nans(&mut self, enable: bool) -> &mut Self {
         self.canonicalize_nans = enable;
