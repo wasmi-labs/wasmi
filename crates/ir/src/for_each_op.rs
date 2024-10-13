@@ -4672,56 +4672,56 @@ macro_rules! for_each_op {
                 input: Reg,
             },
 
-            /// Wasm `f32.abs` instruction.
+            /// Wasm `f32.abs` equivalent Wasmi instruction.
             #[snake_name(f32_abs)]
             F32Abs {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f32.neg` instruction.
+            /// Wasm `f32.neg` equivalent Wasmi instruction.
             #[snake_name(f32_neg)]
             F32Neg {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f32.ceil` instruction.
+            /// Wasm `f32.ceil` equivalent Wasmi instruction.
             #[snake_name(f32_ceil)]
             F32Ceil {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f32.floor` instruction.
+            /// Wasm `f32.floor` equivalent Wasmi instruction.
             #[snake_name(f32_floor)]
             F32Floor {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f32.trunc` instruction.
+            /// Wasm `f32.trunc` equivalent Wasmi instruction.
             #[snake_name(f32_trunc)]
             F32Trunc {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f32.nearest` instruction.
+            /// Wasm `f32.nearest` equivalent Wasmi instruction.
             #[snake_name(f32_nearest)]
             F32Nearest {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f32.sqrt` instruction.
+            /// Wasm `f32.sqrt` equivalent Wasmi instruction.
             #[snake_name(f32_sqrt)]
             F32Sqrt {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f32.add` instruction: `r0 = r1 + r2`
+            /// Wasm `f32.add` equivalent Wasmi instruction.
             #[snake_name(f32_add)]
             F32Add {
                 @result: Reg,
@@ -4730,7 +4730,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f32.sub` instruction: `r0 = r1 - r2`
+            /// Wasm `f32.sub` equivalent Wasmi instruction.
             #[snake_name(f32_sub)]
             F32Sub {
                 @result: Reg,
@@ -4739,7 +4739,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f32.mul` instruction: `r0 = r1 * r2`
+            /// Wasm `f32.mul` equivalent Wasmi instruction.
             #[snake_name(f32_mul)]
             F32Mul {
                 @result: Reg,
@@ -4748,7 +4748,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f32.div` instruction: `r0 = r1 / r2`
+            /// Wasm `f32.div` equivalent Wasmi instruction.
             #[snake_name(f32_div)]
             F32Div {
                 @result: Reg,
@@ -4757,7 +4757,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f32.min` instruction: `r0 = min(r1, r2)`
+            /// Wasm `f32.min` equivalent Wasmi instruction.
             #[snake_name(f32_min)]
             F32Min {
                 @result: Reg,
@@ -4766,7 +4766,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f32.max` instruction: `r0 = max(r1, r2)`
+            /// Wasm `f32.max` equivalent Wasmi instruction.
             #[snake_name(f32_max)]
             F32Max {
                 @result: Reg,
@@ -4775,7 +4775,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f32.copysign` instruction: `r0 = copysign(r1, r2)`
+            /// Wasm `f32.copysign` equivalent Wasmi instruction.
             #[snake_name(f32_copysign)]
             F32Copysign {
                 @result: Reg,
@@ -4784,7 +4784,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f32.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
+            /// Wasm `f32.add` equivalent Wasmi instruction with immediate `rhs` value.
             #[snake_name(f32_copysign_imm)]
             F32CopysignImm {
                 @result: Reg,
@@ -4794,56 +4794,56 @@ macro_rules! for_each_op {
                 rhs: Sign<f32>,
             },
 
-            /// Wasm `f64.abs` instruction.
+            /// Wasm `f64.abs` equivalent Wasmi instruction.
             #[snake_name(f64_abs)]
             F64Abs {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f64.neg` instruction.
+            /// Wasm `f64.neg` equivalent Wasmi instruction.
             #[snake_name(f64_neg)]
             F64Neg {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f64.ceil` instruction.
+            /// Wasm `f64.ceil` equivalent Wasmi instruction.
             #[snake_name(f64_ceil)]
             F64Ceil {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f64.floor` instruction.
+            /// Wasm `f64.floor` equivalent Wasmi instruction.
             #[snake_name(f64_floor)]
             F64Floor {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f64.trunc` instruction.
+            /// Wasm `f64.trunc` equivalent Wasmi instruction.
             #[snake_name(f64_trunc)]
             F64Trunc {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f64.nearest` instruction.
+            /// Wasm `f64.nearest` equivalent Wasmi instruction.
             #[snake_name(f64_nearest)]
             F64Nearest {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f64.sqrt` instruction.
+            /// Wasm `f64.sqrt` equivalent Wasmi instruction.
             #[snake_name(f64_sqrt)]
             F64Sqrt {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
             },
-            /// Wasm `f64.add` instruction: `r0 = r1 + r2`
+            /// Wasm `f64.add` equivalent Wasmi instruction.
             #[snake_name(f64_add)]
             F64Add {
                 @result: Reg,
@@ -4852,7 +4852,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f64.sub` instruction: `r0 = r1 - r2`
+            /// Wasm `f64.sub` equivalent Wasmi instruction.
             #[snake_name(f64_sub)]
             F64Sub {
                 @result: Reg,
@@ -4861,7 +4861,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f64.mul` instruction: `r0 = r1 * r2`
+            /// Wasm `f64.mul` equivalent Wasmi instruction.
             #[snake_name(f64_mul)]
             F64Mul {
                 @result: Reg,
@@ -4870,7 +4870,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f64.div` instruction: `r0 = r1 / r2`
+            /// Wasm `f64.div` equivalent Wasmi instruction.
             #[snake_name(f64_div)]
             F64Div {
                 @result: Reg,
@@ -4879,7 +4879,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f64.min` instruction: `r0 = min(r1, r2)`
+            /// Wasm `f64.min` equivalent Wasmi instruction.
             #[snake_name(f64_min)]
             F64Min {
                 @result: Reg,
@@ -4888,7 +4888,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f64.max` instruction: `r0 = max(r1, r2)`
+            /// Wasm `f64.max` equivalent Wasmi instruction.
             #[snake_name(f64_max)]
             F64Max {
                 @result: Reg,
@@ -4897,7 +4897,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f64.copysign` instruction: `r0 = copysign(r1, r2)`
+            /// Wasm `f64.copysign` equivalent Wasmi instruction.
             #[snake_name(f64_copysign)]
             F64Copysign {
                 @result: Reg,
@@ -4906,7 +4906,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f64.copysign` instruction with immediate: `r0 = copysign(r1, c0)`
+            /// Wasm `f64.copysign` equivalent Wasmi instruction with imediate `rhs` value.
             #[snake_name(f64_copysign_imm)]
             F64CopysignImm {
                 @result: Reg,
