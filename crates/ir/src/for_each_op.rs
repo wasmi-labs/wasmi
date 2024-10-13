@@ -4784,7 +4784,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// Wasm `f32.add` equivalent Wasmi instruction with immediate `rhs` value.
+            /// Wasm `f32.copysign` equivalent Wasmi instruction with NaN canonicalization.
             #[snake_name(f32_copysign_imm)]
             F32CopysignImm {
                 @result: Reg,
