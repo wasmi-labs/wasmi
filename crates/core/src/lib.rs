@@ -44,5 +44,5 @@ pub use self::{
     typed::{Typed, TypedVal},
     units::Pages,
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedVal},
-    value::ValType,
+    value::{CanonicalizeNan, ValType},
 };
