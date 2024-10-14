@@ -956,16 +956,6 @@ impl UntypedVal {
         self.execute_unary(<F32 as Float<F32>>::sqrt)
     }
 
-    /// Execute `f32.min` Wasm operation.
-    pub fn f32_min(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::min)
-    }
-
-    /// Execute `f32.max` Wasm operation.
-    pub fn f32_max(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::max)
-    }
-
     /// Execute `f32.copysign` Wasm operation.
     pub fn f32_copysign(self, other: Self) -> Self {
         self.execute_binary(other, <F32 as Float<F32>>::copysign)
@@ -1046,9 +1036,19 @@ impl UntypedVal {
         self.execute_binary(rhs, <F64 as Float<F64>>::div)
     }
 
+    /// Execute `f32.min` Wasm operation.
+    pub fn f32_min(self, other: Self) -> Self {
+        self.execute_binary(other, <F32 as Float<F32>>::min)
+    }
+
     /// Execute `f64.min` Wasm operation.
     pub fn f64_min(self, other: Self) -> Self {
         self.execute_binary(other, <F64 as Float<F64>>::min)
+    }
+
+    /// Execute `f32.max` Wasm operation.
+    pub fn f32_max(self, other: Self) -> Self {
+        self.execute_binary(other, <F32 as Float<F32>>::max)
     }
 
     /// Execute `f64.max` Wasm operation.
