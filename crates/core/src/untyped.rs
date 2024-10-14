@@ -923,7 +923,7 @@ impl UntypedVal {
 
     /// Execute `f32.abs` Wasm operation.
     pub fn f32_abs(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::abs)
+        self.execute_unary(<F32 as Float>::abs)
     }
 
     /// Execute `f32.neg` Wasm operation.
@@ -933,32 +933,32 @@ impl UntypedVal {
 
     /// Execute `f32.ceil` Wasm operation.
     pub fn f32_ceil(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::ceil)
+        self.execute_unary(<F32 as Float>::ceil)
     }
 
     /// Execute `f32.floor` Wasm operation.
     pub fn f32_floor(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::floor)
+        self.execute_unary(<F32 as Float>::floor)
     }
 
     /// Execute `f32.trunc` Wasm operation.
     pub fn f32_trunc(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::trunc)
+        self.execute_unary(<F32 as Float>::trunc)
     }
 
     /// Execute `f32.nearest` Wasm operation.
     pub fn f32_nearest(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::nearest)
+        self.execute_unary(<F32 as Float>::nearest)
     }
 
     /// Execute `f32.sqrt` Wasm operation.
     pub fn f32_sqrt(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::sqrt)
+        self.execute_unary(<F32 as Float>::sqrt)
     }
 
     /// Execute `f64.abs` Wasm operation.
     pub fn f64_abs(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::abs)
+        self.execute_unary(<F64 as Float>::abs)
     }
 
     /// Execute `f64.neg` Wasm operation.
@@ -968,97 +968,97 @@ impl UntypedVal {
 
     /// Execute `f64.ceil` Wasm operation.
     pub fn f64_ceil(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::ceil)
+        self.execute_unary(<F64 as Float>::ceil)
     }
 
     /// Execute `f64.floor` Wasm operation.
     pub fn f64_floor(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::floor)
+        self.execute_unary(<F64 as Float>::floor)
     }
 
     /// Execute `f64.trunc` Wasm operation.
     pub fn f64_trunc(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::trunc)
+        self.execute_unary(<F64 as Float>::trunc)
     }
 
     /// Execute `f64.nearest` Wasm operation.
     pub fn f64_nearest(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::nearest)
+        self.execute_unary(<F64 as Float>::nearest)
     }
 
     /// Execute `f64.sqrt` Wasm operation.
     pub fn f64_sqrt(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::sqrt)
+        self.execute_unary(<F64 as Float>::sqrt)
     }
 
     /// Execute `f32.add` Wasm operation.
     pub fn f32_add(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F32 as ArithmeticOps<F32>>::add)
+        self.execute_binary(rhs, <F32 as ArithmeticOps>::add)
     }
 
     /// Execute `f64.add` Wasm operation.
     pub fn f64_add(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F64 as ArithmeticOps<F64>>::add)
+        self.execute_binary(rhs, <F64 as ArithmeticOps>::add)
     }
 
     /// Execute `f32.sub` Wasm operation.
     pub fn f32_sub(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F32 as ArithmeticOps<F32>>::sub)
+        self.execute_binary(rhs, <F32 as ArithmeticOps>::sub)
     }
 
     /// Execute `f64.sub` Wasm operation.
     pub fn f64_sub(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F64 as ArithmeticOps<F64>>::sub)
+        self.execute_binary(rhs, <F64 as ArithmeticOps>::sub)
     }
 
     /// Execute `f32.mul` Wasm operation.
     pub fn f32_mul(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F32 as ArithmeticOps<F32>>::mul)
+        self.execute_binary(rhs, <F32 as ArithmeticOps>::mul)
     }
 
     /// Execute `f64.mul` Wasm operation.
     pub fn f64_mul(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F64 as ArithmeticOps<F64>>::mul)
+        self.execute_binary(rhs, <F64 as ArithmeticOps>::mul)
     }
 
     /// Execute `f32.div` Wasm operation.
     pub fn f32_div(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F32 as Float<F32>>::div)
+        self.execute_binary(rhs, <F32 as Float>::div)
     }
 
     /// Execute `f64.div` Wasm operation.
     pub fn f64_div(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F64 as Float<F64>>::div)
+        self.execute_binary(rhs, <F64 as Float>::div)
     }
 
     /// Execute `f32.min` Wasm operation.
     pub fn f32_min(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::min)
+        self.execute_binary(other, <F32 as Float>::min)
     }
 
     /// Execute `f64.min` Wasm operation.
     pub fn f64_min(self, other: Self) -> Self {
-        self.execute_binary(other, <F64 as Float<F64>>::min)
+        self.execute_binary(other, <F64 as Float>::min)
     }
 
     /// Execute `f32.max` Wasm operation.
     pub fn f32_max(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::max)
+        self.execute_binary(other, <F32 as Float>::max)
     }
 
     /// Execute `f64.max` Wasm operation.
     pub fn f64_max(self, other: Self) -> Self {
-        self.execute_binary(other, <F64 as Float<F64>>::max)
+        self.execute_binary(other, <F64 as Float>::max)
     }
 
     /// Execute `f32.copysign` Wasm operation.
     pub fn f32_copysign(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::copysign)
+        self.execute_binary(other, <F32 as Float>::copysign)
     }
 
     /// Execute `f64.copysign` Wasm operation.
     pub fn f64_copysign(self, other: Self) -> Self {
-        self.execute_binary(other, <F64 as Float<F64>>::copysign)
+        self.execute_binary(other, <F64 as Float>::copysign)
     }
 
     /// Execute `i32.wrap_i64` Wasm operation.
