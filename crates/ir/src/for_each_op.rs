@@ -4938,7 +4938,7 @@ macro_rules! for_each_op {
             },
             /// Wasm `f64.sqrt` equivalent Wasmi instruction with NaN canonicalization.
             #[snake_name(f64_sqrt_canonicalize_nan)]
-            F64SqrtCanonicalizeNaN {
+            F64SqrtCanonicalizeNan {
                 @result: Reg,
                 /// The register holding the input of the instruction.
                 input: Reg,
@@ -4954,7 +4954,7 @@ macro_rules! for_each_op {
             },
             /// Wasm `f64.add` equivalent Wasmi instruction with NaN canonicalization.
             #[snake_name(f64_add_canonicalize_nan)]
-            F64AddCanonicalizeNaN {
+            F64AddCanonicalizeNan {
                 @result: Reg,
                 /// The register holding the left-hand side value.
                 lhs: Reg,
@@ -4972,7 +4972,7 @@ macro_rules! for_each_op {
             },
             /// Wasm `f64.sub` equivalent Wasmi instruction with NaN canonicalization.
             #[snake_name(f64_sub_canonicalize_nan)]
-            F64SubCanonicalizeNaN {
+            F64SubCanonicalizeNan {
                 @result: Reg,
                 /// The register holding the left-hand side value.
                 lhs: Reg,
@@ -4990,7 +4990,7 @@ macro_rules! for_each_op {
             },
             /// Wasm `f64.mul` equivalent Wasmi instruction with NaN canonicalization.
             #[snake_name(f64_mul_canonicalize_nan)]
-            F64MulCanonicalizeNaN {
+            F64MulCanonicalizeNan {
                 @result: Reg,
                 /// The register holding the left-hand side value.
                 lhs: Reg,
@@ -5008,7 +5008,7 @@ macro_rules! for_each_op {
             },
             /// Wasm `f64.div` equivalent Wasmi instruction with NaN canonicalization.
             #[snake_name(f64_div_canonicalize_nan)]
-            F64DivCanonicalizeNaN {
+            F64DivCanonicalizeNan {
                 @result: Reg,
                 /// The register holding the left-hand side value.
                 lhs: Reg,
@@ -5026,7 +5026,7 @@ macro_rules! for_each_op {
             },
             /// Wasm `f64.min` equivalent Wasmi instruction with NaN canonicalization.
             #[snake_name(f64_min_canonicalize_nan)]
-            F64MinCanonicalizeNaN {
+            F64MinCanonicalizeNan {
                 @result: Reg,
                 /// The register holding the left-hand side value.
                 lhs: Reg,
@@ -5044,7 +5044,7 @@ macro_rules! for_each_op {
             },
             /// Wasm `f64.max` equivalent Wasmi instruction with NaN canonicalization.
             #[snake_name(f64_max_canonicalize_nan)]
-            F64MaxCanonicalizeNaN {
+            F64MaxCanonicalizeNan {
                 @result: Reg,
                 /// The register holding the left-hand side value.
                 lhs: Reg,
@@ -5062,7 +5062,7 @@ macro_rules! for_each_op {
             },
             /// Wasm `f64.copysign` equivalent Wasmi instruction with NaN canonicalization.
             #[snake_name(f64_copysign_canonicalize_nan)]
-            F64CopysignCanonicalizeNaN {
+            F64CopysignCanonicalizeNan {
                 @result: Reg,
                 /// The register holding the left-hand side value.
                 lhs: Reg,
@@ -5080,7 +5080,7 @@ macro_rules! for_each_op {
             },
             /// Wasm `f64.copysign_imm` equivalent Wasmi instruction with immediate `rhs` value and NaN canonicalization.
             #[snake_name(f64_copysign_imm_canonicalize_nan)]
-            F64CopysignImmCanonicalizeNaN {
+            F64CopysignImmCanonicalizeNan {
                 @result: Reg,
                 /// The register holding the left-hand side value.
                 lhs: Reg,
