@@ -197,7 +197,7 @@ impl_little_endian_convert_float!(
 );
 
 /// Arithmetic operations.
-pub trait ArithmeticOps<T>: Copy {
+pub trait ArithmeticOps<T = Self>: Copy {
     /// Add two values.
     fn add(self, other: T) -> T;
     /// Subtract two values.
@@ -233,7 +233,7 @@ pub trait Integer<T>: ArithmeticOps<T> {
 }
 
 /// Float-point value.
-pub trait Float<T>: ArithmeticOps<T> {
+pub trait Float<T = Self>: ArithmeticOps<T> {
     /// Get absolute value.
     fn abs(self) -> T;
     /// Returns the largest integer less than or equal to a number.
@@ -624,6 +624,8 @@ macro_rules! impl_float {
 }
 impl_float!( type F32 as f32 );
 impl_float!( type F64 as f64 );
+impl_float!( type f32 as f32 );
+impl_float!( type f64 as f64 );
 
 /// Low-level Wasm float interface to support `no_std` environments.
 ///
