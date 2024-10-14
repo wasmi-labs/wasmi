@@ -5085,7 +5085,7 @@ macro_rules! for_each_op {
                 /// The register holding the left-hand side value.
                 lhs: Reg,
                 /// The register holding the right-hand side value.
-                rhs: Reg,
+                rhs: Sign<f64>,
             },
 
             /// Wasm `i32.trunc_f32_s` instruction.
