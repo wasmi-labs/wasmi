@@ -956,11 +956,6 @@ impl UntypedVal {
         self.execute_unary(<F32 as Float<F32>>::sqrt)
     }
 
-    /// Execute `f32.copysign` Wasm operation.
-    pub fn f32_copysign(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::copysign)
-    }
-
     /// Execute `f64.abs` Wasm operation.
     pub fn f64_abs(self) -> Self {
         self.execute_unary(<F64 as Float<F64>>::abs)
@@ -1054,6 +1049,11 @@ impl UntypedVal {
     /// Execute `f64.max` Wasm operation.
     pub fn f64_max(self, other: Self) -> Self {
         self.execute_binary(other, <F64 as Float<F64>>::max)
+    }
+
+    /// Execute `f32.copysign` Wasm operation.
+    pub fn f32_copysign(self, other: Self) -> Self {
+        self.execute_binary(other, <F32 as Float<F32>>::copysign)
     }
 
     /// Execute `f64.copysign` Wasm operation.
