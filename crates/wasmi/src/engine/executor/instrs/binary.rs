@@ -324,52 +324,27 @@ impl Executor<'_> {
     }
 }
 
-impl Executor<'_> {
-    /// Executes an [`Instruction::F32CopysignImm`].
-    pub fn execute_f32_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f32>) {
-        let lhs = self.get_register(lhs);
-        let rhs = f32::from(rhs);
-        self.set_register(result, UntypedVal::f32_copysign(lhs, rhs.into()));
-        self.next_instr()
-    }
-
-    /// Executes an [`Instruction::F32CopysignImm`] with NaN canonicalization.
-    pub fn execute_f32_copysign_imm_canonicalize_nan(
-        &mut self,
-        result: Reg,
-        lhs: Reg,
-        rhs: Sign<f32>,
-    ) {
-        let lhs = self.get_register(lhs);
-        let rhs = f32::from(rhs);
-        self.set_register(
-            result,
-            UntypedVal::f32_copysign_canonicalize_nan(lhs, rhs.into()),
-        );
-        self.next_instr()
-    }
-
-    /// Executes an [`Instruction::F64CopysignImm`].
-    pub fn execute_f64_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f64>) {
-        let lhs = self.get_register(lhs);
-        let rhs = f64::from(rhs);
-        self.set_register(result, UntypedVal::f64_copysign(lhs, rhs.into()));
-        self.next_instr()
-    }
-
-    /// Executes an [`Instruction::F64CopysignImm`] with NaN canonicalization.
-    pub fn execute_f64_copysign_imm_canonicalize_nan(
-        &mut self,
-        result: Reg,
-        lhs: Reg,
-        rhs: Sign<f64>,
-    ) {
-        let lhs = self.get_register(lhs);
-        let rhs = f64::from(rhs);
-        self.set_register(
-            result,
-            UntypedVal::f64_copysign_canonicalize_nan(lhs, rhs.into()),
-        );
-        self.next_instr()
-    }
+macro_rules! impl_execute_copysign_imm {
+    (
+        $( $instr_name:ident => fn $fn_name:ident($untyped_fn:ident) -> $float_ty:ty; )*
+    ) => {
+        impl Executor<'_> {
+            $(
+                #[doc = concat!("Executes an [`Instruction::", stringify!($instr_name), "`]."
+                )]
+                pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Sign<$float_ty>) {
+                    let lhs = self.get_register(lhs);
+                    let rhs = <$float_ty>::from(rhs);
+                    self.set_register(result, UntypedVal::$untyped_fn(lhs, rhs.into()));
+                    self.next_instr()
+                }
+            )*
+        }
+    };
+}
+impl_execute_copysign_imm! {
+    F32CopysignImm => fn execute_f32_copysign_imm(f32_copysign) -> f32;
+    F64CopysignImm => fn execute_f64_copysign_imm(f64_copysign) -> f64;
+    F32CopysignImmCanonicalizeNan => fn execute_f32_copysign_imm_canonicalize_nan(f32_copysign_canonicalize_nan) -> f32;
+    F64CopysignImmCanonicalizeNan => fn execute_f64_copysign_imm_canonicalize_nan(f64_copysign_canonicalize_nan) -> f64;
 }
