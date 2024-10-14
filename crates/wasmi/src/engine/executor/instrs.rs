@@ -1082,25 +1082,41 @@ impl<'engine> Executor<'engine> {
                 Instr::I64Extend32S { result, input } => self.execute_i64_extend32_s(result, input),
                 Instr::F32Abs { result, input } => self.execute_f32_abs(result, input),
                 Instr::F32Neg { result, input } => self.execute_f32_neg(result, input),
-                Instr::F32NegCanonicalizeNan { result, input } => self.execute_f32_neg_canonicalize_nan(result, input),
+                Instr::F32NegCanonicalizeNan { result, input } => {
+                    self.execute_f32_neg_canonicalize_nan(result, input)
+                }
                 Instr::F32Ceil { result, input } => self.execute_f32_ceil(result, input),
                 Instr::F32Floor { result, input } => self.execute_f32_floor(result, input),
                 Instr::F32Trunc { result, input } => self.execute_f32_trunc(result, input),
                 Instr::F32Nearest { result, input } => self.execute_f32_nearest(result, input),
                 Instr::F32Sqrt { result, input } => self.execute_f32_sqrt(result, input),
-                Instr::F32SqrtCanonicalizeNan { result, input } => self.execute_f32_sqrt_canonicalize_nan(result, input),
+                Instr::F32SqrtCanonicalizeNan { result, input } => {
+                    self.execute_f32_sqrt_canonicalize_nan(result, input)
+                }
                 Instr::F32Add { result, lhs, rhs } => self.execute_f32_add(result, lhs, rhs),
-                Instr::F32AddCanonicalizeNan { result, lhs, rhs } => self.execute_f32_add_canonicalize_nan(result, lhs, rhs),
+                Instr::F32AddCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f32_add_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F32Sub { result, lhs, rhs } => self.execute_f32_sub(result, lhs, rhs),
-                Instr::F32SubCanonicalizeNan { result, lhs, rhs } => self.execute_f32_sub_canonicalize_nan(result, lhs, rhs),
+                Instr::F32SubCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f32_sub_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F32Mul { result, lhs, rhs } => self.execute_f32_mul(result, lhs, rhs),
-                Instr::F32MulCanonicalizeNan { result, lhs, rhs } => self.execute_f32_mul_canonicalize_nan(result, lhs, rhs),
+                Instr::F32MulCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f32_mul_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F32Div { result, lhs, rhs } => self.execute_f32_div(result, lhs, rhs),
-                Instr::F32DivCanonicalizeNan { result, lhs, rhs } => self.execute_f32_div_canonicalize_nan(result, lhs, rhs),
+                Instr::F32DivCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f32_div_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F32Min { result, lhs, rhs } => self.execute_f32_min(result, lhs, rhs),
-                Instr::F32MinCanonicalizeNan { result, lhs, rhs } => self.execute_f32_min_canonicalize_nan(result, lhs, rhs),
+                Instr::F32MinCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f32_min_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F32Max { result, lhs, rhs } => self.execute_f32_max(result, lhs, rhs),
-                Instr::F32MaxCanonicalizeNan { result, lhs, rhs } => self.execute_f32_max_canonicalize_nan(result, lhs, rhs),
+                Instr::F32MaxCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f32_max_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F32Copysign { result, lhs, rhs } => {
                     self.execute_f32_copysign(result, lhs, rhs)
                 }
@@ -1115,25 +1131,41 @@ impl<'engine> Executor<'engine> {
                 }
                 Instr::F64Abs { result, input } => self.execute_f64_abs(result, input),
                 Instr::F64Neg { result, input } => self.execute_f64_neg(result, input),
-                Instr::F64NegCanonicalizeNan { result, input } => self.execute_f64_neg_canonicalize_nan(result, input),
+                Instr::F64NegCanonicalizeNan { result, input } => {
+                    self.execute_f64_neg_canonicalize_nan(result, input)
+                }
                 Instr::F64Ceil { result, input } => self.execute_f64_ceil(result, input),
                 Instr::F64Floor { result, input } => self.execute_f64_floor(result, input),
                 Instr::F64Trunc { result, input } => self.execute_f64_trunc(result, input),
                 Instr::F64Nearest { result, input } => self.execute_f64_nearest(result, input),
                 Instr::F64Sqrt { result, input } => self.execute_f64_sqrt(result, input),
-                Instr::F64SqrtCanonicalizeNan { result, input } => self.execute_f64_sqrt_canonicalize_nan(result, input),
+                Instr::F64SqrtCanonicalizeNan { result, input } => {
+                    self.execute_f64_sqrt_canonicalize_nan(result, input)
+                }
                 Instr::F64Add { result, lhs, rhs } => self.execute_f64_add(result, lhs, rhs),
-                Instr::F64AddCanonicalizeNan { result, lhs, rhs } => self.execute_f64_add_canonicalize_nan(result, lhs, rhs),
+                Instr::F64AddCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f64_add_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F64Sub { result, lhs, rhs } => self.execute_f64_sub(result, lhs, rhs),
-                Instr::F64SubCanonicalizeNan { result, lhs, rhs } => self.execute_f64_sub_canonicalize_nan(result, lhs, rhs),
+                Instr::F64SubCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f64_sub_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F64Mul { result, lhs, rhs } => self.execute_f64_mul(result, lhs, rhs),
-                Instr::F64MulCanonicalizeNan { result, lhs, rhs } => self.execute_f64_mul_canonicalize_nan(result, lhs, rhs),
+                Instr::F64MulCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f64_mul_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F64Div { result, lhs, rhs } => self.execute_f64_div(result, lhs, rhs),
-                Instr::F64DivCanonicalizeNan { result, lhs, rhs } => self.execute_f64_div_canonicalize_nan(result, lhs, rhs),
+                Instr::F64DivCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f64_div_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F64Min { result, lhs, rhs } => self.execute_f64_min(result, lhs, rhs),
-                Instr::F64MinCanonicalizeNan { result, lhs, rhs } => self.execute_f64_min_canonicalize_nan(result, lhs, rhs),
+                Instr::F64MinCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f64_min_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F64Max { result, lhs, rhs } => self.execute_f64_max(result, lhs, rhs),
-                Instr::F64MaxCanonicalizeNan { result, lhs, rhs } => self.execute_f64_max_canonicalize_nan(result, lhs, rhs),
+                Instr::F64MaxCanonicalizeNan { result, lhs, rhs } => {
+                    self.execute_f64_max_canonicalize_nan(result, lhs, rhs)
+                }
                 Instr::F64Copysign { result, lhs, rhs } => {
                     self.execute_f64_copysign(result, lhs, rhs)
                 }

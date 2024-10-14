@@ -334,10 +334,18 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::F32CopysignImm`] with NaN canonicalization.
-    pub fn execute_f32_copysign_imm_canonicalize_nan(&mut self, result: Reg, lhs: Reg, rhs: Sign<f32>) {
+    pub fn execute_f32_copysign_imm_canonicalize_nan(
+        &mut self,
+        result: Reg,
+        lhs: Reg,
+        rhs: Sign<f32>,
+    ) {
         let lhs = self.get_register(lhs);
         let rhs = f32::from(rhs);
-        self.set_register(result, UntypedVal::f32_copysign_canonicalize_nan(lhs, rhs.into()));
+        self.set_register(
+            result,
+            UntypedVal::f32_copysign_canonicalize_nan(lhs, rhs.into()),
+        );
         self.next_instr()
     }
 
@@ -350,10 +358,18 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::F64CopysignImm`] with NaN canonicalization.
-    pub fn execute_f64_copysign_imm_canonicalize_nan(&mut self, result: Reg, lhs: Reg, rhs: Sign<f64>) {
+    pub fn execute_f64_copysign_imm_canonicalize_nan(
+        &mut self,
+        result: Reg,
+        lhs: Reg,
+        rhs: Sign<f64>,
+    ) {
         let lhs = self.get_register(lhs);
         let rhs = f64::from(rhs);
-        self.set_register(result, UntypedVal::f64_copysign_canonicalize_nan(lhs, rhs.into()));
+        self.set_register(
+            result,
+            UntypedVal::f64_copysign_canonicalize_nan(lhs, rhs.into()),
+        );
         self.next_instr()
     }
 }
