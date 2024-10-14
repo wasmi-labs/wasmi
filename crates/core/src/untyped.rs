@@ -1,6 +1,7 @@
 use crate::{
     value::{LoadInto, StoreFrom},
     ArithmeticOps,
+    CanonicalizeNan,
     ExtendInto,
     Float,
     Integer,
@@ -931,6 +932,11 @@ impl UntypedVal {
         self.execute_unary(<f32 as Neg>::neg)
     }
 
+    /// Execute `f32.neg` Wasm operation.
+    pub fn f32_neg_canonicalize_nan(self) -> Self {
+        self.execute_unary(|value| <f32 as Neg>::neg(value).canonicalize_nan())
+    }
+
     /// Execute `f32.ceil` Wasm operation.
     pub fn f32_ceil(self) -> Self {
         self.execute_unary(<f32 as Float>::ceil)
@@ -953,7 +959,12 @@ impl UntypedVal {
 
     /// Execute `f32.sqrt` Wasm operation.
     pub fn f32_sqrt(self) -> Self {
-        self.execute_unary(<f32 as Float>::sqrt)
+        self.execute_unary(<F32 as Float>::sqrt)
+    }
+
+    /// Execute `f32.sqrt` Wasm operation.
+    pub fn f32_sqrt_canonicalize_nan(self) -> Self {
+        self.execute_unary(|value| <f32 as Float>::sqrt(value).canonicalize_nan())
     }
 
     /// Execute `f64.abs` Wasm operation.
@@ -964,6 +975,11 @@ impl UntypedVal {
     /// Execute `f64.neg` Wasm operation.
     pub fn f64_neg(self) -> Self {
         self.execute_unary(<f64 as Neg>::neg)
+    }
+
+    /// Execute `f64.neg` Wasm operation.
+    pub fn f64_neg_canonicalize_nan(self) -> Self {
+        self.execute_unary(|value| <f64 as Neg>::neg(value).canonicalize_nan())
     }
 
     /// Execute `f64.ceil` Wasm operation.
@@ -991,9 +1007,21 @@ impl UntypedVal {
         self.execute_unary(<f64 as Float>::sqrt)
     }
 
+    /// Execute `f64.sqrt` Wasm operation.
+    pub fn f64_sqrt_canonicalize_nan(self) -> Self {
+        self.execute_unary(|value| <f64 as Float>::sqrt(value).canonicalize_nan())
+    }
+
     /// Execute `f32.add` Wasm operation.
     pub fn f32_add(self, rhs: Self) -> Self {
         self.execute_binary(rhs, <f32 as ArithmeticOps>::add)
+    }
+
+    /// Execute `f32.add` Wasm operation with NaN canonicalization.
+    pub fn f32_add_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f32 as ArithmeticOps>::add(lhs, rhs).canonicalize_nan()
+        })
     }
 
     /// Execute `f64.add` Wasm operation.
@@ -1001,9 +1029,23 @@ impl UntypedVal {
         self.execute_binary(rhs, <f64 as ArithmeticOps>::add)
     }
 
+    /// Execute `f64.add` Wasm operation with NaN canonicalization.
+    pub fn f64_add_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f64 as ArithmeticOps>::add(lhs, rhs).canonicalize_nan()
+        })
+    }
+
     /// Execute `f32.sub` Wasm operation.
     pub fn f32_sub(self, rhs: Self) -> Self {
         self.execute_binary(rhs, <f32 as ArithmeticOps>::sub)
+    }
+
+    /// Execute `f32.sub` Wasm operation with NaN canonicalization.
+    pub fn f32_sub_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f32 as ArithmeticOps>::sub(lhs, rhs).canonicalize_nan()
+        })
     }
 
     /// Execute `f64.sub` Wasm operation.
@@ -1011,9 +1053,23 @@ impl UntypedVal {
         self.execute_binary(rhs, <f64 as ArithmeticOps>::sub)
     }
 
+    /// Execute `f64.sub` Wasm operation with NaN canonicalization.
+    pub fn f64_sub_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f64 as ArithmeticOps>::sub(lhs, rhs).canonicalize_nan()
+        })
+    }
+
     /// Execute `f32.mul` Wasm operation.
     pub fn f32_mul(self, rhs: Self) -> Self {
         self.execute_binary(rhs, <f32 as ArithmeticOps>::mul)
+    }
+
+    /// Execute `f32.mul` Wasm operation with NaN canonicalization.
+    pub fn f32_mul_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f32 as ArithmeticOps>::mul(lhs, rhs).canonicalize_nan()
+        })
     }
 
     /// Execute `f64.mul` Wasm operation.
@@ -1021,9 +1077,23 @@ impl UntypedVal {
         self.execute_binary(rhs, <f64 as ArithmeticOps>::mul)
     }
 
+    /// Execute `f64.mul` Wasm operation with NaN canonicalization.
+    pub fn f64_mul_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f64 as ArithmeticOps>::mul(lhs, rhs).canonicalize_nan()
+        })
+    }
+
     /// Execute `f32.div` Wasm operation.
     pub fn f32_div(self, rhs: Self) -> Self {
         self.execute_binary(rhs, <f32 as Float>::div)
+    }
+
+    /// Execute `f32.div` Wasm operation with NaN canonicalization.
+    pub fn f32_div_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f32 as Float>::div(lhs, rhs).canonicalize_nan()
+        })
     }
 
     /// Execute `f64.div` Wasm operation.
@@ -1031,9 +1101,23 @@ impl UntypedVal {
         self.execute_binary(rhs, <f64 as Float>::div)
     }
 
+    /// Execute `f64.div` Wasm operation with NaN canonicalization.
+    pub fn f64_div_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f64 as Float>::div(lhs, rhs).canonicalize_nan()
+        })
+    }
+
     /// Execute `f32.min` Wasm operation.
     pub fn f32_min(self, other: Self) -> Self {
         self.execute_binary(other, <f32 as Float>::min)
+    }
+
+    /// Execute `f32.min` Wasm operation with NaN canonicalization.
+    pub fn f32_min_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f32 as Float>::min(lhs, rhs).canonicalize_nan()
+        })
     }
 
     /// Execute `f64.min` Wasm operation.
@@ -1041,9 +1125,23 @@ impl UntypedVal {
         self.execute_binary(other, <f64 as Float>::min)
     }
 
+    /// Execute `f64.min` Wasm operation with NaN canonicalization.
+    pub fn f64_min_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f64 as Float>::min(lhs, rhs).canonicalize_nan()
+        })
+    }
+
     /// Execute `f32.max` Wasm operation.
     pub fn f32_max(self, other: Self) -> Self {
         self.execute_binary(other, <f32 as Float>::max)
+    }
+
+    /// Execute `f32.max` Wasm operation with NaN canonicalization.
+    pub fn f32_max_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f32 as Float>::max(lhs, rhs).canonicalize_nan()
+        })
     }
 
     /// Execute `f64.max` Wasm operation.
@@ -1051,14 +1149,35 @@ impl UntypedVal {
         self.execute_binary(other, <f64 as Float>::max)
     }
 
+    /// Execute `f64.max` Wasm operation with NaN canonicalization.
+    pub fn f64_max_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f64 as Float>::max(lhs, rhs).canonicalize_nan()
+        })
+    }
+
     /// Execute `f32.copysign` Wasm operation.
     pub fn f32_copysign(self, other: Self) -> Self {
         self.execute_binary(other, <f32 as Float>::copysign)
     }
 
+    /// Execute `f32.copysign` Wasm operation with NaN canonicalization.
+    pub fn f32_copysign_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f32 as Float>::copysign(lhs, rhs).canonicalize_nan()
+        })
+    }
+
     /// Execute `f64.copysign` Wasm operation.
     pub fn f64_copysign(self, other: Self) -> Self {
         self.execute_binary(other, <f64 as Float>::copysign)
+    }
+
+    /// Execute `f64.copysign` Wasm operation with NaN canonicalization.
+    pub fn f64_copysign_canonicalize_nan(self, rhs: Self) -> Self {
+        self.execute_binary(rhs, |lhs, rhs| {
+            <f64 as Float>::copysign(lhs, rhs).canonicalize_nan()
+        })
     }
 
     /// Execute `i32.wrap_i64` Wasm operation.
