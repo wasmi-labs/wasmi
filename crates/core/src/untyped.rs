@@ -1101,11 +1101,6 @@ impl UntypedVal {
         self.execute_binary(rhs, <f64 as Float>::div)
     }
 
-    /// Execute `f32.min` Wasm operation.
-    pub fn f32_min(self, other: Self) -> Self {
-        self.execute_binary(other, <f32 as Float>::min)
-    }
-
     /// Execute `f64.div` Wasm operation with NaN canonicalization.
     pub fn f64_div_canonicalize_nan(self, rhs: Self) -> Self {
         self.execute_binary(rhs, |lhs, rhs| {
@@ -1115,7 +1110,7 @@ impl UntypedVal {
 
     /// Execute `f32.min` Wasm operation.
     pub fn f32_min(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::min)
+        self.execute_binary(other, <f32 as Float>::min)
     }
 
     /// Execute `f32.min` Wasm operation with NaN canonicalization.
@@ -1130,11 +1125,6 @@ impl UntypedVal {
         self.execute_binary(other, <f64 as Float>::min)
     }
 
-    /// Execute `f32.max` Wasm operation.
-    pub fn f32_max(self, other: Self) -> Self {
-        self.execute_binary(other, <f32 as Float>::max)
-    }
-
     /// Execute `f64.min` Wasm operation with NaN canonicalization.
     pub fn f64_min_canonicalize_nan(self, rhs: Self) -> Self {
         self.execute_binary(rhs, |lhs, rhs| {
@@ -1144,7 +1134,7 @@ impl UntypedVal {
 
     /// Execute `f32.max` Wasm operation.
     pub fn f32_max(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::max)
+        self.execute_binary(other, <f32 as Float>::max)
     }
 
     /// Execute `f32.max` Wasm operation with NaN canonicalization.
@@ -1159,11 +1149,6 @@ impl UntypedVal {
         self.execute_binary(other, <f64 as Float>::max)
     }
 
-    /// Execute `f32.copysign` Wasm operation.
-    pub fn f32_copysign(self, other: Self) -> Self {
-        self.execute_binary(other, <f32 as Float>::copysign)
-    }
-
     /// Execute `f64.max` Wasm operation with NaN canonicalization.
     pub fn f64_max_canonicalize_nan(self, rhs: Self) -> Self {
         self.execute_binary(rhs, |lhs, rhs| {
@@ -1173,7 +1158,7 @@ impl UntypedVal {
 
     /// Execute `f32.copysign` Wasm operation.
     pub fn f32_copysign(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::copysign)
+        self.execute_binary(other, <f32 as Float>::copysign)
     }
 
     /// Execute `f32.copysign` Wasm operation with NaN canonicalization.
