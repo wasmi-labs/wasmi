@@ -923,142 +923,142 @@ impl UntypedVal {
 
     /// Execute `f32.abs` Wasm operation.
     pub fn f32_abs(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::abs)
+        self.execute_unary(<f32 as Float>::abs)
     }
 
     /// Execute `f32.neg` Wasm operation.
     pub fn f32_neg(self) -> Self {
-        self.execute_unary(<F32 as Neg>::neg)
+        self.execute_unary(<f32 as Neg>::neg)
     }
 
     /// Execute `f32.ceil` Wasm operation.
     pub fn f32_ceil(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::ceil)
+        self.execute_unary(<f32 as Float>::ceil)
     }
 
     /// Execute `f32.floor` Wasm operation.
     pub fn f32_floor(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::floor)
+        self.execute_unary(<f32 as Float>::floor)
     }
 
     /// Execute `f32.trunc` Wasm operation.
     pub fn f32_trunc(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::trunc)
+        self.execute_unary(<f32 as Float>::trunc)
     }
 
     /// Execute `f32.nearest` Wasm operation.
     pub fn f32_nearest(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::nearest)
+        self.execute_unary(<f32 as Float>::nearest)
     }
 
     /// Execute `f32.sqrt` Wasm operation.
     pub fn f32_sqrt(self) -> Self {
-        self.execute_unary(<F32 as Float<F32>>::sqrt)
-    }
-
-    /// Execute `f32.min` Wasm operation.
-    pub fn f32_min(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::min)
-    }
-
-    /// Execute `f32.max` Wasm operation.
-    pub fn f32_max(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::max)
-    }
-
-    /// Execute `f32.copysign` Wasm operation.
-    pub fn f32_copysign(self, other: Self) -> Self {
-        self.execute_binary(other, <F32 as Float<F32>>::copysign)
+        self.execute_unary(<f32 as Float>::sqrt)
     }
 
     /// Execute `f64.abs` Wasm operation.
     pub fn f64_abs(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::abs)
+        self.execute_unary(<f64 as Float>::abs)
     }
 
     /// Execute `f64.neg` Wasm operation.
     pub fn f64_neg(self) -> Self {
-        self.execute_unary(<F64 as Neg>::neg)
+        self.execute_unary(<f64 as Neg>::neg)
     }
 
     /// Execute `f64.ceil` Wasm operation.
     pub fn f64_ceil(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::ceil)
+        self.execute_unary(<f64 as Float>::ceil)
     }
 
     /// Execute `f64.floor` Wasm operation.
     pub fn f64_floor(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::floor)
+        self.execute_unary(<f64 as Float>::floor)
     }
 
     /// Execute `f64.trunc` Wasm operation.
     pub fn f64_trunc(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::trunc)
+        self.execute_unary(<f64 as Float>::trunc)
     }
 
     /// Execute `f64.nearest` Wasm operation.
     pub fn f64_nearest(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::nearest)
+        self.execute_unary(<f64 as Float>::nearest)
     }
 
     /// Execute `f64.sqrt` Wasm operation.
     pub fn f64_sqrt(self) -> Self {
-        self.execute_unary(<F64 as Float<F64>>::sqrt)
+        self.execute_unary(<f64 as Float>::sqrt)
     }
 
     /// Execute `f32.add` Wasm operation.
     pub fn f32_add(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F32 as ArithmeticOps<F32>>::add)
+        self.execute_binary(rhs, <f32 as ArithmeticOps>::add)
     }
 
     /// Execute `f64.add` Wasm operation.
     pub fn f64_add(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F64 as ArithmeticOps<F64>>::add)
+        self.execute_binary(rhs, <f64 as ArithmeticOps>::add)
     }
 
     /// Execute `f32.sub` Wasm operation.
     pub fn f32_sub(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F32 as ArithmeticOps<F32>>::sub)
+        self.execute_binary(rhs, <f32 as ArithmeticOps>::sub)
     }
 
     /// Execute `f64.sub` Wasm operation.
     pub fn f64_sub(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F64 as ArithmeticOps<F64>>::sub)
+        self.execute_binary(rhs, <f64 as ArithmeticOps>::sub)
     }
 
     /// Execute `f32.mul` Wasm operation.
     pub fn f32_mul(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F32 as ArithmeticOps<F32>>::mul)
+        self.execute_binary(rhs, <f32 as ArithmeticOps>::mul)
     }
 
     /// Execute `f64.mul` Wasm operation.
     pub fn f64_mul(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F64 as ArithmeticOps<F64>>::mul)
+        self.execute_binary(rhs, <f64 as ArithmeticOps>::mul)
     }
 
     /// Execute `f32.div` Wasm operation.
     pub fn f32_div(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F32 as Float<F32>>::div)
+        self.execute_binary(rhs, <f32 as Float>::div)
     }
 
     /// Execute `f64.div` Wasm operation.
     pub fn f64_div(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <F64 as Float<F64>>::div)
+        self.execute_binary(rhs, <f64 as Float>::div)
+    }
+
+    /// Execute `f32.min` Wasm operation.
+    pub fn f32_min(self, other: Self) -> Self {
+        self.execute_binary(other, <f32 as Float>::min)
     }
 
     /// Execute `f64.min` Wasm operation.
     pub fn f64_min(self, other: Self) -> Self {
-        self.execute_binary(other, <F64 as Float<F64>>::min)
+        self.execute_binary(other, <f64 as Float>::min)
+    }
+
+    /// Execute `f32.max` Wasm operation.
+    pub fn f32_max(self, other: Self) -> Self {
+        self.execute_binary(other, <f32 as Float>::max)
     }
 
     /// Execute `f64.max` Wasm operation.
     pub fn f64_max(self, other: Self) -> Self {
-        self.execute_binary(other, <F64 as Float<F64>>::max)
+        self.execute_binary(other, <f64 as Float>::max)
+    }
+
+    /// Execute `f32.copysign` Wasm operation.
+    pub fn f32_copysign(self, other: Self) -> Self {
+        self.execute_binary(other, <f32 as Float>::copysign)
     }
 
     /// Execute `f64.copysign` Wasm operation.
     pub fn f64_copysign(self, other: Self) -> Self {
-        self.execute_binary(other, <F64 as Float<F64>>::copysign)
+        self.execute_binary(other, <f64 as Float>::copysign)
     }
 
     /// Execute `i32.wrap_i64` Wasm operation.
@@ -1079,7 +1079,7 @@ impl UntypedVal {
     /// [WebAssembly specification]:
     /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i32_trunc_f32_s(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<F32 as TryTruncateInto<i32, TrapCode>>::try_truncate_into)
+        self.try_execute_unary(<f32 as TryTruncateInto<i32, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i32.trunc_f32_u` Wasm operation.
@@ -1095,7 +1095,7 @@ impl UntypedVal {
     /// [WebAssembly specification]:
     /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i32_trunc_f32_u(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<F32 as TryTruncateInto<u32, TrapCode>>::try_truncate_into)
+        self.try_execute_unary(<f32 as TryTruncateInto<u32, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i32.trunc_f64_s` Wasm operation.
@@ -1111,7 +1111,7 @@ impl UntypedVal {
     /// [WebAssembly specification]:
     /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i32_trunc_f64_s(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<F64 as TryTruncateInto<i32, TrapCode>>::try_truncate_into)
+        self.try_execute_unary(<f64 as TryTruncateInto<i32, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i32.trunc_f64_u` Wasm operation.
@@ -1127,7 +1127,7 @@ impl UntypedVal {
     /// [WebAssembly specification]:
     /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i32_trunc_f64_u(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<F64 as TryTruncateInto<u32, TrapCode>>::try_truncate_into)
+        self.try_execute_unary(<f64 as TryTruncateInto<u32, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i64.extend_i32_s` Wasm operation.
@@ -1148,7 +1148,7 @@ impl UntypedVal {
     /// [WebAssembly specification]:
     /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i64_trunc_f32_s(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<F32 as TryTruncateInto<i64, TrapCode>>::try_truncate_into)
+        self.try_execute_unary(<f32 as TryTruncateInto<i64, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i64.trunc_f32_u` Wasm operation.
@@ -1164,7 +1164,7 @@ impl UntypedVal {
     /// [WebAssembly specification]:
     /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i64_trunc_f32_u(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<F32 as TryTruncateInto<u64, TrapCode>>::try_truncate_into)
+        self.try_execute_unary(<f32 as TryTruncateInto<u64, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i64.trunc_f64_s` Wasm operation.
@@ -1180,7 +1180,7 @@ impl UntypedVal {
     /// [WebAssembly specification]:
     /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i64_trunc_f64_s(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<F64 as TryTruncateInto<i64, TrapCode>>::try_truncate_into)
+        self.try_execute_unary(<f64 as TryTruncateInto<i64, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `i64.trunc_f64_u` Wasm operation.
@@ -1196,7 +1196,7 @@ impl UntypedVal {
     /// [WebAssembly specification]:
     /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
     pub fn i64_trunc_f64_u(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<F64 as TryTruncateInto<u64, TrapCode>>::try_truncate_into)
+        self.try_execute_unary(<f64 as TryTruncateInto<u64, TrapCode>>::try_truncate_into)
     }
 
     /// Execute `f32.convert_i32_s` Wasm operation.
@@ -1246,7 +1246,7 @@ impl UntypedVal {
 
     /// Execute `f64.promote_f32` Wasm operation.
     pub fn f64_promote_f32(self) -> Self {
-        self.execute_unary(<F32 as ExtendInto<F64>>::extend_into)
+        self.execute_unary(<f32 as ExtendInto<F64>>::extend_into)
     }
 
     /// Execute `i32.extend8_s` Wasm operation.
@@ -1276,42 +1276,42 @@ impl UntypedVal {
 
     /// Execute `i32.trunc_sat_f32_s` Wasm operation.
     pub fn i32_trunc_sat_f32_s(self) -> Self {
-        self.execute_unary(<F32 as TruncateSaturateInto<i32>>::truncate_saturate_into)
+        self.execute_unary(<f32 as TruncateSaturateInto<i32>>::truncate_saturate_into)
     }
 
     /// Execute `i32.trunc_sat_f32_u` Wasm operation.
     pub fn i32_trunc_sat_f32_u(self) -> Self {
-        self.execute_unary(<F32 as TruncateSaturateInto<u32>>::truncate_saturate_into)
+        self.execute_unary(<f32 as TruncateSaturateInto<u32>>::truncate_saturate_into)
     }
 
     /// Execute `i32.trunc_sat_f64_s` Wasm operation.
     pub fn i32_trunc_sat_f64_s(self) -> Self {
-        self.execute_unary(<F64 as TruncateSaturateInto<i32>>::truncate_saturate_into)
+        self.execute_unary(<f64 as TruncateSaturateInto<i32>>::truncate_saturate_into)
     }
 
     /// Execute `i32.trunc_sat_f64_u` Wasm operation.
     pub fn i32_trunc_sat_f64_u(self) -> Self {
-        self.execute_unary(<F64 as TruncateSaturateInto<u32>>::truncate_saturate_into)
+        self.execute_unary(<f64 as TruncateSaturateInto<u32>>::truncate_saturate_into)
     }
 
     /// Execute `i64.trunc_sat_f32_s` Wasm operation.
     pub fn i64_trunc_sat_f32_s(self) -> Self {
-        self.execute_unary(<F32 as TruncateSaturateInto<i64>>::truncate_saturate_into)
+        self.execute_unary(<f32 as TruncateSaturateInto<i64>>::truncate_saturate_into)
     }
 
     /// Execute `i64.trunc_sat_f32_u` Wasm operation.
     pub fn i64_trunc_sat_f32_u(self) -> Self {
-        self.execute_unary(<F32 as TruncateSaturateInto<u64>>::truncate_saturate_into)
+        self.execute_unary(<f32 as TruncateSaturateInto<u64>>::truncate_saturate_into)
     }
 
     /// Execute `i64.trunc_sat_f64_s` Wasm operation.
     pub fn i64_trunc_sat_f64_s(self) -> Self {
-        self.execute_unary(<F64 as TruncateSaturateInto<i64>>::truncate_saturate_into)
+        self.execute_unary(<f64 as TruncateSaturateInto<i64>>::truncate_saturate_into)
     }
 
     /// Execute `i64.trunc_sat_f64_u` Wasm operation.
     pub fn i64_trunc_sat_f64_u(self) -> Self {
-        self.execute_unary(<F64 as TruncateSaturateInto<u64>>::truncate_saturate_into)
+        self.execute_unary(<f64 as TruncateSaturateInto<u64>>::truncate_saturate_into)
     }
 }
 

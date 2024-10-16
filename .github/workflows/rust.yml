@@ -198,9 +198,12 @@ jobs:
       - name: Check uDeps
         run: cargo udeps --all-targets
 
-  fuzz-translate:
-    name: Fuzz (Translation)
+  fuzz:
+    name: Fuzz
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        fuzz_target: ['translate', 'translate_metered', 'execute', 'differential']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
@@ -213,71 +216,16 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
-            ~/fuzz/corpus/translate/
-            ~/fuzz/corpus/translate_metered/
-      - name: Install cargo-fuzz
+            ${{ github.workspace }}/hfuzz_target
+            ${{ github.workspace }}/hfuzz_workspace
+      - name: Install cargo-honggfuzz and dependencies
         run: |
-          # Note: We use `|| true` because cargo install returns an error
-          #       if cargo-udeps was already installed on the CI runner.
-          cargo install cargo-fuzz || true
-      - name: Build Fuzzing
-        run: cargo fuzz build translate
-      - name: Fuzz (Translation)
-        run: cargo fuzz run translate -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
-      - name: Fuzz (Translation) + fuel
-        run: cargo fuzz run translate_metered -j 2 --verbose -- -max_total_time=60 # 1 minute of fuzzing
-
-  fuzz-execute:
-    name: Fuzz (Execution)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-        with:
-          submodules: true
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
-          toolchain: nightly-2024-09-24
-      - name: Set up Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          cache-directories: |
-            ~/fuzz/corpus/execute/
-      - name: Install cargo-fuzz
-        run: |
-          # Note: We use `|| true` because cargo install returns an error
-          #       if cargo-udeps was already installed on the CI runner.
-          cargo install cargo-fuzz || true
-      - name: Build Fuzzing
-        run: cargo fuzz build execute
-      - name: Fuzz (Execution)
-        run: cargo fuzz run execute -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
-
-  fuzz-differential:
-    name: Fuzz (Differential)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-        with:
-          submodules: true
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
-          toolchain: nightly-2024-09-24
-      - name: Set up Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          cache-directories: |
-            ~/fuzz/corpus/differential/
-      - name: Install cargo-fuzz
-        run: |
-          # Note: We use `|| true` because cargo install returns an error
-          #       if cargo-udeps was already installed on the CI runner.
-          cargo install cargo-fuzz || true
-      - name: Build Fuzzing
-        run: cargo fuzz build differential
-      - name: Fuzz (Differential)
-        run: cargo fuzz run differential -j 2 --verbose -- -max_total_time=120 # 2 minutes of fuzzing
+          cargo install honggfuzz || true
+          sudo apt-get update && sudo apt-get install --yes binutils-dev libunwind-dev
+      - name: Run HFuzz
+        env:
+          HFUZZ_RUN_ARGS: "--run_time 120 --verbose --quiet" # 2 minutes of fuzzing
+        run: cargo hfuzz run ${{ matrix.fuzz_target }}
 
   miri:
     name: Miri
