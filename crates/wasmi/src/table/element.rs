@@ -107,11 +107,7 @@ impl ElementSegmentEntity {
                             panic!("unexpected failed initialization of constant expression: {const_expr:?}")
                         })
                 }).collect::<Box<[_]>>();
-                Self {
-                    ty,
-                    // items: Some(elem.items_cloned()),
-                    items,
-                }
+                Self { ty, items }
             }
             module::ElementSegmentKind::Declared => Self::empty(ty),
         }
