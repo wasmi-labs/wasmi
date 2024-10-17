@@ -99,7 +99,7 @@ impl Instr {
 #[derive(Debug, Default)]
 pub struct InstrEncoder {
     /// Already encoded [`Instruction`] words.
-    instrs: InstrSequence,
+    pub(super) instrs: InstrSequence,
     /// Unresolved and unpinned labels created during function translation.
     labels: LabelRegistry,
     /// The last [`Instruction`] created via [`InstrEncoder::push_instr`].
@@ -173,7 +173,7 @@ impl InstrSequence {
     /// # Panics
     ///
     /// If no [`Instruction`] is associated to the [`Instr`] for this [`InstrSequence`].
-    fn get(&self, instr: Instr) -> &Instruction {
+    pub(super) fn get(&self, instr: Instr) -> &Instruction {
         &self.instrs[instr.into_usize()]
     }
 
