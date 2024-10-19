@@ -109,19 +109,19 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Build (default features)
         env:
-          RUSTFLAGS: "--cfg debug_assertions"
+          RUSTFLAGS: "-C debug-assertions"
         run: cargo build --tests --workspace --locked --verbose
       - name: Test (default features)
         env:
-          RUSTFLAGS: "--cfg debug_assertions"
+          RUSTFLAGS: "-C debug-assertions"
         run: cargo test --workspace --locked
       - name: Build (all features)
         env:
-          RUSTFLAGS: "--cfg debug_assertions"
+          RUSTFLAGS: "-C debug-assertions"
         run: cargo build --tests --workspace --locked --all-features --verbose
       - name: Test (all features)
         env:
-          RUSTFLAGS: "--cfg debug_assertions"
+          RUSTFLAGS: "-C debug-assertions"
         run: cargo test --workspace --locked --all-features
 
   fmt:
