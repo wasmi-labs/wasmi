@@ -237,9 +237,7 @@ impl ModuleParser {
                             //       to return the byte slice for the respective code section
                             //       entry payload. Please remove this work around as soon as
                             //       such an API becomes available.
-                            let remaining = func_body.get_binary_reader().bytes_remaining();
-                            let start = consumed - remaining;
-                            let bytes = &buffer[start..consumed];
+                            let bytes = func_body.as_bytes();
                             self.process_code_entry(func_body, bytes, &header)?;
                         }
                         _ => break,
