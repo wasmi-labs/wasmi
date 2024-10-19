@@ -15,26 +15,8 @@ pub struct Config {
     stack_limits: StackLimits,
     /// The amount of Wasm stacks to keep in cache at most.
     cached_stacks: usize,
-    /// Is `true` if the `mutable-global` Wasm proposal is enabled.
-    mutable_global: bool,
-    /// Is `true` if the `sign-extension` Wasm proposal is enabled.
-    sign_extension: bool,
-    /// Is `true` if the `saturating-float-to-int` Wasm proposal is enabled.
-    saturating_float_to_int: bool,
-    /// Is `true` if the [`multi-value`] Wasm proposal is enabled.
-    multi_value: bool,
-    /// Is `true` if the [`multi-memory`] Wasm proposal is enabled.
-    multi_memory: bool,
-    /// Is `true` if the [`bulk-memory`] Wasm proposal is enabled.
-    bulk_memory: bool,
-    /// Is `true` if the [`reference-types`] Wasm proposal is enabled.
-    reference_types: bool,
-    /// Is `true` if the [`tail-call`] Wasm proposal is enabled.
-    tail_call: bool,
-    /// Is `true` if the [`extended-const`] Wasm proposal is enabled.
-    extended_const: bool,
-    /// Is `true` if Wasm instructions on `f32` and `f64` types are allowed.
-    floats: bool,
+    /// The Wasm features used when validating or translating functions.
+    features: WasmFeatures,
     /// Is `true` if Wasmi executions shall consume fuel.
     consume_fuel: bool,
     /// Is `true` if Wasmi shall ignore Wasm custom sections when parsing Wasm modules.
@@ -174,16 +156,7 @@ impl Default for Config {
         Self {
             stack_limits: StackLimits::default(),
             cached_stacks: DEFAULT_CACHED_STACKS,
-            mutable_global: true,
-            sign_extension: true,
-            saturating_float_to_int: true,
-            multi_value: true,
-            multi_memory: true,
-            bulk_memory: true,
-            reference_types: true,
-            tail_call: true,
-            extended_const: true,
-            floats: true,
+            features: Self::default_features(),
             consume_fuel: false,
             ignore_custom_sections: false,
             fuel_costs: FuelCosts::default(),
@@ -194,6 +167,23 @@ impl Default for Config {
 }
 
 impl Config {
+    /// Returns the default [`WasmFeatures`].
+    fn default_features() -> WasmFeatures {
+        let mut features = WasmFeatures::empty();
+        features.set(WasmFeatures::MUTABLE_GLOBAL, true);
+        features.set(WasmFeatures::MULTI_VALUE, true);
+        features.set(WasmFeatures::MULTI_MEMORY, true);
+        features.set(WasmFeatures::SATURATING_FLOAT_TO_INT, true);
+        features.set(WasmFeatures::SIGN_EXTENSION, true);
+        features.set(WasmFeatures::BULK_MEMORY, true);
+        features.set(WasmFeatures::REFERENCE_TYPES, true);
+        features.set(WasmFeatures::GC_TYPES, true); // required by reference-types
+        features.set(WasmFeatures::TAIL_CALL, true);
+        features.set(WasmFeatures::EXTENDED_CONST, true);
+        features.set(WasmFeatures::FLOATS, true);
+        features
+    }
+
     /// Sets the [`StackLimits`] for the [`Config`].
     pub fn set_stack_limits(&mut self, stack_limits: StackLimits) -> &mut Self {
         self.stack_limits = stack_limits;
@@ -228,7 +218,7 @@ impl Config {
     ///
     /// [`mutable-global`]: https://github.com/WebAssembly/mutable-global
     pub fn wasm_mutable_global(&mut self, enable: bool) -> &mut Self {
-        self.mutable_global = enable;
+        self.features.set(WasmFeatures::MUTABLE_GLOBAL, enable);
         self
     }
 
@@ -240,7 +230,7 @@ impl Config {
     ///
     /// [`sign-extension`]: https://github.com/WebAssembly/sign-extension-ops
     pub fn wasm_sign_extension(&mut self, enable: bool) -> &mut Self {
-        self.sign_extension = enable;
+        self.features.set(WasmFeatures::SIGN_EXTENSION, enable);
         self
     }
 
@@ -253,7 +243,8 @@ impl Config {
     /// [`saturating-float-to-int`]:
     /// https://github.com/WebAssembly/nontrapping-float-to-int-conversions
     pub fn wasm_saturating_float_to_int(&mut self, enable: bool) -> &mut Self {
-        self.saturating_float_to_int = enable;
+        self.features
+            .set(WasmFeatures::SATURATING_FLOAT_TO_INT, enable);
         self
     }
 
@@ -265,7 +256,7 @@ impl Config {
     ///
     /// [`multi-value`]: https://github.com/WebAssembly/multi-value
     pub fn wasm_multi_value(&mut self, enable: bool) -> &mut Self {
-        self.multi_value = enable;
+        self.features.set(WasmFeatures::MULTI_VALUE, enable);
         self
     }
 
@@ -277,7 +268,7 @@ impl Config {
     ///
     /// [`multi-memory`]: https://github.com/WebAssembly/multi-memory
     pub fn wasm_multi_memory(&mut self, enable: bool) -> &mut Self {
-        self.multi_memory = enable;
+        self.features.set(WasmFeatures::MULTI_MEMORY, enable);
         self
     }
 
@@ -289,7 +280,7 @@ impl Config {
     ///
     /// [`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
     pub fn wasm_bulk_memory(&mut self, enable: bool) -> &mut Self {
-        self.bulk_memory = enable;
+        self.features.set(WasmFeatures::BULK_MEMORY, enable);
         self
     }
 
@@ -301,7 +292,8 @@ impl Config {
     ///
     /// [`reference-types`]: https://github.com/WebAssembly/reference-types
     pub fn wasm_reference_types(&mut self, enable: bool) -> &mut Self {
-        self.reference_types = enable;
+        self.features.set(WasmFeatures::REFERENCE_TYPES, enable);
+        self.features.set(WasmFeatures::GC_TYPES, enable);
         self
     }
 
@@ -313,7 +305,7 @@ impl Config {
     ///
     /// [`tail-call`]: https://github.com/WebAssembly/tail-call
     pub fn wasm_tail_call(&mut self, enable: bool) -> &mut Self {
-        self.tail_call = enable;
+        self.features.set(WasmFeatures::TAIL_CALL, enable);
         self
     }
 
@@ -325,7 +317,7 @@ impl Config {
     ///
     /// [`extended-const`]: https://github.com/WebAssembly/extended-const
     pub fn wasm_extended_const(&mut self, enable: bool) -> &mut Self {
-        self.extended_const = enable;
+        self.features.set(WasmFeatures::EXTENDED_CONST, enable);
         self
     }
 
@@ -333,7 +325,7 @@ impl Config {
     ///
     /// Enabled by default.
     pub fn floats(&mut self, enable: bool) -> &mut Self {
-        self.floats = enable;
+        self.features.set(WasmFeatures::FLOATS, enable);
         self
     }
 
@@ -420,24 +412,6 @@ impl Config {
 
     /// Returns the [`WasmFeatures`] represented by the [`Config`].
     pub(crate) fn wasm_features(&self) -> WasmFeatures {
-        WasmFeatures {
-            multi_value: self.multi_value,
-            mutable_global: self.mutable_global,
-            saturating_float_to_int: self.saturating_float_to_int,
-            sign_extension: self.sign_extension,
-            bulk_memory: self.bulk_memory,
-            reference_types: self.reference_types,
-            tail_call: self.tail_call,
-            extended_const: self.extended_const,
-            floats: self.floats,
-            component_model: false,
-            simd: false,
-            relaxed_simd: false,
-            threads: false,
-            multi_memory: self.multi_memory,
-            exceptions: false,
-            memory64: false,
-            memory_control: false,
-        }
+        self.features
     }
 }

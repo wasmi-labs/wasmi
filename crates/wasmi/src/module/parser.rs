@@ -113,20 +113,21 @@ impl ModuleParser {
         }
         let limits = self.engine.config().get_enforced_limits();
         let func_types = section.into_iter().map(|result| {
-            let wasmparser::Type::Func(ty) = result?;
+            let ty = result?.into_types().next().unwrap();
+            let func_ty = ty.unwrap_func();
             if let Some(limit) = limits.max_params {
-                if ty.params().len() > limit {
+                if func_ty.params().len() > limit {
                     return Err(Error::from(EnforcedLimitsError::TooManyParameters {
                         limit,
                     }));
                 }
             }
             if let Some(limit) = limits.max_results {
-                if ty.results().len() > limit {
+                if func_ty.results().len() > limit {
                     return Err(Error::from(EnforcedLimitsError::TooManyResults { limit }));
                 }
             }
-            Ok(FuncType::from_wasmparser(ty))
+            Ok(FuncType::from_wasmparser(func_ty))
         });
         header.push_func_types(func_types)?;
         Ok(())
@@ -208,9 +209,13 @@ impl ModuleParser {
         if let Some(validator) = &mut self.validator {
             validator.table_section(&section)?;
         }
-        let tables = section
-            .into_iter()
-            .map(|table| table.map(TableType::from_wasmparser).map_err(Error::from));
+        let tables = section.into_iter().map(|table| match table {
+            Ok(table) => {
+                assert!(matches!(table.init, wasmparser::TableInit::RefNull));
+                Ok(TableType::from_wasmparser(table.ty))
+            }
+            Err(err) => Err(err.into()),
+        });
         header.push_tables(tables)?;
         Ok(())
     }
