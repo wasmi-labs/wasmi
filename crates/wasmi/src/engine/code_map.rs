@@ -586,16 +586,36 @@ impl UncompiledFuncEntity {
         fuel: Option<&mut Fuel>,
         features: &WasmFeatures,
     ) -> Result<CompiledFuncEntity, Error> {
+        /// The amount of fuel required to compile a function body per byte.
+        ///
+        /// This does _not_ include validation.
+        ///
+        /// # Note
+        ///
+        /// This fuel amount was chosen after extensive worst-case translation benchmarking.
+        const COMPILE_FUEL_PER_BYTE: u64 = 7;
+        /// The amount of fuel required to validate a function body per byte.
+        ///
+        /// This does _not_ include compilation.
+        ///
+        /// # Note
+        ///
+        /// This fuel amount was chosen after extensive worst-case translation benchmarking.
+        const VALIDATE_FUEL_PER_BYTE: u64 = 2;
+        /// The amount of fuel required to validate and compile a function body per byte.
+        const VALIDATE_AND_COMPILE_FUEL_PER_BYTE: u64 =
+            VALIDATE_FUEL_PER_BYTE + COMPILE_FUEL_PER_BYTE;
+
         let func_idx = self.func_index;
         let bytes = mem::take(&mut self.bytes);
         let needs_validation = self.validation.is_some();
         let compilation_fuel = |_costs: &FuelCosts| {
             let len_bytes = bytes.as_slice().len() as u64;
-            let compile_factor = match needs_validation {
-                false => 7,
-                true => 9,
+            let fuel_per_byte = match needs_validation {
+                false => COMPILE_FUEL_PER_BYTE,
+                true => VALIDATE_AND_COMPILE_FUEL_PER_BYTE,
             };
-            len_bytes.saturating_mul(compile_factor)
+            len_bytes.saturating_mul(fuel_per_byte)
         };
         if let Some(fuel) = fuel {
             match fuel.consume_fuel(compilation_fuel) {
