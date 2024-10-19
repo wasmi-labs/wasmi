@@ -96,6 +96,16 @@ impl Default for EngineFuncSpan {
 }
 
 impl EngineFuncSpan {
+    /// Creates a new [`EngineFuncSpan`] for `start..end`.
+    ///
+    /// # Panics
+    ///
+    /// If `start` index is not less than or equal to `end` index.
+    pub fn new(start: EngineFunc, end: EngineFunc) -> Self {
+        assert!(start <= end);
+        Self { start, end }
+    }
+
     /// Creates an empty [`EngineFuncSpan`].
     #[inline]
     pub fn empty() -> Self {
@@ -108,11 +118,13 @@ impl EngineFuncSpan {
     /// Returns `true` if `self` is empty.
     #[inline]
     pub fn is_empty(&self) -> bool {
+        debug_assert!(self.start <= self.end);
         self.start == self.end
     }
 
     /// Returns the number of [`EngineFunc`] in `self`.
     pub fn len(&self) -> u32 {
+        debug_assert!(self.start <= self.end);
         let start = self.start.0;
         let end = self.end.0;
         end - start
@@ -122,6 +134,7 @@ impl EngineFuncSpan {
     ///
     /// Returns `None` if `n` is out of bounds.
     pub fn get(&self, n: u32) -> Option<EngineFunc> {
+        debug_assert!(self.start <= self.end);
         if n >= self.len() {
             return None;
         }
@@ -132,6 +145,7 @@ impl EngineFuncSpan {
     ///
     /// Returns `None` if `func` is not contained in `self`.
     pub fn position(&self, func: EngineFunc) -> Option<u32> {
+        debug_assert!(self.start <= self.end);
         if func < self.start || func >= self.end {
             return None;
         }
@@ -145,6 +159,7 @@ impl EngineFuncSpan {
     /// If `n` is out of bounds.
     #[track_caller]
     pub fn get_or_panic(&self, n: u32) -> EngineFunc {
+        debug_assert!(self.start <= self.end);
         self.get(n)
             .unwrap_or_else(|| panic!("out of bounds `EngineFunc` index: {n}"))
     }
@@ -152,6 +167,7 @@ impl EngineFuncSpan {
     /// Returns an iterator over the [`EngineFunc`]s in `self`.
     #[inline]
     pub fn iter(&self) -> EngineFuncSpanIter {
+        debug_assert!(self.start <= self.end);
         EngineFuncSpanIter { span: *self }
     }
 }
@@ -218,7 +234,7 @@ impl CodeMap {
     /// - [`CodeMap::init_func_as_uncompiled`]
     pub fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
         let Range { start, end } = self.funcs.lock().alloc_many(amount);
-        EngineFuncSpan { start, end }
+        EngineFuncSpan::new(start, end)
     }
 
     /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntity`].
