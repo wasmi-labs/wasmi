@@ -96,6 +96,16 @@ impl Default for EngineFuncSpan {
 }
 
 impl EngineFuncSpan {
+    /// Creates a new [`EngineFuncSpan`] for `start..end`.
+    ///
+    /// # Panics
+    ///
+    /// If `start` index is not less than or equal to `end` index.
+    pub fn new(start: EngineFunc, end: EngineFunc) -> Self {
+        assert!(start <= end);
+        Self { start, end }
+    }
+
     /// Creates an empty [`EngineFuncSpan`].
     #[inline]
     pub fn empty() -> Self {
@@ -108,11 +118,13 @@ impl EngineFuncSpan {
     /// Returns `true` if `self` is empty.
     #[inline]
     pub fn is_empty(&self) -> bool {
+        debug_assert!(self.start <= self.end);
         self.start == self.end
     }
 
     /// Returns the number of [`EngineFunc`] in `self`.
     pub fn len(&self) -> u32 {
+        debug_assert!(self.start <= self.end);
         let start = self.start.0;
         let end = self.end.0;
         end - start
@@ -122,6 +134,7 @@ impl EngineFuncSpan {
     ///
     /// Returns `None` if `n` is out of bounds.
     pub fn get(&self, n: u32) -> Option<EngineFunc> {
+        debug_assert!(self.start <= self.end);
         if n >= self.len() {
             return None;
         }
@@ -132,6 +145,7 @@ impl EngineFuncSpan {
     ///
     /// Returns `None` if `func` is not contained in `self`.
     pub fn position(&self, func: EngineFunc) -> Option<u32> {
+        debug_assert!(self.start <= self.end);
         if func < self.start || func >= self.end {
             return None;
         }
@@ -145,6 +159,7 @@ impl EngineFuncSpan {
     /// If `n` is out of bounds.
     #[track_caller]
     pub fn get_or_panic(&self, n: u32) -> EngineFunc {
+        debug_assert!(self.start <= self.end);
         self.get(n)
             .unwrap_or_else(|| panic!("out of bounds `EngineFunc` index: {n}"))
     }
@@ -152,6 +167,7 @@ impl EngineFuncSpan {
     /// Returns an iterator over the [`EngineFunc`]s in `self`.
     #[inline]
     pub fn iter(&self) -> EngineFuncSpanIter {
+        debug_assert!(self.start <= self.end);
         EngineFuncSpanIter { span: *self }
     }
 }
@@ -218,7 +234,7 @@ impl CodeMap {
     /// - [`CodeMap::init_func_as_uncompiled`]
     pub fn alloc_funcs(&self, amount: usize) -> EngineFuncSpan {
         let Range { start, end } = self.funcs.lock().alloc_many(amount);
-        EngineFuncSpan { start, end }
+        EngineFuncSpan::new(start, end)
     }
 
     /// Initializes the [`EngineFunc`] with its [`CompiledFuncEntity`].
@@ -586,16 +602,36 @@ impl UncompiledFuncEntity {
         fuel: Option<&mut Fuel>,
         features: &WasmFeatures,
     ) -> Result<CompiledFuncEntity, Error> {
+        /// The amount of fuel required to compile a function body per byte.
+        ///
+        /// This does _not_ include validation.
+        ///
+        /// # Note
+        ///
+        /// This fuel amount was chosen after extensive worst-case translation benchmarking.
+        const COMPILE_FUEL_PER_BYTE: u64 = 7;
+        /// The amount of fuel required to validate a function body per byte.
+        ///
+        /// This does _not_ include compilation.
+        ///
+        /// # Note
+        ///
+        /// This fuel amount was chosen after extensive worst-case translation benchmarking.
+        const VALIDATE_FUEL_PER_BYTE: u64 = 2;
+        /// The amount of fuel required to validate and compile a function body per byte.
+        const VALIDATE_AND_COMPILE_FUEL_PER_BYTE: u64 =
+            VALIDATE_FUEL_PER_BYTE + COMPILE_FUEL_PER_BYTE;
+
         let func_idx = self.func_index;
         let bytes = mem::take(&mut self.bytes);
         let needs_validation = self.validation.is_some();
         let compilation_fuel = |_costs: &FuelCosts| {
             let len_bytes = bytes.as_slice().len() as u64;
-            let compile_factor = match needs_validation {
-                false => 7,
-                true => 9,
+            let fuel_per_byte = match needs_validation {
+                false => COMPILE_FUEL_PER_BYTE,
+                true => VALIDATE_AND_COMPILE_FUEL_PER_BYTE,
             };
-            len_bytes.saturating_mul(compile_factor)
+            len_bytes.saturating_mul(fuel_per_byte)
         };
         if let Some(fuel) = fuel {
             match fuel.consume_fuel(compilation_fuel) {
