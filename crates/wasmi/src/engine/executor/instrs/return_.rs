@@ -246,7 +246,7 @@ impl Executor<'_> {
         }
     }
 
-    /// Execute an [`Instruction::Return`].
+    /// Execute an [`Instruction::ReturnNez`].
     pub fn execute_return_nez(&mut self, store: &mut StoreInner, condition: Reg) -> ControlFlow {
         self.execute_return_nez_impl(store, condition, (), |this, store, _| {
             this.execute_return(store)
@@ -263,7 +263,7 @@ impl Executor<'_> {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg)
     }
 
-    /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Reg`] value.
+    /// Execute an [`Instruction::ReturnNezReg2`] returning two [`Reg`] values.
     pub fn execute_return_nez_reg2(
         &mut self,
         store: &mut StoreInner,
@@ -273,7 +273,7 @@ impl Executor<'_> {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg2)
     }
 
-    /// Execute an [`Instruction::ReturnNezImm32`] returning a single 32-bit constant value.
+    /// Execute an [`Instruction::ReturnNezImm32`] returning a single 32-bit immediate value.
     pub fn execute_return_nez_imm32(
         &mut self,
         store: &mut StoreInner,
@@ -283,7 +283,7 @@ impl Executor<'_> {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_imm32)
     }
 
-    /// Execute an [`Instruction::ReturnNezI64Imm32`] returning a single 32-bit encoded constant `i64` value.
+    /// Execute an [`Instruction::ReturnNezI64Imm32`] returning a single 32-bit encoded immediate `i64` value.
     pub fn execute_return_nez_i64imm32(
         &mut self,
         store: &mut StoreInner,
@@ -293,7 +293,7 @@ impl Executor<'_> {
         self.execute_return_nez_impl(store, condition, value, Self::execute_return_i64imm32)
     }
 
-    /// Execute an [`Instruction::ReturnNezF64Imm32`] returning a single 32-bit encoded constant `f64` value.
+    /// Execute an [`Instruction::ReturnNezF64Imm32`] returning a single 32-bit encoded immediate `f64` value.
     pub fn execute_return_nez_f64imm32(
         &mut self,
         store: &mut StoreInner,
