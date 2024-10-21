@@ -1573,7 +1573,7 @@ impl Executor<'_> {
 
     /// Executes a generic binary [`Instruction`].
     #[inline(always)]
-    fn execute_binary_imm16<T>(
+    fn execute_binary_imm16_rhs<T>(
         &mut self,
         result: Reg,
         lhs: Reg,

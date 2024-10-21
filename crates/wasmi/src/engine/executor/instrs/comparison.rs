@@ -58,19 +58,19 @@ impl Executor<'_> {
     }
 }
 
-macro_rules! impl_comparison_imm16 {
+macro_rules! impl_comparison_imm16_rhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
-                self.execute_binary_imm16(result, lhs, rhs, $op)
+                self.execute_binary_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
     };
 }
 
 impl Executor<'_> {
-    impl_comparison_imm16! {
+    impl_comparison_imm16_rhs! {
         (i32, Instruction::I32EqImm16, execute_i32_eq_imm16, UntypedVal::i32_eq),
         (i32, Instruction::I32NeImm16, execute_i32_ne_imm16, UntypedVal::i32_ne),
         (i32, Instruction::I32LtSImm16Rhs, execute_i32_lt_s_imm16_rhs, UntypedVal::i32_lt_s),
