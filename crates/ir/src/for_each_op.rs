@@ -3048,7 +3048,7 @@ macro_rules! for_each_op {
                 address: u32,
             },
 
-            /// `i32` equality comparison instruction: `r0 = r1 == r2`
+            /// Wasm `i32.eq` equivalent Wasmi instruction.
             #[snake_name(i32_eq)]
             I32Eq{
                 @result: Reg,
@@ -3057,12 +3057,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` equality comparison instruction with immediate: `r0 = r1 == c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I32Eq`]
-            /// for 16-bit right-hand side constant values.
+            /// Wasm `i32.eq` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_eq_imm16)]
             I32EqImm16{
                 @result: Reg,
@@ -3072,7 +3067,7 @@ macro_rules! for_each_op {
                 rhs: Const16<i32>,
             },
 
-            /// `i32` inequality comparison instruction: `r0 = r1 != r2`
+            /// Wasm `i32.ne` equivalent Wasmi instruction.
             #[snake_name(i32_ne)]
             I32Ne{
                 @result: Reg,
@@ -3081,12 +3076,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` inequality comparison instruction with immediate: `r0 = r1 != c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I32Ne`]
-            /// for 16-bit right-hand side constant values.
+            /// Wasm `i32.ne` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_ne_imm16)]
             I32NeImm16{
                 @result: Reg,
@@ -3096,7 +3086,7 @@ macro_rules! for_each_op {
                 rhs: Const16<i32>,
             },
 
-            /// `i32` signed less-than comparison instruction: `r0 = r1 < r2`
+            /// Wasm `i32.lt_s` equivalent Wasmi instruction.
             #[snake_name(i32_lt_s)]
             I32LtS{
                 @result: Reg,
@@ -3105,12 +3095,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` signed less-than comparison instruction with immediate: `r0 = r1 < c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I32LtS`]
-            /// for small right-hand side constant values.
+            /// Wasm `i32.lt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_lt_s_imm16_rhs)]
             I32LtSImm16Rhs{
                 @result: Reg,
@@ -3119,7 +3104,7 @@ macro_rules! for_each_op {
                 /// The 16-bit immediate value.
                 rhs: Const16<i32>,
             },
-            /// `i32` unsigned less-than comparison instruction: `r0 = r1 < r2`
+            /// Wasm `i32.lt_u` equivalent Wasmi instruction.
             #[snake_name(i32_lt_u)]
             I32LtU{
                 @result: Reg,
@@ -3128,12 +3113,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` unsigned less-than comparison instruction with immediate: `r0 = r1 < c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I32LtU`]
-            /// for small right-hand side constant values.
+            /// Wasm `i32.lt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_lt_u_imm16_rhs)]
             I32LtUImm16Rhs{
                 @result: Reg,
@@ -3143,7 +3123,7 @@ macro_rules! for_each_op {
                 rhs: Const16<u32>,
             },
 
-            /// `i32` signed greater-than comparison instruction: `r0 = r1 > r2`
+            /// Wasm `i32.gt_s` equivalent Wasmi instruction.
             #[snake_name(i32_gt_s)]
             I32GtS{
                 @result: Reg,
@@ -3152,12 +3132,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` signed greater-than comparison instruction with immediate: `r0 = r1 > c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I32GtS`]
-            /// for small right-hand side constant values.
+            /// Wasm `i32.gt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_gt_s_imm16_rhs)]
             I32GtSImm16Rhs{
                 @result: Reg,
@@ -3166,7 +3141,7 @@ macro_rules! for_each_op {
                 /// The 16-bit immediate value.
                 rhs: Const16<i32>,
             },
-            /// `i32` unsigned greater-than comparison instruction: `r0 = r1 > r2`
+            /// Wasm `i32.gt_u` equivalent Wasmi instruction.
             #[snake_name(i32_gt_u)]
             I32GtU{
                 @result: Reg,
@@ -3175,12 +3150,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` unsigned greater-than comparison instruction with immediate: `r0 = r1 > c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I32GtU`]
-            /// for small right-hand side constant values.
+            /// Wasm `i32.gt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_gt_u_imm16_rhs)]
             I32GtUImm16Rhs{
                 @result: Reg,
@@ -3190,7 +3160,7 @@ macro_rules! for_each_op {
                 rhs: Const16<u32>,
             },
 
-            /// `i32` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
+            /// Wasm `i32.le_s` equivalent Wasmi instruction.
             #[snake_name(i32_le_s)]
             I32LeS{
                 @result: Reg,
@@ -3199,12 +3169,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` signed less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I32LeS`]
-            /// for small right-hand side constant values.
+            /// Wasm `i32.le_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_le_s_imm16_rhs)]
             I32LeSImm16Rhs{
                 @result: Reg,
@@ -3213,7 +3178,7 @@ macro_rules! for_each_op {
                 /// The 16-bit immediate value.
                 rhs: Const16<i32>,
             },
-            /// `i32` unsigned less-than or equals comparison instruction: `r0 = r1 <= r2`
+            /// Wasm `i32.le_u` equivalent Wasmi instruction.
             #[snake_name(i32_le_u)]
             I32LeU{
                 @result: Reg,
@@ -3222,12 +3187,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` unsigned less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I32LeU`]
-            /// for small right-hand side constant values.
+            /// Wasm `i32.le_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_le_u_imm16_rhs)]
             I32LeUImm16Rhs{
                 @result: Reg,
@@ -3237,7 +3197,7 @@ macro_rules! for_each_op {
                 rhs: Const16<u32>,
             },
 
-            /// `i32` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
+            /// Wasm `i32.ge_s` equivalent Wasmi instruction.
             #[snake_name(i32_ge_s)]
             I32GeS{
                 @result: Reg,
@@ -3246,12 +3206,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` signed greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I32GeS`]
-            /// for small right-hand side constant values.
+            /// Wasm `i32.ge_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_ge_s_imm16_rhs)]
             I32GeSImm16Rhs{
                 @result: Reg,
@@ -3260,7 +3215,7 @@ macro_rules! for_each_op {
                 /// The 16-bit immediate value.
                 rhs: Const16<i32>,
             },
-            /// `i32` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
+            /// Wasm `i32.ge_u` equivalent Wasmi instruction.
             #[snake_name(i32_ge_u)]
             I32GeU{
                 @result: Reg,
@@ -3269,12 +3224,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i32` unsigned greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I32GeU`]
-            /// for small right-hand side constant values.
+            /// Wasm `i32.ge_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_ge_u_imm16_rhs)]
             I32GeUImm16Rhs{
                 @result: Reg,
@@ -3284,7 +3234,7 @@ macro_rules! for_each_op {
                 rhs: Const16<u32>,
             },
 
-            /// `i64` equality comparison instruction: `r0 = r1 == r2`
+            /// Wasm `i64.eq` equivalent Wasmi instruction.
             #[snake_name(i64_eq)]
             I64Eq{
                 @result: Reg,
@@ -3293,12 +3243,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` equality comparison instruction with immediate: `r0 = r1 == c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I64Eq`]
-            /// for 16-bit right-hand side constant values.
+            /// Wasm `i64.eq` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i64_eq_imm16)]
             I64EqImm16{
                 @result: Reg,
@@ -3308,7 +3253,7 @@ macro_rules! for_each_op {
                 rhs: Const16<i64>,
             },
 
-            /// `i64` inequality comparison instruction: `r0 = r1 != r2`
+            /// Wasm `i64.ne` equivalent Wasmi instruction.
             #[snake_name(i64_ne)]
             I64Ne{
                 @result: Reg,
@@ -3317,12 +3262,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` inequality comparison instruction with immediate: `r0 = r1 != c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I64Ne`]
-            /// for 16-bit right-hand side constant values.
+            /// Wasm `i64.ne` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i64_ne_imm16)]
             I64NeImm16{
                 @result: Reg,
@@ -3332,7 +3272,7 @@ macro_rules! for_each_op {
                 rhs: Const16<i64>,
             },
 
-            /// `i64` signed less-than comparison instruction: `r0 = r1 < r2`
+            /// Wasm `i64.lt_s` equivalent Wasmi instruction.
             #[snake_name(i64_lt_s)]
             I64LtS{
                 @result: Reg,
@@ -3341,12 +3281,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` signed less-than comparison instruction with immediate: `r0 = r1 < c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I64LtS`]
-            /// for small right-hand side constant values.
+            /// Wasm `i64.lt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i64_lt_s_imm16_rhs)]
             I64LtSImm16Rhs{
                 @result: Reg,
@@ -3356,7 +3291,7 @@ macro_rules! for_each_op {
                 rhs: Const16<i64>,
             },
 
-            /// `i64` unsigned less-than comparison instruction: `r0 = r1 < r2`
+            /// Wasm `i64.lt_s` equivalent Wasmi instruction.
             #[snake_name(i64_lt_u)]
             I64LtU{
                 @result: Reg,
@@ -3365,12 +3300,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` unsigned less-than comparison instruction with immediate: `r0 = r1 < c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I64LtU`]
-            /// for small right-hand side constant values.
+            /// Wasm `i64.lt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i64_lt_u_imm16_rhs)]
             I64LtUImm16Rhs{
                 @result: Reg,
@@ -3380,7 +3310,7 @@ macro_rules! for_each_op {
                 rhs: Const16<u64>,
             },
 
-            /// `i64` signed greater-than comparison instruction: `r0 = r1 > r2`
+            /// Wasm `i64.gt_s` equivalent Wasmi instruction.
             #[snake_name(i64_gt_s)]
             I64GtS{
                 @result: Reg,
@@ -3389,12 +3319,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` signed greater-than comparison instruction with immediate: `r0 = r1 > c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I64GtS`]
-            /// for small right-hand side constant values.
+            /// Wasm `i64.gt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i64_gt_s_imm16_rhs)]
             I64GtSImm16Rhs{
                 @result: Reg,
@@ -3404,7 +3329,7 @@ macro_rules! for_each_op {
                 rhs: Const16<i64>,
             },
 
-            /// `i64` unsigned greater-than comparison instruction: `r0 = r1 > r2`
+            /// Wasm `i64.gt_u` equivalent Wasmi instruction.
             #[snake_name(i64_gt_u)]
             I64GtU{
                 @result: Reg,
@@ -3413,12 +3338,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` unsigned greater-than comparison instruction with immediate: `r0 = r1 > c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I64GtU`]
-            /// for small right-hand side constant values.
+            /// Wasm `i64.gt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i64_gt_u_imm16_rhs)]
             I64GtUImm16Rhs{
                 @result: Reg,
@@ -3428,7 +3348,7 @@ macro_rules! for_each_op {
                 rhs: Const16<u64>,
             },
 
-            /// `i64` signed less-than or equals comparison instruction: `r0 = r1 <= r2`
+            /// Wasm `i64.le_s` equivalent Wasmi instruction.
             #[snake_name(i64_le_s)]
             I64LeS{
                 @result: Reg,
@@ -3437,12 +3357,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` signed less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I64LeS`]
-            /// for small right-hand side constant values.
+            /// Wasm `i64.le_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i64_le_s_imm16_rhs)]
             I64LeSImm16Rhs{
                 @result: Reg,
@@ -3452,7 +3367,7 @@ macro_rules! for_each_op {
                 rhs: Const16<i64>,
             },
 
-            /// `i64` unsigned less-than or equals comparison instruction: `r0 = r1 <= r2`
+            /// Wasm `i64.le_u` equivalent Wasmi instruction.
             #[snake_name(i64_le_u)]
             I64LeU{
                 @result: Reg,
@@ -3461,12 +3376,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` unsigned less-than or equals comparison instruction with immediate: `r0 = r1 <= c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I64LeU`]
-            /// for small right-hand side constant values.
+            /// Wasm `i64.le_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i64_le_u_imm16_rhs)]
             I64LeUImm16Rhs{
                 @result: Reg,
@@ -3476,7 +3386,7 @@ macro_rules! for_each_op {
                 rhs: Const16<u64>,
             },
 
-            /// `i64` signed greater-than or equals comparison instruction: `r0 = r1 >= r2`
+            /// Wasm `i64.ge_s` equivalent Wasmi instruction.
             #[snake_name(i64_ge_s)]
             I64GeS{
                 @result: Reg,
@@ -3485,12 +3395,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` signed greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I64GeS`]
-            /// for small right-hand side constant values.
+            /// Wasm `i64.ge_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i64_ge_s_imm16_rhs)]
             I64GeSImm16Rhs{
                 @result: Reg,
@@ -3500,7 +3405,7 @@ macro_rules! for_each_op {
                 rhs: Const16<i64>,
             },
 
-            /// `i64` unsigned greater-than or equals comparison instruction: `r0 = r1 >= r2`
+            /// Wasm `i64.ge_u` equivalent Wasmi instruction.
             #[snake_name(i64_ge_u)]
             I64GeU{
                 @result: Reg,
@@ -3509,12 +3414,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `i64` unsigned greater-than or equals comparison instruction with immediate: `r0 = r1 >= c0`
-            ///
-            /// # Note
-            ///
-            /// This is an optimization of [`Instruction::I64GeU`]
-            /// for small right-hand side constant values.
+            /// Wasm `i64.ge_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i64_ge_u_imm16_rhs)]
             I64GeUImm16Rhs{
                 @result: Reg,
@@ -3524,7 +3424,7 @@ macro_rules! for_each_op {
                 rhs: Const16<u64>,
             },
 
-            /// `f32` equality comparison instruction: `r0 = r1 == r2`
+            /// Wasm `f32.eq` equivalent Wasmi instruction.
             #[snake_name(f32_eq)]
             F32Eq{
                 @result: Reg,
@@ -3533,7 +3433,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `f32` inequality comparison instruction: `r0 = r1 != r2`
+            /// Wasm `f32.ne` equivalent Wasmi instruction.
             #[snake_name(f32_ne)]
             F32Ne{
                 @result: Reg,
@@ -3542,7 +3442,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `f32` less-than comparison instruction: `r0 = r1 < r2`
+            /// Wasm `f32.lt` equivalent Wasmi instruction.
             #[snake_name(f32_lt)]
             F32Lt{
                 @result: Reg,
@@ -3551,7 +3451,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `f32` less-than or equals comparison instruction: `r0 = r1 <= r2`
+            /// Wasm `f32.le` equivalent Wasmi instruction.
             #[snake_name(f32_le)]
             F32Le{
                 @result: Reg,
@@ -3560,7 +3460,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `f32` greater-than comparison instruction: `r0 = r1 > r2`
+            /// Wasm `f32.gt` equivalent Wasmi instruction.
             #[snake_name(f32_gt)]
             F32Gt{
                 @result: Reg,
@@ -3569,7 +3469,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `f32` greater-than or equals comparison instruction: `r0 = r1 >= r2`
+            /// Wasm `f32.ge` equivalent Wasmi instruction.
             #[snake_name(f32_ge)]
             F32Ge{
                 @result: Reg,
@@ -3579,7 +3479,7 @@ macro_rules! for_each_op {
                 rhs: Reg,
             },
 
-            /// `f64` equality comparison instruction: `r0 = r1 == r2`
+            /// Wasm `f64.eq` equivalent Wasmi instruction.
             #[snake_name(f64_eq)]
             F64Eq{
                 @result: Reg,
@@ -3588,7 +3488,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `f64` inequality comparison instruction: `r0 = r1 != r2`
+            /// Wasm `f64.ne` equivalent Wasmi instruction.
             #[snake_name(f64_ne)]
             F64Ne{
                 @result: Reg,
@@ -3597,7 +3497,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `f64` less-than comparison instruction: `r0 = r1 < r2`
+            /// Wasm `f64.lt` equivalent Wasmi instruction.
             #[snake_name(f64_lt)]
             F64Lt{
                 @result: Reg,
@@ -3606,7 +3506,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `f64` less-than or equals comparison instruction: `r0 = r1 <= r2`
+            /// Wasm `f64.le` equivalent Wasmi instruction.
             #[snake_name(f64_le)]
             F64Le{
                 @result: Reg,
@@ -3615,7 +3515,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `f64` greater-than comparison instruction: `r0 = r1 > r2`
+            /// Wasm `f64.gt` equivalent Wasmi instruction.
             #[snake_name(f64_gt)]
             F64Gt{
                 @result: Reg,
@@ -3624,7 +3524,7 @@ macro_rules! for_each_op {
                 /// The register holding the right-hand side value.
                 rhs: Reg,
             },
-            /// `f64` greater-than or equals comparison instruction: `r0 = r1 >= r2`
+            /// Wasm `f64.ge` equivalent Wasmi instruction.
             #[snake_name(f64_ge)]
             F64Ge{
                 @result: Reg,
