@@ -253,121 +253,121 @@ impl<'engine> Executor<'engine> {
                 Instr::BranchI32Eq { lhs, rhs, offset } => {
                     self.execute_branch_i32_eq(lhs, rhs, offset)
                 }
-                Instr::BranchI32EqImm { lhs, rhs, offset } => {
+                Instr::BranchI32EqImm16 { lhs, rhs, offset } => {
                     self.execute_branch_i32_eq_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI32Ne { lhs, rhs, offset } => {
                     self.execute_branch_i32_ne(lhs, rhs, offset)
                 }
-                Instr::BranchI32NeImm { lhs, rhs, offset } => {
+                Instr::BranchI32NeImm16 { lhs, rhs, offset } => {
                     self.execute_branch_i32_ne_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI32LtS { lhs, rhs, offset } => {
                     self.execute_branch_i32_lt_s(lhs, rhs, offset)
                 }
-                Instr::BranchI32LtSImm { lhs, rhs, offset } => {
+                Instr::BranchI32LtSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_lt_s_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI32LtU { lhs, rhs, offset } => {
                     self.execute_branch_i32_lt_u(lhs, rhs, offset)
                 }
-                Instr::BranchI32LtUImm { lhs, rhs, offset } => {
+                Instr::BranchI32LtUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_lt_u_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI32LeS { lhs, rhs, offset } => {
                     self.execute_branch_i32_le_s(lhs, rhs, offset)
                 }
-                Instr::BranchI32LeSImm { lhs, rhs, offset } => {
+                Instr::BranchI32LeSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_le_s_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI32LeU { lhs, rhs, offset } => {
                     self.execute_branch_i32_le_u(lhs, rhs, offset)
                 }
-                Instr::BranchI32LeUImm { lhs, rhs, offset } => {
+                Instr::BranchI32LeUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_le_u_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI32GtS { lhs, rhs, offset } => {
                     self.execute_branch_i32_gt_s(lhs, rhs, offset)
                 }
-                Instr::BranchI32GtSImm { lhs, rhs, offset } => {
+                Instr::BranchI32GtSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_gt_s_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI32GtU { lhs, rhs, offset } => {
                     self.execute_branch_i32_gt_u(lhs, rhs, offset)
                 }
-                Instr::BranchI32GtUImm { lhs, rhs, offset } => {
+                Instr::BranchI32GtUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_gt_u_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI32GeS { lhs, rhs, offset } => {
                     self.execute_branch_i32_ge_s(lhs, rhs, offset)
                 }
-                Instr::BranchI32GeSImm { lhs, rhs, offset } => {
+                Instr::BranchI32GeSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_ge_s_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI32GeU { lhs, rhs, offset } => {
                     self.execute_branch_i32_ge_u(lhs, rhs, offset)
                 }
-                Instr::BranchI32GeUImm { lhs, rhs, offset } => {
+                Instr::BranchI32GeUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_ge_u_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI64Eq { lhs, rhs, offset } => {
                     self.execute_branch_i64_eq(lhs, rhs, offset)
                 }
-                Instr::BranchI64EqImm { lhs, rhs, offset } => {
+                Instr::BranchI64EqImm16 { lhs, rhs, offset } => {
                     self.execute_branch_i64_eq_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI64Ne { lhs, rhs, offset } => {
                     self.execute_branch_i64_ne(lhs, rhs, offset)
                 }
-                Instr::BranchI64NeImm { lhs, rhs, offset } => {
+                Instr::BranchI64NeImm16 { lhs, rhs, offset } => {
                     self.execute_branch_i64_ne_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI64LtS { lhs, rhs, offset } => {
                     self.execute_branch_i64_lt_s(lhs, rhs, offset)
                 }
-                Instr::BranchI64LtSImm { lhs, rhs, offset } => {
+                Instr::BranchI64LtSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_lt_s_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI64LtU { lhs, rhs, offset } => {
                     self.execute_branch_i64_lt_u(lhs, rhs, offset)
                 }
-                Instr::BranchI64LtUImm { lhs, rhs, offset } => {
+                Instr::BranchI64LtUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_lt_u_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI64LeS { lhs, rhs, offset } => {
                     self.execute_branch_i64_le_s(lhs, rhs, offset)
                 }
-                Instr::BranchI64LeSImm { lhs, rhs, offset } => {
+                Instr::BranchI64LeSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_le_s_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI64LeU { lhs, rhs, offset } => {
                     self.execute_branch_i64_le_u(lhs, rhs, offset)
                 }
-                Instr::BranchI64LeUImm { lhs, rhs, offset } => {
+                Instr::BranchI64LeUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_le_u_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI64GtS { lhs, rhs, offset } => {
                     self.execute_branch_i64_gt_s(lhs, rhs, offset)
                 }
-                Instr::BranchI64GtSImm { lhs, rhs, offset } => {
+                Instr::BranchI64GtSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_gt_s_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI64GtU { lhs, rhs, offset } => {
                     self.execute_branch_i64_gt_u(lhs, rhs, offset)
                 }
-                Instr::BranchI64GtUImm { lhs, rhs, offset } => {
+                Instr::BranchI64GtUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_gt_u_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI64GeS { lhs, rhs, offset } => {
                     self.execute_branch_i64_ge_s(lhs, rhs, offset)
                 }
-                Instr::BranchI64GeSImm { lhs, rhs, offset } => {
+                Instr::BranchI64GeSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_ge_s_imm(lhs, rhs, offset)
                 }
                 Instr::BranchI64GeU { lhs, rhs, offset } => {
                     self.execute_branch_i64_ge_u(lhs, rhs, offset)
                 }
-                Instr::BranchI64GeUImm { lhs, rhs, offset } => {
+                Instr::BranchI64GeUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_ge_u_imm(lhs, rhs, offset)
                 }
                 Instr::BranchF32Eq { lhs, rhs, offset } => {

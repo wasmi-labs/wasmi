@@ -113,27 +113,27 @@ fn loop_backward_imm() {
     test_for::<i32>("and", 1, Instruction::branch_i32_and_imm);
     test_for::<i32>("or", 1, Instruction::branch_i32_or_imm);
     test_for::<i32>("xor", 1, Instruction::branch_i32_xor_imm);
-    test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm);
-    test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm);
-    test_for::<i32>("lt_s", 1, Instruction::branch_i32_lt_s_imm);
-    test_for::<u32>("lt_u", 1, Instruction::branch_i32_lt_u_imm);
-    test_for::<i32>("le_s", 1, Instruction::branch_i32_le_s_imm);
-    test_for::<u32>("le_u", 1, Instruction::branch_i32_le_u_imm);
-    test_for::<i32>("gt_s", 1, Instruction::branch_i32_gt_s_imm);
-    test_for::<u32>("gt_u", 1, Instruction::branch_i32_gt_u_imm);
-    test_for::<i32>("ge_s", 1, Instruction::branch_i32_ge_s_imm);
-    test_for::<u32>("ge_u", 1, Instruction::branch_i32_ge_u_imm);
+    test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm16);
+    test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm16);
+    test_for::<i32>("lt_s", 1, Instruction::branch_i32_lt_s_imm16_rhs);
+    test_for::<u32>("lt_u", 1, Instruction::branch_i32_lt_u_imm16_rhs);
+    test_for::<i32>("le_s", 1, Instruction::branch_i32_le_s_imm16_rhs);
+    test_for::<u32>("le_u", 1, Instruction::branch_i32_le_u_imm16_rhs);
+    test_for::<i32>("gt_s", 1, Instruction::branch_i32_gt_s_imm16_rhs);
+    test_for::<u32>("gt_u", 1, Instruction::branch_i32_gt_u_imm16_rhs);
+    test_for::<i32>("ge_s", 1, Instruction::branch_i32_ge_s_imm16_rhs);
+    test_for::<u32>("ge_u", 1, Instruction::branch_i32_ge_u_imm16_rhs);
 
-    test_for::<i64>("eq", 1, Instruction::branch_i64_eq_imm);
-    test_for::<i64>("ne", 1, Instruction::branch_i64_ne_imm);
-    test_for::<i64>("lt_s", 1, Instruction::branch_i64_lt_s_imm);
-    test_for::<u64>("lt_u", 1, Instruction::branch_i64_lt_u_imm);
-    test_for::<i64>("le_s", 1, Instruction::branch_i64_le_s_imm);
-    test_for::<u64>("le_u", 1, Instruction::branch_i64_le_u_imm);
-    test_for::<i64>("gt_s", 1, Instruction::branch_i64_gt_s_imm);
-    test_for::<u64>("gt_u", 1, Instruction::branch_i64_gt_u_imm);
-    test_for::<i64>("ge_s", 1, Instruction::branch_i64_ge_s_imm);
-    test_for::<u64>("ge_u", 1, Instruction::branch_i64_ge_u_imm);
+    test_for::<i64>("eq", 1, Instruction::branch_i64_eq_imm16);
+    test_for::<i64>("ne", 1, Instruction::branch_i64_ne_imm16);
+    test_for::<i64>("lt_s", 1, Instruction::branch_i64_lt_s_imm16_rhs);
+    test_for::<u64>("lt_u", 1, Instruction::branch_i64_lt_u_imm16_rhs);
+    test_for::<i64>("le_s", 1, Instruction::branch_i64_le_s_imm16_rhs);
+    test_for::<u64>("le_u", 1, Instruction::branch_i64_le_u_imm16_rhs);
+    test_for::<i64>("gt_s", 1, Instruction::branch_i64_gt_s_imm16_rhs);
+    test_for::<u64>("gt_u", 1, Instruction::branch_i64_gt_u_imm16_rhs);
+    test_for::<i64>("ge_s", 1, Instruction::branch_i64_ge_s_imm16_rhs);
+    test_for::<u64>("ge_u", 1, Instruction::branch_i64_ge_u_imm16_rhs);
 }
 
 #[test]
@@ -160,8 +160,8 @@ fn loop_backward_imm_eqz() {
             ])
             .run()
     }
-    test_for("eq", Instruction::branch_i32_eq_imm);
-    test_for("ne", Instruction::branch_i32_ne_imm);
+    test_for("eq", Instruction::branch_i32_eq_imm16);
+    test_for("ne", Instruction::branch_i32_ne_imm16);
 }
 
 #[test]
@@ -486,7 +486,7 @@ fn block_i64_eqz_fuse() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_eq_imm(Reg::from(0), 0, BranchOffset16::from(1)),
+            Instruction::branch_i64_eq_imm16(Reg::from(0), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -506,7 +506,7 @@ fn if_i64_eqz_fuse() {
         )";
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_ne_imm(Reg::from(0), 0, BranchOffset16::from(1)),
+            Instruction::branch_i64_ne_imm16(Reg::from(0), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
