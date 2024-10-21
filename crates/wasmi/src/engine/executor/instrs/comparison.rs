@@ -94,3 +94,28 @@ impl Executor<'_> {
         (u64, Instruction::I64GeUImm16Rhs, execute_i64_ge_u_imm16_rhs, UntypedVal::i64_ge_u),
     }
 }
+
+macro_rules! impl_comparison_imm16_lhs {
+    ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
+            pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) {
+                self.execute_binary_imm16_lhs(result, lhs, rhs, $op)
+            }
+        )*
+    };
+}
+
+impl Executor<'_> {
+    impl_comparison_imm16_lhs! {
+        (i32, Instruction::I32LtSImm16Lhs, execute_i32_lt_s_imm16_lhs, UntypedVal::i32_lt_s),
+        (u32, Instruction::I32LtUImm16Lhs, execute_i32_lt_u_imm16_lhs, UntypedVal::i32_lt_u),
+        (i32, Instruction::I32LeSImm16Lhs, execute_i32_le_s_imm16_lhs, UntypedVal::i32_le_s),
+        (u32, Instruction::I32LeUImm16Lhs, execute_i32_le_u_imm16_lhs, UntypedVal::i32_le_u),
+
+        (i64, Instruction::I64LtSImm16Lhs, execute_i64_lt_s_imm16_lhs, UntypedVal::i64_lt_s),
+        (u64, Instruction::I64LtUImm16Lhs, execute_i64_lt_u_imm16_lhs, UntypedVal::i64_lt_u),
+        (i64, Instruction::I64LeSImm16Lhs, execute_i64_le_s_imm16_lhs, UntypedVal::i64_le_s),
+        (u64, Instruction::I64LeUImm16Lhs, execute_i64_le_u_imm16_lhs, UntypedVal::i64_le_u),
+    }
+}
