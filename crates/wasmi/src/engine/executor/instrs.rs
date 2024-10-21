@@ -265,11 +265,17 @@ impl<'engine> Executor<'engine> {
                 Instr::BranchI32LtS { lhs, rhs, offset } => {
                     self.execute_branch_i32_lt_s(lhs, rhs, offset)
                 }
+                Instr::BranchI32LtSImm16Lhs { lhs, rhs, offset } => {
+                    self.execute_branch_i32_lt_s_imm16_lhs(lhs, rhs, offset)
+                }
                 Instr::BranchI32LtSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_lt_s_imm16_rhs(lhs, rhs, offset)
                 }
                 Instr::BranchI32LtU { lhs, rhs, offset } => {
                     self.execute_branch_i32_lt_u(lhs, rhs, offset)
+                }
+                Instr::BranchI32LtUImm16Lhs { lhs, rhs, offset } => {
+                    self.execute_branch_i32_lt_u_imm16_lhs(lhs, rhs, offset)
                 }
                 Instr::BranchI32LtUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_lt_u_imm16_rhs(lhs, rhs, offset)
@@ -277,11 +283,17 @@ impl<'engine> Executor<'engine> {
                 Instr::BranchI32LeS { lhs, rhs, offset } => {
                     self.execute_branch_i32_le_s(lhs, rhs, offset)
                 }
+                Instr::BranchI32LeSImm16Lhs { lhs, rhs, offset } => {
+                    self.execute_branch_i32_le_s_imm16_lhs(lhs, rhs, offset)
+                }
                 Instr::BranchI32LeSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_le_s_imm16_rhs(lhs, rhs, offset)
                 }
                 Instr::BranchI32LeU { lhs, rhs, offset } => {
                     self.execute_branch_i32_le_u(lhs, rhs, offset)
+                }
+                Instr::BranchI32LeUImm16Lhs { lhs, rhs, offset } => {
+                    self.execute_branch_i32_le_u_imm16_lhs(lhs, rhs, offset)
                 }
                 Instr::BranchI32LeUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i32_le_u_imm16_rhs(lhs, rhs, offset)
@@ -325,11 +337,17 @@ impl<'engine> Executor<'engine> {
                 Instr::BranchI64LtS { lhs, rhs, offset } => {
                     self.execute_branch_i64_lt_s(lhs, rhs, offset)
                 }
+                Instr::BranchI64LtSImm16Lhs { lhs, rhs, offset } => {
+                    self.execute_branch_i64_lt_s_imm16_lhs(lhs, rhs, offset)
+                }
                 Instr::BranchI64LtSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_lt_s_imm16_rhs(lhs, rhs, offset)
                 }
                 Instr::BranchI64LtU { lhs, rhs, offset } => {
                     self.execute_branch_i64_lt_u(lhs, rhs, offset)
+                }
+                Instr::BranchI64LtUImm16Lhs { lhs, rhs, offset } => {
+                    self.execute_branch_i64_lt_u_imm16_lhs(lhs, rhs, offset)
                 }
                 Instr::BranchI64LtUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_lt_u_imm16_rhs(lhs, rhs, offset)
@@ -337,11 +355,17 @@ impl<'engine> Executor<'engine> {
                 Instr::BranchI64LeS { lhs, rhs, offset } => {
                     self.execute_branch_i64_le_s(lhs, rhs, offset)
                 }
+                Instr::BranchI64LeSImm16Lhs { lhs, rhs, offset } => {
+                    self.execute_branch_i64_le_s_imm16_lhs(lhs, rhs, offset)
+                }
                 Instr::BranchI64LeSImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_le_s_imm16_rhs(lhs, rhs, offset)
                 }
                 Instr::BranchI64LeU { lhs, rhs, offset } => {
                     self.execute_branch_i64_le_u(lhs, rhs, offset)
+                }
+                Instr::BranchI64LeUImm16Lhs { lhs, rhs, offset } => {
+                    self.execute_branch_i64_le_u_imm16_lhs(lhs, rhs, offset)
                 }
                 Instr::BranchI64LeUImm16Rhs { lhs, rhs, offset } => {
                     self.execute_branch_i64_le_u_imm16_rhs(lhs, rhs, offset)

@@ -442,6 +442,16 @@ macro_rules! for_each_op {
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
+            /// A fused `i32.lt_s` and branch instruction with 16-bit immediate `lhs` value.
+            #[snake_name(branch_i32_lt_s_imm16_lhs)]
+            BranchI32LtSImm16Lhs {
+                /// The right-hand side operand to the conditional operator.
+                lhs: Const16<i32>,
+                /// The left-hand side operand to the conditional operator.
+                rhs: Reg,
+                /// The 16-bit encoded branch offset.
+                offset: BranchOffset16,
+            },
             /// A fused `i32.lt_s` and branch instruction with 16-bit immediate `rhs` value.
             #[snake_name(branch_i32_lt_s_imm16_rhs)]
             BranchI32LtSImm16Rhs {
@@ -458,6 +468,16 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the branch conditional.
                 lhs: Reg,
                 /// The right-hand side operand to the branch conditional.
+                rhs: Reg,
+                /// The 16-bit encoded branch offset.
+                offset: BranchOffset16,
+            },
+            /// A fused `i32.lt_u` and branch instruction with 16-bit immediate `lhs` value.
+            #[snake_name(branch_i32_lt_u_imm16_lhs)]
+            BranchI32LtUImm16Lhs {
+                /// The right-hand side operand to the conditional operator.
+                lhs: Const16<u32>,
+                /// The left-hand side operand to the conditional operator.
                 rhs: Reg,
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
@@ -482,6 +502,16 @@ macro_rules! for_each_op {
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
+            /// A fused `i32.le_s` and branch instruction with 16-bit immediate `lhs` value.
+            #[snake_name(branch_i32_le_s_imm16_lhs)]
+            BranchI32LeSImm16Lhs {
+                /// The right-hand side operand to the conditional operator.
+                lhs: Const16<i32>,
+                /// The left-hand side operand to the conditional operator.
+                rhs: Reg,
+                /// The 16-bit encoded branch offset.
+                offset: BranchOffset16,
+            },
             /// A fused `i32.le_s` and branch instruction with 16-bit immediate `rhs` value.
             #[snake_name(branch_i32_le_s_imm16_rhs)]
             BranchI32LeSImm16Rhs {
@@ -498,6 +528,16 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the branch conditional.
                 lhs: Reg,
                 /// The right-hand side operand to the branch conditional.
+                rhs: Reg,
+                /// The 16-bit encoded branch offset.
+                offset: BranchOffset16,
+            },
+            /// A fused `i32.le_u` and branch instruction with 16-bit immediate `lhs` value.
+            #[snake_name(branch_i32_le_u_imm16_lhs)]
+            BranchI32LeUImm16Lhs {
+                /// The right-hand side operand to the conditional operator.
+                lhs: Const16<u32>,
+                /// The left-hand side operand to the conditional operator.
                 rhs: Reg,
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
@@ -644,6 +684,16 @@ macro_rules! for_each_op {
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
+            /// A fused `i64.lt_s` and branch instruction with 16-bit immediate `lhs` value.
+            #[snake_name(branch_i64_lt_s_imm16_lhs)]
+            BranchI64LtSImm16Lhs {
+                /// The right-hand side operand to the conditional operator.
+                lhs: Const16<i64>,
+                /// The left-hand side operand to the conditional operator.
+                rhs: Reg,
+                /// The 16-bit encoded branch offset.
+                offset: BranchOffset16,
+            },
             /// A fused `i64.lt_s` and branch instruction with 16-bit immediate `rhs` value.
             #[snake_name(branch_i64_lt_s_imm16_rhs)]
             BranchI64LtSImm16Rhs {
@@ -660,6 +710,16 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the branch conditional.
                 lhs: Reg,
                 /// The right-hand side operand to the branch conditional.
+                rhs: Reg,
+                /// The 16-bit encoded branch offset.
+                offset: BranchOffset16,
+            },
+            /// A fused `i64.lt_u` and branch instruction with 16-bit immediate `lhs` value.
+            #[snake_name(branch_i64_lt_u_imm16_lhs)]
+            BranchI64LtUImm16Lhs {
+                /// The right-hand side operand to the conditional operator.
+                lhs: Const16<u64>,
+                /// The left-hand side operand to the conditional operator.
                 rhs: Reg,
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
@@ -684,6 +744,16 @@ macro_rules! for_each_op {
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
+            /// A fused `i64.le_s` and branch instruction with 16-bit immediate `lhs` value.
+            #[snake_name(branch_i64_le_s_imm16_lhs)]
+            BranchI64LeSImm16Lhs {
+                /// The right-hand side operand to the conditional operator.
+                lhs: Const16<i64>,
+                /// The left-hand side operand to the conditional operator.
+                rhs: Reg,
+                /// The 16-bit encoded branch offset.
+                offset: BranchOffset16,
+            },
             /// A fused `i64.le_s` and branch instruction with 16-bit immediate `rhs` value.
             #[snake_name(branch_i64_le_s_imm16_rhs)]
             BranchI64LeSImm16Rhs {
@@ -700,6 +770,16 @@ macro_rules! for_each_op {
                 /// The left-hand side operand to the branch conditional.
                 lhs: Reg,
                 /// The right-hand side operand to the branch conditional.
+                rhs: Reg,
+                /// The 16-bit encoded branch offset.
+                offset: BranchOffset16,
+            },
+            /// A fused `i64.le_u` and branch instruction with 16-bit immediate `lhs` value.
+            #[snake_name(branch_i64_le_u_imm16_lhs)]
+            BranchI64LeUImm16Lhs {
+                /// The right-hand side operand to the conditional operator.
+                lhs: Const16<u64>,
+                /// The left-hand side operand to the conditional operator.
                 rhs: Reg,
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,

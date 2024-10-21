@@ -214,7 +214,7 @@ impl Executor<'_> {
     }
 
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
-    fn execute_branch_binop_imm<T>(
+    fn execute_branch_binop_imm16_rhs<T>(
         &mut self,
         lhs: Reg,
         rhs: Const16<T>,
@@ -225,6 +225,24 @@ impl Executor<'_> {
     {
         let lhs: T = self.get_register_as(lhs);
         let rhs = T::from(rhs);
+        if f(lhs, rhs) {
+            return self.branch_to16(offset);
+        }
+        self.next_instr()
+    }
+
+    /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
+    fn execute_branch_binop_imm16_lhs<T>(
+        &mut self,
+        lhs: Const16<T>,
+        rhs: Reg,
+        offset: BranchOffset16,
+        f: fn(T, T) -> bool,
+    ) where
+        T: From<UntypedVal> + From<Const16<T>>,
+    {
+        let lhs = T::from(lhs);
+        let rhs: T = self.get_register_as(rhs);
         if f(lhs, rhs) {
             return self.branch_to16(offset);
         }
@@ -354,19 +372,19 @@ impl_execute_branch_binop! {
     (f64, Instruction::BranchF64Ge, execute_branch_f64_ge, cmp_ge),
 }
 
-macro_rules! impl_execute_branch_binop_imm {
+macro_rules! impl_execute_branch_binop_imm16_rhs {
     ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
                 pub fn $fn_name(&mut self, lhs: Reg, rhs: Const16<$ty>, offset: BranchOffset16) {
-                    self.execute_branch_binop_imm::<$ty>(lhs, rhs, offset, $op)
+                    self.execute_branch_binop_imm16_rhs::<$ty>(lhs, rhs, offset, $op)
                 }
             )*
         }
     }
 }
-impl_execute_branch_binop_imm! {
+impl_execute_branch_binop_imm16_rhs! {
     (i32, Instruction::BranchI32AndImm16, execute_branch_i32_and_imm16, cmp_i32_and),
     (i32, Instruction::BranchI32OrImm16, execute_branch_i32_or_imm16, cmp_i32_or),
     (i32, Instruction::BranchI32XorImm16, execute_branch_i32_xor_imm16, cmp_i32_xor),
@@ -394,6 +412,30 @@ impl_execute_branch_binop_imm! {
     (u64, Instruction::BranchI64GtUImm16Rhs, execute_branch_i64_gt_u_imm16_rhs, cmp_gt),
     (i64, Instruction::BranchI64GeSImm16Rhs, execute_branch_i64_ge_s_imm16_rhs, cmp_ge),
     (u64, Instruction::BranchI64GeUImm16Rhs, execute_branch_i64_ge_u_imm16_rhs, cmp_ge),
+}
+
+macro_rules! impl_execute_branch_binop_imm16_lhs {
+    ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+        impl<'engine> Executor<'engine> {
+            $(
+                #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
+                pub fn $fn_name(&mut self, lhs: Const16<$ty>, rhs: Reg, offset: BranchOffset16) {
+                    self.execute_branch_binop_imm16_lhs::<$ty>(lhs, rhs, offset, $op)
+                }
+            )*
+        }
+    }
+}
+impl_execute_branch_binop_imm16_lhs! {
+    (i32, Instruction::BranchI32LtSImm16Lhs, execute_branch_i32_lt_s_imm16_lhs, cmp_lt),
+    (u32, Instruction::BranchI32LtUImm16Lhs, execute_branch_i32_lt_u_imm16_lhs, cmp_lt),
+    (i32, Instruction::BranchI32LeSImm16Lhs, execute_branch_i32_le_s_imm16_lhs, cmp_le),
+    (u32, Instruction::BranchI32LeUImm16Lhs, execute_branch_i32_le_u_imm16_lhs, cmp_le),
+
+    (i64, Instruction::BranchI64LtSImm16Lhs, execute_branch_i64_lt_s_imm16_lhs, cmp_lt),
+    (u64, Instruction::BranchI64LtUImm16Lhs, execute_branch_i64_lt_u_imm16_lhs, cmp_lt),
+    (i64, Instruction::BranchI64LeSImm16Lhs, execute_branch_i64_le_s_imm16_lhs, cmp_le),
+    (u64, Instruction::BranchI64LeUImm16Lhs, execute_branch_i64_le_u_imm16_lhs, cmp_le),
 }
 
 impl Executor<'_> {
