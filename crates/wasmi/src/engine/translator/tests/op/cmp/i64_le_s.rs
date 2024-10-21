@@ -26,7 +26,7 @@ fn reg_imm16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16_lhs() {
-    test_binary_reg_imm16_lhs::<i64>(WASM_OP, 100, swap_ops!(Instruction::i64_ge_s_imm16_rhs))
+    test_binary_reg_imm16_lhs::<i64>(WASM_OP, 100, Instruction::i64_le_s_imm16_lhs)
 }
 
 #[test]

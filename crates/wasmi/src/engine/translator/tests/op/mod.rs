@@ -28,6 +28,7 @@ use super::{
     bspan,
     display_wasm::DisplayValueType,
     driver::ExpectedFunc,
+    swap_cmp_br_ops,
     swap_ops,
     test_binary_consteval,
     test_binary_reg_imm16_lhs,
