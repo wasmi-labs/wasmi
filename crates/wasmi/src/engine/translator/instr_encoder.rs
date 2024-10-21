@@ -1134,7 +1134,7 @@ impl InstrEncoder {
     ) -> Result<(), Error> {
         let offset = self.try_resolve_label(label)?;
         let instr = match BranchOffset16::try_from(offset) {
-            Ok(offset) => Instruction::branch_i32_eq_imm(condition, 0, offset),
+            Ok(offset) => Instruction::branch_i32_eq_imm16(condition, 0, offset),
             Err(_) => {
                 let zero = stack.alloc_const(0_i32)?;
                 InstrEncoder::make_branch_cmp_fallback(
@@ -1234,30 +1234,30 @@ impl InstrEncoder {
             | I::I32XorEqzImm16 { result, lhs, rhs }
             | I::I32EqImm16 { result, lhs, rhs }
             | I::I32NeImm16 { result, lhs, rhs }
-            | I::I32LtSImm16 { result, lhs, rhs }
-            | I::I32LeSImm16 { result, lhs, rhs }
-            | I::I32GtSImm16 { result, lhs, rhs }
-            | I::I32GeSImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<i32>(
+            | I::I32LtSImm16Rhs { result, lhs, rhs }
+            | I::I32LeSImm16Rhs { result, lhs, rhs }
+            | I::I32GtSImm16Rhs { result, lhs, rhs }
+            | I::I32GeSImm16Rhs { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<i32>(
                 stack, instr, condition, result, lhs, rhs, label, comparator,
             )?,
-            | I::I32LtUImm16 { result, lhs, rhs }
-            | I::I32LeUImm16 { result, lhs, rhs }
-            | I::I32GtUImm16 { result, lhs, rhs }
-            | I::I32GeUImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<u32>(
+            | I::I32LtUImm16Rhs { result, lhs, rhs }
+            | I::I32LeUImm16Rhs { result, lhs, rhs }
+            | I::I32GtUImm16Rhs { result, lhs, rhs }
+            | I::I32GeUImm16Rhs { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<u32>(
                 stack, instr, condition, result, lhs, rhs, label, comparator,
             )?,
             | I::I64EqImm16 { result, lhs, rhs }
             | I::I64NeImm16 { result, lhs, rhs }
-            | I::I64LtSImm16 { result, lhs, rhs }
-            | I::I64LeSImm16 { result, lhs, rhs }
-            | I::I64GtSImm16 { result, lhs, rhs }
-            | I::I64GeSImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<i64>(
+            | I::I64LtSImm16Rhs { result, lhs, rhs }
+            | I::I64LeSImm16Rhs { result, lhs, rhs }
+            | I::I64GtSImm16Rhs { result, lhs, rhs }
+            | I::I64GeSImm16Rhs { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<i64>(
                 stack, instr, condition, result, lhs, rhs, label, comparator,
             )?,
-            | I::I64LtUImm16 { result, lhs, rhs }
-            | I::I64LeUImm16 { result, lhs, rhs }
-            | I::I64GtUImm16 { result, lhs, rhs }
-            | I::I64GeUImm16 { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<u64>(
+            | I::I64LtUImm16Rhs { result, lhs, rhs }
+            | I::I64LeUImm16Rhs { result, lhs, rhs }
+            | I::I64GtUImm16Rhs { result, lhs, rhs }
+            | I::I64GeUImm16Rhs { result, lhs, rhs } => self.try_fuse_branch_cmp_imm::<u64>(
                 stack, instr, condition, result, lhs, rhs, label, comparator,
             )?,
             _ => None,
@@ -1276,7 +1276,7 @@ impl InstrEncoder {
     ) -> Result<(), Error> {
         let offset = self.try_resolve_label(label)?;
         let instr = match BranchOffset16::try_from(offset) {
-            Ok(offset) => Instruction::branch_i32_ne_imm(condition, 0, offset),
+            Ok(offset) => Instruction::branch_i32_ne_imm16(condition, 0, offset),
             Err(_) => {
                 let zero = stack.alloc_const(0_i32)?;
                 InstrEncoder::make_branch_cmp_fallback(
@@ -1394,38 +1394,38 @@ impl UpdateBranchOffset for Instruction {
                     }
                 }
             }
-            I::BranchI32AndImm { lhs, rhs, offset } |
-            I::BranchI32OrImm { lhs, rhs, offset } |
-            I::BranchI32XorImm { lhs, rhs, offset } |
-            I::BranchI32AndEqzImm { lhs, rhs, offset } |
-            I::BranchI32OrEqzImm { lhs, rhs, offset } |
-            I::BranchI32XorEqzImm { lhs, rhs, offset } |
-            I::BranchI32EqImm { lhs, rhs, offset } |
-            I::BranchI32NeImm { lhs, rhs, offset } |
-            I::BranchI32LtSImm { lhs, rhs, offset } |
-            I::BranchI32LeSImm { lhs, rhs, offset } |
-            I::BranchI32GtSImm { lhs, rhs, offset } |
-            I::BranchI32GeSImm { lhs, rhs, offset } => {
+            I::BranchI32AndImm16 { lhs, rhs, offset } |
+            I::BranchI32OrImm16 { lhs, rhs, offset } |
+            I::BranchI32XorImm16 { lhs, rhs, offset } |
+            I::BranchI32AndEqzImm16 { lhs, rhs, offset } |
+            I::BranchI32OrEqzImm16 { lhs, rhs, offset } |
+            I::BranchI32XorEqzImm16 { lhs, rhs, offset } |
+            I::BranchI32EqImm16 { lhs, rhs, offset } |
+            I::BranchI32NeImm16 { lhs, rhs, offset } |
+            I::BranchI32LtSImm16Rhs { lhs, rhs, offset } |
+            I::BranchI32LeSImm16Rhs { lhs, rhs, offset } |
+            I::BranchI32GtSImm16Rhs { lhs, rhs, offset } |
+            I::BranchI32GeSImm16Rhs { lhs, rhs, offset } => {
                 init_offset_imm::<i32>(stack, *lhs, *rhs, offset, new_offset, comparator)?
             }
-            I::BranchI32LtUImm { lhs, rhs, offset } |
-            I::BranchI32LeUImm { lhs, rhs, offset } |
-            I::BranchI32GtUImm { lhs, rhs, offset } |
-            I::BranchI32GeUImm { lhs, rhs, offset } => {
+            I::BranchI32LtUImm16Rhs { lhs, rhs, offset } |
+            I::BranchI32LeUImm16Rhs { lhs, rhs, offset } |
+            I::BranchI32GtUImm16Rhs { lhs, rhs, offset } |
+            I::BranchI32GeUImm16Rhs { lhs, rhs, offset } => {
                 init_offset_imm::<u32>(stack, *lhs, *rhs, offset, new_offset, comparator)?
             }
-            I::BranchI64EqImm { lhs, rhs, offset } |
-            I::BranchI64NeImm { lhs, rhs, offset } |
-            I::BranchI64LtSImm { lhs, rhs, offset } |
-            I::BranchI64LeSImm { lhs, rhs, offset } |
-            I::BranchI64GtSImm { lhs, rhs, offset } |
-            I::BranchI64GeSImm { lhs, rhs, offset } => {
+            I::BranchI64EqImm16 { lhs, rhs, offset } |
+            I::BranchI64NeImm16 { lhs, rhs, offset } |
+            I::BranchI64LtSImm16Rhs { lhs, rhs, offset } |
+            I::BranchI64LeSImm16Rhs { lhs, rhs, offset } |
+            I::BranchI64GtSImm16Rhs { lhs, rhs, offset } |
+            I::BranchI64GeSImm16Rhs { lhs, rhs, offset } => {
                 init_offset_imm::<i64>(stack, *lhs, *rhs, offset, new_offset, comparator)?
             }
-            I::BranchI64LtUImm { lhs, rhs, offset } |
-            I::BranchI64LeUImm { lhs, rhs, offset } |
-            I::BranchI64GtUImm { lhs, rhs, offset } |
-            I::BranchI64GeUImm { lhs, rhs, offset } => {
+            I::BranchI64LtUImm16Rhs { lhs, rhs, offset } |
+            I::BranchI64LeUImm16Rhs { lhs, rhs, offset } |
+            I::BranchI64GtUImm16Rhs { lhs, rhs, offset } |
+            I::BranchI64GeUImm16Rhs { lhs, rhs, offset } => {
                 init_offset_imm::<u64>(stack, *lhs, *rhs, offset, new_offset, comparator)?
             }
             _ => panic!("expected a Wasmi branch+cmp instruction but found: {:?}", *self),

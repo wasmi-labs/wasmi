@@ -284,8 +284,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32And`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_and_imm)]
-            BranchI32AndImm {
+            #[snake_name(branch_i32_and_imm16)]
+            BranchI32AndImm16 {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -308,8 +308,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32Or`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_or_imm)]
-            BranchI32OrImm {
+            #[snake_name(branch_i32_or_imm16)]
+            BranchI32OrImm16 {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -332,8 +332,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32Xor`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_xor_imm)]
-            BranchI32XorImm {
+            #[snake_name(branch_i32_xor_imm16)]
+            BranchI32XorImm16 {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -357,8 +357,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32AndEqz`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_and_eqz_imm)]
-            BranchI32AndEqzImm {
+            #[snake_name(branch_i32_and_eqz_imm16)]
+            BranchI32AndEqzImm16 {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -381,8 +381,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32OrEqz`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_or_eqz_imm)]
-            BranchI32OrEqzImm {
+            #[snake_name(branch_i32_or_eqz_imm16)]
+            BranchI32OrEqzImm16 {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -405,8 +405,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32XorEqz`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_xor_eqz_imm)]
-            BranchI32XorEqzImm {
+            #[snake_name(branch_i32_xor_eqz_imm16)]
+            BranchI32XorEqzImm16 {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -430,8 +430,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32Eq`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_eq_imm)]
-            BranchI32EqImm {
+            #[snake_name(branch_i32_eq_imm16)]
+            BranchI32EqImm16 {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -454,8 +454,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32Ne`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_ne_imm)]
-            BranchI32NeImm {
+            #[snake_name(branch_i32_ne_imm16)]
+            BranchI32NeImm16 {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -479,8 +479,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32LtS`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_lt_s_imm)]
-            BranchI32LtSImm {
+            #[snake_name(branch_i32_lt_s_imm16_rhs)]
+            BranchI32LtSImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -503,8 +503,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32LtU`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_lt_u_imm)]
-            BranchI32LtUImm {
+            #[snake_name(branch_i32_lt_u_imm16_rhs)]
+            BranchI32LtUImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -527,8 +527,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32LeS`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_le_s_imm)]
-            BranchI32LeSImm {
+            #[snake_name(branch_i32_le_s_imm16_rhs)]
+            BranchI32LeSImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -551,8 +551,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32LeU`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_le_u_imm)]
-            BranchI32LeUImm {
+            #[snake_name(branch_i32_le_u_imm16_rhs)]
+            BranchI32LeUImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -575,8 +575,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32GtS`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_gt_s_imm)]
-            BranchI32GtSImm {
+            #[snake_name(branch_i32_gt_s_imm16_rhs)]
+            BranchI32GtSImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -599,8 +599,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32GtU`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_gt_u_imm)]
-            BranchI32GtUImm {
+            #[snake_name(branch_i32_gt_u_imm16_rhs)]
+            BranchI32GtUImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -623,8 +623,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32GeS`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_ge_s_imm)]
-            BranchI32GeSImm {
+            #[snake_name(branch_i32_ge_s_imm16_rhs)]
+            BranchI32GeSImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -647,8 +647,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI32GeU`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i32_ge_u_imm)]
-            BranchI32GeUImm {
+            #[snake_name(branch_i32_ge_u_imm16_rhs)]
+            BranchI32GeUImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -672,8 +672,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI64Eq`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i64_eq_imm)]
-            BranchI64EqImm {
+            #[snake_name(branch_i64_eq_imm16)]
+            BranchI64EqImm16 {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -696,8 +696,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI64Ne`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i64_ne_imm)]
-            BranchI64NeImm {
+            #[snake_name(branch_i64_ne_imm16)]
+            BranchI64NeImm16 {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -721,8 +721,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI64LtS`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i64_lt_s_imm)]
-            BranchI64LtSImm {
+            #[snake_name(branch_i64_lt_s_imm16_rhs)]
+            BranchI64LtSImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -745,8 +745,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI64LtU`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i64_lt_u_imm)]
-            BranchI64LtUImm {
+            #[snake_name(branch_i64_lt_u_imm16_rhs)]
+            BranchI64LtUImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -769,8 +769,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI64LeS`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i64_le_s_imm)]
-            BranchI64LeSImm {
+            #[snake_name(branch_i64_le_s_imm16_rhs)]
+            BranchI64LeSImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -793,8 +793,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI64LeU`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i64_le_u_imm)]
-            BranchI64LeUImm {
+            #[snake_name(branch_i64_le_u_imm16_rhs)]
+            BranchI64LeUImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -817,8 +817,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI64GtS`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i64_gt_s_imm)]
-            BranchI64GtSImm {
+            #[snake_name(branch_i64_gt_s_imm16_rhs)]
+            BranchI64GtSImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -841,8 +841,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI64GtU`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i64_gt_u_imm)]
-            BranchI64GtUImm {
+            #[snake_name(branch_i64_gt_u_imm16_rhs)]
+            BranchI64GtUImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -865,8 +865,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI64GeS`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i64_ge_s_imm)]
-            BranchI64GeSImm {
+            #[snake_name(branch_i64_ge_s_imm16_rhs)]
+            BranchI64GeSImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -889,8 +889,8 @@ macro_rules! for_each_op {
             /// # Note
             ///
             /// Variant of [`Instruction::BranchI64GeU`] with 16-bit encoded constant `rhs`.
-            #[snake_name(branch_i64_ge_u_imm)]
-            BranchI64GeUImm {
+            #[snake_name(branch_i64_ge_u_imm16_rhs)]
+            BranchI64GeUImm16Rhs {
                 /// The left-hand side operand to the conditional operator.
                 lhs: Reg,
                 /// The right-hand side operand to the conditional operator.
@@ -3111,8 +3111,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I32LtS`]
             /// for small right-hand side constant values.
-            #[snake_name(i32_lt_s_imm16)]
-            I32LtSImm16{
+            #[snake_name(i32_lt_s_imm16_rhs)]
+            I32LtSImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3134,8 +3134,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I32LtU`]
             /// for small right-hand side constant values.
-            #[snake_name(i32_lt_u_imm16)]
-            I32LtUImm16{
+            #[snake_name(i32_lt_u_imm16_rhs)]
+            I32LtUImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3158,8 +3158,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I32GtS`]
             /// for small right-hand side constant values.
-            #[snake_name(i32_gt_s_imm16)]
-            I32GtSImm16{
+            #[snake_name(i32_gt_s_imm16_rhs)]
+            I32GtSImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3181,8 +3181,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I32GtU`]
             /// for small right-hand side constant values.
-            #[snake_name(i32_gt_u_imm16)]
-            I32GtUImm16{
+            #[snake_name(i32_gt_u_imm16_rhs)]
+            I32GtUImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3205,8 +3205,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I32LeS`]
             /// for small right-hand side constant values.
-            #[snake_name(i32_le_s_imm16)]
-            I32LeSImm16{
+            #[snake_name(i32_le_s_imm16_rhs)]
+            I32LeSImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3228,8 +3228,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I32LeU`]
             /// for small right-hand side constant values.
-            #[snake_name(i32_le_u_imm16)]
-            I32LeUImm16{
+            #[snake_name(i32_le_u_imm16_rhs)]
+            I32LeUImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3252,8 +3252,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I32GeS`]
             /// for small right-hand side constant values.
-            #[snake_name(i32_ge_s_imm16)]
-            I32GeSImm16{
+            #[snake_name(i32_ge_s_imm16_rhs)]
+            I32GeSImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3275,8 +3275,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I32GeU`]
             /// for small right-hand side constant values.
-            #[snake_name(i32_ge_u_imm16)]
-            I32GeUImm16{
+            #[snake_name(i32_ge_u_imm16_rhs)]
+            I32GeUImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3347,8 +3347,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I64LtS`]
             /// for small right-hand side constant values.
-            #[snake_name(i64_lt_s_imm16)]
-            I64LtSImm16{
+            #[snake_name(i64_lt_s_imm16_rhs)]
+            I64LtSImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3371,8 +3371,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I64LtU`]
             /// for small right-hand side constant values.
-            #[snake_name(i64_lt_u_imm16)]
-            I64LtUImm16{
+            #[snake_name(i64_lt_u_imm16_rhs)]
+            I64LtUImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3395,8 +3395,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I64GtS`]
             /// for small right-hand side constant values.
-            #[snake_name(i64_gt_s_imm16)]
-            I64GtSImm16{
+            #[snake_name(i64_gt_s_imm16_rhs)]
+            I64GtSImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3419,8 +3419,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I64GtU`]
             /// for small right-hand side constant values.
-            #[snake_name(i64_gt_u_imm16)]
-            I64GtUImm16{
+            #[snake_name(i64_gt_u_imm16_rhs)]
+            I64GtUImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3443,8 +3443,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I64LeS`]
             /// for small right-hand side constant values.
-            #[snake_name(i64_le_s_imm16)]
-            I64LeSImm16{
+            #[snake_name(i64_le_s_imm16_rhs)]
+            I64LeSImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3467,8 +3467,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I64LeU`]
             /// for small right-hand side constant values.
-            #[snake_name(i64_le_u_imm16)]
-            I64LeUImm16{
+            #[snake_name(i64_le_u_imm16_rhs)]
+            I64LeUImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3491,8 +3491,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I64GeS`]
             /// for small right-hand side constant values.
-            #[snake_name(i64_ge_s_imm16)]
-            I64GeSImm16{
+            #[snake_name(i64_ge_s_imm16_rhs)]
+            I64GeSImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3515,8 +3515,8 @@ macro_rules! for_each_op {
             ///
             /// This is an optimization of [`Instruction::I64GeU`]
             /// for small right-hand side constant values.
-            #[snake_name(i64_ge_u_imm16)]
-            I64GeUImm16{
+            #[snake_name(i64_ge_u_imm16_rhs)]
+            I64GeUImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
