@@ -1125,8 +1125,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_lt_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_lt_s,
-            Instruction::i32_lt_s_imm16,
-            swap_ops!(Instruction::i32_gt_s_imm16),
+            Instruction::i32_lt_s_imm16_rhs,
+            swap_ops!(Instruction::i32_gt_s_imm16_rhs),
             TypedVal::i32_lt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1158,8 +1158,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_lt_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_lt_u,
-            Instruction::i32_lt_u_imm16,
-            swap_ops!(Instruction::i32_gt_u_imm16),
+            Instruction::i32_lt_u_imm16_rhs,
+            swap_ops!(Instruction::i32_gt_u_imm16_rhs),
             TypedVal::i32_lt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1191,8 +1191,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_gt_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_gt_s,
-            Instruction::i32_gt_s_imm16,
-            swap_ops!(Instruction::i32_lt_s_imm16),
+            Instruction::i32_gt_s_imm16_rhs,
+            swap_ops!(Instruction::i32_lt_s_imm16_rhs),
             TypedVal::i32_gt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1224,8 +1224,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_gt_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_gt_u,
-            Instruction::i32_gt_u_imm16,
-            swap_ops!(Instruction::i32_lt_u_imm16),
+            Instruction::i32_gt_u_imm16_rhs,
+            swap_ops!(Instruction::i32_lt_u_imm16_rhs),
             TypedVal::i32_gt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1257,8 +1257,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_le_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_le_s,
-            Instruction::i32_le_s_imm16,
-            swap_ops!(Instruction::i32_ge_s_imm16),
+            Instruction::i32_le_s_imm16_rhs,
+            swap_ops!(Instruction::i32_ge_s_imm16_rhs),
             TypedVal::i32_le_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1290,8 +1290,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_le_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_le_u,
-            Instruction::i32_le_u_imm16,
-            swap_ops!(Instruction::i32_ge_u_imm16),
+            Instruction::i32_le_u_imm16_rhs,
+            swap_ops!(Instruction::i32_ge_u_imm16_rhs),
             TypedVal::i32_le_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1323,8 +1323,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_ge_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_ge_s,
-            Instruction::i32_ge_s_imm16,
-            swap_ops!(Instruction::i32_le_s_imm16),
+            Instruction::i32_ge_s_imm16_rhs,
+            swap_ops!(Instruction::i32_le_s_imm16_rhs),
             TypedVal::i32_ge_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1356,8 +1356,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_ge_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_ge_u,
-            Instruction::i32_ge_u_imm16,
-            swap_ops!(Instruction::i32_le_u_imm16),
+            Instruction::i32_ge_u_imm16_rhs,
+            swap_ops!(Instruction::i32_le_u_imm16_rhs),
             TypedVal::i32_ge_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1430,8 +1430,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_lt_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_lt_s,
-            Instruction::i64_lt_s_imm16,
-            swap_ops!(Instruction::i64_gt_s_imm16),
+            Instruction::i64_lt_s_imm16_rhs,
+            swap_ops!(Instruction::i64_gt_s_imm16_rhs),
             TypedVal::i64_lt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1463,8 +1463,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_lt_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_lt_u,
-            Instruction::i64_lt_u_imm16,
-            swap_ops!(Instruction::i64_gt_u_imm16),
+            Instruction::i64_lt_u_imm16_rhs,
+            swap_ops!(Instruction::i64_gt_u_imm16_rhs),
             TypedVal::i64_lt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1496,8 +1496,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_gt_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_gt_s,
-            Instruction::i64_gt_s_imm16,
-            swap_ops!(Instruction::i64_lt_s_imm16),
+            Instruction::i64_gt_s_imm16_rhs,
+            swap_ops!(Instruction::i64_lt_s_imm16_rhs),
             TypedVal::i64_gt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1529,8 +1529,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_gt_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_gt_u,
-            Instruction::i64_gt_u_imm16,
-            swap_ops!(Instruction::i64_lt_u_imm16),
+            Instruction::i64_gt_u_imm16_rhs,
+            swap_ops!(Instruction::i64_lt_u_imm16_rhs),
             TypedVal::i64_gt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1562,8 +1562,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_le_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_le_s,
-            Instruction::i64_le_s_imm16,
-            swap_ops!(Instruction::i64_ge_s_imm16),
+            Instruction::i64_le_s_imm16_rhs,
+            swap_ops!(Instruction::i64_ge_s_imm16_rhs),
             TypedVal::i64_le_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1595,8 +1595,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_le_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_le_u,
-            Instruction::i64_le_u_imm16,
-            swap_ops!(Instruction::i64_ge_u_imm16),
+            Instruction::i64_le_u_imm16_rhs,
+            swap_ops!(Instruction::i64_ge_u_imm16_rhs),
             TypedVal::i64_le_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1628,8 +1628,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_ge_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_ge_s,
-            Instruction::i64_ge_s_imm16,
-            swap_ops!(Instruction::i64_le_s_imm16),
+            Instruction::i64_ge_s_imm16_rhs,
+            swap_ops!(Instruction::i64_le_s_imm16_rhs),
             TypedVal::i64_ge_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1661,8 +1661,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_ge_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_ge_u,
-            Instruction::i64_ge_u_imm16,
-            swap_ops!(Instruction::i64_le_u_imm16),
+            Instruction::i64_ge_u_imm16_rhs,
+            swap_ops!(Instruction::i64_le_u_imm16_rhs),
             TypedVal::i64_ge_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {

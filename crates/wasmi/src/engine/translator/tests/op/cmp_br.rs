@@ -110,9 +110,9 @@ fn loop_backward_imm() {
             .run()
     }
 
-    test_for::<i32>("and", 1, Instruction::branch_i32_and_imm);
-    test_for::<i32>("or", 1, Instruction::branch_i32_or_imm);
-    test_for::<i32>("xor", 1, Instruction::branch_i32_xor_imm);
+    test_for::<i32>("and", 1, Instruction::branch_i32_and_imm16);
+    test_for::<i32>("or", 1, Instruction::branch_i32_or_imm16);
+    test_for::<i32>("xor", 1, Instruction::branch_i32_xor_imm16);
     test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm16);
     test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm16);
     test_for::<i32>("lt_s", 1, Instruction::branch_i32_lt_s_imm16_rhs);

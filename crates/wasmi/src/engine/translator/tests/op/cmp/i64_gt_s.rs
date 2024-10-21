@@ -20,13 +20,13 @@ fn reg_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16() {
-    test_binary_reg_imm16_rhs::<i64>(WASM_OP, 100, Instruction::i64_gt_s_imm16)
+    test_binary_reg_imm16_rhs::<i64>(WASM_OP, 100, Instruction::i64_gt_s_imm16_rhs)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16_lhs() {
-    test_binary_reg_imm16_lhs::<i64>(WASM_OP, 100, swap_ops!(Instruction::i64_lt_s_imm16))
+    test_binary_reg_imm16_lhs::<i64>(WASM_OP, 100, swap_ops!(Instruction::i64_lt_s_imm16_rhs))
 }
 
 #[test]
