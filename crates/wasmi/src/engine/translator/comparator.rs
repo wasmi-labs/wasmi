@@ -20,6 +20,13 @@ pub trait ComparatorExt: Sized {
     fn branch_cmp_instr(self) -> fn(lhs: Reg, rhs: Reg, offset: BranchOffset16) -> ir::Instruction;
 }
 
+/// Used to swap `lhs` and `rhs` operands of a fused `cmp+branch` instruction.
+macro_rules! swap_cmp_br_ops {
+    ($fn_name:path) => {
+        |lhs, rhs, offset: BranchOffset16| -> Instruction { $fn_name(rhs, lhs, offset) }
+    };
+}
+
 impl ComparatorExt for Comparator {
     fn from_cmp_instruction(instr: Instruction) -> Option<Self> {
         use Instruction as I;
@@ -32,36 +39,24 @@ impl ComparatorExt for Comparator {
             I::I32XorEqz { .. } | I::I32XorEqzImm16 { .. } => Self::I32XorEqz,
             I::I32Eq { .. } | I::I32EqImm16 { .. } => Self::I32Eq,
             I::I32Ne { .. } | I::I32NeImm16 { .. } => Self::I32Ne,
-            I::I32LtS { .. } | I::I32LtSImm16Rhs { .. } => Self::I32LtS,
-            I::I32LtU { .. } | I::I32LtUImm16Rhs { .. } => Self::I32LtU,
-            I::I32LeS { .. } | I::I32LeSImm16Rhs { .. } => Self::I32LeS,
-            I::I32LeU { .. } | I::I32LeUImm16Rhs { .. } => Self::I32LeU,
-            I::I32GtS { .. } | I::I32GtSImm16Rhs { .. } => Self::I32GtS,
-            I::I32GtU { .. } | I::I32GtUImm16Rhs { .. } => Self::I32GtU,
-            I::I32GeS { .. } | I::I32GeSImm16Rhs { .. } => Self::I32GeS,
-            I::I32GeU { .. } | I::I32GeUImm16Rhs { .. } => Self::I32GeU,
+            I::I32LtS { .. } | I::I32LtSImm16Rhs { .. } | I::I32LtSImm16Lhs { .. } => Self::I32LtS,
+            I::I32LtU { .. } | I::I32LtUImm16Rhs { .. } | I::I32LtUImm16Lhs { .. } => Self::I32LtU,
+            I::I32LeS { .. } | I::I32LeSImm16Rhs { .. } | I::I32LeSImm16Lhs { .. } => Self::I32LeS,
+            I::I32LeU { .. } | I::I32LeUImm16Rhs { .. } | I::I32LeUImm16Lhs { .. } => Self::I32LeU,
             I::I64Eq { .. } | I::I64EqImm16 { .. } => Self::I64Eq,
             I::I64Ne { .. } | I::I64NeImm16 { .. } => Self::I64Ne,
-            I::I64LtS { .. } | I::I64LtSImm16Rhs { .. } => Self::I64LtS,
-            I::I64LtU { .. } | I::I64LtUImm16Rhs { .. } => Self::I64LtU,
-            I::I64LeS { .. } | I::I64LeSImm16Rhs { .. } => Self::I64LeS,
-            I::I64LeU { .. } | I::I64LeUImm16Rhs { .. } => Self::I64LeU,
-            I::I64GtS { .. } | I::I64GtSImm16Rhs { .. } => Self::I64GtS,
-            I::I64GtU { .. } | I::I64GtUImm16Rhs { .. } => Self::I64GtU,
-            I::I64GeS { .. } | I::I64GeSImm16Rhs { .. } => Self::I64GeS,
-            I::I64GeU { .. } | I::I64GeUImm16Rhs { .. } => Self::I64GeU,
+            I::I64LtS { .. } | I::I64LtSImm16Rhs { .. } | I::I64LtSImm16Lhs { .. } => Self::I64LtS,
+            I::I64LtU { .. } | I::I64LtUImm16Rhs { .. } | I::I64LtUImm16Lhs { .. } => Self::I64LtU,
+            I::I64LeS { .. } | I::I64LeSImm16Rhs { .. } | I::I64LeSImm16Lhs { .. } => Self::I64LeS,
+            I::I64LeU { .. } | I::I64LeUImm16Rhs { .. } | I::I64LeUImm16Lhs { .. } => Self::I64LeU,
             I::F32Eq { .. } => Self::F32Eq,
             I::F32Ne { .. } => Self::F32Ne,
             I::F32Lt { .. } => Self::F32Lt,
             I::F32Le { .. } => Self::F32Le,
-            I::F32Gt { .. } => Self::F32Gt,
-            I::F32Ge { .. } => Self::F32Ge,
             I::F64Eq { .. } => Self::F64Eq,
             I::F64Ne { .. } => Self::F64Ne,
             I::F64Lt { .. } => Self::F64Lt,
             I::F64Le { .. } => Self::F64Le,
-            I::F64Gt { .. } => Self::F64Gt,
-            I::F64Ge { .. } => Self::F64Ge,
             _ => return None,
         };
         Some(cmp)
@@ -82,32 +77,20 @@ impl ComparatorExt for Comparator {
             I::BranchI32LtU { .. } | I::BranchI32LtUImm16Rhs { .. } => Self::I32LtU,
             I::BranchI32LeS { .. } | I::BranchI32LeSImm16Rhs { .. } => Self::I32LeS,
             I::BranchI32LeU { .. } | I::BranchI32LeUImm16Rhs { .. } => Self::I32LeU,
-            I::BranchI32GtS { .. } | I::BranchI32GtSImm16Rhs { .. } => Self::I32GtS,
-            I::BranchI32GtU { .. } | I::BranchI32GtUImm16Rhs { .. } => Self::I32GtU,
-            I::BranchI32GeS { .. } | I::BranchI32GeSImm16Rhs { .. } => Self::I32GeS,
-            I::BranchI32GeU { .. } | I::BranchI32GeUImm16Rhs { .. } => Self::I32GeU,
             I::BranchI64Eq { .. } | I::BranchI64EqImm16 { .. } => Self::I64Eq,
             I::BranchI64Ne { .. } | I::BranchI64NeImm16 { .. } => Self::I64Ne,
             I::BranchI64LtS { .. } | I::BranchI64LtSImm16Rhs { .. } => Self::I64LtS,
             I::BranchI64LtU { .. } | I::BranchI64LtUImm16Rhs { .. } => Self::I64LtU,
             I::BranchI64LeS { .. } | I::BranchI64LeSImm16Rhs { .. } => Self::I64LeS,
             I::BranchI64LeU { .. } | I::BranchI64LeUImm16Rhs { .. } => Self::I64LeU,
-            I::BranchI64GtS { .. } | I::BranchI64GtSImm16Rhs { .. } => Self::I64GtS,
-            I::BranchI64GtU { .. } | I::BranchI64GtUImm16Rhs { .. } => Self::I64GtU,
-            I::BranchI64GeS { .. } | I::BranchI64GeSImm16Rhs { .. } => Self::I64GeS,
-            I::BranchI64GeU { .. } | I::BranchI64GeUImm16Rhs { .. } => Self::I64GeU,
             I::BranchF32Eq { .. } => Self::F32Eq,
             I::BranchF32Ne { .. } => Self::F32Ne,
             I::BranchF32Lt { .. } => Self::F32Lt,
             I::BranchF32Le { .. } => Self::F32Le,
-            I::BranchF32Gt { .. } => Self::F32Gt,
-            I::BranchF32Ge { .. } => Self::F32Ge,
             I::BranchF64Eq { .. } => Self::F64Eq,
             I::BranchF64Ne { .. } => Self::F64Ne,
             I::BranchF64Lt { .. } => Self::F64Lt,
             I::BranchF64Le { .. } => Self::F64Le,
-            I::BranchF64Gt { .. } => Self::F64Gt,
-            I::BranchF64Ge { .. } => Self::F64Ge,
             _ => return None,
         };
         Some(cmp)
@@ -166,48 +149,48 @@ impl ComparatorExt for Comparator {
             Self::I32LtU => Instruction::branch_i32_lt_u,
             Self::I32LeS => Instruction::branch_i32_le_s,
             Self::I32LeU => Instruction::branch_i32_le_u,
-            Self::I32GtS => Instruction::branch_i32_gt_s,
-            Self::I32GtU => Instruction::branch_i32_gt_u,
-            Self::I32GeS => Instruction::branch_i32_ge_s,
-            Self::I32GeU => Instruction::branch_i32_ge_u,
+            Self::I32GtS => swap_cmp_br_ops!(Instruction::branch_i32_lt_s),
+            Self::I32GtU => swap_cmp_br_ops!(Instruction::branch_i32_lt_u),
+            Self::I32GeS => swap_cmp_br_ops!(Instruction::branch_i32_le_s),
+            Self::I32GeU => swap_cmp_br_ops!(Instruction::branch_i32_le_u),
             Self::I64Eq => Instruction::branch_i64_eq,
             Self::I64Ne => Instruction::branch_i64_ne,
             Self::I64LtS => Instruction::branch_i64_lt_s,
             Self::I64LtU => Instruction::branch_i64_lt_u,
             Self::I64LeS => Instruction::branch_i64_le_s,
             Self::I64LeU => Instruction::branch_i64_le_u,
-            Self::I64GtS => Instruction::branch_i64_gt_s,
-            Self::I64GtU => Instruction::branch_i64_gt_u,
-            Self::I64GeS => Instruction::branch_i64_ge_s,
-            Self::I64GeU => Instruction::branch_i64_ge_u,
+            Self::I64GtS => swap_cmp_br_ops!(Instruction::branch_i64_lt_s),
+            Self::I64GtU => swap_cmp_br_ops!(Instruction::branch_i64_lt_u),
+            Self::I64GeS => swap_cmp_br_ops!(Instruction::branch_i64_le_s),
+            Self::I64GeU => swap_cmp_br_ops!(Instruction::branch_i64_le_u),
             Self::F32Eq => Instruction::branch_f32_eq,
             Self::F32Ne => Instruction::branch_f32_ne,
             Self::F32Lt => Instruction::branch_f32_lt,
             Self::F32Le => Instruction::branch_f32_le,
-            Self::F32Gt => Instruction::branch_f32_gt,
-            Self::F32Ge => Instruction::branch_f32_ge,
+            Self::F32Gt => swap_cmp_br_ops!(Instruction::branch_f32_lt),
+            Self::F32Ge => swap_cmp_br_ops!(Instruction::branch_f32_le),
             Self::F64Eq => Instruction::branch_f64_eq,
             Self::F64Ne => Instruction::branch_f64_ne,
             Self::F64Lt => Instruction::branch_f64_lt,
             Self::F64Le => Instruction::branch_f64_le,
-            Self::F64Gt => Instruction::branch_f64_gt,
-            Self::F64Ge => Instruction::branch_f64_ge,
+            Self::F64Gt => swap_cmp_br_ops!(Instruction::branch_f64_lt),
+            Self::F64Ge => swap_cmp_br_ops!(Instruction::branch_f64_le),
         }
     }
 }
 
-/// Extensional functionality for [`Comparator`] with immediate value [`Instruction`].
-pub trait ComparatorExtImm<T> {
-    /// Returns the [`Instruction`] constructor for `self` without immediate value of type `T` if any.
-    fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<T>>;
+/// Extensional functionality for [`Comparator`] with 16-bit immediate `rhs` value [`Instruction`].
+pub trait ComparatorExtImm16Rhs<T> {
+    /// Returns the [`Instruction`] constructor for `self` with 16-bit immediate `rhs` value of type `T` if any.
+    fn branch_cmp_instr_imm16_rhs(self) -> Option<MakeBranchCmpInstrImm16Rhs<T>>;
 }
 
-/// Constructor for branch+cmp [`Instruction`] with an immediate value of type `T`.
-type MakeBranchCmpInstrImm<T> =
+/// Constructor for branch+cmp [`Instruction`] with a 16-bit immediate `rhs` value of type `T`.
+type MakeBranchCmpInstrImm16Rhs<T> =
     fn(lhs: Reg, rhs: Const16<T>, offset: BranchOffset16) -> ir::Instruction;
 
-impl ComparatorExtImm<i32> for Comparator {
-    fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<i32>> {
+impl ComparatorExtImm16Rhs<i32> for Comparator {
+    fn branch_cmp_instr_imm16_rhs(self) -> Option<MakeBranchCmpInstrImm16Rhs<i32>> {
         use Instruction as I;
         let make_instr = match self {
             Self::I32And => I::branch_i32_and_imm16,
@@ -220,52 +203,118 @@ impl ComparatorExtImm<i32> for Comparator {
             Self::I32Ne => I::branch_i32_ne_imm16,
             Self::I32LtS => I::branch_i32_lt_s_imm16_rhs,
             Self::I32LeS => I::branch_i32_le_s_imm16_rhs,
-            Self::I32GtS => I::branch_i32_gt_s_imm16_rhs,
-            Self::I32GeS => I::branch_i32_ge_s_imm16_rhs,
+            Self::I32GtS => swap_cmp_br_ops!(I::branch_i32_lt_s_imm16_lhs),
+            Self::I32GeS => swap_cmp_br_ops!(I::branch_i32_le_s_imm16_lhs),
             _ => return None,
         };
         Some(make_instr)
     }
 }
 
-impl ComparatorExtImm<u32> for Comparator {
-    fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<u32>> {
+impl ComparatorExtImm16Rhs<u32> for Comparator {
+    fn branch_cmp_instr_imm16_rhs(self) -> Option<MakeBranchCmpInstrImm16Rhs<u32>> {
         use Instruction as I;
         let make_instr = match self {
             Self::I32LtU => I::branch_i32_lt_u_imm16_rhs,
             Self::I32LeU => I::branch_i32_le_u_imm16_rhs,
-            Self::I32GtU => I::branch_i32_gt_u_imm16_rhs,
-            Self::I32GeU => I::branch_i32_ge_u_imm16_rhs,
+            Self::I32GtU => swap_cmp_br_ops!(I::branch_i32_lt_u_imm16_lhs),
+            Self::I32GeU => swap_cmp_br_ops!(I::branch_i32_le_u_imm16_lhs),
             _ => return None,
         };
         Some(make_instr)
     }
 }
 
-impl ComparatorExtImm<i64> for Comparator {
-    fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<i64>> {
+impl ComparatorExtImm16Rhs<i64> for Comparator {
+    fn branch_cmp_instr_imm16_rhs(self) -> Option<MakeBranchCmpInstrImm16Rhs<i64>> {
         use Instruction as I;
         let make_instr = match self {
             Self::I64Eq => I::branch_i64_eq_imm16,
             Self::I64Ne => I::branch_i64_ne_imm16,
             Self::I64LtS => I::branch_i64_lt_s_imm16_rhs,
             Self::I64LeS => I::branch_i64_le_s_imm16_rhs,
-            Self::I64GtS => I::branch_i64_gt_s_imm16_rhs,
-            Self::I64GeS => I::branch_i64_ge_s_imm16_rhs,
+            Self::I64GtS => swap_cmp_br_ops!(I::branch_i64_lt_s_imm16_lhs),
+            Self::I64GeS => swap_cmp_br_ops!(I::branch_i64_le_s_imm16_lhs),
             _ => return None,
         };
         Some(make_instr)
     }
 }
 
-impl ComparatorExtImm<u64> for Comparator {
-    fn branch_cmp_instr_imm(self) -> Option<MakeBranchCmpInstrImm<u64>> {
+impl ComparatorExtImm16Rhs<u64> for Comparator {
+    fn branch_cmp_instr_imm16_rhs(self) -> Option<MakeBranchCmpInstrImm16Rhs<u64>> {
         use Instruction as I;
         let make_instr = match self {
             Self::I64LtU => I::branch_i64_lt_u_imm16_rhs,
             Self::I64LeU => I::branch_i64_le_u_imm16_rhs,
-            Self::I64GtU => I::branch_i64_gt_u_imm16_rhs,
-            Self::I64GeU => I::branch_i64_ge_u_imm16_rhs,
+            Self::I64GtU => swap_cmp_br_ops!(I::branch_i64_lt_u_imm16_lhs),
+            Self::I64GeU => swap_cmp_br_ops!(I::branch_i64_le_u_imm16_lhs),
+            _ => return None,
+        };
+        Some(make_instr)
+    }
+}
+
+/// Extensional functionality for [`Comparator`] with 16-bit immediate `lhs` value [`Instruction`].
+pub trait ComparatorExtImm16Lhs<T> {
+    /// Returns the [`Instruction`] constructor for `self` with 16-bit immediate `lhs` value of type `T` if any.
+    fn branch_cmp_instr_imm16_lhs(self) -> Option<MakeBranchCmpInstrImm16Lhs<T>>;
+}
+
+/// Constructor for branch+cmp [`Instruction`] with a 16-bit immediate `lhs` value of type `T`.
+type MakeBranchCmpInstrImm16Lhs<T> =
+    fn(lhs: Const16<T>, rhs: Reg, offset: BranchOffset16) -> ir::Instruction;
+
+impl ComparatorExtImm16Lhs<i32> for Comparator {
+    fn branch_cmp_instr_imm16_lhs(self) -> Option<MakeBranchCmpInstrImm16Lhs<i32>> {
+        use Instruction as I;
+        let make_instr = match self {
+            Self::I32LtS => I::branch_i32_lt_s_imm16_lhs,
+            Self::I32LeS => I::branch_i32_le_s_imm16_lhs,
+            Self::I32GtS => swap_cmp_br_ops!(I::branch_i32_lt_s_imm16_rhs),
+            Self::I32GeS => swap_cmp_br_ops!(I::branch_i32_le_s_imm16_rhs),
+            _ => return None,
+        };
+        Some(make_instr)
+    }
+}
+
+impl ComparatorExtImm16Lhs<u32> for Comparator {
+    fn branch_cmp_instr_imm16_lhs(self) -> Option<MakeBranchCmpInstrImm16Lhs<u32>> {
+        use Instruction as I;
+        let make_instr = match self {
+            Self::I32LtU => I::branch_i32_lt_u_imm16_lhs,
+            Self::I32LeU => I::branch_i32_le_u_imm16_lhs,
+            Self::I32GtU => swap_cmp_br_ops!(I::branch_i32_lt_u_imm16_rhs),
+            Self::I32GeU => swap_cmp_br_ops!(I::branch_i32_le_u_imm16_rhs),
+            _ => return None,
+        };
+        Some(make_instr)
+    }
+}
+
+impl ComparatorExtImm16Lhs<i64> for Comparator {
+    fn branch_cmp_instr_imm16_lhs(self) -> Option<MakeBranchCmpInstrImm16Lhs<i64>> {
+        use Instruction as I;
+        let make_instr = match self {
+            Self::I64LtS => I::branch_i64_lt_s_imm16_lhs,
+            Self::I64LeS => I::branch_i64_le_s_imm16_lhs,
+            Self::I64GtS => swap_cmp_br_ops!(I::branch_i64_lt_s_imm16_rhs),
+            Self::I64GeS => swap_cmp_br_ops!(I::branch_i64_le_s_imm16_rhs),
+            _ => return None,
+        };
+        Some(make_instr)
+    }
+}
+
+impl ComparatorExtImm16Lhs<u64> for Comparator {
+    fn branch_cmp_instr_imm16_lhs(self) -> Option<MakeBranchCmpInstrImm16Lhs<u64>> {
+        use Instruction as I;
+        let make_instr = match self {
+            Self::I64LtU => I::branch_i64_lt_u_imm16_lhs,
+            Self::I64LeU => I::branch_i64_le_u_imm16_lhs,
+            Self::I64GtU => swap_cmp_br_ops!(I::branch_i64_lt_u_imm16_rhs),
+            Self::I64GeU => swap_cmp_br_ops!(I::branch_i64_le_u_imm16_rhs),
             _ => return None,
         };
         Some(make_instr)

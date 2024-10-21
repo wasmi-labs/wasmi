@@ -341,10 +341,6 @@ impl_execute_branch_binop! {
     (u32, Instruction::BranchI32LtU, execute_branch_i32_lt_u, cmp_lt),
     (i32, Instruction::BranchI32LeS, execute_branch_i32_le_s, cmp_le),
     (u32, Instruction::BranchI32LeU, execute_branch_i32_le_u, cmp_le),
-    (i32, Instruction::BranchI32GtS, execute_branch_i32_gt_s, cmp_gt),
-    (u32, Instruction::BranchI32GtU, execute_branch_i32_gt_u, cmp_gt),
-    (i32, Instruction::BranchI32GeS, execute_branch_i32_ge_s, cmp_ge),
-    (u32, Instruction::BranchI32GeU, execute_branch_i32_ge_u, cmp_ge),
 
     (i64, Instruction::BranchI64Eq, execute_branch_i64_eq, cmp_eq),
     (i64, Instruction::BranchI64Ne, execute_branch_i64_ne, cmp_ne),
@@ -352,24 +348,16 @@ impl_execute_branch_binop! {
     (u64, Instruction::BranchI64LtU, execute_branch_i64_lt_u, cmp_lt),
     (i64, Instruction::BranchI64LeS, execute_branch_i64_le_s, cmp_le),
     (u64, Instruction::BranchI64LeU, execute_branch_i64_le_u, cmp_le),
-    (i64, Instruction::BranchI64GtS, execute_branch_i64_gt_s, cmp_gt),
-    (u64, Instruction::BranchI64GtU, execute_branch_i64_gt_u, cmp_gt),
-    (i64, Instruction::BranchI64GeS, execute_branch_i64_ge_s, cmp_ge),
-    (u64, Instruction::BranchI64GeU, execute_branch_i64_ge_u, cmp_ge),
 
     (f32, Instruction::BranchF32Eq, execute_branch_f32_eq, cmp_eq),
     (f32, Instruction::BranchF32Ne, execute_branch_f32_ne, cmp_ne),
     (f32, Instruction::BranchF32Lt, execute_branch_f32_lt, cmp_lt),
     (f32, Instruction::BranchF32Le, execute_branch_f32_le, cmp_le),
-    (f32, Instruction::BranchF32Gt, execute_branch_f32_gt, cmp_gt),
-    (f32, Instruction::BranchF32Ge, execute_branch_f32_ge, cmp_ge),
 
     (f64, Instruction::BranchF64Eq, execute_branch_f64_eq, cmp_eq),
     (f64, Instruction::BranchF64Ne, execute_branch_f64_ne, cmp_ne),
     (f64, Instruction::BranchF64Lt, execute_branch_f64_lt, cmp_lt),
     (f64, Instruction::BranchF64Le, execute_branch_f64_le, cmp_le),
-    (f64, Instruction::BranchF64Gt, execute_branch_f64_gt, cmp_gt),
-    (f64, Instruction::BranchF64Ge, execute_branch_f64_ge, cmp_ge),
 }
 
 macro_rules! impl_execute_branch_binop_imm16_rhs {
@@ -397,10 +385,6 @@ impl_execute_branch_binop_imm16_rhs! {
     (u32, Instruction::BranchI32LtUImm16Rhs, execute_branch_i32_lt_u_imm16_rhs, cmp_lt),
     (i32, Instruction::BranchI32LeSImm16Rhs, execute_branch_i32_le_s_imm16_rhs, cmp_le),
     (u32, Instruction::BranchI32LeUImm16Rhs, execute_branch_i32_le_u_imm16_rhs, cmp_le),
-    (i32, Instruction::BranchI32GtSImm16Rhs, execute_branch_i32_gt_s_imm16_rhs, cmp_gt),
-    (u32, Instruction::BranchI32GtUImm16Rhs, execute_branch_i32_gt_u_imm16_rhs, cmp_gt),
-    (i32, Instruction::BranchI32GeSImm16Rhs, execute_branch_i32_ge_s_imm16_rhs, cmp_ge),
-    (u32, Instruction::BranchI32GeUImm16Rhs, execute_branch_i32_ge_u_imm16_rhs, cmp_ge),
 
     (i64, Instruction::BranchI64EqImm16, execute_branch_i64_eq_imm16, cmp_eq),
     (i64, Instruction::BranchI64NeImm16, execute_branch_i64_ne_imm16, cmp_ne),
@@ -408,10 +392,6 @@ impl_execute_branch_binop_imm16_rhs! {
     (u64, Instruction::BranchI64LtUImm16Rhs, execute_branch_i64_lt_u_imm16_rhs, cmp_lt),
     (i64, Instruction::BranchI64LeSImm16Rhs, execute_branch_i64_le_s_imm16_rhs, cmp_le),
     (u64, Instruction::BranchI64LeUImm16Rhs, execute_branch_i64_le_u_imm16_rhs, cmp_le),
-    (i64, Instruction::BranchI64GtSImm16Rhs, execute_branch_i64_gt_s_imm16_rhs, cmp_gt),
-    (u64, Instruction::BranchI64GtUImm16Rhs, execute_branch_i64_gt_u_imm16_rhs, cmp_gt),
-    (i64, Instruction::BranchI64GeSImm16Rhs, execute_branch_i64_ge_s_imm16_rhs, cmp_ge),
-    (u64, Instruction::BranchI64GeUImm16Rhs, execute_branch_i64_ge_u_imm16_rhs, cmp_ge),
 }
 
 macro_rules! impl_execute_branch_binop_imm16_lhs {

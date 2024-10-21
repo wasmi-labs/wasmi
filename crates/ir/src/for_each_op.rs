@@ -552,86 +552,6 @@ macro_rules! for_each_op {
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
-            /// A fused `i32.gt_s` and branch instruction.
-            #[snake_name(branch_i32_gt_s)]
-            BranchI32GtS {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i32.gt_s` and branch instruction with 16-bit immediate `rhs` value.
-            #[snake_name(branch_i32_gt_s_imm16_rhs)]
-            BranchI32GtSImm16Rhs {
-                /// The left-hand side operand to the conditional operator.
-                lhs: Reg,
-                /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i32.gt_u` and branch instruction.
-            #[snake_name(branch_i32_gt_u)]
-            BranchI32GtU {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i32.gt_u` and branch instruction with 16-bit immediate `rhs` value.
-            #[snake_name(branch_i32_gt_u_imm16_rhs)]
-            BranchI32GtUImm16Rhs {
-                /// The left-hand side operand to the conditional operator.
-                lhs: Reg,
-                /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u32>,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i32.ge_s` and branch instruction.
-            #[snake_name(branch_i32_ge_s)]
-            BranchI32GeS {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i32.ge_s` and branch instruction with 16-bit immediate `rhs` value.
-            #[snake_name(branch_i32_ge_s_imm16_rhs)]
-            BranchI32GeSImm16Rhs {
-                /// The left-hand side operand to the conditional operator.
-                lhs: Reg,
-                /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i32>,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i32.ge_u` and branch instruction.
-            #[snake_name(branch_i32_ge_u)]
-            BranchI32GeU {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i32.ge_u` and branch instruction with 16-bit immediate `rhs` value.
-            #[snake_name(branch_i32_ge_u_imm16_rhs)]
-            BranchI32GeUImm16Rhs {
-                /// The left-hand side operand to the conditional operator.
-                lhs: Reg,
-                /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u32>,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
 
             /// A fused `i64.eq` and branch instruction.
             #[snake_name(branch_i64_eq)]
@@ -794,86 +714,6 @@ macro_rules! for_each_op {
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
-            /// A fused `i64.gt_s` and branch instruction.
-            #[snake_name(branch_i64_gt_s)]
-            BranchI64GtS {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i64.gt_s` and branch instruction with 16-bit immediate `rhs` value.
-            #[snake_name(branch_i64_gt_s_imm16_rhs)]
-            BranchI64GtSImm16Rhs {
-                /// The left-hand side operand to the conditional operator.
-                lhs: Reg,
-                /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i64>,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i64.gt_u` and branch instruction.
-            #[snake_name(branch_i64_gt_u)]
-            BranchI64GtU {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i64.gt_u` and branch instruction with 16-bit immediate `rhs` value.
-            #[snake_name(branch_i64_gt_u_imm16_rhs)]
-            BranchI64GtUImm16Rhs {
-                /// The left-hand side operand to the conditional operator.
-                lhs: Reg,
-                /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u64>,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i64.ge_s` and branch instruction.
-            #[snake_name(branch_i64_ge_s)]
-            BranchI64GeS {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i64.ge_s` and branch instruction with 16-bit immediate `rhs` value.
-            #[snake_name(branch_i64_ge_s_imm16_rhs)]
-            BranchI64GeSImm16Rhs {
-                /// The left-hand side operand to the conditional operator.
-                lhs: Reg,
-                /// The right-hand side operand to the conditional operator.
-                rhs: Const16<i64>,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i64.ge_u` and branch instruction.
-            #[snake_name(branch_i64_ge_u)]
-            BranchI64GeU {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `i64.ge_u` and branch instruction with 16-bit immediate `rhs` value.
-            #[snake_name(branch_i64_ge_u_imm16_rhs)]
-            BranchI64GeUImm16Rhs {
-                /// The left-hand side operand to the conditional operator.
-                lhs: Reg,
-                /// The right-hand side operand to the conditional operator.
-                rhs: Const16<u64>,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
 
             /// A fused `f32.eq` and branch instruction.
             #[snake_name(branch_f32_eq)]
@@ -916,26 +756,6 @@ macro_rules! for_each_op {
                 /// The 16-bit encoded branch offset.
                 offset: BranchOffset16,
             },
-            /// A fused `f32.gt` and branch instruction.
-            #[snake_name(branch_f32_gt)]
-            BranchF32Gt {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `f32.ge` and branch instruction.
-            #[snake_name(branch_f32_ge)]
-            BranchF32Ge {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
 
             /// A fused `f64.eq` and branch instruction.
             #[snake_name(branch_f64_eq)]
@@ -971,26 +791,6 @@ macro_rules! for_each_op {
             /// A fused `f64.le` and branch instruction.
             #[snake_name(branch_f64_le)]
             BranchF64Le {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `f64.gt` and branch instruction.
-            #[snake_name(branch_f64_gt)]
-            BranchF64Gt {
-                /// The left-hand side operand to the branch conditional.
-                lhs: Reg,
-                /// The right-hand side operand to the branch conditional.
-                rhs: Reg,
-                /// The 16-bit encoded branch offset.
-                offset: BranchOffset16,
-            },
-            /// A fused `f64.ge` and branch instruction.
-            #[snake_name(branch_f64_ge)]
-            BranchF64Ge {
                 /// The left-hand side operand to the branch conditional.
                 lhs: Reg,
                 /// The right-hand side operand to the branch conditional.
@@ -3117,43 +2917,6 @@ macro_rules! for_each_op {
                 rhs: Const16<u32>,
             },
 
-            /// Wasm `i32.gt_s` equivalent Wasmi instruction.
-            #[snake_name(i32_gt_s)]
-            I32GtS{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `i32.gt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_gt_s_imm16_rhs)]
-            I32GtSImm16Rhs{
-                @result: Reg,
-                /// The register holding one of the operands.
-                lhs: Reg,
-                /// The 16-bit immediate value.
-                rhs: Const16<i32>,
-            },
-            /// Wasm `i32.gt_u` equivalent Wasmi instruction.
-            #[snake_name(i32_gt_u)]
-            I32GtU{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `i32.gt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_gt_u_imm16_rhs)]
-            I32GtUImm16Rhs{
-                @result: Reg,
-                /// The register holding one of the operands.
-                lhs: Reg,
-                /// The 16-bit immediate value.
-                rhs: Const16<u32>,
-            },
-
             /// Wasm `i32.le_s` equivalent Wasmi instruction.
             #[snake_name(i32_le_s)]
             I32LeS{
@@ -3202,43 +2965,6 @@ macro_rules! for_each_op {
             /// Wasm `i32.le_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
             #[snake_name(i32_le_u_imm16_rhs)]
             I32LeUImm16Rhs{
-                @result: Reg,
-                /// The register holding one of the operands.
-                lhs: Reg,
-                /// The 16-bit immediate value.
-                rhs: Const16<u32>,
-            },
-
-            /// Wasm `i32.ge_s` equivalent Wasmi instruction.
-            #[snake_name(i32_ge_s)]
-            I32GeS{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `i32.ge_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_ge_s_imm16_rhs)]
-            I32GeSImm16Rhs{
-                @result: Reg,
-                /// The register holding one of the operands.
-                lhs: Reg,
-                /// The 16-bit immediate value.
-                rhs: Const16<i32>,
-            },
-            /// Wasm `i32.ge_u` equivalent Wasmi instruction.
-            #[snake_name(i32_ge_u)]
-            I32GeU{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `i32.ge_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i32_ge_u_imm16_rhs)]
-            I32GeUImm16Rhs{
                 @result: Reg,
                 /// The register holding one of the operands.
                 lhs: Reg,
@@ -3340,44 +3066,6 @@ macro_rules! for_each_op {
                 rhs: Const16<u64>,
             },
 
-            /// Wasm `i64.gt_s` equivalent Wasmi instruction.
-            #[snake_name(i64_gt_s)]
-            I64GtS{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `i64.gt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_gt_s_imm16_rhs)]
-            I64GtSImm16Rhs{
-                @result: Reg,
-                /// The register holding one of the operands.
-                lhs: Reg,
-                /// The 16-bit immediate value.
-                rhs: Const16<i64>,
-            },
-
-            /// Wasm `i64.gt_u` equivalent Wasmi instruction.
-            #[snake_name(i64_gt_u)]
-            I64GtU{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `i64.gt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_gt_u_imm16_rhs)]
-            I64GtUImm16Rhs{
-                @result: Reg,
-                /// The register holding one of the operands.
-                lhs: Reg,
-                /// The 16-bit immediate value.
-                rhs: Const16<u64>,
-            },
-
             /// Wasm `i64.le_s` equivalent Wasmi instruction.
             #[snake_name(i64_le_s)]
             I64LeS{
@@ -3434,44 +3122,6 @@ macro_rules! for_each_op {
                 rhs: Const16<u64>,
             },
 
-            /// Wasm `i64.ge_s` equivalent Wasmi instruction.
-            #[snake_name(i64_ge_s)]
-            I64GeS{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `i64.ge_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_ge_s_imm16_rhs)]
-            I64GeSImm16Rhs{
-                @result: Reg,
-                /// The register holding one of the operands.
-                lhs: Reg,
-                /// The 16-bit immediate value.
-                rhs: Const16<i64>,
-            },
-
-            /// Wasm `i64.ge_u` equivalent Wasmi instruction.
-            #[snake_name(i64_ge_u)]
-            I64GeU{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `i64.ge_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
-            #[snake_name(i64_ge_u_imm16_rhs)]
-            I64GeUImm16Rhs{
-                @result: Reg,
-                /// The register holding one of the operands.
-                lhs: Reg,
-                /// The 16-bit immediate value.
-                rhs: Const16<u64>,
-            },
-
             /// Wasm `f32.eq` equivalent Wasmi instruction.
             #[snake_name(f32_eq)]
             F32Eq{
@@ -3502,24 +3152,6 @@ macro_rules! for_each_op {
             /// Wasm `f32.le` equivalent Wasmi instruction.
             #[snake_name(f32_le)]
             F32Le{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `f32.gt` equivalent Wasmi instruction.
-            #[snake_name(f32_gt)]
-            F32Gt{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `f32.ge` equivalent Wasmi instruction.
-            #[snake_name(f32_ge)]
-            F32Ge{
                 @result: Reg,
                 /// The register holding the left-hand side value.
                 lhs: Reg,
@@ -3557,24 +3189,6 @@ macro_rules! for_each_op {
             /// Wasm `f64.le` equivalent Wasmi instruction.
             #[snake_name(f64_le)]
             F64Le{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `f64.gt` equivalent Wasmi instruction.
-            #[snake_name(f64_gt)]
-            F64Gt{
-                @result: Reg,
-                /// The register holding the left-hand side value.
-                lhs: Reg,
-                /// The register holding the right-hand side value.
-                rhs: Reg,
-            },
-            /// Wasm `f64.ge` equivalent Wasmi instruction.
-            #[snake_name(f64_ge)]
-            F64Ge{
                 @result: Reg,
                 /// The register holding the left-hand side value.
                 lhs: Reg,
