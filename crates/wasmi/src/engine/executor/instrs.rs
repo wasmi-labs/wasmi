@@ -812,35 +812,35 @@ impl<'engine> Executor<'engine> {
                 }
                 Instr::I32LtS { result, lhs, rhs } => self.execute_i32_lt_s(result, lhs, rhs),
                 Instr::I32LtSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_lt_s_imm16(result, lhs, rhs)
+                    self.execute_i32_lt_s_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I32LtU { result, lhs, rhs } => self.execute_i32_lt_u(result, lhs, rhs),
                 Instr::I32LtUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_lt_u_imm16(result, lhs, rhs)
+                    self.execute_i32_lt_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I32LeS { result, lhs, rhs } => self.execute_i32_le_s(result, lhs, rhs),
                 Instr::I32LeSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_le_s_imm16(result, lhs, rhs)
+                    self.execute_i32_le_s_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I32LeU { result, lhs, rhs } => self.execute_i32_le_u(result, lhs, rhs),
                 Instr::I32LeUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_le_u_imm16(result, lhs, rhs)
+                    self.execute_i32_le_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I32GtS { result, lhs, rhs } => self.execute_i32_gt_s(result, lhs, rhs),
                 Instr::I32GtSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_gt_s_imm16(result, lhs, rhs)
+                    self.execute_i32_gt_s_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I32GtU { result, lhs, rhs } => self.execute_i32_gt_u(result, lhs, rhs),
                 Instr::I32GtUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_gt_u_imm16(result, lhs, rhs)
+                    self.execute_i32_gt_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I32GeS { result, lhs, rhs } => self.execute_i32_ge_s(result, lhs, rhs),
                 Instr::I32GeSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_ge_s_imm16(result, lhs, rhs)
+                    self.execute_i32_ge_s_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I32GeU { result, lhs, rhs } => self.execute_i32_ge_u(result, lhs, rhs),
                 Instr::I32GeUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_ge_u_imm16(result, lhs, rhs)
+                    self.execute_i32_ge_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I64Eq { result, lhs, rhs } => self.execute_i64_eq(result, lhs, rhs),
                 Instr::I64EqImm16 { result, lhs, rhs } => {
@@ -852,35 +852,35 @@ impl<'engine> Executor<'engine> {
                 }
                 Instr::I64LtS { result, lhs, rhs } => self.execute_i64_lt_s(result, lhs, rhs),
                 Instr::I64LtSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_lt_s_imm16(result, lhs, rhs)
+                    self.execute_i64_lt_s_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I64LtU { result, lhs, rhs } => self.execute_i64_lt_u(result, lhs, rhs),
                 Instr::I64LtUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_lt_u_imm16(result, lhs, rhs)
+                    self.execute_i64_lt_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I64LeS { result, lhs, rhs } => self.execute_i64_le_s(result, lhs, rhs),
                 Instr::I64LeSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_le_s_imm16(result, lhs, rhs)
+                    self.execute_i64_le_s_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I64LeU { result, lhs, rhs } => self.execute_i64_le_u(result, lhs, rhs),
                 Instr::I64LeUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_le_u_imm16(result, lhs, rhs)
+                    self.execute_i64_le_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I64GtS { result, lhs, rhs } => self.execute_i64_gt_s(result, lhs, rhs),
                 Instr::I64GtSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_gt_s_imm16(result, lhs, rhs)
+                    self.execute_i64_gt_s_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I64GtU { result, lhs, rhs } => self.execute_i64_gt_u(result, lhs, rhs),
                 Instr::I64GtUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_gt_u_imm16(result, lhs, rhs)
+                    self.execute_i64_gt_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I64GeS { result, lhs, rhs } => self.execute_i64_ge_s(result, lhs, rhs),
                 Instr::I64GeSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_ge_s_imm16(result, lhs, rhs)
+                    self.execute_i64_ge_s_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::I64GeU { result, lhs, rhs } => self.execute_i64_ge_u(result, lhs, rhs),
                 Instr::I64GeUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_ge_u_imm16(result, lhs, rhs)
+                    self.execute_i64_ge_u_imm16_rhs(result, lhs, rhs)
                 }
                 Instr::F32Eq { result, lhs, rhs } => self.execute_f32_eq(result, lhs, rhs),
                 Instr::F32Ne { result, lhs, rhs } => self.execute_f32_ne(result, lhs, rhs),
