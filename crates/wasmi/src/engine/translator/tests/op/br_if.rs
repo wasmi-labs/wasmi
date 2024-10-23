@@ -989,3 +989,46 @@ fn branch_if_results_4_mixed_2() {
         ])
         .run()
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn branch_if_i32_eqz() {
+    let wasm = r"
+        (module
+            (func (param i32)
+                (block $exit
+                    (i32.eqz (local.get 0)) ;; br_if condition
+                    (br_if $exit)
+                    (drop (i32.add (local.get 0) (i32.const 1)))
+                )
+            )
+        )";
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::branch_i32_eq_imm16(0, 0_i16, BranchOffset16::from(2)),
+            Instruction::i32_add_imm16(1, 0, 1),
+            Instruction::r#return(),
+        ])
+        .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn return_if_i32_eqz() {
+    let wasm = r"
+        (module
+            (func (param i32)
+                (i32.eqz (local.get 0)) ;; br_if condition
+                (br_if 0)
+                (drop (i32.add (local.get 0) (i32.const 1)))
+            )
+        )";
+    TranslationTest::from_wat(wasm)
+        .expect_func_instrs([
+            Instruction::i32_eq_imm16(1, 0, 0),
+            Instruction::return_nez(1),
+            Instruction::i32_add_imm16(1, 0, 1),
+            Instruction::r#return(),
+        ])
+        .run()
+}
