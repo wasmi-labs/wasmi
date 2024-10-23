@@ -18,7 +18,7 @@ mod visit_register;
 mod tests;
 
 use self::{
-    comparator::{ComparatorExt, ComparatorExtImm16Lhs, ComparatorExtImm16Rhs},
+    comparator::{NegateCmpInstr, TryIntoCmpBranchFallbackInstr, TryIntoCmpBranchInstr},
     control_frame::{
         BlockControlFrame,
         BlockHeight,
