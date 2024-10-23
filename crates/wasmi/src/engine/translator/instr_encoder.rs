@@ -921,40 +921,6 @@ impl InstrEncoder {
     /// Tries to fuse `i32.eqz` with a previous `i32.{and,or,xor}` instruction if possible.
     /// Returns `true` if it was possible to fuse the `i32.eqz` instruction.
     pub fn fuse_i32_eqz(&mut self, stack: &mut ValueStack) -> bool {
-        /// Fuse a `i32.{and,or,xor}` instruction with `i32.eqz`.
-        macro_rules! fuse {
-            ($result:expr, $lhs:expr, $rhs:expr, $stack:ident, $input:ident, $make_fuse:expr) => {{
-                if matches!($stack.get_register_space($result), RegisterSpace::Local) {
-                    // The instruction stores its result into a local variable which
-                    // is an observable side effect which we are not allowed to mutate.
-                    return false;
-                }
-                if $result != $input {
-                    // The result of the instruction and the current input are not equal
-                    // thus indicating that we cannot fuse the instructions.
-                    return false;
-                }
-                $make_fuse($result, $lhs, $rhs)
-            }};
-        }
-
-        /// Fuse a `i32.{and,or,xor}` instruction with 16-bit encoded immediate parameter with `i32.eqz`.
-        macro_rules! fuse_imm16 {
-            ($result:expr, $lhs:expr, $rhs:expr, $stack:ident, $input:ident, $make_fuse:expr) => {{
-                if matches!($stack.get_register_space($result), RegisterSpace::Local) {
-                    // The instruction stores its result into a local variable which
-                    // is an observable side effect which we are not allowed to mutate.
-                    return false;
-                }
-                if $result != $input {
-                    // The result of the instruction and the current input are not equal
-                    // thus indicating that we cannot fuse the instructions.
-                    return false;
-                }
-                $make_fuse($result, $lhs, $rhs)
-            }};
-        }
-
         let Provider::Register(input) = stack.peek() else {
             // Only register inputs can be negated.
             // Constant inputs are resolved via constant propagation.
@@ -964,49 +930,26 @@ impl InstrEncoder {
             // If there is no last instruction there is no comparison instruction to negate.
             return false;
         };
-        let fused_instr = match *self.instrs.get(last_instr) {
-            Instruction::I32And { result, lhs, rhs } => {
-                fuse!(result, lhs, rhs, stack, input, Instruction::i32_and_eqz)
-            }
-            Instruction::I32AndImm16 { result, lhs, rhs } => {
-                fuse_imm16!(
-                    result,
-                    lhs,
-                    rhs,
-                    stack,
-                    input,
-                    Instruction::i32_and_eqz_imm16
-                )
-            }
-            Instruction::I32Or { result, lhs, rhs } => {
-                fuse!(result, lhs, rhs, stack, input, Instruction::i32_or_eqz)
-            }
-            Instruction::I32OrImm16 { result, lhs, rhs } => {
-                fuse_imm16!(
-                    result,
-                    lhs,
-                    rhs,
-                    stack,
-                    input,
-                    Instruction::i32_or_eqz_imm16
-                )
-            }
-            Instruction::I32Xor { result, lhs, rhs } => {
-                fuse!(result, lhs, rhs, stack, input, Instruction::i32_xor_eqz)
-            }
-            Instruction::I32XorImm16 { result, lhs, rhs } => {
-                fuse_imm16!(
-                    result,
-                    lhs,
-                    rhs,
-                    stack,
-                    input,
-                    Instruction::i32_xor_eqz_imm16
-                )
-            }
-            _ => return false,
+        let last_instruction = *self.instrs.get(last_instr);
+        let Some(result) = last_instruction.result() else {
+            // All negatable instructions have a single result register.
+            return false;
         };
-        _ = mem::replace(self.instrs.get_mut(last_instr), fused_instr);
+        if matches!(stack.get_register_space(result), RegisterSpace::Local) {
+            // The instruction stores its result into a local variable which
+            // is an observable side effect which we are not allowed to mutate.
+            return false;
+        }
+        if result != input {
+            // The result of the instruction and the current input are not equal
+            // thus indicating that we cannot fuse the instructions.
+            return false;
+        }
+        let Some(negated) = last_instruction.negate_cmp_instr() else {
+            // Last instruction is unable to be negated.
+            return false;
+        };
+        _ = mem::replace(self.instrs.get_mut(last_instr), negated);
         true
     }
 
