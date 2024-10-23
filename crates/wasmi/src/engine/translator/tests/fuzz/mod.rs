@@ -205,7 +205,7 @@ fn fuzz_regression_12_f32() {
         ]))
         .expect_func(ExpectedFunc::new([
             Instruction::copy_imm32(Reg::from(0), u32::MAX),
-            Instruction::f32_ge(Reg::from(1), Reg::from(0), Reg::from(0)),
+            Instruction::f32_le(Reg::from(1), Reg::from(0), Reg::from(0)),
             Instruction::return_nez(1),
             Instruction::trap(TrapCode::UnreachableCodeReached),
         ]))
@@ -229,7 +229,7 @@ fn fuzz_regression_12_f64() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::copy(0, -1),
-                Instruction::f64_ge(Reg::from(1), Reg::from(0), Reg::from(0)),
+                Instruction::f64_le(Reg::from(1), Reg::from(0), Reg::from(0)),
                 Instruction::return_nez(1),
                 Instruction::trap(TrapCode::UnreachableCodeReached),
             ])

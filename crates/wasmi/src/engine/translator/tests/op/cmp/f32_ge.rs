@@ -6,7 +6,7 @@ const WASM_OP: WasmOp = WasmOp::cmp(WasmType::F32, "ge");
 #[cfg_attr(miri, ignore)]
 fn same_reg() {
     let expected = [
-        Instruction::f32_ge(Reg::from(1), Reg::from(0), Reg::from(0)),
+        Instruction::f32_le(Reg::from(1), Reg::from(0), Reg::from(0)),
         Instruction::return_reg(1),
     ];
     test_binary_same_reg(WASM_OP, expected)
@@ -15,19 +15,19 @@ fn same_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_reg() {
-    test_binary_reg_reg(WASM_OP, Instruction::f32_ge)
+    test_binary_reg_reg(WASM_OP, swap_ops!(Instruction::f32_le))
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm() {
-    test_binary_reg_imm32(WASM_OP, 1.0_f32, Instruction::f32_ge)
+    test_binary_reg_imm32(WASM_OP, 1.0_f32, swap_ops!(Instruction::f32_le))
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm_lhs() {
-    test_binary_reg_imm32_lhs(WASM_OP, 1.0_f32, Instruction::f32_ge)
+    test_binary_reg_imm32_lhs(WASM_OP, 1.0_f32, swap_ops!(Instruction::f32_le))
 }
 
 #[test]
