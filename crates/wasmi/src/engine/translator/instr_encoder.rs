@@ -957,9 +957,12 @@ impl InstrEncoder {
         }
 
         let Provider::Register(input) = stack.peek() else {
+            // Only register inputs can be negated.
+            // Constant inputs are resolved via constant propagation.
             return false;
         };
         let Some(last_instr) = self.last_instr else {
+            // If there is no last instruction there is no comparison instruction to negate.
             return false;
         };
         let fused_instr = match *self.instrs.get(last_instr) {
