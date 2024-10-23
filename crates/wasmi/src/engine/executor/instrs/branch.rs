@@ -278,20 +278,6 @@ where
     a <= b
 }
 
-fn cmp_gt<T>(a: T, b: T) -> bool
-where
-    T: PartialOrd,
-{
-    a > b
-}
-
-fn cmp_ge<T>(a: T, b: T) -> bool
-where
-    T: PartialOrd,
-{
-    a >= b
-}
-
 fn cmp_i32_and(a: i32, b: i32) -> bool {
     (a & b) != 0
 }
@@ -434,10 +420,6 @@ impl Executor<'_> {
             C::I32LtU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_lt),
             C::I32LeS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_le),
             C::I32LeU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_le),
-            C::I32GtS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_gt),
-            C::I32GtU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_gt),
-            C::I32GeS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_ge),
-            C::I32GeU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_ge),
             C::I32And => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_and),
             C::I32Or => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_or),
             C::I32Xor => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_xor),
@@ -450,22 +432,14 @@ impl Executor<'_> {
             C::I64LtU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_lt),
             C::I64LeS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_le),
             C::I64LeU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_le),
-            C::I64GtS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_gt),
-            C::I64GtU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_gt),
-            C::I64GeS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_ge),
-            C::I64GeU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_ge),
             C::F32Eq => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_eq),
             C::F32Ne => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_ne),
             C::F32Lt => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_lt),
             C::F32Le => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_le),
-            C::F32Gt => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_gt),
-            C::F32Ge => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_ge),
             C::F64Eq => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_eq),
             C::F64Ne => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_ne),
             C::F64Lt => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_lt),
             C::F64Le => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_le),
-            C::F64Gt => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_gt),
-            C::F64Ge => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_ge),
         };
     }
 }
