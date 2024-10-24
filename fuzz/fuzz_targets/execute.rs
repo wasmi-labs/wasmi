@@ -1,11 +1,9 @@
 #![no_main]
 
-mod utils;
-
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
-use utils::ty_to_arbitrary_val;
 use wasmi::{Config, Engine, Export, Linker, Module, Store, StoreLimitsBuilder};
+use wasmi_fuzz::ty_to_arbitrary_val;
 
 fuzz_target!(|seed: &[u8]| {
     let mut u = Unstructured::new(seed);

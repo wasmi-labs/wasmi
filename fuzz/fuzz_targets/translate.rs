@@ -1,7 +1,5 @@
 #![no_main]
 
-mod utils;
-
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
 use wasmi::{Config, Engine, Module};
