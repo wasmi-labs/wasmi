@@ -49,7 +49,6 @@ fn binop_i32_eqz() {
         ("i32", "gt_u", Instruction::i32_le_u),
         ("i32", "ge_s", Instruction::i32_lt_s),
         ("i32", "ge_u", Instruction::i32_lt_u),
-
         ("i64", "eq", Instruction::i64_ne),
         ("i64", "ne", Instruction::i64_eq),
         ("i64", "lt_s", swap_ops!(Instruction::i64_le_s)),
@@ -60,7 +59,6 @@ fn binop_i32_eqz() {
         ("i64", "gt_u", Instruction::i64_le_u),
         ("i64", "ge_s", Instruction::i64_lt_s),
         ("i64", "ge_u", Instruction::i64_lt_u),
-
         ("f32", "eq", Instruction::f32_ne),
         ("f32", "ne", Instruction::f32_eq),
         ("f64", "eq", Instruction::f64_ne),
