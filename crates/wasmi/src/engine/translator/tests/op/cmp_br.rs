@@ -1,9 +1,13 @@
 use super::{wasm_type::WasmTy, *};
 use crate::{
-    core::ValType,
-    ir::{index::Global, BranchOffset, BranchOffset16},
+    core::{UntypedVal, ValType},
+    ir::{index::Global, BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset},
 };
-use std::fmt::{Debug, Display};
+use std::{
+    fmt,
+    fmt::{Debug, Display},
+    string::String,
+};
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -823,4 +827,68 @@ fn if_i64_eqz_fuse() {
             Instruction::Return,
         ])
         .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn cmp_br_fallback() {
+    let len_adds = 0x1 << 16;
+    let wasm = generate_cmp_br_fallback_wasm(len_adds).unwrap();
+    let expected_instrs = {
+        let mut instrs = std::vec![
+            Instruction::branch_cmp_fallback(0, -1, -3),
+            Instruction::i32_add_imm16(1, 0, 1),
+        ];
+        instrs.extend((0..(len_adds - 2)).map(|_| Instruction::i32_add_imm16(1, 1, 1)));
+        instrs.extend([
+            Instruction::i32_add_imm16(0, 1, 1),
+            Instruction::branch_cmp_fallback(0, -1, -2),
+            Instruction::r#return(),
+        ]);
+        instrs
+    };
+    let param0: ComparatorAndOffset =
+        ComparatorAndOffset::new(Comparator::I32Ne, BranchOffset::from(65537));
+    let param1 = ComparatorAndOffset::new(Comparator::I32Ne, BranchOffset::from(-65537));
+    TranslationTest::from_wat(&wasm)
+        .expect_func(ExpectedFunc::new(expected_instrs).consts([
+            UntypedVal::from(0_i64),  // reg(-1)
+            UntypedVal::from(param1), // reg(-2)
+            UntypedVal::from(param0), // reg(-3)
+        ]))
+        .run()
+}
+
+fn generate_cmp_br_fallback_wasm(len_adds: usize) -> Result<String, fmt::Error> {
+    use fmt::Write as _;
+    let mut wasm = String::new();
+    writeln!(
+        wasm,
+        r"
+        (module
+            (func (param i32)
+                (loop $continue
+                    (block $skip
+                        (br_if $skip (local.get 0))
+
+                        (local.get 0)"
+    )?;
+    for _ in 0..len_adds {
+        writeln!(
+            wasm,
+            "\
+                        (i32.add (i32.const 1))"
+        )?;
+    }
+    writeln!(
+        wasm,
+        "\
+                        (local.set 0)
+                    )
+                    (br_if $continue (local.get 0))
+                )
+            )
+        )"
+    )?;
+    Ok(wasm)
 }
