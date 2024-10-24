@@ -5,7 +5,7 @@ mod utils;
 use arbitrary::Unstructured;
 use libfuzzer_sys::fuzz_target;
 use utils::{arbitrary_swarm_config_module, ty_to_arbitrary_val};
-use wasmi::{Config, Engine, Linker, Module, Store, StoreLimitsBuilder};
+use wasmi::{Config, Engine, Export, Linker, Module, Store, StoreLimitsBuilder};
 
 fuzz_target!(|seed: &[u8]| {
     let mut unstructured = Unstructured::new(seed);
@@ -36,19 +36,14 @@ fuzz_target!(|seed: &[u8]| {
         return;
     };
 
-    let mut funcs = Vec::new();
     let mut params = Vec::new();
     let mut results = Vec::new();
 
-    let exports = instance.exports(&store);
-    for e in exports {
-        let Some(func) = e.into_func() else {
-            // Export is no function which we cannot execute, therefore we ignore it.
-            continue;
-        };
-        funcs.push(func);
-    }
-    for func in &funcs {
+    let funcs = instance
+        .exports(&store)
+        .filter_map(Export::into_func)
+        .collect::<Vec<_>>();
+    for func in funcs {
         params.clear();
         results.clear();
         let ty = func.ty(&store);
