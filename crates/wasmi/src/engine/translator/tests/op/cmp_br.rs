@@ -218,6 +218,103 @@ fn loop_backward_imm_rhs() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
+fn loop_backward_imm_lhs() {
+    fn test_for<T>(
+        op: &str,
+        value: T,
+        expect_instr: fn(Reg, Const16<T>, BranchOffset16) -> Instruction,
+    ) where
+        T: WasmTy,
+        Const16<T>: TryFrom<T> + Debug,
+        DisplayWasm<T>: Display,
+    {
+        let ty = T::NAME;
+        let display_value = DisplayWasm::from(value);
+        let wasm = format!(
+            r"
+            (module
+                (func (param {ty} {ty})
+                    (loop
+                        ({ty}.const {display_value})
+                        (local.get 0)
+                        ({ty}.{op})
+                        (br_if 0)
+                    )
+                )
+            )",
+        );
+        TranslationTest::from_wat(&wasm)
+            .expect_func_instrs([
+                expect_instr(
+                    Reg::from(0),
+                    <Const16<T>>::try_from(value).ok().unwrap(),
+                    BranchOffset16::from(0),
+                ),
+                Instruction::Return,
+            ])
+            .run()
+    }
+
+    test_for::<i32>("and", 1, Instruction::branch_i32_and_imm16);
+    test_for::<i32>("or", 1, Instruction::branch_i32_or_imm16);
+    test_for::<i32>("xor", 1, Instruction::branch_i32_xor_imm16);
+    test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm16);
+    test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm16);
+    test_for::<i32>(
+        "lt_s",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i32_lt_s_imm16_lhs),
+    );
+    test_for::<u32>(
+        "lt_u",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i32_lt_u_imm16_lhs),
+    );
+    test_for::<i32>(
+        "le_s",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i32_le_s_imm16_lhs),
+    );
+    test_for::<u32>(
+        "le_u",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i32_le_u_imm16_lhs),
+    );
+    test_for::<i32>("gt_s", 1, Instruction::branch_i32_lt_s_imm16_rhs);
+    test_for::<u32>("gt_u", 1, Instruction::branch_i32_lt_u_imm16_rhs);
+    test_for::<i32>("ge_s", 1, Instruction::branch_i32_le_s_imm16_rhs);
+    test_for::<u32>("ge_u", 1, Instruction::branch_i32_le_u_imm16_rhs);
+
+    test_for::<i64>("eq", 1, Instruction::branch_i64_eq_imm16);
+    test_for::<i64>("ne", 1, Instruction::branch_i64_ne_imm16);
+    test_for::<i64>(
+        "lt_s",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i64_lt_s_imm16_lhs),
+    );
+    test_for::<u64>(
+        "lt_u",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i64_lt_u_imm16_lhs),
+    );
+    test_for::<i64>(
+        "le_s",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i64_le_s_imm16_lhs),
+    );
+    test_for::<u64>(
+        "le_u",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i64_le_u_imm16_lhs),
+    );
+    test_for::<i64>("gt_s", 1, Instruction::branch_i64_lt_s_imm16_rhs);
+    test_for::<u64>("gt_u", 1, Instruction::branch_i64_lt_u_imm16_rhs);
+    test_for::<i64>("ge_s", 1, Instruction::branch_i64_le_s_imm16_rhs);
+    test_for::<u64>("ge_u", 1, Instruction::branch_i64_le_u_imm16_rhs);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
 fn loop_backward_imm_eqz() {
     fn test_for(op: &str, expect_instr: fn(Reg, i16, BranchOffset16) -> Instruction) {
         let wasm = format!(
