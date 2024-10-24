@@ -25,12 +25,6 @@ test = false
 doc = false
 
 [[bin]]
-name = "translate_metered"
-path = "fuzz_targets/translate_metered.rs"
-test = false
-doc = false
-
-[[bin]]
 name = "execute"
 path = "fuzz_targets/execute.rs"
 test = false
