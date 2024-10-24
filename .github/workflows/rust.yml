@@ -229,7 +229,7 @@ jobs:
       - name: Run Fuzzing Target
         run: >-
           cargo fuzz run ${{ matrix.fuzz_target }}
-          -jobs 4              # GitHub hosted runners have 4 CPUs.
+          --jobs 4              # GitHub hosted runners have 4 CPUs.
           --verbose
           --debug-assertions   # We want to have debug-assertions enabled for all modes.
           --
