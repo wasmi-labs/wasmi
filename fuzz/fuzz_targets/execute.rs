@@ -43,7 +43,7 @@ fuzz_target!(|seed: &[u8]| {
         .exports(&store)
         .filter_map(Export::into_func)
         .collect::<Box<[_]>>();
-    for func in &funcs {
+    for func in funcs {
         params.clear();
         results.clear();
         let ty = func.ty(&store);
