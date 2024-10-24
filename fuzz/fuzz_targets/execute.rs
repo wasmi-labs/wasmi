@@ -2,14 +2,18 @@
 
 mod utils;
 
-use arbitrary::Unstructured;
+use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
-use utils::{arbitrary_swarm_config_module, ty_to_arbitrary_val};
+use utils::ty_to_arbitrary_val;
 use wasmi::{Config, Engine, Export, Linker, Module, Store, StoreLimitsBuilder};
 
 fuzz_target!(|seed: &[u8]| {
-    let mut unstructured = Unstructured::new(seed);
-    let Ok(smith_module) = arbitrary_swarm_config_module(&mut unstructured) else {
+    let unstructured = Unstructured::new(seed);
+    let Ok(mut fuzz_config) = wasmi_fuzz::FuzzConfig::arbitrary(&mut unstructured) else {
+        return;
+    };
+    fuzz_config.export_everything();
+    let Ok(smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut unstructured) else {
         return;
     };
     let wasm = smith_module.to_bytes();
