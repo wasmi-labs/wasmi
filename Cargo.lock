@@ -1822,16 +1822,16 @@ dependencies = [
 
 [[package]]
 name = "wasm-smith"
-version = "0.218.0"
+version = "0.219.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b533994f2242064bf512b31d47380e4ea9acc85ffec09fc07db61300261793f7"
+checksum = "3b526e4c6eed409b619960258ba5bd8a3b44dfb30c75c12fce80b750a4487fcc"
 dependencies = [
  "anyhow",
  "arbitrary",
  "flagset",
  "indexmap",
  "leb128",
- "wasm-encoder 0.218.0",
+ "wasm-encoder 0.219.1",
 ]
 
 [[package]]
