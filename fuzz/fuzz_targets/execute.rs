@@ -8,12 +8,12 @@ use utils::ty_to_arbitrary_val;
 use wasmi::{Config, Engine, Export, Linker, Module, Store, StoreLimitsBuilder};
 
 fuzz_target!(|seed: &[u8]| {
-    let mut unstructured = Unstructured::new(seed);
-    let Ok(mut fuzz_config) = wasmi_fuzz::FuzzConfig::arbitrary(&mut unstructured) else {
+    let mut u = Unstructured::new(seed);
+    let Ok(mut fuzz_config) = wasmi_fuzz::FuzzConfig::arbitrary(&mut u) else {
         return;
     };
     fuzz_config.export_everything();
-    let Ok(smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut unstructured) else {
+    let Ok(smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut u) else {
         return;
     };
     let wasm = smith_module.to_bytes();
@@ -54,12 +54,12 @@ fuzz_target!(|seed: &[u8]| {
         params.extend(
             ty.params()
                 .iter()
-                .map(|param_ty| ty_to_arbitrary_val(param_ty, &mut unstructured)),
+                .map(|param_ty| ty_to_arbitrary_val(param_ty, &mut u)),
         );
         results.extend(
             ty.results()
                 .iter()
-                .map(|param_ty| ty_to_arbitrary_val(param_ty, &mut unstructured)),
+                .map(|param_ty| ty_to_arbitrary_val(param_ty, &mut u)),
         );
         _ = func.call(&mut store, &params, &mut results);
     }
