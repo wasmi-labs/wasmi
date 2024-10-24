@@ -8,7 +8,7 @@ use utils::ty_to_arbitrary_val;
 use wasmi::{Config, Engine, Export, Linker, Module, Store, StoreLimitsBuilder};
 
 fuzz_target!(|seed: &[u8]| {
-    let unstructured = Unstructured::new(seed);
+    let mut unstructured = Unstructured::new(seed);
     let Ok(mut fuzz_config) = wasmi_fuzz::FuzzConfig::arbitrary(&mut unstructured) else {
         return;
     };
