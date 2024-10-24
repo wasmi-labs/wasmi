@@ -222,6 +222,8 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-fuzz was already installed on the CI runner.
           cargo install cargo-fuzz || true
+      - name: Check Fuzzing Target
+        run: cargo fuzz check ${{ matrix.fuzz_target }}
       - name: Build Fuzzing Target
         run: cargo fuzz build ${{ matrix.fuzz_target }}
       - name: Run Fuzzing Target
