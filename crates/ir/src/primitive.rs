@@ -346,7 +346,7 @@ impl ComparatorAndOffset {
     pub fn as_u64(&self) -> u64 {
         let hi = self.cmp as u64;
         let lo = self.offset.to_i32() as u64;
-        hi << 32 & lo
+        hi << 32 | lo
     }
 }
 
