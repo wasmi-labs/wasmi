@@ -1,9 +1,13 @@
 use super::{wasm_type::WasmTy, *};
 use crate::{
-    core::ValType,
-    ir::{index::Global, BranchOffset, BranchOffset16},
+    core::{UntypedVal, ValType},
+    ir::{index::Global, BranchOffset, BranchOffset16, Comparator, ComparatorAndOffset},
 };
-use std::fmt::{Debug, Display};
+use std::{
+    fmt,
+    fmt::{Debug, Display},
+    string::String,
+};
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -121,7 +125,7 @@ fn loop_backward() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn loop_backward_imm() {
+fn loop_backward_imm_rhs() {
     fn test_for<T>(
         op: &str,
         value: T,
@@ -218,16 +222,26 @@ fn loop_backward_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn loop_backward_imm_eqz() {
-    fn test_for(op: &str, expect_instr: fn(Reg, i16, BranchOffset16) -> Instruction) {
+fn loop_backward_imm_lhs() {
+    fn test_for<T>(
+        op: &str,
+        value: T,
+        expect_instr: fn(Reg, Const16<T>, BranchOffset16) -> Instruction,
+    ) where
+        T: WasmTy,
+        Const16<T>: TryFrom<T> + Debug,
+        DisplayWasm<T>: Display,
+    {
+        let ty = T::NAME;
+        let display_value = DisplayWasm::from(value);
         let wasm = format!(
             r"
             (module
-                (func (param i32 i32)
+                (func (param {ty} {ty})
                     (loop
+                        ({ty}.const {display_value})
                         (local.get 0)
-                        (i32.const 0)
-                        (i32.{op})
+                        ({ty}.{op})
                         (br_if 0)
                     )
                 )
@@ -235,13 +249,72 @@ fn loop_backward_imm_eqz() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(0), 0, BranchOffset16::from(0_i16)),
+                expect_instr(
+                    Reg::from(0),
+                    <Const16<T>>::try_from(value).ok().unwrap(),
+                    BranchOffset16::from(0),
+                ),
                 Instruction::Return,
             ])
             .run()
     }
-    test_for("eq", Instruction::branch_i32_eq_imm16);
-    test_for("ne", Instruction::branch_i32_ne_imm16);
+
+    test_for::<i32>("and", 1, Instruction::branch_i32_and_imm16);
+    test_for::<i32>("or", 1, Instruction::branch_i32_or_imm16);
+    test_for::<i32>("xor", 1, Instruction::branch_i32_xor_imm16);
+    test_for::<i32>("eq", 1, Instruction::branch_i32_eq_imm16);
+    test_for::<i32>("ne", 1, Instruction::branch_i32_ne_imm16);
+    test_for::<i32>(
+        "lt_s",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i32_lt_s_imm16_lhs),
+    );
+    test_for::<u32>(
+        "lt_u",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i32_lt_u_imm16_lhs),
+    );
+    test_for::<i32>(
+        "le_s",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i32_le_s_imm16_lhs),
+    );
+    test_for::<u32>(
+        "le_u",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i32_le_u_imm16_lhs),
+    );
+    test_for::<i32>("gt_s", 1, Instruction::branch_i32_lt_s_imm16_rhs);
+    test_for::<u32>("gt_u", 1, Instruction::branch_i32_lt_u_imm16_rhs);
+    test_for::<i32>("ge_s", 1, Instruction::branch_i32_le_s_imm16_rhs);
+    test_for::<u32>("ge_u", 1, Instruction::branch_i32_le_u_imm16_rhs);
+
+    test_for::<i64>("eq", 1, Instruction::branch_i64_eq_imm16);
+    test_for::<i64>("ne", 1, Instruction::branch_i64_ne_imm16);
+    test_for::<i64>(
+        "lt_s",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i64_lt_s_imm16_lhs),
+    );
+    test_for::<u64>(
+        "lt_u",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i64_lt_u_imm16_lhs),
+    );
+    test_for::<i64>(
+        "le_s",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i64_le_s_imm16_lhs),
+    );
+    test_for::<u64>(
+        "le_u",
+        1,
+        swap_cmp_br_ops!(Instruction::branch_i64_le_u_imm16_lhs),
+    );
+    test_for::<i64>("gt_s", 1, Instruction::branch_i64_lt_s_imm16_rhs);
+    test_for::<u64>("gt_u", 1, Instruction::branch_i64_lt_u_imm16_rhs);
+    test_for::<i64>("ge_s", 1, Instruction::branch_i64_le_s_imm16_rhs);
+    test_for::<u64>("ge_u", 1, Instruction::branch_i64_le_u_imm16_rhs);
 }
 
 #[test]
@@ -679,6 +752,8 @@ fn block_i32_eqz_fuse() {
             .run()
     }
 
+    test_for("eq", Instruction::branch_i32_ne);
+    test_for("ne", Instruction::branch_i32_eq);
     test_for("and", Instruction::branch_i32_and_eqz);
     test_for("or", Instruction::branch_i32_or_eqz);
     test_for("xor", Instruction::branch_i32_xor_eqz);
@@ -707,6 +782,8 @@ fn if_i32_eqz_fuse() {
             .run()
     }
 
+    test_for("eq", Instruction::branch_i32_eq);
+    test_for("ne", Instruction::branch_i32_ne);
     test_for("and", Instruction::branch_i32_and);
     test_for("or", Instruction::branch_i32_or);
     test_for("xor", Instruction::branch_i32_xor);
@@ -750,4 +827,70 @@ fn if_i64_eqz_fuse() {
             Instruction::Return,
         ])
         .run()
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn cmp_br_fallback() {
+    // Required amount of instructions to trigger the `cmp+br` fallback instruction generation.
+    let len_adds = (1 << 15) + 1;
+    let wasm = generate_cmp_br_fallback_wasm(len_adds).unwrap();
+    let expected_instrs = {
+        let mut instrs = std::vec![
+            Instruction::branch_cmp_fallback(0, -1, -3),
+            Instruction::i32_add_imm16(1, 0, 1),
+        ];
+        instrs.extend((0..(len_adds - 2)).map(|_| Instruction::i32_add_imm16(1, 1, 1)));
+        instrs.extend([
+            Instruction::i32_add_imm16(0, 1, 1),
+            Instruction::branch_cmp_fallback(0, -1, -2),
+            Instruction::r#return(),
+        ]);
+        instrs
+    };
+    let offset = len_adds as i32 + 1;
+    let param0: ComparatorAndOffset =
+        ComparatorAndOffset::new(Comparator::I32Ne, BranchOffset::from(offset));
+    let param1 = ComparatorAndOffset::new(Comparator::I32Ne, BranchOffset::from(-offset));
+    TranslationTest::from_wat(&wasm)
+        .expect_func(ExpectedFunc::new(expected_instrs).consts([
+            UntypedVal::from(0_i64),  // reg(-1)
+            UntypedVal::from(param1), // reg(-2)
+            UntypedVal::from(param0), // reg(-3)
+        ]))
+        .run()
+}
+
+fn generate_cmp_br_fallback_wasm(len_adds: usize) -> Result<String, fmt::Error> {
+    use fmt::Write as _;
+    let mut wasm = String::new();
+    writeln!(
+        wasm,
+        r"
+        (module
+            (func (param i32)
+                (loop $continue
+                    (block $skip
+                        (br_if $skip (local.get 0))
+
+                        (local.get 0)"
+    )?;
+    for _ in 0..len_adds {
+        writeln!(
+            wasm,
+            "\
+                        (i32.add (i32.const 1))"
+        )?;
+    }
+    writeln!(
+        wasm,
+        "\
+                        (local.set 0)
+                    )
+                    (br_if $continue (local.get 0))
+                )
+            )
+        )"
+    )?;
+    Ok(wasm)
 }
