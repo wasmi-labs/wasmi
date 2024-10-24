@@ -211,7 +211,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
-          toolchain: nightly-2024-09-24
+          toolchain: nightly-2024-10-18
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -222,16 +222,21 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-fuzz was already installed on the CI runner.
           cargo install cargo-fuzz || true
+      - name: Check Fuzzing Target
+        run: cargo fuzz check ${{ matrix.fuzz_target }}
       - name: Build Fuzzing Target
         run: cargo fuzz build ${{ matrix.fuzz_target }}
       - name: Run Fuzzing Target
+        # - Use 4 jobs since GitHub hosted runners provide 4 CPUs.
+        # - Always enable debug-assertions for all modes to catch more bugs.
+        # - Run fuzzing for 120s (2 minutes) in total.
         run: >-
           cargo fuzz run ${{ matrix.fuzz_target }}
-          -j 2
+          --jobs 4
           --verbose
           --debug-assertions
           --
-          -max_total_time=120 # 2 minutes of fuzzing
+          -max_total_time=120
 
   miri:
     name: Miri
