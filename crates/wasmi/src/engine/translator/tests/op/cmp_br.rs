@@ -832,7 +832,8 @@ fn if_i64_eqz_fuse() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn cmp_br_fallback() {
-    let len_adds = 0x1 << 16;
+    // Required amount of instructions to trigger the `cmp+br` fallback instruction generation.
+    let len_adds = 1 << 15 + 1;
     let wasm = generate_cmp_br_fallback_wasm(len_adds).unwrap();
     let expected_instrs = {
         let mut instrs = std::vec![
