@@ -216,16 +216,22 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
-            ${{ github.workspace }}/hfuzz_target
-            ${{ github.workspace }}/hfuzz_workspace
-      - name: Install cargo-honggfuzz and dependencies
+            ${{ github.workspace }}/fuzz/corpus
+      - name: Install `cargo-fuzz`
         run: |
-          cargo install honggfuzz || true
-          sudo apt-get update && sudo apt-get install --yes binutils-dev libunwind-dev
-      - name: Run HFuzz
-        env:
-          HFUZZ_RUN_ARGS: "--run_time 120 --verbose --quiet" # 2 minutes of fuzzing
-        run: cargo hfuzz run ${{ matrix.fuzz_target }}
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-fuzz was already installed on the CI runner.
+          cargo install cargo-fuzz || true
+      - name: Build Fuzzing Target
+        run: cargo fuzz build ${{ matrix.fuzz_target }}
+      - name: Run Fuzzing Target
+        run: >-
+          cargo fuzz run ${{ matrix.fuzz_target }}
+          -j 2
+          --verbose
+          --debug-assertions
+          --
+          -max_total_time=120 # 2 minutes of fuzzing
 
   miri:
     name: Miri
