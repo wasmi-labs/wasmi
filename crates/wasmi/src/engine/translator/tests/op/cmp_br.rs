@@ -847,9 +847,10 @@ fn cmp_br_fallback() {
         ]);
         instrs
     };
+    let offset = len_adds as i32 + 1;
     let param0: ComparatorAndOffset =
-        ComparatorAndOffset::new(Comparator::I32Ne, BranchOffset::from(65537));
-    let param1 = ComparatorAndOffset::new(Comparator::I32Ne, BranchOffset::from(-65537));
+        ComparatorAndOffset::new(Comparator::I32Ne, BranchOffset::from(offset));
+    let param1 = ComparatorAndOffset::new(Comparator::I32Ne, BranchOffset::from(-offset));
     TranslationTest::from_wat(&wasm)
         .expect_func(ExpectedFunc::new(expected_instrs).consts([
             UntypedVal::from(0_i64),  // reg(-1)
