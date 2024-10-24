@@ -3,7 +3,7 @@
 use arbitrary::{Arbitrary, Unstructured};
 use wasmi::{core::ValType, ExternRef, FuncRef, Val};
 
-pub fn disable_unsupported_config(config: &mut wasm_smith::Config) {
+fn disable_unsupported_config(config: &mut wasm_smith::Config) {
     config.gc_enabled = false;
     config.exceptions_enabled = false;
     config.relaxed_simd_enabled = false;
