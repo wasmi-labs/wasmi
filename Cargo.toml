@@ -8,6 +8,7 @@ members = [
     "crates/wasmi",
     "crates/wasi",
     "crates/ir",
+    "crates/fuzz",
     "fuzz",
 ]
 exclude = []
