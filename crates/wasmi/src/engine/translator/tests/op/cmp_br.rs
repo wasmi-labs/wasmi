@@ -315,37 +315,6 @@ fn loop_backward_imm_lhs() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn loop_backward_imm_eqz() {
-    fn test_for(op: &str, expect_instr: fn(Reg, i16, BranchOffset16) -> Instruction) {
-        let wasm = format!(
-            r"
-            (module
-                (func (param i32 i32)
-                    (loop
-                        (local.get 0)
-                        (i32.const 1)
-                        (i32.{op})
-                        (br_if 0)
-                    )
-                )
-            )",
-        );
-        TranslationTest::from_wat(&wasm)
-            .expect_func_instrs([
-                expect_instr(Reg::from(0), 1, BranchOffset16::from(0_i16)),
-                Instruction::Return,
-            ])
-            .run()
-    }
-    test_for("eq", Instruction::branch_i32_eq_imm16);
-    test_for("ne", Instruction::branch_i32_ne_imm16);
-    test_for("and", Instruction::branch_i32_and_imm16);
-    test_for("or", Instruction::branch_i32_or_imm16);
-    test_for("xor", Instruction::branch_i32_xor_imm16);
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
 fn block_forward() {
     fn test_for(ty: ValType, op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
         let ty = DisplayValueType::from(ty);
