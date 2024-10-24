@@ -229,9 +229,9 @@ jobs:
           cargo fuzz run ${{ matrix.fuzz_target }}
           -jobs 4              # GitHub hosted runners have 4 CPUs.
           --verbose
-          --debug-assertions
+          --debug-assertions   # We want to have debug-assertions enabled for all modes.
           --
-          -max_total_time=120 # 2 minutes of fuzzing
+          -max_total_time=120  # We run fuzz tests for 2 minutes.
 
   miri:
     name: Miri
