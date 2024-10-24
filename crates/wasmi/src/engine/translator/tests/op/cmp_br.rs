@@ -121,7 +121,7 @@ fn loop_backward() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn loop_backward_imm() {
+fn loop_backward_imm_rhs() {
     fn test_for<T>(
         op: &str,
         value: T,
