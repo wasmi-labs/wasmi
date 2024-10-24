@@ -227,7 +227,7 @@ jobs:
       - name: Run Fuzzing Target
         run: >-
           cargo fuzz run ${{ matrix.fuzz_target }}
-          -j 2
+          -jobs 4              # GitHub hosted runners have 4 CPUs.
           --verbose
           --debug-assertions
           --
