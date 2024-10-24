@@ -11,7 +11,7 @@ macro_rules! test_for {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn binop_i32_eqz_i64() {
+fn binop_i32_eqz() {
     fn test_for(
         input_ty: &str,
         op: &str,
