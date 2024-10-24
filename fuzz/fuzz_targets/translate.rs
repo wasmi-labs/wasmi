@@ -12,6 +12,9 @@ fuzz_target!(|seed: &[u8]| {
     let Ok(consume_fuel) = bool::arbitrary(&mut u) else {
         return;
     };
+    let Ok(streaming) = bool::arbitrary(&mut u) else {
+        return;
+    };
     let Ok(smith_module) = arbitrary_swarm_config_module(&mut u) else {
         return;
     };
@@ -19,5 +22,9 @@ fuzz_target!(|seed: &[u8]| {
     let mut config = Config::default();
     config.consume_fuel(consume_fuel);
     let engine = Engine::new(&config);
-    Module::new(&engine, &wasm[..]).unwrap();
+    let make_module = match streaming {
+        true => Module::new_streaming,
+        false => Module::new,
+    };
+    make_module(&engine, &wasm[..]).unwrap();
 });
