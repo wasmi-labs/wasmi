@@ -42,7 +42,7 @@ fuzz_target!(|seed: &[u8]| {
     let funcs = instance
         .exports(&store)
         .filter_map(Export::into_func)
-        .collect::<Box<[_]>>();
+        .collect::<Vec<_>>();
     for func in funcs {
         params.clear();
         results.clear();
