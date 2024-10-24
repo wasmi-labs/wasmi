@@ -203,7 +203,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        fuzz_target: ['translate', 'translate_metered', 'execute', 'differential']
+        fuzz_target: ['translate', 'execute', 'differential']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
