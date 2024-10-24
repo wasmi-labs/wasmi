@@ -226,7 +226,7 @@ fn loop_backward_imm_eqz() {
                 (func (param i32 i32)
                     (loop
                         (local.get 0)
-                        (i32.const 0)
+                        (i32.const 1)
                         (i32.{op})
                         (br_if 0)
                     )
@@ -235,13 +235,16 @@ fn loop_backward_imm_eqz() {
         );
         TranslationTest::from_wat(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(0), 0, BranchOffset16::from(0_i16)),
+                expect_instr(Reg::from(0), 1, BranchOffset16::from(0_i16)),
                 Instruction::Return,
             ])
             .run()
     }
     test_for("eq", Instruction::branch_i32_eq_imm16);
     test_for("ne", Instruction::branch_i32_ne_imm16);
+    test_for("and", Instruction::branch_i32_and_imm16);
+    test_for("or", Instruction::branch_i32_or_imm16);
+    test_for("xor", Instruction::branch_i32_xor_imm16);
 }
 
 #[test]
@@ -679,6 +682,8 @@ fn block_i32_eqz_fuse() {
             .run()
     }
 
+    test_for("eq", Instruction::branch_i32_ne);
+    test_for("ne", Instruction::branch_i32_eq);
     test_for("and", Instruction::branch_i32_and_eqz);
     test_for("or", Instruction::branch_i32_or_eqz);
     test_for("xor", Instruction::branch_i32_xor_eqz);
@@ -707,6 +712,8 @@ fn if_i32_eqz_fuse() {
             .run()
     }
 
+    test_for("eq", Instruction::branch_i32_eq);
+    test_for("ne", Instruction::branch_i32_ne);
     test_for("and", Instruction::branch_i32_and);
     test_for("or", Instruction::branch_i32_or);
     test_for("xor", Instruction::branch_i32_xor);
