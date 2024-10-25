@@ -3,7 +3,7 @@ use core::cmp;
 use wasmi::CompilationMode;
 
 /// Wasmi configuration for fuzzing.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct FuzzWasmiConfig {
     /// Is `true` if Wasmi shall enable fuel metering for its translation.
     pub consume_fuel: bool,
@@ -16,7 +16,7 @@ pub struct FuzzWasmiConfig {
 }
 
 /// The Wasmi parsing mode.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ParsingMode {
     /// Use buffered parsing.
     Buffered,
@@ -25,12 +25,21 @@ pub enum ParsingMode {
 }
 
 /// The Wasmi validation mode.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ValidationMode {
     /// Validate the Wasm input during Wasm translation.
     Checked,
     /// Do _not_ validate the Wasm input during Wasm translation.
     Unchecked,
+}
+
+impl From<FuzzWasmiConfig> for wasmi::Config {
+    fn from(fuzz: FuzzWasmiConfig) -> Self {
+        let mut config = wasmi::Config::default();
+        config.compilation_mode(fuzz.translation_mode);
+        config.consume_fuel(fuzz.consume_fuel);
+        config
+    }
 }
 
 impl Arbitrary<'_> for FuzzWasmiConfig {

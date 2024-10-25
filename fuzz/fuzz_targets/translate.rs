@@ -21,9 +21,7 @@ fuzz_target!(|seed: &[u8]| {
     };
     let wasm_bytes = smith_module.to_bytes();
     let wasm = wasm_bytes.as_slice();
-    let mut config = Config::default();
-    config.consume_fuel(wasmi_config.consume_fuel);
-    config.compilation_mode(wasmi_config.translation_mode);
+    let config = Config::from(wasmi_config);
     let engine = Engine::new(&config);
     if matches!(wasmi_config.validation_mode, ValidationMode::Unchecked) {
         // We validate the Wasm module before handing it over to Wasmi
