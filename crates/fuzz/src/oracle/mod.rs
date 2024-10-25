@@ -1,5 +1,6 @@
 pub use self::{
     exports::{ModuleExports, StringSequenceIter},
+    wasmi::WasmiOracle,
 };
 use crate::{FuzzError, FuzzSmithConfig, FuzzVal};
 
