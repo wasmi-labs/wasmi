@@ -230,15 +230,18 @@ jobs:
         run: cargo fuzz check ${{ matrix.fuzz_target }}
       - name: Build Fuzzing Target
         run: cargo fuzz build ${{ matrix.fuzz_target }}
-      - name: Run Fuzzing Target
-        # - Use 4 jobs since GitHub hosted runners provide 4 CPUs.
-        # - Always enable debug-assertions for all modes to catch more bugs.
-        # - Run fuzzing for 120s (2 minutes) in total.
+      - name: Set Fuzzing Features
         run: |
           FEATURES=""
           if [ "${{ matrix.fuzz_target }}" == "differential" ]; then
             FEATURES="--features differential"
           fi
+          echo "FEATURES=$FEATURES" >> $GITHUB_ENV
+      - name: Run Fuzzing Target
+        # - Use 4 jobs since GitHub hosted runners provide 4 CPUs.
+        # - Always enable debug-assertions for all modes to catch more bugs.
+        # - Run fuzzing for 120s (2 minutes) in total.
+        run: >-
           cargo fuzz run ${{ matrix.fuzz_target }} \\
             --jobs 4 \\
             --verbose \\
