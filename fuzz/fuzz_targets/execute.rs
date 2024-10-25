@@ -62,18 +62,20 @@ fuzz_target!(|seed: &[u8]| {
         params.extend(
             ty.params()
                 .iter()
-                .map(|param_ty| ty_to_arbitrary_val(param_ty, &mut u)),
+                .copied()
+                .map(|ty| ty_to_arbitrary_val(ty, &mut u)),
         );
         results.extend(
             ty.results()
                 .iter()
-                .map(|param_ty| ty_to_arbitrary_val(param_ty, &mut u)),
+                .copied()
+                .map(|ty| ty_to_arbitrary_val(ty, &mut u)),
         );
         _ = func.call(&mut store, &params, &mut results);
     }
 });
 
 /// Converts a [`ValType`] into an arbitrary [`Val`]
-pub fn ty_to_arbitrary_val(ty: &ValType, u: &mut Unstructured) -> Val {
-    FuzzVal::with_type(FuzzValType::from(*ty), u).into()
+pub fn ty_to_arbitrary_val(ty: ValType, u: &mut Unstructured) -> Val {
+    FuzzVal::with_type(FuzzValType::from(ty), u).into()
 }
