@@ -239,12 +239,12 @@ jobs:
           if [ "${{ matrix.fuzz_target }}" == "differential" ]; then
             FEATURES="--features differential"
           fi
-          cargo fuzz run ${{ matrix.fuzz_target }} \
-            --jobs 4 \
-            --verbose \
-            --debug-assertions \
-            $FEATURES \
-            -- \
+          cargo fuzz run ${{ matrix.fuzz_target }} \\
+            --jobs 4 \\
+            --verbose \\
+            --debug-assertions \\
+            $FEATURES \\
+            -- \\
             -max_total_time=120
 
   miri:
