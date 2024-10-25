@@ -19,7 +19,7 @@ impl Arbitrary<'_> for TranslateFuzzConfig {
         let bits = u8::arbitrary(u)?;
         let consume_fuel = (bits & 0x1) != 0;
         let streaming = (bits & (0x1 << 1)) != 0;
-        let checked = (bits & (0x1 << 1)) != 0;
+        let checked = (bits & (0x1 << 2)) != 0;
         Ok(Self {
             consume_fuel,
             streaming,
