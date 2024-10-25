@@ -760,6 +760,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "fuzz"
+version = "0.0.0"
+dependencies = [
+ "arbitrary",
+ "libfuzzer-sys",
+ "wasm-smith",
+ "wasmi 0.31.2",
+ "wasmi 0.38.0",
+ "wasmi_fuzz",
+ "wasmtime",
+]
+
+[[package]]
 name = "fxhash"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1941,14 +1954,11 @@ dependencies = [
 
 [[package]]
 name = "wasmi_fuzz"
-version = "0.0.0"
+version = "0.38.0"
 dependencies = [
  "arbitrary",
- "libfuzzer-sys",
  "wasm-smith",
- "wasmi 0.31.2",
  "wasmi 0.38.0",
- "wasmtime",
 ]
 
 [[package]]

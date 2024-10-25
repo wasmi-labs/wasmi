@@ -1,15 +1,27 @@
 #![no_main]
 
-mod utils;
-
-use arbitrary::Unstructured;
+use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
-use utils::{arbitrary_swarm_config_module, ty_to_arbitrary_val};
-use wasmi::{Config, Engine, Export, Linker, Module, Store, StoreLimitsBuilder};
+use wasmi::{
+    core::ValType,
+    Config,
+    Engine,
+    Export,
+    Linker,
+    Module,
+    Store,
+    StoreLimitsBuilder,
+    Val,
+};
+use wasmi_fuzz::{FuzzVal, FuzzValType};
 
 fuzz_target!(|seed: &[u8]| {
-    let mut unstructured = Unstructured::new(seed);
-    let Ok(smith_module) = arbitrary_swarm_config_module(&mut unstructured) else {
+    let mut u = Unstructured::new(seed);
+    let Ok(mut fuzz_config) = wasmi_fuzz::FuzzConfig::arbitrary(&mut u) else {
+        return;
+    };
+    fuzz_config.export_everything();
+    let Ok(smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut u) else {
         return;
     };
     let wasm = smith_module.to_bytes();
@@ -50,13 +62,20 @@ fuzz_target!(|seed: &[u8]| {
         params.extend(
             ty.params()
                 .iter()
-                .map(|param_ty| ty_to_arbitrary_val(param_ty, &mut unstructured)),
+                .copied()
+                .map(|ty| ty_to_arbitrary_val(ty, &mut u)),
         );
         results.extend(
             ty.results()
                 .iter()
-                .map(|param_ty| ty_to_arbitrary_val(param_ty, &mut unstructured)),
+                .copied()
+                .map(|ty| ty_to_arbitrary_val(ty, &mut u)),
         );
         _ = func.call(&mut store, &params, &mut results);
     }
 });
+
+/// Converts a [`ValType`] into an arbitrary [`Val`]
+pub fn ty_to_arbitrary_val(ty: ValType, u: &mut Unstructured) -> Val {
+    FuzzVal::with_type(FuzzValType::from(ty), u).into()
+}

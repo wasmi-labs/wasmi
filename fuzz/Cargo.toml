@@ -1,5 +1,5 @@
 [package]
-name = "wasmi_fuzz"
+name = "fuzz"
 version = "0.0.0"
 authors.workspace = true
 readme.workspace = true
@@ -11,6 +11,7 @@ edition.workspace = true
 cargo-fuzz = true
 
 [dependencies]
+wasmi_fuzz = { workspace = true }
 libfuzzer-sys = "0.4.7"
 wasmi-stack = { package = "wasmi", version = "0.31.2" }
 wasmtime = "26.0.0"

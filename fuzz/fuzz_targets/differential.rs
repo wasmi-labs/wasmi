@@ -1,12 +1,10 @@
 #![no_main]
 
-mod utils;
-
-use arbitrary::Unstructured;
+use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
 use std::{collections::hash_map::RandomState, mem};
-use utils::arbitrary_config;
 use wasmi as wasmi_reg;
+use wasmi_fuzz::FuzzConfig;
 use wasmi_reg::core::{F32, F64};
 
 /// Names of exported items.
@@ -624,12 +622,14 @@ impl FuzzContext {
 
 fuzz_target!(|seed: &[u8]| {
     let mut unstructured = Unstructured::new(seed);
-    let Ok(mut smith_module) = arbitrary_config(&mut unstructured).and_then(|mut config| {
-        config.reference_types_enabled = false;
-        config.tail_call_enabled = false;
-        config.max_memories = 1;
-        wasm_smith::Module::new(config, &mut unstructured)
-    }) else {
+    let Ok(mut fuzz_config) = FuzzConfig::arbitrary(&mut unstructured) else {
+        return;
+    };
+    fuzz_config.enable_nan_canonicalization();
+    fuzz_config.export_everything();
+    fuzz_config.disable_multi_memory(); // TODO: only disable for Wasmi (stack)
+    let Ok(mut smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut unstructured)
+    else {
         return;
     };
     // Note: We cannot use built-in fuel metering of the different engines since that
