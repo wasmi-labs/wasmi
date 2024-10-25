@@ -136,25 +136,6 @@ impl From<FuzzValType> for ValType {
     }
 }
 
-impl From<FuzzVal> for Val {
-    fn from(value: FuzzVal) -> Self {
-        match value {
-            FuzzVal::I32(value) => Self::I32(value),
-            FuzzVal::I64(value) => Self::I64(value),
-            FuzzVal::F32(value) => Self::F32(value.into()),
-            FuzzVal::F64(value) => Self::F64(value.into()),
-            FuzzVal::FuncRef { is_null } => {
-                assert!(is_null);
-                Self::FuncRef(FuncRef::null())
-            }
-            FuzzVal::ExternRef { is_null } => {
-                assert!(is_null);
-                Self::ExternRef(ExternRef::null())
-            }
-        }
-    }
-}
-
 impl From<Val> for FuzzVal {
     fn from(value: Val) -> Self {
         match value {
