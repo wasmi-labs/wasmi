@@ -78,7 +78,7 @@ impl StringSequence {
     }
 }
 
-/// An iterator yielding the strings of a [`StringSequence`].
+/// An iterator yielding the strings of a sequence of strings.
 #[derive(Debug)]
 pub struct StringSequenceIter<'a> {
     /// The underlying iterator over strings.
