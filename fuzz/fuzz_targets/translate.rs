@@ -2,7 +2,7 @@
 
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
-use wasmi::{Config, Engine, Module};
+use wasmi::{CompilationMode, Config, Engine, Module};
 
 /// Configuration for translation fuzzing.
 struct TranslateFuzzConfig {
@@ -12,6 +12,8 @@ struct TranslateFuzzConfig {
     streaming: bool,
     /// Is `true` if Wasmi shall validate the Wasm input during translation.
     checked: bool,
+    /// Is `true` if Wasmi shall use lazy translation.
+    translation_mode: CompilationMode,
 }
 
 impl Arbitrary<'_> for TranslateFuzzConfig {
@@ -20,10 +22,16 @@ impl Arbitrary<'_> for TranslateFuzzConfig {
         let consume_fuel = (bits & 0x1) != 0;
         let streaming = (bits & (0x1 << 1)) != 0;
         let checked = (bits & (0x1 << 2)) != 0;
+        let translation_mode = match (bits >> 3) & 0b11 {
+            0b00 => CompilationMode::Lazy,
+            0b01 => CompilationMode::LazyTranslation,
+            _ => CompilationMode::Eager,
+        };
         Ok(Self {
             consume_fuel,
             streaming,
             checked,
+            translation_mode,
         })
     }
 
@@ -48,6 +56,7 @@ fuzz_target!(|seed: &[u8]| {
     let wasm = wasm_bytes.as_slice();
     let mut config = Config::default();
     config.consume_fuel(translate_config.consume_fuel);
+    config.compilation_mode(translate_config.translation_mode);
     let engine = Engine::new(&config);
     if !translate_config.checked {
         // We validate the Wasm module before handing it over to Wasmi
