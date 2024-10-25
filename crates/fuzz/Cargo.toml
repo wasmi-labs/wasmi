@@ -16,7 +16,5 @@ publish = false
 
 [dependencies]
 wasmi = { workspace = true, features = ["std"] }
-wasmi-stack = { package = "wasmi", version = "0.31.2" }
-wasmtime = "26.0.0"
 wasm-smith = "0.219.1"
 arbitrary = "1.3.2"
