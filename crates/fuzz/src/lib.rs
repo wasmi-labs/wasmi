@@ -4,5 +4,5 @@ mod value;
 
 pub use self::{
     config::{FuzzSmithConfig, FuzzWasmiConfig},
-    value::{FuzzRefTy, FuzzVal, FuzzValType},
+    value::{FuzzVal, FuzzValType},
 };

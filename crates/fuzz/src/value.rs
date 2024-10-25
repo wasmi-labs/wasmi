@@ -38,16 +38,8 @@ pub enum FuzzVal {
     I64(i64),
     F32(f32),
     F64(f64),
-    Null(FuzzRefTy),
-}
-
-/// A Wasm reference type.
-#[derive(Debug, Copy, Clone)]
-pub enum FuzzRefTy {
-    /// The Wasm `funcref` type.
-    Func,
-    /// The Wasm `externref` type.
-    Extern,
+    FuncRef { is_null: bool },
+    ExternRef { is_null: bool },
 }
 
 impl FuzzVal {
@@ -58,8 +50,8 @@ impl FuzzVal {
             FuzzValType::I64 => Self::I64(i64::arbitrary(u).unwrap_or_default()),
             FuzzValType::F32 => Self::F32(f32::arbitrary(u).unwrap_or_default()),
             FuzzValType::F64 => Self::F64(f64::arbitrary(u).unwrap_or_default()),
-            FuzzValType::FuncRef => Self::Null(FuzzRefTy::Func),
-            FuzzValType::ExternRef => Self::Null(FuzzRefTy::Extern),
+            FuzzValType::FuncRef => Self::FuncRef { is_null: true },
+            FuzzValType::ExternRef => Self::ExternRef { is_null: true },
         }
     }
 }
