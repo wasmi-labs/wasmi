@@ -2,8 +2,18 @@
 
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
-use wasmi::{Config, Engine, Export, Linker, Module, Store, StoreLimitsBuilder};
-use wasmi_fuzz::ty_to_arbitrary_val;
+use wasmi::{
+    core::ValType,
+    Config,
+    Engine,
+    Export,
+    Linker,
+    Module,
+    Store,
+    StoreLimitsBuilder,
+    Val,
+};
+use wasmi_fuzz::{FuzzVal, FuzzValType};
 
 fuzz_target!(|seed: &[u8]| {
     let mut u = Unstructured::new(seed);
@@ -62,3 +72,8 @@ fuzz_target!(|seed: &[u8]| {
         _ = func.call(&mut store, &params, &mut results);
     }
 });
+
+/// Converts a [`ValType`] into an arbitrary [`Val`]
+pub fn ty_to_arbitrary_val(ty: &ValType, u: &mut Unstructured) -> Val {
+    FuzzVal::with_type(FuzzValType::from(*ty), u).into()
+}
