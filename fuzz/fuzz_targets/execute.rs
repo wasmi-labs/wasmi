@@ -81,7 +81,7 @@ fuzz_target!(|seed: &[u8]| {
     for func in funcs {
         let func_ty = func.ty(&store);
         fill_values(&mut params, func_ty.params(), &mut u);
-        fill_values(&mut params, func_ty.results(), &mut u);
+        fill_values(&mut results, func_ty.results(), &mut u);
         _ = func.call(&mut store, &params, &mut results);
     }
 });
