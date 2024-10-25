@@ -1,1 +1,2 @@
+mod exports;
 mod wasmi;

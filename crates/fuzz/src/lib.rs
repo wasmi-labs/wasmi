@@ -1,6 +1,6 @@
 pub mod config;
-mod oracle;
 mod error;
+pub mod oracle;
 mod value;
 
 pub use self::{
