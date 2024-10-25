@@ -226,10 +226,6 @@ jobs:
           # Note: We use `|| true` because cargo install returns an error
           #       if cargo-fuzz was already installed on the CI runner.
           cargo install cargo-fuzz || true
-      - name: Check Fuzzing Target
-        run: cargo fuzz check ${{ matrix.fuzz_target }}
-      - name: Build Fuzzing Target
-        run: cargo fuzz build ${{ matrix.fuzz_target }}
       - name: Set Fuzzing Features
         run: |
           FEATURES=""
@@ -237,6 +233,10 @@ jobs:
             FEATURES="--features differential"
           fi
           echo "FEATURES=$FEATURES" >> $GITHUB_ENV
+      - name: Check Fuzzing Target
+        run: cargo fuzz check ${{ matrix.fuzz_target }} $FEATURES
+      - name: Build Fuzzing Target
+        run: cargo fuzz build ${{ matrix.fuzz_target }} $FEATURES
       - name: Run Fuzzing Target
         # - Use 4 jobs since GitHub hosted runners provide 4 CPUs.
         # - Always enable debug-assertions for all modes to catch more bugs.
