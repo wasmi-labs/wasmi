@@ -627,6 +627,7 @@ fuzz_target!(|seed: &[u8]| {
     };
     fuzz_config.enable_nan_canonicalization();
     fuzz_config.export_everything();
+    fuzz_config.disable_multi_memory(); // TODO: only disable for Wasmi (stack)
     let Ok(mut smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut unstructured)
     else {
         return;
