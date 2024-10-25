@@ -17,7 +17,7 @@ use wasmi_fuzz::{FuzzVal, FuzzValType};
 
 fuzz_target!(|seed: &[u8]| {
     let mut u = Unstructured::new(seed);
-    let Ok(mut fuzz_config) = wasmi_fuzz::FuzzConfig::arbitrary(&mut u) else {
+    let Ok(mut fuzz_config) = wasmi_fuzz::FuzzSmithConfig::arbitrary(&mut u) else {
         return;
     };
     fuzz_config.export_everything();

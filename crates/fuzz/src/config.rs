@@ -64,13 +64,13 @@ impl Arbitrary<'_> for FuzzWasmiConfig {
     }
 }
 
-/// Fuzzing configuration for Wasm runtimes.
+/// Fuzzing configuration for `wasm_smith` modules.
 #[derive(Debug)]
-pub struct FuzzConfig {
+pub struct FuzzSmithConfig {
     inner: wasm_smith::Config,
 }
 
-impl Arbitrary<'_> for FuzzConfig {
+impl Arbitrary<'_> for FuzzSmithConfig {
     fn arbitrary(u: &mut Unstructured) -> arbitrary::Result<Self> {
         const MAX_MAXIMUM: usize = 1000;
         let config = wasm_smith::Config {
@@ -111,7 +111,7 @@ impl Arbitrary<'_> for FuzzConfig {
     }
 }
 
-impl FuzzConfig {
+impl FuzzSmithConfig {
     /// Enable NaN canonicalization.
     ///
     /// # Note
@@ -136,8 +136,8 @@ impl FuzzConfig {
     }
 }
 
-impl From<FuzzConfig> for wasm_smith::Config {
-    fn from(config: FuzzConfig) -> Self {
+impl From<FuzzSmithConfig> for wasm_smith::Config {
+    fn from(config: FuzzSmithConfig) -> Self {
         config.inner
     }
 }

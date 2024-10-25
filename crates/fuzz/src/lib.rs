@@ -3,6 +3,6 @@ mod oracle;
 mod value;
 
 pub use self::{
-    config::{FuzzConfig, FuzzWasmiConfig},
+    config::{FuzzSmithConfig, FuzzWasmiConfig},
     value::{FuzzRefTy, FuzzVal, FuzzValType},
 };

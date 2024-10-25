@@ -4,7 +4,7 @@ use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
 use std::{collections::hash_map::RandomState, mem};
 use wasmi as wasmi_reg;
-use wasmi_fuzz::FuzzConfig;
+use wasmi_fuzz::FuzzSmithConfig;
 use wasmi_reg::core::{F32, F64};
 
 /// Names of exported items.
@@ -622,7 +622,7 @@ impl FuzzContext {
 
 fuzz_target!(|seed: &[u8]| {
     let mut unstructured = Unstructured::new(seed);
-    let Ok(mut fuzz_config) = FuzzConfig::arbitrary(&mut unstructured) else {
+    let Ok(mut fuzz_config) = FuzzSmithConfig::arbitrary(&mut unstructured) else {
         return;
     };
     fuzz_config.enable_nan_canonicalization();

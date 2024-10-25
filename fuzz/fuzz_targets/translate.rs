@@ -13,7 +13,7 @@ fuzz_target!(|seed: &[u8]| {
     let Ok(translate_config) = FuzzWasmiConfig::arbitrary(&mut u) else {
         return;
     };
-    let Ok(fuzz_config) = wasmi_fuzz::FuzzConfig::arbitrary(&mut u) else {
+    let Ok(fuzz_config) = wasmi_fuzz::FuzzSmithConfig::arbitrary(&mut u) else {
         return;
     };
     let Ok(smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut u) else {
