@@ -29,7 +29,7 @@ impl Arbitrary<'_> for FuzzConfig {
             max_table_elements: u.int_in_range(0..=1_000_000)?,
             // Wasm proposals supported by Wasmi:
             bulk_memory_enabled: true,
-            reference_types_enabled: true,
+            reference_types_enabled: false, // TODO: re-enable reference-types for differential fuzzing
             simd_enabled: false,
             multi_value_enabled: true,
             saturating_float_to_int_enabled: true,
