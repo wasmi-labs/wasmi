@@ -1,5 +1,68 @@
 use arbitrary::{Arbitrary, Unstructured};
 use core::cmp;
+use wasmi::CompilationMode;
+
+/// Wasmi configuration for fuzzing.
+#[derive(Debug)]
+pub struct FuzzWasmiConfig {
+    /// Is `true` if Wasmi shall enable fuel metering for its translation.
+    pub consume_fuel: bool,
+    /// Is `true` if Wasmi shall use streaming translation instead of buffered translation.
+    pub parsing_mode: ParsingMode,
+    /// Is `true` if Wasmi shall validate the Wasm input during translation.
+    pub validation_mode: ValidationMode,
+    /// Is `true` if Wasmi shall use lazy translation.
+    pub translation_mode: CompilationMode,
+}
+
+/// The Wasmi parsing mode.
+#[derive(Debug)]
+pub enum ParsingMode {
+    /// Use buffered parsing.
+    Buffered,
+    /// Use streaming parsing.
+    Streaming,
+}
+
+/// The Wasmi validation mode.
+#[derive(Debug)]
+pub enum ValidationMode {
+    /// Validate the Wasm input during Wasm translation.
+    Checked,
+    /// Do _not_ validate the Wasm input during Wasm translation.
+    Unchecked,
+}
+
+impl Arbitrary<'_> for FuzzWasmiConfig {
+    fn arbitrary(u: &mut Unstructured) -> arbitrary::Result<Self> {
+        let bits = u8::arbitrary(u)?;
+        let consume_fuel = (bits & 0x1) != 0;
+        let parsing_mode = match (bits >> 1) & 0x1 {
+            0 => ParsingMode::Streaming,
+            _ => ParsingMode::Buffered,
+        };
+        let validation_mode = match (bits >> 2) & 0x1 {
+            0 => ValidationMode::Unchecked,
+            _ => ValidationMode::Checked,
+        };
+        let translation_mode = match (bits >> 3) & 0b11 {
+            0b00 => CompilationMode::Lazy,
+            0b01 => CompilationMode::LazyTranslation,
+            _ => CompilationMode::Eager,
+        };
+        Ok(Self {
+            consume_fuel,
+            parsing_mode,
+            validation_mode,
+            translation_mode,
+        })
+    }
+
+    #[inline]
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        <u8 as Arbitrary>::size_hint(depth)
+    }
+}
 
 /// Fuzzing configuration for Wasm runtimes.
 #[derive(Debug)]
