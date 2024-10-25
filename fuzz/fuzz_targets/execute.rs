@@ -56,26 +56,23 @@ fuzz_target!(|seed: &[u8]| {
         .filter_map(Export::into_func)
         .collect::<Vec<_>>();
     for func in funcs {
-        params.clear();
-        results.clear();
-        let ty = func.ty(&store);
-        params.extend(
-            ty.params()
-                .iter()
-                .copied()
-                .map(|ty| ty_to_arbitrary_val(ty, &mut u)),
-        );
-        results.extend(
-            ty.results()
-                .iter()
-                .copied()
-                .map(|ty| ty_to_arbitrary_val(ty, &mut u)),
-        );
+        let func_ty = func.ty(&store);
+        fill_values(&mut params, func_ty.params(), &mut u);
+        fill_values(&mut params, func_ty.results(), &mut u);
         _ = func.call(&mut store, &params, &mut results);
     }
 });
 
-/// Converts a [`ValType`] into an arbitrary [`Val`]
-pub fn ty_to_arbitrary_val(ty: ValType, u: &mut Unstructured) -> Val {
-    FuzzVal::with_type(FuzzValType::from(ty), u).into()
+/// Fill [`Val`]s of type `src` into `dst` using `u` for initialization.
+///
+/// Clears `dst` before the operation.
+fn fill_values(dst: &mut Vec<Val>, src: &[ValType], u: &mut Unstructured) {
+    dst.clear();
+    dst.extend(
+        src.iter()
+            .copied()
+            .map(FuzzValType::from)
+            .map(|ty| FuzzVal::with_type(ty, u))
+            .map(Val::from),
+    );
 }
