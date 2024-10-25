@@ -22,6 +22,11 @@ impl Arbitrary<'_> for TranslateFuzzConfig {
             streaming,
         })
     }
+
+    #[inline]
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        <u8 as Arbitrary>::size_hint(depth)
+    }
 }
 
 fuzz_target!(|seed: &[u8]| {
