@@ -13,10 +13,13 @@ use wasmi::{
     StoreLimitsBuilder,
     Val,
 };
-use wasmi_fuzz::{FuzzVal, FuzzValType};
+use wasmi_fuzz::{config::ValidationMode, FuzzVal, FuzzValType, FuzzWasmiConfig};
 
 fuzz_target!(|seed: &[u8]| {
     let mut u = Unstructured::new(seed);
+    let Ok(wasmi_config) = FuzzWasmiConfig::arbitrary(&mut u) else {
+        return;
+    };
     let Ok(mut fuzz_config) = wasmi_fuzz::FuzzSmithConfig::arbitrary(&mut u) else {
         return;
     };
@@ -24,13 +27,18 @@ fuzz_target!(|seed: &[u8]| {
     let Ok(smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut u) else {
         return;
     };
-    let wasm = smith_module.to_bytes();
+    let wasm_bytes = smith_module.to_bytes();
+    let wasm = wasm_bytes.as_slice();
 
-    let mut config = Config::default();
-    config.consume_fuel(true);
-    config.compilation_mode(wasmi::CompilationMode::Eager);
-
-    let engine = Engine::default();
+    let config = {
+        let mut config = Config::from(wasmi_config);
+        // We use Wasmi's built-in fuel metering since it is way faster
+        // than `wasm_smith`'s fuel metering and thus allows the fuzzer
+        // to expand its test coverage faster.
+        config.consume_fuel(true);
+        config
+    };
+    let engine = Engine::new(&config);
     let linker = Linker::new(&engine);
     let limiter = StoreLimitsBuilder::new()
         .memory_size(1000 * 0x10000)
@@ -40,11 +48,26 @@ fuzz_target!(|seed: &[u8]| {
     let Ok(_) = store.set_fuel(1000) else {
         return;
     };
-    let module = Module::new(store.engine(), wasm.as_slice()).unwrap();
-    let Ok(preinstance) = linker.instantiate(&mut store, &module) else {
+    if matches!(wasmi_config.validation_mode, ValidationMode::Unchecked) {
+        // We validate the Wasm module before handing it over to Wasmi
+        // despite `wasm_smith` stating to only produce valid Wasm.
+        // Translating an invalid Wasm module is undefined behavior.
+        if Module::validate(&engine, wasm).is_err() {
+            return;
+        }
+    }
+    let status = match wasmi_config.validation_mode {
+        ValidationMode::Checked => Module::new(&engine, wasm),
+        ValidationMode::Unchecked => {
+            // Safety: we have just checked Wasm validity above.
+            unsafe { Module::new_unchecked(&engine, wasm) }
+        }
+    };
+    let module = status.unwrap();
+    let Ok(unstarted_instance) = linker.instantiate(&mut store, &module) else {
         return;
     };
-    let Ok(instance) = preinstance.ensure_no_start(&mut store) else {
+    let Ok(instance) = unstarted_instance.ensure_no_start(&mut store) else {
         return;
     };
 
