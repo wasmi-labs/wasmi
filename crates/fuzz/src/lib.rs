@@ -1,5 +1,6 @@
 pub mod config;
 mod error;
+#[cfg(feature = "differential")]
 pub mod oracle;
 mod value;
 

@@ -1958,6 +1958,7 @@ version = "0.38.0"
 dependencies = [
  "arbitrary",
  "wasm-smith",
+ "wasmi 0.31.2",
  "wasmi 0.38.0",
 ]
 
