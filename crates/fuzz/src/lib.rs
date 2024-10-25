@@ -1,9 +1,9 @@
 mod config;
+mod oracle;
+mod value;
 
 use arbitrary::{Arbitrary, Unstructured};
 use wasmi::{core::ValType, ExternRef, FuncRef, Val};
-
-pub use self::config::FuzzConfig;
 
 /// Converts a [`ValType`] into an arbitrary [`Val`]
 pub fn ty_to_arbitrary_val(ty: &ValType, u: &mut Unstructured) -> Val {
@@ -16,3 +16,7 @@ pub fn ty_to_arbitrary_val(ty: &ValType, u: &mut Unstructured) -> Val {
         ValType::ExternRef => Val::ExternRef(ExternRef::null()),
     }
 }
+pub use self::{
+    config::FuzzConfig,
+    value::{FuzzRefTy, FuzzVal, FuzzValType},
+};
