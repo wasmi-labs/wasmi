@@ -5,6 +5,7 @@ use crate::{
     FuzzVal,
 };
 use wasmi_stack::{
+    Config,
     Engine,
     Error,
     ExternRef,
@@ -36,7 +37,10 @@ impl DifferentialOracleMeta for WasmiStackOracle {
     where
         Self: Sized,
     {
-        let engine = Engine::default();
+        let mut config = Config::default();
+        config.wasm_tail_call(true);
+        config.wasm_extended_const(true);
+        let engine = Engine::new(&config);
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
             .memory_size(1000 * 0x10000)
