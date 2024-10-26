@@ -55,7 +55,8 @@ impl DifferentialOracle for WasmiStack {
     fn call(&mut self, name: &str, params: &[FuzzVal]) -> Result<Box<[FuzzVal]>, FuzzError> {
         let Some(func) = self.instance.get_func(&self.store, name) else {
             panic!(
-                "wasmi (stack) is missing exported function {name} that exists in wasmi (register)"
+                "{}: could not find exported function: \"{name}\"",
+                Self::NAME
             )
         };
         let ty = func.ty(&self.store);
