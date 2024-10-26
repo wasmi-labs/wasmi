@@ -1,5 +1,5 @@
 use crate::{oracle::DifferentialOracle, FuzzError, FuzzVal};
-use wasmtime::{Config, Engine, Instance, Linker, Module, Store, StoreLimitsBuilder, Val, ValType};
+use wasmtime::{Config, Engine, Instance, Linker, Module, Store, StoreLimitsBuilder, Val};
 
 /// Differential fuzzing backend for Wasmtime.
 struct Wasmtime {
@@ -7,20 +7,6 @@ struct Wasmtime {
     instance: Instance,
     params: Vec<Val>,
     results: Vec<Val>,
-}
-
-impl Wasmtime {
-    fn type_to_value(ty: ValType) -> wasmtime::Val {
-        match ty {
-            ValType::I32 => wasmtime::Val::I32(1),
-            ValType::I64 => wasmtime::Val::I64(1),
-            ValType::F32 => wasmtime::Val::F32(1.0_f32.to_bits()),
-            ValType::F64 => wasmtime::Val::F64(1.0_f64.to_bits()),
-            unsupported => panic!(
-                "differential fuzzing does not support reference types, yet but found: {unsupported:?}"
-            ),
-        }
-    }
 }
 
 impl DifferentialOracle for Wasmtime {
@@ -65,7 +51,8 @@ impl DifferentialOracle for Wasmtime {
         self.params.clear();
         self.results.clear();
         self.params.extend(params.iter().cloned().map(Val::from));
-        self.results.extend(ty.results().map(Self::type_to_value));
+        self.results
+            .extend(ty.results().map(|ty| Val::default_for_ty(&ty).unwrap()));
         func.call(&mut self.store, &self.params[..], &mut self.results[..])?;
         let results = self.results.iter().cloned().map(FuzzVal::from).collect();
         Ok(results)
