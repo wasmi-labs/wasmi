@@ -3,8 +3,6 @@ use wasmi::{
     core::ValType,
     Config,
     Engine,
-    ExternRef,
-    FuncRef,
     Instance,
     Linker,
     Module,
