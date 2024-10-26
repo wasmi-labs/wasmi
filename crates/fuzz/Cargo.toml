@@ -17,9 +17,10 @@ publish = false
 [dependencies]
 wasmi = { workspace = true, features = ["std"] }
 wasmi-stack = { package = "wasmi", feature = ["std"], version = "0.31.2", optional = true }
+wasmtime = { version = "26.0.0", feature = ["std"], optional = true }
 wasm-smith = "0.219.1"
 arbitrary = "1.3.2"
 
 [features]
-default = []
-differential = ["dep:wasmi-stack"]
+default = ["differential"]
+differential = ["dep:wasmi-stack", "dep:wasmtime"]

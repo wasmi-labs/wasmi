@@ -7,6 +7,7 @@ use crate::{FuzzError, FuzzSmithConfig, FuzzVal};
 mod exports;
 mod wasmi;
 mod wasmi_stack;
+mod wasmtime;
 
 /// Trait implemented by differential fuzzing oracles.
 pub trait DifferentialOracle: Sized {
