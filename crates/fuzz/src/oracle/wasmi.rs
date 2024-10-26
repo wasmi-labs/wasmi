@@ -73,10 +73,10 @@ impl DifferentialOracle for WasmiOracle {
         let mut store = Store::new(&engine, limiter);
         store.limiter(|lim| lim);
         let module = Module::new(store.engine(), wasm).unwrap();
-        let Ok(preinstance) = linker.instantiate(&mut store, &module) else {
+        let Ok(unstarted_instance) = linker.instantiate(&mut store, &module) else {
             return None;
         };
-        let Ok(instance) = preinstance.ensure_no_start(&mut store) else {
+        let Ok(instance) = unstarted_instance.ensure_no_start(&mut store) else {
             return None;
         };
         Some(Self {
