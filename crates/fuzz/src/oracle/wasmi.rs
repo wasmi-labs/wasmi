@@ -31,7 +31,7 @@ impl WasmiOracle {
         for export in self.instance.exports(&self.store) {
             let name = export.name();
             match export.ty(&self.store) {
-                wasmi::ExternType::Func(_) => exports.push_func(name),
+                wasmi::ExternType::Func(ty) => exports.push_func(name, ty),
                 wasmi::ExternType::Global(_) => exports.push_global(name),
                 wasmi::ExternType::Memory(_) => exports.push_memory(name),
                 wasmi::ExternType::Table(_) => exports.push_table(name),

@@ -1,10 +1,13 @@
 use core::slice;
+use wasmi::FuncType;
 
 /// Names of exported Wasm objects from a fuzzed Wasm module.
 #[derive(Debug, Default)]
 pub struct ModuleExports {
     /// Names of exported functions.
     funcs: StringSequence,
+    /// The types of exported functions.
+    func_types: Vec<FuncType>,
     /// Names of exported global variables.
     globals: StringSequence,
     /// Names of exported linear memories.
@@ -15,8 +18,9 @@ pub struct ModuleExports {
 
 impl ModuleExports {
     /// Pushes an exported function `name` to `self`.
-    pub(crate) fn push_func(&mut self, name: &str) {
+    pub(crate) fn push_func(&mut self, name: &str, ty: FuncType) {
         self.funcs.push(name);
+        self.func_types.push(ty);
     }
 
     /// Pushes an exported global `name` to `self`.
@@ -35,8 +39,11 @@ impl ModuleExports {
     }
 
     /// Returns an iterator yielding the names of the exported Wasm functions.
-    pub fn funcs(&self) -> StringSequenceIter {
-        self.funcs.iter()
+    pub fn funcs(&self) -> ExportedFuncsIter {
+        ExportedFuncsIter {
+            names: self.funcs.iter(),
+            types: self.func_types.iter(),
+        }
     }
 
     /// Returns an iterator yielding the names of the exported Wasm globals.
@@ -52,6 +59,31 @@ impl ModuleExports {
     /// Returns an iterator yielding the names of the exported Wasm tables.
     pub fn tables(&self) -> StringSequenceIter {
         self.tables.iter()
+    }
+}
+
+/// Iterator yieling the exported functions of a fuzzed Wasm module.
+#[derive(Debug)]
+pub struct ExportedFuncsIter<'a> {
+    /// The names of the exported Wasm functions.
+    names: StringSequenceIter<'a>,
+    /// The types of the exported Wasm functions.
+    types: slice::Iter<'a, FuncType>,
+}
+
+impl<'a> Iterator for ExportedFuncsIter<'a> {
+    type Item = (&'a str, &'a FuncType);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let name = self.names.next()?;
+        let ty = self.types.next()?;
+        Some((name, ty))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.names.size_hint()
     }
 }
 
