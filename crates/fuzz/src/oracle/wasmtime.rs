@@ -1,20 +1,25 @@
-use crate::{oracle::DifferentialOracle, FuzzError, FuzzVal};
+use crate::{
+    oracle::{DifferentialOracle, DifferentialOracleMeta},
+    FuzzError,
+    FuzzVal,
+};
 use wasmtime::{Config, Engine, Instance, Linker, Module, Store, StoreLimitsBuilder, Val};
 
 /// Differential fuzzing backend for Wasmtime.
-struct Wasmtime {
+pub struct WasmtimeOracle {
     store: Store<wasmtime::StoreLimits>,
     instance: Instance,
     params: Vec<Val>,
     results: Vec<Val>,
 }
 
-impl DifferentialOracle for Wasmtime {
-    const NAME: &str = "Wasmtime";
-
+impl DifferentialOracleMeta for WasmtimeOracle {
     fn configure(_config: &mut crate::FuzzSmithConfig) {}
 
-    fn setup(wasm: &[u8]) -> Option<Self> {
+    fn setup(wasm: &[u8]) -> Option<Self>
+    where
+        Self: Sized,
+    {
         let mut config = Config::default();
         // We disabled backtraces since they sometimes become so large
         // that the entire output is obliterated by them. Generally we are
@@ -39,12 +44,18 @@ impl DifferentialOracle for Wasmtime {
             results: Vec::new(),
         })
     }
+}
+
+impl DifferentialOracle for WasmtimeOracle {
+    fn name(&self) -> &'static str {
+        "Wasmtime"
+    }
 
     fn call(&mut self, name: &str, params: &[FuzzVal]) -> Result<Box<[FuzzVal]>, FuzzError> {
         let Some(func) = self.instance.get_func(&mut self.store, name) else {
             panic!(
                 "{}: could not find exported function: \"{name}\"",
-                Self::NAME
+                self.name(),
             )
         };
         let ty = func.ty(&self.store);

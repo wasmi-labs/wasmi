@@ -1,4 +1,10 @@
-use crate::{oracle::DifferentialOracle, FuzzError, FuzzSmithConfig, FuzzVal, FuzzValType};
+use crate::{
+    oracle::{DifferentialOracle, DifferentialOracleMeta},
+    FuzzError,
+    FuzzSmithConfig,
+    FuzzVal,
+    FuzzValType,
+};
 use wasmi::{
     core::ValType,
     Config,
@@ -41,12 +47,13 @@ impl WasmiOracle {
     }
 }
 
-impl DifferentialOracle for WasmiOracle {
-    const NAME: &str = "Wasmi";
-
+impl DifferentialOracleMeta for WasmiOracle {
     fn configure(_config: &mut FuzzSmithConfig) {}
 
-    fn setup(wasm: &[u8]) -> Option<Self> {
+    fn setup(wasm: &[u8]) -> Option<Self>
+    where
+        Self: Sized,
+    {
         let mut config = Config::default();
         // We set custom limits since Wasmi (register) might use more
         // stack space than Wasmi (stack) for some malicious recursive workloads.
@@ -84,12 +91,18 @@ impl DifferentialOracle for WasmiOracle {
             results: Vec::new(),
         })
     }
+}
+
+impl DifferentialOracle for WasmiOracle {
+    fn name(&self) -> &'static str {
+        "Wasmi"
+    }
 
     fn call(&mut self, name: &str, params: &[FuzzVal]) -> Result<Box<[FuzzVal]>, FuzzError> {
         let Some(func) = self.instance.get_func(&self.store, name) else {
             panic!(
                 "{}: could not find exported function: \"{name}\"",
-                Self::NAME
+                self.name(),
             )
         };
         let ty = func.ty(&self.store);

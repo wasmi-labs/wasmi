@@ -1,4 +1,9 @@
-use crate::{oracle::DifferentialOracle, FuzzError, FuzzSmithConfig, FuzzVal};
+use crate::{
+    oracle::{DifferentialOracle, DifferentialOracleMeta},
+    FuzzError,
+    FuzzSmithConfig,
+    FuzzVal,
+};
 use wasmi_stack::{
     Engine,
     Error,
@@ -15,21 +20,22 @@ use wasmi_stack::{
 
 /// Differential fuzzing backend for the stack-machine Wasmi.
 #[derive(Debug)]
-struct WasmiStack {
+pub struct WasmiStackOracle {
     store: Store<StoreLimits>,
     instance: Instance,
     params: Vec<Value>,
     results: Vec<Value>,
 }
 
-impl DifferentialOracle for WasmiStack {
-    const NAME: &str = "Wasmi v0.31";
-
+impl DifferentialOracleMeta for WasmiStackOracle {
     fn configure(config: &mut FuzzSmithConfig) {
         config.disable_multi_memory();
     }
 
-    fn setup(wasm: &[u8]) -> Option<Self> {
+    fn setup(wasm: &[u8]) -> Option<Self>
+    where
+        Self: Sized,
+    {
         let engine = Engine::default();
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
@@ -51,12 +57,18 @@ impl DifferentialOracle for WasmiStack {
             results: Vec::new(),
         })
     }
+}
+
+impl DifferentialOracle for WasmiStackOracle {
+    fn name(&self) -> &'static str {
+        "Wasmi v0.31"
+    }
 
     fn call(&mut self, name: &str, params: &[FuzzVal]) -> Result<Box<[FuzzVal]>, FuzzError> {
         let Some(func) = self.instance.get_func(&self.store, name) else {
             panic!(
                 "{}: could not find exported function: \"{name}\"",
-                Self::NAME
+                self.name()
             )
         };
         let ty = func.ty(&self.store);
