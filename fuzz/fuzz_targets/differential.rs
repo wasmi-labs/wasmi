@@ -60,7 +60,7 @@ fuzz_target!(|seed: &[u8]| {
                 continue;
             }
         }
-        if let Err(oracle_err) = &result_wasmi {
+        if let Err(oracle_err) = &result_oracle {
             if oracle_err.is_non_deterministic() {
                 deterministic = false;
                 continue;
