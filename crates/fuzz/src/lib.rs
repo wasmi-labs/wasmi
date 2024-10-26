@@ -1,8 +1,11 @@
 pub mod config;
-mod oracle;
+mod error;
+#[cfg(feature = "differential")]
+pub mod oracle;
 mod value;
 
 pub use self::{
     config::{FuzzSmithConfig, FuzzWasmiConfig},
-    value::{FuzzRefTy, FuzzVal, FuzzValType},
+    error::{FuzzError, TrapCode},
+    value::{FuzzVal, FuzzValType},
 };

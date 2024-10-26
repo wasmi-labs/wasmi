@@ -38,17 +38,25 @@ pub enum FuzzVal {
     I64(i64),
     F32(f32),
     F64(f64),
-    Null(FuzzRefTy),
+    FuncRef { is_null: bool },
+    ExternRef { is_null: bool },
 }
 
-/// A Wasm reference type.
-#[derive(Debug, Copy, Clone)]
-pub enum FuzzRefTy {
-    /// The Wasm `funcref` type.
-    Func,
-    /// The Wasm `externref` type.
-    Extern,
+impl PartialEq for FuzzVal {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::I32(l), Self::I32(r)) => l == r,
+            (Self::I64(l), Self::I64(r)) => l == r,
+            (Self::F32(l), Self::F32(r)) => l.to_bits() == r.to_bits(),
+            (Self::F64(l), Self::F64(r)) => l.to_bits() == r.to_bits(),
+            (Self::FuncRef { is_null: l }, Self::FuncRef { is_null: r }) => l == r,
+            (Self::ExternRef { is_null: l }, Self::ExternRef { is_null: r }) => l == r,
+            _ => false,
+        }
+    }
 }
+
+impl Eq for FuzzVal {}
 
 impl FuzzVal {
     /// Creates a new [`FuzzVal`] of the given `ty` initialized by `u`.
@@ -58,8 +66,27 @@ impl FuzzVal {
             FuzzValType::I64 => Self::I64(i64::arbitrary(u).unwrap_or_default()),
             FuzzValType::F32 => Self::F32(f32::arbitrary(u).unwrap_or_default()),
             FuzzValType::F64 => Self::F64(f64::arbitrary(u).unwrap_or_default()),
-            FuzzValType::FuncRef => Self::Null(FuzzRefTy::Func),
-            FuzzValType::ExternRef => Self::Null(FuzzRefTy::Extern),
+            FuzzValType::FuncRef => Self::FuncRef { is_null: true },
+            FuzzValType::ExternRef => Self::ExternRef { is_null: true },
+        }
+    }
+}
+
+impl From<FuzzVal> for wasmi::Val {
+    fn from(value: FuzzVal) -> Self {
+        match value {
+            FuzzVal::I32(value) => Self::I32(value),
+            FuzzVal::I64(value) => Self::I64(value),
+            FuzzVal::F32(value) => Self::F32(value.into()),
+            FuzzVal::F64(value) => Self::F64(value.into()),
+            FuzzVal::FuncRef { is_null } => {
+                assert!(is_null);
+                Self::FuncRef(wasmi::FuncRef::null())
+            }
+            FuzzVal::ExternRef { is_null } => {
+                assert!(is_null);
+                Self::ExternRef(wasmi::ExternRef::null())
+            }
         }
     }
 }
