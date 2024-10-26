@@ -42,6 +42,22 @@ pub enum FuzzVal {
     ExternRef { is_null: bool },
 }
 
+impl PartialEq for FuzzVal {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::I32(l), Self::I32(r)) => l == r,
+            (Self::I64(l), Self::I64(r)) => l == r,
+            (Self::F32(l), Self::F32(r)) => l.to_bits() == r.to_bits(),
+            (Self::F64(l), Self::F64(r)) => l.to_bits() == r.to_bits(),
+            (Self::FuncRef { is_null: l }, Self::FuncRef { is_null: r }) => l == r,
+            (Self::ExternRef { is_null: l }, Self::ExternRef { is_null: r }) => l == r,
+            _ => false,
+        }
+    }
+}
+
+impl Eq for FuzzVal {}
+
 impl FuzzVal {
     /// Creates a new [`FuzzVal`] of the given `ty` initialized by `u`.
     pub fn with_type(ty: FuzzValType, u: &mut Unstructured) -> Self {
