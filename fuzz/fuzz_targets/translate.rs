@@ -43,5 +43,13 @@ fuzz_target!(|seed: &[u8]| {
             unsafe { Module::new_unchecked(&engine, wasm) }
         }
     };
-    status.unwrap();
+    if let Err(err) = status {
+        let crash_input = wasmi_fuzz::generate_crash_inputs("translate", wasm).unwrap();
+        panic!(
+            "\
+            encountered invalid translation: {err}\n\
+                \t- crash-report: 0x{crash_input}\n\
+        "
+        );
+    }
 });
