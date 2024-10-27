@@ -38,7 +38,6 @@ fuzz_target!(|seed: &[u8]| {
     let exports = wasmi_oracle.exports();
     let mut params = Vec::new();
     // True as long as differential execution is deterministic between both oracles.
-    let mut deterministic = true;
     for (name, func_type) in exports.funcs() {
         params.clear();
         params.extend(
@@ -56,14 +55,12 @@ fuzz_target!(|seed: &[u8]| {
         //       to avoid having to deal with non-deterministic behavior between oracles.
         if let Err(wasmi_err) = &result_wasmi {
             if wasmi_err.is_non_deterministic() {
-                deterministic = false;
-                continue;
+                return;
             }
         }
         if let Err(oracle_err) = &result_oracle {
             if oracle_err.is_non_deterministic() {
-                deterministic = false;
-                continue;
+                return;
             }
         }
         let wasmi_name = wasmi_oracle.name();
@@ -128,12 +125,6 @@ fuzz_target!(|seed: &[u8]| {
                 )
             }
         }
-    }
-    if !deterministic {
-        // We bail out and do not check global state since potential non-determinism
-        // has been detected previously which could have led to non-deterministic changes
-        // to Wasm global state.
-        return;
     }
     for name in exports.globals() {
         let wasmi_val = wasmi_oracle.get_global(name);
