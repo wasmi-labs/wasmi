@@ -20,7 +20,13 @@ wasmi-stack = { package = "wasmi", feature = ["std"], version = "0.31.2", option
 wasmtime = { version = "26.0.0", feature = ["std"], optional = true }
 wasm-smith = "0.219.1"
 arbitrary = "1.3.2"
+sha2 = "0.10"
+wasmprinter = "0.219.1"
+anyhow = "1.0.91"
 
 [features]
 default = ["differential"]
-differential = ["dep:wasmi-stack", "dep:wasmtime"]
+differential = [
+    "dep:wasmi-stack",
+    "dep:wasmtime",
+]
