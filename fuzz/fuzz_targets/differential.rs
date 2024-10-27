@@ -73,6 +73,7 @@ fuzz_target!(|seed: &[u8]| {
                 if wasmi_results == oracle_results {
                     continue;
                 }
+                let crash_input = generate_crash_inputs(wasm);
                 panic!(
                     "\
                     function call returned different values:\n\
@@ -80,6 +81,7 @@ fuzz_target!(|seed: &[u8]| {
                         \tparams: {params:?}\n\
                         \t{wasmi_name}: {wasmi_results:?}\n\
                         \t{oracle_name}: {oracle_results:?}\n\
+                        \tcrash-report: 0x{crash_input}\n\
                     "
                 )
             }
@@ -87,6 +89,7 @@ fuzz_target!(|seed: &[u8]| {
                 if wasmi_err == oracle_err {
                     continue;
                 }
+                let crash_input = generate_crash_inputs(wasm);
                 panic!(
                     "\
                     function call returned different errors:\n\
@@ -94,10 +97,12 @@ fuzz_target!(|seed: &[u8]| {
                         \tparams: {params:?}\n\
                         \t{wasmi_name}: {wasmi_err:?}\n\
                         \t{oracle_name}: {oracle_err:?}\n\
+                        \tcrash-report: 0x{crash_input}\n\
                     "
                 )
             }
             (Ok(wasmi_results), Err(oracle_err)) => {
+                let crash_input = generate_crash_inputs(wasm);
                 panic!(
                     "\
                     function call returned results and error:\n\
@@ -105,10 +110,12 @@ fuzz_target!(|seed: &[u8]| {
                         \tparams: {params:?}\n\
                         \t{wasmi_name}: {wasmi_results:?}\n\
                         \t{oracle_name}: {oracle_err:?}\n\
+                        \tcrash-report: 0x{crash_input}\n\
                     "
                 )
             }
             (Err(wasmi_err), Ok(oracle_results)) => {
+                let crash_input = generate_crash_inputs(wasm);
                 panic!(
                     "\
                     function call returned results and error:\n\
@@ -116,6 +123,7 @@ fuzz_target!(|seed: &[u8]| {
                         \tparams: {params:?}\n\
                         \t{wasmi_name}: {wasmi_err:?}\n\
                         \t{oracle_name}: {oracle_results:?}\n\
+                        \tcrash-report: 0x{crash_input}\n\
                     "
                 )
             }
@@ -135,12 +143,14 @@ fuzz_target!(|seed: &[u8]| {
         }
         let wasmi_name = wasmi_oracle.name();
         let oracle_name = chosen_oracle.name();
+        let crash_input = generate_crash_inputs(wasm);
         panic!(
             "\
             encountered unequal globals:\n\
                 \tglobal: {name}\n\
                 \t{wasmi_name}: {wasmi_val:?}\n\
                 \t{oracle_name}: {oracle_val:?}\n\
+                \tcrash-report: 0x{crash_input}\n\
             "
         )
     }
@@ -167,6 +177,7 @@ fuzz_target!(|seed: &[u8]| {
         }
         let wasmi_name = wasmi_oracle.name();
         let oracle_name = chosen_oracle.name();
+        let crash_input = generate_crash_inputs(wasm);
         panic!(
             "\
             encountered unequal memories:\n\
@@ -174,7 +185,14 @@ fuzz_target!(|seed: &[u8]| {
                 \tindex first non-matching: {first_nonmatching}\n\
                 \t{wasmi_name}: {byte_wasmi:?}\n\
                 \t{oracle_name}: {byte_oracle:?}\n\
+                \tcrash-report: 0x{crash_input}\n\
             "
         )
     }
 });
+
+/// Generate crash input reports for `differential` fuzzing.`
+#[track_caller]
+fn generate_crash_inputs(wasm: &[u8]) -> String {
+    wasmi_fuzz::generate_crash_inputs("differential", wasm).unwrap()
+}
