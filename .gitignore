@@ -6,4 +6,5 @@ spec/target
 **/fuzz/corpus/
 **/fuzz/target/
 **/fuzz/artifacts/
+**/fuzz/crash-inputs/
 **/fuzz/Cargo.lock

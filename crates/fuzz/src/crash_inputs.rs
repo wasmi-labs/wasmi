@@ -17,9 +17,11 @@ pub fn generate_crash_inputs(target: &str, wasm: &[u8]) -> Result<String, anyhow
     let hash: [u8; 32] = sha2.finalize().into();
     let hash_str = hash_str(hash)?;
     let wat = wasmprinter::print_bytes(wasm)?;
-    let file_path = format!("fuzz/crash-inputs/{target}/crash-{hash_str}");
-    fs::write(format!("{file_path}.wasm"), wasm)?;
-    fs::write(format!("{file_path}.wat"), wat)?;
+    let dir_path = format!("fuzz/crash-inputs/{target}");
+    let file_path = format!("crash-{hash_str}");
+    fs::create_dir_all(&dir_path)?;
+    fs::write(format!("{dir_path}/{file_path}.wasm"), wasm)?;
+    fs::write(format!("{dir_path}/{file_path}.wat"), wat)?;
     Ok(hash_str)
 }
 
