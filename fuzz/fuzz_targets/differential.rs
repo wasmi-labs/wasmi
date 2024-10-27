@@ -51,8 +51,9 @@ fuzz_target!(|seed: &[u8]| {
         let params = &params[..];
         let result_wasmi = wasmi_oracle.call(name, params);
         let result_oracle = chosen_oracle.call(name, params);
-        // Note: If either of the oracles returns a non-deterministic error we ignore it
-        //       to avoid having to deal with non-deterministic behavior between oracles.
+        // Note: If either of the oracles returns a non-deterministic error we skip the
+        //       entire fuzz run since following function executions could be affected by
+        //       this non-determinism due to shared global state, such as global variables.
         if let Err(wasmi_err) = &result_wasmi {
             if wasmi_err.is_non_deterministic() {
                 return;
