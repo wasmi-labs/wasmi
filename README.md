@@ -56,14 +56,14 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`multi-value`] | ✅ | ≥ `0.14.0`. |
 | [`bulk-memory`] | ✅ | ≥ `0.24.0`. [(#628)] |
 | [`reference-types`] | ✅ | ≥ `0.24.0`. [(#635)] |
-| [`simd`] | ❌ | Unlikely to be supported. |
 | [`tail-calls`] | ✅ | ≥ `0.28.0`. [(#683)] |
 | [`extended-const`] | ✅ | ≥ `0.29.0`. [(#707)] |
 | [`multi-memory`] | ✅ | ≥ `0.37.0`. [(#1191)] |
+| [`simd`] | ❌ | Unlikely to be supported. |
+| [`relaxed-simd`] | ❌ | Unlikely to be supported. Depends on `simd`. |
 | [`function-references`] | 📅 | Planned but not yet implemented. [(#774)] |
 | [`gc`] | 📅 | Planned but not yet implemented. [(#775)] |
 | [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
-| [`relaxed-simd`] | ❌ | Unlikely to be supported since `simd` is unlikely to be supported. |
 | [`exception-handling`] | 📅 | Planned but not yet implemented. [(#1037)] |
 | [`custom-page-sizes`] | 📅 | Planned but not yet implemented. [(#1197)] |
 | | |
