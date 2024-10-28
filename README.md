@@ -64,7 +64,6 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`gc`] | 📅 | Planned but not yet implemented. [(#775)] |
 | [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
 | [`relaxed-simd`] | ❌ | Unlikely to be supported since `simd` is unlikely to be supported. |
-| [`component-model`] | 📅 | Planned but not yet implemented. [(#897)] |
 | [`exception-handling`] | 📅 | Planned but not yet implemented. [(#1037)] |
 | [`branch-hinting`] | 📅 | Planned but not yet implemented. [(#1036)] |
 | [`custom-page-sizes`] | 📅 | Planned but not yet implemented. [(#1197)] |
@@ -86,7 +85,6 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [`multi-memory`]: https://github.com/WebAssembly/multi-memory
 [`threads`]: https://github.com/WebAssembly/threads
 [`relaxed-simd`]: https://github.com/WebAssembly/relaxed-simd
-[`component-model`]: https://github.com/WebAssembly/component-model
 [`exception-handling`]: https://github.com/WebAssembly/exception-handling
 [`branch-hinting`]: https://github.com/WebAssembly/branch-hinting
 [`custom-page-sizes`]: https://github.com/WebAssembly/custom-page-sizes
@@ -108,7 +106,6 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#775)]: https://github.com/wasmi-labs/wasmi/pull/775
 [(#776)]: https://github.com/wasmi-labs/wasmi/pull/776
 [(#777)]: https://github.com/wasmi-labs/wasmi/pull/777
-[(#897)]: https://github.com/wasmi-labs/wasmi/pull/897
 [(#1036)]: https://github.com/wasmi-labs/wasmi/issues/1136
 [(#1037)]: https://github.com/wasmi-labs/wasmi/issues/1137
 [(#1197)]: https://github.com/wasmi-labs/wasmi/issues/1197
