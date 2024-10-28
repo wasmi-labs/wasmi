@@ -61,11 +61,11 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`multi-memory`] | ✅ | ≥ `0.37.0`. [(#1191)] |
 | [`simd`] | ❌ | Unlikely to be supported. |
 | [`relaxed-simd`] | ❌ | Unlikely to be supported. Depends on `simd`. |
-| [`function-references`] | 📅 | Planned but not yet implemented. [(#774)] |
-| [`gc`] | 📅 | Planned but not yet implemented. [(#775)] |
-| [`threads`] | 📅 | Planned but not yet implemented. [(#777)] |
-| [`exception-handling`] | 📅 | Planned but not yet implemented. [(#1037)] |
-| [`custom-page-sizes`] | 📅 | Planned but not yet implemented. [(#1197)] |
+| [`function-references`] | 📅 | Not yet implemented. [(#774)] |
+| [`gc`] | 📅 | Not yet implemented. [(#775)] |
+| [`threads`] | 📅 | Not yet implemented. [(#777)] |
+| [`exception-handling`] | 📅 | Not yet implemented. [(#1037)] |
+| [`custom-page-sizes`] | 📅 | Not yet implemented. [(#1197)] |
 | | |
 | [WASI] | 👨‍🔬 | Experimental support for WASI (`wasip1`) via the [`wasmi_wasi` crate]. |
 | [C-API] | 👨‍🔬 | Experimental support for the official Wasm C-API via the [`wasmi_c_api_impl` crate]. |
