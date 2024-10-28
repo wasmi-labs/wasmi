@@ -137,8 +137,6 @@ cargo bench
 
 Use `translate`, `instantiate`, `execute` or `overhead` filters to only run benchmarks that test performance of Wasm translation, instantiation, execution or miscellaneous overhead respectively, e.g. `cargo bench execute`.
 
-We maintain a timeline for benchmarks of every commit to `master` that [can be viewed here](https://wasmi-labs.github.io/wasmi/benchmarks/).
-
 ## Supported Platforms
 
 Wasmi supports a wide variety of architectures and platforms.
