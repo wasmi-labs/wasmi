@@ -48,13 +48,7 @@ std = [
     "spin/std",
     "arrayvec/std",
 ]
-
-# Disabling this crate feature allows to drop `hashbrown`, `string-interner` and `ahash` dependencies
-# entirely, reducing compilation times and shrink binary sizes.
 hash-collections = ["wasmi_collections/hash-collections"]
-
-# Tells this crate to prefer using its built-in btree-based collections 
-# even if the `hash-collections` feature is enabled.
 prefer-btree-collections = ["wasmi_collections/prefer-btree-collections"]
 
 # Enables extra checks performed during Wasmi bytecode execution.

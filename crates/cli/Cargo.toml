@@ -25,13 +25,7 @@ assert_cmd = "2.0.7"
 
 [features]
 default = []
-
-# Disabling this crate feature allows to drop `hashbrown`, `string-interner` and `ahash` dependencies
-# entirely, reducing compilation times and shrink binary sizes.
 hash-collections = ["wasmi/hash-collections"]
-
-# Tells this crate to prefer using its built-in btree-based collections 
-# even if the `hash-collections` feature is enabled.
 prefer-btree-collections = ["wasmi/prefer-btree-collections"]
 
 # We need to put this [profile.release] section due to this bug in Cargo:
