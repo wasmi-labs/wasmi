@@ -17,7 +17,6 @@ exclude.workspace = true
 libm = "0.2.8"
 num-traits = { workspace = true }
 downcast-rs = { version = "1.2", default-features = false }
-paste = "1"
 
 [dev-dependencies]
 rand = "0.8.5"
