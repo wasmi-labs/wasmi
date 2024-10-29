@@ -17,7 +17,6 @@ use core::{
     fmt::{self, Display},
     ops::{Neg, Shl, Shr},
 };
-use paste::paste;
 
 /// An untyped value.
 ///
@@ -1479,27 +1478,25 @@ where
 
 macro_rules! impl_encode_untyped_slice {
     ( $n:literal $( $tuple:ident )* ) => {
-        paste! {
-            impl<$($tuple),*> EncodeUntypedSlice for ($($tuple,)*)
-            where
+        impl<$($tuple),*> EncodeUntypedSlice for ($($tuple,)*)
+        where
+            $(
+                $tuple: Into<UntypedVal>
+            ),*
+        {
+            #[allow(non_snake_case)]
+            #[inline]
+            fn encode_untyped_slice<'a>(self, results: &'a mut [UntypedVal]) -> Result<(), UntypedError> {
+                let Ok(_results) = <&'a mut [UntypedVal; $n]>::try_from(results) else {
+                    return Err(UntypedError::invalid_len())
+                };
+                let ( $( $tuple ,)* ) = self;
+                let mut _i = 0;
                 $(
-                    $tuple: Into<UntypedVal>
-                ),*
-            {
-                #[allow(non_snake_case)]
-                #[inline]
-                fn encode_untyped_slice(self, results: &mut [UntypedVal]) -> Result<(), UntypedError> {
-                    match results {
-                        [ $( [< _results_ $tuple >] ,)* ] => {
-                            let ( $( [< _self_ $tuple >] ,)* ) = self;
-                            $(
-                                *[< _results_ $tuple >] = <$tuple as Into<UntypedVal>>::into([< _self_ $tuple >]);
-                            )*
-                            Ok(())
-                        }
-                        _ => Err(UntypedError::invalid_len())
-                    }
-                }
+                    _results[_i] = <$tuple as Into<UntypedVal>>::into($tuple);
+                    _i += 1;
+                )*
+                Ok(())
             }
         }
     };
