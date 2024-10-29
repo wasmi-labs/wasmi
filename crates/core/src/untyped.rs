@@ -1484,17 +1484,17 @@ macro_rules! impl_encode_untyped_slice {
                 $tuple: Into<UntypedVal>
             ),*
         {
-            #[allow(non_snake_case, unused_variables, unused_mut, unused_assignments)]
+            #[allow(non_snake_case)]
             #[inline]
             fn encode_untyped_slice<'a>(self, results: &'a mut [UntypedVal]) -> Result<(), UntypedError> {
-                let Ok(mut results) = <&'a mut [UntypedVal; $n]>::try_from(results) else {
+                let Ok(_results) = <&'a mut [UntypedVal; $n]>::try_from(results) else {
                     return Err(UntypedError::invalid_len())
                 };
                 let ( $( $tuple ,)* ) = self;
-                let mut i = 0;
+                let mut _i = 0;
                 $(
-                    results[i] = <$tuple as Into<UntypedVal>>::into($tuple);
-                    i += 1;
+                    _results[_i] = <$tuple as Into<UntypedVal>>::into($tuple);
+                    _i += 1;
                 )*
                 Ok(())
             }
