@@ -79,15 +79,6 @@ macro_rules! float {
                 Self(self.0 & !$sign_bit)
             }
 
-            /// Returns the fractional part of the float.
-            #[must_use]
-            #[inline]
-            pub fn fract(self) -> Self {
-                Self::from_float(
-                    ::num_traits::float::FloatCore::fract(self.to_float())
-                )
-            }
-
             /// Returns the minimum float between `self` and `other`.
             #[must_use]
             #[inline]

@@ -15,7 +15,6 @@ exclude.workspace = true
 
 [dependencies]
 libm = "0.2.8"
-num-traits = { workspace = true }
 downcast-rs = { version = "1.2", default-features = false }
 paste = "1"
 
@@ -25,7 +24,7 @@ rand = "0.8.5"
 [features]
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
-std = ["num-traits/std", "downcast-rs/std"]
+std = ["downcast-rs/std"]
 
 [package.metadata.cargo-udeps.ignore]
 # cargo-udeps cannot detect that libm is used for no_std targets only.
