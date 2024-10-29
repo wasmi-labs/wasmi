@@ -40,7 +40,7 @@ anyhow = "1.0"
 criterion = { version = "0.5", default-features = false }
 
 [features]
-default = ["std", "no-hash-maps"]
+default = ["std"]
 std = [
     "wasmi_core/std",
     "wasmi_collections/std",
@@ -48,14 +48,14 @@ std = [
     "spin/std",
     "arrayvec/std",
 ]
-# Tells the `wasmi` crate to avoid using hash based data structures.
-# 
-# Some embedded environments cannot provide a random source which is required
-# to properly initialize hashmap based data structures for resilience against
-# malious actors that control their inputs.
-#
-# An example of such an environment is `wasm32-unknown-unknown`.
-no-hash-maps = ["wasmi_collections/no-hash-maps"]
+
+# Disabling this crate feature allows to drop `hashbrown`, `string-interner` and `ahash` dependencies
+# entirely, reducing compilation times and shrink binary sizes.
+hash-collections = ["wasmi_collections/hash-collections"]
+
+# Tells this crate to prefer using its built-in btree-based collections 
+# even if the `hash-collections` feature is enabled.
+prefer-btree-collections = ["wasmi_collections/prefer-btree-collections"]
 
 # Enables extra checks performed during Wasmi bytecode execution.
 #

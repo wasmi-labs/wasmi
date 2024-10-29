@@ -1,6 +1,9 @@
 //! Data structure to efficiently store and deduplicate strings.
 
-#[cfg(not(feature = "no-hash-maps"))]
+#[cfg(all(
+    feature = "hash-collections",
+    not(feature = "prefer-btree-collections")
+))]
 mod detail {
     use super::{GetOrInternWithHint, Sym};
     use crate::hash;
@@ -34,7 +37,10 @@ mod detail {
     }
 }
 
-#[cfg(feature = "no-hash-maps")]
+#[cfg(any(
+    not(feature = "hash-collections"),
+    feature = "prefer-btree-collections"
+))]
 mod detail;
 
 /// Internment hint to speed-up certain use cases.
