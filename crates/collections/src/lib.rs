@@ -37,6 +37,7 @@ extern crate alloc as std;
 extern crate std;
 
 pub mod arena;
+#[cfg(feature = "hash-collections")]
 pub mod hash;
 mod head_vec;
 pub mod map;

@@ -36,14 +36,14 @@ jobs:
             --no-default-features
             --target x86_64-unknown-none
             --verbose
-      - name: Build (no_std + no-hash-maps)
+      - name: Build (no_std + hash-collections)
         run: >-
             cargo build
             --package wasmi
             --locked
             --lib
             --no-default-features
-            --features no-hash-maps
+            --features hash-collections
             --target x86_64-unknown-none
             --verbose
       - name: Build (no_std + wasm32)
