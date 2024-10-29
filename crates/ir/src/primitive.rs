@@ -244,10 +244,6 @@ macro_rules! for_each_comparator {
             I32LtU,
             I32LeS,
             I32LeU,
-            I32GtS,
-            I32GtU,
-            I32GeS,
-            I32GeU,
 
             I32And,
             I32Or,
@@ -262,23 +258,16 @@ macro_rules! for_each_comparator {
             I64LtU,
             I64LeS,
             I64LeU,
-            I64GtS,
-            I64GtU,
-            I64GeS,
-            I64GeU,
 
             F32Eq,
             F32Ne,
             F32Lt,
             F32Le,
-            F32Gt,
-            F32Ge,
+
             F64Eq,
             F64Ne,
             F64Lt,
             F64Le,
-            F64Gt,
-            F64Ge,
         }
     };
 }
@@ -357,7 +346,7 @@ impl ComparatorAndOffset {
     pub fn as_u64(&self) -> u64 {
         let hi = self.cmp as u64;
         let lo = self.offset.to_i32() as u64;
-        hi << 32 & lo
+        hi << 32 | lo
     }
 }
 

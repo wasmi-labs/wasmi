@@ -32,10 +32,18 @@ fn create_module(config: &Config, bytes: &[u8]) -> Module {
 /// Used to swap operands of a `rev` variant [`Instruction`] constructor.
 macro_rules! swap_ops {
     ($fn_name:path) => {
-        |result: Reg, lhs: Const16<_>, rhs: Reg| -> Instruction { $fn_name(result, rhs, lhs) }
+        |result: Reg, lhs, rhs| -> Instruction { $fn_name(result, rhs, lhs) }
     };
 }
 use swap_ops;
+
+/// Used to swap `lhs` and `rhs` operands of a fused `cmp+branch` instruction.
+macro_rules! swap_cmp_br_ops {
+    ($fn_name:path) => {
+        |lhs, rhs, offset: BranchOffset16| -> Instruction { $fn_name(rhs, lhs, offset) }
+    };
+}
+use swap_cmp_br_ops;
 
 /// Asserts that the given `wasm` bytes yield functions with expected instructions.
 ///

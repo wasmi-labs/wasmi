@@ -8,6 +8,7 @@ members = [
     "crates/wasmi",
     "crates/wasi",
     "crates/ir",
+    "crates/fuzz",
     "fuzz",
 ]
 exclude = []
@@ -33,6 +34,7 @@ wasmi_ir = { version = "0.38.0", path = "crates/ir", default-features = false }
 wasmi_collections = { version = "0.38.0", path = "crates/collections", default-features = false }
 wasmi_c_api_impl = { version = "0.38.0", path = "crates/c_api" }
 wasmi_c_api_macros = { version = "0.38.0", path = "crates/c_api/macro" }
+wasmi_fuzz = { version = "0.38.0", path = "crates/fuzz" }
 num-traits = { version = "0.2.8", default-features = false }
 
 [profile.bench]

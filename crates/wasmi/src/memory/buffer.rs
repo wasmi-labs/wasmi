@@ -36,6 +36,12 @@ pub struct ByteBuffer {
 // Both of them are `Send` so this is sound.
 unsafe impl Send for ByteBuffer {}
 
+// # Safety
+//
+// `ByteBuffer` is essentially an `enum`` of `Vec<u8>` or `&'static mut [u8]`.
+// Both of them are `Sync` so this is sound.
+unsafe impl Sync for ByteBuffer {}
+
 /// Decomposes the `Vec<u8>` into its raw components.
 ///
 /// Returns the raw pointer to the underlying data, the length of

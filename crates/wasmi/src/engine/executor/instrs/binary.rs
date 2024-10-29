@@ -73,7 +73,7 @@ macro_rules! impl_binary_imm16 {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
             pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
-                self.execute_binary_imm16(result, lhs, rhs, $op)
+                self.execute_binary_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
     };

@@ -41,7 +41,7 @@ fn fuzz_regression_2() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
-            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::Return,
         ])
@@ -69,7 +69,7 @@ fn fuzz_regression_4() {
         .expect_func_instrs([
             Instruction::copy(2, 1),
             Instruction::copy(1, 0),
-            Instruction::branch_i32_eq_imm(Reg::from(1), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm16(Reg::from(1), 0, BranchOffset16::from(2)),
             Instruction::trap(TrapCode::UnreachableCodeReached),
             Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
@@ -84,10 +84,10 @@ fn fuzz_regression_5() {
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(1)), EngineFunc::from_u32(0)),
             Instruction::register(Reg::from(0)),
-            Instruction::branch_i32_eq_imm(Reg::from(3), 0, BranchOffset16::from(5)),
+            Instruction::branch_i32_eq_imm16(Reg::from(3), 0, BranchOffset16::from(5)),
             Instruction::call_internal(RegSpan::new(Reg::from(2)), EngineFunc::from_u32(0)),
             Instruction::register(Reg::from(2)),
-            Instruction::branch_i32_eq_imm(Reg::from(4), 0, BranchOffset16::from(1)),
+            Instruction::branch_i32_eq_imm16(Reg::from(4), 0, BranchOffset16::from(1)),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy_imm32(Reg::from(3), 0),
             Instruction::trap(TrapCode::UnreachableCodeReached),
@@ -102,8 +102,8 @@ fn fuzz_regression_6() {
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
-            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(4)),
-            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(1)),
+            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(4)),
+            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(1)),
             Instruction::copy(1, 2),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy(1, 2),
@@ -151,7 +151,7 @@ fn fuzz_regression_9() {
             Instruction::copy_imm32(Reg::from(1), 10),
             Instruction::copy(5, 0),
             Instruction::copy_imm32(Reg::from(0), 20),
-            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(5)),
+            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(5)),
             Instruction::i32_add(Reg::from(3), Reg::from(5), Reg::from(6)),
             Instruction::copy(4, 2),
             Instruction::copy_imm32(Reg::from(2), 30),
@@ -168,7 +168,7 @@ fn fuzz_regression_10() {
     let wasm = include_str!("wat/fuzz_10.wat");
     TranslationTest::from_wat(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eq_imm(Reg::from(0), 0, BranchOffset16::from(3)),
+            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(3)),
             Instruction::copy_imm32(Reg::from(1), 10),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy_imm32(Reg::from(1), 20),
@@ -205,7 +205,7 @@ fn fuzz_regression_12_f32() {
         ]))
         .expect_func(ExpectedFunc::new([
             Instruction::copy_imm32(Reg::from(0), u32::MAX),
-            Instruction::f32_ge(Reg::from(1), Reg::from(0), Reg::from(0)),
+            Instruction::f32_le(Reg::from(1), Reg::from(0), Reg::from(0)),
             Instruction::return_nez(1),
             Instruction::trap(TrapCode::UnreachableCodeReached),
         ]))
@@ -229,7 +229,7 @@ fn fuzz_regression_12_f64() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::copy(0, -1),
-                Instruction::f64_ge(Reg::from(1), Reg::from(0), Reg::from(0)),
+                Instruction::f64_le(Reg::from(1), Reg::from(0), Reg::from(0)),
                 Instruction::return_nez(1),
                 Instruction::trap(TrapCode::UnreachableCodeReached),
             ])

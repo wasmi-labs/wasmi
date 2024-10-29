@@ -31,10 +31,10 @@ use crate::{
 use core::num::{NonZeroU32, NonZeroU64};
 use wasmparser::VisitOperator;
 
-/// Used to swap operands of a `rev` variant [`Instruction`] constructor.
+/// Used to swap operands of binary [`Instruction`] constructor.
 macro_rules! swap_ops {
     ($fn_name:path) => {
-        |result: Reg, lhs: Const16<_>, rhs: Reg| -> Instruction { $fn_name(result, rhs, lhs) }
+        |result: Reg, lhs, rhs| -> Instruction { $fn_name(result, rhs, lhs) }
     };
 }
 
@@ -389,90 +389,82 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_br_if(&mut self, relative_depth: u32) -> Self::Output {
         bail_unreachable!(self);
         let engine = self.engine().clone();
-        match self.alloc.stack.pop() {
-            TypedProvider::Const(condition) => {
+        let condition = match self.alloc.stack.pop() {
+            Provider::Const(condition) => {
                 if i32::from(condition) != 0 {
                     // Case: `condition != 0` so the branch is always taken.
                     // Therefore we can simplify the `br_if` to a `br` instruction.
-                    self.translate_br(relative_depth)
-                } else {
-                    // Case: `condition == 0` so the branch is never taken.
-                    // Therefore the `br_if` is a `nop` and can be ignored.
-                    Ok(())
+                    self.translate_br(relative_depth)?;
                 }
+                return Ok(());
             }
-            TypedProvider::Register(condition) => {
-                let fuel_info = self.fuel_info();
-                match self.alloc.control_stack.acquire_target(relative_depth) {
-                    AcquiredTarget::Return(_frame) => self.translate_return_if(condition),
-                    AcquiredTarget::Branch(frame) => {
-                        frame.bump_branches();
-                        let branch_dst = frame.branch_destination();
-                        let branch_params = frame.branch_params(&engine);
-                        if branch_params.is_empty() {
-                            // Case: no values need to be copied so we can directly
-                            //       encode the `br_if` as efficient `branch_nez`.
-                            self.alloc.instr_encoder.encode_branch_nez(
-                                &mut self.alloc.stack,
-                                condition,
-                                branch_dst,
-                            )?;
-                            return Ok(());
-                        }
-                        self.alloc.stack.peek_n(
-                            usize::from(branch_params.len()),
-                            &mut self.alloc.buffer.providers,
-                        );
-                        if self
-                            .alloc
-                            .buffer
-                            .providers
-                            .iter()
-                            .copied()
-                            .eq(branch_params.iter().map(TypedProvider::Register))
-                        {
-                            // Case: the providers on the stack are already as
-                            //       expected by the branch params and therefore
-                            //       no copies are required.
-                            //
-                            // This means we can encode the `br_if` as efficient `branch_nez`.
-                            self.alloc.instr_encoder.encode_branch_nez(
-                                &mut self.alloc.stack,
-                                condition,
-                                branch_dst,
-                            )?;
-                            return Ok(());
-                        }
-                        // Case: We need to copy the branch inputs to where the
-                        //       control frame expects them before actually branching
-                        //       to it.
-                        //       We do this by performing a negated `br_eqz` and skip
-                        //       the copy process with it in cases where no branch is
-                        //       needed.
-                        //       Otherwise we copy the values to their expected locations
-                        //       and finally perform the actual branch to the target
-                        //       control frame.
-                        let skip_label = self.alloc.instr_encoder.new_label();
-                        self.alloc.instr_encoder.encode_branch_eqz(
-                            &mut self.alloc.stack,
-                            condition,
-                            skip_label,
-                        )?;
-                        self.alloc.instr_encoder.encode_copies(
-                            &mut self.alloc.stack,
-                            branch_params,
-                            &self.alloc.buffer.providers[..],
-                            fuel_info,
-                        )?;
-                        let branch_offset =
-                            self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
-                        self.push_base_instr(Instruction::branch(branch_offset))?;
-                        self.alloc.instr_encoder.pin_label(skip_label);
-                        Ok(())
-                    }
-                }
-            }
+            Provider::Register(condition) => condition,
+        };
+        let fuel_info = self.fuel_info();
+        let frame = match self.alloc.control_stack.acquire_target(relative_depth) {
+            AcquiredTarget::Return(_frame) => return self.translate_return_if(condition),
+            AcquiredTarget::Branch(frame) => frame,
+        };
+        frame.bump_branches();
+        let branch_dst = frame.branch_destination();
+        let branch_params = frame.branch_params(&engine);
+        if branch_params.is_empty() {
+            // Case: no values need to be copied so we can directly
+            //       encode the `br_if` as efficient `branch_nez`.
+            self.alloc.instr_encoder.encode_branch_nez(
+                &mut self.alloc.stack,
+                condition,
+                branch_dst,
+            )?;
+            return Ok(());
         }
+        self.alloc.stack.peek_n(
+            usize::from(branch_params.len()),
+            &mut self.alloc.buffer.providers,
+        );
+        if self
+            .alloc
+            .buffer
+            .providers
+            .iter()
+            .copied()
+            .eq(branch_params.iter().map(TypedProvider::Register))
+        {
+            // Case: the providers on the stack are already as
+            //       expected by the branch params and therefore
+            //       no copies are required.
+            //
+            // This means we can encode the `br_if` as efficient `branch_nez`.
+            self.alloc.instr_encoder.encode_branch_nez(
+                &mut self.alloc.stack,
+                condition,
+                branch_dst,
+            )?;
+            return Ok(());
+        }
+        // Case: We need to copy the branch inputs to where the
+        //       control frame expects them before actually branching
+        //       to it.
+        //       We do this by performing a negated `br_eqz` and skip
+        //       the copy process with it in cases where no branch is
+        //       needed.
+        //       Otherwise we copy the values to their expected locations
+        //       and finally perform the actual branch to the target
+        //       control frame.
+        let skip_label = self.alloc.instr_encoder.new_label();
+        self.alloc
+            .instr_encoder
+            .encode_branch_eqz(&mut self.alloc.stack, condition, skip_label)?;
+        self.alloc.instr_encoder.encode_copies(
+            &mut self.alloc.stack,
+            branch_params,
+            &self.alloc.buffer.providers[..],
+            fuel_info,
+        )?;
+        let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
+        self.push_base_instr(Instruction::branch(branch_offset))?;
+        self.alloc.instr_encoder.pin_label(skip_label);
+        Ok(())
     }
 
     fn visit_br_table(&mut self, targets: wasmparser::BrTable<'a>) -> Self::Output {
@@ -1133,8 +1125,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_lt_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_lt_s,
-            Instruction::i32_lt_s_imm16,
-            swap_ops!(Instruction::i32_gt_s_imm16),
+            Instruction::i32_lt_s_imm16_rhs,
+            Instruction::i32_lt_s_imm16_lhs,
             TypedVal::i32_lt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1166,8 +1158,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_lt_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_lt_u,
-            Instruction::i32_lt_u_imm16,
-            swap_ops!(Instruction::i32_gt_u_imm16),
+            Instruction::i32_lt_u_imm16_rhs,
+            Instruction::i32_lt_u_imm16_lhs,
             TypedVal::i32_lt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1198,9 +1190,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i32_gt_s(&mut self) -> Self::Output {
         self.translate_binary(
-            Instruction::i32_gt_s,
-            Instruction::i32_gt_s_imm16,
-            swap_ops!(Instruction::i32_lt_s_imm16),
+            swap_ops!(Instruction::i32_lt_s),
+            swap_ops!(Instruction::i32_lt_s_imm16_lhs),
+            swap_ops!(Instruction::i32_lt_s_imm16_rhs),
             TypedVal::i32_gt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1231,9 +1223,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i32_gt_u(&mut self) -> Self::Output {
         self.translate_binary(
-            Instruction::i32_gt_u,
-            Instruction::i32_gt_u_imm16,
-            swap_ops!(Instruction::i32_lt_u_imm16),
+            swap_ops!(Instruction::i32_lt_u),
+            swap_ops!(Instruction::i32_lt_u_imm16_lhs),
+            swap_ops!(Instruction::i32_lt_u_imm16_rhs),
             TypedVal::i32_gt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1265,8 +1257,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_le_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_le_s,
-            Instruction::i32_le_s_imm16,
-            swap_ops!(Instruction::i32_ge_s_imm16),
+            Instruction::i32_le_s_imm16_rhs,
+            Instruction::i32_le_s_imm16_lhs,
             TypedVal::i32_le_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1298,8 +1290,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_le_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i32_le_u,
-            Instruction::i32_le_u_imm16,
-            swap_ops!(Instruction::i32_ge_u_imm16),
+            Instruction::i32_le_u_imm16_rhs,
+            Instruction::i32_le_u_imm16_lhs,
             TypedVal::i32_le_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1330,9 +1322,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i32_ge_s(&mut self) -> Self::Output {
         self.translate_binary(
-            Instruction::i32_ge_s,
-            Instruction::i32_ge_s_imm16,
-            swap_ops!(Instruction::i32_le_s_imm16),
+            swap_ops!(Instruction::i32_le_s),
+            swap_ops!(Instruction::i32_le_s_imm16_lhs),
+            swap_ops!(Instruction::i32_le_s_imm16_rhs),
             TypedVal::i32_ge_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1363,9 +1355,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i32_ge_u(&mut self) -> Self::Output {
         self.translate_binary(
-            Instruction::i32_ge_u,
-            Instruction::i32_ge_u_imm16,
-            swap_ops!(Instruction::i32_le_u_imm16),
+            swap_ops!(Instruction::i32_le_u),
+            swap_ops!(Instruction::i32_le_u_imm16_lhs),
+            swap_ops!(Instruction::i32_le_u_imm16_rhs),
             TypedVal::i32_ge_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1438,8 +1430,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_lt_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_lt_s,
-            Instruction::i64_lt_s_imm16,
-            swap_ops!(Instruction::i64_gt_s_imm16),
+            Instruction::i64_lt_s_imm16_rhs,
+            Instruction::i64_lt_s_imm16_lhs,
             TypedVal::i64_lt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1471,8 +1463,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_lt_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_lt_u,
-            Instruction::i64_lt_u_imm16,
-            swap_ops!(Instruction::i64_gt_u_imm16),
+            Instruction::i64_lt_u_imm16_rhs,
+            Instruction::i64_lt_u_imm16_lhs,
             TypedVal::i64_lt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1503,9 +1495,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i64_gt_s(&mut self) -> Self::Output {
         self.translate_binary(
-            Instruction::i64_gt_s,
-            Instruction::i64_gt_s_imm16,
-            swap_ops!(Instruction::i64_lt_s_imm16),
+            swap_ops!(Instruction::i64_lt_s),
+            swap_ops!(Instruction::i64_lt_s_imm16_lhs),
+            swap_ops!(Instruction::i64_lt_s_imm16_rhs),
             TypedVal::i64_gt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1536,9 +1528,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i64_gt_u(&mut self) -> Self::Output {
         self.translate_binary(
-            Instruction::i64_gt_u,
-            Instruction::i64_gt_u_imm16,
-            swap_ops!(Instruction::i64_lt_u_imm16),
+            swap_ops!(Instruction::i64_lt_u),
+            swap_ops!(Instruction::i64_lt_u_imm16_lhs),
+            swap_ops!(Instruction::i64_lt_u_imm16_rhs),
             TypedVal::i64_gt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1570,8 +1562,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_le_s(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_le_s,
-            Instruction::i64_le_s_imm16,
-            swap_ops!(Instruction::i64_ge_s_imm16),
+            Instruction::i64_le_s_imm16_rhs,
+            Instruction::i64_le_s_imm16_lhs,
             TypedVal::i64_le_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1603,8 +1595,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_le_u(&mut self) -> Self::Output {
         self.translate_binary(
             Instruction::i64_le_u,
-            Instruction::i64_le_u_imm16,
-            swap_ops!(Instruction::i64_ge_u_imm16),
+            Instruction::i64_le_u_imm16_rhs,
+            Instruction::i64_le_u_imm16_lhs,
             TypedVal::i64_le_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1635,9 +1627,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i64_ge_s(&mut self) -> Self::Output {
         self.translate_binary(
-            Instruction::i64_ge_s,
-            Instruction::i64_ge_s_imm16,
-            swap_ops!(Instruction::i64_le_s_imm16),
+            swap_ops!(Instruction::i64_le_s),
+            swap_ops!(Instruction::i64_le_s_imm16_lhs),
+            swap_ops!(Instruction::i64_le_s_imm16_rhs),
             TypedVal::i64_ge_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1668,9 +1660,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_i64_ge_u(&mut self) -> Self::Output {
         self.translate_binary(
-            Instruction::i64_ge_u,
-            Instruction::i64_ge_u_imm16,
-            swap_ops!(Instruction::i64_le_u_imm16),
+            swap_ops!(Instruction::i64_le_u),
+            swap_ops!(Instruction::i64_le_u_imm16_lhs),
+            swap_ops!(Instruction::i64_le_u_imm16_rhs),
             TypedVal::i64_ge_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1774,7 +1766,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_f32_gt(&mut self) -> Self::Output {
         self.translate_fbinary(
-            Instruction::f32_gt,
+            swap_ops!(Instruction::f32_lt),
             TypedVal::f32_gt,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -1839,7 +1831,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_f32_ge(&mut self) -> Self::Output {
         self.translate_fbinary(
-            Instruction::f32_ge,
+            swap_ops!(Instruction::f32_le),
             TypedVal::f32_ge,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: f32| {
@@ -1936,7 +1928,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_f64_gt(&mut self) -> Self::Output {
         self.translate_fbinary(
-            Instruction::f64_gt,
+            swap_ops!(Instruction::f64_lt),
             TypedVal::f64_gt,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
@@ -2001,7 +1993,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_f64_ge(&mut self) -> Self::Output {
         self.translate_fbinary(
-            Instruction::f64_ge,
+            swap_ops!(Instruction::f64_le),
             TypedVal::f64_ge,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: f64| {

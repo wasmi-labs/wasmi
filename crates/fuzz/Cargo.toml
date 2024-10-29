@@ -1,0 +1,32 @@
+[package]
+name = "wasmi_fuzz"
+version.workspace = true
+rust-version.workspace = true
+documentation = "https://docs.rs/wasmi_fuzz"
+description = "Fuzzing utilities and infrastructure for the Wasmi interpreter"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+publish = false
+
+[dependencies]
+wasmi = { workspace = true, features = ["std"] }
+wasmi-stack = { package = "wasmi", version = "0.31.2", optional = true }
+wasmtime = { version = "26.0.0", optional = true }
+wasm-smith = "0.219.1"
+arbitrary = "1.3.2"
+sha2 = "0.10"
+wasmprinter = "0.219.1"
+anyhow = "1.0.91"
+
+[features]
+default = []
+differential = [
+    "dep:wasmi-stack",
+    "dep:wasmtime",
+]
