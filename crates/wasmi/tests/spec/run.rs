@@ -235,6 +235,20 @@ fn assert_trap(test: &TestDescriptor, span: Span, error: TestError, message: &st
     }
 }
 
+/// Asserts that `results` match the `expected` values.
+fn assert_results(
+    test: &TestDescriptor,
+    context: &TestContext,
+    span: Span,
+    results: &[Val],
+    expected: &[WastRet],
+) {
+    assert_eq!(results.len(), expected.len());
+    for (result, expected) in results.iter().zip(expected) {
+        assert_result(test, context, span, result, expected);
+    }
+}
+
 /// Asserts that `result` match the `expected` value.
 fn assert_result(
     test: &TestDescriptor,
@@ -306,20 +320,6 @@ fn assert_result(
             expected,
             result
         ),
-    }
-}
-
-/// Asserts that `results` match the `expected` values.
-fn assert_results(
-    test: &TestDescriptor,
-    context: &TestContext,
-    span: Span,
-    results: &[Val],
-    expected: &[WastRet],
-) {
-    assert_eq!(results.len(), expected.len());
-    for (result, expected) in results.iter().zip(expected) {
-        assert_result(test, context, span, result, expected);
     }
 }
 
