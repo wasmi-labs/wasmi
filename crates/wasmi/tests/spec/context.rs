@@ -162,8 +162,8 @@ impl TestContext<'_> {
     ) -> Result<Instance, TestError> {
         let module_name = id.map(|id| id.name());
         let module = match self.runner_config.mode {
-            ParsingMode::Buffered => Module::new(self.engine(), &wasm[..])?,
-            ParsingMode::Streaming => Module::new_streaming(self.engine(), &wasm[..])?,
+            ParsingMode::Buffered => Module::new(self.engine(), wasm)?,
+            ParsingMode::Streaming => Module::new_streaming(self.engine(), wasm)?,
         };
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.start(&mut self.store)?;
