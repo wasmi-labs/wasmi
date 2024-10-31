@@ -1,8 +1,6 @@
 use super::{
     run::{ParsingMode, RunnerConfig},
-    TestDescriptor,
     TestError,
-    TestSpan,
 };
 use anyhow::Result;
 use std::collections::HashMap;
@@ -23,11 +21,11 @@ use wasmi::{
     Val,
 };
 use wasmi_core::{ValType, F32, F64};
-use wast::token::{Id, Span};
+use wast::token::Id;
 
 /// The context of a single Wasm test spec suite run.
 #[derive(Debug)]
-pub struct TestContext<'a> {
+pub struct TestContext {
     /// The configuration of the test runner.
     runner_config: RunnerConfig,
     /// The linker for linking together Wasm test modules.
@@ -40,15 +38,11 @@ pub struct TestContext<'a> {
     last_instance: Option<Instance>,
     /// Intermediate results buffer that can be reused for calling Wasm functions.
     results: Vec<Val>,
-    /// The descriptor of the test.
-    ///
-    /// Useful for printing better debug messages in case of failure.
-    descriptor: &'a TestDescriptor,
 }
 
-impl<'a> TestContext<'a> {
+impl TestContext {
     /// Creates a new [`TestContext`] with the given [`TestDescriptor`].
-    pub fn new(descriptor: &'a TestDescriptor, runner_config: RunnerConfig) -> Self {
+    pub fn new(runner_config: RunnerConfig) -> Self {
         let engine = Engine::new(&runner_config.config);
         let mut linker = Linker::new(&engine);
         let mut store = Store::new(&engine, ());
@@ -109,17 +103,11 @@ impl<'a> TestContext<'a> {
             instances: HashMap::new(),
             last_instance: None,
             results: Vec::new(),
-            descriptor,
         }
     }
 }
 
-impl TestContext<'_> {
-    /// Returns the [`TestDescriptor`] of the test context.
-    pub fn spanned(&self, span: Span) -> TestSpan {
-        self.descriptor.spanned(span)
-    }
-
+impl TestContext {
     /// Returns the [`Engine`] of the [`TestContext`].
     fn engine(&self) -> &Engine {
         self.store.engine()

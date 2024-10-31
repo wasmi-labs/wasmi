@@ -5,7 +5,7 @@ mod run;
 
 use self::{
     context::TestContext,
-    descriptor::{TestDescriptor, TestSpan},
+    descriptor::TestDescriptor,
     error::TestError,
     run::{ParsingMode, RunnerConfig},
 };
