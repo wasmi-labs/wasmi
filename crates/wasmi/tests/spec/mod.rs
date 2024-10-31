@@ -1,14 +1,12 @@
 mod context;
 mod descriptor;
 mod error;
-mod profile;
 mod run;
 
 use self::{
     context::TestContext,
     descriptor::{TestDescriptor, TestSpan},
     error::TestError,
-    profile::TestProfile,
     run::{ParsingMode, RunnerConfig},
 };
 use wasmi::Config;

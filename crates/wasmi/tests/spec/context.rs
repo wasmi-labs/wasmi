@@ -2,7 +2,6 @@ use super::{
     run::{ParsingMode, RunnerConfig},
     TestDescriptor,
     TestError,
-    TestProfile,
     TestSpan,
 };
 use anyhow::Result;
@@ -43,8 +42,6 @@ pub struct TestContext<'a> {
     instances: HashMap<String, Instance>,
     /// The last touched module instance.
     last_instance: Option<Instance>,
-    /// Profiling during the Wasm spec test run.
-    profile: TestProfile,
     /// Intermediate results buffer that can be reused for calling Wasm functions.
     results: Vec<Val>,
     /// The descriptor of the test.
@@ -117,7 +114,6 @@ impl<'a> TestContext<'a> {
             modules: Vec::new(),
             instances: HashMap::new(),
             last_instance: None,
-            profile: TestProfile::default(),
             results: Vec::new(),
             descriptor,
         }
@@ -143,11 +139,6 @@ impl TestContext<'_> {
     /// Returns an exclusive reference to the underlying [`Store`].
     pub fn store_mut(&mut self) -> &mut Store<()> {
         &mut self.store
-    }
-
-    /// Returns an exclusive reference to the test profile.
-    pub fn profile(&mut self) -> &mut TestProfile {
-        &mut self.profile
     }
 
     /// Compiles the Wasm module and stores it into the [`TestContext`].
