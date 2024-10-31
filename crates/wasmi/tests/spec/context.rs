@@ -35,7 +35,7 @@ pub struct TestContext<'a> {
     /// The store to hold all runtime data during the test.
     store: Store<()>,
     /// The list of all instantiated modules.
-    instances: HashMap<String, Instance>,
+    instances: HashMap<Box<str>, Instance>,
     /// The last touched module instance.
     last_instance: Option<Instance>,
     /// Intermediate results buffer that can be reused for calling Wasm functions.
@@ -153,7 +153,7 @@ impl TestContext<'_> {
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.start(&mut self.store)?;
         if let Some(module_name) = module_name {
-            self.instances.insert(module_name.to_string(), instance);
+            self.instances.insert(module_name.into(), instance);
             for export in instance.exports(&self.store) {
                 self.linker
                     .define(module_name, export.name(), export.into_extern())?;
@@ -193,7 +193,7 @@ impl TestContext<'_> {
             // Already registered the instance.
             return;
         }
-        self.instances.insert(name.to_string(), instance);
+        self.instances.insert(name.into(), instance);
         for export in instance.exports(&self.store) {
             self.linker
                 .define(name, export.name(), export.clone().into_extern())
