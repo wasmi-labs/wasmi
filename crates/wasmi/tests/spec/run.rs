@@ -3,7 +3,7 @@ use anyhow::Result;
 use wasmi::{Config, ExternRef, FuncRef, Instance, Val};
 use wasmi_core::{F32, F64};
 use wast::{
-    core::{HeapType, NanPattern, WastRetCore},
+    core::{AbstractHeapType, HeapType, NanPattern, WastRetCore},
     lexer::Lexer,
     parser::ParseBuffer,
     token::Span,
@@ -74,44 +74,49 @@ pub fn run_wasm_spec_test(name: &'static str, file: &'static str, config: Runner
 }
 
 fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> {
-    'outer: for directive in wast.directives {
-        let span = directive.span();
+    for directive in wast.directives {
         test_context.profile().bump_directives();
         match directive {
-            WastDirective::Wat(QuoteWat::Wat(Wat::Module(module))) => {
-                module_compilation_succeeds(test_context, span, module);
-                test_context.profile().bump_module();
+            WastDirective::ModuleDefinition(
+                mut module @ (QuoteWat::Wat(wast::Wat::Module(_)) | QuoteWat::QuoteModule { .. }),
+            ) => {
+                let wasm = module.encode().unwrap();
+                let span = module.span();
+                module_compilation_succeeds(test_context, span, None, &wasm);
+                test_context.profile().bump_module_definition();
             }
-            WastDirective::Wat(_) => {
-                test_context.profile().bump_quote_module();
-                // For the purpose of testing Wasmi we are not
-                // interested in parsing `.wat` files, therefore
-                // we silently ignore this case for now.
-                // This might change once wasmi supports `.wat` files.
-                continue 'outer;
+            WastDirective::Module(
+                mut module @ (QuoteWat::Wat(wast::Wat::Module(_)) | QuoteWat::QuoteModule { .. }),
+            ) => {
+                let wasm = module.encode().unwrap();
+                let span = module.span();
+                let id = module.name();
+                module_compilation_succeeds(test_context, span, id, &wasm);
+                test_context.profile().bump_module();
             }
             WastDirective::AssertMalformed {
                 span,
-                module: QuoteWat::Wat(Wat::Module(module)),
+                module: mut module @ QuoteWat::Wat(wast::Wat::Module(_)),
                 message,
             } => {
                 test_context.profile().bump_assert_malformed();
-                module_compilation_fails(test_context, span, module, message);
+                let id = module.name();
+                let wasm = module.encode().unwrap();
+                module_compilation_fails(test_context, span, id, &wasm, message);
             }
             WastDirective::AssertMalformed { .. } => {
                 test_context.profile().bump_assert_malformed();
             }
             WastDirective::AssertInvalid {
                 span,
-                module,
+                module:
+                    mut module @ (QuoteWat::Wat(wast::Wat::Module(_)) | QuoteWat::QuoteModule { .. }),
                 message,
             } => {
                 test_context.profile().bump_assert_invalid();
-                let module = match extract_module(module) {
-                    Some(module) => module,
-                    None => continue 'outer,
-                };
-                module_compilation_fails(test_context, span, module, message);
+                let id = module.name();
+                let wasm = module.encode().unwrap();
+                module_compilation_fails(test_context, span, id, &wasm, message);
             }
             WastDirective::Register { span, name, module } => {
                 test_context.profile().bump_register();
@@ -190,11 +195,13 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             }
             WastDirective::AssertUnlinkable {
                 span,
-                module: Wat::Module(module),
+                module: Wat::Module(mut module),
                 message,
             } => {
+                let id = module.id;
+                let wasm = module.encode().unwrap();
                 test_context.profile().bump_assert_unlinkable();
-                module_compilation_fails(test_context, span, module, message);
+                module_compilation_fails(test_context, span, id, &wasm, message);
             }
             WastDirective::AssertUnlinkable { .. } => {
                 test_context.profile().bump_assert_unlinkable();
@@ -285,10 +292,22 @@ fn assert_results(context: &TestContext, span: Span, results: &[Val], expected: 
                     );
                 }
             },
-            (Val::FuncRef(funcref), WastRetCore::RefNull(Some(HeapType::Func))) => {
+            (
+                Val::FuncRef(funcref),
+                WastRetCore::RefNull(Some(HeapType::Abstract {
+                    ty: AbstractHeapType::Func,
+                    ..
+                })),
+            ) => {
                 assert!(funcref.is_null());
             }
-            (Val::ExternRef(externref), WastRetCore::RefNull(Some(HeapType::Extern))) => {
+            (
+                Val::ExternRef(externref),
+                WastRetCore::RefNull(Some(HeapType::Abstract {
+                    ty: AbstractHeapType::Extern,
+                    ..
+                })),
+            ) => {
                 assert!(externref.is_null());
             }
             (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
@@ -312,28 +331,13 @@ fn assert_results(context: &TestContext, span: Span, results: &[Val], expected: 
     }
 }
 
-fn extract_module(quote_wat: QuoteWat) -> Option<wast::core::Module> {
-    match quote_wat {
-        QuoteWat::Wat(Wat::Module(module)) => Some(module),
-        QuoteWat::Wat(Wat::Component(_))
-        | QuoteWat::QuoteModule(_, _)
-        | QuoteWat::QuoteComponent(_, _) => {
-            // We currently do not allow parsing `.wat` Wasm modules in `v1`
-            // therefore checks based on malformed `.wat` modules are uninteresting
-            // to us at the moment.
-            // This might become interesting once `v1` starts support parsing `.wat`
-            // Wasm modules.
-            None
-        }
-    }
-}
-
 fn module_compilation_succeeds(
     context: &mut TestContext,
     span: Span,
-    module: wast::core::Module,
+    id: Option<wast::token::Id>,
+    wasm: &[u8],
 ) -> Instance {
-    match context.compile_and_instantiate(module) {
+    match context.compile_and_instantiate(id, wasm) {
         Ok(instance) => instance,
         Err(error) => panic!(
             "{}: failed to instantiate module but should have succeeded: {}",
@@ -346,10 +350,11 @@ fn module_compilation_succeeds(
 fn module_compilation_fails(
     context: &mut TestContext,
     span: Span,
-    module: wast::core::Module,
+    id: Option<wast::token::Id>,
+    wasm: &[u8],
     expected_message: &str,
 ) {
-    let result = context.compile_and_instantiate(module);
+    let result = context.compile_and_instantiate(id, wasm);
     assert!(
         result.is_err(),
         "{}: succeeded to instantiate module but should have failed with: {}",
@@ -367,14 +372,22 @@ fn execute_wast_execute(
         WastExecute::Invoke(invoke) => {
             execute_wast_invoke(context, span, invoke).map_err(Into::into)
         }
-        WastExecute::Wat(Wat::Module(module)) => {
-            context.compile_and_instantiate(module).map(|_| Vec::new())
+        WastExecute::Wat(Wat::Module(mut module)) => {
+            let id = module.id;
+            let wasm = module.encode().unwrap();
+            context
+                .compile_and_instantiate(id, &wasm)
+                .map(|_| Vec::new())
         }
         WastExecute::Wat(Wat::Component(_)) => {
             // Wasmi currently does not support the Wasm component model.
             Ok(vec![])
         }
-        WastExecute::Get { module, global } => context
+        WastExecute::Get {
+            module,
+            global,
+            span: _,
+        } => context
             .get_global(module, global)
             .map(|result| vec![result]),
     }
@@ -415,8 +428,14 @@ fn value(ctx: &mut wasmi::Store<()>, value: &wast::core::WastArgCore) -> Option<
         wast::core::WastArgCore::I64(arg) => Val::I64(*arg),
         wast::core::WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
         wast::core::WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
-        wast::core::WastArgCore::RefNull(HeapType::Func) => Val::FuncRef(FuncRef::null()),
-        wast::core::WastArgCore::RefNull(HeapType::Extern) => Val::ExternRef(ExternRef::null()),
+        wast::core::WastArgCore::RefNull(HeapType::Abstract {
+            ty: AbstractHeapType::Func,
+            ..
+        }) => Val::FuncRef(FuncRef::null()),
+        wast::core::WastArgCore::RefNull(HeapType::Abstract {
+            ty: AbstractHeapType::Extern,
+            ..
+        }) => Val::ExternRef(ExternRef::null()),
         wast::core::WastArgCore::RefExtern(value) => Val::ExternRef(ExternRef::new(ctx, *value)),
         _ => return None,
     })
