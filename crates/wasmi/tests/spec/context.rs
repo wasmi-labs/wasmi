@@ -28,8 +28,6 @@ use wast::token::{Id, Span};
 /// The context of a single Wasm test spec suite run.
 #[derive(Debug)]
 pub struct TestContext<'a> {
-    /// The Wasmi engine used for executing functions used during the test.
-    engine: Engine,
     /// The configuration of the test runner.
     runner_config: RunnerConfig,
     /// The linker for linking together Wasm test modules.
@@ -107,7 +105,6 @@ impl<'a> TestContext<'a> {
             .define("spectest", "print_f64_f64", print_f64_f64)
             .unwrap();
         TestContext {
-            engine,
             runner_config,
             linker,
             store,
@@ -128,7 +125,7 @@ impl TestContext<'_> {
 
     /// Returns the [`Engine`] of the [`TestContext`].
     fn engine(&self) -> &Engine {
-        &self.engine
+        self.store.engine()
     }
 
     /// Returns a shared reference to the underlying [`Store`].
