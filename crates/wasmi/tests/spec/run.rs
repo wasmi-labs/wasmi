@@ -75,14 +75,16 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
     for directive in wast.directives {
         match directive {
             WastDirective::ModuleDefinition(
-                mut module @ (QuoteWat::Wat(wast::Wat::Module(_)) | QuoteWat::QuoteModule { .. }),
+                mut module @ QuoteWat::Wat(wast::Wat::Module(_))
+                | mut module @ QuoteWat::QuoteModule { .. },
             ) => {
                 let wasm = module.encode().unwrap();
                 let span = module.span();
                 module_compilation_succeeds(test_context, span, None, &wasm);
             }
             WastDirective::Module(
-                mut module @ (QuoteWat::Wat(wast::Wat::Module(_)) | QuoteWat::QuoteModule { .. }),
+                mut module @ QuoteWat::Wat(wast::Wat::Module(_))
+                | mut module @ QuoteWat::QuoteModule { .. },
             ) => {
                 let wasm = module.encode().unwrap();
                 let span = module.span();
