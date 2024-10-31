@@ -34,8 +34,6 @@ pub struct TestContext<'a> {
     linker: Linker<()>,
     /// The store to hold all runtime data during the test.
     store: Store<()>,
-    /// The list of all encountered Wasm modules belonging to the test.
-    modules: Vec<Module>,
     /// The list of all instantiated modules.
     instances: HashMap<String, Instance>,
     /// The last touched module instance.
@@ -108,7 +106,6 @@ impl<'a> TestContext<'a> {
             runner_config,
             linker,
             store,
-            modules: Vec::new(),
             instances: HashMap::new(),
             last_instance: None,
             results: Vec::new(),
@@ -155,7 +152,6 @@ impl TestContext<'_> {
         };
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.start(&mut self.store)?;
-        self.modules.push(module);
         if let Some(module_name) = module_name {
             self.instances.insert(module_name.to_string(), instance);
             for export in instance.exports(&self.store) {
