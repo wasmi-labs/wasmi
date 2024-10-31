@@ -5,8 +5,8 @@ pub struct TestProfile {
     directives: usize,
     /// The amount of executed [`WasmDirective::Module`].
     module: usize,
-    /// The amount of executed [`WasmDirective::QuoteModule`].
-    quote_module: usize,
+    /// The amount of executed [`WasmDirective::ModuleDefinition`].
+    module_definition: usize,
     /// The amount of executed [`WasmDirective::AssertMalformed`].
     assert_malformed: usize,
     /// The amount of executed [`WasmDirective::AssertInvalid`].
@@ -38,9 +38,9 @@ impl TestProfile {
         self.module += 1;
     }
 
-    /// Bumps the amount of [`WasmDirective::QuoteModule`] directives.
-    pub fn bump_quote_module(&mut self) {
-        self.quote_module += 1;
+    /// Bumps the amount of [`WasmDirective::ModuleDefinition`] directives.
+    pub fn bump_module_definition(&mut self) {
+        self.module_definition += 1;
     }
 
     /// Bumps the amount of [`WasmDirective::AssertMalformed`] directives.

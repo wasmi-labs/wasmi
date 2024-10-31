@@ -125,11 +125,6 @@ impl<'a> TestContext<'a> {
 }
 
 impl TestContext<'_> {
-    /// Returns the file path of the associated `.wast` test file.
-    fn test_path(&self) -> &str {
-        self.descriptor.path()
-    }
-
     /// Returns the [`TestDescriptor`] of the test context.
     pub fn spanned(&self, span: Span) -> TestSpan {
         self.descriptor.spanned(span)
@@ -162,16 +157,10 @@ impl TestContext<'_> {
     /// If creating the [`Module`] fails.
     pub fn compile_and_instantiate(
         &mut self,
-        mut module: wast::core::Module,
+        id: Option<wast::token::Id>,
+        wasm: &[u8],
     ) -> Result<Instance, TestError> {
-        let module_name = module.id.map(|id| id.name());
-        let wasm = module.encode().unwrap_or_else(|error| {
-            panic!(
-                "encountered unexpected failure to encode `.wast` module into `.wasm`:{}: {}",
-                self.test_path(),
-                error
-            )
-        });
+        let module_name = id.map(|id| id.name());
         let module = match self.runner_config.mode {
             ParsingMode::Buffered => Module::new(self.engine(), &wasm[..])?,
             ParsingMode::Streaming => Module::new_streaming(self.engine(), &wasm[..])?,
