@@ -109,7 +109,8 @@ fn execute_directives(wast: Wast, test_context: &mut TestContext) -> Result<()> 
             }
             WastDirective::AssertInvalid {
                 span,
-                module: mut module @ (QuoteWat::Wat(wast::Wat::Module(_)) | QuoteWat::QuoteModule { .. }),
+                module:
+                    mut module @ (QuoteWat::Wat(wast::Wat::Module(_)) | QuoteWat::QuoteModule { .. }),
                 message,
             } => {
                 test_context.profile().bump_assert_invalid();
