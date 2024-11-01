@@ -307,21 +307,21 @@ impl WastRunner {
 /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
 fn value(ctx: &mut wasmi::Store<()>, value: &wast::core::WastArgCore) -> Option<Val> {
     use wasmi::{ExternRef, FuncRef};
-    use wast::core::{AbstractHeapType, HeapType};
+    use wast::core::{AbstractHeapType, HeapType, WastArgCore};
     Some(match value {
-        wast::core::WastArgCore::I32(arg) => Val::I32(*arg),
-        wast::core::WastArgCore::I64(arg) => Val::I64(*arg),
-        wast::core::WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
-        wast::core::WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
-        wast::core::WastArgCore::RefNull(HeapType::Abstract {
+        WastArgCore::I32(arg) => Val::I32(*arg),
+        WastArgCore::I64(arg) => Val::I64(*arg),
+        WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
+        WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
+        WastArgCore::RefNull(HeapType::Abstract {
             ty: AbstractHeapType::Func,
             ..
         }) => Val::FuncRef(FuncRef::null()),
-        wast::core::WastArgCore::RefNull(HeapType::Abstract {
+        WastArgCore::RefNull(HeapType::Abstract {
             ty: AbstractHeapType::Extern,
             ..
         }) => Val::ExternRef(ExternRef::null()),
-        wast::core::WastArgCore::RefExtern(value) => Val::ExternRef(ExternRef::new(ctx, *value)),
+        WastArgCore::RefExtern(value) => Val::ExternRef(ExternRef::new(ctx, *value)),
         _ => return None,
     })
 }
