@@ -363,6 +363,7 @@ fn execute_wast_execute(
     execute: WastExecute,
     results: &mut Vec<Val>,
 ) -> Result<(), TestError> {
+    results.clear();
     match execute {
         WastExecute::Invoke(invoke) => context.invoke(test, invoke, results),
         WastExecute::Wat(Wat::Module(mut module)) => {
@@ -381,7 +382,6 @@ fn execute_wast_execute(
             span: _,
         } => {
             let result = context.get_global(module, global)?;
-            results.clear();
             results.push(result);
             Ok(())
         }
