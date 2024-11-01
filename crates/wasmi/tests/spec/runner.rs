@@ -256,6 +256,7 @@ impl WastRunner {
         Ok(())
     }
 
+    /// Fills the `params` buffer with `args`.
     fn fill_params(
         &mut self,
         desc: &TestDescriptor,
@@ -264,19 +265,20 @@ impl WastRunner {
     ) -> Result<(), TestError> {
         self.params.clear();
         for arg in args {
-            let value = match arg {
-                wast::WastArg::Core(arg) => value(self.store_mut(), arg).unwrap_or_else(|| {
-                    panic!(
-                        "{}: encountered unsupported WastArgCore argument: {arg:?}",
-                        desc.spanned(span)
-                    )
-                }),
+            let arg = match arg {
+                wast::WastArg::Core(arg) => arg,
                 wast::WastArg::Component(arg) => panic!(
                     "{}: Wasmi does not support the Wasm `component-model` but found {arg:?}",
                     desc.spanned(span)
                 ),
             };
-            self.params.push(value);
+            let Some(val) = value(self.store_mut(), arg) else {
+                panic!(
+                    "{}: encountered unsupported WastArgCore argument: {arg:?}",
+                    desc.spanned(span)
+                )
+            };
+            self.params.push(val);
         }
         Ok(())
     }
