@@ -6,13 +6,13 @@ use wasmi::Config;
 
 /// Runs the Wasm test spec identified by the given name.
 fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {
-    let mut context = WastRunner::new(config);
-    if let Err(error) = context.setup_wasm_spectest_module() {
-        panic!("failed to setup Wasm spectest module: {error}");
+    let mut runner = WastRunner::new(config);
+    if let Err(error) = runner.setup_wasm_spectest_module() {
+        panic!("{path}: failed to setup Wasm spectest module: {error}");
     }
-    context
-        .process_directives(wast)
-        .unwrap_or_else(|error| panic!("{}:{}", path, error));
+    if let Err(error) = runner.process_directives(wast) {
+        panic!("{path}:{error}")
+    }
 }
 
 macro_rules! define_tests {
