@@ -1,6 +1,7 @@
-use super::{error::TestError, TestContext, TestDescriptor};
+use super::{error::TestError, TestDescriptor};
+use crate::spec::runner::{RunnerConfig, WastRunner};
 use anyhow::Result;
-use wasmi::{Config, Instance, Val};
+use wasmi::{Instance, Val};
 use wast::{
     core::{AbstractHeapType, HeapType, NanPattern, WastRetCore},
     lexer::Lexer,
@@ -14,28 +15,10 @@ use wast::{
     Wat,
 };
 
-/// The configuation for the test runner.
-#[derive(Debug, Copy, Clone)]
-pub struct RunnerConfig {
-    /// The Wasmi configuration used for all tests.
-    pub config: Config,
-    /// The parsing mode that is used.
-    pub mode: ParsingMode,
-}
-
-/// The mode in which Wasm is parsed.
-#[derive(Debug, Copy, Clone)]
-pub enum ParsingMode {
-    /// The test runner shall use buffered Wasm compilation.
-    Buffered,
-    /// The test runner shall use streaming Wasm compilation.
-    Streaming,
-}
-
 /// Runs the Wasm test spec identified by the given name.
 pub fn run_wasm_spec_test(name: &'static str, file: &'static str, config: RunnerConfig) {
     let test = TestDescriptor::new(name, file);
-    let mut context = TestContext::new(config);
+    let mut context = WastRunner::new(config);
     if let Err(error) = context.setup_wasm_spectest_module() {
         panic!("failed to setup Wasm spectest module: {error}");
     }
@@ -75,7 +58,7 @@ pub fn run_wasm_spec_test(name: &'static str, file: &'static str, config: Runner
 fn execute_directives(
     test: &TestDescriptor,
     wast: Wast,
-    test_context: &mut TestContext,
+    test_context: &mut WastRunner,
 ) -> Result<()> {
     let mut results = Vec::new();
     for directive in wast.directives {
@@ -238,7 +221,7 @@ fn assert_trap(test: &TestDescriptor, span: Span, error: TestError, message: &st
 /// Asserts that `results` match the `expected` values.
 fn assert_results(
     test: &TestDescriptor,
-    context: &TestContext,
+    context: &WastRunner,
     span: Span,
     results: &[Val],
     expected: &[WastRet],
@@ -252,7 +235,7 @@ fn assert_results(
 /// Asserts that `result` match the `expected` value.
 fn assert_result(
     test: &TestDescriptor,
-    context: &TestContext,
+    context: &WastRunner,
     span: Span,
     result: &Val,
     expected: &WastRet,
@@ -325,7 +308,7 @@ fn assert_result(
 
 fn module_compilation_succeeds(
     test: &TestDescriptor,
-    context: &mut TestContext,
+    context: &mut WastRunner,
     span: Span,
     id: Option<wast::token::Id>,
     wasm: &[u8],
@@ -342,7 +325,7 @@ fn module_compilation_succeeds(
 
 fn module_compilation_fails(
     test: &TestDescriptor,
-    context: &mut TestContext,
+    context: &mut WastRunner,
     span: Span,
     id: Option<wast::token::Id>,
     wasm: &[u8],
@@ -359,7 +342,7 @@ fn module_compilation_fails(
 
 fn execute_wast_execute(
     test: &TestDescriptor,
-    context: &mut TestContext,
+    context: &mut WastRunner,
     execute: WastExecute,
     results: &mut Vec<Val>,
 ) -> Result<(), TestError> {

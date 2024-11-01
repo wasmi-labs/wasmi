@@ -1,11 +1,8 @@
-use super::{
-    descriptor::TestDescriptor,
-    run::{ParsingMode, RunnerConfig},
-    TestError,
-};
+use super::{descriptor::TestDescriptor, TestError};
 use anyhow::Result;
 use std::collections::HashMap;
 use wasmi::{
+    Config,
     Engine,
     Extern,
     Func,
@@ -27,9 +24,27 @@ use wast::{
     WastArg,
 };
 
+/// The configuation for the test runner.
+#[derive(Debug, Copy, Clone)]
+pub struct RunnerConfig {
+    /// The Wasmi configuration used for all tests.
+    pub config: Config,
+    /// The parsing mode that is used.
+    pub mode: ParsingMode,
+}
+
+/// The mode in which Wasm is parsed.
+#[derive(Debug, Copy, Clone)]
+pub enum ParsingMode {
+    /// The test runner shall use buffered Wasm compilation.
+    Buffered,
+    /// The test runner shall use streaming Wasm compilation.
+    Streaming,
+}
+
 /// The context of a single Wasm test spec suite run.
 #[derive(Debug)]
-pub struct TestContext {
+pub struct WastRunner {
     /// The configuration of the test runner.
     runner_config: RunnerConfig,
     /// The linker for linking together Wasm test modules.
@@ -44,14 +59,14 @@ pub struct TestContext {
     params: Vec<Val>,
 }
 
-impl TestContext {
+impl WastRunner {
     /// Creates a new [`TestContext`] with the given [`TestDescriptor`].
     pub fn new(runner_config: RunnerConfig) -> Self {
         let engine = Engine::new(&runner_config.config);
         let linker = Linker::new(&engine);
         let mut store = Store::new(&engine, ());
         _ = store.set_fuel(1_000_000_000);
-        TestContext {
+        WastRunner {
             runner_config,
             linker,
             store,
@@ -114,7 +129,7 @@ impl TestContext {
     }
 }
 
-impl TestContext {
+impl WastRunner {
     /// Returns the [`Engine`] of the [`TestContext`].
     fn engine(&self) -> &Engine {
         self.store.engine()
