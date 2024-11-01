@@ -87,7 +87,10 @@ fn test_config(consume_fuel: bool, parsing_mode: ParsingMode) -> RunnerConfig {
         .wasm_tail_call(true)
         .wasm_extended_const(true)
         .consume_fuel(consume_fuel);
-    RunnerConfig { config, parsing_mode }
+    RunnerConfig {
+        config,
+        parsing_mode,
+    }
 }
 
 macro_rules! expand_tests {
@@ -293,7 +296,10 @@ mod multi_memory {
     fn test_config() -> RunnerConfig {
         let config = Config::default();
         let parsing_mode = ParsingMode::Buffered;
-        RunnerConfig { config, parsing_mode }
+        RunnerConfig {
+            config,
+            parsing_mode,
+        }
     }
 
     expand_tests_mm! {
