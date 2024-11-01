@@ -9,7 +9,7 @@ pub fn process_wast(name: &'static str, wast: &'static str, config: RunnerConfig
         panic!("failed to setup Wasm spectest module: {error}");
     }
     context
-        .process_directives(&test, test.wast())
+        .process_directives(&test, wast)
         .unwrap_or_else(|error| {
             panic!(
                 "{}: failed to execute `.wast` directive: {}",
