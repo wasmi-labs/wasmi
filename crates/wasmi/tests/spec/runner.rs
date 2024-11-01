@@ -141,11 +141,6 @@ impl WastRunner {
         &self.store
     }
 
-    /// Returns an exclusive reference to the underlying [`Store`].
-    pub fn store_mut(&mut self) -> &mut Store<()> {
-        &mut self.store
-    }
-
     /// Compiles the Wasm module and stores it into the [`TestContext`].
     ///
     /// # Errors
@@ -273,7 +268,7 @@ impl WastRunner {
                     desc.spanned(span)
                 ),
             };
-            let Some(val) = value(self.store_mut(), arg) else {
+            let Some(val) = self.value(arg) else {
                 panic!(
                     "{}: encountered unsupported WastArgCore argument: {arg:?}",
                     desc.spanned(span)
@@ -303,26 +298,28 @@ impl WastRunner {
         let value = global.get(&self.store);
         Ok(value)
     }
-}
 
-/// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
-fn value(ctx: &mut wasmi::Store<()>, value: &WastArgCore) -> Option<Val> {
-    use wasmi::{ExternRef, FuncRef};
-    use wast::core::{AbstractHeapType, HeapType};
-    Some(match value {
-        WastArgCore::I32(arg) => Val::I32(*arg),
-        WastArgCore::I64(arg) => Val::I64(*arg),
-        WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
-        WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
-        WastArgCore::RefNull(HeapType::Abstract {
-            ty: AbstractHeapType::Func,
-            ..
-        }) => Val::FuncRef(FuncRef::null()),
-        WastArgCore::RefNull(HeapType::Abstract {
-            ty: AbstractHeapType::Extern,
-            ..
-        }) => Val::ExternRef(ExternRef::null()),
-        WastArgCore::RefExtern(value) => Val::ExternRef(ExternRef::new(ctx, *value)),
-        _ => return None,
-    })
+    /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
+    fn value(&mut self, value: &WastArgCore) -> Option<Val> {
+        use wasmi::{ExternRef, FuncRef};
+        use wast::core::{AbstractHeapType, HeapType};
+        Some(match value {
+            WastArgCore::I32(arg) => Val::I32(*arg),
+            WastArgCore::I64(arg) => Val::I64(*arg),
+            WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
+            WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
+            WastArgCore::RefNull(HeapType::Abstract {
+                ty: AbstractHeapType::Func,
+                ..
+            }) => Val::FuncRef(FuncRef::null()),
+            WastArgCore::RefNull(HeapType::Abstract {
+                ty: AbstractHeapType::Extern,
+                ..
+            }) => Val::ExternRef(ExternRef::null()),
+            WastArgCore::RefExtern(value) => {
+                Val::ExternRef(ExternRef::new(&mut self.store, *value))
+            }
+            _ => return None,
+        })
+    }
 }
