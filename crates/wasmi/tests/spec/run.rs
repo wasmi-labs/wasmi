@@ -2,7 +2,7 @@ use super::TestDescriptor;
 use crate::spec::runner::{RunnerConfig, WastRunner};
 
 /// Runs the Wasm test spec identified by the given name.
-pub fn run_wasm_spec_test(name: &'static str, wast: &'static str, config: RunnerConfig) {
+pub fn process_wast(name: &'static str, wast: &'static str, config: RunnerConfig) {
     let test = TestDescriptor::new(name, wast);
     let mut context = WastRunner::new(config);
     if let Err(error) = context.setup_wasm_spectest_module() {

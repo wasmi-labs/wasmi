@@ -208,7 +208,7 @@ expand_tests! {
     define_spec_tests,
 
     let config = test_config(false, ParsingMode::Buffered);
-    let runner = run::run_wasm_spec_test;
+    let runner = run::process_wast;
 }
 
 macro_rules! expand_tests_mm {
@@ -294,7 +294,7 @@ mod multi_memory {
         define_spec_tests,
 
         let config = test_config();
-        let runner = run::run_wasm_spec_test;
+        let runner = run::process_wast;
     }
 }
 
@@ -305,7 +305,7 @@ mod fueled {
         define_spec_tests,
 
         let config = test_config(true, ParsingMode::Buffered);
-        let runner = run::run_wasm_spec_test;
+        let runner = run::process_wast;
     }
 }
 
@@ -316,6 +316,6 @@ mod streaming {
         define_spec_tests,
 
         let config = test_config(false, ParsingMode::Streaming);
-        let runner = run::run_wasm_spec_test;
+        let runner = run::process_wast;
     }
 }
