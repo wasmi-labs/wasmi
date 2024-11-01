@@ -1,4 +1,3 @@
-mod descriptor;
 mod runner;
 
 use self::runner::{ParsingMode, RunnerConfig, WastRunner};
