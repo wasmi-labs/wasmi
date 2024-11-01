@@ -47,7 +47,7 @@ pub enum ParsingMode {
 #[derive(Debug)]
 pub struct WastRunner {
     /// The configuration of the test runner.
-    runner_config: RunnerConfig,
+    config: RunnerConfig,
     /// The linker for linking together Wasm test modules.
     linker: Linker<()>,
     /// The store to hold all runtime data during the test.
@@ -62,13 +62,13 @@ pub struct WastRunner {
 
 impl WastRunner {
     /// Creates a new [`TestContext`] with the given [`TestDescriptor`].
-    pub fn new(runner_config: RunnerConfig) -> Self {
-        let engine = Engine::new(&runner_config.config);
+    pub fn new(config: RunnerConfig) -> Self {
+        let engine = Engine::new(&config.config);
         let linker = Linker::new(&engine);
         let mut store = Store::new(&engine, ());
         _ = store.set_fuel(1_000_000_000);
         WastRunner {
-            runner_config,
+            config,
             linker,
             store,
             instances: HashMap::new(),
@@ -152,7 +152,7 @@ impl WastRunner {
         wasm: &[u8],
     ) -> Result<Instance, TestError> {
         let module_name = id.map(|id| id.name());
-        let module = match self.runner_config.mode {
+        let module = match self.config.mode {
             ParsingMode::Buffered => Module::new(self.engine(), wasm)?,
             ParsingMode::Streaming => Module::new_streaming(self.engine(), wasm)?,
         };
