@@ -63,16 +63,18 @@ fn execute_directives(
     let mut results = Vec::new();
     for directive in wast.directives {
         match directive {
+            #[rustfmt::skip]
             WastDirective::ModuleDefinition(
-                mut module @ QuoteWat::Wat(wast::Wat::Module(_))
+                | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
                 | mut module @ QuoteWat::QuoteModule { .. },
             ) => {
                 let wasm = module.encode().unwrap();
                 let span = module.span();
                 module_compilation_succeeds(test, test_context, span, None, &wasm);
             }
+            #[rustfmt::skip]
             WastDirective::Module(
-                mut module @ QuoteWat::Wat(wast::Wat::Module(_))
+                | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
                 | mut module @ QuoteWat::QuoteModule { .. },
             ) => {
                 let wasm = module.encode().unwrap();
@@ -90,10 +92,12 @@ fn execute_directives(
                 module_compilation_fails(test, test_context, span, id, &wasm, message);
             }
             WastDirective::AssertMalformed { .. } => {}
+            #[rustfmt::skip]
             WastDirective::AssertInvalid {
                 span,
                 module:
-                    mut module @ (QuoteWat::Wat(wast::Wat::Module(_)) | QuoteWat::QuoteModule { .. }),
+                    | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
+                    | mut module @ QuoteWat::QuoteModule { .. },
                 message,
             } => {
                 let id = module.name();
