@@ -36,7 +36,7 @@ use std::fmt::{self, Display};
 
 /// The desciptor of a Wasm spec test suite run.
 #[derive(Debug)]
-pub struct TestDescriptor<'a> {
+struct TestDescriptor<'a> {
     /// The contents of the Wasm spec test `.wast` file.
     wast: &'a str,
 }
@@ -47,19 +47,19 @@ impl<'a> TestDescriptor<'a> {
     /// # Errors
     ///
     /// If the corresponding Wasm test spec file cannot properly be read.
-    pub fn new(wast: &'a str) -> Self {
+    fn new(wast: &'a str) -> Self {
         Self { wast }
     }
 
     /// Creates a [`ErrorPos`] which can be used to print the location within the `.wast` test file.
-    pub fn spanned(&self, span: Span) -> ErrorPos<'a> {
+    fn spanned(&self, span: Span) -> ErrorPos<'a> {
         ErrorPos::new(self.wast, span)
     }
 }
 
 /// Useful for printing the location where the `.wast` parse is located.
 #[derive(Debug)]
-pub struct ErrorPos<'a> {
+struct ErrorPos<'a> {
     /// The file contents of the `.wast` test.
     wast: &'a str,
     /// The line and column within the `.wast` test file.
@@ -68,7 +68,7 @@ pub struct ErrorPos<'a> {
 
 impl<'a> ErrorPos<'a> {
     /// Creates a new [`ErrorPos`].
-    pub fn new(wast: &'a str, span: Span) -> Self {
+    fn new(wast: &'a str, span: Span) -> Self {
         Self { wast, span }
     }
 }
