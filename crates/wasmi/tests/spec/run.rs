@@ -34,7 +34,7 @@ pub fn run_wasm_spec_test(name: &'static str, file: &'static str, config: Runner
     };
 
     context
-        .execute_directives(&test, wast)
+        .process_directives(&test, wast)
         .unwrap_or_else(|error| {
             panic!(
                 "{}: failed to execute `.wast` directive: {}",
