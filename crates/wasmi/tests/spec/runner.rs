@@ -147,6 +147,7 @@ impl WastRunner {
         &self.store
     }
 
+    /// Processes the directives of the given `wast` source by `self`.
     pub fn process_directives(&mut self, test: &TestDescriptor, wast: Wast) -> Result<()> {
         let mut results = Vec::new();
         for directive in wast.directives {
@@ -155,6 +156,7 @@ impl WastRunner {
         Ok(())
     }
 
+    /// Processes the given `.wast` directive by `self`.
     fn process_directive(
         &mut self,
         directive: WastDirective,
