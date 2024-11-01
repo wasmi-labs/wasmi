@@ -3,28 +3,28 @@ use wast::token::Span;
 
 /// The desciptor of a Wasm spec test suite run.
 #[derive(Debug)]
-pub struct TestDescriptor {
+pub struct TestDescriptor<'a> {
     /// The contents of the Wasm spec test `.wast` file.
-    wast: &'static str,
+    wast: &'a str,
 }
 
-impl TestDescriptor {
+impl<'a> TestDescriptor<'a> {
     /// Creates a new Wasm spec [`TestDescriptor`].
     ///
     /// # Errors
     ///
     /// If the corresponding Wasm test spec file cannot properly be read.
-    pub fn new(wast: &'static str) -> Self {
+    pub fn new(wast: &'a str) -> Self {
         Self { wast }
     }
 
     /// Returns the contents of the Wasm spec test `.wast` file.
-    pub fn wast(&self) -> &str {
+    pub fn wast(&self) -> &'a str {
         self.wast
     }
 
     /// Creates a [`TestSpan`] which can be used to print the location within the `.wast` test file.
-    pub fn spanned(&self, span: Span) -> TestSpan {
+    pub fn spanned(&self, span: Span) -> TestSpan<'a> {
         TestSpan {
             contents: self.wast(),
             span,

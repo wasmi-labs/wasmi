@@ -140,12 +140,13 @@ impl WastRunner {
 
 impl WastRunner {
     /// Processes the directives of the given `wast` source by `self`.
-    pub fn process_directives(&mut self, desc: &TestDescriptor, wast: &str) -> Result<()> {
+    pub fn process_directives(&mut self, wast: &str) -> Result<()> {
+        let desc = TestDescriptor::new(wast);
         let buffer = Self::setup_parser(wast)?;
         let wast = Self::parse_wast(&buffer)?;
         let mut results = Vec::new();
         for directive in wast.directives {
-            self.process_directive(directive, desc, &mut results)?;
+            self.process_directive(directive, &desc, &mut results)?;
         }
         Ok(())
     }

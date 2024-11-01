@@ -1,21 +1,17 @@
 mod descriptor;
 mod runner;
 
-use self::{
-    descriptor::TestDescriptor,
-    runner::{ParsingMode, RunnerConfig, WastRunner},
-};
+use self::runner::{ParsingMode, RunnerConfig, WastRunner};
 use wasmi::Config;
 
 /// Runs the Wasm test spec identified by the given name.
 fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {
-    let test = TestDescriptor::new(wast);
     let mut context = WastRunner::new(config);
     if let Err(error) = context.setup_wasm_spectest_module() {
         panic!("failed to setup Wasm spectest module: {error}");
     }
     context
-        .process_directives(&test, wast)
+        .process_directives(wast)
         .unwrap_or_else(|error| panic!("{}:{}", path, error));
 }
 
