@@ -1,13 +1,8 @@
-use super::{
-    run::{ParsingMode, RunnerConfig},
-    TestDescriptor,
-    TestError,
-    TestProfile,
-    TestSpan,
-};
+use super::{descriptor::TestDescriptor, TestError};
 use anyhow::Result;
 use std::collections::HashMap;
 use wasmi::{
+    Config,
     Engine,
     Extern,
     Func,
@@ -24,130 +19,126 @@ use wasmi::{
     Val,
 };
 use wasmi_core::{ValType, F32, F64};
-use wast::token::{Id, Span};
+use wast::{
+    core::WastArgCore,
+    token::{Id, Span},
+    WastArg,
+};
+
+/// The configuation for the test runner.
+#[derive(Debug, Copy, Clone)]
+pub struct RunnerConfig {
+    /// The Wasmi configuration used for all tests.
+    pub config: Config,
+    /// The parsing mode that is used.
+    pub mode: ParsingMode,
+}
+
+/// The mode in which Wasm is parsed.
+#[derive(Debug, Copy, Clone)]
+pub enum ParsingMode {
+    /// The test runner shall use buffered Wasm compilation.
+    Buffered,
+    /// The test runner shall use streaming Wasm compilation.
+    Streaming,
+}
 
 /// The context of a single Wasm test spec suite run.
 #[derive(Debug)]
-pub struct TestContext<'a> {
-    /// The Wasmi engine used for executing functions used during the test.
-    engine: Engine,
+pub struct WastRunner {
     /// The configuration of the test runner.
     runner_config: RunnerConfig,
     /// The linker for linking together Wasm test modules.
     linker: Linker<()>,
     /// The store to hold all runtime data during the test.
     store: Store<()>,
-    /// The list of all encountered Wasm modules belonging to the test.
-    modules: Vec<Module>,
     /// The list of all instantiated modules.
-    instances: HashMap<String, Instance>,
+    instances: HashMap<Box<str>, Instance>,
     /// The last touched module instance.
     last_instance: Option<Instance>,
-    /// Profiling during the Wasm spec test run.
-    profile: TestProfile,
-    /// Intermediate results buffer that can be reused for calling Wasm functions.
-    results: Vec<Val>,
-    /// The descriptor of the test.
-    ///
-    /// Useful for printing better debug messages in case of failure.
-    descriptor: &'a TestDescriptor,
+    /// Buffer to store parameters to function invocations.
+    params: Vec<Val>,
 }
 
-impl<'a> TestContext<'a> {
+impl WastRunner {
     /// Creates a new [`TestContext`] with the given [`TestDescriptor`].
-    pub fn new(descriptor: &'a TestDescriptor, runner_config: RunnerConfig) -> Self {
+    pub fn new(runner_config: RunnerConfig) -> Self {
         let engine = Engine::new(&runner_config.config);
-        let mut linker = Linker::new(&engine);
+        let linker = Linker::new(&engine);
         let mut store = Store::new(&engine, ());
         _ = store.set_fuel(1_000_000_000);
-        let default_memory = Memory::new(&mut store, MemoryType::new(1, Some(2)).unwrap()).unwrap();
-        let default_table = Table::new(
-            &mut store,
-            TableType::new(ValType::FuncRef, 10, Some(20)),
-            Val::default(ValType::FuncRef),
-        )
-        .unwrap();
-        let global_i32 = Global::new(&mut store, Val::I32(666), Mutability::Const);
-        let global_i64 = Global::new(&mut store, Val::I64(666), Mutability::Const);
-        let global_f32 = Global::new(&mut store, Val::F32(666.0.into()), Mutability::Const);
-        let global_f64 = Global::new(&mut store, Val::F64(666.0.into()), Mutability::Const);
-        let print = Func::wrap(&mut store, || {
-            println!("print");
-        });
-        let print_i32 = Func::wrap(&mut store, |value: i32| {
-            println!("print: {value}");
-        });
-        let print_i64 = Func::wrap(&mut store, |value: i64| {
-            println!("print: {value}");
-        });
-        let print_f32 = Func::wrap(&mut store, |value: F32| {
-            println!("print: {value:?}");
-        });
-        let print_f64 = Func::wrap(&mut store, |value: F64| {
-            println!("print: {value:?}");
-        });
-        let print_i32_f32 = Func::wrap(&mut store, |v0: i32, v1: F32| {
-            println!("print: {v0:?} {v1:?}");
-        });
-        let print_f64_f64 = Func::wrap(&mut store, |v0: F64, v1: F64| {
-            println!("print: {v0:?} {v1:?}");
-        });
-        linker.define("spectest", "memory", default_memory).unwrap();
-        linker.define("spectest", "table", default_table).unwrap();
-        linker.define("spectest", "global_i32", global_i32).unwrap();
-        linker.define("spectest", "global_i64", global_i64).unwrap();
-        linker.define("spectest", "global_f32", global_f32).unwrap();
-        linker.define("spectest", "global_f64", global_f64).unwrap();
-        linker.define("spectest", "print", print).unwrap();
-        linker.define("spectest", "print_i32", print_i32).unwrap();
-        linker.define("spectest", "print_i64", print_i64).unwrap();
-        linker.define("spectest", "print_f32", print_f32).unwrap();
-        linker.define("spectest", "print_f64", print_f64).unwrap();
-        linker
-            .define("spectest", "print_i32_f32", print_i32_f32)
-            .unwrap();
-        linker
-            .define("spectest", "print_f64_f64", print_f64_f64)
-            .unwrap();
-        TestContext {
-            engine,
+        WastRunner {
             runner_config,
             linker,
             store,
-            modules: Vec::new(),
             instances: HashMap::new(),
             last_instance: None,
-            profile: TestProfile::default(),
-            results: Vec::new(),
-            descriptor,
+            params: Vec::new(),
         }
+    }
+
+    /// Sets up the Wasm spec testsuite module for `self`.
+    pub fn setup_wasm_spectest_module(&mut self) -> Result<(), wasmi::Error> {
+        let Self { store, .. } = self;
+        let default_memory = Memory::new(&mut *store, MemoryType::new(1, Some(2))?)?;
+        let default_table = Table::new(
+            &mut *store,
+            TableType::new(ValType::FuncRef, 10, Some(20)),
+            Val::default(ValType::FuncRef),
+        )?;
+        let global_i32 = Global::new(&mut *store, Val::I32(666), Mutability::Const);
+        let global_i64 = Global::new(&mut *store, Val::I64(666), Mutability::Const);
+        let global_f32 = Global::new(&mut *store, Val::F32(666.0.into()), Mutability::Const);
+        let global_f64 = Global::new(&mut *store, Val::F64(666.0.into()), Mutability::Const);
+        let print = Func::wrap(&mut *store, || {
+            println!("print");
+        });
+        let print_i32 = Func::wrap(&mut *store, |value: i32| {
+            println!("print: {value}");
+        });
+        let print_i64 = Func::wrap(&mut *store, |value: i64| {
+            println!("print: {value}");
+        });
+        let print_f32 = Func::wrap(&mut *store, |value: F32| {
+            println!("print: {value:?}");
+        });
+        let print_f64 = Func::wrap(&mut *store, |value: F64| {
+            println!("print: {value:?}");
+        });
+        let print_i32_f32 = Func::wrap(&mut *store, |v0: i32, v1: F32| {
+            println!("print: {v0:?} {v1:?}");
+        });
+        let print_f64_f64 = Func::wrap(&mut *store, |v0: F64, v1: F64| {
+            println!("print: {v0:?} {v1:?}");
+        });
+        self.linker.define("spectest", "memory", default_memory)?;
+        self.linker.define("spectest", "table", default_table)?;
+        self.linker.define("spectest", "global_i32", global_i32)?;
+        self.linker.define("spectest", "global_i64", global_i64)?;
+        self.linker.define("spectest", "global_f32", global_f32)?;
+        self.linker.define("spectest", "global_f64", global_f64)?;
+        self.linker.define("spectest", "print", print)?;
+        self.linker.define("spectest", "print_i32", print_i32)?;
+        self.linker.define("spectest", "print_i64", print_i64)?;
+        self.linker.define("spectest", "print_f32", print_f32)?;
+        self.linker.define("spectest", "print_f64", print_f64)?;
+        self.linker
+            .define("spectest", "print_i32_f32", print_i32_f32)?;
+        self.linker
+            .define("spectest", "print_f64_f64", print_f64_f64)?;
+        Ok(())
     }
 }
 
-impl TestContext<'_> {
-    /// Returns the [`TestDescriptor`] of the test context.
-    pub fn spanned(&self, span: Span) -> TestSpan {
-        self.descriptor.spanned(span)
-    }
-
+impl WastRunner {
     /// Returns the [`Engine`] of the [`TestContext`].
     fn engine(&self) -> &Engine {
-        &self.engine
+        self.store.engine()
     }
 
     /// Returns a shared reference to the underlying [`Store`].
     pub fn store(&self) -> &Store<()> {
         &self.store
-    }
-
-    /// Returns an exclusive reference to the underlying [`Store`].
-    pub fn store_mut(&mut self) -> &mut Store<()> {
-        &mut self.store
-    }
-
-    /// Returns an exclusive reference to the test profile.
-    pub fn profile(&mut self) -> &mut TestProfile {
-        &mut self.profile
     }
 
     /// Compiles the Wasm module and stores it into the [`TestContext`].
@@ -167,9 +158,8 @@ impl TestContext<'_> {
         };
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.start(&mut self.store)?;
-        self.modules.push(module);
         if let Some(module_name) = module_name {
-            self.instances.insert(module_name.to_string(), instance);
+            self.instances.insert(module_name.into(), instance);
             for export in instance.exports(&self.store) {
                 self.linker
                     .define(module_name, export.name(), export.into_extern())?;
@@ -209,7 +199,7 @@ impl TestContext<'_> {
             // Already registered the instance.
             return;
         }
-        self.instances.insert(name.to_string(), instance);
+        self.instances.insert(name.into(), instance);
         for export in instance.exports(&self.store) {
             self.linker
                 .define(name, export.name(), export.clone().into_extern())
@@ -240,10 +230,13 @@ impl TestContext<'_> {
     /// - If function invokation returned an error.
     pub fn invoke(
         &mut self,
-        module_name: Option<&str>,
-        func_name: &str,
-        args: &[Val],
-    ) -> Result<&[Val], TestError> {
+        desc: &TestDescriptor,
+        invoke: wast::WastInvoke,
+        results: &mut Vec<Val>,
+    ) -> Result<(), TestError> {
+        self.fill_params(desc, invoke.span, &invoke.args)?;
+        let module_name = invoke.module.map(|id| id.name());
+        let func_name = invoke.name;
         let instance = self.instance_by_name_or_last(module_name)?;
         let func = instance
             .get_export(&self.store, func_name)
@@ -253,10 +246,37 @@ impl TestContext<'_> {
                 func_name: func_name.to_string(),
             })?;
         let len_results = func.ty(&self.store).results().len();
-        self.results.clear();
-        self.results.resize(len_results, Val::I32(0));
-        func.call(&mut self.store, args, &mut self.results)?;
-        Ok(&self.results)
+        results.clear();
+        results.resize(len_results, Val::I32(0));
+        func.call(&mut self.store, &self.params, results)?;
+        Ok(())
+    }
+
+    /// Fills the `params` buffer with `args`.
+    fn fill_params(
+        &mut self,
+        desc: &TestDescriptor,
+        span: Span,
+        args: &[WastArg],
+    ) -> Result<(), TestError> {
+        self.params.clear();
+        for arg in args {
+            let arg = match arg {
+                WastArg::Core(arg) => arg,
+                WastArg::Component(arg) => panic!(
+                    "{}: Wasmi does not support the Wasm `component-model` but found {arg:?}",
+                    desc.spanned(span)
+                ),
+            };
+            let Some(val) = self.value(arg) else {
+                panic!(
+                    "{}: encountered unsupported WastArgCore argument: {arg:?}",
+                    desc.spanned(span)
+                )
+            };
+            self.params.push(val);
+        }
+        Ok(())
     }
 
     /// Returns the current value of the [`Global`] identifier by the given `module_name` and `global_name`.
@@ -277,5 +297,29 @@ impl TestContext<'_> {
             })?;
         let value = global.get(&self.store);
         Ok(value)
+    }
+
+    /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
+    fn value(&mut self, value: &WastArgCore) -> Option<Val> {
+        use wasmi::{ExternRef, FuncRef};
+        use wast::core::{AbstractHeapType, HeapType};
+        Some(match value {
+            WastArgCore::I32(arg) => Val::I32(*arg),
+            WastArgCore::I64(arg) => Val::I64(*arg),
+            WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
+            WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
+            WastArgCore::RefNull(HeapType::Abstract {
+                ty: AbstractHeapType::Func,
+                ..
+            }) => Val::FuncRef(FuncRef::null()),
+            WastArgCore::RefNull(HeapType::Abstract {
+                ty: AbstractHeapType::Extern,
+                ..
+            }) => Val::ExternRef(ExternRef::null()),
+            WastArgCore::RefExtern(value) => {
+                Val::ExternRef(ExternRef::new(&mut self.store, *value))
+            }
+            _ => return None,
+        })
     }
 }
