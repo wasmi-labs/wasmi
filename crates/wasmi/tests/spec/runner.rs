@@ -1,4 +1,3 @@
-use super::descriptor::TestDescriptor;
 use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
 use wasmi::{
@@ -21,6 +20,8 @@ use wasmi::{
 use wasmi_core::{ValType, F32, F64};
 use wast::{
     core::{AbstractHeapType, HeapType, NanPattern, WastArgCore, WastRetCore},
+    lexer::Lexer,
+    parser::ParseBuffer,
     token::{Id, Span},
     QuoteWat,
     Wast,
@@ -30,6 +31,57 @@ use wast::{
     WastRet,
     Wat,
 };
+
+use std::fmt::{self, Display};
+
+/// The desciptor of a Wasm spec test suite run.
+#[derive(Debug)]
+pub struct TestDescriptor<'a> {
+    /// The contents of the Wasm spec test `.wast` file.
+    wast: &'a str,
+}
+
+impl<'a> TestDescriptor<'a> {
+    /// Creates a new Wasm spec [`TestDescriptor`].
+    ///
+    /// # Errors
+    ///
+    /// If the corresponding Wasm test spec file cannot properly be read.
+    pub fn new(wast: &'a str) -> Self {
+        Self { wast }
+    }
+
+    /// Creates a [`ErrorPos`] which can be used to print the location within the `.wast` test file.
+    pub fn spanned(&self, span: Span) -> ErrorPos<'a> {
+        ErrorPos::new(self.wast, span)
+    }
+}
+
+/// Useful for printing the location where the `.wast` parse is located.
+#[derive(Debug)]
+pub struct ErrorPos<'a> {
+    /// The file contents of the `.wast` test.
+    wast: &'a str,
+    /// The line and column within the `.wast` test file.
+    span: Span,
+}
+
+impl<'a> ErrorPos<'a> {
+    /// Creates a new [`ErrorPos`].
+    pub fn new(wast: &'a str, span: Span) -> Self {
+        Self { wast, span }
+    }
+}
+
+impl Display for ErrorPos<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (line, col) = self.span.linecol_in(self.wast);
+        // Change from 0-indexing to 1-indexing for better UX:
+        let line = line + 1;
+        let col = col + 1;
+        write!(f, "{line}:{col}")
+    }
+}
 
 /// The configuation for the test runner.
 #[derive(Debug, Copy, Clone)]
@@ -138,12 +190,39 @@ impl WastRunner {
 
 impl WastRunner {
     /// Processes the directives of the given `wast` source by `self`.
-    pub fn process_directives(&mut self, test: &TestDescriptor, wast: Wast) -> Result<()> {
+    pub fn process_directives(&mut self, wast: &str) -> Result<()> {
+        let desc = TestDescriptor::new(wast);
+        let buffer = Self::setup_parser(wast)?;
+        let wast = Self::parse_wast(&buffer)?;
         let mut results = Vec::new();
         for directive in wast.directives {
-            self.process_directive(directive, test, &mut results)?;
+            self.process_directive(directive, &desc, &mut results)?;
         }
         Ok(())
+    }
+
+    /// Prepares for parsing the `wast` source.
+    fn setup_parser(wast: &str) -> Result<ParseBuffer> {
+        let mut lexer = Lexer::new(wast);
+        lexer.allow_confusing_unicode(true);
+        let buffer = match ParseBuffer::new_with_lexer(lexer) {
+            Ok(buffer) => buffer,
+            Err(error) => {
+                bail!("failed to create parse buffer: {}", error)
+            }
+        };
+        Ok(buffer)
+    }
+
+    /// Parses the wast source given in the `buffer`.
+    fn parse_wast<'a>(buffer: &'a ParseBuffer<'a>) -> Result<Wast<'a>> {
+        let wast = match wast::parser::parse(buffer) {
+            Ok(wast) => wast,
+            Err(error) => {
+                bail!("failed to parse `.wast` spec test file: {}", error)
+            }
+        };
+        Ok(wast)
     }
 
     /// Processes the given `.wast` directive by `self`.
