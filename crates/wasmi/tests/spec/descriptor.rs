@@ -18,32 +18,31 @@ impl<'a> TestDescriptor<'a> {
         Self { wast }
     }
 
-    /// Returns the contents of the Wasm spec test `.wast` file.
-    pub fn wast(&self) -> &'a str {
-        self.wast
-    }
-
-    /// Creates a [`TestSpan`] which can be used to print the location within the `.wast` test file.
-    pub fn spanned(&self, span: Span) -> TestSpan<'a> {
-        TestSpan {
-            contents: self.wast(),
-            span,
-        }
+    /// Creates a [`ErrorPos`] which can be used to print the location within the `.wast` test file.
+    pub fn spanned(&self, span: Span) -> ErrorPos<'a> {
+        ErrorPos::new(self.wast, span)
     }
 }
 
 /// Useful for printing the location where the `.wast` parse is located.
 #[derive(Debug)]
-pub struct TestSpan<'a> {
+pub struct ErrorPos<'a> {
     /// The file contents of the `.wast` test.
-    contents: &'a str,
+    wast: &'a str,
     /// The line and column within the `.wast` test file.
     span: Span,
 }
 
-impl Display for TestSpan<'_> {
+impl<'a> ErrorPos<'a> {
+    /// Creates a new [`ErrorPos`].
+    pub fn new(wast: &'a str, span: Span) -> Self {
+        Self { wast, span }
+    }
+}
+
+impl Display for ErrorPos<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (line, col) = self.span.linecol_in(self.contents);
+        let (line, col) = self.span.linecol_in(self.wast);
         // Change from 0-indexing to 1-indexing for better UX:
         let line = line + 1;
         let col = col + 1;
