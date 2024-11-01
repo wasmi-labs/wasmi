@@ -23,6 +23,8 @@ use wast::{
     core::WastArgCore,
     token::{Id, Span},
     WastArg,
+    WastExecute,
+    Wat,
 };
 
 /// The configuation for the test runner.
@@ -321,5 +323,37 @@ impl WastRunner {
             }
             _ => return None,
         })
+    }
+
+    /// Processes a [`WastExecute`] directive.
+    pub fn execute_wast_execute(
+        &mut self,
+        test: &TestDescriptor,
+        execute: WastExecute,
+        results: &mut Vec<Val>,
+    ) -> Result<(), TestError> {
+        results.clear();
+        match execute {
+            WastExecute::Invoke(invoke) => self.invoke(test, invoke, results),
+            WastExecute::Wat(Wat::Module(mut module)) => {
+                let id = module.id;
+                let wasm = module.encode().unwrap();
+                self.compile_and_instantiate(id, &wasm)?;
+                Ok(())
+            }
+            WastExecute::Wat(Wat::Component(_)) => {
+                // Wasmi currently does not support the Wasm component model.
+                Ok(())
+            }
+            WastExecute::Get {
+                module,
+                global,
+                span: _,
+            } => {
+                let result = self.get_global(module, global)?;
+                results.push(result);
+                Ok(())
+            }
+        }
     }
 }

@@ -10,7 +10,6 @@ use wast::{
     QuoteWat,
     Wast,
     WastDirective,
-    WastExecute,
     WastRet,
     Wat,
 };
@@ -129,7 +128,7 @@ fn execute_directives(
                 span,
                 exec,
                 message,
-            } => match execute_wast_execute(test, test_context, exec, &mut results) {
+            } => match test_context.execute_wast_execute(test, exec, &mut results) {
                 Ok(results) => panic!(
                     "{}: expected to trap with message '{}' but succeeded with: {:?}",
                     test.spanned(span),
@@ -143,15 +142,15 @@ fn execute_directives(
                 exec,
                 results: expected,
             } => {
-                execute_wast_execute(test, test_context, exec, &mut results).unwrap_or_else(
-                    |error| {
+                test_context
+                    .execute_wast_execute(test, exec, &mut results)
+                    .unwrap_or_else(|error| {
                         panic!(
                             "{}: encountered unexpected failure to execute `AssertReturn`: {}",
                             test.spanned(span),
                             error
                         )
-                    },
-                );
+                    });
                 assert_results(test, test_context, span, &results, &expected);
             }
             WastDirective::AssertExhaustion {
@@ -180,7 +179,7 @@ fn execute_directives(
             }
             WastDirective::AssertUnlinkable { .. } => {}
             WastDirective::AssertException { span, exec } => {
-                if let Ok(results) = execute_wast_execute(test, test_context, exec, &mut results) {
+                if let Ok(results) = test_context.execute_wast_execute(test, exec, &mut results) {
                     panic!(
                         "{}: expected to fail due to exception but succeeded with: {:?}",
                         test.spanned(span),
@@ -342,35 +341,4 @@ fn module_compilation_fails(
         test.spanned(span),
         expected_message
     );
-}
-
-fn execute_wast_execute(
-    test: &TestDescriptor,
-    context: &mut WastRunner,
-    execute: WastExecute,
-    results: &mut Vec<Val>,
-) -> Result<(), TestError> {
-    results.clear();
-    match execute {
-        WastExecute::Invoke(invoke) => context.invoke(test, invoke, results),
-        WastExecute::Wat(Wat::Module(mut module)) => {
-            let id = module.id;
-            let wasm = module.encode().unwrap();
-            context.compile_and_instantiate(id, &wasm)?;
-            Ok(())
-        }
-        WastExecute::Wat(Wat::Component(_)) => {
-            // Wasmi currently does not support the Wasm component model.
-            Ok(())
-        }
-        WastExecute::Get {
-            module,
-            global,
-            span: _,
-        } => {
-            let result = context.get_global(module, global)?;
-            results.push(result);
-            Ok(())
-        }
-    }
 }
