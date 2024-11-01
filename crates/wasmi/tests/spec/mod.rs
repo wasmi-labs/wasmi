@@ -1,11 +1,9 @@
 mod descriptor;
-mod error;
 mod run;
 mod runner;
 
 use self::{
     descriptor::TestDescriptor,
-    error::TestError,
     runner::{ParsingMode, RunnerConfig},
 };
 use wasmi::Config;
