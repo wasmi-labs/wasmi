@@ -20,10 +20,11 @@ use wasmi::{
 };
 use wasmi_core::{ValType, F32, F64};
 use wast::{
-    core::WastArgCore,
+    core::{AbstractHeapType, HeapType, NanPattern, WastArgCore, WastRetCore},
     token::{Id, Span},
     WastArg,
     WastExecute,
+    WastRet,
     Wat,
 };
 
@@ -354,6 +355,88 @@ impl WastRunner {
                 results.push(result);
                 Ok(())
             }
+        }
+    }
+
+    /// Asserts that `results` match the `expected` values.
+    pub fn assert_results(
+        &self,
+        test: &TestDescriptor,
+        span: Span,
+        results: &[Val],
+        expected: &[WastRet],
+    ) {
+        assert_eq!(results.len(), expected.len());
+        for (result, expected) in results.iter().zip(expected) {
+            self.assert_result(test, span, result, expected);
+        }
+    }
+
+    /// Asserts that `result` match the `expected` value.
+    fn assert_result(&self, test: &TestDescriptor, span: Span, result: &Val, expected: &WastRet) {
+        let WastRet::Core(expected) = expected else {
+            panic!(
+                "{}: unexpected component-model return value: {:?}",
+                test.spanned(span),
+                expected,
+            )
+        };
+        match (result, expected) {
+            (Val::I32(result), WastRetCore::I32(expected)) => {
+                assert_eq!(result, expected, "in {}", test.spanned(span))
+            }
+            (Val::I64(result), WastRetCore::I64(expected)) => {
+                assert_eq!(result, expected, "in {}", test.spanned(span))
+            }
+            (Val::F32(result), WastRetCore::F32(expected)) => match expected {
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => assert!(result.is_nan()),
+                NanPattern::Value(expected) => {
+                    assert_eq!(result.to_bits(), expected.bits, "in {}", test.spanned(span));
+                }
+            },
+            (Val::F64(result), WastRetCore::F64(expected)) => match expected {
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => {
+                    assert!(result.is_nan(), "in {}", test.spanned(span))
+                }
+                NanPattern::Value(expected) => {
+                    assert_eq!(result.to_bits(), expected.bits, "in {}", test.spanned(span));
+                }
+            },
+            (
+                Val::FuncRef(funcref),
+                WastRetCore::RefNull(Some(HeapType::Abstract {
+                    ty: AbstractHeapType::Func,
+                    ..
+                })),
+            ) => {
+                assert!(funcref.is_null());
+            }
+            (
+                Val::ExternRef(externref),
+                WastRetCore::RefNull(Some(HeapType::Abstract {
+                    ty: AbstractHeapType::Extern,
+                    ..
+                })),
+            ) => {
+                assert!(externref.is_null());
+            }
+            (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
+                let value = externref
+                    .data(self.store())
+                    .expect("unexpected null element")
+                    .downcast_ref::<u32>()
+                    .expect("unexpected non-u32 data");
+                assert_eq!(value, expected);
+            }
+            (Val::ExternRef(externref), WastRetCore::RefExtern(None)) => {
+                assert!(externref.is_null());
+            }
+            (result, expected) => panic!(
+                "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
+                test.spanned(span),
+                expected,
+                result
+            ),
         }
     }
 }
