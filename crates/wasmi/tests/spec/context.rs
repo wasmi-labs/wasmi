@@ -250,7 +250,7 @@ impl TestContext {
         self.params.clear();
         for arg in args {
             let value = match arg {
-                wast::WastArg::Core(arg) => value(self.store_mut(), &arg).unwrap_or_else(|| {
+                wast::WastArg::Core(arg) => value(self.store_mut(), arg).unwrap_or_else(|| {
                     panic!(
                         "{}: encountered unsupported WastArgCore argument: {arg:?}",
                         desc.spanned(span)
