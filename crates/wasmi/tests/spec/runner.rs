@@ -137,16 +137,6 @@ impl WastRunner {
 }
 
 impl WastRunner {
-    /// Returns the [`Engine`] of the [`TestContext`].
-    fn engine(&self) -> &Engine {
-        self.store.engine()
-    }
-
-    /// Returns a shared reference to the underlying [`Store`].
-    pub fn store(&self) -> &Store<()> {
-        &self.store
-    }
-
     /// Processes the directives of the given `wast` source by `self`.
     pub fn process_directives(&mut self, test: &TestDescriptor, wast: Wast) -> Result<()> {
         let mut results = Vec::new();
@@ -303,9 +293,10 @@ impl WastRunner {
         wasm: &[u8],
     ) -> Result<Instance, TestError> {
         let module_name = id.map(|id| id.name());
+        let engine = self.store.engine();
         let module = match self.config.mode {
-            ParsingMode::Buffered => Module::new(self.engine(), wasm)?,
-            ParsingMode::Streaming => Module::new_streaming(self.engine(), wasm)?,
+            ParsingMode::Buffered => Module::new(engine, wasm)?,
+            ParsingMode::Streaming => Module::new_streaming(engine, wasm)?,
         };
         let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
         let instance = instance_pre.start(&mut self.store)?;
@@ -570,7 +561,7 @@ impl WastRunner {
             }
             (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
                 let value = externref
-                    .data(self.store())
+                    .data(&self.store)
                     .expect("unexpected null element")
                     .downcast_ref::<u32>()
                     .expect("unexpected non-u32 data");
