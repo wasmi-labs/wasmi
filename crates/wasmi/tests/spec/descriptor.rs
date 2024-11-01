@@ -4,8 +4,6 @@ use wast::token::Span;
 /// The desciptor of a Wasm spec test suite run.
 #[derive(Debug)]
 pub struct TestDescriptor {
-    /// The path of the Wasm spec test `.wast` file.
-    path: &'static str,
     /// The contents of the Wasm spec test `.wast` file.
     wast: &'static str,
 }
@@ -16,13 +14,8 @@ impl TestDescriptor {
     /// # Errors
     ///
     /// If the corresponding Wasm test spec file cannot properly be read.
-    pub fn new(path: &'static str, wast: &'static str) -> Self {
-        Self { path, wast }
-    }
-
-    /// Returns the path of the Wasm spec test `.wast` file.
-    pub fn path(&self) -> &str {
-        self.path
+    pub fn new(wast: &'static str) -> Self {
+        Self { wast }
     }
 
     /// Returns the contents of the Wasm spec test `.wast` file.
@@ -33,7 +26,6 @@ impl TestDescriptor {
     /// Creates a [`TestSpan`] which can be used to print the location within the `.wast` test file.
     pub fn spanned(&self, span: Span) -> TestSpan {
         TestSpan {
-            path: self.path(),
             contents: self.wast(),
             span,
         }
@@ -43,8 +35,6 @@ impl TestDescriptor {
 /// Useful for printing the location where the `.wast` parse is located.
 #[derive(Debug)]
 pub struct TestSpan<'a> {
-    /// The file path of the `.wast` test.
-    path: &'a str,
     /// The file contents of the `.wast` test.
     contents: &'a str,
     /// The line and column within the `.wast` test file.
@@ -57,6 +47,6 @@ impl Display for TestSpan<'_> {
         // Change from 0-indexing to 1-indexing for better UX:
         let line = line + 1;
         let col = col + 1;
-        write!(f, "{}:{line}:{col}", self.path)
+        write!(f, "{line}:{col}")
     }
 }
