@@ -140,34 +140,46 @@ impl WastRunner {
 
 impl WastRunner {
     /// Processes the directives of the given `wast` source by `self`.
-    pub fn process_directives(&mut self, test: &TestDescriptor, wast: &str) -> Result<()> {
-        let mut lexer = Lexer::new(wast);
-        lexer.allow_confusing_unicode(true);
-        let parse_buffer = match ParseBuffer::new_with_lexer(lexer) {
-            Ok(buffer) => buffer,
-            Err(error) => {
-                panic!(
-                    "failed to create parse buffer for {}: {}",
-                    test.path(),
-                    error
-                )
-            }
-        };
-        let wast: Wast = match wast::parser::parse(&parse_buffer) {
-            Ok(wast) => wast,
-            Err(error) => {
-                panic!(
-                    "failed to parse `.wast` spec test file for {}: {}",
-                    test.path(),
-                    error
-                )
-            }
-        };
+    pub fn process_directives(&mut self, desc: &TestDescriptor, wast: &str) -> Result<()> {
+        let buffer = Self::setup_parser(desc, wast)?;
+        let wast = Self::parse_wast(desc, &buffer)?;
         let mut results = Vec::new();
         for directive in wast.directives {
-            self.process_directive(directive, test, &mut results)?;
+            self.process_directive(directive, desc, &mut results)?;
         }
         Ok(())
+    }
+
+    /// Prepares for parsing the `wast` source.
+    fn setup_parser<'a>(desc: &TestDescriptor, wast: &'a str) -> Result<ParseBuffer<'a>> {
+        let mut lexer = Lexer::new(wast);
+        lexer.allow_confusing_unicode(true);
+        let buffer = match ParseBuffer::new_with_lexer(lexer) {
+            Ok(buffer) => buffer,
+            Err(error) => {
+                bail!(
+                    "failed to create parse buffer for {}: {}",
+                    desc.path(),
+                    error
+                )
+            }
+        };
+        Ok(buffer)
+    }
+
+    /// Parses the wast source given in the `buffer`.
+    fn parse_wast<'a>(desc: &TestDescriptor, buffer: &'a ParseBuffer<'a>) -> Result<Wast<'a>> {
+        let wast = match wast::parser::parse(buffer) {
+            Ok(wast) => wast,
+            Err(error) => {
+                bail!(
+                    "failed to parse `.wast` spec test file for {}: {}",
+                    desc.path(),
+                    error
+                )
+            }
+        };
+        Ok(wast)
     }
 
     /// Processes the given `.wast` directive by `self`.
