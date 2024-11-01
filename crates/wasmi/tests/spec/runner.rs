@@ -21,6 +21,8 @@ use wasmi::{
 use wasmi_core::{ValType, F32, F64};
 use wast::{
     core::{AbstractHeapType, HeapType, NanPattern, WastArgCore, WastRetCore},
+    lexer::Lexer,
+    parser::ParseBuffer,
     token::{Id, Span},
     QuoteWat,
     Wast,
@@ -138,7 +140,29 @@ impl WastRunner {
 
 impl WastRunner {
     /// Processes the directives of the given `wast` source by `self`.
-    pub fn process_directives(&mut self, test: &TestDescriptor, wast: Wast) -> Result<()> {
+    pub fn process_directives(&mut self, test: &TestDescriptor, wast: &str) -> Result<()> {
+        let mut lexer = Lexer::new(wast);
+        lexer.allow_confusing_unicode(true);
+        let parse_buffer = match ParseBuffer::new_with_lexer(lexer) {
+            Ok(buffer) => buffer,
+            Err(error) => {
+                panic!(
+                    "failed to create parse buffer for {}: {}",
+                    test.path(),
+                    error
+                )
+            }
+        };
+        let wast: Wast = match wast::parser::parse(&parse_buffer) {
+            Ok(wast) => wast,
+            Err(error) => {
+                panic!(
+                    "failed to parse `.wast` spec test file for {}: {}",
+                    test.path(),
+                    error
+                )
+            }
+        };
         let mut results = Vec::new();
         for directive in wast.directives {
             self.process_directive(directive, test, &mut results)?;
