@@ -89,7 +89,7 @@ pub struct RunnerConfig {
     /// The Wasmi configuration used for all tests.
     pub config: Config,
     /// The parsing mode that is used.
-    pub mode: ParsingMode,
+    pub parsing_mode: ParsingMode,
 }
 
 /// The mode in which Wasm is parsed.
@@ -379,7 +379,7 @@ impl WastRunner {
     ) -> Result<Instance> {
         let module_name = id.map(|id| id.name());
         let engine = self.store.engine();
-        let module = match self.config.mode {
+        let module = match self.config.parsing_mode {
             ParsingMode::Buffered => Module::new(engine, wasm)?,
             ParsingMode::Streaming => Module::new_streaming(engine, wasm)?,
         };
