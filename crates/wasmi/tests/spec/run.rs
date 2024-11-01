@@ -3,14 +3,14 @@ use crate::spec::runner::{RunnerConfig, WastRunner};
 use wast::{lexer::Lexer, parser::ParseBuffer};
 
 /// Runs the Wasm test spec identified by the given name.
-pub fn run_wasm_spec_test(name: &'static str, file: &'static str, config: RunnerConfig) {
-    let test = TestDescriptor::new(name, file);
+pub fn run_wasm_spec_test(name: &'static str, wast: &'static str, config: RunnerConfig) {
+    let test = TestDescriptor::new(name, wast);
     let mut context = WastRunner::new(config);
     if let Err(error) = context.setup_wasm_spectest_module() {
         panic!("failed to setup Wasm spectest module: {error}");
     }
 
-    let mut lexer = Lexer::new(test.file());
+    let mut lexer = Lexer::new(test.wast());
     lexer.allow_confusing_unicode(true);
     let parse_buffer = match ParseBuffer::new_with_lexer(lexer) {
         Ok(buffer) => buffer,

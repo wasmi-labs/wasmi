@@ -7,7 +7,7 @@ pub struct TestDescriptor {
     /// The path of the Wasm spec test `.wast` file.
     path: &'static str,
     /// The contents of the Wasm spec test `.wast` file.
-    file: &'static str,
+    wast: &'static str,
 }
 
 impl TestDescriptor {
@@ -16,8 +16,8 @@ impl TestDescriptor {
     /// # Errors
     ///
     /// If the corresponding Wasm test spec file cannot properly be read.
-    pub fn new(path: &'static str, file: &'static str) -> Self {
-        Self { path, file }
+    pub fn new(path: &'static str, wast: &'static str) -> Self {
+        Self { path, wast }
     }
 
     /// Returns the path of the Wasm spec test `.wast` file.
@@ -26,15 +26,15 @@ impl TestDescriptor {
     }
 
     /// Returns the contents of the Wasm spec test `.wast` file.
-    pub fn file(&self) -> &str {
-        self.file
+    pub fn wast(&self) -> &str {
+        self.wast
     }
 
     /// Creates a [`TestSpan`] which can be used to print the location within the `.wast` test file.
     pub fn spanned(&self, span: Span) -> TestSpan {
         TestSpan {
             path: self.path(),
-            contents: self.file(),
+            contents: self.wast(),
             span,
         }
     }
