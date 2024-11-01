@@ -1,7 +1,6 @@
 use super::{error::TestError, TestContext, TestDescriptor};
 use anyhow::Result;
-use wasmi::{Config, ExternRef, FuncRef, Instance, Val};
-use wasmi_core::{F32, F64};
+use wasmi::{Config, Instance, Val};
 use wast::{
     core::{AbstractHeapType, HeapType, NanPattern, WastRetCore},
     lexer::Lexer,
@@ -11,7 +10,6 @@ use wast::{
     Wast,
     WastDirective,
     WastExecute,
-    WastInvoke,
     WastRet,
     Wat,
 };
@@ -79,6 +77,7 @@ fn execute_directives(
     wast: Wast,
     test_context: &mut TestContext,
 ) -> Result<()> {
+    let mut results = Vec::new();
     for directive in wast.directives {
         match directive {
             WastDirective::ModuleDefinition(
@@ -129,21 +128,21 @@ fn execute_directives(
             }
             WastDirective::Invoke(wast_invoke) => {
                 let span = wast_invoke.span;
-                execute_wast_invoke(test, test_context, span, wast_invoke).unwrap_or_else(
-                    |error| {
+                test_context
+                    .invoke(test, wast_invoke, &mut results)
+                    .unwrap_or_else(|error| {
                         panic!(
                             "{}: failed to invoke `.wast` directive: {}",
                             test.spanned(span),
                             error
                         )
-                    },
-                );
+                    });
             }
             WastDirective::AssertTrap {
                 span,
                 exec,
                 message,
-            } => match execute_wast_execute(test, test_context, span, exec) {
+            } => match execute_wast_execute(test, test_context, exec, &mut results) {
                 Ok(results) => panic!(
                     "{}: expected to trap with message '{}' but succeeded with: {:?}",
                     test.spanned(span),
@@ -157,21 +156,22 @@ fn execute_directives(
                 exec,
                 results: expected,
             } => {
-                let results =
-                    execute_wast_execute(test, test_context, span, exec).unwrap_or_else(|error| {
+                execute_wast_execute(test, test_context, exec, &mut results).unwrap_or_else(
+                    |error| {
                         panic!(
                             "{}: encountered unexpected failure to execute `AssertReturn`: {}",
                             test.spanned(span),
                             error
                         )
-                    });
+                    },
+                );
                 assert_results(test, test_context, span, &results, &expected);
             }
             WastDirective::AssertExhaustion {
                 span,
                 call,
                 message,
-            } => match execute_wast_invoke(test, test_context, span, call) {
+            } => match test_context.invoke(test, call, &mut results) {
                 Ok(results) => {
                     panic!(
                             "{}: expected to fail due to resource exhaustion '{}' but succeeded with: {:?}",
@@ -193,7 +193,7 @@ fn execute_directives(
             }
             WastDirective::AssertUnlinkable { .. } => {}
             WastDirective::AssertException { span, exec } => {
-                if let Ok(results) = execute_wast_execute(test, test_context, span, exec) {
+                if let Ok(results) = execute_wast_execute(test, test_context, exec, &mut results) {
                     panic!(
                         "{}: expected to fail due to exception but succeeded with: {:?}",
                         test.spanned(span),
@@ -360,79 +360,30 @@ fn module_compilation_fails(
 fn execute_wast_execute(
     test: &TestDescriptor,
     context: &mut TestContext,
-    span: Span,
     execute: WastExecute,
-) -> Result<Vec<Val>, TestError> {
+    results: &mut Vec<Val>,
+) -> Result<(), TestError> {
     match execute {
-        WastExecute::Invoke(invoke) => {
-            execute_wast_invoke(test, context, span, invoke).map_err(Into::into)
-        }
+        WastExecute::Invoke(invoke) => context.invoke(test, invoke, results),
         WastExecute::Wat(Wat::Module(mut module)) => {
             let id = module.id;
             let wasm = module.encode().unwrap();
-            context
-                .compile_and_instantiate(id, &wasm)
-                .map(|_| Vec::new())
+            context.compile_and_instantiate(id, &wasm)?;
+            Ok(())
         }
         WastExecute::Wat(Wat::Component(_)) => {
             // Wasmi currently does not support the Wasm component model.
-            Ok(vec![])
+            Ok(())
         }
         WastExecute::Get {
             module,
             global,
             span: _,
-        } => context
-            .get_global(module, global)
-            .map(|result| vec![result]),
+        } => {
+            let result = context.get_global(module, global)?;
+            results.clear();
+            results.push(result);
+            Ok(())
+        }
     }
-}
-
-fn execute_wast_invoke(
-    test: &TestDescriptor,
-    context: &mut TestContext,
-    span: Span,
-    invoke: WastInvoke,
-) -> Result<Vec<Val>, TestError> {
-    let module_name = invoke.module.map(|id| id.name());
-    let field_name = invoke.name;
-    let mut args = <Vec<Val>>::new();
-    for arg in invoke.args {
-        let value = match arg {
-            wast::WastArg::Core(arg) => value(context.store_mut(), &arg).unwrap_or_else(|| {
-                panic!(
-                    "{}: encountered unsupported WastArgCore argument: {arg:?}",
-                    test.spanned(span)
-                )
-            }),
-            wast::WastArg::Component(arg) => panic!(
-                "{}: Wasmi does not support the Wasm `component-model` but found {arg:?}",
-                test.spanned(span)
-            ),
-        };
-        args.push(value);
-    }
-    context
-        .invoke(module_name, field_name, &args)
-        .map(|results| results.to_vec())
-}
-
-/// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
-fn value(ctx: &mut wasmi::Store<()>, value: &wast::core::WastArgCore) -> Option<Val> {
-    Some(match value {
-        wast::core::WastArgCore::I32(arg) => Val::I32(*arg),
-        wast::core::WastArgCore::I64(arg) => Val::I64(*arg),
-        wast::core::WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
-        wast::core::WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
-        wast::core::WastArgCore::RefNull(HeapType::Abstract {
-            ty: AbstractHeapType::Func,
-            ..
-        }) => Val::FuncRef(FuncRef::null()),
-        wast::core::WastArgCore::RefNull(HeapType::Abstract {
-            ty: AbstractHeapType::Extern,
-            ..
-        }) => Val::ExternRef(ExternRef::null()),
-        wast::core::WastArgCore::RefExtern(value) => Val::ExternRef(ExternRef::new(ctx, *value)),
-        _ => return None,
-    })
 }

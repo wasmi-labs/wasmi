@@ -1,4 +1,5 @@
 use super::{
+    descriptor::TestDescriptor,
     run::{ParsingMode, RunnerConfig},
     TestError,
 };
@@ -21,7 +22,10 @@ use wasmi::{
     Val,
 };
 use wasmi_core::{ValType, F32, F64};
-use wast::token::Id;
+use wast::{
+    token::{Id, Span},
+    WastArg,
+};
 
 /// The context of a single Wasm test spec suite run.
 #[derive(Debug)]
@@ -36,8 +40,8 @@ pub struct TestContext {
     instances: HashMap<Box<str>, Instance>,
     /// The last touched module instance.
     last_instance: Option<Instance>,
-    /// Intermediate results buffer that can be reused for calling Wasm functions.
-    results: Vec<Val>,
+    /// Buffer to store parameters to function invocations.
+    params: Vec<Val>,
 }
 
 impl TestContext {
@@ -53,7 +57,7 @@ impl TestContext {
             store,
             instances: HashMap::new(),
             last_instance: None,
-            results: Vec::new(),
+            params: Vec::new(),
         }
     }
 
@@ -215,10 +219,13 @@ impl TestContext {
     /// - If function invokation returned an error.
     pub fn invoke(
         &mut self,
-        module_name: Option<&str>,
-        func_name: &str,
-        args: &[Val],
-    ) -> Result<&[Val], TestError> {
+        desc: &TestDescriptor,
+        invoke: wast::WastInvoke,
+        results: &mut Vec<Val>,
+    ) -> Result<(), TestError> {
+        self.fill_params(desc, invoke.span, &invoke.args)?;
+        let module_name = invoke.module.map(|id| id.name());
+        let func_name = invoke.name;
         let instance = self.instance_by_name_or_last(module_name)?;
         let func = instance
             .get_export(&self.store, func_name)
@@ -228,10 +235,35 @@ impl TestContext {
                 func_name: func_name.to_string(),
             })?;
         let len_results = func.ty(&self.store).results().len();
-        self.results.clear();
-        self.results.resize(len_results, Val::I32(0));
-        func.call(&mut self.store, args, &mut self.results)?;
-        Ok(&self.results)
+        results.clear();
+        results.resize(len_results, Val::I32(0));
+        func.call(&mut self.store, &self.params, results)?;
+        Ok(())
+    }
+
+    fn fill_params(
+        &mut self,
+        desc: &TestDescriptor,
+        span: Span,
+        args: &[WastArg],
+    ) -> Result<(), TestError> {
+        self.params.clear();
+        for arg in args {
+            let value = match arg {
+                wast::WastArg::Core(arg) => value(self.store_mut(), &arg).unwrap_or_else(|| {
+                    panic!(
+                        "{}: encountered unsupported WastArgCore argument: {arg:?}",
+                        desc.spanned(span)
+                    )
+                }),
+                wast::WastArg::Component(arg) => panic!(
+                    "{}: Wasmi does not support the Wasm `component-model` but found {arg:?}",
+                    desc.spanned(span)
+                ),
+            };
+            self.params.push(value);
+        }
+        Ok(())
     }
 
     /// Returns the current value of the [`Global`] identifier by the given `module_name` and `global_name`.
@@ -253,4 +285,26 @@ impl TestContext {
         let value = global.get(&self.store);
         Ok(value)
     }
+}
+
+/// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
+fn value(ctx: &mut wasmi::Store<()>, value: &wast::core::WastArgCore) -> Option<Val> {
+    use wasmi::{ExternRef, FuncRef};
+    use wast::core::{AbstractHeapType, HeapType};
+    Some(match value {
+        wast::core::WastArgCore::I32(arg) => Val::I32(*arg),
+        wast::core::WastArgCore::I64(arg) => Val::I64(*arg),
+        wast::core::WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
+        wast::core::WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
+        wast::core::WastArgCore::RefNull(HeapType::Abstract {
+            ty: AbstractHeapType::Func,
+            ..
+        }) => Val::FuncRef(FuncRef::null()),
+        wast::core::WastArgCore::RefNull(HeapType::Abstract {
+            ty: AbstractHeapType::Extern,
+            ..
+        }) => Val::ExternRef(ExternRef::null()),
+        wast::core::WastArgCore::RefExtern(value) => Val::ExternRef(ExternRef::new(ctx, *value)),
+        _ => return None,
+    })
 }
