@@ -439,4 +439,38 @@ impl WastRunner {
             ),
         }
     }
+
+    pub fn module_compilation_succeeds(
+        &mut self,
+        test: &TestDescriptor,
+        span: Span,
+        id: Option<wast::token::Id>,
+        wasm: &[u8],
+    ) -> Instance {
+        match self.compile_and_instantiate(id, wasm) {
+            Ok(instance) => instance,
+            Err(error) => panic!(
+                "{}: failed to instantiate module but should have succeeded: {}",
+                test.spanned(span),
+                error
+            ),
+        }
+    }
+
+    pub fn module_compilation_fails(
+        &mut self,
+        test: &TestDescriptor,
+        span: Span,
+        id: Option<wast::token::Id>,
+        wasm: &[u8],
+        expected_message: &str,
+    ) {
+        let result = self.compile_and_instantiate(id, wasm);
+        assert!(
+            result.is_err(),
+            "{}: succeeded to instantiate module but should have failed with: {}",
+            test.spanned(span),
+            expected_message
+        );
+    }
 }

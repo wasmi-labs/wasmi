@@ -1,7 +1,6 @@
 use super::{error::TestError, TestDescriptor};
 use crate::spec::runner::{RunnerConfig, WastRunner};
 use anyhow::Result;
-use wasmi::Instance;
 use wast::{lexer::Lexer, parser::ParseBuffer, token::Span, QuoteWat, Wast, WastDirective, Wat};
 
 /// Runs the Wasm test spec identified by the given name.
@@ -59,7 +58,7 @@ fn execute_directives(
             ) => {
                 let wasm = module.encode().unwrap();
                 let span = module.span();
-                module_compilation_succeeds(test, test_context, span, None, &wasm);
+                test_context.module_compilation_succeeds(test, span, None, &wasm);
             }
             #[rustfmt::skip]
             WastDirective::Module(
@@ -69,7 +68,7 @@ fn execute_directives(
                 let wasm = module.encode().unwrap();
                 let span = module.span();
                 let id = module.name();
-                module_compilation_succeeds(test, test_context, span, id, &wasm);
+                test_context.module_compilation_succeeds(test, span, id, &wasm);
             }
             WastDirective::AssertMalformed {
                 span,
@@ -78,7 +77,7 @@ fn execute_directives(
             } => {
                 let id = module.name();
                 let wasm = module.encode().unwrap();
-                module_compilation_fails(test, test_context, span, id, &wasm, message);
+                test_context.module_compilation_fails(test, span, id, &wasm, message);
             }
             WastDirective::AssertMalformed { .. } => {}
             #[rustfmt::skip]
@@ -91,7 +90,7 @@ fn execute_directives(
             } => {
                 let id = module.name();
                 let wasm = module.encode().unwrap();
-                module_compilation_fails(test, test_context, span, id, &wasm, message);
+                test_context.module_compilation_fails(test, span, id, &wasm, message);
             }
             WastDirective::Register { span, name, module } => {
                 let module_name = module.map(|id| id.name());
@@ -165,7 +164,7 @@ fn execute_directives(
             } => {
                 let id = module.id;
                 let wasm = module.encode().unwrap();
-                module_compilation_fails(test, test_context, span, id, &wasm, message);
+                test_context.module_compilation_fails(test, span, id, &wasm, message);
             }
             WastDirective::AssertUnlinkable { .. } => {}
             WastDirective::AssertException { span, exec } => {
@@ -209,38 +208,4 @@ fn assert_trap(test: &TestDescriptor, span: Span, error: TestError, message: &st
             test.spanned(span),
         ),
     }
-}
-
-fn module_compilation_succeeds(
-    test: &TestDescriptor,
-    context: &mut WastRunner,
-    span: Span,
-    id: Option<wast::token::Id>,
-    wasm: &[u8],
-) -> Instance {
-    match context.compile_and_instantiate(id, wasm) {
-        Ok(instance) => instance,
-        Err(error) => panic!(
-            "{}: failed to instantiate module but should have succeeded: {}",
-            test.spanned(span),
-            error
-        ),
-    }
-}
-
-fn module_compilation_fails(
-    test: &TestDescriptor,
-    context: &mut WastRunner,
-    span: Span,
-    id: Option<wast::token::Id>,
-    wasm: &[u8],
-    expected_message: &str,
-) {
-    let result = context.compile_and_instantiate(id, wasm);
-    assert!(
-        result.is_err(),
-        "{}: succeeded to instantiate module but should have failed with: {}",
-        test.spanned(span),
-        expected_message
-    );
 }
