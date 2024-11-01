@@ -1,12 +1,29 @@
 mod descriptor;
-mod run;
 mod runner;
 
 use self::{
     descriptor::TestDescriptor,
-    runner::{ParsingMode, RunnerConfig},
+    runner::{ParsingMode, RunnerConfig, WastRunner},
 };
 use wasmi::Config;
+
+/// Runs the Wasm test spec identified by the given name.
+fn process_wast(name: &'static str, wast: &'static str, config: RunnerConfig) {
+    let test = TestDescriptor::new(name, wast);
+    let mut context = WastRunner::new(config);
+    if let Err(error) = context.setup_wasm_spectest_module() {
+        panic!("failed to setup Wasm spectest module: {error}");
+    }
+    context
+        .process_directives(&test, wast)
+        .unwrap_or_else(|error| {
+            panic!(
+                "{}: failed to execute `.wast` directive: {}",
+                test.path(),
+                error
+            )
+        });
+}
 
 macro_rules! define_tests {
     (
@@ -208,7 +225,7 @@ expand_tests! {
     define_spec_tests,
 
     let config = test_config(false, ParsingMode::Buffered);
-    let runner = run::process_wast;
+    let runner = process_wast;
 }
 
 macro_rules! expand_tests_mm {
@@ -294,7 +311,7 @@ mod multi_memory {
         define_spec_tests,
 
         let config = test_config();
-        let runner = run::process_wast;
+        let runner = process_wast;
     }
 }
 
@@ -305,7 +322,7 @@ mod fueled {
         define_spec_tests,
 
         let config = test_config(true, ParsingMode::Buffered);
-        let runner = run::process_wast;
+        let runner = process_wast;
     }
 }
 
@@ -316,6 +333,6 @@ mod streaming {
         define_spec_tests,
 
         let config = test_config(false, ParsingMode::Streaming);
-        let runner = run::process_wast;
+        let runner = process_wast;
     }
 }
