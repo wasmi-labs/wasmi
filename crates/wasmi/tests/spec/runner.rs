@@ -20,6 +20,7 @@ use wasmi::{
 };
 use wasmi_core::{ValType, F32, F64};
 use wast::{
+    core::WastArgCore,
     token::{Id, Span},
     WastArg,
 };
@@ -266,8 +267,8 @@ impl WastRunner {
         self.params.clear();
         for arg in args {
             let arg = match arg {
-                wast::WastArg::Core(arg) => arg,
-                wast::WastArg::Component(arg) => panic!(
+                WastArg::Core(arg) => arg,
+                WastArg::Component(arg) => panic!(
                     "{}: Wasmi does not support the Wasm `component-model` but found {arg:?}",
                     desc.spanned(span)
                 ),
@@ -305,9 +306,9 @@ impl WastRunner {
 }
 
 /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
-fn value(ctx: &mut wasmi::Store<()>, value: &wast::core::WastArgCore) -> Option<Val> {
+fn value(ctx: &mut wasmi::Store<()>, value: &WastArgCore) -> Option<Val> {
     use wasmi::{ExternRef, FuncRef};
-    use wast::core::{AbstractHeapType, HeapType, WastArgCore};
+    use wast::core::{AbstractHeapType, HeapType};
     Some(match value {
         WastArgCore::I32(arg) => Val::I32(*arg),
         WastArgCore::I64(arg) => Val::I64(*arg),
