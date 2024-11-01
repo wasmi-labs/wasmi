@@ -285,7 +285,7 @@ impl WastRunner {
     /// # Errors
     ///
     /// If creating the [`Module`] fails.
-    pub fn compile_and_instantiate(
+    fn compile_and_instantiate(
         &mut self,
         id: Option<wast::token::Id>,
         wasm: &[u8],
@@ -313,7 +313,7 @@ impl WastRunner {
     /// # Errors
     ///
     /// If there is no registered module instance with the given name.
-    pub fn instance_by_name(&self, name: &str) -> Result<Instance, TestError> {
+    fn instance_by_name(&self, name: &str) -> Result<Instance, TestError> {
         self.instances
             .get(name)
             .copied()
@@ -327,13 +327,13 @@ impl WastRunner {
     /// # Errors
     ///
     /// If there have been no Wasm module instances registered so far.
-    pub fn instance_by_name_or_last(&self, name: Option<&str>) -> Result<Instance, TestError> {
+    fn instance_by_name_or_last(&self, name: Option<&str>) -> Result<Instance, TestError> {
         name.map(|name| self.instance_by_name(name))
             .unwrap_or_else(|| self.last_instance.ok_or(TestError::NoModuleInstancesFound))
     }
 
     /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
-    pub fn register_instance(&mut self, name: &str, instance: Instance) {
+    fn register_instance(&mut self, name: &str, instance: Instance) {
         if self.instances.contains_key(name) {
             // Already registered the instance.
             return;
@@ -367,7 +367,7 @@ impl WastRunner {
     /// - If no module instances can be found.
     /// - If no function identified with `func_name` can be found.
     /// - If function invokation returned an error.
-    pub fn invoke(
+    fn invoke(
         &mut self,
         desc: &TestDescriptor,
         invoke: wast::WastInvoke,
@@ -424,7 +424,7 @@ impl WastRunner {
     ///
     /// - If no module instances can be found.
     /// - If no global variable identifier with `global_name` can be found.
-    pub fn get_global(&self, module_name: Option<Id>, global_name: &str) -> Result<Val, TestError> {
+    fn get_global(&self, module_name: Option<Id>, global_name: &str) -> Result<Val, TestError> {
         let module_name = module_name.map(|id| id.name());
         let instance = self.instance_by_name_or_last(module_name)?;
         let global = instance
@@ -463,7 +463,7 @@ impl WastRunner {
     }
 
     /// Processes a [`WastExecute`] directive.
-    pub fn execute_wast_execute(
+    fn execute_wast_execute(
         &mut self,
         test: &TestDescriptor,
         execute: WastExecute,
@@ -495,7 +495,7 @@ impl WastRunner {
     }
 
     /// Asserts that `results` match the `expected` values.
-    pub fn assert_results(
+    fn assert_results(
         &self,
         test: &TestDescriptor,
         span: Span,
@@ -576,7 +576,7 @@ impl WastRunner {
         }
     }
 
-    pub fn module_compilation_succeeds(
+    fn module_compilation_succeeds(
         &mut self,
         test: &TestDescriptor,
         span: Span,
@@ -593,7 +593,7 @@ impl WastRunner {
         }
     }
 
-    pub fn module_compilation_fails(
+    fn module_compilation_fails(
         &mut self,
         test: &TestDescriptor,
         span: Span,
