@@ -258,6 +258,12 @@ impl WastRunner {
                 let id = module.name();
                 self.module_compilation_succeeds(id, &wasm)?;
             }
+            WastDirective::Register { name, module, .. } => {
+                self.register(name, module)?;
+            }
+            WastDirective::Invoke(wast_invoke) => {
+                self.invoke(wast_invoke)?;
+            }
             WastDirective::AssertMalformed {
                 module: mut module @ QuoteWat::Wat(wast::Wat::Module(_)),
                 message,
@@ -282,12 +288,6 @@ impl WastRunner {
                 let id = module.name();
                 let wasm = module.encode()?;
                 self.module_compilation_fails(id, &wasm, message)?;
-            }
-            WastDirective::Register { name, module, .. } => {
-                self.register(name, module)?;
-            }
-            WastDirective::Invoke(wast_invoke) => {
-                self.invoke(wast_invoke)?;
             }
             WastDirective::AssertTrap { exec, message, .. } => {
                 match self.execute_wast_execute(exec) {
