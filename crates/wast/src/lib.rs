@@ -422,7 +422,7 @@ impl<'runner> DirectivesProcessor<'runner> {
         let expected = match expected {
             WastRet::Core(arg) => arg,
             WastRet::Component(arg) => {
-                bail!("encountered unsupported component-model argument: {arg:?}")
+                bail!("encountered unsupported component-model result: {arg:?}")
             }
         };
         let is_equal = match (result, expected) {
