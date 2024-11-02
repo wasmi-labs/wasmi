@@ -9,6 +9,7 @@ members = [
     "crates/wasi",
     "crates/ir",
     "crates/fuzz",
+    "crates/wast",
     "fuzz",
 ]
 exclude = []
@@ -35,6 +36,7 @@ wasmi_collections = { version = "0.38.0", path = "crates/collections", default-f
 wasmi_c_api_impl = { version = "0.38.0", path = "crates/c_api" }
 wasmi_c_api_macros = { version = "0.38.0", path = "crates/c_api/macro" }
 wasmi_fuzz = { version = "0.38.0", path = "crates/fuzz" }
+wasmi_wast = { version = "0.38.0", path = "crates/wast" }
 
 [profile.bench]
 lto = "fat"

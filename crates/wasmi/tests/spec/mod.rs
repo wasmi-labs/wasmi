@@ -1,7 +1,5 @@
-mod runner;
-
-use self::runner::{ParsingMode, RunnerConfig, WastRunner};
 use wasmi::Config;
+use wasmi_wast::{ParsingMode, RunnerConfig, WastRunner};
 
 /// Runs the Wasm test spec identified by the given name.
 fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {

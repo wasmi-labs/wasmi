@@ -1847,7 +1847,6 @@ dependencies = [
 name = "wasmi"
 version = "0.38.0"
 dependencies = [
- "anyhow",
  "arrayvec",
  "assert_matches",
  "criterion",
@@ -1857,8 +1856,8 @@ dependencies = [
  "wasmi_collections",
  "wasmi_core 0.38.0",
  "wasmi_ir",
+ "wasmi_wast",
  "wasmparser-nostd",
- "wast 219.0.1",
  "wat",
 ]
 
@@ -1962,6 +1961,16 @@ dependencies = [
  "wasmi 0.38.0",
  "wat",
  "wiggle",
+]
+
+[[package]]
+name = "wasmi_wast"
+version = "0.38.0"
+dependencies = [
+ "anyhow",
+ "wasmi 0.38.0",
+ "wast 219.0.1",
+ "wat",
 ]
 
 [[package]]
