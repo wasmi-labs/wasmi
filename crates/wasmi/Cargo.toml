@@ -33,11 +33,11 @@ multi-stash = { version = "0.2.0" }
 arrayvec = { version = "0.7.4", default-features = false }
 
 [dev-dependencies]
-wasmi_wast = { workspace = true }
-criterion = { version = "0.5", default-features = false }
+wat = "1"
 assert_matches = "1.5"
 anyhow = "1"
-wat = "1"
+wasmi_wast = { workspace = true }
+criterion = { version = "0.5", default-features = false }
 
 [features]
 default = ["std"]
