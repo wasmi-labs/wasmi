@@ -279,7 +279,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                     &self.results[..],
                 ),
                 Err(error) => {
-                    WastRunner::assert_trap(self.source, span, error, message)?;
+                    self.assert_trap(span, error, message)?;
                 }
             },
             WastDirective::AssertReturn {
@@ -310,7 +310,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                     )
                 }
                 Err(error) => {
-                    WastRunner::assert_trap(self.source, span, error, message)?;
+                    self.assert_trap(span, error, message)?;
                 }
             },
             WastDirective::AssertUnlinkable {
@@ -466,6 +466,34 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                 Ok(())
             }
         }
+    }
+
+    /// Asserts that the `error` is a trap with the expected `message`.
+    ///
+    /// # Panics
+    ///
+    /// - If the `error` is not a trap.
+    /// - If the trap message of the `error` is not as expected.
+    fn assert_trap(&self, span: Span, error: anyhow::Error, message: &str) -> Result<()> {
+        let Some(error) = error.downcast_ref::<wasmi::Error>() else {
+            bail!(
+                "{}: encountered unexpected error: \n\t\
+                    found: '{error}'\n\t\
+                    expected: trap with message '{message}'",
+                self.source.pos(span),
+            )
+        };
+        if !error.to_string().contains(message) {
+            bail!(
+                "{}: the directive trapped as expected but with an unexpected message\n\
+                    expected: {},\n\
+                    encountered: {}",
+                self.source.pos(span),
+                message,
+                error,
+            )
+        }
+        Ok(())
     }
 }
 
@@ -689,38 +717,5 @@ impl WastRunner {
             }
             _ => return None,
         })
-    }
-
-    /// Asserts that the `error` is a trap with the expected `message`.
-    ///
-    /// # Panics
-    ///
-    /// - If the `error` is not a trap.
-    /// - If the trap message of the `error` is not as expected.
-    fn assert_trap(
-        source: WastSource,
-        span: Span,
-        error: anyhow::Error,
-        message: &str,
-    ) -> Result<()> {
-        let Some(error) = error.downcast_ref::<wasmi::Error>() else {
-            bail!(
-                "{}: encountered unexpected error: \n\t\
-                    found: '{error}'\n\t\
-                    expected: trap with message '{message}'",
-                source.pos(span),
-            )
-        };
-        if !error.to_string().contains(message) {
-            bail!(
-                "{}: the directive trapped as expected but with an unexpected message\n\
-                    expected: {},\n\
-                    encountered: {}",
-                source.pos(span),
-                message,
-                error,
-            )
-        }
-        Ok(())
     }
 }
