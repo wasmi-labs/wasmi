@@ -71,7 +71,7 @@ fn mvp_config() -> Config {
 /// # Note
 ///
 /// The Wasm MVP has no Wasm proposals enabled.
-fn test_config(consume_fuel: bool, mode: ParsingMode) -> RunnerConfig {
+fn test_config(consume_fuel: bool, parsing_mode: ParsingMode) -> RunnerConfig {
     let mut config = mvp_config();
     // We have to enable the `mutable-global` Wasm proposal because
     // it seems that the entire Wasm spec test suite is already built
@@ -87,7 +87,10 @@ fn test_config(consume_fuel: bool, mode: ParsingMode) -> RunnerConfig {
         .wasm_tail_call(true)
         .wasm_extended_const(true)
         .consume_fuel(consume_fuel);
-    RunnerConfig { config, mode }
+    RunnerConfig {
+        config,
+        parsing_mode,
+    }
 }
 
 macro_rules! expand_tests {
@@ -292,8 +295,11 @@ mod multi_memory {
 
     fn test_config() -> RunnerConfig {
         let config = Config::default();
-        let mode = ParsingMode::Buffered;
-        RunnerConfig { config, mode }
+        let parsing_mode = ParsingMode::Buffered;
+        RunnerConfig {
+            config,
+            parsing_mode,
+        }
     }
 
     expand_tests_mm! {

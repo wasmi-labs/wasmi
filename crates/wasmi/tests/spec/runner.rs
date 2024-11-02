@@ -35,31 +35,19 @@ use wast::{
 use std::fmt::{self, Display};
 
 /// The desciptor of a Wasm spec test suite run.
-#[derive(Debug)]
-pub struct TestDescriptor<'a> {
-    /// The contents of the Wasm spec test `.wast` file.
-    wast: &'a str,
-}
+#[derive(Debug, Copy, Clone)]
+struct WastSource<'a>(&'a str);
 
-impl<'a> TestDescriptor<'a> {
-    /// Creates a new Wasm spec [`TestDescriptor`].
-    ///
-    /// # Errors
-    ///
-    /// If the corresponding Wasm test spec file cannot properly be read.
-    pub fn new(wast: &'a str) -> Self {
-        Self { wast }
-    }
-
+impl<'a> WastSource<'a> {
     /// Creates a [`ErrorPos`] which can be used to print the location within the `.wast` test file.
-    pub fn spanned(&self, span: Span) -> ErrorPos<'a> {
-        ErrorPos::new(self.wast, span)
+    fn pos(&self, span: Span) -> ErrorPos<'a> {
+        ErrorPos::new(self.0, span)
     }
 }
 
 /// Useful for printing the location where the `.wast` parse is located.
 #[derive(Debug)]
-pub struct ErrorPos<'a> {
+struct ErrorPos<'a> {
     /// The file contents of the `.wast` test.
     wast: &'a str,
     /// The line and column within the `.wast` test file.
@@ -68,7 +56,7 @@ pub struct ErrorPos<'a> {
 
 impl<'a> ErrorPos<'a> {
     /// Creates a new [`ErrorPos`].
-    pub fn new(wast: &'a str, span: Span) -> Self {
+    fn new(wast: &'a str, span: Span) -> Self {
         Self { wast, span }
     }
 }
@@ -89,7 +77,7 @@ pub struct RunnerConfig {
     /// The Wasmi configuration used for all tests.
     pub config: Config,
     /// The parsing mode that is used.
-    pub mode: ParsingMode,
+    pub parsing_mode: ParsingMode,
 }
 
 /// The mode in which Wasm is parsed.
@@ -119,7 +107,7 @@ pub struct WastRunner {
 }
 
 impl WastRunner {
-    /// Creates a new [`TestContext`] with the given [`TestDescriptor`].
+    /// Creates a new [`TestContext`] with the given [`WastSource`].
     pub fn new(config: RunnerConfig) -> Self {
         let engine = Engine::new(&config.config);
         let linker = Linker::new(&engine);
@@ -188,15 +176,334 @@ impl WastRunner {
     }
 }
 
+/// A processor for Wast directives.
+struct DirectivesProcessor<'runner, 'wast> {
+    /// The underlying Wast runner and context.
+    runner: &'runner mut WastRunner,
+    /// The underlying Wast source code.
+    source: WastSource<'wast>,
+    /// A convenience buffer for intermediary results.
+    results: Vec<Val>,
+}
+
+impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
+    /// Create a new [`DirectivesProcessor`].
+    fn new(runner: &'runner mut WastRunner, wast: &'wast str) -> Self {
+        Self {
+            runner,
+            source: WastSource(wast),
+            results: Vec::new(),
+        }
+    }
+
+    /// Processes the given `.wast` directive by `self`.
+    fn process_directive(&mut self, directive: WastDirective) -> Result<()> {
+        match directive {
+            #[rustfmt::skip]
+            WastDirective::ModuleDefinition(
+                | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
+                | mut module @ QuoteWat::QuoteModule { .. },
+            ) => {
+                let wasm = module.encode().unwrap();
+                let span = module.span();
+                self.module_compilation_succeeds(span, None, &wasm)?;
+            }
+            #[rustfmt::skip]
+            WastDirective::Module(
+                | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
+                | mut module @ QuoteWat::QuoteModule { .. },
+            ) => {
+                let wasm = module.encode().unwrap();
+                let span = module.span();
+                let id = module.name();
+                self.module_compilation_succeeds(span, id, &wasm)?;
+            }
+            WastDirective::AssertMalformed {
+                span,
+                module: mut module @ QuoteWat::Wat(wast::Wat::Module(_)),
+                message,
+            } => {
+                let id = module.name();
+                let wasm = module.encode().unwrap();
+                self.module_compilation_fails(span, id, &wasm, message)?;
+            }
+            WastDirective::AssertMalformed {
+                module: QuoteWat::QuoteModule { .. },
+                ..
+            } => {}
+            #[rustfmt::skip]
+            WastDirective::AssertInvalid {
+                span,
+                module:
+                    | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
+                    | mut module @ QuoteWat::QuoteModule { .. },
+                message,
+            } => {
+                let id = module.name();
+                let wasm = module.encode().unwrap();
+                self.module_compilation_fails(span, id, &wasm, message)?;
+            }
+            WastDirective::Register { span, name, module } => {
+                let module_name = module.map(|id| id.name());
+                let instance = match self.runner.instance_by_name_or_last(module_name) {
+                    Ok(instance) => instance,
+                    Err(error) => {
+                        bail!(
+                            "{}: failed to load module: {}",
+                            self.source.pos(span),
+                            error
+                        )
+                    }
+                };
+                self.runner.register_instance(name, instance)?;
+            }
+            WastDirective::Invoke(wast_invoke) => {
+                let span = wast_invoke.span;
+                if let Err(error) = self
+                    .runner
+                    .invoke(self.source, wast_invoke, &mut self.results)
+                {
+                    bail!(
+                        "{}: failed to invoke `.wast` directive: {}",
+                        self.source.pos(span),
+                        error
+                    )
+                }
+            }
+            WastDirective::AssertTrap {
+                span,
+                exec,
+                message,
+            } => match self.execute_wast_execute(exec) {
+                Ok(_) => bail!(
+                    "{}: expected to trap with message '{}' but succeeded with: {:?}",
+                    self.source.pos(span),
+                    message,
+                    &self.results[..],
+                ),
+                Err(error) => {
+                    self.assert_trap(span, error, message)?;
+                }
+            },
+            WastDirective::AssertReturn {
+                span,
+                exec,
+                results: expected,
+            } => {
+                if let Err(error) = self.execute_wast_execute(exec) {
+                    bail!(
+                        "{}: encountered unexpected failure to execute `AssertReturn`: {}",
+                        self.source.pos(span),
+                        error
+                    )
+                };
+                self.assert_results(span, &expected)?;
+            }
+            WastDirective::AssertExhaustion {
+                span,
+                call,
+                message,
+            } => match self.runner.invoke(self.source, call, &mut self.results) {
+                Ok(_) => {
+                    bail!(
+                        "{}: expected to fail due to resource exhaustion '{}' but succeeded with: {:?}",
+                        self.source.pos(span),
+                        message,
+                        &self.results[..],
+                    )
+                }
+                Err(error) => {
+                    self.assert_trap(span, error, message)?;
+                }
+            },
+            WastDirective::AssertUnlinkable {
+                span,
+                module: Wat::Module(mut module),
+                message,
+            } => {
+                let id = module.id;
+                let wasm = module.encode().unwrap();
+                self.module_compilation_fails(span, id, &wasm, message)?;
+            }
+            unsupported => bail!(
+                "{}: encountered unsupported Wast directive: {unsupported:?}",
+                self.source.pos(unsupported.span())
+            ),
+        };
+        Ok(())
+    }
+
+    /// Asserts that a Wasm module compilation succeeds.
+    fn module_compilation_succeeds(
+        &mut self,
+        span: Span,
+        id: Option<wast::token::Id>,
+        wasm: &[u8],
+    ) -> Result<Instance> {
+        match self.runner.compile_and_instantiate(id, wasm) {
+            Ok(instance) => Ok(instance),
+            Err(error) => bail!(
+                "{}: failed to instantiate module but should have succeeded: {}",
+                self.source.pos(span),
+                error
+            ),
+        }
+    }
+
+    /// Asserts that a Wasm module compilation fails.
+    fn module_compilation_fails(
+        &mut self,
+        span: Span,
+        id: Option<wast::token::Id>,
+        wasm: &[u8],
+        expected_message: &str,
+    ) -> Result<()> {
+        if self.runner.compile_and_instantiate(id, wasm).is_ok() {
+            bail!(
+                "{}: succeeded to instantiate module but should have failed with: {}",
+                self.source.pos(span),
+                expected_message
+            )
+        }
+        Ok(())
+    }
+
+    /// Asserts that `results` match the `expected` values.
+    fn assert_results(&self, span: Span, expected: &[WastRet]) -> Result<()> {
+        anyhow::ensure!(
+            self.results.len() == expected.len(),
+            "number of returned values and expected values do not match: #expected = {}, #returned = {}",
+            expected.len(),
+            self.results.len(),
+        );
+        for (result, expected) in self.results.iter().zip(expected) {
+            self.assert_result(span, result, expected)?;
+        }
+        Ok(())
+    }
+
+    /// Asserts that `result` match the `expected` value.
+    fn assert_result(&self, span: Span, result: &Val, expected: &WastRet) -> Result<()> {
+        let WastRet::Core(expected) = expected else {
+            bail!(
+                "{}: unexpected component-model return value: {:?}",
+                self.source.pos(span),
+                expected,
+            )
+        };
+        let is_equal = match (result, expected) {
+            (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
+            (Val::I64(result), WastRetCore::I64(expected)) => result == expected,
+            (Val::F32(result), WastRetCore::F32(expected)) => match expected {
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.is_nan(),
+                NanPattern::Value(expected) => result.to_bits() == expected.bits,
+            },
+            (Val::F64(result), WastRetCore::F64(expected)) => match expected {
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.is_nan(),
+                NanPattern::Value(expected) => result.to_bits() == expected.bits,
+            },
+            (
+                Val::FuncRef(funcref),
+                WastRetCore::RefNull(Some(HeapType::Abstract {
+                    ty: AbstractHeapType::Func,
+                    ..
+                })),
+            ) => funcref.is_null(),
+            (
+                Val::ExternRef(externref),
+                WastRetCore::RefNull(Some(HeapType::Abstract {
+                    ty: AbstractHeapType::Extern,
+                    ..
+                })),
+            ) => externref.is_null(),
+            (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
+                let value = externref
+                    .data(&self.runner.store)
+                    .expect("unexpected null element")
+                    .downcast_ref::<u32>()
+                    .expect("unexpected non-u32 data");
+                value == expected
+            }
+            (Val::ExternRef(externref), WastRetCore::RefExtern(None)) => externref.is_null(),
+            _ => false,
+        };
+        if !is_equal {
+            bail!(
+                "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
+                self.source.pos(span),
+                expected,
+                result,
+            )
+        }
+        Ok(())
+    }
+
+    /// Processes a [`WastExecute`] directive.
+    fn execute_wast_execute(&mut self, execute: WastExecute) -> Result<()> {
+        self.results.clear();
+        match execute {
+            WastExecute::Invoke(invoke) => {
+                self.runner.invoke(self.source, invoke, &mut self.results)
+            }
+            WastExecute::Wat(Wat::Module(mut module)) => {
+                let id = module.id;
+                let wasm = module.encode().unwrap();
+                self.runner.compile_and_instantiate(id, &wasm)?;
+                Ok(())
+            }
+            WastExecute::Wat(Wat::Component(_)) => {
+                // Wasmi currently does not support the Wasm component model.
+                Ok(())
+            }
+            WastExecute::Get {
+                module,
+                global,
+                span: _,
+            } => {
+                let result = self.runner.get_global(module, global)?;
+                self.results.push(result);
+                Ok(())
+            }
+        }
+    }
+
+    /// Asserts that the `error` is a trap with the expected `message`.
+    ///
+    /// # Panics
+    ///
+    /// - If the `error` is not a trap.
+    /// - If the trap message of the `error` is not as expected.
+    fn assert_trap(&self, span: Span, error: anyhow::Error, message: &str) -> Result<()> {
+        let Some(error) = error.downcast_ref::<wasmi::Error>() else {
+            bail!(
+                "{}: encountered unexpected error: \n\t\
+                    found: '{error}'\n\t\
+                    expected: trap with message '{message}'",
+                self.source.pos(span),
+            )
+        };
+        if !error.to_string().contains(message) {
+            bail!(
+                "{}: the directive trapped as expected but with an unexpected message\n\
+                    expected: {},\n\
+                    encountered: {}",
+                self.source.pos(span),
+                message,
+                error,
+            )
+        }
+        Ok(())
+    }
+}
+
 impl WastRunner {
     /// Processes the directives of the given `wast` source by `self`.
     pub fn process_directives(&mut self, wast: &str) -> Result<()> {
-        let desc = TestDescriptor::new(wast);
+        let mut processor = DirectivesProcessor::new(self, wast);
         let buffer = Self::setup_parser(wast)?;
         let wast = Self::parse_wast(&buffer)?;
-        let mut results = Vec::new();
         for directive in wast.directives {
-            self.process_directive(directive, &desc, &mut results)?;
+            processor.process_directive(directive)?;
         }
         Ok(())
     }
@@ -225,148 +532,6 @@ impl WastRunner {
         Ok(wast)
     }
 
-    /// Processes the given `.wast` directive by `self`.
-    fn process_directive(
-        &mut self,
-        directive: WastDirective,
-        test: &TestDescriptor,
-        results: &mut Vec<Val>,
-    ) -> Result<()> {
-        match directive {
-            #[rustfmt::skip]
-            WastDirective::ModuleDefinition(
-                | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
-                | mut module @ QuoteWat::QuoteModule { .. },
-            ) => {
-                let wasm = module.encode().unwrap();
-                let span = module.span();
-                self.module_compilation_succeeds(test, span, None, &wasm)?;
-            }
-            #[rustfmt::skip]
-            WastDirective::Module(
-                | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
-                | mut module @ QuoteWat::QuoteModule { .. },
-            ) => {
-                let wasm = module.encode().unwrap();
-                let span = module.span();
-                let id = module.name();
-                self.module_compilation_succeeds(test, span, id, &wasm)?;
-            }
-            WastDirective::AssertMalformed {
-                span,
-                module: mut module @ QuoteWat::Wat(wast::Wat::Module(_)),
-                message,
-            } => {
-                let id = module.name();
-                let wasm = module.encode().unwrap();
-                self.module_compilation_fails(test, span, id, &wasm, message);
-            }
-            WastDirective::AssertMalformed { .. } => {}
-            #[rustfmt::skip]
-            WastDirective::AssertInvalid {
-                span,
-                module:
-                    | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
-                    | mut module @ QuoteWat::QuoteModule { .. },
-                message,
-            } => {
-                let id = module.name();
-                let wasm = module.encode().unwrap();
-                self.module_compilation_fails(test, span, id, &wasm, message);
-            }
-            WastDirective::Register { span, name, module } => {
-                let module_name = module.map(|id| id.name());
-                let instance = match self.instance_by_name_or_last(module_name) {
-                    Ok(instance) => instance,
-                    Err(error) => {
-                        bail!("{}: failed to load module: {}", test.spanned(span), error)
-                    }
-                };
-                self.register_instance(name, instance)?;
-            }
-            WastDirective::Invoke(wast_invoke) => {
-                let span = wast_invoke.span;
-                if let Err(error) = self.invoke(test, wast_invoke, results) {
-                    bail!(
-                        "{}: failed to invoke `.wast` directive: {}",
-                        test.spanned(span),
-                        error
-                    )
-                }
-            }
-            WastDirective::AssertTrap {
-                span,
-                exec,
-                message,
-            } => match self.execute_wast_execute(test, exec, results) {
-                Ok(results) => bail!(
-                    "{}: expected to trap with message '{}' but succeeded with: {:?}",
-                    test.spanned(span),
-                    message,
-                    results
-                ),
-                Err(error) => {
-                    Self::assert_trap(test, span, error, message)?;
-                }
-            },
-            WastDirective::AssertReturn {
-                span,
-                exec,
-                results: expected,
-            } => {
-                if let Err(error) = self.execute_wast_execute(test, exec, results) {
-                    bail!(
-                        "{}: encountered unexpected failure to execute `AssertReturn`: {}",
-                        test.spanned(span),
-                        error
-                    )
-                };
-                self.assert_results(test, span, results, &expected)?;
-            }
-            WastDirective::AssertExhaustion {
-                span,
-                call,
-                message,
-            } => match self.invoke(test, call, results) {
-                Ok(results) => {
-                    bail!(
-                        "{}: expected to fail due to resource exhaustion '{}' but succeeded with: {:?}",
-                        test.spanned(span),
-                        message,
-                        results
-                    )
-                }
-                Err(error) => {
-                    Self::assert_trap(test, span, error, message)?;
-                }
-            },
-            WastDirective::AssertUnlinkable {
-                span,
-                module: Wat::Module(mut module),
-                message,
-            } => {
-                let id = module.id;
-                let wasm = module.encode().unwrap();
-                self.module_compilation_fails(test, span, id, &wasm, message);
-            }
-            WastDirective::AssertUnlinkable { .. } => {}
-            WastDirective::AssertException { span, exec } => {
-                if let Ok(results) = self.execute_wast_execute(test, exec, results) {
-                    bail!(
-                        "{}: expected to fail due to exception but succeeded with: {:?}",
-                        test.spanned(span),
-                        results
-                    )
-                }
-            }
-            unsupported => bail!(
-                "{}: encountered unsupported Wast directive: {unsupported:?}",
-                test.spanned(unsupported.span())
-            ),
-        };
-        Ok(())
-    }
-
     /// Compiles the Wasm module and stores it into the [`TestContext`].
     ///
     /// # Errors
@@ -379,7 +544,7 @@ impl WastRunner {
     ) -> Result<Instance> {
         let module_name = id.map(|id| id.name());
         let engine = self.store.engine();
-        let module = match self.config.mode {
+        let module = match self.config.parsing_mode {
             ParsingMode::Buffered => Module::new(engine, wasm)?,
             ParsingMode::Streaming => Module::new_streaming(engine, wasm)?,
         };
@@ -463,7 +628,7 @@ impl WastRunner {
     /// - If function invokation returned an error.
     fn invoke(
         &mut self,
-        desc: &TestDescriptor,
+        desc: WastSource,
         invoke: wast::WastInvoke,
         results: &mut Vec<Val>,
     ) -> Result<()> {
@@ -487,20 +652,20 @@ impl WastRunner {
     }
 
     /// Fills the `params` buffer with `args`.
-    fn fill_params(&mut self, desc: &TestDescriptor, span: Span, args: &[WastArg]) -> Result<()> {
+    fn fill_params(&mut self, desc: WastSource, span: Span, args: &[WastArg]) -> Result<()> {
         self.params.clear();
         for arg in args {
             let arg = match arg {
                 WastArg::Core(arg) => arg,
                 WastArg::Component(arg) => bail!(
                     "{}: Wasmi does not support the Wasm `component-model` but found {arg:?}",
-                    desc.spanned(span)
+                    desc.pos(span)
                 ),
             };
             let Some(val) = self.value(arg) else {
                 bail!(
                     "{}: encountered unsupported WastArgCore argument: {arg:?}",
-                    desc.spanned(span)
+                    desc.pos(span)
                 )
             };
             self.params.push(val);
@@ -551,181 +716,5 @@ impl WastRunner {
             }
             _ => return None,
         })
-    }
-
-    /// Processes a [`WastExecute`] directive.
-    fn execute_wast_execute(
-        &mut self,
-        test: &TestDescriptor,
-        execute: WastExecute,
-        results: &mut Vec<Val>,
-    ) -> Result<()> {
-        results.clear();
-        match execute {
-            WastExecute::Invoke(invoke) => self.invoke(test, invoke, results),
-            WastExecute::Wat(Wat::Module(mut module)) => {
-                let id = module.id;
-                let wasm = module.encode().unwrap();
-                self.compile_and_instantiate(id, &wasm)?;
-                Ok(())
-            }
-            WastExecute::Wat(Wat::Component(_)) => {
-                // Wasmi currently does not support the Wasm component model.
-                Ok(())
-            }
-            WastExecute::Get {
-                module,
-                global,
-                span: _,
-            } => {
-                let result = self.get_global(module, global)?;
-                results.push(result);
-                Ok(())
-            }
-        }
-    }
-
-    /// Asserts that `results` match the `expected` values.
-    fn assert_results(
-        &self,
-        test: &TestDescriptor,
-        span: Span,
-        results: &[Val],
-        expected: &[WastRet],
-    ) -> Result<()> {
-        assert_eq!(results.len(), expected.len());
-        for (result, expected) in results.iter().zip(expected) {
-            self.assert_result(test, span, result, expected)?;
-        }
-        Ok(())
-    }
-
-    /// Asserts that `result` match the `expected` value.
-    fn assert_result(
-        &self,
-        test: &TestDescriptor,
-        span: Span,
-        result: &Val,
-        expected: &WastRet,
-    ) -> Result<()> {
-        let WastRet::Core(expected) = expected else {
-            bail!(
-                "{}: unexpected component-model return value: {:?}",
-                test.spanned(span),
-                expected,
-            )
-        };
-        let is_equal = match (result, expected) {
-            (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
-            (Val::I64(result), WastRetCore::I64(expected)) => result == expected,
-            (Val::F32(result), WastRetCore::F32(expected)) => match expected {
-                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.is_nan(),
-                NanPattern::Value(expected) => result.to_bits() == expected.bits,
-            },
-            (Val::F64(result), WastRetCore::F64(expected)) => match expected {
-                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.is_nan(),
-                NanPattern::Value(expected) => result.to_bits() == expected.bits,
-            },
-            (
-                Val::FuncRef(funcref),
-                WastRetCore::RefNull(Some(HeapType::Abstract {
-                    ty: AbstractHeapType::Func,
-                    ..
-                })),
-            ) => funcref.is_null(),
-            (
-                Val::ExternRef(externref),
-                WastRetCore::RefNull(Some(HeapType::Abstract {
-                    ty: AbstractHeapType::Extern,
-                    ..
-                })),
-            ) => externref.is_null(),
-            (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
-                let value = externref
-                    .data(&self.store)
-                    .expect("unexpected null element")
-                    .downcast_ref::<u32>()
-                    .expect("unexpected non-u32 data");
-                value == expected
-            }
-            (Val::ExternRef(externref), WastRetCore::RefExtern(None)) => externref.is_null(),
-            _ => false,
-        };
-        if !is_equal {
-            bail!(
-                "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
-                test.spanned(span),
-                expected,
-                result,
-            )
-        }
-        Ok(())
-    }
-
-    fn module_compilation_succeeds(
-        &mut self,
-        test: &TestDescriptor,
-        span: Span,
-        id: Option<wast::token::Id>,
-        wasm: &[u8],
-    ) -> Result<Instance> {
-        match self.compile_and_instantiate(id, wasm) {
-            Ok(instance) => Ok(instance),
-            Err(error) => bail!(
-                "{}: failed to instantiate module but should have succeeded: {}",
-                test.spanned(span),
-                error
-            ),
-        }
-    }
-
-    fn module_compilation_fails(
-        &mut self,
-        test: &TestDescriptor,
-        span: Span,
-        id: Option<wast::token::Id>,
-        wasm: &[u8],
-        expected_message: &str,
-    ) {
-        let result = self.compile_and_instantiate(id, wasm);
-        assert!(
-            result.is_err(),
-            "{}: succeeded to instantiate module but should have failed with: {}",
-            test.spanned(span),
-            expected_message
-        );
-    }
-
-    /// Asserts that the `error` is a trap with the expected `message`.
-    ///
-    /// # Panics
-    ///
-    /// - If the `error` is not a trap.
-    /// - If the trap message of the `error` is not as expected.
-    fn assert_trap(
-        test: &TestDescriptor,
-        span: Span,
-        error: anyhow::Error,
-        message: &str,
-    ) -> Result<()> {
-        let Some(error) = error.downcast_ref::<wasmi::Error>() else {
-            bail!(
-                "{}: encountered unexpected error: \n\t\
-                    found: '{error}'\n\t\
-                    expected: trap with message '{message}'",
-                test.spanned(span),
-            )
-        };
-        if !error.to_string().contains(message) {
-            bail!(
-                "{}: the directive trapped as expected but with an unexpected message\n\
-                    expected: {},\n\
-                    encountered: {}",
-                test.spanned(span),
-                message,
-                error,
-            )
-        }
-        Ok(())
     }
 }
