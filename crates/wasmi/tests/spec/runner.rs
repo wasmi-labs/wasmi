@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use std::collections::HashMap;
 use wasmi::{
     Config,
@@ -245,15 +245,11 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             }
             WastDirective::Register { span, name, module } => {
                 let module_name = module.map(|id| id.name());
-                let instance = match self.runner.instance_by_name_or_last(module_name) {
-                    Ok(instance) => instance,
-                    Err(error) => {
-                        bail!(
-                            "{}: failed to load module: {}",
-                            self.source.pos(span),
-                            error
-                        )
-                    }
+                let Some(instance) = self.runner.instance_by_name_or_last(module_name) else {
+                    bail!(
+                        "{}: missing instance named {module_name:?}",
+                        self.source.pos(span),
+                    )
                 };
                 self.runner.register_instance(name, instance)?;
             }
@@ -475,7 +471,12 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
     /// - If no global variable identifier with `global_name` can be found.
     fn get_global(&self, span: Span, module_name: Option<Id>, global_name: &str) -> Result<Val> {
         let module_name = module_name.map(|id| id.name());
-        let instance = self.runner.instance_by_name_or_last(module_name)?;
+        let Some(instance) = self.runner.instance_by_name_or_last(module_name) else {
+            bail!(
+                "{}: missing instance named {module_name:?}",
+                self.source.pos(span)
+            )
+        };
         let Some(global) = instance
             .get_export(&self.runner.store, global_name)
             .and_then(Extern::into_global)
@@ -596,18 +597,12 @@ impl WastRunner {
 
     /// Loads the Wasm module instance with the given name or the last instantiated one.
     ///
-    /// # Errors
-    ///
-    /// If there have been no Wasm module instances registered so far.
-    fn instance_by_name_or_last(&self, name: Option<&str>) -> Result<Instance> {
-        let instance = match name {
+    /// Returns `None` if there have been no Wasm module instances registered so far.
+    fn instance_by_name_or_last(&self, name: Option<&str>) -> Option<Instance> {
+        match name {
             Some(name) => self.instance_by_name(name).or(self.last_instance),
             None => self.last_instance,
-        };
-        let Some(instance) = instance else {
-            bail!("found no module instances registered so far")
-        };
-        Ok(instance)
+        }
     }
 
     /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
@@ -649,22 +644,31 @@ impl WastRunner {
     /// - If function invokation returned an error.
     fn invoke(
         &mut self,
-        desc: WastSource,
+        source: WastSource,
         invoke: wast::WastInvoke,
         results: &mut Vec<Val>,
     ) -> Result<()> {
-        self.fill_params(desc, invoke.span, &invoke.args)?;
+        let span = invoke.span;
+        self.fill_params(source, invoke.span, &invoke.args)?;
         let module_name = invoke.module.map(|id| id.name());
         let func_name = invoke.name;
-        let instance = self.instance_by_name_or_last(module_name)?;
-        let func = instance
+        let Some(instance) = self.instance_by_name_or_last(module_name) else {
+            bail!(
+                "{}: missing instance named: {module_name:?}",
+                source.pos(span)
+            )
+        };
+        let Some(func) = instance
             .get_export(&self.store, func_name)
             .and_then(Extern::into_func)
-            .ok_or_else(|| {
-                let module_name = module_name.map(|name| name.to_string());
-                let func_name = func_name.to_string();
-                anyhow!("missing func exported as: {module_name:?}::{func_name}")
-            })?;
+        else {
+            let module_name = module_name.map(|name| name.to_string());
+            let func_name = func_name.to_string();
+            bail!(
+                "{}: missing func exported as: {module_name:?}::{func_name}",
+                source.pos(span)
+            )
+        };
         let len_results = func.ty(&self.store).results().len();
         results.clear();
         results.resize(len_results, Val::I32(0));
@@ -673,20 +677,20 @@ impl WastRunner {
     }
 
     /// Fills the `params` buffer with `args`.
-    fn fill_params(&mut self, desc: WastSource, span: Span, args: &[WastArg]) -> Result<()> {
+    fn fill_params(&mut self, source: WastSource, span: Span, args: &[WastArg]) -> Result<()> {
         self.params.clear();
         for arg in args {
             let arg = match arg {
                 WastArg::Core(arg) => arg,
                 WastArg::Component(arg) => bail!(
                     "{}: Wasmi does not support the Wasm `component-model` but found {arg:?}",
-                    desc.pos(span)
+                    source.pos(span)
                 ),
             };
             let Some(val) = self.value(arg) else {
                 bail!(
                     "{}: encountered unsupported WastArgCore argument: {arg:?}",
-                    desc.pos(span)
+                    source.pos(span)
                 )
             };
             self.params.push(val);
