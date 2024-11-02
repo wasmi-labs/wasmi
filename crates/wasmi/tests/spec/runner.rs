@@ -225,7 +225,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             } => {
                 let id = module.name();
                 let wasm = module.encode().unwrap();
-                self.module_compilation_fails(span, id, &wasm, message);
+                self.module_compilation_fails(span, id, &wasm, message)?;
             }
             WastDirective::AssertMalformed {
                 module: QuoteWat::QuoteModule { .. },
@@ -241,7 +241,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             } => {
                 let id = module.name();
                 let wasm = module.encode().unwrap();
-                self.module_compilation_fails(span, id, &wasm, message);
+                self.module_compilation_fails(span, id, &wasm, message)?;
             }
             WastDirective::Register { span, name, module } => {
                 let module_name = module.map(|id| id.name());
@@ -323,7 +323,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             } => {
                 let id = module.id;
                 let wasm = module.encode().unwrap();
-                self.module_compilation_fails(span, id, &wasm, message);
+                self.module_compilation_fails(span, id, &wasm, message)?;
             }
             unsupported => bail!(
                 "{}: encountered unsupported Wast directive: {unsupported:?}",
@@ -357,19 +357,25 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
         id: Option<wast::token::Id>,
         wasm: &[u8],
         expected_message: &str,
-    ) {
-        let result = self.runner.compile_and_instantiate(id, wasm);
-        assert!(
-            result.is_err(),
-            "{}: succeeded to instantiate module but should have failed with: {}",
-            self.source.pos(span),
-            expected_message
-        );
+    ) -> Result<()> {
+        if self.runner.compile_and_instantiate(id, wasm).is_ok() {
+            bail!(
+                "{}: succeeded to instantiate module but should have failed with: {}",
+                self.source.pos(span),
+                expected_message
+            )
+        }
+        Ok(())
     }
 
     /// Asserts that `results` match the `expected` values.
     fn assert_results(&self, span: Span, expected: &[WastRet]) -> Result<()> {
-        assert_eq!(self.results.len(), expected.len());
+        anyhow::ensure!(
+            self.results.len() == expected.len(),
+            "number of returned values and expected values do not match: #expected = {}, #returned = {}",
+            expected.len(),
+            self.results.len(),
+        );
         for (result, expected) in self.results.iter().zip(expected) {
             self.assert_result(span, result, expected)?;
         }
