@@ -419,7 +419,12 @@ impl<'runner> DirectivesProcessor<'runner> {
 
     /// Asserts that `result` match the `expected` value.
     fn assert_result(&self, result: &Val, expected: &WastRet) -> Result<()> {
-        let WastRet::Core(expected) = expected;
+        let expected = match expected {
+            WastRet::Core(arg) => arg,
+            WastRet::Component(arg) => {
+                bail!("encountered unsupported component-model argument: {arg:?}")
+            }
+        };
         let is_equal = match (result, expected) {
             (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
             (Val::I64(result), WastRetCore::I64(expected)) => result == expected,
@@ -572,7 +577,12 @@ impl<'runner> DirectivesProcessor<'runner> {
     fn fill_params(&mut self, args: &[WastArg]) -> Result<()> {
         self.params.clear();
         for arg in args {
-            let WastArg::Core(arg) = arg;
+            let arg = match arg {
+                WastArg::Core(arg) => arg,
+                WastArg::Component(arg) => {
+                    bail!("encountered unsupported component-model argument: {arg:?}")
+                }
+            };
             let Some(val) = self.runner.value(arg) else {
                 bail!("encountered unsupported WastArgCore argument: {arg:?}")
             };

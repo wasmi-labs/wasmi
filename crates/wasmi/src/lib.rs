@@ -14,7 +14,7 @@
 //! [Wasmtime's API example](https://docs.rs/wasmtime/0.39.1/wasmtime/).
 //!
 //! ```
-//! use anyhow::{anyhow, Result};
+//! use anyhow::Result;
 //! use wasmi::*;
 //!
 //! fn main() -> Result<()> {
