@@ -275,11 +275,11 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                 .runner
                 .execute_wast_execute(self.source, exec, &mut self.results)
             {
-                Ok(results) => bail!(
+                Ok(_) => bail!(
                     "{}: expected to trap with message '{}' but succeeded with: {:?}",
                     self.source.pos(span),
                     message,
-                    results
+                    &self.results[..],
                 ),
                 Err(error) => {
                     WastRunner::assert_trap(self.source, span, error, message)?;
@@ -307,12 +307,12 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                 call,
                 message,
             } => match self.runner.invoke(self.source, call, &mut self.results) {
-                Ok(results) => {
+                Ok(_) => {
                     bail!(
                         "{}: expected to fail due to resource exhaustion '{}' but succeeded with: {:?}",
                         self.source.pos(span),
                         message,
-                        results
+                        &self.results[..],
                     )
                 }
                 Err(error) => {
@@ -330,14 +330,15 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             }
             WastDirective::AssertUnlinkable { .. } => {}
             WastDirective::AssertException { span, exec } => {
-                if let Ok(results) =
-                    self.runner
-                        .execute_wast_execute(self.source, exec, &mut self.results)
+                if self
+                    .runner
+                    .execute_wast_execute(self.source, exec, &mut self.results)
+                    .is_ok()
                 {
                     bail!(
                         "{}: expected to fail due to exception but succeeded with: {:?}",
                         self.source.pos(span),
-                        results
+                        &self.results[..]
                     )
                 }
             }
