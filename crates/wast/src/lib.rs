@@ -1,6 +1,7 @@
 use anyhow::{bail, Context as _, Result};
 use std::collections::HashMap;
 use wasmi::{
+    core::{ValType, F32, F64},
     Config,
     Engine,
     Extern,
@@ -17,7 +18,6 @@ use wasmi::{
     TableType,
     Val,
 };
-use wasmi_core::{ValType, F32, F64};
 use wast::{
     core::{AbstractHeapType, HeapType, NanPattern, WastArgCore, WastRetCore},
     lexer::Lexer,
@@ -65,7 +65,7 @@ pub struct WastRunner {
 }
 
 impl WastRunner {
-    /// Creates a new [`TestContext`] with the given [`WastSource`].
+    /// Creates a new [`WastRunner`] with the given [`RunnerConfig`].
     pub fn new(config: RunnerConfig) -> Self {
         let engine = Engine::new(&config.config);
         let linker = Linker::new(&engine);
@@ -132,7 +132,7 @@ impl WastRunner {
         Ok(())
     }
 
-    /// Compiles the Wasm module and stores it into the [`TestContext`].
+    /// Compiles, validates and instantiates the Wasm module.
     ///
     /// # Errors
     ///
@@ -204,7 +204,7 @@ impl WastRunner {
         Ok(())
     }
 
-    /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
+    /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Val`] if possible.
     fn value(&mut self, value: &WastArgCore) -> Option<Val> {
         use wasmi::{ExternRef, FuncRef};
         use wast::core::{AbstractHeapType, HeapType};
@@ -419,8 +419,11 @@ impl<'runner> DirectivesProcessor<'runner> {
 
     /// Asserts that `result` match the `expected` value.
     fn assert_result(&self, result: &Val, expected: &WastRet) -> Result<()> {
-        let WastRet::Core(expected) = expected else {
-            bail!("unexpected component-model return value: {expected:?}")
+        let expected = match expected {
+            WastRet::Core(arg) => arg,
+            WastRet::Component(arg) => {
+                bail!("encountered unsupported component-model result: {arg:?}")
+            }
         };
         let is_equal = match (result, expected) {
             (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
@@ -577,7 +580,7 @@ impl<'runner> DirectivesProcessor<'runner> {
             let arg = match arg {
                 WastArg::Core(arg) => arg,
                 WastArg::Component(arg) => {
-                    bail!("Wasmi does not support the Wasm `component-model` but found {arg:?}")
+                    bail!("encountered unsupported component-model argument: {arg:?}")
                 }
             };
             let Some(val) = self.runner.value(arg) else {
