@@ -476,8 +476,6 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             .get_export(&self.runner.store, global_name)
             .and_then(Extern::into_global)
         else {
-            let module_name = module_name.map(|name| name.to_string());
-            let global_name = global_name.to_string();
             bail!(
                 "{}: missing global exported as: {module_name:?}::{global_name}",
                 self.source.pos(span)
@@ -543,8 +541,6 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             .get_export(&self.runner.store, func_name)
             .and_then(Extern::into_func)
         else {
-            let module_name = module_name.map(|name| name.to_string());
-            let func_name = func_name.to_string();
             bail!(
                 "{}: missing func exported as: {module_name:?}::{func_name}",
                 self.source.pos(span)
