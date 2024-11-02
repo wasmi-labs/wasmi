@@ -428,7 +428,6 @@ impl<'runner> DirectivesProcessor<'runner> {
     /// - If no function identified with `func_name` can be found.
     /// - If function invokation returned an error.
     fn invoke(&mut self, invoke: wast::WastInvoke) -> Result<()> {
-        self.fill_params(&invoke.args)?;
         let module_name = invoke.module.map(|id| id.name());
         let func_name = invoke.name;
         let Some(instance) = self.runner.instance_by_name_or_last(module_name) else {
@@ -440,6 +439,7 @@ impl<'runner> DirectivesProcessor<'runner> {
         else {
             bail!("missing func exported as: {module_name:?}::{func_name}",)
         };
+        self.fill_params(&invoke.args)?;
         let len_results = func.ty(&self.runner.store).results().len();
         self.results.clear();
         self.results.resize(len_results, Val::I32(0));
