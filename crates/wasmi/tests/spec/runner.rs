@@ -300,8 +300,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                         error
                     )
                 };
-                self.runner
-                    .assert_results(self.source, span, &self.results, &expected)?;
+                self.assert_results(span, &expected)?;
             }
             WastDirective::AssertExhaustion {
                 span,
@@ -382,6 +381,71 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             self.source.pos(span),
             expected_message
         );
+    }
+
+    /// Asserts that `results` match the `expected` values.
+    fn assert_results(&self, span: Span, expected: &[WastRet]) -> Result<()> {
+        assert_eq!(self.results.len(), expected.len());
+        for (result, expected) in self.results.iter().zip(expected) {
+            self.assert_result(span, result, expected)?;
+        }
+        Ok(())
+    }
+
+    /// Asserts that `result` match the `expected` value.
+    fn assert_result(&self, span: Span, result: &Val, expected: &WastRet) -> Result<()> {
+        let WastRet::Core(expected) = expected else {
+            bail!(
+                "{}: unexpected component-model return value: {:?}",
+                self.source.pos(span),
+                expected,
+            )
+        };
+        let is_equal = match (result, expected) {
+            (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
+            (Val::I64(result), WastRetCore::I64(expected)) => result == expected,
+            (Val::F32(result), WastRetCore::F32(expected)) => match expected {
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.is_nan(),
+                NanPattern::Value(expected) => result.to_bits() == expected.bits,
+            },
+            (Val::F64(result), WastRetCore::F64(expected)) => match expected {
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.is_nan(),
+                NanPattern::Value(expected) => result.to_bits() == expected.bits,
+            },
+            (
+                Val::FuncRef(funcref),
+                WastRetCore::RefNull(Some(HeapType::Abstract {
+                    ty: AbstractHeapType::Func,
+                    ..
+                })),
+            ) => funcref.is_null(),
+            (
+                Val::ExternRef(externref),
+                WastRetCore::RefNull(Some(HeapType::Abstract {
+                    ty: AbstractHeapType::Extern,
+                    ..
+                })),
+            ) => externref.is_null(),
+            (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
+                let value = externref
+                    .data(&self.runner.store)
+                    .expect("unexpected null element")
+                    .downcast_ref::<u32>()
+                    .expect("unexpected non-u32 data");
+                value == expected
+            }
+            (Val::ExternRef(externref), WastRetCore::RefExtern(None)) => externref.is_null(),
+            _ => false,
+        };
+        if !is_equal {
+            bail!(
+                "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
+                self.source.pos(span),
+                expected,
+                result,
+            )
+        }
+        Ok(())
     }
 }
 
@@ -637,83 +701,6 @@ impl WastRunner {
                 Ok(())
             }
         }
-    }
-
-    /// Asserts that `results` match the `expected` values.
-    fn assert_results(
-        &self,
-        source: WastSource,
-        span: Span,
-        results: &[Val],
-        expected: &[WastRet],
-    ) -> Result<()> {
-        assert_eq!(results.len(), expected.len());
-        for (result, expected) in results.iter().zip(expected) {
-            self.assert_result(source, span, result, expected)?;
-        }
-        Ok(())
-    }
-
-    /// Asserts that `result` match the `expected` value.
-    fn assert_result(
-        &self,
-        source: WastSource,
-        span: Span,
-        result: &Val,
-        expected: &WastRet,
-    ) -> Result<()> {
-        let WastRet::Core(expected) = expected else {
-            bail!(
-                "{}: unexpected component-model return value: {:?}",
-                source.pos(span),
-                expected,
-            )
-        };
-        let is_equal = match (result, expected) {
-            (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
-            (Val::I64(result), WastRetCore::I64(expected)) => result == expected,
-            (Val::F32(result), WastRetCore::F32(expected)) => match expected {
-                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.is_nan(),
-                NanPattern::Value(expected) => result.to_bits() == expected.bits,
-            },
-            (Val::F64(result), WastRetCore::F64(expected)) => match expected {
-                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.is_nan(),
-                NanPattern::Value(expected) => result.to_bits() == expected.bits,
-            },
-            (
-                Val::FuncRef(funcref),
-                WastRetCore::RefNull(Some(HeapType::Abstract {
-                    ty: AbstractHeapType::Func,
-                    ..
-                })),
-            ) => funcref.is_null(),
-            (
-                Val::ExternRef(externref),
-                WastRetCore::RefNull(Some(HeapType::Abstract {
-                    ty: AbstractHeapType::Extern,
-                    ..
-                })),
-            ) => externref.is_null(),
-            (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
-                let value = externref
-                    .data(&self.store)
-                    .expect("unexpected null element")
-                    .downcast_ref::<u32>()
-                    .expect("unexpected non-u32 data");
-                value == expected
-            }
-            (Val::ExternRef(externref), WastRetCore::RefExtern(None)) => externref.is_null(),
-            _ => false,
-        };
-        if !is_equal {
-            bail!(
-                "{}: encountered mismatch in evaluation. expected {:?} but found {:?}",
-                source.pos(span),
-                expected,
-                result,
-            )
-        }
-        Ok(())
     }
 
     /// Asserts that the `error` is a trap with the expected `message`.
