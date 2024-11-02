@@ -213,8 +213,7 @@ impl<'runner> DirectivesProcessor<'runner> {
             WastDirective::AssertTrap { exec, message, .. } => {
                 match self.execute_wast_execute(exec) {
                     Ok(_) => bail!(
-                        "expected to trap with message '{}' but succeeded with: {:?}",
-                        message,
+                        "expected to trap with message '{message}' but succeeded with: {:?}",
                         &self.results[..],
                     ),
                     Err(error) => {
@@ -228,18 +227,14 @@ impl<'runner> DirectivesProcessor<'runner> {
                 ..
             } => {
                 if let Err(error) = self.execute_wast_execute(exec) {
-                    bail!(
-                        "encountered unexpected failure to execute `AssertReturn`: {}",
-                        error
-                    )
+                    bail!("encountered unexpected failure to execute `AssertReturn`: {error}",)
                 };
                 self.assert_results(&expected)?;
             }
             WastDirective::AssertExhaustion { call, message, .. } => match self.invoke(call) {
                 Ok(_) => {
                     bail!(
-                        "expected to fail due to resource exhaustion '{}' but succeeded with: {:?}",
-                        message,
+                        "expected to fail due to resource exhaustion '{message}' but succeeded with: {:?}",
                         &self.results[..],
                     )
                 }
