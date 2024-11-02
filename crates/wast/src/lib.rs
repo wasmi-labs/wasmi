@@ -187,7 +187,11 @@ impl WastRunner {
     }
 
     /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
-    fn register_instance(&mut self, name: &str, instance: Instance) -> Result<()> {
+    fn register(&mut self, name: &str, module: Option<Id>) -> Result<()> {
+        let module_name = module.map(|id| id.name());
+        let Some(instance) = self.instance_by_name_or_last(module_name) else {
+            bail!("missing instance named {module_name:?}")
+        };
         if self.instances.contains_key(name) {
             // Already registered the instance.
             return Ok(());
@@ -308,11 +312,7 @@ impl WastRunner {
                 self.module_compilation_fails(id, &wasm, message)?;
             }
             WastDirective::Register { name, module, .. } => {
-                let module_name = module.map(|id| id.name());
-                let Some(instance) = self.instance_by_name_or_last(module_name) else {
-                    bail!("missing instance named {module_name:?}")
-                };
-                self.register_instance(name, instance)?;
+                self.register(name, module)?;
             }
             WastDirective::Invoke(wast_invoke) => {
                 self.invoke(wast_invoke)?;
