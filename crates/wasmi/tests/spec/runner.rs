@@ -271,10 +271,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                 span,
                 exec,
                 message,
-            } => match self
-                .runner
-                .execute_wast_execute(self.source, exec, &mut self.results)
-            {
+            } => match self.execute_wast_execute(exec) {
                 Ok(_) => bail!(
                     "{}: expected to trap with message '{}' but succeeded with: {:?}",
                     self.source.pos(span),
@@ -290,10 +287,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                 exec,
                 results: expected,
             } => {
-                if let Err(error) =
-                    self.runner
-                        .execute_wast_execute(self.source, exec, &mut self.results)
-                {
+                if let Err(error) = self.execute_wast_execute(exec) {
                     bail!(
                         "{}: encountered unexpected failure to execute `AssertReturn`: {}",
                         self.source.pos(span),
@@ -330,11 +324,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             }
             WastDirective::AssertUnlinkable { .. } => {}
             WastDirective::AssertException { span, exec } => {
-                if self
-                    .runner
-                    .execute_wast_execute(self.source, exec, &mut self.results)
-                    .is_ok()
-                {
+                if self.execute_wast_execute(exec).is_ok() {
                     bail!(
                         "{}: expected to fail due to exception but succeeded with: {:?}",
                         self.source.pos(span),
@@ -447,6 +437,35 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             )
         }
         Ok(())
+    }
+
+    /// Processes a [`WastExecute`] directive.
+    fn execute_wast_execute(&mut self, execute: WastExecute) -> Result<()> {
+        self.results.clear();
+        match execute {
+            WastExecute::Invoke(invoke) => {
+                self.runner.invoke(self.source, invoke, &mut self.results)
+            }
+            WastExecute::Wat(Wat::Module(mut module)) => {
+                let id = module.id;
+                let wasm = module.encode().unwrap();
+                self.runner.compile_and_instantiate(id, &wasm)?;
+                Ok(())
+            }
+            WastExecute::Wat(Wat::Component(_)) => {
+                // Wasmi currently does not support the Wasm component model.
+                Ok(())
+            }
+            WastExecute::Get {
+                module,
+                global,
+                span: _,
+            } => {
+                let result = self.runner.get_global(module, global)?;
+                self.results.push(result);
+                Ok(())
+            }
+        }
     }
 }
 
@@ -670,38 +689,6 @@ impl WastRunner {
             }
             _ => return None,
         })
-    }
-
-    /// Processes a [`WastExecute`] directive.
-    fn execute_wast_execute(
-        &mut self,
-        source: WastSource,
-        execute: WastExecute,
-        results: &mut Vec<Val>,
-    ) -> Result<()> {
-        results.clear();
-        match execute {
-            WastExecute::Invoke(invoke) => self.invoke(source, invoke, results),
-            WastExecute::Wat(Wat::Module(mut module)) => {
-                let id = module.id;
-                let wasm = module.encode().unwrap();
-                self.compile_and_instantiate(id, &wasm)?;
-                Ok(())
-            }
-            WastExecute::Wat(Wat::Component(_)) => {
-                // Wasmi currently does not support the Wasm component model.
-                Ok(())
-            }
-            WastExecute::Get {
-                module,
-                global,
-                span: _,
-            } => {
-                let result = self.get_global(module, global)?;
-                results.push(result);
-                Ok(())
-            }
-        }
     }
 
     /// Asserts that the `error` is a trap with the expected `message`.
