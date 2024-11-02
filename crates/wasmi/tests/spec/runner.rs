@@ -458,13 +458,37 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             WastExecute::Get {
                 module,
                 global,
-                span: _,
+                span,
             } => {
-                let result = self.runner.get_global(module, global)?;
+                let result = self.get_global(span, module, global)?;
                 self.results.push(result);
                 Ok(())
             }
         }
+    }
+
+    /// Returns the current value of the [`Global`] identifier by the given `module_name` and `global_name`.
+    ///
+    /// # Errors
+    ///
+    /// - If no module instances can be found.
+    /// - If no global variable identifier with `global_name` can be found.
+    fn get_global(&self, span: Span, module_name: Option<Id>, global_name: &str) -> Result<Val> {
+        let module_name = module_name.map(|id| id.name());
+        let instance = self.runner.instance_by_name_or_last(module_name)?;
+        let Some(global) = instance
+            .get_export(&self.runner.store, global_name)
+            .and_then(Extern::into_global)
+        else {
+            let module_name = module_name.map(|name| name.to_string());
+            let global_name = global_name.to_string();
+            bail!(
+                "{}: missing global exported as: {module_name:?}::{global_name}",
+                self.source.pos(span)
+            )
+        };
+        let value = global.get(&self.runner.store);
+        Ok(value)
     }
 
     /// Asserts that the `error` is a trap with the expected `message`.
@@ -671,27 +695,6 @@ impl WastRunner {
             self.params.push(val);
         }
         Ok(())
-    }
-
-    /// Returns the current value of the [`Global`] identifier by the given `module_name` and `global_name`.
-    ///
-    /// # Errors
-    ///
-    /// - If no module instances can be found.
-    /// - If no global variable identifier with `global_name` can be found.
-    fn get_global(&self, module_name: Option<Id>, global_name: &str) -> Result<Val> {
-        let module_name = module_name.map(|id| id.name());
-        let instance = self.instance_by_name_or_last(module_name)?;
-        let global = instance
-            .get_export(&self.store, global_name)
-            .and_then(Extern::into_global)
-            .ok_or_else(|| {
-                let module_name = module_name.map(|name| name.to_string());
-                let global_name = global_name.to_string();
-                anyhow!("missing global exported as: {module_name:?}::{global_name}")
-            })?;
-        let value = global.get(&self.store);
-        Ok(value)
     }
 
     /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
