@@ -590,11 +590,8 @@ impl WastRunner {
     /// # Errors
     ///
     /// If there is no registered module instance with the given name.
-    fn instance_by_name(&self, name: &str) -> Result<Instance> {
-        let Some(instance) = self.instances.get(name).copied() else {
-            bail!("missing module instance with name: {name}")
-        };
-        Ok(instance)
+    fn instance_by_name(&self, name: &str) -> Option<Instance> {
+        self.instances.get(name).copied()
     }
 
     /// Loads the Wasm module instance with the given name or the last instantiated one.
@@ -604,7 +601,7 @@ impl WastRunner {
     /// If there have been no Wasm module instances registered so far.
     fn instance_by_name_or_last(&self, name: Option<&str>) -> Result<Instance> {
         let instance = match name {
-            Some(name) => self.instance_by_name(name).ok().or(self.last_instance),
+            Some(name) => self.instance_by_name(name).or(self.last_instance),
             None => self.last_instance,
         };
         let Some(instance) = instance else {
