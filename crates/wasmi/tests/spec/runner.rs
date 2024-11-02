@@ -161,7 +161,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                 | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
                 | mut module @ QuoteWat::QuoteModule { .. },
             ) => {
-                let wasm = module.encode().unwrap();
+                let wasm = module.encode()?;
                 self.module_compilation_succeeds(None, &wasm)?;
             }
             #[rustfmt::skip]
@@ -169,7 +169,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                 | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
                 | mut module @ QuoteWat::QuoteModule { .. },
             ) => {
-                let wasm = module.encode().unwrap();
+                let wasm = module.encode()?;
                 let id = module.name();
                 self.module_compilation_succeeds(id, &wasm)?;
             }
@@ -179,7 +179,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                 ..
             } => {
                 let id = module.name();
-                let wasm = module.encode().unwrap();
+                let wasm = module.encode()?;
                 self.module_compilation_fails(id, &wasm, message)?;
             }
             WastDirective::AssertMalformed {
@@ -195,7 +195,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                 ..
             } => {
                 let id = module.name();
-                let wasm = module.encode().unwrap();
+                let wasm = module.encode()?;
                 self.module_compilation_fails(id, &wasm, message)?;
             }
             WastDirective::Register { name, module, .. } => {
@@ -248,7 +248,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                 ..
             } => {
                 let id = module.id;
-                let wasm = module.encode().unwrap();
+                let wasm = module.encode()?;
                 self.module_compilation_fails(id, &wasm, message)?;
             }
             unsupported => bail!("encountered unsupported Wast directive: {unsupported:?}"),
@@ -349,7 +349,7 @@ impl<'runner> DirectivesProcessor<'runner> {
             WastExecute::Invoke(invoke) => self.invoke(invoke),
             WastExecute::Wat(Wat::Module(mut module)) => {
                 let id = module.id;
-                let wasm = module.encode().unwrap();
+                let wasm = module.encode()?;
                 self.runner.compile_and_instantiate(id, &wasm)?;
                 Ok(())
             }
