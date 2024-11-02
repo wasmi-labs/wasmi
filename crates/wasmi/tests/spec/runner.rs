@@ -206,9 +206,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                 self.runner.register_instance(name, instance)?;
             }
             WastDirective::Invoke(wast_invoke) => {
-                if let Err(error) = self.invoke(wast_invoke) {
-                    bail!("failed to invoke `.wast` directive: {}", error)
-                }
+                self.invoke(wast_invoke)?;
             }
             WastDirective::AssertTrap { exec, message, .. } => {
                 match self.execute_wast_execute(exec) {
@@ -226,9 +224,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                 results: expected,
                 ..
             } => {
-                if let Err(error) = self.execute_wast_execute(exec) {
-                    bail!("encountered unexpected failure to execute `AssertReturn`: {error}")
-                };
+                self.execute_wast_execute(exec)?;
                 self.assert_results(&expected)?;
             }
             WastDirective::AssertExhaustion { call, message, .. } => match self.invoke(call) {
@@ -264,7 +260,7 @@ impl<'runner> DirectivesProcessor<'runner> {
     ) -> Result<Instance> {
         match self.runner.compile_and_instantiate(id, wasm) {
             Ok(instance) => Ok(instance),
-            Err(error) => bail!("failed to instantiate module but should have succeeded: {error}"),
+            Err(error) => bail!("unexpectedly failed to instantiate module {id:?}: {error}"),
         }
     }
 
@@ -326,11 +322,12 @@ impl<'runner> DirectivesProcessor<'runner> {
                 })),
             ) => externref.is_null(),
             (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
-                let value = externref
-                    .data(&self.runner.store)
-                    .expect("unexpected null element")
-                    .downcast_ref::<u32>()
-                    .expect("unexpected non-u32 data");
+                let Some(value) = externref.data(&self.runner.store) else {
+                    bail!("unexpected null element: {externref:?}");
+                };
+                let Some(value) = value.downcast_ref::<u32>() else {
+                    bail!("unexpected non-`u32` externref data: {value:?}");
+                };
                 value == expected
             }
             (Val::ExternRef(externref), WastRetCore::RefExtern(None)) => externref.is_null(),
