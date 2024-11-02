@@ -65,7 +65,7 @@ pub struct WastRunner {
 }
 
 impl WastRunner {
-    /// Creates a new [`TestContext`] with the given [`WastSource`].
+    /// Creates a new [`WastRunner`] with the given [`RunnerConfig`].
     pub fn new(config: RunnerConfig) -> Self {
         let engine = Engine::new(&config.config);
         let linker = Linker::new(&engine);
@@ -132,7 +132,7 @@ impl WastRunner {
         Ok(())
     }
 
-    /// Compiles the Wasm module and stores it into the [`TestContext`].
+    /// Compiles, validates and instantiates the Wasm module.
     ///
     /// # Errors
     ///
@@ -204,7 +204,7 @@ impl WastRunner {
         Ok(())
     }
 
-    /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
+    /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Val`] if possible.
     fn value(&mut self, value: &WastArgCore) -> Option<Val> {
         use wasmi::{ExternRef, FuncRef};
         use wast::core::{AbstractHeapType, HeapType};
