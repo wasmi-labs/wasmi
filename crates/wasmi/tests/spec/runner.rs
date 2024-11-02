@@ -206,7 +206,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             ) => {
                 let wasm = module.encode().unwrap();
                 let span = module.span();
-                self.runner.module_compilation_succeeds(self.source, span, None, &wasm)?;
+                self.module_compilation_succeeds(span, None, &wasm)?;
             }
             #[rustfmt::skip]
             WastDirective::Module(
@@ -216,7 +216,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                 let wasm = module.encode().unwrap();
                 let span = module.span();
                 let id = module.name();
-                self.runner.module_compilation_succeeds(self.source, span, id, &wasm)?;
+                self.module_compilation_succeeds(span, id, &wasm)?;
             }
             WastDirective::AssertMalformed {
                 span,
@@ -225,8 +225,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             } => {
                 let id = module.name();
                 let wasm = module.encode().unwrap();
-                self.runner
-                    .module_compilation_fails(self.source, span, id, &wasm, message);
+                self.module_compilation_fails(span, id, &wasm, message);
             }
             WastDirective::AssertMalformed { .. } => {}
             #[rustfmt::skip]
@@ -239,7 +238,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             } => {
                 let id = module.name();
                 let wasm = module.encode().unwrap();
-                self.runner.module_compilation_fails(self.source, span, id, &wasm, message);
+                self.module_compilation_fails(span, id, &wasm, message);
             }
             WastDirective::Register { span, name, module } => {
                 let module_name = module.map(|id| id.name());
@@ -328,8 +327,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             } => {
                 let id = module.id;
                 let wasm = module.encode().unwrap();
-                self.runner
-                    .module_compilation_fails(self.source, span, id, &wasm, message);
+                self.module_compilation_fails(span, id, &wasm, message);
             }
             WastDirective::AssertUnlinkable { .. } => {}
             WastDirective::AssertException { span, exec } => {
@@ -350,6 +348,40 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
             ),
         };
         Ok(())
+    }
+
+    /// Asserts that a Wasm module compilation succeeds.
+    fn module_compilation_succeeds(
+        &mut self,
+        span: Span,
+        id: Option<wast::token::Id>,
+        wasm: &[u8],
+    ) -> Result<Instance> {
+        match self.runner.compile_and_instantiate(id, wasm) {
+            Ok(instance) => Ok(instance),
+            Err(error) => bail!(
+                "{}: failed to instantiate module but should have succeeded: {}",
+                self.source.pos(span),
+                error
+            ),
+        }
+    }
+
+    /// Asserts that a Wasm module compilation fails.
+    fn module_compilation_fails(
+        &mut self,
+        span: Span,
+        id: Option<wast::token::Id>,
+        wasm: &[u8],
+        expected_message: &str,
+    ) {
+        let result = self.runner.compile_and_instantiate(id, wasm);
+        assert!(
+            result.is_err(),
+            "{}: succeeded to instantiate module but should have failed with: {}",
+            self.source.pos(span),
+            expected_message
+        );
     }
 }
 
@@ -682,40 +714,6 @@ impl WastRunner {
             )
         }
         Ok(())
-    }
-
-    fn module_compilation_succeeds(
-        &mut self,
-        source: WastSource,
-        span: Span,
-        id: Option<wast::token::Id>,
-        wasm: &[u8],
-    ) -> Result<Instance> {
-        match self.compile_and_instantiate(id, wasm) {
-            Ok(instance) => Ok(instance),
-            Err(error) => bail!(
-                "{}: failed to instantiate module but should have succeeded: {}",
-                source.pos(span),
-                error
-            ),
-        }
-    }
-
-    fn module_compilation_fails(
-        &mut self,
-        source: WastSource,
-        span: Span,
-        id: Option<wast::token::Id>,
-        wasm: &[u8],
-        expected_message: &str,
-    ) {
-        let result = self.compile_and_instantiate(id, wasm);
-        assert!(
-            result.is_err(),
-            "{}: succeeded to instantiate module but should have failed with: {}",
-            source.pos(span),
-            expected_message
-        );
     }
 
     /// Asserts that the `error` is a trap with the expected `message`.
