@@ -1971,7 +1971,6 @@ dependencies = [
  "anyhow",
  "wasmi 0.38.0",
  "wast 219.0.1",
- "wat",
 ]
 
 [[package]]

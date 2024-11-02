@@ -16,6 +16,5 @@ publish = false
 
 [dependencies]
 wasmi = { workspace = true, features = ["std"] }
-wat = "1"
 wast = { version = "219.0.1", default-features = false, features = ["wasm-module"] }
 anyhow = "1.0"
