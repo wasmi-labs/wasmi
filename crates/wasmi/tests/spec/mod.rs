@@ -9,8 +9,8 @@ fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {
     if let Err(error) = runner.setup_wasm_spectest_module() {
         panic!("{path}: failed to setup Wasm spectest module: {error}");
     }
-    if let Err(error) = runner.process_directives(wast) {
-        panic!("{path}:{error}")
+    if let Err(error) = runner.process_directives(path, wast) {
+        panic!("{error:#}")
     }
 }
 

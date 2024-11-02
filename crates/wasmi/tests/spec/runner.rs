@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{bail, Context as _, Result};
 use std::collections::HashMap;
 use wasmi::{
     Config,
@@ -24,7 +24,6 @@ use wast::{
     parser::ParseBuffer,
     token::{Id, Span},
     QuoteWat,
-    Wast,
     WastArg,
     WastDirective,
     WastExecute,
@@ -578,38 +577,33 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
 
 impl WastRunner {
     /// Processes the directives of the given `wast` source by `self`.
-    pub fn process_directives(&mut self, wast: &str) -> Result<()> {
+    pub fn process_directives(&mut self, filename: &str, wast: &str) -> Result<()> {
+        let adjust_wast = |mut err: wast::Error| {
+            err.set_path(filename.as_ref());
+            err.set_text(wast);
+            err
+        };
         let mut processor = DirectivesProcessor::new(self, wast);
-        let buffer = Self::setup_parser(wast)?;
-        let wast = Self::parse_wast(&buffer)?;
-        for directive in wast.directives {
-            processor.process_directive(directive)?;
-        }
-        Ok(())
-    }
-
-    /// Prepares for parsing the `wast` source.
-    fn setup_parser(wast: &str) -> Result<ParseBuffer> {
         let mut lexer = Lexer::new(wast);
         lexer.allow_confusing_unicode(true);
-        let buffer = match ParseBuffer::new_with_lexer(lexer) {
-            Ok(buffer) => buffer,
-            Err(error) => {
-                bail!("failed to create parse buffer: {}", error)
-            }
-        };
-        Ok(buffer)
-    }
-
-    /// Parses the wast source given in the `buffer`.
-    fn parse_wast<'a>(buffer: &'a ParseBuffer<'a>) -> Result<Wast<'a>> {
-        let wast = match wast::parser::parse(buffer) {
-            Ok(wast) => wast,
-            Err(error) => {
-                bail!("failed to parse `.wast` spec test file: {}", error)
-            }
-        };
-        Ok(wast)
+        let buffer = ParseBuffer::new_with_lexer(lexer).map_err(adjust_wast)?;
+        let directives = wast::parser::parse::<wast::Wast>(&buffer)
+            .map_err(adjust_wast)?
+            .directives;
+        for directive in directives {
+            let span = directive.span();
+            processor
+                .process_directive(directive)
+                .map_err(|err| match err.downcast::<wast::Error>() {
+                    Ok(err) => adjust_wast(err).into(),
+                    Err(err) => err,
+                })
+                .with_context(|| {
+                    let (line, col) = span.linecol_in(wast);
+                    format!("failed directive on {}:{}:{}", filename, line + 1, col)
+                })?;
+        }
+        Ok(())
     }
 
     /// Compiles the Wasm module and stores it into the [`TestContext`].
