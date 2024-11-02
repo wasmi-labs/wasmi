@@ -227,7 +227,10 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                 let wasm = module.encode().unwrap();
                 self.module_compilation_fails(span, id, &wasm, message);
             }
-            WastDirective::AssertMalformed { .. } => {}
+            WastDirective::AssertMalformed {
+                module: QuoteWat::QuoteModule { .. },
+                ..
+            } => {}
             #[rustfmt::skip]
             WastDirective::AssertInvalid {
                 span,
@@ -321,16 +324,6 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
                 let id = module.id;
                 let wasm = module.encode().unwrap();
                 self.module_compilation_fails(span, id, &wasm, message);
-            }
-            WastDirective::AssertUnlinkable { .. } => {}
-            WastDirective::AssertException { span, exec } => {
-                if self.execute_wast_execute(exec).is_ok() {
-                    bail!(
-                        "{}: expected to fail due to exception but succeeded with: {:?}",
-                        self.source.pos(span),
-                        &self.results[..]
-                    )
-                }
             }
             unsupported => bail!(
                 "{}: encountered unsupported Wast directive: {unsupported:?}",
