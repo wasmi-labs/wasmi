@@ -254,8 +254,8 @@ impl WastRunner {
                 | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
                 | mut module @ QuoteWat::QuoteModule { .. },
             ) => {
-                let wasm = module.encode()?;
                 let id = module.name();
+                let wasm = module.encode()?;
                 self.module_compilation_succeeds(id, &wasm)?;
             }
             WastDirective::Register { name, module, .. } => {
