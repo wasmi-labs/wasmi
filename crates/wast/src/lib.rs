@@ -62,6 +62,10 @@ pub struct WastRunner {
     instances: HashMap<Box<str>, Instance>,
     /// The last touched module instance.
     last_instance: Option<Instance>,
+    /// A convenience buffer for intermediary function call parameters.
+    params: Vec<Val>,
+    /// A convenience buffer for intermediary results.
+    results: Vec<Val>,
 }
 
 impl WastRunner {
@@ -77,6 +81,8 @@ impl WastRunner {
             store,
             instances: HashMap::new(),
             last_instance: None,
+            params: Vec::new(),
+            results: Vec::new(),
         }
     }
 
@@ -235,7 +241,6 @@ impl WastRunner {
             err.set_text(wast);
             err
         };
-        let mut processor = DirectivesProcessor::new(self);
         let mut lexer = Lexer::new(wast);
         lexer.allow_confusing_unicode(true);
         let buffer = ParseBuffer::new_with_lexer(lexer).map_err(enhance_error)?;
@@ -244,8 +249,7 @@ impl WastRunner {
             .directives;
         for directive in directives {
             let span = directive.span();
-            processor
-                .process_directive(directive)
+            self.process_directive(directive)
                 .map_err(|err| match err.downcast::<wast::Error>() {
                     Ok(err) => enhance_error(err).into(),
                     Err(err) => err,
@@ -256,27 +260,6 @@ impl WastRunner {
                 })?;
         }
         Ok(())
-    }
-}
-
-/// A processor for Wast directives.
-struct DirectivesProcessor<'runner> {
-    /// The underlying Wast runner and context.
-    runner: &'runner mut WastRunner,
-    /// A convenience buffer for intermediary function call parameters.
-    params: Vec<Val>,
-    /// A convenience buffer for intermediary results.
-    results: Vec<Val>,
-}
-
-impl<'runner> DirectivesProcessor<'runner> {
-    /// Create a new [`DirectivesProcessor`].
-    fn new(runner: &'runner mut WastRunner) -> Self {
-        Self {
-            runner,
-            params: Vec::new(),
-            results: Vec::new(),
-        }
     }
 
     /// Processes the given `.wast` directive by `self`.
@@ -326,10 +309,10 @@ impl<'runner> DirectivesProcessor<'runner> {
             }
             WastDirective::Register { name, module, .. } => {
                 let module_name = module.map(|id| id.name());
-                let Some(instance) = self.runner.instance_by_name_or_last(module_name) else {
+                let Some(instance) = self.instance_by_name_or_last(module_name) else {
                     bail!("missing instance named {module_name:?}")
                 };
-                self.runner.register_instance(name, instance)?;
+                self.register_instance(name, instance)?;
             }
             WastDirective::Invoke(wast_invoke) => {
                 self.invoke(wast_invoke)?;
@@ -384,7 +367,7 @@ impl<'runner> DirectivesProcessor<'runner> {
         id: Option<wast::token::Id>,
         wasm: &[u8],
     ) -> Result<Instance> {
-        match self.runner.compile_and_instantiate(id, wasm) {
+        match self.compile_and_instantiate(id, wasm) {
             Ok(instance) => Ok(instance),
             Err(error) => bail!("unexpectedly failed to instantiate module {id:?}: {error}"),
         }
@@ -397,7 +380,7 @@ impl<'runner> DirectivesProcessor<'runner> {
         wasm: &[u8],
         expected_message: &str,
     ) -> Result<()> {
-        if self.runner.compile_and_instantiate(id, wasm).is_ok() {
+        if self.compile_and_instantiate(id, wasm).is_ok() {
             bail!("succeeded to instantiate module but should have failed with: {expected_message}")
         }
         Ok(())
@@ -451,7 +434,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                 })),
             ) => externref.is_null(),
             (Val::ExternRef(externref), WastRetCore::RefExtern(Some(expected))) => {
-                let Some(value) = externref.data(&self.runner.store) else {
+                let Some(value) = externref.data(&self.store) else {
                     bail!("unexpected null element: {externref:?}");
                 };
                 let Some(value) = value.downcast_ref::<u32>() else {
@@ -476,7 +459,7 @@ impl<'runner> DirectivesProcessor<'runner> {
             WastExecute::Wat(Wat::Module(mut module)) => {
                 let id = module.id;
                 let wasm = module.encode()?;
-                self.runner.compile_and_instantiate(id, &wasm)?;
+                self.compile_and_instantiate(id, &wasm)?;
                 Ok(())
             }
             WastExecute::Wat(Wat::Component(_)) => {
@@ -503,16 +486,16 @@ impl<'runner> DirectivesProcessor<'runner> {
     /// - If no global variable identifier with `global_name` can be found.
     fn get_global(&self, module_name: Option<Id>, global_name: &str) -> Result<Val> {
         let module_name = module_name.map(|id| id.name());
-        let Some(instance) = self.runner.instance_by_name_or_last(module_name) else {
+        let Some(instance) = self.instance_by_name_or_last(module_name) else {
             bail!("missing instance named {module_name:?}")
         };
         let Some(global) = instance
-            .get_export(&self.runner.store, global_name)
+            .get_export(&self.store, global_name)
             .and_then(Extern::into_global)
         else {
             bail!("missing global exported as: {module_name:?}::{global_name}")
         };
-        let value = global.get(&self.runner.store);
+        let value = global.get(&self.store);
         Ok(value)
     }
 
@@ -556,20 +539,20 @@ impl<'runner> DirectivesProcessor<'runner> {
     fn invoke(&mut self, invoke: wast::WastInvoke) -> Result<()> {
         let module_name = invoke.module.map(|id| id.name());
         let func_name = invoke.name;
-        let Some(instance) = self.runner.instance_by_name_or_last(module_name) else {
+        let Some(instance) = self.instance_by_name_or_last(module_name) else {
             bail!("missing instance named: {module_name:?}")
         };
         let Some(func) = instance
-            .get_export(&self.runner.store, func_name)
+            .get_export(&self.store, func_name)
             .and_then(Extern::into_func)
         else {
             bail!("missing func exported as: {module_name:?}::{func_name}")
         };
         self.fill_params(&invoke.args)?;
-        let len_results = func.ty(&self.runner.store).results().len();
+        let len_results = func.ty(&self.store).results().len();
         self.results.clear();
         self.results.resize(len_results, Val::I32(0));
-        func.call(&mut self.runner.store, &self.params, &mut self.results[..])?;
+        func.call(&mut self.store, &self.params, &mut self.results[..])?;
         Ok(())
     }
 
@@ -583,7 +566,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                     bail!("encountered unsupported component-model argument: {arg:?}")
                 }
             };
-            let Some(val) = self.runner.value(arg) else {
+            let Some(val) = self.value(arg) else {
                 bail!("encountered unsupported WastArgCore argument: {arg:?}")
             };
             self.params.push(val);
