@@ -578,7 +578,7 @@ impl<'runner, 'wast> DirectivesProcessor<'runner, 'wast> {
 impl WastRunner {
     /// Processes the directives of the given `wast` source by `self`.
     pub fn process_directives(&mut self, filename: &str, wast: &str) -> Result<()> {
-        let adjust_wast = |mut err: wast::Error| {
+        let enhance_error = |mut err: wast::Error| {
             err.set_path(filename.as_ref());
             err.set_text(wast);
             err
@@ -586,16 +586,16 @@ impl WastRunner {
         let mut processor = DirectivesProcessor::new(self, wast);
         let mut lexer = Lexer::new(wast);
         lexer.allow_confusing_unicode(true);
-        let buffer = ParseBuffer::new_with_lexer(lexer).map_err(adjust_wast)?;
+        let buffer = ParseBuffer::new_with_lexer(lexer).map_err(enhance_error)?;
         let directives = wast::parser::parse::<wast::Wast>(&buffer)
-            .map_err(adjust_wast)?
+            .map_err(enhance_error)?
             .directives;
         for directive in directives {
             let span = directive.span();
             processor
                 .process_directive(directive)
                 .map_err(|err| match err.downcast::<wast::Error>() {
-                    Ok(err) => adjust_wast(err).into(),
+                    Ok(err) => enhance_error(err).into(),
                     Err(err) => err,
                 })
                 .with_context(|| {
