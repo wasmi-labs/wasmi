@@ -684,7 +684,7 @@ impl WastRunner {
                 WastArg::Core(arg) => arg,
                 WastArg::Component(arg) => bail!(
                     "{}: Wasmi does not support the Wasm `component-model` but found {arg:?}",
-                    source.pos(span)
+                    source.pos(span),
                 ),
             };
             let Some(val) = self.value(arg) else {
