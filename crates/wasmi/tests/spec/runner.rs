@@ -131,6 +131,132 @@ impl WastRunner {
             .define("spectest", "print_f64_f64", print_f64_f64)?;
         Ok(())
     }
+
+    /// Compiles the Wasm module and stores it into the [`TestContext`].
+    ///
+    /// # Errors
+    ///
+    /// If creating the [`Module`] fails.
+    fn compile_and_instantiate(
+        &mut self,
+        id: Option<wast::token::Id>,
+        wasm: &[u8],
+    ) -> Result<Instance> {
+        let module_name = id.map(|id| id.name());
+        let engine = self.store.engine();
+        let module = match self.config.parsing_mode {
+            ParsingMode::Buffered => Module::new(engine, wasm)?,
+            ParsingMode::Streaming => Module::new_streaming(engine, wasm)?,
+        };
+        let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
+        let instance = instance_pre.start(&mut self.store)?;
+        if let Some(module_name) = module_name {
+            self.instances.insert(module_name.into(), instance);
+            for export in instance.exports(&self.store) {
+                self.linker
+                    .define(module_name, export.name(), export.into_extern())?;
+            }
+        }
+        self.last_instance = Some(instance);
+        Ok(instance)
+    }
+
+    /// Loads the Wasm module instance with the given name.
+    ///
+    /// # Errors
+    ///
+    /// If there is no registered module instance with the given name.
+    fn instance_by_name(&self, name: &str) -> Option<Instance> {
+        self.instances.get(name).copied()
+    }
+
+    /// Loads the Wasm module instance with the given name or the last instantiated one.
+    ///
+    /// Returns `None` if there have been no Wasm module instances registered so far.
+    fn instance_by_name_or_last(&self, name: Option<&str>) -> Option<Instance> {
+        match name {
+            Some(name) => self.instance_by_name(name).or(self.last_instance),
+            None => self.last_instance,
+        }
+    }
+
+    /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
+    fn register_instance(&mut self, name: &str, instance: Instance) -> Result<()> {
+        if self.instances.contains_key(name) {
+            // Already registered the instance.
+            return Ok(());
+        }
+        self.instances.insert(name.into(), instance);
+        for export in instance.exports(&self.store) {
+            if let Err(error) =
+                self.linker
+                    .define(name, export.name(), export.clone().into_extern())
+            {
+                let field_name = export.name();
+                let export = export.clone().into_extern();
+                bail!(
+                    "failed to define export {name}::{field_name}: \
+                    {export:?}: {error}",
+                )
+            };
+        }
+        self.last_instance = Some(instance);
+        Ok(())
+    }
+
+    /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
+    fn value(&mut self, value: &WastArgCore) -> Option<Val> {
+        use wasmi::{ExternRef, FuncRef};
+        use wast::core::{AbstractHeapType, HeapType};
+        Some(match value {
+            WastArgCore::I32(arg) => Val::I32(*arg),
+            WastArgCore::I64(arg) => Val::I64(*arg),
+            WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
+            WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
+            WastArgCore::RefNull(HeapType::Abstract {
+                ty: AbstractHeapType::Func,
+                ..
+            }) => Val::FuncRef(FuncRef::null()),
+            WastArgCore::RefNull(HeapType::Abstract {
+                ty: AbstractHeapType::Extern,
+                ..
+            }) => Val::ExternRef(ExternRef::null()),
+            WastArgCore::RefExtern(value) => {
+                Val::ExternRef(ExternRef::new(&mut self.store, *value))
+            }
+            _ => return None,
+        })
+    }
+
+    /// Processes the directives of the given `wast` source by `self`.
+    pub fn process_directives(&mut self, filename: &str, wast: &str) -> Result<()> {
+        let enhance_error = |mut err: wast::Error| {
+            err.set_path(filename.as_ref());
+            err.set_text(wast);
+            err
+        };
+        let mut processor = DirectivesProcessor::new(self);
+        let mut lexer = Lexer::new(wast);
+        lexer.allow_confusing_unicode(true);
+        let buffer = ParseBuffer::new_with_lexer(lexer).map_err(enhance_error)?;
+        let directives = wast::parser::parse::<wast::Wast>(&buffer)
+            .map_err(enhance_error)?
+            .directives;
+        for directive in directives {
+            let span = directive.span();
+            processor
+                .process_directive(directive)
+                .map_err(|err| match err.downcast::<wast::Error>() {
+                    Ok(err) => enhance_error(err).into(),
+                    Err(err) => err,
+                })
+                .with_context(|| {
+                    let (line, col) = span.linecol_in(wast);
+                    format!("failed directive on {}:{}:{}", filename, line + 1, col)
+                })?;
+        }
+        Ok(())
+    }
 }
 
 /// A processor for Wast directives.
@@ -460,133 +586,5 @@ impl<'runner> DirectivesProcessor<'runner> {
             self.params.push(val);
         }
         Ok(())
-    }
-}
-
-impl WastRunner {
-    /// Processes the directives of the given `wast` source by `self`.
-    pub fn process_directives(&mut self, filename: &str, wast: &str) -> Result<()> {
-        let enhance_error = |mut err: wast::Error| {
-            err.set_path(filename.as_ref());
-            err.set_text(wast);
-            err
-        };
-        let mut processor = DirectivesProcessor::new(self);
-        let mut lexer = Lexer::new(wast);
-        lexer.allow_confusing_unicode(true);
-        let buffer = ParseBuffer::new_with_lexer(lexer).map_err(enhance_error)?;
-        let directives = wast::parser::parse::<wast::Wast>(&buffer)
-            .map_err(enhance_error)?
-            .directives;
-        for directive in directives {
-            let span = directive.span();
-            processor
-                .process_directive(directive)
-                .map_err(|err| match err.downcast::<wast::Error>() {
-                    Ok(err) => enhance_error(err).into(),
-                    Err(err) => err,
-                })
-                .with_context(|| {
-                    let (line, col) = span.linecol_in(wast);
-                    format!("failed directive on {}:{}:{}", filename, line + 1, col)
-                })?;
-        }
-        Ok(())
-    }
-
-    /// Compiles the Wasm module and stores it into the [`TestContext`].
-    ///
-    /// # Errors
-    ///
-    /// If creating the [`Module`] fails.
-    fn compile_and_instantiate(
-        &mut self,
-        id: Option<wast::token::Id>,
-        wasm: &[u8],
-    ) -> Result<Instance> {
-        let module_name = id.map(|id| id.name());
-        let engine = self.store.engine();
-        let module = match self.config.parsing_mode {
-            ParsingMode::Buffered => Module::new(engine, wasm)?,
-            ParsingMode::Streaming => Module::new_streaming(engine, wasm)?,
-        };
-        let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
-        let instance = instance_pre.start(&mut self.store)?;
-        if let Some(module_name) = module_name {
-            self.instances.insert(module_name.into(), instance);
-            for export in instance.exports(&self.store) {
-                self.linker
-                    .define(module_name, export.name(), export.into_extern())?;
-            }
-        }
-        self.last_instance = Some(instance);
-        Ok(instance)
-    }
-
-    /// Loads the Wasm module instance with the given name.
-    ///
-    /// # Errors
-    ///
-    /// If there is no registered module instance with the given name.
-    fn instance_by_name(&self, name: &str) -> Option<Instance> {
-        self.instances.get(name).copied()
-    }
-
-    /// Loads the Wasm module instance with the given name or the last instantiated one.
-    ///
-    /// Returns `None` if there have been no Wasm module instances registered so far.
-    fn instance_by_name_or_last(&self, name: Option<&str>) -> Option<Instance> {
-        match name {
-            Some(name) => self.instance_by_name(name).or(self.last_instance),
-            None => self.last_instance,
-        }
-    }
-
-    /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
-    fn register_instance(&mut self, name: &str, instance: Instance) -> Result<()> {
-        if self.instances.contains_key(name) {
-            // Already registered the instance.
-            return Ok(());
-        }
-        self.instances.insert(name.into(), instance);
-        for export in instance.exports(&self.store) {
-            if let Err(error) =
-                self.linker
-                    .define(name, export.name(), export.clone().into_extern())
-            {
-                let field_name = export.name();
-                let export = export.clone().into_extern();
-                bail!(
-                    "failed to define export {name}::{field_name}: \
-                    {export:?}: {error}",
-                )
-            };
-        }
-        self.last_instance = Some(instance);
-        Ok(())
-    }
-
-    /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Value`] if possible.
-    fn value(&mut self, value: &WastArgCore) -> Option<Val> {
-        use wasmi::{ExternRef, FuncRef};
-        use wast::core::{AbstractHeapType, HeapType};
-        Some(match value {
-            WastArgCore::I32(arg) => Val::I32(*arg),
-            WastArgCore::I64(arg) => Val::I64(*arg),
-            WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
-            WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
-            WastArgCore::RefNull(HeapType::Abstract {
-                ty: AbstractHeapType::Func,
-                ..
-            }) => Val::FuncRef(FuncRef::null()),
-            WastArgCore::RefNull(HeapType::Abstract {
-                ty: AbstractHeapType::Extern,
-                ..
-            }) => Val::ExternRef(ExternRef::null()),
-            WastArgCore::RefExtern(value) => {
-                Val::ExternRef(ExternRef::new(&mut self.store, *value))
-            }
-            _ => return None,
-        })
     }
 }
