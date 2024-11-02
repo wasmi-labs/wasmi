@@ -201,7 +201,7 @@ impl<'runner> DirectivesProcessor<'runner> {
             WastDirective::Register { name, module, .. } => {
                 let module_name = module.map(|id| id.name());
                 let Some(instance) = self.runner.instance_by_name_or_last(module_name) else {
-                    bail!("missing instance named {module_name:?}",)
+                    bail!("missing instance named {module_name:?}")
                 };
                 self.runner.register_instance(name, instance)?;
             }
@@ -227,7 +227,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                 ..
             } => {
                 if let Err(error) = self.execute_wast_execute(exec) {
-                    bail!("encountered unexpected failure to execute `AssertReturn`: {error}",)
+                    bail!("encountered unexpected failure to execute `AssertReturn`: {error}")
                 };
                 self.assert_results(&expected)?;
             }
@@ -251,7 +251,7 @@ impl<'runner> DirectivesProcessor<'runner> {
                 let wasm = module.encode().unwrap();
                 self.module_compilation_fails(id, &wasm, message)?;
             }
-            unsupported => bail!("encountered unsupported Wast directive: {unsupported:?}",),
+            unsupported => bail!("encountered unsupported Wast directive: {unsupported:?}"),
         };
         Ok(())
     }
@@ -264,7 +264,7 @@ impl<'runner> DirectivesProcessor<'runner> {
     ) -> Result<Instance> {
         match self.runner.compile_and_instantiate(id, wasm) {
             Ok(instance) => Ok(instance),
-            Err(error) => bail!("failed to instantiate module but should have succeeded: {error}",),
+            Err(error) => bail!("failed to instantiate module but should have succeeded: {error}"),
         }
     }
 
@@ -276,7 +276,7 @@ impl<'runner> DirectivesProcessor<'runner> {
         expected_message: &str,
     ) -> Result<()> {
         if self.runner.compile_and_instantiate(id, wasm).is_ok() {
-            bail!("succeeded to instantiate module but should have failed with: {expected_message}",)
+            bail!("succeeded to instantiate module but should have failed with: {expected_message}")
         }
         Ok(())
     }
@@ -298,7 +298,7 @@ impl<'runner> DirectivesProcessor<'runner> {
     /// Asserts that `result` match the `expected` value.
     fn assert_result(&self, result: &Val, expected: &WastRet) -> Result<()> {
         let WastRet::Core(expected) = expected else {
-            bail!("unexpected component-model return value: {expected:?}",)
+            bail!("unexpected component-model return value: {expected:?}")
         };
         let is_equal = match (result, expected) {
             (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
@@ -337,7 +337,7 @@ impl<'runner> DirectivesProcessor<'runner> {
             _ => false,
         };
         if !is_equal {
-            bail!("encountered mismatch in evaluation. expected {expected:?} but found {result:?}",)
+            bail!("encountered mismatch in evaluation. expected {expected:?} but found {result:?}")
         }
         Ok(())
     }
@@ -378,13 +378,13 @@ impl<'runner> DirectivesProcessor<'runner> {
     fn get_global(&self, module_name: Option<Id>, global_name: &str) -> Result<Val> {
         let module_name = module_name.map(|id| id.name());
         let Some(instance) = self.runner.instance_by_name_or_last(module_name) else {
-            bail!("missing instance named {module_name:?}",)
+            bail!("missing instance named {module_name:?}")
         };
         let Some(global) = instance
             .get_export(&self.runner.store, global_name)
             .and_then(Extern::into_global)
         else {
-            bail!("missing global exported as: {module_name:?}::{global_name}",)
+            bail!("missing global exported as: {module_name:?}::{global_name}")
         };
         let value = global.get(&self.runner.store);
         Ok(value)
@@ -431,13 +431,13 @@ impl<'runner> DirectivesProcessor<'runner> {
         let module_name = invoke.module.map(|id| id.name());
         let func_name = invoke.name;
         let Some(instance) = self.runner.instance_by_name_or_last(module_name) else {
-            bail!("missing instance named: {module_name:?}",)
+            bail!("missing instance named: {module_name:?}")
         };
         let Some(func) = instance
             .get_export(&self.runner.store, func_name)
             .and_then(Extern::into_func)
         else {
-            bail!("missing func exported as: {module_name:?}::{func_name}",)
+            bail!("missing func exported as: {module_name:?}::{func_name}")
         };
         self.fill_params(&invoke.args)?;
         let len_results = func.ty(&self.runner.store).results().len();
@@ -454,11 +454,11 @@ impl<'runner> DirectivesProcessor<'runner> {
             let arg = match arg {
                 WastArg::Core(arg) => arg,
                 WastArg::Component(arg) => {
-                    bail!("Wasmi does not support the Wasm `component-model` but found {arg:?}",)
+                    bail!("Wasmi does not support the Wasm `component-model` but found {arg:?}")
                 }
             };
             let Some(val) = self.runner.value(arg) else {
-                bail!("encountered unsupported WastArgCore argument: {arg:?}",)
+                bail!("encountered unsupported WastArgCore argument: {arg:?}")
             };
             self.params.push(val);
         }
