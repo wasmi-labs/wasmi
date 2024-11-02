@@ -186,34 +186,6 @@ impl WastRunner {
         }
     }
 
-    /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
-    fn register(&mut self, name: &str, module: Option<Id>) -> Result<()> {
-        let module_name = module.map(|id| id.name());
-        let Some(instance) = self.instance_by_name_or_last(module_name) else {
-            bail!("missing instance named {module_name:?}")
-        };
-        if self.instances.contains_key(name) {
-            // Already registered the instance.
-            return Ok(());
-        }
-        self.instances.insert(name.into(), instance);
-        for export in instance.exports(&self.store) {
-            if let Err(error) =
-                self.linker
-                    .define(name, export.name(), export.clone().into_extern())
-            {
-                let field_name = export.name();
-                let export = export.clone().into_extern();
-                bail!(
-                    "failed to define export {name}::{field_name}: \
-                    {export:?}: {error}",
-                )
-            };
-        }
-        self.last_instance = Some(instance);
-        Ok(())
-    }
-
     /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Val`] if possible.
     fn value(&mut self, value: &WastArgCore) -> Option<Val> {
         use wasmi::{ExternRef, FuncRef};
@@ -383,6 +355,34 @@ impl WastRunner {
         if self.compile_and_instantiate(id, wasm).is_ok() {
             bail!("succeeded to instantiate module but should have failed with: {expected_message}")
         }
+        Ok(())
+    }
+
+    /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
+    fn register(&mut self, name: &str, module: Option<Id>) -> Result<()> {
+        let module_name = module.map(|id| id.name());
+        let Some(instance) = self.instance_by_name_or_last(module_name) else {
+            bail!("missing instance named {module_name:?}")
+        };
+        if self.instances.contains_key(name) {
+            // Already registered the instance.
+            return Ok(());
+        }
+        self.instances.insert(name.into(), instance);
+        for export in instance.exports(&self.store) {
+            if let Err(error) =
+                self.linker
+                    .define(name, export.name(), export.clone().into_extern())
+            {
+                let field_name = export.name();
+                let export = export.clone().into_extern();
+                bail!(
+                    "failed to define export {name}::{field_name}: \
+                    {export:?}: {error}",
+                )
+            };
+        }
+        self.last_instance = Some(instance);
         Ok(())
     }
 
