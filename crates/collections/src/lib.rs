@@ -12,8 +12,8 @@
 //! - [`Set`]: generic key-value mapping, based on either [`HashSet`] or [`BTreeSet`]
 //! - [`StringInterner`]: stores and deduplicates strings efficiently, based on either [`HashSet`] or [`BTreeSet`]
 //!
-//! [`HashSet`]: hashbrown::HashSet
-//! [`HashMap`]: hashbrown::HashMap
+//! [`HashSet`]: https://docs.rs/hashbrown/0.15.0/hashbrown/struct.HashSet.html
+//! [`HashMap`]: https://docs.rs/hashbrown/0.15.0/hashbrown/struct.HashMap.html
 //! [`BTreeSet`]: std::collections::BTreeSet
 //! [`BTreeMap`]: std::collections::BTreeMap
 
