@@ -298,6 +298,9 @@ impl WastRunner {
         Ok(())
     }
 
+    /// Instantiates `module` and makes its exports available under `name` if any.
+    ///
+    /// Also sets the `current` instance to the `module` instance.
     fn module(&mut self, name: Option<&str>, module: &Module) -> Result<()> {
         let instance = match self.linker.instantiate(&mut self.store, module) {
             Ok(pre_instance) => pre_instance.start(&mut self.store)?,
@@ -310,6 +313,9 @@ impl WastRunner {
         Ok(())
     }
 
+    /// Compiles the `wat` and eventually stores it for further processing.
+    ///
+    /// Returns the compiled Wasm module and its optional name.
     fn module_definition<'a>(
         &mut self,
         mut wat: QuoteWat<'a>,
@@ -430,6 +436,12 @@ impl WastRunner {
         }
     }
 
+    /// Queries the export named `name` for the instance named `module_name`.
+    ///
+    /// # Errors
+    ///
+    /// - If there is no instance to query exports from.
+    /// - If there is no such export available.
     fn get_export(&self, module_name: Option<Id>, name: &str) -> Result<Extern> {
         let export = match module_name {
             Some(module_name) => self.linker.get(&self.store, module_name.name(), name),
