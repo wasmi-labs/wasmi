@@ -510,7 +510,7 @@ impl WastRunner {
     /// - If no module instances can be found.
     /// - If no function identified with `func_name` can be found.
     /// - If function invokation returned an error.
-    /// 
+    ///
     /// [`Func`]: wasmi::Func
     fn invoke(&mut self, invoke: wast::WastInvoke) -> Result<()> {
         let export = self.get_export(invoke.module, invoke.name)?;
