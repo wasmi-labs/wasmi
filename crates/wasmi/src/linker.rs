@@ -15,6 +15,7 @@ use crate::{
     Func,
     FuncType,
     GlobalType,
+    Instance,
     InstancePre,
     IntoFunc,
     MemoryType,
@@ -511,6 +512,35 @@ impl<T> Linker<T> {
             }
         }
         self.inner.get_definition(module, name)
+    }
+
+    /// Convenience wrapper to define an entire [`Instance`]` in this [`Linker`].
+    ///
+    /// This is a convenience wrapper around [`Linker::define`] which defines all exports of
+    /// the `instance` for `self`. The module name for each export is `module_name` and the
+    /// field name for each export is the name in the `instance` itself.
+    ///
+    /// # Errors
+    ///
+    /// - If any item is re-defined in `self` (for example the same `module_name` was already defined).
+    /// - If `instance` comes from a different [`Store`] than this [`Linker`] originally was created with.
+    ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `store` are not the same.
+    pub fn instance(
+        &mut self,
+        mut store: impl AsContextMut<Data = T>,
+        module_name: &str,
+        instance: Instance,
+    ) -> Result<&mut Self, Error> {
+        let mut store = store.as_context_mut();
+        for export in instance.exports(&mut store) {
+            let key = self.inner.new_import_key(module_name, export.name());
+            let def = Definition::Extern(export.into_extern());
+            self.inner.insert(key, def)?;
+        }
+        Ok(self)
     }
 
     /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
