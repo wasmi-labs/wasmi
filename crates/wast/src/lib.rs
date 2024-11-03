@@ -61,7 +61,7 @@ pub struct WastRunner {
     /// The list of all instantiated modules.
     instances: HashMap<Box<str>, Instance>,
     /// The last touched module instance.
-    last_instance: Option<Instance>,
+    current: Option<Instance>,
     /// A convenience buffer for intermediary function call parameters.
     params: Vec<Val>,
     /// A convenience buffer for intermediary results.
@@ -80,7 +80,7 @@ impl WastRunner {
             linker,
             store,
             instances: HashMap::new(),
-            last_instance: None,
+            current: None,
             params: Vec::new(),
             results: Vec::new(),
         }
@@ -163,7 +163,7 @@ impl WastRunner {
                     .define(module_name, export.name(), export.into_extern())?;
             }
         }
-        self.last_instance = Some(instance);
+        self.current = Some(instance);
         Ok(instance)
     }
 
@@ -181,8 +181,8 @@ impl WastRunner {
     /// Returns `None` if there have been no Wasm module instances registered so far.
     fn instance_by_name_or_last(&self, name: Option<&str>) -> Option<Instance> {
         match name {
-            Some(name) => self.instance_by_name(name).or(self.last_instance),
-            None => self.last_instance,
+            Some(name) => self.instance_by_name(name).or(self.current),
+            None => self.current,
         }
     }
 
@@ -382,7 +382,7 @@ impl WastRunner {
                 )
             };
         }
-        self.last_instance = Some(instance);
+        self.current = Some(instance);
         Ok(())
     }
 
