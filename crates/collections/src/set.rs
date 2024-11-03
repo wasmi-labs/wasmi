@@ -46,7 +46,7 @@ mod detail {
 ///
 /// Provides an API compatible with both [`HashSet`] and [`BTreeSet`].
 ///
-/// [`HashSet`]: hashbrown::HashSet
+/// [`HashSet`]: https://docs.rs/hashbrown/0.15.0/hashbrown/struct.HashSet.html
 /// [`BTreeSet`]: std::collections::BTreeSet
 #[derive(Debug, Clone)]
 pub struct Set<T> {
