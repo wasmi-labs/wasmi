@@ -216,11 +216,13 @@ jobs:
         with:
           # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
           toolchain: nightly-2024-10-18
-      - name: Set up Rust cache
+      - name: Cache
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
-            ${{ github.workspace }}/fuzz/corpus
+            ${{ github.workspace }}/fuzz/corpus/${{ matrix.fuzz_target }}
+            ${{ github.workspace }}/target
+          prefix-key: fuzz-${{ matrix.fuzz_target }}
       - name: Install `cargo-fuzz`
         run: |
           # Note: We use `|| true` because cargo install returns an error
