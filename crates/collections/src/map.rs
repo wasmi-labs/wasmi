@@ -50,7 +50,7 @@ mod detail {
 ///
 /// Provides an API compatible with both [`HashMap`] and [`BTreeMap`].
 ///
-/// [`HashMap`]: hashbrown::HashMap
+/// [`HashMap`]: https://docs.rs/hashbrown/0.15.0/hashbrown/struct.HashMap.html
 /// [`BTreeMap`]: std::collections::BTreeMap
 #[derive(Debug, Clone)]
 pub struct Map<K, V> {
