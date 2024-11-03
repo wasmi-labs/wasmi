@@ -5,7 +5,6 @@ use wasmi::{
     Config,
     Engine,
     Extern,
-    Func,
     Global,
     Instance,
     Linker,
@@ -99,42 +98,41 @@ impl WastRunner {
         let global_i64 = Global::new(&mut *store, Val::I64(666), Mutability::Const);
         let global_f32 = Global::new(&mut *store, Val::F32(666.0.into()), Mutability::Const);
         let global_f64 = Global::new(&mut *store, Val::F64(666.0.into()), Mutability::Const);
-        let print = Func::wrap(&mut *store, || {
-            println!("print");
-        });
-        let print_i32 = Func::wrap(&mut *store, |value: i32| {
-            println!("print: {value}");
-        });
-        let print_i64 = Func::wrap(&mut *store, |value: i64| {
-            println!("print: {value}");
-        });
-        let print_f32 = Func::wrap(&mut *store, |value: F32| {
-            println!("print: {value:?}");
-        });
-        let print_f64 = Func::wrap(&mut *store, |value: F64| {
-            println!("print: {value:?}");
-        });
-        let print_i32_f32 = Func::wrap(&mut *store, |v0: i32, v1: F32| {
-            println!("print: {v0:?} {v1:?}");
-        });
-        let print_f64_f64 = Func::wrap(&mut *store, |v0: F64, v1: F64| {
-            println!("print: {v0:?} {v1:?}");
-        });
+
         self.linker.define("spectest", "memory", default_memory)?;
         self.linker.define("spectest", "table", default_table)?;
         self.linker.define("spectest", "global_i32", global_i32)?;
         self.linker.define("spectest", "global_i64", global_i64)?;
         self.linker.define("spectest", "global_f32", global_f32)?;
         self.linker.define("spectest", "global_f64", global_f64)?;
-        self.linker.define("spectest", "print", print)?;
-        self.linker.define("spectest", "print_i32", print_i32)?;
-        self.linker.define("spectest", "print_i64", print_i64)?;
-        self.linker.define("spectest", "print_f32", print_f32)?;
-        self.linker.define("spectest", "print_f64", print_f64)?;
+
+        self.linker.func_wrap("spectest", "print", || {
+            println!("print");
+        })?;
         self.linker
-            .define("spectest", "print_i32_f32", print_i32_f32)?;
+            .func_wrap("spectest", "print_i32", |value: i32| {
+                println!("print: {value}");
+            })?;
         self.linker
-            .define("spectest", "print_f64_f64", print_f64_f64)?;
+            .func_wrap("spectest", "print_i64", |value: i64| {
+                println!("print: {value}");
+            })?;
+        self.linker
+            .func_wrap("spectest", "print_f32", |value: F32| {
+                println!("print: {value:?}");
+            })?;
+        self.linker
+            .func_wrap("spectest", "print_f64", |value: F64| {
+                println!("print: {value:?}");
+            })?;
+        self.linker
+            .func_wrap("spectest", "print_i32_f32", |v0: i32, v1: F32| {
+                println!("print: {v0:?} {v1:?}");
+            })?;
+        self.linker
+            .func_wrap("spectest", "print_f64_f64", |v0: F64, v1: F64| {
+                println!("print: {v0:?} {v1:?}");
+            })?;
         Ok(())
     }
 
