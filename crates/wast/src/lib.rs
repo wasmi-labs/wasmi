@@ -460,10 +460,6 @@ impl WastRunner {
                 self.compile_and_instantiate(id, &wasm)?;
                 Ok(())
             }
-            WastExecute::Wat(Wat::Component(_)) => {
-                // Wasmi currently does not support the Wasm component model.
-                Ok(())
-            }
             WastExecute::Get {
                 module,
                 global,
@@ -473,6 +469,7 @@ impl WastRunner {
                 self.results.push(result);
                 Ok(())
             }
+            _ => bail!("encountered unsupported execution directive: {execute:?}"),
         }
     }
 
