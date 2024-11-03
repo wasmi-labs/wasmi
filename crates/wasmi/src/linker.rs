@@ -380,6 +380,14 @@ impl<T> Linker<T> {
         &self.engine
     }
 
+    /// Configures whether this [`Linker`] allows to shadow previous definitions with the same name.
+    ///
+    /// Disabled by default.
+    pub fn allow_shadowing(&mut self, allow: bool) -> &mut Self {
+        self.inner.allow_shadowing(allow);
+        self
+    }
+
     /// Ensures that the `name` in `module` is undefined in the shared definitions.
     ///
     /// Returns `Ok` if no shared definition exists.
@@ -808,6 +816,8 @@ pub struct LinkerInner<T> {
     ///
     /// [`HashMap`]: std::collections::HashMap
     definitions: BTreeMap<ImportKey, Definition<T>>,
+    /// True if this linker allows to shadow previous definitions.
+    allow_shadowing: bool,
 }
 
 impl<T> Default for LinkerInner<T> {
@@ -815,6 +825,7 @@ impl<T> Default for LinkerInner<T> {
         Self {
             strings: StringInterner::default(),
             definitions: BTreeMap::default(),
+            allow_shadowing: false,
         }
     }
 }
@@ -824,11 +835,19 @@ impl<T> Clone for LinkerInner<T> {
         Self {
             strings: self.strings.clone(),
             definitions: self.definitions.clone(),
+            allow_shadowing: self.allow_shadowing,
         }
     }
 }
 
 impl<T> LinkerInner<T> {
+    /// Configures whether this [`LinkerInner`] allows to shadow previous definitions with the same name.
+    ///
+    /// Disabled by default.
+    pub fn allow_shadowing(&mut self, allow: bool) {
+        self.allow_shadowing = allow;
+    }
+
     /// Returns the import key for the module name and item name.
     fn new_import_key(&mut self, module: &str, name: &str) -> ImportKey {
         ImportKey::new(
@@ -861,6 +880,9 @@ impl<T> LinkerInner<T> {
     /// If there already is a definition for the import key for this [`Linker`].
     fn insert(&mut self, key: ImportKey, item: Definition<T>) -> Result<(), LinkerError> {
         match self.definitions.entry(key) {
+            Entry::Occupied(mut entry) if self.allow_shadowing => {
+                entry.insert(item);
+            }
             Entry::Occupied(_) => {
                 let (module_name, field_name) = self
                     .resolve_import_key(key)
