@@ -534,6 +534,10 @@ impl<T> Linker<T> {
         module_name: &str,
         instance: Instance,
     ) -> Result<&mut Self, Error> {
+        assert!(Engine::same(
+            store.as_context().store.engine(),
+            self.engine()
+        ));
         let mut store = store.as_context_mut();
         for export in instance.exports(&mut store) {
             let key = self.inner.new_import_key(module_name, export.name());
