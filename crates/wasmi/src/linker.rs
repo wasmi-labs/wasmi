@@ -28,7 +28,6 @@ use core::{
     marker::PhantomData,
 };
 use std::{
-    boxed::Box,
     collections::{btree_map::Entry, BTreeMap},
     sync::Arc,
     vec::Vec,
