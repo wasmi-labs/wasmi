@@ -4,7 +4,7 @@ use wasmi_wast::{ParsingMode, RunnerConfig, WastRunner};
 /// Runs the Wasm test spec identified by the given name.
 fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {
     let mut runner = WastRunner::new(config);
-    if let Err(error) = runner.setup_wasm_spectest_module() {
+    if let Err(error) = runner.register_spectest() {
         panic!("{path}: failed to setup Wasm spectest module: {error}");
     }
     if let Err(error) = runner.process_directives(path, wast) {
