@@ -256,7 +256,7 @@ impl ImportKey {
 /// A [`Linker`] definition.
 #[derive(Debug)]
 enum Definition<T> {
-    /// An external item from an [`Instance`](crate::Instance).
+    /// An external item from an [`Instance`].
     Extern(Extern),
     /// A [`Linker`] internal host function.
     HostFunc(HostFuncTrampolineEntity<T>),
@@ -531,7 +531,8 @@ impl<T> Linker<T> {
     /// # Errors
     ///
     /// - If any item is re-defined in `self` (for example the same `module_name` was already defined).
-    /// - If `instance` comes from a different [`Store`] than this [`Linker`] originally was created with.
+    /// - If `instance` comes from a different [`Store`](crate::Store) than this [`Linker`] originally
+    ///   was created with.
     ///
     /// # Panics
     ///
