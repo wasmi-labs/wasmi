@@ -28,6 +28,7 @@ use core::{
     marker::PhantomData,
 };
 use std::{
+    boxed::Box,
     collections::{btree_map::Entry, BTreeMap},
     sync::Arc,
     vec::Vec,
@@ -547,6 +548,19 @@ impl<T> Linker<T> {
         Ok(self)
     }
 
+    /// Aliases one module's name as another.
+    ///
+    /// This method will alias all currently defined under `module` to also be
+    /// defined under the name `as_module` too.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any shadowing violations happen while defining new
+    /// items.
+    pub fn alias_module(&mut self, module: &str, as_module: &str) -> Result<(), Error> {
+        self.inner.alias_module(module, as_module)
+    }
+
     /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
     ///
     /// # Panics
@@ -857,6 +871,28 @@ impl<T> LinkerInner<T> {
             Entry::Vacant(v) => {
                 v.insert(item);
             }
+        }
+        Ok(())
+    }
+
+    /// Aliases one module's name as another.
+    ///
+    /// Read more about this method in [`Linker::alias_module`].
+    pub fn alias_module(&mut self, module: &str, as_module: &str) -> Result<(), Error> {
+        let module = self
+            .strings
+            .get_or_intern_with_hint(module, InternHint::LikelyExists);
+        let as_module = self
+            .strings
+            .get_or_intern_with_hint(as_module, InternHint::LikelyNew);
+        let items = self
+            .definitions
+            .iter()
+            .filter(|(key, _def)| key.module() == module)
+            .map(|(key, def)| (key.name(), def.clone()))
+            .collect::<Box<[_]>>();
+        for (name, item) in items {
+            self.insert(ImportKey::new(as_module, name), item)?;
         }
         Ok(())
     }
