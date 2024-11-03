@@ -57,8 +57,8 @@ pub struct WastRunner {
     linker: Linker<()>,
     /// The store to hold all runtime data during the test.
     store: Store<()>,
-    /// The list of all instantiated modules.
-    instances: HashMap<Box<str>, Instance>,
+    /// All named module definitions that can be instantiated.
+    modules: HashMap<Box<str>, Module>,
     /// The last touched module instance.
     current: Option<Instance>,
     /// A convenience buffer for intermediary function call parameters.
@@ -71,14 +71,15 @@ impl WastRunner {
     /// Creates a new [`WastRunner`] with the given [`RunnerConfig`].
     pub fn new(config: RunnerConfig) -> Self {
         let engine = Engine::new(&config.config);
-        let linker = Linker::new(&engine);
+        let mut linker = Linker::new(&engine);
+        linker.allow_shadowing(true);
         let mut store = Store::new(&engine, ());
         _ = store.set_fuel(1_000_000_000);
         WastRunner {
             config,
             linker,
             store,
-            instances: HashMap::new(),
+            modules: HashMap::new(),
             current: None,
             params: Vec::new(),
             results: Vec::new(),
@@ -134,54 +135,6 @@ impl WastRunner {
                 println!("print: {v0:?} {v1:?}");
             })?;
         Ok(())
-    }
-
-    /// Compiles, validates and instantiates the Wasm module.
-    ///
-    /// # Errors
-    ///
-    /// If creating the [`Module`] fails.
-    fn compile_and_instantiate(
-        &mut self,
-        id: Option<wast::token::Id>,
-        wasm: &[u8],
-    ) -> Result<Instance> {
-        let module_name = id.map(|id| id.name());
-        let engine = self.store.engine();
-        let module = match self.config.parsing_mode {
-            ParsingMode::Buffered => Module::new(engine, wasm)?,
-            ParsingMode::Streaming => Module::new_streaming(engine, wasm)?,
-        };
-        let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
-        let instance = instance_pre.start(&mut self.store)?;
-        if let Some(module_name) = module_name {
-            self.instances.insert(module_name.into(), instance);
-            for export in instance.exports(&self.store) {
-                self.linker
-                    .define(module_name, export.name(), export.into_extern())?;
-            }
-        }
-        self.current = Some(instance);
-        Ok(instance)
-    }
-
-    /// Loads the Wasm module instance with the given name.
-    ///
-    /// # Errors
-    ///
-    /// If there is no registered module instance with the given name.
-    fn instance_by_name(&self, name: &str) -> Option<Instance> {
-        self.instances.get(name).copied()
-    }
-
-    /// Loads the Wasm module instance with the given name or the last instantiated one.
-    ///
-    /// Returns `None` if there have been no Wasm module instances registered so far.
-    fn instance_by_name_or_last(&self, name: Option<&str>) -> Option<Instance> {
-        match name {
-            Some(name) => self.instance_by_name(name).or(self.current),
-            None => self.current,
-        }
     }
 
     /// Converts the [`WastArgCore`][`wast::core::WastArgCore`] into a [`wasmi::Val`] if possible.
@@ -240,21 +193,32 @@ impl WastRunner {
     fn process_directive(&mut self, directive: WastDirective) -> Result<()> {
         match directive {
             #[rustfmt::skip]
-            WastDirective::ModuleDefinition(
-                | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
-                | mut module @ QuoteWat::QuoteModule { .. },
+            WastDirective::Module(
+                | module @ QuoteWat::Wat(wast::Wat::Module(_))
+                | module @ QuoteWat::QuoteModule { .. },
             ) => {
-                let wasm = module.encode()?;
-                self.module_compilation_succeeds(None, &wasm)?;
+                let (name, module) = self.module_definition(module)?;
+                self.module(name, &module)?;
             }
             #[rustfmt::skip]
-            WastDirective::Module(
-                | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
-                | mut module @ QuoteWat::QuoteModule { .. },
+            WastDirective::ModuleDefinition(
+                | module @ QuoteWat::Wat(wast::Wat::Module(_))
+                | module @ QuoteWat::QuoteModule { .. },
             ) => {
-                let id = module.name();
-                let wasm = module.encode()?;
-                self.module_compilation_succeeds(id, &wasm)?;
+                let (name, module) = self.module_definition(module)?;
+                if let Some(name) = name {
+                    self.modules.insert(name.into(), module);
+                }
+            }
+            WastDirective::ModuleInstance {
+                span: _,
+                instance,
+                module,
+            } => {
+                let Some(module) = module.and_then(|n| self.modules.get(n.name())).cloned() else {
+                    bail!("missing module named {module:?}")
+                };
+                self.module(instance.map(|n| n.name()), &module)?;
             }
             WastDirective::Register { name, module, .. } => {
                 self.register(name, module)?;
@@ -262,38 +226,52 @@ impl WastRunner {
             WastDirective::Invoke(wast_invoke) => {
                 self.invoke(wast_invoke)?;
             }
-            WastDirective::AssertMalformed {
-                module: mut module @ QuoteWat::Wat(wast::Wat::Module(_)),
+            #[rustfmt::skip]
+            WastDirective::AssertInvalid {
+                module:
+                    | module @ QuoteWat::Wat(wast::Wat::Module(_))
+                    | module @ QuoteWat::QuoteModule { .. },
                 message,
                 ..
             } => {
-                let id = module.name();
-                let wasm = module.encode()?;
-                self.module_compilation_fails(id, &wasm, message)?;
+                if self.module_definition(module).is_ok() {
+                    bail!("module succeeded to compile and validate but should have failed with: {message}");
+                }
+            },
+            WastDirective::AssertMalformed {
+                module: module @ QuoteWat::Wat(wast::Wat::Module(_)),
+                message,
+                span: _,
+            } => {
+                if self.module_definition(module).is_ok() {
+                    bail!("module succeeded to compile and validate but should have failed with: {message}");
+                }
             }
             WastDirective::AssertMalformed {
                 module: QuoteWat::QuoteModule { .. },
                 ..
             } => {}
-            #[rustfmt::skip]
-            WastDirective::AssertInvalid {
-                module:
-                    | mut module @ QuoteWat::Wat(wast::Wat::Module(_))
-                    | mut module @ QuoteWat::QuoteModule { .. },
+            WastDirective::AssertUnlinkable {
+                module: module @ Wat::Module(_),
                 message,
                 ..
             } => {
-                let id = module.name();
-                let wasm = module.encode()?;
-                self.module_compilation_fails(id, &wasm, message)?;
+                let (name, module) = self.module_definition(QuoteWat::Wat(module))?;
+                if self.module(name, &module).is_ok() {
+                    bail!("module succeeded to link but should have failed with: {message}")
+                }
             }
             WastDirective::AssertTrap { exec, message, .. } => {
                 match self.execute_wast_execute(exec) {
-                    Ok(_) => bail!(
-                        "expected to trap with message '{message}' but succeeded with: {:?}",
-                        &self.results[..],
-                    ),
+                    Ok(_) => {
+                        println!("LOL 1");
+                        bail!(
+                            "expected to trap with message '{message}' but succeeded with: {:?}",
+                            &self.results[..],
+                        )
+                    }
                     Err(error) => {
+                        println!("LOL 2");
                         self.assert_trap(error, message)?;
                     }
                 }
@@ -317,70 +295,51 @@ impl WastRunner {
                     self.assert_trap(error, message)?;
                 }
             },
-            WastDirective::AssertUnlinkable {
-                module: Wat::Module(mut module),
-                message,
-                ..
-            } => {
-                let id = module.id;
-                let wasm = module.encode()?;
-                self.module_compilation_fails(id, &wasm, message)?;
-            }
             unsupported => bail!("encountered unsupported Wast directive: {unsupported:?}"),
         };
         Ok(())
     }
 
-    /// Asserts that a Wasm module compilation succeeds.
-    fn module_compilation_succeeds(
-        &mut self,
-        id: Option<wast::token::Id>,
-        wasm: &[u8],
-    ) -> Result<Instance> {
-        match self.compile_and_instantiate(id, wasm) {
-            Ok(instance) => Ok(instance),
-            Err(error) => bail!("unexpectedly failed to instantiate module {id:?}: {error}"),
+    fn module(&mut self, name: Option<&str>, module: &Module) -> Result<()> {
+        let instance = match self.linker.instantiate(&mut self.store, module) {
+            Ok(pre_instance) => pre_instance.start(&mut self.store)?,
+            Err(error) => bail!("failed to instantiate module: {error}"),
+        };
+        if let Some(name) = name {
+            self.linker.instance(&mut self.store, name, instance)?;
         }
-    }
-
-    /// Asserts that a Wasm module compilation fails.
-    fn module_compilation_fails(
-        &mut self,
-        id: Option<wast::token::Id>,
-        wasm: &[u8],
-        expected_message: &str,
-    ) -> Result<()> {
-        if self.compile_and_instantiate(id, wasm).is_ok() {
-            bail!("succeeded to instantiate module but should have failed with: {expected_message}")
-        }
+        self.current = Some(instance);
         Ok(())
     }
 
+    fn module_definition<'a>(
+        &mut self,
+        mut wat: QuoteWat<'a>,
+    ) -> Result<(Option<&'a str>, Module)> {
+        let name = wat.name();
+        let bytes = wat.encode()?;
+        let engine = self.store.engine();
+        let module = match self.config.parsing_mode {
+            ParsingMode::Buffered => Module::new(engine, &bytes),
+            ParsingMode::Streaming => Module::new_streaming(engine, &mut &bytes[..]),
+        }?;
+        Ok((name.map(|n| n.name()), module))
+    }
+
     /// Registers the given [`Instance`] with the given `name` and sets it as the last instance.
-    fn register(&mut self, name: &str, module: Option<Id>) -> Result<()> {
-        let module_name = module.map(|id| id.name());
-        let Some(instance) = self.instance_by_name_or_last(module_name) else {
-            bail!("missing instance named {module_name:?}")
-        };
-        if self.instances.contains_key(name) {
-            // Already registered the instance.
-            return Ok(());
+    fn register(&mut self, as_name: &str, name: Option<Id>) -> Result<()> {
+        match name {
+            Some(name) => {
+                let name = name.name();
+                self.linker.alias_module(name, as_name)?;
+            }
+            None => {
+                let Some(current) = self.current else {
+                    bail!("no previous instance")
+                };
+                self.linker.instance(&mut self.store, as_name, current)?;
+            }
         }
-        self.instances.insert(name.into(), instance);
-        for export in instance.exports(&self.store) {
-            if let Err(error) =
-                self.linker
-                    .define(name, export.name(), export.clone().into_extern())
-            {
-                let field_name = export.name();
-                let export = export.clone().into_extern();
-                bail!(
-                    "failed to define export {name}::{field_name}: \
-                    {export:?}: {error}",
-                )
-            };
-        }
-        self.current = Some(instance);
         Ok(())
     }
 
@@ -454,10 +413,10 @@ impl WastRunner {
         self.results.clear();
         match execute {
             WastExecute::Invoke(invoke) => self.invoke(invoke),
-            WastExecute::Wat(Wat::Module(mut module)) => {
-                let id = module.id;
-                let wasm = module.encode()?;
-                self.compile_and_instantiate(id, &wasm)?;
+            WastExecute::Wat(Wat::Module(module)) => {
+                let (_name, module) = self.module_definition(QuoteWat::Wat(Wat::Module(module)))?;
+                let instance_pre = self.linker.instantiate(&mut self.store, &module)?;
+                instance_pre.start(&mut self.store)?;
                 Ok(())
             }
             WastExecute::Get {
@@ -473,6 +432,22 @@ impl WastRunner {
         }
     }
 
+    fn get_export(&self, module_name: Option<Id>, name: &str) -> Result<Extern> {
+        let export = match module_name {
+            Some(module_name) => self.linker.get(&self.store, module_name.name(), name),
+            None => {
+                let Some(current) = self.current else {
+                    bail!("missing previous instance to get export at: {module_name:?}::{name}")
+                };
+                current.get_export(&self.store, name)
+            }
+        };
+        match export {
+            Some(export) => Ok(export),
+            None => bail!("missing export at {module_name:?}::{name}"),
+        }
+    }
+
     /// Returns the current value of the [`Global`] identifier by the given `module_name` and `global_name`.
     ///
     /// # Errors
@@ -480,15 +455,9 @@ impl WastRunner {
     /// - If no module instances can be found.
     /// - If no global variable identifier with `global_name` can be found.
     fn get_global(&self, module_name: Option<Id>, global_name: &str) -> Result<Val> {
-        let module_name = module_name.map(|id| id.name());
-        let Some(instance) = self.instance_by_name_or_last(module_name) else {
-            bail!("missing instance named {module_name:?}")
-        };
-        let Some(global) = instance
-            .get_export(&self.store, global_name)
-            .and_then(Extern::into_global)
-        else {
-            bail!("missing global exported as: {module_name:?}::{global_name}")
+        let export = self.get_export(module_name, global_name)?;
+        let Some(global) = export.into_global() else {
+            bail!("missing global export at {module_name:?}::{global_name}")
         };
         let value = global.get(&self.store);
         Ok(value)
@@ -532,16 +501,9 @@ impl WastRunner {
     /// - If no function identified with `func_name` can be found.
     /// - If function invokation returned an error.
     fn invoke(&mut self, invoke: wast::WastInvoke) -> Result<()> {
-        let module_name = invoke.module.map(|id| id.name());
-        let func_name = invoke.name;
-        let Some(instance) = self.instance_by_name_or_last(module_name) else {
-            bail!("missing instance named: {module_name:?}")
-        };
-        let Some(func) = instance
-            .get_export(&self.store, func_name)
-            .and_then(Extern::into_func)
-        else {
-            bail!("missing func exported as: {module_name:?}::{func_name}")
+        let export = self.get_export(invoke.module, invoke.name)?;
+        let Some(func) = export.into_func() else {
+            bail!("missing function at {:?}::{}", invoke.module, invoke.name)
         };
         self.fill_params(&invoke.args)?;
         let len_results = func.ty(&self.store).results().len();
