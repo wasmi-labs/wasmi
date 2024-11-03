@@ -264,14 +264,12 @@ impl WastRunner {
             WastDirective::AssertTrap { exec, message, .. } => {
                 match self.execute_wast_execute(exec) {
                     Ok(_) => {
-                        println!("LOL 1");
                         bail!(
                             "expected to trap with message '{message}' but succeeded with: {:?}",
                             &self.results[..],
                         )
                     }
                     Err(error) => {
-                        println!("LOL 2");
                         self.assert_trap(error, message)?;
                     }
                 }
