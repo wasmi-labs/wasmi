@@ -28,7 +28,6 @@ use core::{
     marker::PhantomData,
 };
 use std::{
-    boxed::Box,
     collections::{btree_map::Entry, BTreeMap},
     sync::Arc,
     vec::Vec,
@@ -912,7 +911,7 @@ impl<T> LinkerInner<T> {
             .iter()
             .filter(|(key, _def)| key.module() == module)
             .map(|(key, def)| (key.name(), def.clone()))
-            .collect::<Box<[_]>>();
+            .collect::<Vec<_>>();
         for (name, item) in items {
             self.insert(ImportKey::new(as_module, name), item)?;
         }
