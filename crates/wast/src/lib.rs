@@ -363,10 +363,11 @@ impl WastRunner {
 
     /// Asserts that `result` match the `expected` value.
     fn assert_result(&self, result: &Val, expected: &WastRet) -> Result<()> {
+        #[allow(unreachable_patterns)] // TODO: remove once `wast v220` is used
         let expected = match expected {
             WastRet::Core(arg) => arg,
-            WastRet::Component(arg) => {
-                bail!("encountered unsupported component-model result: {arg:?}")
+            _ => {
+                bail!("encountered unsupported Wast result: {expected:?}")
             }
         };
         let is_equal = match (result, expected) {
@@ -529,10 +530,11 @@ impl WastRunner {
     fn fill_params(&mut self, args: &[WastArg]) -> Result<()> {
         self.params.clear();
         for arg in args {
+            #[allow(unreachable_patterns)] // TODO: remove once `wast v220` is used
             let arg = match arg {
                 WastArg::Core(arg) => arg,
-                WastArg::Component(arg) => {
-                    bail!("encountered unsupported component-model argument: {arg:?}")
+                _ => {
+                    bail!("encountered unsupported Wast argument: {arg:?}")
                 }
             };
             let Some(val) = self.value(arg) else {
