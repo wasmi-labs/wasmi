@@ -8,6 +8,54 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.39.0`] - 2024-11-04
+
+### Added
+
+- Add new `Linker` APIs. [#1281]
+  - `Linker::instance`: conveniently add exports from an instance to a linker.
+  - `Linker::alias_module`: alias module definitions via another name.
+  - `Linker::allow_shadowing`: enable to shadow previous definitions without errors.
+- Add `hash-collections` and `prefer-btree-collections` crate features to the `wasmi` crate. [#1265]
+    - This allows for more fine grained control over Wasmi
+      dependencies to further decrease compile times.
+- Add lowering of compare instructions and fused branch+compare instructions. [#1243]
+    - This improved performance for certain workloads and
+      reduced the total Wasmi instruction count significantly.
+
+### Fixed
+
+- Removed the `no-hash-maps` crate feature. [#1265]
+- Fixed a bug in translation of fused `cmp+branch` instructions with huge offsets.
+  - This was fixed as a side product in [#1243].
+
+### Removed
+
+- Removed some minor `wasmi` crate dependencies. [#1266] [#1267]
+  - This should improve compile times of the `wasmi` crate slightly.
+
+### Internal
+
+- Modernize fuzzer and significantly improve fuzzing test coverage.
+  - Reworked `differential` fuzzing entirely. [#1257]
+    - This also improves handling of non-deterministic behavior
+      between Wasm runtimes in `differential` fuzzing.
+  - Add `wasmi_fuzz` crate for better code organization. [#1252]
+  - Merged `translate` and `translate_metered` fuzzers. [#1249]
+- Modernize Wasmi `.wast` directives runner. [#1279]
+  - Overall this significantly improved readability and maintainability
+    of the Wasmi `.wast` directives runner.
+
+[#1243]: https://github.com/wasmi-labs/wasmi/pull/1243
+[#1249]: https://github.com/wasmi-labs/wasmi/pull/1249
+[#1252]: https://github.com/wasmi-labs/wasmi/pull/1252
+[#1257]: https://github.com/wasmi-labs/wasmi/pull/1257
+[#1265]: https://github.com/wasmi-labs/wasmi/pull/1265
+[#1266]: https://github.com/wasmi-labs/wasmi/pull/1266
+[#1267]: https://github.com/wasmi-labs/wasmi/pull/1267
+[#1279]: https://github.com/wasmi-labs/wasmi/pull/1279
+[#1281]: https://github.com/wasmi-labs/wasmi/pull/1281
+
 ## [`0.38.0`] - 2024-10-06
 
 ### Added
