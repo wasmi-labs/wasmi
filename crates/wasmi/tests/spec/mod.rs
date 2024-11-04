@@ -158,6 +158,7 @@ macro_rules! expand_tests {
             fn wasm_memory_redundancy("memory_redundancy");
             fn wasm_memory_size("memory_size");
             fn wasm_memory_trap("memory_trap");
+            fn wasm_obsolete_keywords("obsolete-keywords");
             fn wasm_names("names");
             fn wasm_nop("nop");
             fn wasm_ref_func("ref_func");
@@ -223,6 +224,7 @@ macro_rules! expand_tests_mm {
         $mac! {
             $( $args )*
 
+            fn wasm_multi_memory_align("proposals/multi-memory/align");
             fn wasm_multi_memory_address0("proposals/multi-memory/address0");
             fn wasm_multi_memory_address1("proposals/multi-memory/address1");
             fn wasm_multi_memory_align0("proposals/multi-memory/align0");

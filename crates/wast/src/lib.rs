@@ -97,8 +97,16 @@ impl WastRunner {
         )?;
         let global_i32 = Global::new(&mut *store, Val::I32(666), Mutability::Const);
         let global_i64 = Global::new(&mut *store, Val::I64(666), Mutability::Const);
-        let global_f32 = Global::new(&mut *store, Val::F32(666.0.into()), Mutability::Const);
-        let global_f64 = Global::new(&mut *store, Val::F64(666.0.into()), Mutability::Const);
+        let global_f32 = Global::new(
+            &mut *store,
+            Val::F32(F32::from_bits(0x4426_a666)),
+            Mutability::Const,
+        );
+        let global_f64 = Global::new(
+            &mut *store,
+            Val::F64(F64::from_bits(0x4084_d4cc_cccc_cccd)),
+            Mutability::Const,
+        );
 
         self.linker.define("spectest", "memory", default_memory)?;
         self.linker.define("spectest", "table", default_table)?;
