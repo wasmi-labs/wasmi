@@ -35,6 +35,7 @@ jobs:
             --lib
             --no-default-features
             --target x86_64-unknown-none
+            --profile ci
             --verbose
       - name: Build (no_std + hash-collections)
         run: >-
@@ -45,6 +46,7 @@ jobs:
             --no-default-features
             --features hash-collections
             --target x86_64-unknown-none
+            --profile ci
             --verbose
       - name: Build (no_std + wasm32)
         run: >-
@@ -55,6 +57,7 @@ jobs:
             --lib
             --no-default-features
             --target wasm32-unknown-unknown
+            --profile ci
             --verbose
       - name: Build (CMake)
         run: |
@@ -79,11 +82,17 @@ jobs:
       - name: Build Tests
         env:
           RUSTFLAGS: "-C debug-assertions -Zsanitizer=address"
-        run: cargo build --tests --workspace --locked -Zbuild-std --target x86_64-unknown-linux-gnu --verbose
+        run: cargo build --tests --workspace --locked -Zbuild-std --target x86_64-unknown-linux-gnu --verbose --profile ci
       - name: Test
         env:
           RUSTFLAGS: "-C debug-assertions -Zsanitizer=address"
-        run: cargo test --workspace --locked --tests -Zbuild-std --target x86_64-unknown-linux-gnu
+        run: >-
+          cargo test --workspace
+            --locked
+            --tests
+            -Zbuild-std
+            --target x86_64-unknown-linux-gnu
+            --profile ci
 
   min-version:
     name: Check mininum supported Rust version
@@ -95,6 +104,7 @@ jobs:
       - run: >-
           cargo check
           --workspace
+          --profile ci
           --exclude wasmi_fuzz
           --exclude fuzz
 
@@ -114,19 +124,19 @@ jobs:
       - name: Build (default features)
         env:
           RUSTFLAGS: "-C debug-assertions"
-        run: cargo build --tests --workspace --locked --verbose
+        run: cargo build --tests --workspace --locked --profile ci --verbose
       - name: Test (default features)
         env:
           RUSTFLAGS: "-C debug-assertions"
-        run: cargo test --workspace --locked
+        run: cargo test --workspace --profile ci --locked
       - name: Build (all features)
         env:
           RUSTFLAGS: "-C debug-assertions"
-        run: cargo build --tests --workspace --locked --all-features --verbose
+        run: cargo build --tests --workspace --locked --profile ci --all-features --verbose
       - name: Test (all features)
         env:
           RUSTFLAGS: "-C debug-assertions"
-        run: cargo test --workspace --locked --all-features
+        run: cargo test --workspace --locked --profile ci --all-features
 
   fmt:
     name: Formatting
