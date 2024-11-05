@@ -19,4 +19,4 @@ wiggle = { version = "26.0.0", default-features = false }
 wasmi = { workspace = true, features = ["std"]}
 
 [dev-dependencies]
-wat = "1.0.50"
+wat = { version = "1", default-features = false }
