@@ -18,14 +18,15 @@ anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 wasmi = { workspace = true }
 wasmi_wasi = { workspace = true }
-wat = "1"
+wat = { version = "1", default-features = false }
 
 [dev-dependencies]
 assert_cmd = "2.0.7"
 
 [features]
-default = ["no-hash-maps"]
-no-hash-maps = ["wasmi/no-hash-maps"]
+default = []
+hash-collections = ["wasmi/hash-collections"]
+prefer-btree-collections = ["wasmi/prefer-btree-collections"]
 
 # We need to put this [profile.release] section due to this bug in Cargo:
 # https://github.com/rust-lang/cargo/issues/8264

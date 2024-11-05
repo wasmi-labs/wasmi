@@ -14,8 +14,9 @@
 //! [Wasmtime's API example](https://docs.rs/wasmtime/0.39.1/wasmtime/).
 //!
 //! ```
-//! use anyhow::{anyhow, Result};
+//! use anyhow::Result;
 //! use wasmi::*;
+//! use wat;
 //!
 //! fn main() -> Result<()> {
 //!     // First step is to create the Wasm execution engine with some config.

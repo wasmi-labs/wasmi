@@ -15,6 +15,7 @@ use crate::{
     Func,
     FuncType,
     GlobalType,
+    Instance,
     InstancePre,
     IntoFunc,
     MemoryType,
@@ -255,7 +256,7 @@ impl ImportKey {
 /// A [`Linker`] definition.
 #[derive(Debug)]
 enum Definition<T> {
-    /// An external item from an [`Instance`](crate::Instance).
+    /// An external item from an [`Instance`].
     Extern(Extern),
     /// A [`Linker`] internal host function.
     HostFunc(HostFuncTrampolineEntity<T>),
@@ -376,6 +377,14 @@ impl<T> Linker<T> {
     /// Returns the underlying [`Engine`] of the [`Linker`].
     pub fn engine(&self) -> &Engine {
         &self.engine
+    }
+
+    /// Configures whether this [`Linker`] allows to shadow previous definitions with the same name.
+    ///
+    /// Disabled by default.
+    pub fn allow_shadowing(&mut self, allow: bool) -> &mut Self {
+        self.inner.allow_shadowing(allow);
+        self
     }
 
     /// Ensures that the `name` in `module` is undefined in the shared definitions.
@@ -511,6 +520,53 @@ impl<T> Linker<T> {
             }
         }
         self.inner.get_definition(module, name)
+    }
+
+    /// Convenience wrapper to define an entire [`Instance`]` in this [`Linker`].
+    ///
+    /// This is a convenience wrapper around [`Linker::define`] which defines all exports of
+    /// the `instance` for `self`. The module name for each export is `module_name` and the
+    /// field name for each export is the name in the `instance` itself.
+    ///
+    /// # Errors
+    ///
+    /// - If any item is re-defined in `self` (for example the same `module_name` was already defined).
+    /// - If `instance` comes from a different [`Store`](crate::Store) than this [`Linker`] originally
+    ///   was created with.
+    ///
+    /// # Panics
+    ///
+    /// If the [`Engine`] of this [`Linker`] and the [`Engine`] of `store` are not the same.
+    pub fn instance(
+        &mut self,
+        mut store: impl AsContextMut<Data = T>,
+        module_name: &str,
+        instance: Instance,
+    ) -> Result<&mut Self, Error> {
+        assert!(Engine::same(
+            store.as_context().store.engine(),
+            self.engine()
+        ));
+        let mut store = store.as_context_mut();
+        for export in instance.exports(&mut store) {
+            let key = self.inner.new_import_key(module_name, export.name());
+            let def = Definition::Extern(export.into_extern());
+            self.inner.insert(key, def)?;
+        }
+        Ok(self)
+    }
+
+    /// Aliases one module's name as another.
+    ///
+    /// This method will alias all currently defined under `module` to also be
+    /// defined under the name `as_module` too.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any shadowing violations happen while defining new
+    /// items.
+    pub fn alias_module(&mut self, module: &str, as_module: &str) -> Result<(), Error> {
+        self.inner.alias_module(module, as_module)
     }
 
     /// Instantiates the given [`Module`] using the definitions in the [`Linker`].
@@ -760,6 +816,8 @@ pub struct LinkerInner<T> {
     ///
     /// [`HashMap`]: std::collections::HashMap
     definitions: BTreeMap<ImportKey, Definition<T>>,
+    /// True if this linker allows to shadow previous definitions.
+    allow_shadowing: bool,
 }
 
 impl<T> Default for LinkerInner<T> {
@@ -767,6 +825,7 @@ impl<T> Default for LinkerInner<T> {
         Self {
             strings: StringInterner::default(),
             definitions: BTreeMap::default(),
+            allow_shadowing: false,
         }
     }
 }
@@ -776,11 +835,19 @@ impl<T> Clone for LinkerInner<T> {
         Self {
             strings: self.strings.clone(),
             definitions: self.definitions.clone(),
+            allow_shadowing: self.allow_shadowing,
         }
     }
 }
 
 impl<T> LinkerInner<T> {
+    /// Configures whether this [`LinkerInner`] allows to shadow previous definitions with the same name.
+    ///
+    /// Disabled by default.
+    pub fn allow_shadowing(&mut self, allow: bool) {
+        self.allow_shadowing = allow;
+    }
+
     /// Returns the import key for the module name and item name.
     fn new_import_key(&mut self, module: &str, name: &str) -> ImportKey {
         ImportKey::new(
@@ -813,6 +880,9 @@ impl<T> LinkerInner<T> {
     /// If there already is a definition for the import key for this [`Linker`].
     fn insert(&mut self, key: ImportKey, item: Definition<T>) -> Result<(), LinkerError> {
         match self.definitions.entry(key) {
+            Entry::Occupied(mut entry) if self.allow_shadowing => {
+                entry.insert(item);
+            }
             Entry::Occupied(_) => {
                 let (module_name, field_name) = self
                     .resolve_import_key(key)
@@ -823,6 +893,28 @@ impl<T> LinkerInner<T> {
             Entry::Vacant(v) => {
                 v.insert(item);
             }
+        }
+        Ok(())
+    }
+
+    /// Aliases one module's name as another.
+    ///
+    /// Read more about this method in [`Linker::alias_module`].
+    pub fn alias_module(&mut self, module: &str, as_module: &str) -> Result<(), Error> {
+        let module = self
+            .strings
+            .get_or_intern_with_hint(module, InternHint::LikelyExists);
+        let as_module = self
+            .strings
+            .get_or_intern_with_hint(as_module, InternHint::LikelyNew);
+        let items = self
+            .definitions
+            .iter()
+            .filter(|(key, _def)| key.module() == module)
+            .map(|(key, def)| (key.name(), def.clone()))
+            .collect::<Vec<_>>();
+        for (name, item) in items {
+            self.insert(ImportKey::new(as_module, name), item)?;
         }
         Ok(())
     }
