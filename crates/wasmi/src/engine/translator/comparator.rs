@@ -5,11 +5,17 @@ use crate::{
 };
 
 pub trait NegateCmpInstr: Sized {
-    fn negate_cmp_instr(&self) -> Option<Self>;
+    /// Negates the compare (`cmp`) [`Instruction`].
+    ///
+    /// If the user of the fused comparison [`Instruction`] is going to be a
+    /// conditional branch [`Instruction`] the `is_branch` parameter is set to
+    /// `true`. This allows for more optimizations since the result does not need
+    /// to be bit-accurate.
+    fn negate_cmp_instr(&self, is_branch: bool) -> Option<Self>;
 }
 
 impl NegateCmpInstr for Instruction {
-    fn negate_cmp_instr(&self) -> Option<Self> {
+    fn negate_cmp_instr(&self, is_branch: bool) -> Option<Self> {
         use Instruction as I;
         #[rustfmt::skip]
         let negated = match *self {
@@ -34,15 +40,15 @@ impl NegateCmpInstr for Instruction {
             I::I32And { result, lhs, rhs } => I::i32_and_eqz(result, lhs, rhs),
             I::I32Or { result, lhs, rhs } => I::i32_or_eqz(result, lhs, rhs),
             I::I32Xor { result, lhs, rhs } => I::i32_xor_eqz(result, lhs, rhs),
-            I::I32AndEqz { result, lhs, rhs } => I::i32_and(result, lhs, rhs),
-            I::I32OrEqz { result, lhs, rhs } => I::i32_or(result, lhs, rhs),
-            I::I32XorEqz { result, lhs, rhs } => I::i32_xor(result, lhs, rhs),
+            I::I32AndEqz { result, lhs, rhs } if is_branch => I::i32_and(result, lhs, rhs),
+            I::I32OrEqz { result, lhs, rhs } if is_branch => I::i32_or(result, lhs, rhs),
+            I::I32XorEqz { result, lhs, rhs } if is_branch => I::i32_xor(result, lhs, rhs),
             I::I32AndImm16 { result, lhs, rhs } => I::i32_and_eqz_imm16(result, lhs, rhs),
             I::I32OrImm16 { result, lhs, rhs } => I::i32_or_eqz_imm16(result, lhs, rhs),
             I::I32XorImm16 { result, lhs, rhs } => I::i32_xor_eqz_imm16(result, lhs, rhs),
-            I::I32AndEqzImm16 { result, lhs, rhs } => I::i32_and_imm16(result, lhs, rhs),
-            I::I32OrEqzImm16 { result, lhs, rhs } => I::i32_or_imm16(result, lhs, rhs),
-            I::I32XorEqzImm16 { result, lhs, rhs } => I::i32_xor_imm16(result, lhs, rhs),
+            I::I32AndEqzImm16 { result, lhs, rhs } if is_branch => I::i32_and_imm16(result, lhs, rhs),
+            I::I32OrEqzImm16 { result, lhs, rhs } if is_branch => I::i32_or_imm16(result, lhs, rhs),
+            I::I32XorEqzImm16 { result, lhs, rhs } if is_branch => I::i32_xor_imm16(result, lhs, rhs),
             // i64
             I::I64Eq { result, lhs, rhs } => I::i64_ne(result, lhs, rhs),
             I::I64Ne { result, lhs, rhs } => I::i64_eq(result, lhs, rhs),
