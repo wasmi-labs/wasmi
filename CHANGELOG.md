@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.39.1`] - 2024-11-06
+
+### Fixed
+
+- Fixed a bug when translating double negations in expression contexts. [#1293]
+
+[#1293]: https://github.com/wasmi-labs/wasmi/pull/1293
+
 ## [`0.39.0`] - 2024-11-04
 
 ### Added
