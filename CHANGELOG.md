@@ -33,12 +33,12 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Fixed
 
-- Removed the `no-hash-maps` crate feature. [#1265]
 - Fixed a bug in translation of fused `cmp+branch` instructions with huge offsets.
   - This was fixed as a side product in [#1243].
 
 ### Removed
 
+- Removed the `no-hash-maps` crate feature. [#1265]
 - Removed some minor `wasmi` crate dependencies. [#1266] [#1267]
   - This should improve compile times of the `wasmi` crate slightly.
 
