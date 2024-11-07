@@ -121,7 +121,7 @@ enum wasmi_compilation_mode_enum {
  *
  * Default value: #WASMI_COMPILATION_MODE_EAGER
  */
-WASMI_CONFIG_PROP(void, compilation_mode, wasmi_compilation_mode_enum)
+WASMI_CONFIG_PROP(void, compilation_mode, enum wasmi_compilation_mode_enum)
 
 #undef WASMI_CONFIG_PROP
 
