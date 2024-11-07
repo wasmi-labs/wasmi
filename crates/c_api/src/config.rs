@@ -141,7 +141,7 @@ pub enum wasmi_compilation_mode_t {
 ///
 /// Wraps [`wasmi::Config::compilation_mode`]
 #[no_mangle]
-pub extern "C" fn wasmi_config_set_compilation_mode(
+pub extern "C" fn wasmi_config_compilation_mode_set(
     config: &mut wasm_config_t,
     mode: wasmi_compilation_mode_t,
 ) {
