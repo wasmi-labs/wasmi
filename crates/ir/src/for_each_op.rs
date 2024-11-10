@@ -1465,6 +1465,100 @@ macro_rules! for_each_op {
                 global: Global,
             },
 
+            /// Load instruction for 32-bit values.
+            ///
+            /// # Note
+            /// 
+            /// Equivalent to Wasm `{i32,f32}.load` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
+            #[snake_name(load32)]
+            Load32 {
+                @result: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
+            },
+            /// Load instruction for 32-bit values.
+            ///
+            /// # Note
+            ///
+            /// Variant of [`Instruction::Load32`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
+            #[snake_name(load32_at)]
+            Load32At {
+                @result: Reg,
+                /// The `ptr+offset` address of the `load` instruction.
+                address: u32,
+            },
+            /// Load instruction for 32-bit values.
+            ///
+            /// # Note
+            ///
+            /// - Variant of [`Instruction::Load32`] with a 16-bit `offset`.
+            /// - Operates on the default Wasm memory instance.
+            #[snake_name(load32_offset16)]
+            Load32Offset16 {
+                @result: Reg,
+                /// The register storing the pointer of the `load` instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Const16<u32>,
+            },
+
+            /// Load instruction for 64-bit values.
+            ///
+            /// # Note
+            /// 
+            /// Equivalent to Wasm `{i64,f64}.load` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset`.
+            #[snake_name(load64)]
+            Load64 {
+                @result: Reg,
+                /// The linear memory index for which the load instruction is executed.
+                memory: Memory,
+            },
+            /// Load instruction for 64-bit values.
+            ///
+            /// # Note
+            ///
+            /// Variant of [`Instruction::Load32`] with a constant load address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
+            #[snake_name(load64_at)]
+            Load64At {
+                @result: Reg,
+                /// The `ptr+offset` address of the `load` instruction.
+                address: u32,
+            },
+            /// Load instruction for 64-bit values.
+            ///
+            /// # Note
+            ///
+            /// - Variant of [`Instruction::Load64`] with a 16-bit `offset`.
+            /// - Operates on the default Wasm memory instance.
+            #[snake_name(load64_offset16)]
+            Load64Offset16 {
+                @result: Reg,
+                /// The register storing the pointer of the `load` instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Const16<u32>,
+            },
+
             /// Wasm `i32.load` equivalent Wasmi instruction.
             ///
             /// # Encoding
@@ -2065,6 +2159,106 @@ macro_rules! for_each_op {
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
                 offset: Const16<u32>,
+            },
+
+            /// Store instruction for 32-bit values.
+            ///
+            /// # Note
+            /// 
+            /// Equivalent to Wasm `{i32,f32}.store` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `value` and `offset`.
+            #[snake_name(store32)]
+            Store32 {
+                /// The register storing the pointer of the `store` instruction.
+                ptr: Reg,
+                /// The linear memory index for which the store instruction is executed.
+                memory: Memory,
+            },
+            /// Store instruction for 32-bit values.
+            ///
+            /// # Note
+            ///
+            /// - Variant of [`Instruction::Store32`] with a 16-bit `offset`.
+            /// - Operates on the default Wasm memory instance.
+            #[snake_name(store32_offset16)]
+            Store32Offset16 {
+                /// The register storing the pointer of the `store` instruction.
+                ptr: Reg,
+                /// The register storing the pointer offset of the `store` instruction.
+                offset: Const16<u32>,
+                /// The value to be stored.
+                value: Reg,
+            },
+            /// Store instruction for 32-bit values.
+            ///
+            /// # Note
+            ///
+            /// Variant of [`Instruction::Store32`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
+            #[snake_name(store32_at)]
+            Store32At {
+                /// The value to be stored.
+                value: Reg,
+                /// The constant address to store the value.
+                address: u32,
+            },
+
+            /// Store instruction for 64-bit values.
+            ///
+            /// # Note
+            /// 
+            /// Equivalent to Wasm `{i64,f64}.store` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by an [`Instruction::RegisterAndImm32`] encoding `value` and `offset`.
+            #[snake_name(store64)]
+            Store64 {
+                /// The register storing the pointer of the `store` instruction.
+                ptr: Reg,
+                /// The linear memory index for which the store instruction is executed.
+                memory: Memory,
+            },
+            /// Store instruction for 64-bit values.
+            ///
+            /// # Note
+            ///
+            /// - Variant of [`Instruction::Store64`] with a 16-bit `offset`.
+            /// - Operates on the default Wasm memory instance.
+            #[snake_name(store64_offset16)]
+            Store64Offset16 {
+                /// The register storing the pointer of the `store` instruction.
+                ptr: Reg,
+                /// The register storing the pointer offset of the `store` instruction.
+                offset: Const16<u32>,
+                /// The value to be stored.
+                value: Reg,
+            },
+            /// Store instruction for 64-bit values.
+            ///
+            /// # Note
+            ///
+            /// Variant of [`Instruction::Store64`] with an immediate `ptr+offset` address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// - Operates on the default Wasm memory instance if missing.
+            #[snake_name(store64_at)]
+            Store64At {
+                /// The value to be stored.
+                value: Reg,
+                /// The constant address to store the value.
+                address: u32,
             },
 
             /// Wasm `i32.store` equivalent Wasmi instruction.
