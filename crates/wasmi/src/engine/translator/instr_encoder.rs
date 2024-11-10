@@ -351,8 +351,8 @@ impl InstrEncoder {
     /// # Note
     ///
     /// This is used primarily for [`Instruction`] words that are just carrying
-    /// parameters for the [`Instruction`]. An example of this is [`Instruction::Const32`]
-    /// carrying the `offset` parameter for [`Instruction::I32Load`].
+    /// parameters for the [`Instruction`]. An example of this is [`Instruction::RegisterAndImm32`]
+    /// carrying the `ptr` and `offset` parameters for [`Instruction::Load32`].
     pub fn append_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
         self.instrs.push(instr)
     }

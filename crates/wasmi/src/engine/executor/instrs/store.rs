@@ -262,34 +262,16 @@ macro_rules! impl_execute_istore {
     ( $(
         (
             ($from_ty:ty => $to_ty:ty),
-            (Instruction::$var_store:ident, $fn_store:ident),
             (Instruction::$var_store_imm:ident, $fn_store_imm:ident),
-            (Instruction::$var_store_off16:ident, $fn_store_off16:ident),
             (Instruction::$var_store_off16_imm16:ident, $fn_store_off16_imm16:ident),
-            (Instruction::$var_store_at:ident, $fn_store_at:ident),
             (Instruction::$var_store_at_imm16:ident, $fn_store_at_imm16:ident),
             $impl_fn:expr $(,)?
         )
     ),* $(,)? ) => {
         $(
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
-            pub fn $fn_store(&mut self, store: &mut StoreInner, ptr: Reg, memory: Memory) -> Result<(), Error> {
-                self.execute_store(store, ptr, memory, $impl_fn)
-            }
-
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_imm), "`].")]
             pub fn $fn_store_imm(&mut self, store: &mut StoreInner, ptr: Reg, memory: Memory) -> Result<(), Error> {
                 self.execute_store_imm::<$to_ty>(store, ptr, memory, $impl_fn)
-            }
-
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
-            pub fn $fn_store_off16(
-                &mut self,
-                ptr: Reg,
-                offset: Const16<u32>,
-                value: Reg,
-            ) -> Result<(), Error> {
-                self.execute_store_offset16(ptr, offset, value, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16_imm16), "`].")]
@@ -300,11 +282,6 @@ macro_rules! impl_execute_istore {
                 value: $from_ty,
             ) -> Result<(), Error> {
                 self.execute_store_offset16_imm16::<$to_ty, _>(ptr, offset, value, $impl_fn)
-            }
-
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
-            pub fn $fn_store_at(&mut self, store: &mut StoreInner, address: u32, value: Reg) -> Result<(), Error> {
-                self.execute_store_at(store, address, value, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at_imm16), "`].")]
@@ -323,24 +300,69 @@ impl Executor<'_> {
     impl_execute_istore! {
         (
             (Const16<i32> => i32),
-            (Instruction::I32Store, execute_i32_store),
             (Instruction::I32StoreImm16, execute_i32_store_imm16),
-            (Instruction::I32StoreOffset16, execute_i32_store_offset16),
             (Instruction::I32StoreOffset16Imm16, execute_i32_store_offset16_imm16),
-            (Instruction::I32StoreAt, execute_i32_store_at),
             (Instruction::I32StoreAtImm16, execute_i32_store_at_imm16),
-            UntypedVal::i32_store,
+            UntypedVal::store32,
         ),
         (
             (Const16<i64> => i64),
-            (Instruction::I64Store, execute_i64_store),
             (Instruction::I64StoreImm16, execute_i64_store_imm16),
-            (Instruction::I64StoreOffset16, execute_i64_store_offset16),
             (Instruction::I64StoreOffset16Imm16, execute_i64_store_offset16_imm16),
-            (Instruction::I64StoreAt, execute_i64_store_at),
             (Instruction::I64StoreAtImm16, execute_i64_store_at_imm16),
-            UntypedVal::i64_store,
+            UntypedVal::store64,
         ),
+    }
+}
+
+macro_rules! impl_execute_istore_trunc {
+    ( $(
+        (
+            ($from_ty:ty => $to_ty:ty),
+            (Instruction::$var_store:ident, $fn_store:ident),
+            (Instruction::$var_store_imm:ident, $fn_store_imm:ident),
+            (Instruction::$var_store_off16:ident, $fn_store_off16:ident),
+            (Instruction::$var_store_off16_imm16:ident, $fn_store_off16_imm16:ident),
+            (Instruction::$var_store_at:ident, $fn_store_at:ident),
+            (Instruction::$var_store_at_imm16:ident, $fn_store_at_imm16:ident),
+            $impl_fn:expr $(,)?
+        )
+    ),* $(,)? ) => {
+        $(
+            impl_execute_istore! {
+                (
+                    ($from_ty => $to_ty),
+                    (Instruction::$var_store_imm, $fn_store_imm),
+                    (Instruction::$var_store_off16_imm16, $fn_store_off16_imm16),
+                    (Instruction::$var_store_at_imm16, $fn_store_at_imm16),
+                    $impl_fn,
+                )
+            }
+
+            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
+            pub fn $fn_store(&mut self, store: &mut StoreInner, ptr: Reg, memory: Memory) -> Result<(), Error> {
+                self.execute_store(store, ptr, memory, $impl_fn)
+            }
+
+            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
+            pub fn $fn_store_off16(
+                &mut self,
+                ptr: Reg,
+                offset: Const16<u32>,
+                value: Reg,
+            ) -> Result<(), Error> {
+                self.execute_store_offset16(ptr, offset, value, $impl_fn)
+            }
+
+            #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
+            pub fn $fn_store_at(&mut self, store: &mut StoreInner, address: u32, value: Reg) -> Result<(), Error> {
+                self.execute_store_at(store, address, value, $impl_fn)
+            }
+        )*
+    };
+}
+impl Executor<'_> {
+    impl_execute_istore_trunc! {
         (
             (i8 => i8),
             (Instruction::I32Store8, execute_i32_store8),
@@ -394,7 +416,7 @@ impl Executor<'_> {
     }
 }
 
-macro_rules! impl_execute_fstore {
+macro_rules! impl_execute_store {
     ( $(
         (
             (Instruction::$var_store:ident, $fn_store:ident),
@@ -428,18 +450,18 @@ macro_rules! impl_execute_fstore {
 }
 
 impl Executor<'_> {
-    impl_execute_fstore! {
+    impl_execute_store! {
         (
-            (Instruction::F32Store, execute_f32_store),
-            (Instruction::F32StoreOffset16, execute_f32_store_offset16),
-            (Instruction::F32StoreAt, execute_f32_store_at),
-            UntypedVal::f32_store,
+            (Instruction::Store32, execute_store32),
+            (Instruction::Store32Offset16, execute_store32_offset16),
+            (Instruction::Store32At, execute_store32_at),
+            UntypedVal::store32,
         ),
         (
-            (Instruction::F64Store, execute_f64_store),
-            (Instruction::F64StoreOffset16, execute_f64_store_offset16),
-            (Instruction::F64StoreAt, execute_f64_store_at),
-            UntypedVal::f64_store,
+            (Instruction::Store64, execute_store64),
+            (Instruction::Store64Offset16, execute_store64_offset16),
+            (Instruction::Store64At, execute_store64_at),
+            UntypedVal::store64,
         ),
     }
 }

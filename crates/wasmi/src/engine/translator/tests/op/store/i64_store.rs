@@ -5,7 +5,7 @@ const WASM_OP: WasmOp = WasmOp::store(WasmType::I64, "store");
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg() {
-    test_store(WASM_OP, Instruction::i64_store);
+    test_store(WASM_OP, Instruction::store64);
 }
 
 #[test]
@@ -20,7 +20,7 @@ fn imm() {
         i64::MAX - 1,
     ];
     for value in values {
-        test_store_imm::<i64>(WASM_OP, value, Instruction::i64_store);
+        test_store_imm::<i64>(WASM_OP, value, Instruction::store64);
     }
 }
 
@@ -45,7 +45,7 @@ fn imm16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn offset16() {
-    test_store_offset16(WASM_OP, Instruction::i64_store_offset16);
+    test_store_offset16(WASM_OP, Instruction::store64_offset16);
 }
 
 #[test]
@@ -54,17 +54,17 @@ fn offset16_imm() {
     test_store_offset16_imm::<i64>(
         WASM_OP,
         i64::from(i16::MIN) - 1,
-        Instruction::i64_store_offset16,
+        Instruction::store64_offset16,
     );
     test_store_offset16_imm::<i64>(
         WASM_OP,
         i64::from(i16::MAX) + 1,
-        Instruction::i64_store_offset16,
+        Instruction::store64_offset16,
     );
-    test_store_offset16_imm::<i64>(WASM_OP, i64::MAX - 1, Instruction::i64_store_offset16);
-    test_store_offset16_imm::<i64>(WASM_OP, i64::MIN + 1, Instruction::i64_store_offset16);
-    test_store_offset16_imm::<i64>(WASM_OP, i64::MIN, Instruction::i64_store_offset16);
-    test_store_offset16_imm::<i64>(WASM_OP, i64::MAX, Instruction::i64_store_offset16);
+    test_store_offset16_imm::<i64>(WASM_OP, i64::MAX - 1, Instruction::store64_offset16);
+    test_store_offset16_imm::<i64>(WASM_OP, i64::MIN + 1, Instruction::store64_offset16);
+    test_store_offset16_imm::<i64>(WASM_OP, i64::MIN, Instruction::store64_offset16);
+    test_store_offset16_imm::<i64>(WASM_OP, i64::MAX, Instruction::store64_offset16);
 }
 
 #[test]
@@ -82,7 +82,7 @@ fn offset16_imm16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn at() {
-    test_store_at(WASM_OP, Instruction::i64_store_at);
+    test_store_at(WASM_OP, Instruction::store64_at);
 }
 
 #[test]
@@ -94,9 +94,9 @@ fn at_overflow() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn at_imm() {
-    test_store_at_imm::<i64>(WASM_OP, i64::from(i16::MAX) + 1, Instruction::i64_store_at);
-    test_store_at_imm::<i64>(WASM_OP, i64::MAX - 1, Instruction::i64_store_at);
-    test_store_at_imm::<i64>(WASM_OP, i64::MAX, Instruction::i64_store_at);
+    test_store_at_imm::<i64>(WASM_OP, i64::from(i16::MAX) + 1, Instruction::store64_at);
+    test_store_at_imm::<i64>(WASM_OP, i64::MAX - 1, Instruction::store64_at);
+    test_store_at_imm::<i64>(WASM_OP, i64::MAX, Instruction::store64_at);
 }
 
 #[test]
