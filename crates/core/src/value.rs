@@ -289,6 +289,9 @@ impl_wrap_into!(i64, i64);
 impl_wrap_into!(F32, F32);
 impl_wrap_into!(F64, F64);
 
+impl_wrap_into!(u32, u32);
+impl_wrap_into!(u64, u64);
+
 impl WrapInto<F32> for F64 {
     #[inline]
     fn wrap_into(self) -> F32 {
