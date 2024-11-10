@@ -1468,7 +1468,7 @@ macro_rules! for_each_op {
             /// Load instruction for 32-bit values.
             ///
             /// # Note
-            /// 
+            ///
             /// Equivalent to Wasm `{i32,f32}.load` instruction.
             ///
             /// # Encoding
@@ -1515,7 +1515,7 @@ macro_rules! for_each_op {
             /// Load instruction for 64-bit values.
             ///
             /// # Note
-            /// 
+            ///
             /// Equivalent to Wasm `{i64,f64}.load` instruction.
             ///
             /// # Encoding
@@ -1992,7 +1992,7 @@ macro_rules! for_each_op {
             /// Store instruction for 32-bit values.
             ///
             /// # Note
-            /// 
+            ///
             /// Equivalent to Wasm `{i32,f32}.store` instruction.
             ///
             /// # Encoding
@@ -2042,7 +2042,7 @@ macro_rules! for_each_op {
             /// Store instruction for 64-bit values.
             ///
             /// # Note
-            /// 
+            ///
             /// Equivalent to Wasm `{i64,f64}.store` instruction.
             ///
             /// # Encoding
