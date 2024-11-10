@@ -283,11 +283,8 @@ impl_wrap_into!(i64, i32);
 impl_wrap_into!(i64, f32, F32);
 impl_wrap_into!(u64, f32, F32);
 
-// Casting to self
-impl_wrap_into!(i32, i32);
-impl_wrap_into!(i64, i64);
-impl_wrap_into!(F32, F32);
-impl_wrap_into!(F64, F64);
+impl_wrap_into!(u32, u32);
+impl_wrap_into!(u64, u64);
 
 impl WrapInto<F32> for F64 {
     #[inline]
@@ -403,10 +400,8 @@ impl_extend_into!(u64, f64, F64);
 impl_extend_into!(f32, f64, F64);
 
 // Casting to self
-impl_extend_into!(i32, i32);
-impl_extend_into!(i64, i64);
-impl_extend_into!(F32, F32);
-impl_extend_into!(F64, F64);
+impl_extend_into!(u32, u32);
+impl_extend_into!(u64, u64);
 
 impl ExtendInto<F64> for F32 {
     #[inline]

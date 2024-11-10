@@ -754,36 +754,36 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
         self.translate_load(
             memarg,
-            Instruction::i32_load,
-            Instruction::i32_load_offset16,
-            Instruction::i32_load_at,
+            Instruction::load32,
+            Instruction::load32_offset16,
+            Instruction::load32_at,
         )
     }
 
     fn visit_i64_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
         self.translate_load(
             memarg,
-            Instruction::i64_load,
-            Instruction::i64_load_offset16,
-            Instruction::i64_load_at,
+            Instruction::load64,
+            Instruction::load64_offset16,
+            Instruction::load64_at,
         )
     }
 
     fn visit_f32_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
         self.translate_load(
             memarg,
-            Instruction::f32_load,
-            Instruction::f32_load_offset16,
-            Instruction::f32_load_at,
+            Instruction::load32,
+            Instruction::load32_offset16,
+            Instruction::load32_at,
         )
     }
 
     fn visit_f64_load(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
         self.translate_load(
             memarg,
-            Instruction::f64_load,
-            Instruction::f64_load_offset16,
-            Instruction::f64_load_at,
+            Instruction::load64,
+            Instruction::load64_offset16,
+            Instruction::load64_at,
         )
     }
 
@@ -880,11 +880,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
         self.translate_istore::<i32, i16>(
             memarg,
-            Instruction::i32_store,
+            Instruction::store32,
             Instruction::i32_store_imm16,
-            Instruction::i32_store_offset16,
+            Instruction::store32_offset16,
             Instruction::i32_store_offset16_imm16,
-            Instruction::i32_store_at,
+            Instruction::store32_at,
             Instruction::i32_store_at_imm16,
         )
     }
@@ -892,11 +892,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_i64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
         self.translate_istore::<i64, i16>(
             memarg,
-            Instruction::i64_store,
+            Instruction::store64,
             Instruction::i64_store_imm16,
-            Instruction::i64_store_offset16,
+            Instruction::store64_offset16,
             Instruction::i64_store_offset16_imm16,
-            Instruction::i64_store_at,
+            Instruction::store64_at,
             Instruction::i64_store_at_imm16,
         )
     }
@@ -904,18 +904,18 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_f32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
         self.translate_fstore(
             memarg,
-            Instruction::f32_store,
-            Instruction::f32_store_offset16,
-            Instruction::f32_store_at,
+            Instruction::store32,
+            Instruction::store32_offset16,
+            Instruction::store32_at,
         )
     }
 
     fn visit_f64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
         self.translate_fstore(
             memarg,
-            Instruction::f64_store,
-            Instruction::f64_store_offset16,
-            Instruction::f64_store_at,
+            Instruction::store64,
+            Instruction::store64_offset16,
+            Instruction::store64_at,
         )
     }
 

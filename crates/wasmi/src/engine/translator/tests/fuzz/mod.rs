@@ -402,7 +402,7 @@ fn fuzz_regression_16() {
             Instruction::copy(2, 0),
             Instruction::global_get(Reg::from(0), Global::from(0)),
             Instruction::global_set(Reg::from(0), Global::from(0)),
-            Instruction::i64_store_at(Reg::from(2), 2147483647_u32),
+            Instruction::store64_at(Reg::from(2), 2147483647_u32),
             Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()
@@ -420,7 +420,7 @@ fn fuzz_regression_17() {
             Instruction::copy(2, 0),
             Instruction::copy_i64imm32(Reg::from(0), 2),
             Instruction::copy_imm32(Reg::from(1), -1.0_f32),
-            Instruction::i64_store_at(Reg::from(2), 4294967295_u32),
+            Instruction::store64_at(Reg::from(2), 4294967295_u32),
             Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()

@@ -5,42 +5,42 @@ const WASM_OP: WasmOp = WasmOp::store(WasmType::F64, "store");
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg() {
-    test_store(WASM_OP, Instruction::f64_store);
+    test_store(WASM_OP, Instruction::store64);
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm() {
-    test_store_imm::<f64>(WASM_OP, 0.0, Instruction::f64_store);
-    test_store_imm::<f64>(WASM_OP, 1.0, Instruction::f64_store);
-    test_store_imm::<f64>(WASM_OP, -1.0, Instruction::f64_store);
-    test_store_imm::<f64>(WASM_OP, 42.25, Instruction::f64_store);
-    test_store_imm::<f64>(WASM_OP, f64::INFINITY, Instruction::f64_store);
-    test_store_imm::<f64>(WASM_OP, f64::NEG_INFINITY, Instruction::f64_store);
-    test_store_imm::<f64>(WASM_OP, f64::NAN, Instruction::f64_store);
+    test_store_imm::<f64>(WASM_OP, 0.0, Instruction::store64);
+    test_store_imm::<f64>(WASM_OP, 1.0, Instruction::store64);
+    test_store_imm::<f64>(WASM_OP, -1.0, Instruction::store64);
+    test_store_imm::<f64>(WASM_OP, 42.25, Instruction::store64);
+    test_store_imm::<f64>(WASM_OP, f64::INFINITY, Instruction::store64);
+    test_store_imm::<f64>(WASM_OP, f64::NEG_INFINITY, Instruction::store64);
+    test_store_imm::<f64>(WASM_OP, f64::NAN, Instruction::store64);
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn offset16() {
-    test_store_offset16(WASM_OP, Instruction::f64_store_offset16);
+    test_store_offset16(WASM_OP, Instruction::store64_offset16);
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn offset16_imm() {
-    test_store_offset16_imm::<f64>(WASM_OP, 0.0, Instruction::f64_store_offset16);
-    test_store_offset16_imm::<f64>(WASM_OP, 1.0, Instruction::f64_store_offset16);
-    test_store_offset16_imm::<f64>(WASM_OP, -1.0, Instruction::f64_store_offset16);
-    test_store_offset16_imm::<f64>(WASM_OP, f64::INFINITY, Instruction::f64_store_offset16);
-    test_store_offset16_imm::<f64>(WASM_OP, f64::NEG_INFINITY, Instruction::f64_store_offset16);
-    test_store_offset16_imm::<f64>(WASM_OP, f64::NAN, Instruction::f64_store_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, 0.0, Instruction::store64_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, 1.0, Instruction::store64_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, -1.0, Instruction::store64_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, f64::INFINITY, Instruction::store64_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, f64::NEG_INFINITY, Instruction::store64_offset16);
+    test_store_offset16_imm::<f64>(WASM_OP, f64::NAN, Instruction::store64_offset16);
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn at() {
-    test_store_at(WASM_OP, Instruction::f64_store_at);
+    test_store_at(WASM_OP, Instruction::store64_at);
 }
 
 #[test]
@@ -52,12 +52,12 @@ fn at_overflow() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn at_imm() {
-    test_store_at_imm::<f64>(WASM_OP, 0.0, Instruction::f64_store_at);
-    test_store_at_imm::<f64>(WASM_OP, 1.0, Instruction::f64_store_at);
-    test_store_at_imm::<f64>(WASM_OP, -1.0, Instruction::f64_store_at);
-    test_store_at_imm::<f64>(WASM_OP, f64::NEG_INFINITY, Instruction::f64_store_at);
-    test_store_at_imm::<f64>(WASM_OP, f64::INFINITY, Instruction::f64_store_at);
-    test_store_at_imm::<f64>(WASM_OP, f64::NAN, Instruction::f64_store_at);
+    test_store_at_imm::<f64>(WASM_OP, 0.0, Instruction::store64_at);
+    test_store_at_imm::<f64>(WASM_OP, 1.0, Instruction::store64_at);
+    test_store_at_imm::<f64>(WASM_OP, -1.0, Instruction::store64_at);
+    test_store_at_imm::<f64>(WASM_OP, f64::NEG_INFINITY, Instruction::store64_at);
+    test_store_at_imm::<f64>(WASM_OP, f64::INFINITY, Instruction::store64_at);
+    test_store_at_imm::<f64>(WASM_OP, f64::NAN, Instruction::store64_at);
 }
 
 #[test]
