@@ -202,27 +202,15 @@ macro_rules! impl_execute_load {
 impl Executor<'_> {
     impl_execute_load! {
         (
-            (Instruction::I32Load, execute_i32_load),
-            (Instruction::I32LoadAt, execute_i32_load_at),
-            (Instruction::I32LoadOffset16, execute_i32_load_offset16),
+            (Instruction::Load32, execute_load32),
+            (Instruction::Load32At, execute_load32_at),
+            (Instruction::Load32Offset16, execute_load32_offset16),
             UntypedVal::load32,
         ),
         (
-            (Instruction::I64Load, execute_i64_load),
-            (Instruction::I64LoadAt, execute_i64_load_at),
-            (Instruction::I64LoadOffset16, execute_i64_load_offset16),
-            UntypedVal::load64,
-        ),
-        (
-            (Instruction::F32Load, execute_f32_load),
-            (Instruction::F32LoadAt, execute_f32_load_at),
-            (Instruction::F32LoadOffset16, execute_f32_load_offset16),
-            UntypedVal::load32,
-        ),
-        (
-            (Instruction::F64Load, execute_f64_load),
-            (Instruction::F64LoadAt, execute_f64_load_at),
-            (Instruction::F64LoadOffset16, execute_f64_load_offset16),
+            (Instruction::Load64, execute_load64),
+            (Instruction::Load64At, execute_load64_at),
+            (Instruction::Load64Offset16, execute_load64_offset16),
             UntypedVal::load64,
         ),
 

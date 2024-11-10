@@ -468,50 +468,28 @@ impl<'engine> Executor<'engine> {
                 Instr::GlobalSetI64Imm16 { global, input } => {
                     self.execute_global_set_i64imm16(&mut store.inner, global, input)
                 }
-                Instr::I32Load { result, memory } => {
-                    self.execute_i32_load(&store.inner, result, memory)?
+                Instr::Load32 { result, memory } => {
+                    self.execute_load32(&store.inner, result, memory)?
                 }
-                Instr::I32LoadAt { result, address } => {
-                    self.execute_i32_load_at(&store.inner, result, address)?
+                Instr::Load32At { result, address } => {
+                    self.execute_load32_at(&store.inner, result, address)?
                 }
-                Instr::I32LoadOffset16 {
+                Instr::Load32Offset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i32_load_offset16(result, ptr, offset)?,
-                Instr::I64Load { result, memory } => {
-                    self.execute_i64_load(&store.inner, result, memory)?
+                } => self.execute_load32_offset16(result, ptr, offset)?,
+                Instr::Load64 { result, memory } => {
+                    self.execute_load64(&store.inner, result, memory)?
                 }
-                Instr::I64LoadAt { result, address } => {
-                    self.execute_i64_load_at(&store.inner, result, address)?
+                Instr::Load64At { result, address } => {
+                    self.execute_load64_at(&store.inner, result, address)?
                 }
-                Instr::I64LoadOffset16 {
+                Instr::Load64Offset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i64_load_offset16(result, ptr, offset)?,
-                Instr::F32Load { result, memory } => {
-                    self.execute_f32_load(&store.inner, result, memory)?
-                }
-                Instr::F32LoadAt { result, address } => {
-                    self.execute_f32_load_at(&store.inner, result, address)?
-                }
-                Instr::F32LoadOffset16 {
-                    result,
-                    ptr,
-                    offset,
-                } => self.execute_f32_load_offset16(result, ptr, offset)?,
-                Instr::F64Load { result, memory } => {
-                    self.execute_f64_load(&store.inner, result, memory)?
-                }
-                Instr::F64LoadAt { result, address } => {
-                    self.execute_f64_load_at(&store.inner, result, address)?
-                }
-                Instr::F64LoadOffset16 {
-                    result,
-                    ptr,
-                    offset,
-                } => self.execute_f64_load_offset16(result, ptr, offset)?,
+                } => self.execute_load64_offset16(result, ptr, offset)?,
                 Instr::I32Load8s { result, memory } => {
                     self.execute_i32_load8_s(&store.inner, result, memory)?
                 }
