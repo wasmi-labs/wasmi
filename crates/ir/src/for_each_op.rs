@@ -2093,7 +2093,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32Store`] with 16-bit immediate `value`.
+            /// Variant of [`Instruction::Store32`] with 16-bit immediate `value`.
             ///
             /// # Encoding
             ///
@@ -2109,7 +2109,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I32StoreOffset16`] with 16-bit immediate `value`.
+            /// - Variant of [`Instruction::Store32Offset16`] with 16-bit immediate `value`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i32_store_offset16_imm16)]
             I32StoreOffset16Imm16 {
@@ -2124,7 +2124,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I32StoreAt`] with 16-bit immediate `value`.
+            /// Variant of [`Instruction::Store32At`] with 16-bit immediate `value`.
             ///
             /// # Encoding
             ///
@@ -2333,7 +2333,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64Store`] with 16-bit immediate `value`.
+            /// Variant of [`Instruction::Store64`] with 16-bit immediate `value`.
             ///
             /// # Encoding
             ///
@@ -2349,7 +2349,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// - Variant of [`Instruction::I64StoreOffset16`] with 16-bit immediate `value`.
+            /// - Variant of [`Instruction::Store64Offset16`] with 16-bit immediate `value`.
             /// - Operates on the default Wasm memory instance.
             #[snake_name(i64_store_offset16_imm16)]
             I64StoreOffset16Imm16 {
@@ -2364,7 +2364,7 @@ macro_rules! for_each_op {
             ///
             /// # Note
             ///
-            /// Variant of [`Instruction::I64StoreAt`] with 16-bit immediate `value`.
+            /// Variant of [`Instruction::Store64At`] with 16-bit immediate `value`.
             ///
             /// # Encoding
             ///
