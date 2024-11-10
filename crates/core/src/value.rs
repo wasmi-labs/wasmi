@@ -394,6 +394,9 @@ impl_extend_into!(i32, i64);
 impl_extend_into!(u32, i64);
 impl_extend_into!(u32, u64);
 
+impl_extend_into!(u32, u32);
+impl_extend_into!(u64, u64);
+
 impl_extend_into!(i32, f32, F32);
 impl_extend_into!(i32, f64, F64);
 impl_extend_into!(u32, f32, F32);

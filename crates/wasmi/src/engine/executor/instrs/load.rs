@@ -205,25 +205,25 @@ impl Executor<'_> {
             (Instruction::I32Load, execute_i32_load),
             (Instruction::I32LoadAt, execute_i32_load_at),
             (Instruction::I32LoadOffset16, execute_i32_load_offset16),
-            UntypedVal::i32_load,
+            UntypedVal::load32,
         ),
         (
             (Instruction::I64Load, execute_i64_load),
             (Instruction::I64LoadAt, execute_i64_load_at),
             (Instruction::I64LoadOffset16, execute_i64_load_offset16),
-            UntypedVal::i64_load,
+            UntypedVal::load64,
         ),
         (
             (Instruction::F32Load, execute_f32_load),
             (Instruction::F32LoadAt, execute_f32_load_at),
             (Instruction::F32LoadOffset16, execute_f32_load_offset16),
-            UntypedVal::f32_load,
+            UntypedVal::load32,
         ),
         (
             (Instruction::F64Load, execute_f64_load),
             (Instruction::F64LoadAt, execute_f64_load_at),
             (Instruction::F64LoadOffset16, execute_f64_load_offset16),
-            UntypedVal::f64_load,
+            UntypedVal::load64,
         ),
 
         (

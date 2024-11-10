@@ -178,44 +178,24 @@ impl UntypedVal {
         Self::load_extend::<T, T>(memory, address, offset)
     }
 
-    /// Executes the `i32.load` Wasm operation.
+    /// Executes a Wasmi `load32` instruction.
     ///
     /// # Errors
     ///
     /// - If `address + offset` overflows.
     /// - If `address + offset` loads out of bounds from `memory`.
-    pub fn i32_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
-        Self::load::<i32>(memory, address, offset)
+    pub fn load32(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load::<u32>(memory, address, offset)
     }
 
-    /// Executes the `i64.load` Wasm operation.
+    /// Executes a Wasmi `load64` instruction.
     ///
     /// # Errors
     ///
     /// - If `address + offset` overflows.
     /// - If `address + offset` loads out of bounds from `memory`.
-    pub fn i64_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
-        Self::load::<i64>(memory, address, offset)
-    }
-
-    /// Executes the `f32.load` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `address + offset` overflows.
-    /// - If `address + offset` loads out of bounds from `memory`.
-    pub fn f32_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
-        Self::load::<F32>(memory, address, offset)
-    }
-
-    /// Executes the `f64.load` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `address + offset` overflows.
-    /// - If `address + offset` loads out of bounds from `memory`.
-    pub fn f64_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
-        Self::load::<F64>(memory, address, offset)
+    pub fn load64(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load::<u64>(memory, address, offset)
     }
 
     /// Executes the `i32.load8_s` Wasm operation.
