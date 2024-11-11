@@ -203,6 +203,12 @@ impl InstrSequence {
     pub fn get_slice_at_mut(&mut self, start: Instr) -> &mut [Instruction] {
         &mut self.instrs[start.into_usize()..]
     }
+
+    /// Returns a slice over the [`Instruction`]s of the [`InstrSequence`].
+    #[cfg(debug_assertions)]
+    pub fn as_slice(&self) -> &[Instruction] {
+        &self.instrs[..]
+    }
 }
 
 impl<'a> IntoIterator for &'a mut InstrSequence {
