@@ -577,9 +577,6 @@ impl WasmTranslator<'_> for FuncTranslator {
                     costs.fuel_for_copies(u64::from(len_registers))
                 })?;
         }
-        let func_consts = self.alloc.stack.func_local_consts();
-        let instrs = self.alloc.instr_encoder.drain_instrs();
-        finalize(CompiledFuncEntity::new(len_registers, instrs, func_consts));
         #[cfg(debug_assertions)]
         if let Err(err) = conditions::verify_translation_invariants(&self) {
             // Note: we do not propagate these errors to the caller as usual since
@@ -587,6 +584,9 @@ impl WasmTranslator<'_> for FuncTranslator {
             //       that should never occur if Wasmi translation works as intended.
             panic!("{err}")
         }
+        let func_consts = self.alloc.stack.func_local_consts();
+        let instrs = self.alloc.instr_encoder.drain_instrs();
+        finalize(CompiledFuncEntity::new(len_registers, instrs, func_consts));
         Ok(self.into_allocations())
     }
 }
