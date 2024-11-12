@@ -1642,7 +1642,7 @@ dependencies = [
  "wasmi_core 0.39.1",
  "wasmi_ir",
  "wasmi_wast",
- "wasmparser-nostd",
+ "wasmparser 0.219.1",
  "wat",
 ]
 
@@ -1776,8 +1776,11 @@ version = "0.219.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c771866898879073c53b565a6c7b49953795159836714ac56a5befb581227c5"
 dependencies = [
+ "ahash",
  "bitflags",
+ "hashbrown 0.14.5",
  "indexmap",
+ "semver",
 ]
 
 [[package]]
