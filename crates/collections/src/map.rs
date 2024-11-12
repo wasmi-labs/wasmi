@@ -3,7 +3,10 @@
 use core::{borrow::Borrow, hash::Hash, iter::FusedIterator, ops::Index};
 use std::fmt::Debug;
 
-#[cfg(not(feature = "no-hash-maps"))]
+#[cfg(all(
+    feature = "hash-collections",
+    not(feature = "prefer-btree-collections")
+))]
 mod detail {
     use crate::hash;
     use hashbrown::hash_map;
@@ -22,7 +25,10 @@ mod detail {
     pub type IntoValuesImpl<K, V> = hash_map::IntoValues<K, V>;
 }
 
-#[cfg(feature = "no-hash-maps")]
+#[cfg(any(
+    not(feature = "hash-collections"),
+    feature = "prefer-btree-collections"
+))]
 mod detail {
     use std::collections::btree_map;
 
@@ -44,7 +50,7 @@ mod detail {
 ///
 /// Provides an API compatible with both [`HashMap`] and [`BTreeMap`].
 ///
-/// [`HashMap`]: hashbrown::HashMap
+/// [`HashMap`]: https://docs.rs/hashbrown/0.15.0/hashbrown/struct.HashMap.html
 /// [`BTreeMap`]: std::collections::BTreeMap
 #[derive(Debug, Clone)]
 pub struct Map<K, V> {
@@ -155,9 +161,15 @@ where
     /// Reserves capacity for at least `additional` more elements to be inserted in the [`Map`].
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
-        #[cfg(not(feature = "no-hash-maps"))]
+        #[cfg(all(
+            feature = "hash-collections",
+            not(feature = "prefer-btree-collections")
+        ))]
         self.inner.reserve(additional);
-        #[cfg(feature = "no-hash-maps")]
+        #[cfg(any(
+            not(feature = "hash-collections"),
+            feature = "prefer-btree-collections"
+        ))]
         let _ = additional;
     }
 

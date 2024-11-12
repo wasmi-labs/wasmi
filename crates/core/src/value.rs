@@ -283,11 +283,8 @@ impl_wrap_into!(i64, i32);
 impl_wrap_into!(i64, f32, F32);
 impl_wrap_into!(u64, f32, F32);
 
-// Casting to self
-impl_wrap_into!(i32, i32);
-impl_wrap_into!(i64, i64);
-impl_wrap_into!(F32, F32);
-impl_wrap_into!(F64, F64);
+impl_wrap_into!(u32, u32);
+impl_wrap_into!(u64, u64);
 
 impl WrapInto<F32> for F64 {
     #[inline]
@@ -297,7 +294,7 @@ impl WrapInto<F32> for F64 {
 }
 
 macro_rules! impl_try_truncate_into {
-    (@primitive $from: ident, $into: ident, $to_primitive:path, $rmin:literal, $rmax:literal) => {
+    (@primitive $from: ident, $into: ident, $rmin:literal, $rmax:literal) => {
         impl TryTruncateInto<$into, TrapCode> for $from {
             #[inline]
             fn try_truncate_into(self) -> Result<$into, TrapCode> {
@@ -344,14 +341,14 @@ macro_rules! impl_try_truncate_into {
     };
 }
 
-impl_try_truncate_into!(@primitive f32, i32, num_traits::cast::ToPrimitive::to_i32, -2147483904.0_f32, 2147483648.0_f32);
-impl_try_truncate_into!(@primitive f32, u32, num_traits::cast::ToPrimitive::to_u32,          -1.0_f32, 4294967296.0_f32);
-impl_try_truncate_into!(@primitive f64, i32, num_traits::cast::ToPrimitive::to_i32, -2147483649.0_f64, 2147483648.0_f64);
-impl_try_truncate_into!(@primitive f64, u32, num_traits::cast::ToPrimitive::to_u32,          -1.0_f64, 4294967296.0_f64);
-impl_try_truncate_into!(@primitive f32, i64, num_traits::cast::ToPrimitive::to_i64, -9223373136366403584.0_f32,  9223372036854775808.0_f32);
-impl_try_truncate_into!(@primitive f32, u64, num_traits::cast::ToPrimitive::to_u64,                   -1.0_f32, 18446744073709551616.0_f32);
-impl_try_truncate_into!(@primitive f64, i64, num_traits::cast::ToPrimitive::to_i64, -9223372036854777856.0_f64,  9223372036854775808.0_f64);
-impl_try_truncate_into!(@primitive f64, u64, num_traits::cast::ToPrimitive::to_u64,                   -1.0_f64, 18446744073709551616.0_f64);
+impl_try_truncate_into!(@primitive f32, i32, -2147483904.0_f32, 2147483648.0_f32);
+impl_try_truncate_into!(@primitive f32, u32,          -1.0_f32, 4294967296.0_f32);
+impl_try_truncate_into!(@primitive f64, i32, -2147483649.0_f64, 2147483648.0_f64);
+impl_try_truncate_into!(@primitive f64, u32,          -1.0_f64, 4294967296.0_f64);
+impl_try_truncate_into!(@primitive f32, i64, -9223373136366403584.0_f32,  9223372036854775808.0_f32);
+impl_try_truncate_into!(@primitive f32, u64,                   -1.0_f32, 18446744073709551616.0_f32);
+impl_try_truncate_into!(@primitive f64, i64, -9223372036854777856.0_f64,  9223372036854775808.0_f64);
+impl_try_truncate_into!(@primitive f64, u64,                   -1.0_f64, 18446744073709551616.0_f64);
 impl_try_truncate_into!(@wrapped F32, f32, i32);
 impl_try_truncate_into!(@wrapped F32, f32, i64);
 impl_try_truncate_into!(@wrapped F64, f64, i32);
@@ -403,10 +400,8 @@ impl_extend_into!(u64, f64, F64);
 impl_extend_into!(f32, f64, F64);
 
 // Casting to self
-impl_extend_into!(i32, i32);
-impl_extend_into!(i64, i64);
-impl_extend_into!(F32, F32);
-impl_extend_into!(F64, F64);
+impl_extend_into!(u32, u32);
+impl_extend_into!(u64, u64);
 
 impl ExtendInto<F64> for F32 {
     #[inline]

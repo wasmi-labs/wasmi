@@ -1,17 +1,16 @@
-mod context;
-mod descriptor;
-mod error;
-mod profile;
-mod run;
-
-use self::{
-    context::TestContext,
-    descriptor::{TestDescriptor, TestSpan},
-    error::TestError,
-    profile::TestProfile,
-    run::{ParsingMode, RunnerConfig},
-};
 use wasmi::Config;
+use wasmi_wast::{ParsingMode, RunnerConfig, WastRunner};
+
+/// Runs the Wasm test spec identified by the given name.
+fn process_wast(path: &'static str, wast: &'static str, config: RunnerConfig) {
+    let mut runner = WastRunner::new(config);
+    if let Err(error) = runner.register_spectest() {
+        panic!("{path}: failed to setup Wasm spectest module: {error}");
+    }
+    if let Err(error) = runner.process_directives(path, wast) {
+        panic!("{error:#}")
+    }
+}
 
 macro_rules! define_tests {
     (
@@ -70,7 +69,7 @@ fn mvp_config() -> Config {
 /// # Note
 ///
 /// The Wasm MVP has no Wasm proposals enabled.
-fn test_config(consume_fuel: bool, mode: ParsingMode) -> RunnerConfig {
+fn test_config(consume_fuel: bool, parsing_mode: ParsingMode) -> RunnerConfig {
     let mut config = mvp_config();
     // We have to enable the `mutable-global` Wasm proposal because
     // it seems that the entire Wasm spec test suite is already built
@@ -86,7 +85,10 @@ fn test_config(consume_fuel: bool, mode: ParsingMode) -> RunnerConfig {
         .wasm_tail_call(true)
         .wasm_extended_const(true)
         .consume_fuel(consume_fuel);
-    RunnerConfig { config, mode }
+    RunnerConfig {
+        config,
+        parsing_mode,
+    }
 }
 
 macro_rules! expand_tests {
@@ -156,6 +158,7 @@ macro_rules! expand_tests {
             fn wasm_memory_redundancy("memory_redundancy");
             fn wasm_memory_size("memory_size");
             fn wasm_memory_trap("memory_trap");
+            fn wasm_obsolete_keywords("obsolete-keywords");
             fn wasm_names("names");
             fn wasm_nop("nop");
             fn wasm_ref_func("ref_func");
@@ -213,7 +216,7 @@ expand_tests! {
     define_spec_tests,
 
     let config = test_config(false, ParsingMode::Buffered);
-    let runner = run::run_wasm_spec_test;
+    let runner = process_wast;
 }
 
 macro_rules! expand_tests_mm {
@@ -221,6 +224,7 @@ macro_rules! expand_tests_mm {
         $mac! {
             $( $args )*
 
+            fn wasm_multi_memory_align("proposals/multi-memory/align");
             fn wasm_multi_memory_address0("proposals/multi-memory/address0");
             fn wasm_multi_memory_address1("proposals/multi-memory/address1");
             fn wasm_multi_memory_align0("proposals/multi-memory/align0");
@@ -291,15 +295,18 @@ mod multi_memory {
 
     fn test_config() -> RunnerConfig {
         let config = Config::default();
-        let mode = ParsingMode::Buffered;
-        RunnerConfig { config, mode }
+        let parsing_mode = ParsingMode::Buffered;
+        RunnerConfig {
+            config,
+            parsing_mode,
+        }
     }
 
     expand_tests_mm! {
         define_spec_tests,
 
         let config = test_config();
-        let runner = run::run_wasm_spec_test;
+        let runner = process_wast;
     }
 }
 
@@ -310,7 +317,7 @@ mod fueled {
         define_spec_tests,
 
         let config = test_config(true, ParsingMode::Buffered);
-        let runner = run::run_wasm_spec_test;
+        let runner = process_wast;
     }
 }
 
@@ -321,6 +328,6 @@ mod streaming {
         define_spec_tests,
 
         let config = test_config(false, ParsingMode::Streaming);
-        let runner = run::run_wasm_spec_test;
+        let runner = process_wast;
     }
 }

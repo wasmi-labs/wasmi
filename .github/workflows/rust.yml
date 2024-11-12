@@ -36,14 +36,14 @@ jobs:
             --no-default-features
             --target x86_64-unknown-none
             --verbose
-      - name: Build (no_std + no-hash-maps)
+      - name: Build (no_std + hash-collections)
         run: >-
             cargo build
             --package wasmi
             --locked
             --lib
             --no-default-features
-            --features no-hash-maps
+            --features hash-collections
             --target x86_64-unknown-none
             --verbose
       - name: Build (no_std + wasm32)
@@ -92,7 +92,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.79.0
       - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace
+      - run: >-
+          cargo check
+          --workspace
+          --exclude wasmi_fuzz
+          --exclude fuzz
 
   test:
     name: Test
@@ -203,7 +207,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        fuzz_target: ['translate', 'translate_metered', 'execute', 'differential']
+        fuzz_target: ['translate', 'execute', 'differential']
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
@@ -211,21 +215,42 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
-          toolchain: nightly-2024-09-24
-      - name: Set up Rust cache
+          toolchain: nightly-2024-10-18
+      - name: Cache
         uses: Swatinem/rust-cache@v2
         with:
           cache-directories: |
-            ${{ github.workspace }}/hfuzz_target
-            ${{ github.workspace }}/hfuzz_workspace
-      - name: Install cargo-honggfuzz and dependencies
+            ${{ github.workspace }}/fuzz/corpus/${{ matrix.fuzz_target }}
+            ${{ github.workspace }}/target
+          prefix-key: fuzz-${{ matrix.fuzz_target }}
+      - name: Install `cargo-fuzz`
         run: |
-          cargo install honggfuzz || true
-          sudo apt-get update && sudo apt-get install --yes binutils-dev libunwind-dev
-      - name: Run HFuzz
-        env:
-          HFUZZ_RUN_ARGS: "--run_time 120 --verbose --quiet" # 2 minutes of fuzzing
-        run: cargo hfuzz run ${{ matrix.fuzz_target }}
+          # Note: We use `|| true` because cargo install returns an error
+          #       if cargo-fuzz was already installed on the CI runner.
+          cargo install cargo-fuzz || true
+      - name: Set Fuzzing Features
+        run: |
+          FEATURES=""
+          if [ "${{ matrix.fuzz_target }}" == "differential" ]; then
+            FEATURES="--features differential"
+          fi
+          echo "FEATURES=$FEATURES" >> $GITHUB_ENV
+      - name: Check Fuzzing Target
+        run: cargo fuzz check ${{ matrix.fuzz_target }} $FEATURES
+      - name: Build Fuzzing Target
+        run: cargo fuzz build ${{ matrix.fuzz_target }} $FEATURES
+      - name: Run Fuzzing Target
+        # - Use 4 jobs since GitHub hosted runners provide 4 CPUs.
+        # - Always enable debug-assertions for all modes to catch more bugs.
+        # - Run fuzzing for 120s (2 minutes) in total.
+        run: >-
+          cargo fuzz run ${{ matrix.fuzz_target }}
+          --jobs 4
+          --verbose
+          --debug-assertions
+          $FEATURES
+          --
+          -max_total_time=120
 
   miri:
     name: Miri

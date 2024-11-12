@@ -18,7 +18,7 @@ mod visit_register;
 mod tests;
 
 use self::{
-    comparator::{ComparatorExt, ComparatorExtImm},
+    comparator::{NegateCmpInstr, TryIntoCmpBranchFallbackInstr, TryIntoCmpBranchInstr},
     control_frame::{
         BlockControlFrame,
         BlockHeight,
@@ -1431,8 +1431,8 @@ impl FuncTranslator {
     fn translate_binary<T>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
-        make_instr_imm16_rev: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        make_instr_imm16_rhs: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
         make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
@@ -1455,7 +1455,7 @@ impl FuncTranslator {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
-                if self.try_push_binary_instr_imm16(lhs, T::from(rhs), make_instr_imm16)? {
+                if self.try_push_binary_instr_imm16(lhs, T::from(rhs), make_instr_imm16_rhs)? {
                     // Optimization was applied: return early.
                     return Ok(());
                 }
@@ -1466,7 +1466,7 @@ impl FuncTranslator {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
-                if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_rev)? {
+                if self.try_push_binary_instr_imm16_rev(T::from(lhs), rhs, make_instr_imm16_lhs)? {
                     // Optimization was applied: return early.
                     return Ok(());
                 }

@@ -14,19 +14,19 @@ fn same_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_reg() {
-    test_binary_reg_reg(WASM_OP, Instruction::f64_gt)
+    test_binary_reg_reg(WASM_OP, swap_ops!(Instruction::f64_lt))
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm() {
-    test_binary_reg_imm32(WASM_OP, 1.0, Instruction::f64_gt)
+    test_binary_reg_imm32(WASM_OP, 1.0, swap_ops!(Instruction::f64_lt))
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm_lhs() {
-    test_binary_reg_imm32_lhs(WASM_OP, 1.0, Instruction::f64_gt)
+    test_binary_reg_imm32_lhs(WASM_OP, 1.0, swap_ops!(Instruction::f64_lt))
 }
 
 #[test]

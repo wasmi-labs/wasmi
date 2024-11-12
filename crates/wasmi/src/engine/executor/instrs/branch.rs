@@ -214,7 +214,7 @@ impl Executor<'_> {
     }
 
     /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
-    fn execute_branch_binop_imm<T>(
+    fn execute_branch_binop_imm16_rhs<T>(
         &mut self,
         lhs: Reg,
         rhs: Const16<T>,
@@ -225,6 +225,24 @@ impl Executor<'_> {
     {
         let lhs: T = self.get_register_as(lhs);
         let rhs = T::from(rhs);
+        if f(lhs, rhs) {
+            return self.branch_to16(offset);
+        }
+        self.next_instr()
+    }
+
+    /// Executes a generic fused compare and branch instruction with immediate `rhs` operand.
+    fn execute_branch_binop_imm16_lhs<T>(
+        &mut self,
+        lhs: Const16<T>,
+        rhs: Reg,
+        offset: BranchOffset16,
+        f: fn(T, T) -> bool,
+    ) where
+        T: From<UntypedVal> + From<Const16<T>>,
+    {
+        let lhs = T::from(lhs);
+        let rhs: T = self.get_register_as(rhs);
         if f(lhs, rhs) {
             return self.branch_to16(offset);
         }
@@ -258,20 +276,6 @@ where
     T: PartialOrd,
 {
     a <= b
-}
-
-fn cmp_gt<T>(a: T, b: T) -> bool
-where
-    T: PartialOrd,
-{
-    a > b
-}
-
-fn cmp_ge<T>(a: T, b: T) -> bool
-where
-    T: PartialOrd,
-{
-    a >= b
 }
 
 fn cmp_i32_and(a: i32, b: i32) -> bool {
@@ -323,10 +327,6 @@ impl_execute_branch_binop! {
     (u32, Instruction::BranchI32LtU, execute_branch_i32_lt_u, cmp_lt),
     (i32, Instruction::BranchI32LeS, execute_branch_i32_le_s, cmp_le),
     (u32, Instruction::BranchI32LeU, execute_branch_i32_le_u, cmp_le),
-    (i32, Instruction::BranchI32GtS, execute_branch_i32_gt_s, cmp_gt),
-    (u32, Instruction::BranchI32GtU, execute_branch_i32_gt_u, cmp_gt),
-    (i32, Instruction::BranchI32GeS, execute_branch_i32_ge_s, cmp_ge),
-    (u32, Instruction::BranchI32GeU, execute_branch_i32_ge_u, cmp_ge),
 
     (i64, Instruction::BranchI64Eq, execute_branch_i64_eq, cmp_eq),
     (i64, Instruction::BranchI64Ne, execute_branch_i64_ne, cmp_ne),
@@ -334,66 +334,74 @@ impl_execute_branch_binop! {
     (u64, Instruction::BranchI64LtU, execute_branch_i64_lt_u, cmp_lt),
     (i64, Instruction::BranchI64LeS, execute_branch_i64_le_s, cmp_le),
     (u64, Instruction::BranchI64LeU, execute_branch_i64_le_u, cmp_le),
-    (i64, Instruction::BranchI64GtS, execute_branch_i64_gt_s, cmp_gt),
-    (u64, Instruction::BranchI64GtU, execute_branch_i64_gt_u, cmp_gt),
-    (i64, Instruction::BranchI64GeS, execute_branch_i64_ge_s, cmp_ge),
-    (u64, Instruction::BranchI64GeU, execute_branch_i64_ge_u, cmp_ge),
 
     (f32, Instruction::BranchF32Eq, execute_branch_f32_eq, cmp_eq),
     (f32, Instruction::BranchF32Ne, execute_branch_f32_ne, cmp_ne),
     (f32, Instruction::BranchF32Lt, execute_branch_f32_lt, cmp_lt),
     (f32, Instruction::BranchF32Le, execute_branch_f32_le, cmp_le),
-    (f32, Instruction::BranchF32Gt, execute_branch_f32_gt, cmp_gt),
-    (f32, Instruction::BranchF32Ge, execute_branch_f32_ge, cmp_ge),
 
     (f64, Instruction::BranchF64Eq, execute_branch_f64_eq, cmp_eq),
     (f64, Instruction::BranchF64Ne, execute_branch_f64_ne, cmp_ne),
     (f64, Instruction::BranchF64Lt, execute_branch_f64_lt, cmp_lt),
     (f64, Instruction::BranchF64Le, execute_branch_f64_le, cmp_le),
-    (f64, Instruction::BranchF64Gt, execute_branch_f64_gt, cmp_gt),
-    (f64, Instruction::BranchF64Ge, execute_branch_f64_ge, cmp_ge),
 }
 
-macro_rules! impl_execute_branch_binop_imm {
+macro_rules! impl_execute_branch_binop_imm16_rhs {
     ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
                 pub fn $fn_name(&mut self, lhs: Reg, rhs: Const16<$ty>, offset: BranchOffset16) {
-                    self.execute_branch_binop_imm::<$ty>(lhs, rhs, offset, $op)
+                    self.execute_branch_binop_imm16_rhs::<$ty>(lhs, rhs, offset, $op)
                 }
             )*
         }
     }
 }
-impl_execute_branch_binop_imm! {
-    (i32, Instruction::BranchI32AndImm, execute_branch_i32_and_imm, cmp_i32_and),
-    (i32, Instruction::BranchI32OrImm, execute_branch_i32_or_imm, cmp_i32_or),
-    (i32, Instruction::BranchI32XorImm, execute_branch_i32_xor_imm, cmp_i32_xor),
-    (i32, Instruction::BranchI32AndEqzImm, execute_branch_i32_and_eqz_imm, cmp_i32_and_eqz),
-    (i32, Instruction::BranchI32OrEqzImm, execute_branch_i32_or_eqz_imm, cmp_i32_or_eqz),
-    (i32, Instruction::BranchI32XorEqzImm, execute_branch_i32_xor_eqz_imm, cmp_i32_xor_eqz),
-    (i32, Instruction::BranchI32EqImm, execute_branch_i32_eq_imm, cmp_eq),
-    (i32, Instruction::BranchI32NeImm, execute_branch_i32_ne_imm, cmp_ne),
-    (i32, Instruction::BranchI32LtSImm, execute_branch_i32_lt_s_imm, cmp_lt),
-    (u32, Instruction::BranchI32LtUImm, execute_branch_i32_lt_u_imm, cmp_lt),
-    (i32, Instruction::BranchI32LeSImm, execute_branch_i32_le_s_imm, cmp_le),
-    (u32, Instruction::BranchI32LeUImm, execute_branch_i32_le_u_imm, cmp_le),
-    (i32, Instruction::BranchI32GtSImm, execute_branch_i32_gt_s_imm, cmp_gt),
-    (u32, Instruction::BranchI32GtUImm, execute_branch_i32_gt_u_imm, cmp_gt),
-    (i32, Instruction::BranchI32GeSImm, execute_branch_i32_ge_s_imm, cmp_ge),
-    (u32, Instruction::BranchI32GeUImm, execute_branch_i32_ge_u_imm, cmp_ge),
+impl_execute_branch_binop_imm16_rhs! {
+    (i32, Instruction::BranchI32AndImm16, execute_branch_i32_and_imm16, cmp_i32_and),
+    (i32, Instruction::BranchI32OrImm16, execute_branch_i32_or_imm16, cmp_i32_or),
+    (i32, Instruction::BranchI32XorImm16, execute_branch_i32_xor_imm16, cmp_i32_xor),
+    (i32, Instruction::BranchI32AndEqzImm16, execute_branch_i32_and_eqz_imm16, cmp_i32_and_eqz),
+    (i32, Instruction::BranchI32OrEqzImm16, execute_branch_i32_or_eqz_imm16, cmp_i32_or_eqz),
+    (i32, Instruction::BranchI32XorEqzImm16, execute_branch_i32_xor_eqz_imm16, cmp_i32_xor_eqz),
+    (i32, Instruction::BranchI32EqImm16, execute_branch_i32_eq_imm16, cmp_eq),
+    (i32, Instruction::BranchI32NeImm16, execute_branch_i32_ne_imm16, cmp_ne),
+    (i32, Instruction::BranchI32LtSImm16Rhs, execute_branch_i32_lt_s_imm16_rhs, cmp_lt),
+    (u32, Instruction::BranchI32LtUImm16Rhs, execute_branch_i32_lt_u_imm16_rhs, cmp_lt),
+    (i32, Instruction::BranchI32LeSImm16Rhs, execute_branch_i32_le_s_imm16_rhs, cmp_le),
+    (u32, Instruction::BranchI32LeUImm16Rhs, execute_branch_i32_le_u_imm16_rhs, cmp_le),
 
-    (i64, Instruction::BranchI64EqImm, execute_branch_i64_eq_imm, cmp_eq),
-    (i64, Instruction::BranchI64NeImm, execute_branch_i64_ne_imm, cmp_ne),
-    (i64, Instruction::BranchI64LtSImm, execute_branch_i64_lt_s_imm, cmp_lt),
-    (u64, Instruction::BranchI64LtUImm, execute_branch_i64_lt_u_imm, cmp_lt),
-    (i64, Instruction::BranchI64LeSImm, execute_branch_i64_le_s_imm, cmp_le),
-    (u64, Instruction::BranchI64LeUImm, execute_branch_i64_le_u_imm, cmp_le),
-    (i64, Instruction::BranchI64GtSImm, execute_branch_i64_gt_s_imm, cmp_gt),
-    (u64, Instruction::BranchI64GtUImm, execute_branch_i64_gt_u_imm, cmp_gt),
-    (i64, Instruction::BranchI64GeSImm, execute_branch_i64_ge_s_imm, cmp_ge),
-    (u64, Instruction::BranchI64GeUImm, execute_branch_i64_ge_u_imm, cmp_ge),
+    (i64, Instruction::BranchI64EqImm16, execute_branch_i64_eq_imm16, cmp_eq),
+    (i64, Instruction::BranchI64NeImm16, execute_branch_i64_ne_imm16, cmp_ne),
+    (i64, Instruction::BranchI64LtSImm16Rhs, execute_branch_i64_lt_s_imm16_rhs, cmp_lt),
+    (u64, Instruction::BranchI64LtUImm16Rhs, execute_branch_i64_lt_u_imm16_rhs, cmp_lt),
+    (i64, Instruction::BranchI64LeSImm16Rhs, execute_branch_i64_le_s_imm16_rhs, cmp_le),
+    (u64, Instruction::BranchI64LeUImm16Rhs, execute_branch_i64_le_u_imm16_rhs, cmp_le),
+}
+
+macro_rules! impl_execute_branch_binop_imm16_lhs {
+    ( $( ($ty:ty, Instruction::$op_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+        impl<'engine> Executor<'engine> {
+            $(
+                #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
+                pub fn $fn_name(&mut self, lhs: Const16<$ty>, rhs: Reg, offset: BranchOffset16) {
+                    self.execute_branch_binop_imm16_lhs::<$ty>(lhs, rhs, offset, $op)
+                }
+            )*
+        }
+    }
+}
+impl_execute_branch_binop_imm16_lhs! {
+    (i32, Instruction::BranchI32LtSImm16Lhs, execute_branch_i32_lt_s_imm16_lhs, cmp_lt),
+    (u32, Instruction::BranchI32LtUImm16Lhs, execute_branch_i32_lt_u_imm16_lhs, cmp_lt),
+    (i32, Instruction::BranchI32LeSImm16Lhs, execute_branch_i32_le_s_imm16_lhs, cmp_le),
+    (u32, Instruction::BranchI32LeUImm16Lhs, execute_branch_i32_le_u_imm16_lhs, cmp_le),
+
+    (i64, Instruction::BranchI64LtSImm16Lhs, execute_branch_i64_lt_s_imm16_lhs, cmp_lt),
+    (u64, Instruction::BranchI64LtUImm16Lhs, execute_branch_i64_lt_u_imm16_lhs, cmp_lt),
+    (i64, Instruction::BranchI64LeSImm16Lhs, execute_branch_i64_le_s_imm16_lhs, cmp_le),
+    (u64, Instruction::BranchI64LeUImm16Lhs, execute_branch_i64_le_u_imm16_lhs, cmp_le),
 }
 
 impl Executor<'_> {
@@ -412,10 +420,6 @@ impl Executor<'_> {
             C::I32LtU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_lt),
             C::I32LeS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_le),
             C::I32LeU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_le),
-            C::I32GtS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_gt),
-            C::I32GtU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_gt),
-            C::I32GeS => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_ge),
-            C::I32GeU => self.execute_branch_binop::<u32>(lhs, rhs, offset, cmp_ge),
             C::I32And => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_and),
             C::I32Or => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_or),
             C::I32Xor => self.execute_branch_binop::<i32>(lhs, rhs, offset, cmp_i32_xor),
@@ -428,22 +432,14 @@ impl Executor<'_> {
             C::I64LtU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_lt),
             C::I64LeS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_le),
             C::I64LeU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_le),
-            C::I64GtS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_gt),
-            C::I64GtU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_gt),
-            C::I64GeS => self.execute_branch_binop::<i64>(lhs, rhs, offset, cmp_ge),
-            C::I64GeU => self.execute_branch_binop::<u64>(lhs, rhs, offset, cmp_ge),
             C::F32Eq => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_eq),
             C::F32Ne => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_ne),
             C::F32Lt => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_lt),
             C::F32Le => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_le),
-            C::F32Gt => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_gt),
-            C::F32Ge => self.execute_branch_binop::<f32>(lhs, rhs, offset, cmp_ge),
             C::F64Eq => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_eq),
             C::F64Ne => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_ne),
             C::F64Lt => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_lt),
             C::F64Le => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_le),
-            C::F64Gt => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_gt),
-            C::F64Ge => self.execute_branch_binop::<f64>(lhs, rhs, offset, cmp_ge),
         };
     }
 }

@@ -17,7 +17,6 @@ use core::{
     fmt::{self, Display},
     ops::{Neg, Shl, Shr},
 };
-use paste::paste;
 
 /// An untyped value.
 ///
@@ -179,44 +178,24 @@ impl UntypedVal {
         Self::load_extend::<T, T>(memory, address, offset)
     }
 
-    /// Executes the `i32.load` Wasm operation.
+    /// Executes a Wasmi `load32` instruction.
     ///
     /// # Errors
     ///
     /// - If `address + offset` overflows.
     /// - If `address + offset` loads out of bounds from `memory`.
-    pub fn i32_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
-        Self::load::<i32>(memory, address, offset)
+    pub fn load32(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load::<u32>(memory, address, offset)
     }
 
-    /// Executes the `i64.load` Wasm operation.
+    /// Executes a Wasmi `load64` instruction.
     ///
     /// # Errors
     ///
     /// - If `address + offset` overflows.
     /// - If `address + offset` loads out of bounds from `memory`.
-    pub fn i64_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
-        Self::load::<i64>(memory, address, offset)
-    }
-
-    /// Executes the `f32.load` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `address + offset` overflows.
-    /// - If `address + offset` loads out of bounds from `memory`.
-    pub fn f32_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
-        Self::load::<F32>(memory, address, offset)
-    }
-
-    /// Executes the `f64.load` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `address + offset` overflows.
-    /// - If `address + offset` loads out of bounds from `memory`.
-    pub fn f64_load(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
-        Self::load::<F64>(memory, address, offset)
+    pub fn load64(memory: &[u8], address: Self, offset: u32) -> Result<Self, TrapCode> {
+        Self::load::<u64>(memory, address, offset)
     }
 
     /// Executes the `i32.load8_s` Wasm operation.
@@ -356,64 +335,34 @@ impl UntypedVal {
         Self::store_wrap::<T, T>(memory, address, offset, value)
     }
 
-    /// Executes the `i32.store` Wasm operation.
+    /// Executes a Wasmi `store32` instruction.
     ///
     /// # Errors
     ///
     /// - If `address + offset` overflows.
     /// - If `address + offset` stores out of bounds from `memory`.
-    pub fn i32_store(
+    pub fn store32(
         memory: &mut [u8],
         address: Self,
         offset: u32,
         value: Self,
     ) -> Result<(), TrapCode> {
-        Self::store::<i32>(memory, address, offset, value)
+        Self::store::<u32>(memory, address, offset, value)
     }
 
-    /// Executes the `i64.store` Wasm operation.
+    /// Executes a Wasmi `store64` instruction.
     ///
     /// # Errors
     ///
     /// - If `address + offset` overflows.
     /// - If `address + offset` stores out of bounds from `memory`.
-    pub fn i64_store(
+    pub fn store64(
         memory: &mut [u8],
         address: Self,
         offset: u32,
         value: Self,
     ) -> Result<(), TrapCode> {
-        Self::store::<i64>(memory, address, offset, value)
-    }
-
-    /// Executes the `f32.store` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `address + offset` overflows.
-    /// - If `address + offset` stores out of bounds from `memory`.
-    pub fn f32_store(
-        memory: &mut [u8],
-        address: Self,
-        offset: u32,
-        value: Self,
-    ) -> Result<(), TrapCode> {
-        Self::store::<F32>(memory, address, offset, value)
-    }
-
-    /// Executes the `f64.store` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `address + offset` overflows.
-    /// - If `address + offset` stores out of bounds from `memory`.
-    pub fn f64_store(
-        memory: &mut [u8],
-        address: Self,
-        offset: u32,
-        value: Self,
-    ) -> Result<(), TrapCode> {
-        Self::store::<F64>(memory, address, offset, value)
+        Self::store::<u64>(memory, address, offset, value)
     }
 
     /// Executes the `i32.store8` Wasm operation.
@@ -1479,27 +1428,25 @@ where
 
 macro_rules! impl_encode_untyped_slice {
     ( $n:literal $( $tuple:ident )* ) => {
-        paste! {
-            impl<$($tuple),*> EncodeUntypedSlice for ($($tuple,)*)
-            where
+        impl<$($tuple),*> EncodeUntypedSlice for ($($tuple,)*)
+        where
+            $(
+                $tuple: Into<UntypedVal>
+            ),*
+        {
+            #[allow(non_snake_case)]
+            #[inline]
+            fn encode_untyped_slice<'a>(self, results: &'a mut [UntypedVal]) -> Result<(), UntypedError> {
+                let Ok(_results) = <&'a mut [UntypedVal; $n]>::try_from(results) else {
+                    return Err(UntypedError::invalid_len())
+                };
+                let ( $( $tuple ,)* ) = self;
+                let mut _i = 0;
                 $(
-                    $tuple: Into<UntypedVal>
-                ),*
-            {
-                #[allow(non_snake_case)]
-                #[inline]
-                fn encode_untyped_slice(self, results: &mut [UntypedVal]) -> Result<(), UntypedError> {
-                    match results {
-                        [ $( [< _results_ $tuple >] ,)* ] => {
-                            let ( $( [< _self_ $tuple >] ,)* ) = self;
-                            $(
-                                *[< _results_ $tuple >] = <$tuple as Into<UntypedVal>>::into([< _self_ $tuple >]);
-                            )*
-                            Ok(())
-                        }
-                        _ => Err(UntypedError::invalid_len())
-                    }
-                }
+                    _results[_i] = <$tuple as Into<UntypedVal>>::into($tuple);
+                    _i += 1;
+                )*
+                Ok(())
             }
         }
     };

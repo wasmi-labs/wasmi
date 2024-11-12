@@ -1,0 +1,19 @@
+[package]
+name = "wasmi_wast"
+version.workspace = true
+rust-version.workspace = true
+documentation = "https://docs.rs/wasmi_wast"
+description = "Utilities to execute Wast files and directives with Wasmi"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+exclude.workspace = true
+
+[dependencies]
+wasmi = { workspace = true, features = ["std"] }
+wast = { version = "219.0.1", default-features = false, features = ["wasm-module"] }
+anyhow = "1.0"

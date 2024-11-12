@@ -260,9 +260,9 @@ mod i32_load {
 
     generate_tests!(
         WASM_OP,
-        Instruction::i32_load,
-        Instruction::i32_load_offset16,
-        Instruction::i32_load_at
+        Instruction::load32,
+        Instruction::load32_offset16,
+        Instruction::load32_at
     );
 }
 
@@ -325,9 +325,9 @@ mod i64_load {
 
     generate_tests!(
         WASM_OP,
-        Instruction::i64_load,
-        Instruction::i64_load_offset16,
-        Instruction::i64_load_at
+        Instruction::load64,
+        Instruction::load64_offset16,
+        Instruction::load64_at
     );
 }
 
@@ -416,9 +416,9 @@ mod f32_load {
 
     generate_tests!(
         WASM_OP,
-        Instruction::f32_load,
-        Instruction::f32_load_offset16,
-        Instruction::f32_load_at
+        Instruction::load32,
+        Instruction::load32_offset16,
+        Instruction::load32_at
     );
 }
 
@@ -429,8 +429,8 @@ mod f64_load {
 
     generate_tests!(
         WASM_OP,
-        Instruction::f64_load,
-        Instruction::f64_load_offset16,
-        Instruction::f64_load_at
+        Instruction::load64,
+        Instruction::load64_offset16,
+        Instruction::load64_at
     );
 }

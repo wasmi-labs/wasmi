@@ -8,7 +8,10 @@ use core::{
     ops::{BitAnd, BitOr, BitXor, Sub},
 };
 
-#[cfg(not(feature = "no-hash-maps"))]
+#[cfg(all(
+    feature = "hash-collections",
+    not(feature = "prefer-btree-collections")
+))]
 mod detail {
     use crate::hash;
     use hashbrown::hash_set;
@@ -23,7 +26,10 @@ mod detail {
     pub type UnionImpl<'a, T> = hash_set::Union<'a, T, hash::RandomState>;
 }
 
-#[cfg(feature = "no-hash-maps")]
+#[cfg(any(
+    not(feature = "hash-collections"),
+    feature = "prefer-btree-collections"
+))]
 mod detail {
     use std::collections::btree_set;
 
@@ -40,7 +46,7 @@ mod detail {
 ///
 /// Provides an API compatible with both [`HashSet`] and [`BTreeSet`].
 ///
-/// [`HashSet`]: hashbrown::HashSet
+/// [`HashSet`]: https://docs.rs/hashbrown/0.15.0/hashbrown/struct.HashSet.html
 /// [`BTreeSet`]: std::collections::BTreeSet
 #[derive(Debug, Clone)]
 pub struct Set<T> {
@@ -105,9 +111,15 @@ where
     /// Reserves capacity for at least `additional` more elements to be inserted in the [`Set`].
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
-        #[cfg(not(feature = "no-hash-maps"))]
+        #[cfg(all(
+            feature = "hash-collections",
+            not(feature = "prefer-btree-collections")
+        ))]
         self.inner.reserve(additional);
-        #[cfg(feature = "no-hash-maps")]
+        #[cfg(any(
+            not(feature = "hash-collections"),
+            feature = "prefer-btree-collections"
+        ))]
         let _ = additional;
     }
 
