@@ -19,7 +19,7 @@ exclude = [
 ]
 
 [dependencies]
-wasmparser = { version = "0.219.0", default-features = false, features = ["validate", "features"] }
+wasmparser = { version = "0.220.0", default-features = false, features = ["validate", "features"] }
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
 wasmi_ir = { workspace = true }
@@ -48,8 +48,14 @@ std = [
     "spin/std",
     "arrayvec/std",
 ]
-hash-collections = ["wasmi_collections/hash-collections"]
-prefer-btree-collections = ["wasmi_collections/prefer-btree-collections"]
+hash-collections = [
+    "wasmi_collections/hash-collections",
+    "wasmparser/hash-collections",
+]
+prefer-btree-collections = [
+    "wasmi_collections/prefer-btree-collections",
+    "wasmparser/prefer-btree-collections",
+]
 
 # Enables extra checks performed during Wasmi bytecode execution.
 #
