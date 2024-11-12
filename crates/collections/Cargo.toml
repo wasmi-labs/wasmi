@@ -16,7 +16,6 @@ exclude.workspace = true
 [dependencies]
 hashbrown = { version = "0.15.1", default-features = false, optional = true, features = ["default-hasher", "inline-more"] }
 string-interner = { version = "0.18", default-features = false, optional = true, features = ["inline-more", "backends"] }
-ahash = { version = "0.8.11", default-features = false, optional = true }
 
 [features]
 default = ["std"]
@@ -46,7 +45,6 @@ std = ["string-interner?/std"]
 hash-collections = [
   'dep:hashbrown',
   'dep:string-interner',
-  'dep:ahash',
 ]
 prefer-btree-collections = []
 
