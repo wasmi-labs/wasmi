@@ -94,29 +94,29 @@ impl Hasher for RandomStateHasher {
 #[cfg(feature = "std")]
 use std::collections::hash_map::RandomState as RandomStateImpl;
 
-// When the `std` feature is NOT active then rely on `ahash::RandomState`
+// When the `std` feature is NOT active then rely on `hashbrown`'s `RandomState`
 // which relies on ASLR by default for randomness.
 #[derive(Clone, Debug)]
 #[cfg(not(feature = "std"))]
 struct RandomStateImpl {
-    state: ahash::RandomState,
+    state: hashbrown::DefaultHashBuilder,
 }
 
 #[cfg(not(feature = "std"))]
 impl Default for RandomStateImpl {
     fn default() -> Self {
         Self {
-            state: ahash::RandomState::new(),
+            state: hashbrown::DefaultHashBuilder::default(),
         }
     }
 }
 
 #[cfg(not(feature = "std"))]
 impl BuildHasher for RandomStateImpl {
-    type Hasher = ahash::AHasher;
+    type Hasher = <hashbrown::DefaultHashBuilder as BuildHasher>::Hasher;
 
     #[inline]
-    fn build_hasher(&self) -> ahash::AHasher {
+    fn build_hasher(&self) -> Self::Hasher {
         self.state.build_hasher()
     }
 }
