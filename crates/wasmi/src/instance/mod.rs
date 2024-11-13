@@ -22,7 +22,7 @@ use crate::{
     WasmParams,
     WasmResults,
 };
-use std::{boxed::Box, sync::Arc};
+use alloc::{boxed::Box, sync::Arc};
 
 mod builder;
 mod exports;

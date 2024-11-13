@@ -1,5 +1,5 @@
+use alloc::{slice, vec, vec::Vec};
 use core::mem::ManuallyDrop;
-use std::{slice, vec, vec::Vec};
 
 /// A byte buffer implementation.
 ///

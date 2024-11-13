@@ -19,7 +19,7 @@ use crate::{
     ir::{Reg, RegSpan},
     Error,
 };
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 /// Typed inputs to Wasmi bytecode instructions.
 ///

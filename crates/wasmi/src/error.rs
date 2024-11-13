@@ -14,8 +14,8 @@ use crate::{
     engine::{ResumableHostError, TranslationError},
     module::ReadError,
 };
+use alloc::{boxed::Box, string::String};
 use core::{fmt, fmt::Display};
-use std::{boxed::Box, string::String};
 use wasmparser::BinaryReaderError as WasmError;
 
 /// The generic Wasmi root error type.

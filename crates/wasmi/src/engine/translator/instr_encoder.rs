@@ -33,8 +33,8 @@ use crate::{
     module::ModuleHeader,
     Error,
 };
+use alloc::vec::{Drain, Vec};
 use core::mem;
-use std::vec::{Drain, Vec};
 
 /// A reference to an instruction of the partially
 /// constructed function body of the [`InstrEncoder`].
