@@ -24,7 +24,7 @@ use super::{
 };
 use crate::{collections::arena::ArenaIndex, engine::ResumableCall, Engine, Error, Val};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
-use std::{boxed::Box, sync::Arc};
+use alloc::{boxed::Box, sync::Arc};
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

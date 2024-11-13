@@ -1,7 +1,7 @@
 use super::Reg;
 use crate::{core::UntypedVal, engine::TranslationError, Error};
 use core::{iter::Rev, slice::Iter as SliceIter};
-use std::{
+use alloc::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
 };

@@ -15,7 +15,7 @@ use crate::{
     module::ReadError,
 };
 use core::{fmt, fmt::Display};
-use std::{boxed::Box, string::String};
+use alloc::{boxed::Box, string::String};
 use wasmparser::BinaryReaderError as WasmError;
 
 /// The generic Wasmi root error type.

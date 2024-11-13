@@ -19,7 +19,7 @@ use crate::{
     Store,
 };
 use core::array;
-use std::fmt;
+use core::fmt;
 
 /// Dispatches and executes the host function.
 ///

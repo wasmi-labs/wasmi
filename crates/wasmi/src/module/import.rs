@@ -1,6 +1,6 @@
 use crate::{GlobalType, MemoryType, TableType};
 use core::fmt::{self, Display};
-use std::boxed::Box;
+use alloc::boxed::Box;
 use wasmparser::TypeRef;
 
 /// A [`Module`] import item.

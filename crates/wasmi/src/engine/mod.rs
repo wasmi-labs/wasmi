@@ -54,7 +54,7 @@ use crate::{
 };
 use core::sync::atomic::{AtomicU32, Ordering};
 use spin::{Mutex, RwLock};
-use std::{
+use alloc::{
     sync::{Arc, Weak},
     vec::Vec,
 };

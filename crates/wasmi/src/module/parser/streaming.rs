@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{Error, Module, Read};
 use core::ops::{Deref, DerefMut};
-use std::vec::Vec;
+use alloc::vec::Vec;
 use wasmparser::{Chunk, Payload, Validator};
 
 /// A buffer for holding parsed payloads in bytes.

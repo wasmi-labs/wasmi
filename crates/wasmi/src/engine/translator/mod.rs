@@ -67,7 +67,7 @@ use crate::{
 };
 use core::fmt;
 use stack::RegisterSpace;
-use std::vec::Vec;
+use alloc::vec::Vec;
 use utils::Wrap;
 use wasmparser::{
     BinaryReaderError,

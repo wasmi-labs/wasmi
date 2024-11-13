@@ -18,7 +18,7 @@ use crate::{
     TableType,
 };
 use core::ops::Range;
-use std::boxed::Box;
+use alloc::boxed::Box;
 use wasmparser::{
     CustomSectionReader,
     DataSectionReader,

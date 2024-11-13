@@ -11,7 +11,7 @@ use crate::{
     TableType,
 };
 use core::iter::FusedIterator;
-use std::boxed::Box;
+use alloc::boxed::Box;
 
 /// An external item to a WebAssembly module.
 ///

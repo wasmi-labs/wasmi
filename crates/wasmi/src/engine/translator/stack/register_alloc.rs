@@ -9,7 +9,7 @@ use core::{
     num::NonZeroUsize,
 };
 use multi_stash::{Key, Key as StashKey, MultiStash};
-use std::collections::BTreeSet;
+use alloc::collections::BTreeSet;
 
 #[cfg(doc)]
 use crate::engine::translator::InstrEncoder;

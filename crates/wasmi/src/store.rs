@@ -37,7 +37,7 @@ use core::{
     fmt::{self, Debug},
     sync::atomic::{AtomicU32, Ordering},
 };
-use std::boxed::Box;
+use alloc::boxed::Box;
 
 /// A unique store index.
 ///

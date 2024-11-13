@@ -45,7 +45,7 @@ use crate::{
     TableType,
 };
 use core::{iter, slice::Iter as SliceIter};
-use std::{boxed::Box, sync::Arc};
+use alloc::{boxed::Box, sync::Arc};
 use wasmparser::{FuncValidatorAllocations, Parser, ValidPayload, Validator};
 
 /// A parsed and validated WebAssembly module.

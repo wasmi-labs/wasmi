@@ -1,6 +1,6 @@
 use super::GlobalIdx;
 use crate::{collections::map::Iter as MapIter, Error, ExternType, Module};
-use std::boxed::Box;
+use alloc::boxed::Box;
 
 /// The index of a function declaration within a [`Module`].
 ///

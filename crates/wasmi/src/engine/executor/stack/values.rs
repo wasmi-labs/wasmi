@@ -11,7 +11,7 @@ use core::{
     ptr,
     slice,
 };
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 #[cfg(doc)]
 use super::calls::CallFrame;

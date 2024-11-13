@@ -15,7 +15,7 @@ use crate::{
 };
 use core::fmt;
 use smallvec::SmallVec;
-use std::boxed::Box;
+use alloc::boxed::Box;
 
 /// Types that allow evluation given an evaluation context.
 pub trait Eval {

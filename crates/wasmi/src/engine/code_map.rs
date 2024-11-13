@@ -30,7 +30,7 @@ use core::{
     slice,
 };
 use spin::Mutex;
-use std::boxed::Box;
+use alloc::boxed::Box;
 use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).

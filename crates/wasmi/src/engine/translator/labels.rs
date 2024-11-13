@@ -4,7 +4,7 @@ use core::{
     fmt::{self, Display},
     slice::Iter as SliceIter,
 };
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 /// A label during the Wasmi compilation process.
 #[derive(Debug, Copy, Clone)]

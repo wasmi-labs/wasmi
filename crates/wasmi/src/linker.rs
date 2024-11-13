@@ -27,7 +27,7 @@ use core::{
     fmt::{self, Debug, Display},
     marker::PhantomData,
 };
-use std::{
+use alloc::{
     collections::{btree_map::Entry, BTreeMap},
     sync::Arc,
     vec::Vec,

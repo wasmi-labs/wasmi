@@ -1,6 +1,6 @@
 use crate::{ir::Reg, Error};
 use core::mem;
-use std::{
+use alloc::{
     collections::{btree_map, BTreeMap},
     vec::Vec,
 };

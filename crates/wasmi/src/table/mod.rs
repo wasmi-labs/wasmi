@@ -12,7 +12,7 @@ use crate::{
     Val,
 };
 use core::cmp::max;
-use std::{vec, vec::Vec};
+use alloc::{vec, vec::Vec};
 
 mod element;
 mod error;
