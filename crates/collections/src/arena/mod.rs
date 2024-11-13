@@ -15,7 +15,7 @@ use core::{
     ops::{Index, IndexMut, Range},
     slice,
 };
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 /// Types that can be used as indices for arenas.
 pub trait ArenaIndex: Copy {

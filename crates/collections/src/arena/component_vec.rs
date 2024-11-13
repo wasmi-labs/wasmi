@@ -4,7 +4,7 @@ use core::{
     marker::PhantomData,
     ops::{Index, IndexMut},
 };
-use std::vec::Vec;
+use alloc::vec::Vec;
 
 /// Stores components for entities backed by a [`Vec`].
 pub struct ComponentVec<Idx, T> {

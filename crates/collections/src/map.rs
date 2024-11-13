@@ -1,7 +1,7 @@
 //! Type definitions for a default map.
 
 use core::{borrow::Borrow, hash::Hash, iter::FusedIterator, ops::Index};
-use std::fmt::Debug;
+use core::fmt::Debug;
 
 #[cfg(all(
     feature = "hash-collections",
@@ -30,7 +30,7 @@ mod detail {
     feature = "prefer-btree-collections"
 ))]
 mod detail {
-    use std::collections::btree_map;
+    use alloc::collections::btree_map;
 
     pub type MapImpl<K, V> = btree_map::BTreeMap<K, V>;
     pub type EntryImpl<'a, K, V> = btree_map::Entry<'a, K, V>;
