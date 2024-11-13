@@ -9,13 +9,13 @@ mod dedup;
 mod guarded;
 
 pub use self::{component_vec::ComponentVec, dedup::DedupArena, guarded::GuardedEntity};
+use alloc::vec::Vec;
 use core::{
     iter::Enumerate,
     marker::PhantomData,
     ops::{Index, IndexMut, Range},
     slice,
 };
-use alloc::vec::Vec;
 
 /// Types that can be used as indices for arenas.
 pub trait ArenaIndex: Copy {

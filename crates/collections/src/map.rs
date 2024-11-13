@@ -1,7 +1,6 @@
 //! Type definitions for a default map.
 
-use core::{borrow::Borrow, hash::Hash, iter::FusedIterator, ops::Index};
-use core::fmt::Debug;
+use core::{borrow::Borrow, fmt::Debug, hash::Hash, iter::FusedIterator, ops::Index};
 
 #[cfg(all(
     feature = "hash-collections",

@@ -1,7 +1,7 @@
 use super::{LocalRefs, RegisterAlloc, TypedVal};
 use crate::{engine::translator::PreservedLocal, ir::Reg, Error};
-use arrayvec::ArrayVec;
 use alloc::vec::Vec;
+use arrayvec::ArrayVec;
 
 #[cfg(doc)]
 use crate::core::UntypedVal;

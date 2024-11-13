@@ -1,5 +1,5 @@
-use core::mem;
 use alloc::vec::Vec;
+use core::mem;
 
 /// A [`Vec`]-like data structure with fast access to the last item.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]

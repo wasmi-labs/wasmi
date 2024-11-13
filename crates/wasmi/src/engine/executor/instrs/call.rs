@@ -18,8 +18,7 @@ use crate::{
     Instance,
     Store,
 };
-use core::array;
-use core::fmt;
+use core::{array, fmt};
 
 /// Dispatches and executes the host function.
 ///

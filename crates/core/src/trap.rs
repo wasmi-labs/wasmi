@@ -1,6 +1,6 @@
 use crate::HostError;
-use core::fmt::{self, Display};
 use alloc::{boxed::Box, string::String};
+use core::fmt::{self, Display};
 
 #[cfg(feature = "std")]
 use std::error::Error as StdError;

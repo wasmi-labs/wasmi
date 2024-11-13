@@ -10,8 +10,8 @@ use crate::{
     Table,
     TableType,
 };
-use core::iter::FusedIterator;
 use alloc::boxed::Box;
+use core::iter::FusedIterator;
 
 /// An external item to a WebAssembly module.
 ///

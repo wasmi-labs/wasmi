@@ -13,9 +13,9 @@ use crate::{
     FuncRef,
     Val,
 };
+use alloc::boxed::Box;
 use core::fmt;
 use smallvec::SmallVec;
-use alloc::boxed::Box;
 
 /// Types that allow evluation given an evaluation context.
 pub trait Eval {

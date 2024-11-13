@@ -6,8 +6,8 @@ use super::{
     ModuleParser,
 };
 use crate::{Error, Module, Read};
-use core::ops::{Deref, DerefMut};
 use alloc::vec::Vec;
+use core::ops::{Deref, DerefMut};
 use wasmparser::{Chunk, Payload, Validator};
 
 /// A buffer for holding parsed payloads in bytes.

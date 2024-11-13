@@ -17,8 +17,8 @@ use crate::{
     MemoryType,
     TableType,
 };
-use core::ops::Range;
 use alloc::boxed::Box;
+use core::ops::Range;
 use wasmparser::{
     CustomSectionReader,
     DataSectionReader,

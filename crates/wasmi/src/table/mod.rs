@@ -11,8 +11,8 @@ use crate::{
     value::WithType,
     Val,
 };
-use core::cmp::max;
 use alloc::{vec, vec::Vec};
+use core::cmp::max;
 
 mod element;
 mod error;

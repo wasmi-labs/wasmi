@@ -33,11 +33,11 @@ use crate::{
     TableEntity,
     TableIdx,
 };
+use alloc::boxed::Box;
 use core::{
     fmt::{self, Debug},
     sync::atomic::{AtomicU32, Ordering},
 };
-use alloc::boxed::Box;
 
 /// A unique store index.
 ///

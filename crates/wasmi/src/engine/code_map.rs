@@ -22,6 +22,7 @@ use crate::{
     Config,
     Error,
 };
+use alloc::boxed::Box;
 use core::{
     fmt,
     mem::{self, MaybeUninit},
@@ -30,7 +31,6 @@ use core::{
     slice,
 };
 use spin::Mutex;
-use alloc::boxed::Box;
 use wasmparser::{FuncToValidate, ValidatorResources, WasmFeatures};
 
 /// A reference to a compiled function stored in the [`CodeMap`] of an [`Engine`](crate::Engine).

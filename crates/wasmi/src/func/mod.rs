@@ -23,8 +23,8 @@ use super::{
     Stored,
 };
 use crate::{collections::arena::ArenaIndex, engine::ResumableCall, Engine, Error, Val};
-use core::{fmt, fmt::Debug, num::NonZeroU32};
 use alloc::{boxed::Box, sync::Arc};
+use core::{fmt, fmt::Debug, num::NonZeroU32};
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
