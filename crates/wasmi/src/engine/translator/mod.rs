@@ -65,9 +65,8 @@ use crate::{
     FuncRef,
     FuncType,
 };
-use core::{fmt, mem};
 use alloc::vec::Vec;
-use core::fmt;
+use core::{fmt, mem};
 use stack::RegisterSpace;
 use utils::Wrap;
 use wasmparser::{

@@ -1,5 +1,5 @@
 use super::{ConstExpr, TableIdx};
-use crate::{core::ValType, module::utils::WasmiValueType};
+use crate::core::ValType;
 use alloc::boxed::Box;
 
 /// A table element segment within a [`Module`].
