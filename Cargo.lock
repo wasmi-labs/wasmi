@@ -1592,15 +1592,6 @@ dependencies = [
 
 [[package]]
 name = "wasm-encoder"
-version = "0.219.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29cbbd772edcb8e7d524a82ee8cef8dd046fc14033796a754c3ad246d019fa54"
-dependencies = [
- "leb128",
-]
-
-[[package]]
-name = "wasm-encoder"
 version = "0.220.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebf48234b389415b226a4daef6562933d38c7b28a8b8f64c5c4130dad1561ab7"
@@ -1610,16 +1601,16 @@ dependencies = [
 
 [[package]]
 name = "wasm-smith"
-version = "0.219.1"
+version = "0.220.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b526e4c6eed409b619960258ba5bd8a3b44dfb30c75c12fce80b750a4487fcc"
+checksum = "3f7d273cf1df3c10f9067cb48796d1a6d1daa3ceb99c3f07d822e5bdeefb34f9"
 dependencies = [
  "anyhow",
  "arbitrary",
  "flagset",
  "indexmap",
  "leb128",
- "wasm-encoder 0.219.1",
+ "wasm-encoder 0.220.0",
 ]
 
 [[package]]
@@ -1734,7 +1725,7 @@ dependencies = [
  "wasm-smith",
  "wasmi 0.31.2",
  "wasmi 0.39.1",
- "wasmprinter 0.219.1",
+ "wasmprinter 0.220.0",
  "wasmtime",
 ]
 
@@ -1780,16 +1771,6 @@ dependencies = [
 
 [[package]]
 name = "wasmparser"
-version = "0.219.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c771866898879073c53b565a6c7b49953795159836714ac56a5befb581227c5"
-dependencies = [
- "bitflags",
- "indexmap",
-]
-
-[[package]]
-name = "wasmparser"
 version = "0.220.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e246c2772ce3ebc83f89a2d4487ac5794cad6c309b2071818a88c7db7c36d87b"
@@ -1823,13 +1804,13 @@ dependencies = [
 
 [[package]]
 name = "wasmprinter"
-version = "0.219.1"
+version = "0.220.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "228cdc1f30c27816da225d239ce4231f28941147d34713dee8f1fff7cb330e54"
+checksum = "ae749f2c66587777ce9ad0e8c632e72c77574336b17d2f040a47cffbd92198c7"
 dependencies = [
  "anyhow",
  "termcolor",
- "wasmparser 0.219.1",
+ "wasmparser 0.220.0",
 ]
 
 [[package]]
