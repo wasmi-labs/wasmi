@@ -28,7 +28,7 @@ use crate::{
     MemoryType,
     TableType,
 };
-use std::{boxed::Box, sync::Arc, vec::Vec};
+use alloc::{boxed::Box, sync::Arc, vec::Vec};
 
 /// A builder for a WebAssembly [`Module`].
 #[derive(Debug)]

@@ -13,9 +13,9 @@ use crate::{
     FuncRef,
     Val,
 };
+use alloc::boxed::Box;
 use core::fmt;
 use smallvec::SmallVec;
-use std::boxed::Box;
 use wasmparser::AbstractHeapType;
 
 /// Types that allow evluation given an evaluation context.

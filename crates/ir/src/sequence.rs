@@ -3,7 +3,7 @@ use ::core::{
     num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64},
     slice,
 };
-use std::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, vec::Vec};
 
 /// A sequence of [`Instruction`]s.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]

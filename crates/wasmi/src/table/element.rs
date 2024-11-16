@@ -10,7 +10,7 @@ use crate::{
     Global,
     Val,
 };
-use std::boxed::Box;
+use alloc::boxed::Box;
 
 /// A raw index to a element segment entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

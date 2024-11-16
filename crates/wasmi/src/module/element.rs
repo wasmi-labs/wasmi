@@ -1,6 +1,6 @@
 use super::{ConstExpr, TableIdx};
-use crate::core::ValType;
-use std::boxed::Box;
+use crate::{core::ValType, module::utils::WasmiValueType};
+use alloc::boxed::Box;
 
 /// A table element segment within a [`Module`].
 ///

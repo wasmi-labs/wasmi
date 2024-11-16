@@ -52,12 +52,12 @@ use crate::{
     FuncType,
     StoreContextMut,
 };
-use core::sync::atomic::{AtomicU32, Ordering};
-use spin::{Mutex, RwLock};
-use std::{
+use alloc::{
     sync::{Arc, Weak},
     vec::Vec,
 };
+use core::sync::atomic::{AtomicU32, Ordering};
+use spin::{Mutex, RwLock};
 use wasmparser::{FuncToValidate, FuncValidatorAllocations, ValidatorResources};
 
 #[cfg(doc)]

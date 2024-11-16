@@ -1,5 +1,5 @@
-use core::slice;
-use std::{str, vec::Vec};
+use alloc::vec::Vec;
+use core::{slice, str};
 
 /// Wasm custom sections.
 #[derive(Default, Debug)]

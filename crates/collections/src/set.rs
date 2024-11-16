@@ -31,7 +31,7 @@ mod detail {
     feature = "prefer-btree-collections"
 ))]
 mod detail {
-    use std::collections::btree_set;
+    use alloc::collections::btree_set;
 
     pub type SetImpl<T> = btree_set::BTreeSet<T>;
     pub type IterImpl<'a, T> = btree_set::Iter<'a, T>;
