@@ -104,6 +104,7 @@ impl Arbitrary<'_> for FuzzSmithConfig {
             reference_types_enabled: false, // TODO: re-enable reference-types for differential fuzzing
             simd_enabled: false,
             multi_value_enabled: true,
+            memory64_enabled: false,
             saturating_float_to_int_enabled: true,
             sign_extension_ops_enabled: true,
             relaxed_simd_enabled: false,
