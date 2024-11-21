@@ -26,7 +26,10 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         // more interested what kind of error occurred and now how an error
         // occurred.
         config.wasm_backtrace(false);
-        let engine = Engine::default();
+        // We're disabling POSIX signals on errors in the engine because
+        // some fuzzers will catch them and report them as false positives.
+        config.signals_based_traps(false);
+        let engine = Engine::new(&config).unwrap();
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
             .memory_size(1000 * 0x10000)
