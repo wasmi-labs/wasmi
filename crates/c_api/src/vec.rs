@@ -1,6 +1,14 @@
 use crate::{
-    wasm_exporttype_t, wasm_extern_t, wasm_externtype_t, wasm_frame_t, wasm_functype_t,
-    wasm_globaltype_t, wasm_importtype_t, wasm_memorytype_t, wasm_tabletype_t, wasm_val_t,
+    wasm_exporttype_t,
+    wasm_extern_t,
+    wasm_externtype_t,
+    wasm_frame_t,
+    wasm_functype_t,
+    wasm_globaltype_t,
+    wasm_importtype_t,
+    wasm_memorytype_t,
+    wasm_tabletype_t,
+    wasm_val_t,
     wasm_valtype_t,
 };
 use alloc::{boxed::Box, string::String, vec, vec::Vec};

@@ -24,6 +24,6 @@ test = false
 doctest = false
 
 [features]
-default = ["std", "mangle-symbols"]
+default = ["std"]
 std = []
 mangle-symbols = []
