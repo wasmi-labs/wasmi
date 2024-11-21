@@ -20,7 +20,7 @@ wasmi_c_api_macros::declare_own!(wasm_config_t);
 /// Wraps [`wasmi::Config::default`].
 ///
 /// [`wasm_engine_new_with_config`]: crate::wasm_engine_new_with_config
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasm_config_new() -> Box<wasm_config_t> {
     Box::new(wasm_config_t {
         inner: Config::default(),
@@ -32,7 +32,7 @@ pub extern "C" fn wasm_config_new() -> Box<wasm_config_t> {
 /// Wraps [`wasmi::Config::wasm_multi_value`]
 ///
 /// [`mutable-global`]: <https://github.com/WebAssembly/mutable-global>
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_wasm_mutable_globals_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_mutable_global(enable);
 }
@@ -42,7 +42,7 @@ pub extern "C" fn wasmi_config_wasm_mutable_globals_set(c: &mut wasm_config_t, e
 /// Wraps [`wasmi::Config::wasm_multi_value`]
 ///
 /// [`multi-value`]: <https://github.com/WebAssembly/multi-value>
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_wasm_multi_value_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_multi_value(enable);
 }
@@ -52,7 +52,7 @@ pub extern "C" fn wasmi_config_wasm_multi_value_set(c: &mut wasm_config_t, enabl
 /// Wraps [`wasmi::Config::wasm_sign_extension`]
 ///
 /// [`sign-extension-ops`]: <https://github.com/WebAssembly/sign-extension-ops>
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_wasm_sign_extension_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_sign_extension(enable);
 }
@@ -62,7 +62,7 @@ pub extern "C" fn wasmi_config_wasm_sign_extension_set(c: &mut wasm_config_t, en
 /// Wraps [`wasmi::Config::wasm_saturating_float_to_int`]
 ///
 /// [`nontrapping-float-to-int-conversions`]: <https://github.com/WebAssembly/nontrapping-float-to-int-conversions>
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_wasm_saturating_float_to_int_set(
     c: &mut wasm_config_t,
     enable: bool,
@@ -75,7 +75,7 @@ pub extern "C" fn wasmi_config_wasm_saturating_float_to_int_set(
 /// Wraps [`wasmi::Config::wasm_bulk_memory`]
 ///
 /// [`bulk-memory-operations`]: <https://github.com/WebAssembly/bulk-memory-operations>
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_wasm_bulk_memory_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_bulk_memory(enable);
 }
@@ -85,7 +85,7 @@ pub extern "C" fn wasmi_config_wasm_bulk_memory_set(c: &mut wasm_config_t, enabl
 /// Wraps [`wasmi::Config::wasm_reference_types`]
 ///
 /// [`reference-types`]: <https://github.com/WebAssembly/reference-types>
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_wasm_reference_types_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_reference_types(enable);
 }
@@ -95,7 +95,7 @@ pub extern "C" fn wasmi_config_wasm_reference_types_set(c: &mut wasm_config_t, e
 /// Wraps [`wasmi::Config::wasm_tail_call`]
 ///
 /// [`tail-call`]: <https://github.com/WebAssembly/tail-call>
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_wasm_tail_call_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_tail_call(enable);
 }
@@ -105,7 +105,7 @@ pub extern "C" fn wasmi_config_wasm_tail_call_set(c: &mut wasm_config_t, enable:
 /// Wraps [`wasmi::Config::wasm_extended_const`]
 ///
 /// [`extended-const`]: <https://github.com/WebAssembly/extended-const>
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_wasm_extended_const_set(c: &mut wasm_config_t, enable: bool) {
     c.inner.wasm_extended_const(enable);
 }
@@ -113,7 +113,7 @@ pub extern "C" fn wasmi_config_wasm_extended_const_set(c: &mut wasm_config_t, en
 /// Enables or disables support for floating point numbers for the config.
 ///
 /// Wraps [`wasmi::Config::floats`]
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_floats_set(config: &mut wasm_config_t, enable: bool) {
     config.inner.floats(enable);
 }
@@ -121,7 +121,7 @@ pub extern "C" fn wasmi_config_floats_set(config: &mut wasm_config_t, enable: bo
 /// Enables or disables fuel consumption for the config.
 ///
 /// Wraps [`wasmi::Config::consume_fuel`]
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_consume_fuel_set(config: &mut wasm_config_t, enable: bool) {
     config.inner.consume_fuel(enable);
 }
@@ -140,7 +140,7 @@ pub enum wasmi_compilation_mode_t {
 /// Sets the compilation mode for the config.
 ///
 /// Wraps [`wasmi::Config::compilation_mode`]
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_compilation_mode_set(
     config: &mut wasm_config_t,
     mode: wasmi_compilation_mode_t,
@@ -156,7 +156,7 @@ pub extern "C" fn wasmi_config_compilation_mode_set(
 /// Enables or disables processing of Wasm custom sections.
 ///
 /// Wraps [`wasmi::Config::ignore_custom_sections`]
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasmi_config_ignore_custom_sections_set(
     config: &mut wasm_config_t,
     enable: bool,

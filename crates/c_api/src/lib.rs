@@ -1,6 +1,21 @@
 //! Implements C-API support for the Wasmi WebAssembly interpreter.
 //!
 //! Namely implements the Wasm C-API proposal found here: <https://github.com/WebAssembly/wasm-c-api/>
+//!
+//! # Crate features
+//!
+//! ## The `mangle-symbols` feature
+//! The `mangle-symbols` feature, when enabled, disables the `#[no_mangle]` attributes on exported symbols. This means that,
+//! when the feature is enabled, the public symbols (such as `wasm_func_new`) in this library are not visible with the
+//! plain "C" name, and the usual Rust mangling is operated instead.
+//!
+//! The rationale behind this feature is to allow (or facilitate) users that want to use multiple implementers of the
+//! C-API proposal together to avoid duplicate symbols error. This feature is disabled by default, thus public symbols
+//! are not mangled.
+//!
+//! ### Note
+//! When enabeld, the public symbols prefixed with `wasmi_` are mangled as well, even if they should not, in principle,
+//! cause any duplicate symbol error when working with other implementers.
 
 #![no_std]
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
