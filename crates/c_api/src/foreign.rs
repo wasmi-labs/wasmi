@@ -12,7 +12,7 @@ wasmi_c_api_macros::declare_ref!(wasm_foreign_t);
 /// # Note
 ///
 /// This API is unsupported and will panic upon use.
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub extern "C" fn wasm_foreign_new(_store: &crate::wasm_store_t) -> Box<wasm_foreign_t> {
     unimplemented!("wasm_foreign_new")
 }

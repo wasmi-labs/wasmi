@@ -1,14 +1,6 @@
 use crate::{
-    wasm_exporttype_t,
-    wasm_extern_t,
-    wasm_externtype_t,
-    wasm_frame_t,
-    wasm_functype_t,
-    wasm_globaltype_t,
-    wasm_importtype_t,
-    wasm_memorytype_t,
-    wasm_tabletype_t,
-    wasm_val_t,
+    wasm_exporttype_t, wasm_extern_t, wasm_externtype_t, wasm_frame_t, wasm_functype_t,
+    wasm_globaltype_t, wasm_importtype_t, wasm_memorytype_t, wasm_tabletype_t, wasm_val_t,
     wasm_valtype_t,
 };
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
@@ -134,7 +126,7 @@ macro_rules! declare_vecs {
         #[doc = "# Note"]
         #[doc = ""]
         #[doc = concat!("Returns the resulting [`", stringify!($name), "`] in `out`.")]
-        #[no_mangle]
+        #[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
         pub extern "C" fn $empty(out: &mut $name) {
             out.size = 0;
             out.data = ptr::null_mut();
@@ -145,7 +137,7 @@ macro_rules! declare_vecs {
         #[doc = "# Note"]
         #[doc = ""]
         #[doc = concat!("Returns the resulting [`", stringify!($name), "`] in `out`.")]
-        #[no_mangle]
+        #[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
         pub extern "C" fn $uninit(out: &mut $name, size: usize) {
             out.set_buffer(vec![Default::default(); size].into());
         }
@@ -160,7 +152,7 @@ macro_rules! declare_vecs {
         #[doc = "# Safety"]
         #[doc = ""]
         #[doc = "It is the callers responsibility to provide a valid pair of `ptr` and `size`."]
-        #[no_mangle]
+        #[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
         pub unsafe extern "C" fn $new $(<$lt>)? (
             out: &mut $name $(<$lt>)?,
             size: usize,
@@ -175,7 +167,7 @@ macro_rules! declare_vecs {
         #[doc = "# Note"]
         #[doc = ""]
         #[doc = concat!("- Returns the resulting [`", stringify!($name), "`] in `out`.")]
-        #[no_mangle]
+        #[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
         pub extern "C" fn $copy $(<$lt>)? (
             out: &mut $name $(<$lt>)?,
             src: &$name $(<$lt>)?,
@@ -184,7 +176,7 @@ macro_rules! declare_vecs {
         }
 
         #[doc = concat!("Frees memory associated to the [`", stringify!($name),"`].")]
-        #[no_mangle]
+        #[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
         pub extern "C" fn $delete $(<$lt>)? (out: &mut $name $(<$lt>)?) {
             out.take();
         }

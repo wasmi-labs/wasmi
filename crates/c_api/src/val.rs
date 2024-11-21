@@ -145,7 +145,7 @@ impl wasm_val_t {
 /// # Safety
 ///
 /// The caller is responsible to provide a valid [`wasm_val_t`] that can safely be copied.
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub unsafe extern "C" fn wasm_val_copy(out: &mut MaybeUninit<wasm_val_t>, source: &wasm_val_t) {
     utils::initialize(out, source.clone());
 }
@@ -156,7 +156,7 @@ pub unsafe extern "C" fn wasm_val_copy(out: &mut MaybeUninit<wasm_val_t>, source
 ///
 /// The caller is responsible to provide a valid [`wasm_val_t`] that can safely be deleted.
 /// The same [`wasm_val_t`] must not be deleted more than once.
-#[no_mangle]
+#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
 pub unsafe extern "C" fn wasm_val_delete(val: *mut wasm_val_t) {
     ptr::drop_in_place(val);
 }
