@@ -169,19 +169,7 @@ impl Default for Config {
 impl Config {
     /// Returns the default [`WasmFeatures`].
     fn default_features() -> WasmFeatures {
-        let mut features = WasmFeatures::empty();
-        features.set(WasmFeatures::MUTABLE_GLOBAL, true);
-        features.set(WasmFeatures::MULTI_VALUE, true);
-        features.set(WasmFeatures::MULTI_MEMORY, true);
-        features.set(WasmFeatures::SATURATING_FLOAT_TO_INT, true);
-        features.set(WasmFeatures::SIGN_EXTENSION, true);
-        features.set(WasmFeatures::BULK_MEMORY, true);
-        features.set(WasmFeatures::REFERENCE_TYPES, true);
-        features.set(WasmFeatures::GC_TYPES, true); // required by reference-types
-        features.set(WasmFeatures::TAIL_CALL, true);
-        features.set(WasmFeatures::EXTENDED_CONST, true);
-        features.set(WasmFeatures::FLOATS, true);
-        features
+        WasmFeatures::default()
     }
 
     /// Sets the [`StackLimits`] for the [`Config`].
@@ -217,8 +205,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`mutable-global`]: https://github.com/WebAssembly/mutable-global
-    pub fn wasm_mutable_global(&mut self, enable: bool) -> &mut Self {
-        self.features.set(WasmFeatures::MUTABLE_GLOBAL, enable);
+    pub fn wasm_mutable_global(&mut self, _enable: bool) -> &mut Self {
         self
     }
 
@@ -229,8 +216,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`sign-extension`]: https://github.com/WebAssembly/sign-extension-ops
-    pub fn wasm_sign_extension(&mut self, enable: bool) -> &mut Self {
-        self.features.set(WasmFeatures::SIGN_EXTENSION, enable);
+    pub fn wasm_sign_extension(&mut self, _enable: bool) -> &mut Self {
         self
     }
 
@@ -242,9 +228,7 @@ impl Config {
     ///
     /// [`saturating-float-to-int`]:
     /// https://github.com/WebAssembly/nontrapping-float-to-int-conversions
-    pub fn wasm_saturating_float_to_int(&mut self, enable: bool) -> &mut Self {
-        self.features
-            .set(WasmFeatures::SATURATING_FLOAT_TO_INT, enable);
+    pub fn wasm_saturating_float_to_int(&mut self, _enable: bool) -> &mut Self {
         self
     }
 
@@ -255,8 +239,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`multi-value`]: https://github.com/WebAssembly/multi-value
-    pub fn wasm_multi_value(&mut self, enable: bool) -> &mut Self {
-        self.features.set(WasmFeatures::MULTI_VALUE, enable);
+    pub fn wasm_multi_value(&mut self, _enable: bool) -> &mut Self {
         self
     }
 
@@ -267,8 +250,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`multi-memory`]: https://github.com/WebAssembly/multi-memory
-    pub fn wasm_multi_memory(&mut self, enable: bool) -> &mut Self {
-        self.features.set(WasmFeatures::MULTI_MEMORY, enable);
+    pub fn wasm_multi_memory(&mut self, _enable: bool) -> &mut Self {
         self
     }
 
@@ -279,8 +261,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`bulk-memory`]: https://github.com/WebAssembly/bulk-memory-operations
-    pub fn wasm_bulk_memory(&mut self, enable: bool) -> &mut Self {
-        self.features.set(WasmFeatures::BULK_MEMORY, enable);
+    pub fn wasm_bulk_memory(&mut self, _enable: bool) -> &mut Self {
         self
     }
 
@@ -291,9 +272,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`reference-types`]: https://github.com/WebAssembly/reference-types
-    pub fn wasm_reference_types(&mut self, enable: bool) -> &mut Self {
-        self.features.set(WasmFeatures::REFERENCE_TYPES, enable);
-        self.features.set(WasmFeatures::GC_TYPES, enable);
+    pub fn wasm_reference_types(&mut self, _enable: bool) -> &mut Self {
         self
     }
 
@@ -304,8 +283,7 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`tail-call`]: https://github.com/WebAssembly/tail-call
-    pub fn wasm_tail_call(&mut self, enable: bool) -> &mut Self {
-        self.features.set(WasmFeatures::TAIL_CALL, enable);
+    pub fn wasm_tail_call(&mut self, _enable: bool) -> &mut Self {
         self
     }
 
@@ -316,16 +294,14 @@ impl Config {
     /// Enabled by default.
     ///
     /// [`extended-const`]: https://github.com/WebAssembly/extended-const
-    pub fn wasm_extended_const(&mut self, enable: bool) -> &mut Self {
-        self.features.set(WasmFeatures::EXTENDED_CONST, enable);
+    pub fn wasm_extended_const(&mut self, _enable: bool) -> &mut Self {
         self
     }
 
     /// Enable or disable Wasm floating point (`f32` and `f64`) instructions and types.
     ///
     /// Enabled by default.
-    pub fn floats(&mut self, enable: bool) -> &mut Self {
-        self.features.set(WasmFeatures::FLOATS, enable);
+    pub fn floats(&mut self, _enable: bool) -> &mut Self {
         self
     }
 

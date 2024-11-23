@@ -1641,7 +1641,7 @@ dependencies = [
  "wasmi_core 0.39.1",
  "wasmi_ir",
  "wasmi_wast",
- "wasmparser 0.220.0",
+ "wasmparser 0.220.0 (git+https://github.com/Robbepop/wasm-tools?branch=rf-use-wasmi-default-feature-set)",
  "wat",
 ]
 
@@ -1775,11 +1775,18 @@ version = "0.220.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e246c2772ce3ebc83f89a2d4487ac5794cad6c309b2071818a88c7db7c36d87b"
 dependencies = [
- "ahash",
  "bitflags",
- "hashbrown 0.14.5",
  "indexmap",
- "semver",
+]
+
+[[package]]
+name = "wasmparser"
+version = "0.220.0"
+source = "git+https://github.com/Robbepop/wasm-tools?branch=rf-use-wasmi-default-feature-set#57844064d7d1d03efa8ba3c924ec3af2567ac369"
+dependencies = [
+ "bitflags",
+ "hashbrown 0.15.1",
+ "indexmap",
 ]
 
 [[package]]
@@ -1810,7 +1817,7 @@ checksum = "ae749f2c66587777ce9ad0e8c632e72c77574336b17d2f040a47cffbd92198c7"
 dependencies = [
  "anyhow",
  "termcolor",
- "wasmparser 0.220.0",
+ "wasmparser 0.220.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

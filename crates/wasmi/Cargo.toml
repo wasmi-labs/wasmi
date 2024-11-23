@@ -19,7 +19,7 @@ exclude = [
 ]
 
 [dependencies]
-wasmparser = { version = "0.220.0", default-features = false, features = ["validate", "features"] }
+wasmparser = { git = "https://github.com/Robbepop/wasm-tools", branch = "rf-use-wasmi-default-feature-set", default-features = false, features = ["validate"] }
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
 wasmi_ir = { workspace = true }
