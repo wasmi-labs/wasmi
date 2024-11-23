@@ -41,3 +41,6 @@ wasmi_wast = { version = "0.39.1", path = "crates/wast" }
 [profile.bench]
 lto = "fat"
 codegen-units = 1
+strip = true
+debug-assertions = false
+overflow-checks = false
