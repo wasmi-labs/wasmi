@@ -50,14 +50,14 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::DataDrop`].
-    pub fn execute_data_drop(&mut self, store: &mut StoreInner, segment_index: Data) {
+    pub fn data_drop(&mut self, store: &mut StoreInner, segment_index: Data) {
         let segment = self.get_data_segment(segment_index);
         store.resolve_data_segment_mut(&segment).drop_bytes();
         self.next_instr();
     }
 
     /// Executes an [`Instruction::MemorySize`].
-    pub fn execute_memory_size(&mut self, store: &StoreInner, result: Reg, memory: Memory) {
+    pub fn memory_size(&mut self, store: &StoreInner, result: Reg, memory: Memory) {
         self.execute_memory_size_impl(store, result, memory);
         self.next_instr()
     }
@@ -70,7 +70,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryGrow`].
-    pub fn execute_memory_grow<T>(
+    pub fn memory_grow<T>(
         &mut self,
         store: &mut Store<T>,
         result: Reg,
@@ -82,7 +82,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryGrowBy`].
-    pub fn execute_memory_grow_by<T>(
+    pub fn memory_grow_by<T>(
         &mut self,
         store: &mut Store<T>,
         result: Reg,
@@ -130,7 +130,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryCopy`].
-    pub fn execute_memory_copy(
+    pub fn memory_copy(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -144,7 +144,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryCopyTo`].
-    pub fn execute_memory_copy_to(
+    pub fn memory_copy_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -158,7 +158,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryCopyFrom`].
-    pub fn execute_memory_copy_from(
+    pub fn memory_copy_from(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -172,7 +172,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryCopyFromTo`].
-    pub fn execute_memory_copy_from_to(
+    pub fn memory_copy_from_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -186,7 +186,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryCopyExact`].
-    pub fn execute_memory_copy_exact(
+    pub fn memory_copy_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -200,7 +200,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryCopyToExact`].
-    pub fn execute_memory_copy_to_exact(
+    pub fn memory_copy_to_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -214,7 +214,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryCopyFromExact`].
-    pub fn execute_memory_copy_from_exact(
+    pub fn memory_copy_from_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -228,7 +228,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryCopyFromToExact`].
-    pub fn execute_memory_copy_from_to_exact(
+    pub fn memory_copy_from_to_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -305,7 +305,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryFill`].
-    pub fn execute_memory_fill(
+    pub fn memory_fill(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -319,7 +319,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryFillAt`].
-    pub fn execute_memory_fill_at(
+    pub fn memory_fill_at(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -333,7 +333,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryFillImm`].
-    pub fn execute_memory_fill_imm(
+    pub fn memory_fill_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -346,7 +346,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryFillAtImm`].
-    pub fn execute_memory_fill_at_imm(
+    pub fn memory_fill_at_imm(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -359,7 +359,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryFillExact`].
-    pub fn execute_memory_fill_exact(
+    pub fn memory_fill_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -373,7 +373,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryFillAtExact`].
-    pub fn execute_memory_fill_at_exact(
+    pub fn memory_fill_at_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -387,7 +387,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryFillImmExact`].
-    pub fn execute_memory_fill_imm_exact(
+    pub fn memory_fill_imm_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -400,7 +400,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryFillAtImmExact`].
-    pub fn execute_memory_fill_at_imm_exact(
+    pub fn memory_fill_at_imm_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -437,7 +437,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryInit`].
-    pub fn execute_memory_init(
+    pub fn memory_init(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -451,7 +451,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryInitTo`].
-    pub fn execute_memory_init_to(
+    pub fn memory_init_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -465,7 +465,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryInitFrom`].
-    pub fn execute_memory_init_from(
+    pub fn memory_init_from(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -479,7 +479,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryInitFromTo`].
-    pub fn execute_memory_init_from_to(
+    pub fn memory_init_from_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -493,7 +493,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryInitExact`].
-    pub fn execute_memory_init_exact(
+    pub fn memory_init_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -507,7 +507,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryInitToExact`].
-    pub fn execute_memory_init_to_exact(
+    pub fn memory_init_to_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -521,7 +521,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryInitFromExact`].
-    pub fn execute_memory_init_from_exact(
+    pub fn memory_init_from_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -535,7 +535,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryInitFromToExact`].
-    pub fn execute_memory_init_from_to_exact(
+    pub fn memory_init_from_to_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,

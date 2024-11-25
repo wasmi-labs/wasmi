@@ -16,12 +16,12 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::Copy`].
-    pub fn execute_copy(&mut self, result: Reg, value: Reg) {
+    pub fn copy(&mut self, result: Reg, value: Reg) {
         self.execute_copy_impl(result, value, |this, value| this.get_register(value))
     }
 
     /// Executes an [`Instruction::Copy2`].
-    pub fn execute_copy_2(&mut self, results: FixedRegSpan<2>, values: [Reg; 2]) {
+    pub fn copy_2(&mut self, results: FixedRegSpan<2>, values: [Reg; 2]) {
         self.execute_copy_2_impl(results, values);
         self.next_instr()
     }
@@ -37,17 +37,17 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CopyImm32`].
-    pub fn execute_copy_imm32(&mut self, result: Reg, value: AnyConst32) {
+    pub fn copy_imm32(&mut self, result: Reg, value: AnyConst32) {
         self.execute_copy_impl(result, value, |_, value| UntypedVal::from(u32::from(value)))
     }
 
     /// Executes an [`Instruction::CopyI64Imm32`].
-    pub fn execute_copy_i64imm32(&mut self, result: Reg, value: Const32<i64>) {
+    pub fn copy_i64imm32(&mut self, result: Reg, value: Const32<i64>) {
         self.execute_copy_impl(result, value, |_, value| UntypedVal::from(i64::from(value)))
     }
 
     /// Executes an [`Instruction::CopyF64Imm32`].
-    pub fn execute_copy_f64imm32(&mut self, result: Reg, value: Const32<f64>) {
+    pub fn copy_f64imm32(&mut self, result: Reg, value: Const32<f64>) {
         self.execute_copy_impl(result, value, |_, value| UntypedVal::from(f64::from(value)))
     }
 
@@ -59,13 +59,13 @@ impl Executor<'_> {
     ///   and thus requires a costly temporary buffer to avoid overwriting
     ///   intermediate copy results.
     /// - If `results` and `values` do _not_ overlap [`Instruction::CopySpanNonOverlapping`] is used.
-    pub fn execute_copy_span(&mut self, results: RegSpan, values: RegSpan, len: u16) {
-        self.execute_copy_span_impl(results, values, len);
+    pub fn copy_span(&mut self, results: RegSpan, values: RegSpan, len: u16) {
+        self.copy_span_impl(results, values, len);
         self.next_instr();
     }
 
     /// Internal implementation of [`Instruction::CopySpan`] execution.
-    pub fn execute_copy_span_impl(&mut self, results: RegSpan, values: RegSpan, len: u16) {
+    pub fn copy_span_impl(&mut self, results: RegSpan, values: RegSpan, len: u16) {
         let results = results.iter(len);
         let values = values.iter(len);
         let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
@@ -82,23 +82,13 @@ impl Executor<'_> {
     /// - This instruction assumes that `results` and `values` do _not_ overlap
     ///   and thus can copy all the elements without a costly temporary buffer.
     /// - If `results` and `values` _do_ overlap [`Instruction::CopySpan`] is used.
-    pub fn execute_copy_span_non_overlapping(
-        &mut self,
-        results: RegSpan,
-        values: RegSpan,
-        len: u16,
-    ) {
-        self.execute_copy_span_non_overlapping_impl(results, values, len);
+    pub fn copy_span_non_overlapping(&mut self, results: RegSpan, values: RegSpan, len: u16) {
+        self.copy_span_non_overlapping_impl(results, values, len);
         self.next_instr();
     }
 
     /// Internal implementation of [`Instruction::CopySpanNonOverlapping`] execution.
-    pub fn execute_copy_span_non_overlapping_impl(
-        &mut self,
-        results: RegSpan,
-        values: RegSpan,
-        len: u16,
-    ) {
+    pub fn copy_span_non_overlapping_impl(&mut self, results: RegSpan, values: RegSpan, len: u16) {
         let results = results.iter(len);
         let values = values.iter(len);
         for (result, value) in results.into_iter().zip(values.into_iter()) {
@@ -108,14 +98,14 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CopyMany`].
-    pub fn execute_copy_many(&mut self, results: RegSpan, values: [Reg; 2]) {
+    pub fn copy_many(&mut self, results: RegSpan, values: [Reg; 2]) {
         self.ip.add(1);
-        self.ip = self.execute_copy_many_impl(self.ip, results, &values);
+        self.ip = self.copy_many_impl(self.ip, results, &values);
         self.next_instr()
     }
 
     /// Internal implementation of [`Instruction::CopyMany`] execution.
-    pub fn execute_copy_many_impl(
+    pub fn copy_many_impl(
         &mut self,
         ip: InstructionPtr,
         results: RegSpan,
@@ -150,14 +140,14 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CopyManyNonOverlapping`].
-    pub fn execute_copy_many_non_overlapping(&mut self, results: RegSpan, values: [Reg; 2]) {
+    pub fn copy_many_non_overlapping(&mut self, results: RegSpan, values: [Reg; 2]) {
         self.ip.add(1);
-        self.ip = self.execute_copy_many_non_overlapping_impl(self.ip, results, &values);
+        self.ip = self.copy_many_non_overlapping_impl(self.ip, results, &values);
         self.next_instr()
     }
 
     /// Internal implementation of [`Instruction::CopyManyNonOverlapping`] execution.
-    pub fn execute_copy_many_non_overlapping_impl(
+    pub fn copy_many_non_overlapping_impl(
         &mut self,
         ip: InstructionPtr,
         results: RegSpan,

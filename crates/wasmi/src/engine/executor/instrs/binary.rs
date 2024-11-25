@@ -21,50 +21,50 @@ macro_rules! impl_binary {
 }
 impl Executor<'_> {
     impl_binary! {
-        (Instruction::I32Add, execute_i32_add, UntypedVal::i32_add),
-        (Instruction::I32Sub, execute_i32_sub, UntypedVal::i32_sub),
-        (Instruction::I32Mul, execute_i32_mul, UntypedVal::i32_mul),
-        (Instruction::I32And, execute_i32_and, UntypedVal::i32_and),
-        (Instruction::I32AndEqz, execute_i32_and_eqz, UntypedVal::i32_and_eqz),
-        (Instruction::I32Or, execute_i32_or, UntypedVal::i32_or),
-        (Instruction::I32OrEqz, execute_i32_or_eqz, UntypedVal::i32_or_eqz),
-        (Instruction::I32Xor, execute_i32_xor, UntypedVal::i32_xor),
-        (Instruction::I32XorEqz, execute_i32_xor_eqz, UntypedVal::i32_xor_eqz),
+        (Instruction::I32Add, i32_add, UntypedVal::i32_add),
+        (Instruction::I32Sub, i32_sub, UntypedVal::i32_sub),
+        (Instruction::I32Mul, i32_mul, UntypedVal::i32_mul),
+        (Instruction::I32And, i32_and, UntypedVal::i32_and),
+        (Instruction::I32AndEqz, i32_and_eqz, UntypedVal::i32_and_eqz),
+        (Instruction::I32Or, i32_or, UntypedVal::i32_or),
+        (Instruction::I32OrEqz, i32_or_eqz, UntypedVal::i32_or_eqz),
+        (Instruction::I32Xor, i32_xor, UntypedVal::i32_xor),
+        (Instruction::I32XorEqz, i32_xor_eqz, UntypedVal::i32_xor_eqz),
 
-        (Instruction::I64Add, execute_i64_add, UntypedVal::i64_add),
-        (Instruction::I64Sub, execute_i64_sub, UntypedVal::i64_sub),
-        (Instruction::I64Mul, execute_i64_mul, UntypedVal::i64_mul),
-        (Instruction::I64And, execute_i64_and, UntypedVal::i64_and),
-        (Instruction::I64Or, execute_i64_or, UntypedVal::i64_or),
-        (Instruction::I64Xor, execute_i64_xor, UntypedVal::i64_xor),
+        (Instruction::I64Add, i64_add, UntypedVal::i64_add),
+        (Instruction::I64Sub, i64_sub, UntypedVal::i64_sub),
+        (Instruction::I64Mul, i64_mul, UntypedVal::i64_mul),
+        (Instruction::I64And, i64_and, UntypedVal::i64_and),
+        (Instruction::I64Or, i64_or, UntypedVal::i64_or),
+        (Instruction::I64Xor, i64_xor, UntypedVal::i64_xor),
 
-        (Instruction::I32Shl, execute_i32_shl, UntypedVal::i32_shl),
-        (Instruction::I32ShrU, execute_i32_shr_u, UntypedVal::i32_shr_u),
-        (Instruction::I32ShrS, execute_i32_shr_s, UntypedVal::i32_shr_s),
-        (Instruction::I32Rotl, execute_i32_rotl, UntypedVal::i32_rotl),
-        (Instruction::I32Rotr, execute_i32_rotr, UntypedVal::i32_rotr),
+        (Instruction::I32Shl, i32_shl, UntypedVal::i32_shl),
+        (Instruction::I32ShrU, i32_shr_u, UntypedVal::i32_shr_u),
+        (Instruction::I32ShrS, i32_shr_s, UntypedVal::i32_shr_s),
+        (Instruction::I32Rotl, i32_rotl, UntypedVal::i32_rotl),
+        (Instruction::I32Rotr, i32_rotr, UntypedVal::i32_rotr),
 
-        (Instruction::I64Shl, execute_i64_shl, UntypedVal::i64_shl),
-        (Instruction::I64ShrU, execute_i64_shr_u, UntypedVal::i64_shr_u),
-        (Instruction::I64ShrS, execute_i64_shr_s, UntypedVal::i64_shr_s),
-        (Instruction::I64Rotl, execute_i64_rotl, UntypedVal::i64_rotl),
-        (Instruction::I64Rotr, execute_i64_rotr, UntypedVal::i64_rotr),
+        (Instruction::I64Shl, i64_shl, UntypedVal::i64_shl),
+        (Instruction::I64ShrU, i64_shr_u, UntypedVal::i64_shr_u),
+        (Instruction::I64ShrS, i64_shr_s, UntypedVal::i64_shr_s),
+        (Instruction::I64Rotl, i64_rotl, UntypedVal::i64_rotl),
+        (Instruction::I64Rotr, i64_rotr, UntypedVal::i64_rotr),
 
-        (Instruction::F32Add, execute_f32_add, UntypedVal::f32_add),
-        (Instruction::F32Sub, execute_f32_sub, UntypedVal::f32_sub),
-        (Instruction::F32Mul, execute_f32_mul, UntypedVal::f32_mul),
-        (Instruction::F32Div, execute_f32_div, UntypedVal::f32_div),
-        (Instruction::F32Min, execute_f32_min, UntypedVal::f32_min),
-        (Instruction::F32Max, execute_f32_max, UntypedVal::f32_max),
-        (Instruction::F32Copysign, execute_f32_copysign, UntypedVal::f32_copysign),
+        (Instruction::F32Add, f32_add, UntypedVal::f32_add),
+        (Instruction::F32Sub, f32_sub, UntypedVal::f32_sub),
+        (Instruction::F32Mul, f32_mul, UntypedVal::f32_mul),
+        (Instruction::F32Div, f32_div, UntypedVal::f32_div),
+        (Instruction::F32Min, f32_min, UntypedVal::f32_min),
+        (Instruction::F32Max, f32_max, UntypedVal::f32_max),
+        (Instruction::F32Copysign, f32_copysign, UntypedVal::f32_copysign),
 
-        (Instruction::F64Add, execute_f64_add, UntypedVal::f64_add),
-        (Instruction::F64Sub, execute_f64_sub, UntypedVal::f64_sub),
-        (Instruction::F64Mul, execute_f64_mul, UntypedVal::f64_mul),
-        (Instruction::F64Div, execute_f64_div, UntypedVal::f64_div),
-        (Instruction::F64Min, execute_f64_min, UntypedVal::f64_min),
-        (Instruction::F64Max, execute_f64_max, UntypedVal::f64_max),
-        (Instruction::F64Copysign, execute_f64_copysign, UntypedVal::f64_copysign),
+        (Instruction::F64Add, f64_add, UntypedVal::f64_add),
+        (Instruction::F64Sub, f64_sub, UntypedVal::f64_sub),
+        (Instruction::F64Mul, f64_mul, UntypedVal::f64_mul),
+        (Instruction::F64Div, f64_div, UntypedVal::f64_div),
+        (Instruction::F64Min, f64_min, UntypedVal::f64_min),
+        (Instruction::F64Max, f64_max, UntypedVal::f64_max),
+        (Instruction::F64Copysign, f64_copysign, UntypedVal::f64_copysign),
     }
 }
 
@@ -80,20 +80,20 @@ macro_rules! impl_binary_imm16 {
 }
 impl Executor<'_> {
     impl_binary_imm16! {
-        (i32, Instruction::I32AddImm16, execute_i32_add_imm16, UntypedVal::i32_add),
-        (i32, Instruction::I32MulImm16, execute_i32_mul_imm16, UntypedVal::i32_mul),
-        (i32, Instruction::I32AndImm16, execute_i32_and_imm16, UntypedVal::i32_and),
-        (i32, Instruction::I32AndEqzImm16, execute_i32_and_eqz_imm16, UntypedVal::i32_and_eqz),
-        (i32, Instruction::I32OrImm16, execute_i32_or_imm16, UntypedVal::i32_or),
-        (i32, Instruction::I32OrEqzImm16, execute_i32_or_eqz_imm16, UntypedVal::i32_or_eqz),
-        (i32, Instruction::I32XorImm16, execute_i32_xor_imm16, UntypedVal::i32_xor),
-        (i32, Instruction::I32XorEqzImm16, execute_i32_xor_eqz_imm16, UntypedVal::i32_xor_eqz),
+        (i32, Instruction::I32AddImm16, i32_add_imm16, UntypedVal::i32_add),
+        (i32, Instruction::I32MulImm16, i32_mul_imm16, UntypedVal::i32_mul),
+        (i32, Instruction::I32AndImm16, i32_and_imm16, UntypedVal::i32_and),
+        (i32, Instruction::I32AndEqzImm16, i32_and_eqz_imm16, UntypedVal::i32_and_eqz),
+        (i32, Instruction::I32OrImm16, i32_or_imm16, UntypedVal::i32_or),
+        (i32, Instruction::I32OrEqzImm16, i32_or_eqz_imm16, UntypedVal::i32_or_eqz),
+        (i32, Instruction::I32XorImm16, i32_xor_imm16, UntypedVal::i32_xor),
+        (i32, Instruction::I32XorEqzImm16, i32_xor_eqz_imm16, UntypedVal::i32_xor_eqz),
 
-        (i64, Instruction::I64AddImm16, execute_i64_add_imm16, UntypedVal::i64_add),
-        (i64, Instruction::I64MulImm16, execute_i64_mul_imm16, UntypedVal::i64_mul),
-        (i64, Instruction::I64AndImm16, execute_i64_and_imm16, UntypedVal::i64_and),
-        (i64, Instruction::I64OrImm16, execute_i64_or_imm16, UntypedVal::i64_or),
-        (i64, Instruction::I64XorImm16, execute_i64_xor_imm16, UntypedVal::i64_xor),
+        (i64, Instruction::I64AddImm16, i64_add_imm16, UntypedVal::i64_add),
+        (i64, Instruction::I64MulImm16, i64_mul_imm16, UntypedVal::i64_mul),
+        (i64, Instruction::I64AndImm16, i64_and_imm16, UntypedVal::i64_and),
+        (i64, Instruction::I64OrImm16, i64_or_imm16, UntypedVal::i64_or),
+        (i64, Instruction::I64XorImm16, i64_xor_imm16, UntypedVal::i64_xor),
     }
 }
 
@@ -109,17 +109,17 @@ macro_rules! impl_shift_by {
 }
 impl Executor<'_> {
     impl_shift_by! {
-        (i32, Instruction::I32ShlBy, execute_i32_shl_by, UntypedVal::i32_shl),
-        (i32, Instruction::I32ShrUBy, execute_i32_shr_u_by, UntypedVal::i32_shr_u),
-        (i32, Instruction::I32ShrSBy, execute_i32_shr_s_by, UntypedVal::i32_shr_s),
-        (i32, Instruction::I32RotlBy, execute_i32_rotl_by, UntypedVal::i32_rotl),
-        (i32, Instruction::I32RotrBy, execute_i32_rotr_by, UntypedVal::i32_rotr),
+        (i32, Instruction::I32ShlBy, i32_shl_by, UntypedVal::i32_shl),
+        (i32, Instruction::I32ShrUBy, i32_shr_u_by, UntypedVal::i32_shr_u),
+        (i32, Instruction::I32ShrSBy, i32_shr_s_by, UntypedVal::i32_shr_s),
+        (i32, Instruction::I32RotlBy, i32_rotl_by, UntypedVal::i32_rotl),
+        (i32, Instruction::I32RotrBy, i32_rotr_by, UntypedVal::i32_rotr),
 
-        (i64, Instruction::I64ShlBy, execute_i64_shl_by, UntypedVal::i64_shl),
-        (i64, Instruction::I64ShrUBy, execute_i64_shr_u_by, UntypedVal::i64_shr_u),
-        (i64, Instruction::I64ShrSBy, execute_i64_shr_s_by, UntypedVal::i64_shr_s),
-        (i64, Instruction::I64RotlBy, execute_i64_rotl_by, UntypedVal::i64_rotl),
-        (i64, Instruction::I64RotrBy, execute_i64_rotr_by, UntypedVal::i64_rotr),
+        (i64, Instruction::I64ShlBy, i64_shl_by, UntypedVal::i64_shl),
+        (i64, Instruction::I64ShrUBy, i64_shr_u_by, UntypedVal::i64_shr_u),
+        (i64, Instruction::I64ShrSBy, i64_shr_s_by, UntypedVal::i64_shr_s),
+        (i64, Instruction::I64RotlBy, i64_rotl_by, UntypedVal::i64_rotl),
+        (i64, Instruction::I64RotrBy, i64_rotr_by, UntypedVal::i64_rotr),
 
     }
 }
@@ -136,20 +136,20 @@ macro_rules! impl_binary_imm16_lhs {
 }
 impl Executor<'_> {
     impl_binary_imm16_lhs! {
-        (i32, Instruction::I32SubImm16Lhs, execute_i32_sub_imm16_lhs, UntypedVal::i32_sub),
-        (i64, Instruction::I64SubImm16Lhs, execute_i64_sub_imm16_lhs, UntypedVal::i64_sub),
+        (i32, Instruction::I32SubImm16Lhs, i32_sub_imm16_lhs, UntypedVal::i32_sub),
+        (i64, Instruction::I64SubImm16Lhs, i64_sub_imm16_lhs, UntypedVal::i64_sub),
 
-        (i32, Instruction::I32ShlImm16, execute_i32_shl_imm16, UntypedVal::i32_shl),
-        (i32, Instruction::I32ShrUImm16, execute_i32_shr_u_imm16, UntypedVal::i32_shr_u),
-        (i32, Instruction::I32ShrSImm16, execute_i32_shr_s_imm16, UntypedVal::i32_shr_s),
-        (i32, Instruction::I32RotlImm16, execute_i32_rotl_imm16, UntypedVal::i32_rotl),
-        (i32, Instruction::I32RotrImm16, execute_i32_rotr_imm16, UntypedVal::i32_rotr),
+        (i32, Instruction::I32ShlImm16, i32_shl_imm16, UntypedVal::i32_shl),
+        (i32, Instruction::I32ShrUImm16, i32_shr_u_imm16, UntypedVal::i32_shr_u),
+        (i32, Instruction::I32ShrSImm16, i32_shr_s_imm16, UntypedVal::i32_shr_s),
+        (i32, Instruction::I32RotlImm16, i32_rotl_imm16, UntypedVal::i32_rotl),
+        (i32, Instruction::I32RotrImm16, i32_rotr_imm16, UntypedVal::i32_rotr),
 
-        (i64, Instruction::I64ShlImm16, execute_i64_shl_imm16, UntypedVal::i64_shl),
-        (i64, Instruction::I64ShrUImm16, execute_i64_shr_u_imm16, UntypedVal::i64_shr_u),
-        (i64, Instruction::I64ShrSImm16, execute_i64_shr_s_imm16, UntypedVal::i64_shr_s),
-        (i64, Instruction::I64RotlImm16, execute_i64_rotl_imm16, UntypedVal::i64_rotl),
-        (i64, Instruction::I64RotrImm16, execute_i64_rotr_imm16, UntypedVal::i64_rotr),
+        (i64, Instruction::I64ShlImm16, i64_shl_imm16, UntypedVal::i64_shl),
+        (i64, Instruction::I64ShrUImm16, i64_shr_u_imm16, UntypedVal::i64_shr_u),
+        (i64, Instruction::I64ShrSImm16, i64_shr_s_imm16, UntypedVal::i64_shr_s),
+        (i64, Instruction::I64RotlImm16, i64_rotl_imm16, UntypedVal::i64_rotl),
+        (i64, Instruction::I64RotrImm16, i64_rotr_imm16, UntypedVal::i64_rotr),
     }
 }
 
@@ -165,15 +165,15 @@ macro_rules! impl_fallible_binary {
 }
 impl Executor<'_> {
     impl_fallible_binary! {
-        (Instruction::I32DivS, execute_i32_div_s, UntypedVal::i32_div_s),
-        (Instruction::I32DivU, execute_i32_div_u, UntypedVal::i32_div_u),
-        (Instruction::I32RemS, execute_i32_rem_s, UntypedVal::i32_rem_s),
-        (Instruction::I32RemU, execute_i32_rem_u, UntypedVal::i32_rem_u),
+        (Instruction::I32DivS, i32_div_s, UntypedVal::i32_div_s),
+        (Instruction::I32DivU, i32_div_u, UntypedVal::i32_div_u),
+        (Instruction::I32RemS, i32_rem_s, UntypedVal::i32_rem_s),
+        (Instruction::I32RemU, i32_rem_u, UntypedVal::i32_rem_u),
 
-        (Instruction::I64DivS, execute_i64_div_s, UntypedVal::i64_div_s),
-        (Instruction::I64DivU, execute_i64_div_u, UntypedVal::i64_div_u),
-        (Instruction::I64RemS, execute_i64_rem_s, UntypedVal::i64_rem_s),
-        (Instruction::I64RemU, execute_i64_rem_u, UntypedVal::i64_rem_u),
+        (Instruction::I64DivS, i64_div_s, UntypedVal::i64_div_s),
+        (Instruction::I64DivU, i64_div_u, UntypedVal::i64_div_u),
+        (Instruction::I64RemS, i64_rem_s, UntypedVal::i64_rem_s),
+        (Instruction::I64RemU, i64_rem_u, UntypedVal::i64_rem_u),
     }
 }
 
@@ -256,11 +256,11 @@ macro_rules! impl_divrem_s_imm16_rhs {
 }
 impl Executor<'_> {
     impl_divrem_s_imm16_rhs! {
-        (NonZeroI32, Instruction::I32DivSImm16Rhs, execute_i32_div_s_imm16_rhs, <UntypedVal as DivRemExt>::i32_div_s),
-        (NonZeroI32, Instruction::I32RemSImm16Rhs, execute_i32_rem_s_imm16_rhs, <UntypedVal as DivRemExt>::i32_rem_s),
+        (NonZeroI32, Instruction::I32DivSImm16Rhs, i32_div_s_imm16_rhs, <UntypedVal as DivRemExt>::i32_div_s),
+        (NonZeroI32, Instruction::I32RemSImm16Rhs, i32_rem_s_imm16_rhs, <UntypedVal as DivRemExt>::i32_rem_s),
 
-        (NonZeroI64, Instruction::I64DivSImm16Rhs, execute_i64_div_s_imm16_rhs, <UntypedVal as DivRemExt>::i64_div_s),
-        (NonZeroI64, Instruction::I64RemSImm16Rhs, execute_i64_rem_s_imm16_rhs, <UntypedVal as DivRemExt>::i64_rem_s),
+        (NonZeroI64, Instruction::I64DivSImm16Rhs, i64_div_s_imm16_rhs, <UntypedVal as DivRemExt>::i64_div_s),
+        (NonZeroI64, Instruction::I64RemSImm16Rhs, i64_rem_s_imm16_rhs, <UntypedVal as DivRemExt>::i64_rem_s),
     }
 }
 
@@ -276,11 +276,11 @@ macro_rules! impl_divrem_u_imm16_rhs {
 }
 impl Executor<'_> {
     impl_divrem_u_imm16_rhs! {
-        (NonZeroU32, Instruction::I32DivUImm16Rhs, execute_i32_div_u_imm16_rhs, <UntypedVal as DivRemExt>::i32_div_u),
-        (NonZeroU32, Instruction::I32RemUImm16Rhs, execute_i32_rem_u_imm16_rhs, <UntypedVal as DivRemExt>::i32_rem_u),
+        (NonZeroU32, Instruction::I32DivUImm16Rhs, i32_div_u_imm16_rhs, <UntypedVal as DivRemExt>::i32_div_u),
+        (NonZeroU32, Instruction::I32RemUImm16Rhs, i32_rem_u_imm16_rhs, <UntypedVal as DivRemExt>::i32_rem_u),
 
-        (NonZeroU64, Instruction::I64DivUImm16Rhs, execute_i64_div_u_imm16_rhs, <UntypedVal as DivRemExt>::i64_div_u),
-        (NonZeroU64, Instruction::I64RemUImm16Rhs, execute_i64_rem_u_imm16_rhs, <UntypedVal as DivRemExt>::i64_rem_u),
+        (NonZeroU64, Instruction::I64DivUImm16Rhs, i64_div_u_imm16_rhs, <UntypedVal as DivRemExt>::i64_div_u),
+        (NonZeroU64, Instruction::I64RemUImm16Rhs, i64_rem_u_imm16_rhs, <UntypedVal as DivRemExt>::i64_rem_u),
     }
 }
 
@@ -296,21 +296,21 @@ macro_rules! impl_fallible_binary_imm16_lhs {
 }
 impl Executor<'_> {
     impl_fallible_binary_imm16_lhs! {
-        (i32, Instruction::I32DivSImm16Lhs, execute_i32_div_s_imm16_lhs, UntypedVal::i32_div_s),
-        (u32, Instruction::I32DivUImm16Lhs, execute_i32_div_u_imm16_lhs, UntypedVal::i32_div_u),
-        (i32, Instruction::I32RemSImm16Lhs, execute_i32_rem_s_imm16_lhs, UntypedVal::i32_rem_s),
-        (u32, Instruction::I32RemUImm16Lhs, execute_i32_rem_u_imm16_lhs, UntypedVal::i32_rem_u),
+        (i32, Instruction::I32DivSImm16Lhs, i32_div_s_imm16_lhs, UntypedVal::i32_div_s),
+        (u32, Instruction::I32DivUImm16Lhs, i32_div_u_imm16_lhs, UntypedVal::i32_div_u),
+        (i32, Instruction::I32RemSImm16Lhs, i32_rem_s_imm16_lhs, UntypedVal::i32_rem_s),
+        (u32, Instruction::I32RemUImm16Lhs, i32_rem_u_imm16_lhs, UntypedVal::i32_rem_u),
 
-        (i64, Instruction::I64DivSImm16Lhs, execute_i64_div_s_imm16_lhs, UntypedVal::i64_div_s),
-        (u64, Instruction::I64DivUImm16Lhs, execute_i64_div_u_imm16_lhs, UntypedVal::i64_div_u),
-        (i64, Instruction::I64RemSImm16Lhs, execute_i64_rem_s_imm16_lhs, UntypedVal::i64_rem_s),
-        (u64, Instruction::I64RemUImm16Lhs, execute_i64_rem_u_imm16_lhs, UntypedVal::i64_rem_u),
+        (i64, Instruction::I64DivSImm16Lhs, i64_div_s_imm16_lhs, UntypedVal::i64_div_s),
+        (u64, Instruction::I64DivUImm16Lhs, i64_div_u_imm16_lhs, UntypedVal::i64_div_u),
+        (i64, Instruction::I64RemSImm16Lhs, i64_rem_s_imm16_lhs, UntypedVal::i64_rem_s),
+        (u64, Instruction::I64RemUImm16Lhs, i64_rem_u_imm16_lhs, UntypedVal::i64_rem_u),
     }
 }
 
 impl Executor<'_> {
     /// Executes an [`Instruction::F32CopysignImm`].
-    pub fn execute_f32_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f32>) {
+    pub fn f32_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f32>) {
         let lhs = self.get_register(lhs);
         let rhs = f32::from(rhs);
         self.set_register(result, UntypedVal::f32_copysign(lhs, rhs.into()));
@@ -318,7 +318,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::F64CopysignImm`].
-    pub fn execute_f64_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f64>) {
+    pub fn f64_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f64>) {
         let lhs = self.get_register(lhs);
         let rhs = f64::from(rhs);
         self.set_register(result, UntypedVal::f64_copysign(lhs, rhs.into()));

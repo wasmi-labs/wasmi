@@ -33,7 +33,7 @@ impl Executor<'_> {
         self.ip.offset(offset.to_i16() as isize)
     }
 
-    pub fn execute_branch(&mut self, offset: BranchOffset) {
+    pub fn branch(&mut self, offset: BranchOffset) {
         self.branch_to(offset)
     }
 
@@ -46,12 +46,12 @@ impl Executor<'_> {
         cmp::min(index, max_index) as usize + 1
     }
 
-    pub fn execute_branch_table_0(&mut self, index: Reg, len_targets: u32) {
+    pub fn branch_table_0(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(offset);
     }
 
-    pub fn execute_branch_table_1(&mut self, index: Reg, len_targets: u32) {
+    pub fn branch_table_1(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let value = match *self.ip.get() {
@@ -73,11 +73,11 @@ impl Executor<'_> {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
             self.set_register(results.head(), value);
-            self.execute_branch(offset)
+            self.branch(offset)
         }
     }
 
-    pub fn execute_branch_table_2(&mut self, index: Reg, len_targets: u32) {
+    pub fn branch_table_2(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let regs = match *self.ip.get() {
@@ -100,11 +100,11 @@ impl Executor<'_> {
             for (result, value) in results.zip(values) {
                 self.set_register(result, value);
             }
-            self.execute_branch(offset)
+            self.branch(offset)
         }
     }
 
-    pub fn execute_branch_table_3(&mut self, index: Reg, len_targets: u32) {
+    pub fn branch_table_3(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let regs = match *self.ip.get() {
@@ -127,11 +127,11 @@ impl Executor<'_> {
             for (result, value) in results.zip(values) {
                 self.set_register(result, value);
             }
-            self.execute_branch(offset)
+            self.branch(offset)
         }
     }
 
-    pub fn execute_branch_table_span(&mut self, index: Reg, len_targets: u32) {
+    pub fn branch_table_span(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let values = match *self.ip.get() {
@@ -152,18 +152,18 @@ impl Executor<'_> {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
             Instruction::BranchTableTarget { results, offset } => {
-                self.execute_copy_span_impl(results, values, len);
-                self.execute_branch(offset)
+                self.copy_span_impl(results, values, len);
+                self.branch(offset)
             }
             Instruction::BranchTableTargetNonOverlapping { results, offset } => {
-                self.execute_copy_span_non_overlapping_impl(results, values, len);
-                self.execute_branch(offset)
+                self.copy_span_non_overlapping_impl(results, values, len);
+                self.branch(offset)
             }
             _ => {}
         }
     }
 
-    pub fn execute_branch_table_many(&mut self, index: Reg, len_targets: u32) {
+    pub fn branch_table_many(&mut self, index: Reg, len_targets: u32) {
         let offset = self.fetch_branch_table_offset(index, len_targets) - 1;
         self.ip.add(1);
         let ip_list = self.ip;
@@ -173,12 +173,12 @@ impl Executor<'_> {
             // Note: we explicitly do _not_ handle branch table returns here for technical reasons.
             //       They are executed as the next conventional instruction in the pipeline, no special treatment required.
             Instruction::BranchTableTarget { results, offset } => {
-                self.execute_copy_many_impl(ip_list, results, &[]);
-                self.execute_branch(offset)
+                self.copy_many_impl(ip_list, results, &[]);
+                self.branch(offset)
             }
             Instruction::BranchTableTargetNonOverlapping { results, offset } => {
-                self.execute_copy_many_non_overlapping_impl(ip_list, results, &[]);
-                self.execute_branch(offset)
+                self.copy_many_non_overlapping_impl(ip_list, results, &[]);
+                self.branch(offset)
             }
             Instruction::Return => {
                 self.copy_many_return_values(ip_list, &[]);
@@ -315,35 +315,35 @@ macro_rules! impl_execute_branch_binop {
     }
 }
 impl_execute_branch_binop! {
-    (i32, Instruction::BranchI32And, execute_branch_i32_and, cmp_i32_and),
-    (i32, Instruction::BranchI32Or, execute_branch_i32_or, cmp_i32_or),
-    (i32, Instruction::BranchI32Xor, execute_branch_i32_xor, cmp_i32_xor),
-    (i32, Instruction::BranchI32AndEqz, execute_branch_i32_and_eqz, cmp_i32_and_eqz),
-    (i32, Instruction::BranchI32OrEqz, execute_branch_i32_or_eqz, cmp_i32_or_eqz),
-    (i32, Instruction::BranchI32XorEqz, execute_branch_i32_xor_eqz, cmp_i32_xor_eqz),
-    (i32, Instruction::BranchI32Eq, execute_branch_i32_eq, cmp_eq),
-    (i32, Instruction::BranchI32Ne, execute_branch_i32_ne, cmp_ne),
-    (i32, Instruction::BranchI32LtS, execute_branch_i32_lt_s, cmp_lt),
-    (u32, Instruction::BranchI32LtU, execute_branch_i32_lt_u, cmp_lt),
-    (i32, Instruction::BranchI32LeS, execute_branch_i32_le_s, cmp_le),
-    (u32, Instruction::BranchI32LeU, execute_branch_i32_le_u, cmp_le),
+    (i32, Instruction::BranchI32And, branch_i32_and, cmp_i32_and),
+    (i32, Instruction::BranchI32Or, branch_i32_or, cmp_i32_or),
+    (i32, Instruction::BranchI32Xor, branch_i32_xor, cmp_i32_xor),
+    (i32, Instruction::BranchI32AndEqz, branch_i32_and_eqz, cmp_i32_and_eqz),
+    (i32, Instruction::BranchI32OrEqz, branch_i32_or_eqz, cmp_i32_or_eqz),
+    (i32, Instruction::BranchI32XorEqz, branch_i32_xor_eqz, cmp_i32_xor_eqz),
+    (i32, Instruction::BranchI32Eq, branch_i32_eq, cmp_eq),
+    (i32, Instruction::BranchI32Ne, branch_i32_ne, cmp_ne),
+    (i32, Instruction::BranchI32LtS, branch_i32_lt_s, cmp_lt),
+    (u32, Instruction::BranchI32LtU, branch_i32_lt_u, cmp_lt),
+    (i32, Instruction::BranchI32LeS, branch_i32_le_s, cmp_le),
+    (u32, Instruction::BranchI32LeU, branch_i32_le_u, cmp_le),
 
-    (i64, Instruction::BranchI64Eq, execute_branch_i64_eq, cmp_eq),
-    (i64, Instruction::BranchI64Ne, execute_branch_i64_ne, cmp_ne),
-    (i64, Instruction::BranchI64LtS, execute_branch_i64_lt_s, cmp_lt),
-    (u64, Instruction::BranchI64LtU, execute_branch_i64_lt_u, cmp_lt),
-    (i64, Instruction::BranchI64LeS, execute_branch_i64_le_s, cmp_le),
-    (u64, Instruction::BranchI64LeU, execute_branch_i64_le_u, cmp_le),
+    (i64, Instruction::BranchI64Eq, branch_i64_eq, cmp_eq),
+    (i64, Instruction::BranchI64Ne, branch_i64_ne, cmp_ne),
+    (i64, Instruction::BranchI64LtS, branch_i64_lt_s, cmp_lt),
+    (u64, Instruction::BranchI64LtU, branch_i64_lt_u, cmp_lt),
+    (i64, Instruction::BranchI64LeS, branch_i64_le_s, cmp_le),
+    (u64, Instruction::BranchI64LeU, branch_i64_le_u, cmp_le),
 
-    (f32, Instruction::BranchF32Eq, execute_branch_f32_eq, cmp_eq),
-    (f32, Instruction::BranchF32Ne, execute_branch_f32_ne, cmp_ne),
-    (f32, Instruction::BranchF32Lt, execute_branch_f32_lt, cmp_lt),
-    (f32, Instruction::BranchF32Le, execute_branch_f32_le, cmp_le),
+    (f32, Instruction::BranchF32Eq, branch_f32_eq, cmp_eq),
+    (f32, Instruction::BranchF32Ne, branch_f32_ne, cmp_ne),
+    (f32, Instruction::BranchF32Lt, branch_f32_lt, cmp_lt),
+    (f32, Instruction::BranchF32Le, branch_f32_le, cmp_le),
 
-    (f64, Instruction::BranchF64Eq, execute_branch_f64_eq, cmp_eq),
-    (f64, Instruction::BranchF64Ne, execute_branch_f64_ne, cmp_ne),
-    (f64, Instruction::BranchF64Lt, execute_branch_f64_lt, cmp_lt),
-    (f64, Instruction::BranchF64Le, execute_branch_f64_le, cmp_le),
+    (f64, Instruction::BranchF64Eq, branch_f64_eq, cmp_eq),
+    (f64, Instruction::BranchF64Ne, branch_f64_ne, cmp_ne),
+    (f64, Instruction::BranchF64Lt, branch_f64_lt, cmp_lt),
+    (f64, Instruction::BranchF64Le, branch_f64_le, cmp_le),
 }
 
 macro_rules! impl_execute_branch_binop_imm16_rhs {
@@ -359,25 +359,25 @@ macro_rules! impl_execute_branch_binop_imm16_rhs {
     }
 }
 impl_execute_branch_binop_imm16_rhs! {
-    (i32, Instruction::BranchI32AndImm16, execute_branch_i32_and_imm16, cmp_i32_and),
-    (i32, Instruction::BranchI32OrImm16, execute_branch_i32_or_imm16, cmp_i32_or),
-    (i32, Instruction::BranchI32XorImm16, execute_branch_i32_xor_imm16, cmp_i32_xor),
-    (i32, Instruction::BranchI32AndEqzImm16, execute_branch_i32_and_eqz_imm16, cmp_i32_and_eqz),
-    (i32, Instruction::BranchI32OrEqzImm16, execute_branch_i32_or_eqz_imm16, cmp_i32_or_eqz),
-    (i32, Instruction::BranchI32XorEqzImm16, execute_branch_i32_xor_eqz_imm16, cmp_i32_xor_eqz),
-    (i32, Instruction::BranchI32EqImm16, execute_branch_i32_eq_imm16, cmp_eq),
-    (i32, Instruction::BranchI32NeImm16, execute_branch_i32_ne_imm16, cmp_ne),
-    (i32, Instruction::BranchI32LtSImm16Rhs, execute_branch_i32_lt_s_imm16_rhs, cmp_lt),
-    (u32, Instruction::BranchI32LtUImm16Rhs, execute_branch_i32_lt_u_imm16_rhs, cmp_lt),
-    (i32, Instruction::BranchI32LeSImm16Rhs, execute_branch_i32_le_s_imm16_rhs, cmp_le),
-    (u32, Instruction::BranchI32LeUImm16Rhs, execute_branch_i32_le_u_imm16_rhs, cmp_le),
+    (i32, Instruction::BranchI32AndImm16, branch_i32_and_imm16, cmp_i32_and),
+    (i32, Instruction::BranchI32OrImm16, branch_i32_or_imm16, cmp_i32_or),
+    (i32, Instruction::BranchI32XorImm16, branch_i32_xor_imm16, cmp_i32_xor),
+    (i32, Instruction::BranchI32AndEqzImm16, branch_i32_and_eqz_imm16, cmp_i32_and_eqz),
+    (i32, Instruction::BranchI32OrEqzImm16, branch_i32_or_eqz_imm16, cmp_i32_or_eqz),
+    (i32, Instruction::BranchI32XorEqzImm16, branch_i32_xor_eqz_imm16, cmp_i32_xor_eqz),
+    (i32, Instruction::BranchI32EqImm16, branch_i32_eq_imm16, cmp_eq),
+    (i32, Instruction::BranchI32NeImm16, branch_i32_ne_imm16, cmp_ne),
+    (i32, Instruction::BranchI32LtSImm16Rhs, branch_i32_lt_s_imm16_rhs, cmp_lt),
+    (u32, Instruction::BranchI32LtUImm16Rhs, branch_i32_lt_u_imm16_rhs, cmp_lt),
+    (i32, Instruction::BranchI32LeSImm16Rhs, branch_i32_le_s_imm16_rhs, cmp_le),
+    (u32, Instruction::BranchI32LeUImm16Rhs, branch_i32_le_u_imm16_rhs, cmp_le),
 
-    (i64, Instruction::BranchI64EqImm16, execute_branch_i64_eq_imm16, cmp_eq),
-    (i64, Instruction::BranchI64NeImm16, execute_branch_i64_ne_imm16, cmp_ne),
-    (i64, Instruction::BranchI64LtSImm16Rhs, execute_branch_i64_lt_s_imm16_rhs, cmp_lt),
-    (u64, Instruction::BranchI64LtUImm16Rhs, execute_branch_i64_lt_u_imm16_rhs, cmp_lt),
-    (i64, Instruction::BranchI64LeSImm16Rhs, execute_branch_i64_le_s_imm16_rhs, cmp_le),
-    (u64, Instruction::BranchI64LeUImm16Rhs, execute_branch_i64_le_u_imm16_rhs, cmp_le),
+    (i64, Instruction::BranchI64EqImm16, branch_i64_eq_imm16, cmp_eq),
+    (i64, Instruction::BranchI64NeImm16, branch_i64_ne_imm16, cmp_ne),
+    (i64, Instruction::BranchI64LtSImm16Rhs, branch_i64_lt_s_imm16_rhs, cmp_lt),
+    (u64, Instruction::BranchI64LtUImm16Rhs, branch_i64_lt_u_imm16_rhs, cmp_lt),
+    (i64, Instruction::BranchI64LeSImm16Rhs, branch_i64_le_s_imm16_rhs, cmp_le),
+    (u64, Instruction::BranchI64LeUImm16Rhs, branch_i64_le_u_imm16_rhs, cmp_le),
 }
 
 macro_rules! impl_execute_branch_binop_imm16_lhs {
@@ -393,20 +393,20 @@ macro_rules! impl_execute_branch_binop_imm16_lhs {
     }
 }
 impl_execute_branch_binop_imm16_lhs! {
-    (i32, Instruction::BranchI32LtSImm16Lhs, execute_branch_i32_lt_s_imm16_lhs, cmp_lt),
-    (u32, Instruction::BranchI32LtUImm16Lhs, execute_branch_i32_lt_u_imm16_lhs, cmp_lt),
-    (i32, Instruction::BranchI32LeSImm16Lhs, execute_branch_i32_le_s_imm16_lhs, cmp_le),
-    (u32, Instruction::BranchI32LeUImm16Lhs, execute_branch_i32_le_u_imm16_lhs, cmp_le),
+    (i32, Instruction::BranchI32LtSImm16Lhs, branch_i32_lt_s_imm16_lhs, cmp_lt),
+    (u32, Instruction::BranchI32LtUImm16Lhs, branch_i32_lt_u_imm16_lhs, cmp_lt),
+    (i32, Instruction::BranchI32LeSImm16Lhs, branch_i32_le_s_imm16_lhs, cmp_le),
+    (u32, Instruction::BranchI32LeUImm16Lhs, branch_i32_le_u_imm16_lhs, cmp_le),
 
-    (i64, Instruction::BranchI64LtSImm16Lhs, execute_branch_i64_lt_s_imm16_lhs, cmp_lt),
-    (u64, Instruction::BranchI64LtUImm16Lhs, execute_branch_i64_lt_u_imm16_lhs, cmp_lt),
-    (i64, Instruction::BranchI64LeSImm16Lhs, execute_branch_i64_le_s_imm16_lhs, cmp_le),
-    (u64, Instruction::BranchI64LeUImm16Lhs, execute_branch_i64_le_u_imm16_lhs, cmp_le),
+    (i64, Instruction::BranchI64LtSImm16Lhs, branch_i64_lt_s_imm16_lhs, cmp_lt),
+    (u64, Instruction::BranchI64LtUImm16Lhs, branch_i64_lt_u_imm16_lhs, cmp_lt),
+    (i64, Instruction::BranchI64LeSImm16Lhs, branch_i64_le_s_imm16_lhs, cmp_le),
+    (u64, Instruction::BranchI64LeUImm16Lhs, branch_i64_le_u_imm16_lhs, cmp_le),
 }
 
 impl Executor<'_> {
     /// Executes an [`Instruction::BranchCmpFallback`].
-    pub fn execute_branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
+    pub fn branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
         use Comparator as C;
         let params = self.get_register(params);
         let Some(params) = ComparatorAndOffset::from_untyped(params) else {

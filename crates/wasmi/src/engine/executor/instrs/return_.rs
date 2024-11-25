@@ -41,7 +41,7 @@ impl Executor<'_> {
     }
 
     /// Execute an [`Instruction::Return`].
-    pub fn execute_return(&mut self, store: &mut StoreInner) -> ControlFlow {
+    pub fn r#return(&mut self, store: &mut StoreInner) -> ControlFlow {
         self.return_impl(store)
     }
 
@@ -97,17 +97,17 @@ impl Executor<'_> {
     }
 
     /// Execute an [`Instruction::ReturnReg`] returning a single [`Reg`] value.
-    pub fn execute_return_reg(&mut self, store: &mut StoreInner, value: Reg) -> ControlFlow {
+    pub fn return_reg(&mut self, store: &mut StoreInner, value: Reg) -> ControlFlow {
         self.execute_return_value(store, value, Self::get_register)
     }
 
     /// Execute an [`Instruction::ReturnReg2`] returning two [`Reg`] values.
-    pub fn execute_return_reg2(&mut self, store: &mut StoreInner, values: [Reg; 2]) -> ControlFlow {
+    pub fn return_reg2(&mut self, store: &mut StoreInner, values: [Reg; 2]) -> ControlFlow {
         self.execute_return_reg_n_impl::<2>(store, values)
     }
 
     /// Execute an [`Instruction::ReturnReg3`] returning three [`Reg`] values.
-    pub fn execute_return_reg3(&mut self, store: &mut StoreInner, values: [Reg; 3]) -> ControlFlow {
+    pub fn return_reg3(&mut self, store: &mut StoreInner, values: [Reg; 3]) -> ControlFlow {
         self.execute_return_reg_n_impl::<3>(store, values)
     }
 
@@ -131,38 +131,22 @@ impl Executor<'_> {
     }
 
     /// Execute an [`Instruction::ReturnImm32`] returning a single 32-bit value.
-    pub fn execute_return_imm32(
-        &mut self,
-        store: &mut StoreInner,
-        value: AnyConst32,
-    ) -> ControlFlow {
+    pub fn return_imm32(&mut self, store: &mut StoreInner, value: AnyConst32) -> ControlFlow {
         self.execute_return_value(store, value, |_, value| u32::from(value).into())
     }
 
     /// Execute an [`Instruction::ReturnI64Imm32`] returning a single 32-bit encoded `i64` value.
-    pub fn execute_return_i64imm32(
-        &mut self,
-        store: &mut StoreInner,
-        value: Const32<i64>,
-    ) -> ControlFlow {
+    pub fn return_i64imm32(&mut self, store: &mut StoreInner, value: Const32<i64>) -> ControlFlow {
         self.execute_return_value(store, value, |_, value| i64::from(value).into())
     }
 
     /// Execute an [`Instruction::ReturnF64Imm32`] returning a single 32-bit encoded `f64` value.
-    pub fn execute_return_f64imm32(
-        &mut self,
-        store: &mut StoreInner,
-        value: Const32<f64>,
-    ) -> ControlFlow {
+    pub fn return_f64imm32(&mut self, store: &mut StoreInner, value: Const32<f64>) -> ControlFlow {
         self.execute_return_value(store, value, |_, value| f64::from(value).into())
     }
 
     /// Execute an [`Instruction::ReturnSpan`] returning many values.
-    pub fn execute_return_span(
-        &mut self,
-        store: &mut StoreInner,
-        values: BoundedRegSpan,
-    ) -> ControlFlow {
+    pub fn return_span(&mut self, store: &mut StoreInner, values: BoundedRegSpan) -> ControlFlow {
         let (mut caller_sp, results) = self.return_caller_results();
         let results = results.iter(values.len());
         for (result, value) in results.zip(values) {
@@ -177,7 +161,7 @@ impl Executor<'_> {
     }
 
     /// Execute an [`Instruction::ReturnMany`] returning many values.
-    pub fn execute_return_many(&mut self, store: &mut StoreInner, values: [Reg; 3]) -> ControlFlow {
+    pub fn return_many(&mut self, store: &mut StoreInner, values: [Reg; 3]) -> ControlFlow {
         self.ip.add(1);
         self.copy_many_return_values(self.ip, &values);
         self.return_impl(store)
@@ -247,74 +231,72 @@ impl Executor<'_> {
     }
 
     /// Execute an [`Instruction::ReturnNez`].
-    pub fn execute_return_nez(&mut self, store: &mut StoreInner, condition: Reg) -> ControlFlow {
-        self.execute_return_nez_impl(store, condition, (), |this, store, _| {
-            this.execute_return(store)
-        })
+    pub fn return_nez(&mut self, store: &mut StoreInner, condition: Reg) -> ControlFlow {
+        self.execute_return_nez_impl(store, condition, (), |this, store, _| this.r#return(store))
     }
 
     /// Execute an [`Instruction::ReturnNezReg`] returning a single [`Reg`] value.
-    pub fn execute_return_nez_reg(
+    pub fn return_nez_reg(
         &mut self,
         store: &mut StoreInner,
         condition: Reg,
         value: Reg,
     ) -> ControlFlow {
-        self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg)
+        self.execute_return_nez_impl(store, condition, value, Self::return_reg)
     }
 
     /// Execute an [`Instruction::ReturnNezReg2`] returning two [`Reg`] values.
-    pub fn execute_return_nez_reg2(
+    pub fn return_nez_reg2(
         &mut self,
         store: &mut StoreInner,
         condition: Reg,
         value: [Reg; 2],
     ) -> ControlFlow {
-        self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg2)
+        self.execute_return_nez_impl(store, condition, value, Self::return_reg2)
     }
 
     /// Execute an [`Instruction::ReturnNezImm32`] returning a single 32-bit immediate value.
-    pub fn execute_return_nez_imm32(
+    pub fn return_nez_imm32(
         &mut self,
         store: &mut StoreInner,
         condition: Reg,
         value: AnyConst32,
     ) -> ControlFlow {
-        self.execute_return_nez_impl(store, condition, value, Self::execute_return_imm32)
+        self.execute_return_nez_impl(store, condition, value, Self::return_imm32)
     }
 
     /// Execute an [`Instruction::ReturnNezI64Imm32`] returning a single 32-bit encoded immediate `i64` value.
-    pub fn execute_return_nez_i64imm32(
+    pub fn return_nez_i64imm32(
         &mut self,
         store: &mut StoreInner,
         condition: Reg,
         value: Const32<i64>,
     ) -> ControlFlow {
-        self.execute_return_nez_impl(store, condition, value, Self::execute_return_i64imm32)
+        self.execute_return_nez_impl(store, condition, value, Self::return_i64imm32)
     }
 
     /// Execute an [`Instruction::ReturnNezF64Imm32`] returning a single 32-bit encoded immediate `f64` value.
-    pub fn execute_return_nez_f64imm32(
+    pub fn return_nez_f64imm32(
         &mut self,
         store: &mut StoreInner,
         condition: Reg,
         value: Const32<f64>,
     ) -> ControlFlow {
-        self.execute_return_nez_impl(store, condition, value, Self::execute_return_f64imm32)
+        self.execute_return_nez_impl(store, condition, value, Self::return_f64imm32)
     }
 
     /// Execute an [`Instruction::ReturnNezSpan`] returning many values.
-    pub fn execute_return_nez_span(
+    pub fn return_nez_span(
         &mut self,
         store: &mut StoreInner,
         condition: Reg,
         values: BoundedRegSpan,
     ) -> ControlFlow {
-        self.execute_return_nez_impl(store, condition, values, Self::execute_return_span)
+        self.execute_return_nez_impl(store, condition, values, Self::return_span)
     }
 
     /// Execute an [`Instruction::ReturnNezMany`] returning many values.
-    pub fn execute_return_nez_many(
+    pub fn return_nez_many(
         &mut self,
         store: &mut StoreInner,
         condition: Reg,

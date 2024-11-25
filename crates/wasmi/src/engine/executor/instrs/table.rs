@@ -51,18 +51,13 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableGet`].
-    pub fn execute_table_get(
-        &mut self,
-        store: &StoreInner,
-        result: Reg,
-        index: Reg,
-    ) -> Result<(), Error> {
+    pub fn table_get(&mut self, store: &StoreInner, result: Reg, index: Reg) -> Result<(), Error> {
         let index: u32 = self.get_register_as(index);
         self.execute_table_get_impl(store, result, index)
     }
 
     /// Executes an [`Instruction::TableGetImm`].
-    pub fn execute_table_get_imm(
+    pub fn table_get_imm(
         &mut self,
         store: &StoreInner,
         result: Reg,
@@ -89,7 +84,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableSize`].
-    pub fn execute_table_size(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
+    pub fn table_size(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
         self.execute_table_size_impl(store, result, table_index);
         self.next_instr();
     }
@@ -102,7 +97,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableSet`].
-    pub fn execute_table_set(
+    pub fn table_set(
         &mut self,
         store: &mut StoreInner,
         index: Reg,
@@ -113,7 +108,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableSetAt`].
-    pub fn execute_table_set_at(
+    pub fn table_set_at(
         &mut self,
         store: &mut StoreInner,
         index: u32,
@@ -140,7 +135,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableCopy`].
-    pub fn execute_table_copy(
+    pub fn table_copy(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -154,7 +149,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableCopyTo`].
-    pub fn execute_table_copy_to(
+    pub fn table_copy_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -168,7 +163,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableCopyFrom`].
-    pub fn execute_table_copy_from(
+    pub fn table_copy_from(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -182,7 +177,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableCopyFromTo`].
-    pub fn execute_table_copy_from_to(
+    pub fn table_copy_from_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -196,7 +191,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableCopyExact`].
-    pub fn execute_table_copy_exact(
+    pub fn table_copy_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -210,7 +205,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableCopyToExact`].
-    pub fn execute_table_copy_to_exact(
+    pub fn table_copy_to_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -224,7 +219,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableCopyFromExact`].
-    pub fn execute_table_copy_from_exact(
+    pub fn table_copy_from_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -238,7 +233,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableCopyFromToExact`].
-    pub fn execute_table_copy_from_to_exact(
+    pub fn table_copy_from_to_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -280,7 +275,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableInit`].
-    pub fn execute_table_init(
+    pub fn table_init(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -294,7 +289,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableInitTo`].
-    pub fn execute_table_init_to(
+    pub fn table_init_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -308,7 +303,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableInitFrom`].
-    pub fn execute_table_init_from(
+    pub fn table_init_from(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -322,7 +317,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableInitFromTo`].
-    pub fn execute_table_init_from_to(
+    pub fn table_init_from_to(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -336,7 +331,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableInitExact`].
-    pub fn execute_table_init_exact(
+    pub fn table_init_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -350,7 +345,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableInitToExact`].
-    pub fn execute_table_init_to_exact(
+    pub fn table_init_to_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -364,7 +359,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableInitFromExact`].
-    pub fn execute_table_init_from_exact(
+    pub fn table_init_from_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -378,7 +373,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableInitFromToExact`].
-    pub fn execute_table_init_from_to_exact(
+    pub fn table_init_from_to_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -411,7 +406,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableFill`].
-    pub fn execute_table_fill(
+    pub fn table_fill(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -424,7 +419,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableFillAt`].
-    pub fn execute_table_fill_at(
+    pub fn table_fill_at(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -437,7 +432,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableFillExact`].
-    pub fn execute_table_fill_exact(
+    pub fn table_fill_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
@@ -450,7 +445,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableFillAtExact`].
-    pub fn execute_table_fill_at_exact(
+    pub fn table_fill_at_exact(
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u32>,
@@ -480,7 +475,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableGrow`].
-    pub fn execute_table_grow<T>(
+    pub fn table_grow<T>(
         &mut self,
         store: &mut Store<T>,
         result: Reg,
@@ -493,7 +488,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableGrowImm`].
-    pub fn execute_table_grow_imm<T>(
+    pub fn table_grow_imm<T>(
         &mut self,
         store: &mut Store<T>,
         result: Reg,
@@ -535,7 +530,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ElemDrop`].
-    pub fn execute_element_drop(&mut self, store: &mut StoreInner, segment_index: Elem) {
+    pub fn element_drop(&mut self, store: &mut StoreInner, segment_index: Elem) {
         let segment = self.get_element_segment(segment_index);
         store.resolve_element_segment_mut(&segment).drop_items();
         self.next_instr();

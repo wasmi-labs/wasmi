@@ -343,7 +343,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal0`].
-    pub fn execute_return_call_internal_0(
+    pub fn return_call_internal_0(
         &mut self,
         store: &mut StoreInner,
         func: EngineFunc,
@@ -352,7 +352,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`].
-    pub fn execute_return_call_internal(
+    pub fn return_call_internal(
         &mut self,
         store: &mut StoreInner,
         func: EngineFunc,
@@ -387,7 +387,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallInternal0`].
-    pub fn execute_call_internal_0(
+    pub fn call_internal_0(
         &mut self,
         store: &mut StoreInner,
         results: RegSpan,
@@ -397,7 +397,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallInternal`].
-    pub fn execute_call_internal(
+    pub fn call_internal(
         &mut self,
         store: &mut StoreInner,
         results: RegSpan,
@@ -407,7 +407,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
-    pub fn execute_return_call_imported_0<T>(
+    pub fn return_call_imported_0<T>(
         &mut self,
         store: &mut Store<T>,
         func: index::Func,
@@ -416,7 +416,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
-    pub fn execute_return_call_imported<T>(
+    pub fn return_call_imported<T>(
         &mut self,
         store: &mut Store<T>,
         func: index::Func,
@@ -436,7 +436,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallImported0`].
-    pub fn execute_call_imported_0<T>(
+    pub fn call_imported_0<T>(
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
@@ -447,7 +447,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallImported`].
-    pub fn execute_call_imported<T>(
+    pub fn call_imported<T>(
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
@@ -561,7 +561,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    pub fn execute_return_call_indirect_0<T>(
+    pub fn return_call_indirect_0<T>(
         &mut self,
         store: &mut Store<T>,
         func_type: index::FuncType,
@@ -574,7 +574,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
-    pub fn execute_return_call_indirect_0_imm16<T>(
+    pub fn return_call_indirect_0_imm16<T>(
         &mut self,
         store: &mut Store<T>,
         func_type: index::FuncType,
@@ -587,7 +587,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    pub fn execute_return_call_indirect<T>(
+    pub fn return_call_indirect<T>(
         &mut self,
         store: &mut Store<T>,
         func_type: index::FuncType,
@@ -600,7 +600,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
-    pub fn execute_return_call_indirect_imm16<T>(
+    pub fn return_call_indirect_imm16<T>(
         &mut self,
         store: &mut Store<T>,
         func_type: index::FuncType,
@@ -613,7 +613,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    pub fn execute_call_indirect_0<T>(
+    pub fn call_indirect_0<T>(
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
@@ -626,7 +626,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
-    pub fn execute_call_indirect_0_imm16<T>(
+    pub fn call_indirect_0_imm16<T>(
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
@@ -639,7 +639,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect`].
-    pub fn execute_call_indirect<T>(
+    pub fn call_indirect<T>(
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
@@ -652,7 +652,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirectImm16`].
-    pub fn execute_call_indirect_imm16<T>(
+    pub fn call_indirect_imm16<T>(
         &mut self,
         store: &mut Store<T>,
         results: RegSpan,
