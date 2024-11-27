@@ -88,7 +88,7 @@ impl FuncTranslator {
 impl<'a> VisitOperator<'a> for FuncTranslator {
     type Output = Result<(), Error>;
 
-    wasmparser::for_each_operator!(impl_visit_operator);
+    wasmparser::for_each_visit_operator!(impl_visit_operator);
 
     fn visit_unreachable(&mut self) -> Self::Output {
         bail_unreachable!(self);

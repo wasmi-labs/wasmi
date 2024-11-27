@@ -393,7 +393,7 @@ where
 {
     type Output = Result<(), Error>;
 
-    wasmparser::for_each_operator!(impl_visit_operator);
+    wasmparser::for_each_visit_operator!(impl_visit_operator);
 }
 
 /// A lazy Wasm function translator that defers translation when the function is first used.
@@ -554,7 +554,7 @@ macro_rules! impl_visit_operator {
 impl<'a> VisitOperator<'a> for LazyFuncTranslator {
     type Output = Result<(), Error>;
 
-    wasmparser::for_each_operator!(impl_visit_operator);
+    wasmparser::for_each_visit_operator!(impl_visit_operator);
 }
 
 /// Type concerned with translating from Wasm bytecode to Wasmi bytecode.
