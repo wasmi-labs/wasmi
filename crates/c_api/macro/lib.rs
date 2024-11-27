@@ -22,7 +22,7 @@ pub fn declare_own(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let ty = extract_ident(input);
     let name = ty.to_string();
     let delete = quote::format_ident!("{}_delete", &name[..name.len() - 2]);
-    let prefixed_delete = format!("wasmi_{}_delete", &name[..name.len() - 2]);
+    let prefixed_delete = format!("wasmi_{delete}");
     let docs = format!("Deletes the [`{name}`].");
 
     (quote! {
@@ -40,7 +40,7 @@ pub fn declare_ty(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let name = ty.to_string();
     let prefix = &name[..name.len() - 2];
     let copy = quote::format_ident!("{}_copy", &prefix);
-    let prefixed_copy = format!("wasmi_{}_copy", &prefix);
+    let prefixed_copy = format!("wasmi_{copy}");
     let docs = format!(
         "Creates a new [`{name}`] which matches the provided one.\n\n\
         The caller is responsible for deleting the returned value via [`{prefix}_delete`].\n\n\
@@ -66,37 +66,37 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let name = ty.to_string();
     let prefix = &name[..name.len() - 2];
     let same = quote::format_ident!("{}_same", prefix);
-    let same_prefixed = format!("wasmi_{}_same", prefix);
+    let same_prefixed = format!("wasmi_{same}");
     let same_docs = format!(
         "Returns `true` if the given references are pointing to the same [`{name}`].\n\n\
         This is not yet supported and aborts the process upon use."
     );
     let get_host_info = quote::format_ident!("{}_get_host_info", prefix);
-    let get_host_info_prefixed = format!("wasmi_{}_get_host_info", prefix);
+    let get_host_info_prefixed = format!("wasmi_{get_host_info}");
     let get_host_info_docs = format!(
         "Returns the host information of the [`{name}`].\n\n\
         This is not yet supported and always returns `NULL`."
     );
     let set_host_info = quote::format_ident!("{}_set_host_info", prefix);
-    let set_host_info_prefixed = format!("wasmi_{}_set_host_info", prefix);
+    let set_host_info_prefixed = format!("wasmi_{set_host_info}");
     let set_host_info_docs = format!(
         "Sets the host information of the [`{name}`].\n\n\
         This is not yet supported and aborts the process upon use."
     );
     let set_host_info_final = quote::format_ident!("{}_set_host_info_with_finalizer", prefix);
-    let set_host_info_final_prefixed = format!("wasmi_{}_set_host_info_with_finalizer", prefix);
+    let set_host_info_final_prefixed = format!("wasmi_{set_host_info_final}");
     let set_host_info_final_docs = format!(
         "Sets the host information finalizer of the [`{name}`].\n\n\
         This is not yet supported and aborts the process upon use."
     );
     let as_ref = quote::format_ident!("{}_as_ref", prefix);
-    let as_ref_prefixed = format!("wasmi_{}_as_ref", prefix);
+    let as_ref_prefixed = format!("wasmi_{as_ref}");
     let as_ref_docs = format!(
         "Returns the [`{name}`] as mutable reference.\n\n\
         This is not yet supported and aborts the process upon use."
     );
     let as_ref_const = quote::format_ident!("{}_as_ref_const", prefix);
-    let as_ref_const_prefixed = format!("wasmi_{}_as_ref_const", prefix);
+    let as_ref_const_prefixed = format!("wasmi_{as_ref_const}");
     let as_ref_const_docs = format!(
         "Returns the [`{name}`] as immutable reference.\n\n\
         This is not yet supported and aborts the process upon use."
