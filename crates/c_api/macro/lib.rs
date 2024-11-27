@@ -187,7 +187,7 @@ pub fn prefix_symbol(
     let prefixed_fn_name = format!("wasmi_{}", fn_name.unwrap());
 
     let mut attr: proc_macro::TokenStream = quote! {
-        #[cfg_attr(feature = "prefix-symbols", export_name = #prefixed_fn_name)]
+        #[export_name = #prefixed_fn_name]
     }
     .into();
     attr.extend(input);

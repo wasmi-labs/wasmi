@@ -60,10 +60,7 @@ pub extern "C" fn wasm_extern_as_func(e: &mut wasm_extern_t) -> Option<&mut wasm
 ///
 /// Returns `None` if `e` is not a [`wasm_func_t`].
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_extern_as_func_const"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_extern_as_func_const(e: &wasm_extern_t) -> Option<&wasm_func_t> {
     wasm_func_t::try_from(e)
 }
@@ -99,10 +96,7 @@ pub extern "C" fn wasm_extern_as_table(e: &mut wasm_extern_t) -> Option<&mut was
 ///
 /// Returns `None` if `e` is not a [`wasm_table_t`].
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_extern_as_table_const"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_extern_as_table_const(e: &wasm_extern_t) -> Option<&wasm_table_t> {
     wasm_table_t::try_from(e)
 }

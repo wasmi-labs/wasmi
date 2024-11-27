@@ -142,10 +142,7 @@ pub unsafe extern "C" fn wasm_func_new(
 /// It is the caller's responsibility not to alias the [`wasm_functype_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_func_new_with_env"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_func_new_with_env(
     store: &mut wasm_store_t,
     ty: &wasm_functype_t,

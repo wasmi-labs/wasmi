@@ -54,10 +54,7 @@ pub extern "C" fn wasm_importtype_new(
 
 /// Returns a shared reference to the module namespace of the [`wasm_importtype_t`].
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_importtype_module"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_importtype_module(it: &wasm_importtype_t) -> &wasm_name_t {
     &it.c_module
 }

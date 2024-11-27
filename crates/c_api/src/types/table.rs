@@ -80,30 +80,21 @@ pub extern "C" fn wasm_tabletype_new(
 
 /// Returns a shared reference to the element type of the [`wasm_tabletype_t`].
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_tabletype_element"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_tabletype_element(tt: &wasm_tabletype_t) -> &wasm_valtype_t {
     &tt.ty().element
 }
 
 /// Returns a shared reference to the table limits of the [`wasm_tabletype_t`].
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_tabletype_limits"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_tabletype_limits(tt: &wasm_tabletype_t) -> &wasm_limits_t {
     &tt.ty().limits
 }
 
 /// Returns a mutable reference to the element type of [`wasm_tabletype_t`] as [`wasm_externtype_t`].
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_tabletype_as_externtype"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_tabletype_as_externtype(
     ty: &mut wasm_tabletype_t,
 ) -> &mut wasm_externtype_t {
@@ -112,10 +103,7 @@ pub extern "C" fn wasm_tabletype_as_externtype(
 
 /// Returns a shared reference to the element type of [`wasm_tabletype_t`] as [`wasm_externtype_t`].
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_tabletype_as_externtype_const"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_tabletype_as_externtype_const(ty: &wasm_tabletype_t) -> &wasm_externtype_t {
     &ty.ext
 }

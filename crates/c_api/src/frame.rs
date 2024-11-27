@@ -28,10 +28,7 @@ pub extern "C" fn wasm_frame_func_index(_frame: &wasm_frame_t<'_>) -> u32 {
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_frame_func_offset"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_frame_func_offset(_frame: &wasm_frame_t<'_>) -> usize {
     unimplemented!("wasm_frame_func_offset")
 }
