@@ -196,10 +196,7 @@ fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<Tok
         bail!("err(prefix_symbol): attributes must be empty")
     }
     let mut stream = input.clone().into_iter();
-    let fn_token = stream.find(|tt| match tt {
-        TokenTree::Ident(ref ident) if *ident == "fn" => true,
-        _ => false,
-    });
+    let fn_token = stream.find(|tt| matches!(tt, TokenTree::Ident(ref ident) if *ident == "fn"));
     if fn_token.is_none() {
         bail!("can only apply on `fn` items")
     }
@@ -215,6 +212,5 @@ fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<Tok
     Ok(quote! {
         #[export_name = #prefixed_fn_name]
         #input
-    }
-    .into())
+    })
 }
