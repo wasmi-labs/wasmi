@@ -26,4 +26,3 @@ doctest = false
 [features]
 default = ["std"]
 std = []
-mangle-symbols = []
