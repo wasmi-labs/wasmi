@@ -159,38 +159,43 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     .into()
 }
 
+macro_rules! bail {
+    ($message:literal) => {{
+        return ::core::result::Result::Err($message.into());
+    }};
+}
+
 #[proc_macro_attribute]
 pub fn prefix_symbol(
-    _attributes: proc_macro::TokenStream,
+    attributes: proc_macro::TokenStream,
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    let mut stream = TokenStream::from(input.clone()).into_iter();
-
-    let mut fn_name = None;
-
-    while let Some(token) = stream.next() {
-        match token {
-            TokenTree::Ident(ref ident) if *ident == "fn" => {
-                if let Some(TokenTree::Ident(ident_name)) = stream.next() {
-                    fn_name = Some(ident_name.to_string());
-                    break;
-                }
-            }
-            _ => continue,
+    match prefix_symbol_impl(attributes.into(), input.into()) {
+        Ok(result) => result.into(),
+        Err(message) => quote! {
+            ::core::compile_error!(#message)
         }
+        .into(),
     }
+}
 
-    if fn_name.is_none() {
-        panic!("expected a valid Rust function definition, but it does not appear in: {input:?}");
+fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<TokenStream, String> {
+    let mut stream = input.clone().into_iter();
+    let fn_token = stream.find(|tt| match tt {
+        TokenTree::Ident(ref ident) if *ident == "fn" => true,
+        _ => false,
+    });
+    if fn_token.is_none() {
+        bail!("can only apply on `fn` items")
     }
-
-    let prefixed_fn_name = format!("wasmi_{}", fn_name.unwrap());
-
-    let mut attr: proc_macro::TokenStream = quote! {
+    let Some(TokenTree::Ident(fn_ident)) = stream.next() else {
+        bail!("function name must follow `fn` keyword")
+    };
+    let fn_name = fn_ident.to_string();
+    let prefixed_fn_name = format!("wasmi_{}", fn_name);
+    Ok(quote! {
         #[export_name = #prefixed_fn_name]
+        #input
     }
-    .into();
-    attr.extend(input);
-
-    attr
+    .into())
 }
