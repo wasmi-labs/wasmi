@@ -10,6 +10,10 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ## [`0.40.0`] - 2024-11-27
 
+This release focuses on compile time improvements for Wasmi,
+significantly reducing the time it takes to compile Wasmi and
+decrease its compiled artifact size.
+
 ### Added
 
 - Added optimization for `load` and `store` lowering. [#1303]
