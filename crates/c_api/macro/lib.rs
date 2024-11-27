@@ -161,10 +161,25 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
 macro_rules! bail {
     ($message:literal) => {{
-        return ::core::result::Result::Err($message.into());
+        return ::core::result::Result::Err(Error($message.into()));
     }};
 }
 
+/// An error with its error message.
+struct Error(String);
+
+impl Error {
+    /// Converts the [`Error`] into a `compile_error!` token stream.
+    fn to_compile_error(&self) -> proc_macro::TokenStream {
+        let message = &self.0;
+        quote! { ::core::compile_error!(#message) }.into()
+    }
+}
+
+/// Applied on Rust `fn` items from the Wasm spec.
+///
+/// Annotates the given function with `#[export_name = $func_name]`
+/// where `$func_name` is the name of the given function.
 #[proc_macro_attribute]
 pub fn prefix_symbol(
     attributes: proc_macro::TokenStream,
@@ -172,14 +187,11 @@ pub fn prefix_symbol(
 ) -> proc_macro::TokenStream {
     match prefix_symbol_impl(attributes.into(), input.into()) {
         Ok(result) => result.into(),
-        Err(message) => quote! {
-            ::core::compile_error!(#message)
-        }
-        .into(),
+        Err(error) => error.to_compile_error(),
     }
 }
 
-fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<TokenStream, String> {
+fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<TokenStream, Error> {
     if !attributes.is_empty() {
         bail!("err(prefix_symbol): attributes must be empty")
     }
@@ -197,7 +209,7 @@ fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<Tok
     let fn_name = fn_ident.to_string();
     if !fn_name.starts_with("wasm_") {
         // No prefix needed since the function is not a part of the Wasm spec.
-        return Ok(input)
+        return Ok(input);
     }
     let prefixed_fn_name = format!("wasmi_{}", fn_name);
     Ok(quote! {
