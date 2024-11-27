@@ -64,7 +64,7 @@ impl wasm_externtype_t {
 
 /// Returns the [`wasm_externkind_t`] of the [`wasm_externtype_t`].
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_externtype_kind")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_externtype_kind(et: &wasm_externtype_t) -> wasm_externkind_t {
     match &et.which {
         CExternType::Func(_) => wasm_externkind_t::WASM_EXTERN_FUNC,

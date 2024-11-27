@@ -46,7 +46,7 @@ pub enum wasm_valkind_t {
 
 /// Creates a new owned [`wasm_valtype_t`] from the [`wasm_valkind_t`].
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_valtype_new")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_valtype_new(kind: wasm_valkind_t) -> Box<wasm_valtype_t> {
     Box::new(wasm_valtype_t {
         ty: into_valtype(kind),
@@ -55,7 +55,7 @@ pub extern "C" fn wasm_valtype_new(kind: wasm_valkind_t) -> Box<wasm_valtype_t> 
 
 /// Returns the [`wasm_valkind_t`] of the [`wasm_valtype_t`].
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_valtype_kind")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_valtype_kind(vt: &wasm_valtype_t) -> wasm_valkind_t {
     from_valtype(&vt.ty)
 }

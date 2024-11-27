@@ -44,7 +44,7 @@ impl wasm_instance_t {
 ///
 /// [Wasm core specification]: https://webassembly.github.io/spec/core/exec/modules.html#exec-instantiation
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_instance_new")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_instance_new(
     store: &mut wasm_store_t,
     wasm_module: &wasm_module_t,
@@ -81,10 +81,7 @@ pub unsafe extern "C" fn wasm_instance_new(
 /// It is the caller's responsibility not to alias the [`wasm_instance_t`]
 /// with its underlying, internal [`WasmStoreRef`].
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_instance_exports"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_instance_exports(
     instance: &mut wasm_instance_t,
     out: &mut wasm_extern_vec_t,

@@ -63,7 +63,7 @@ impl CMemoryType {
 ///
 /// Wraps [`MemoryType::new`].
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_memorytype_new")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_memorytype_new(limits: &wasm_limits_t) -> Box<wasm_memorytype_t> {
     let memory_type = MemoryType::new(limits.min, limits.max()).unwrap();
     Box::new(wasm_memorytype_t::new(memory_type))

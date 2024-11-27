@@ -22,13 +22,12 @@ pub fn declare_own(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let ty = extract_ident(input);
     let name = ty.to_string();
     let delete = quote::format_ident!("{}_delete", &name[..name.len() - 2]);
-    let prefixed_delete = format!("wasmi_{delete}");
     let docs = format!("Deletes the [`{name}`].");
 
     (quote! {
         #[doc = #docs]
         #[no_mangle]
-        #[cfg_attr(feature = "prefix-symbols", export_name = #prefixed_delete)]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #delete(_: ::alloc::boxed::Box<#ty>) {}
     })
     .into()
@@ -40,7 +39,6 @@ pub fn declare_ty(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let name = ty.to_string();
     let prefix = &name[..name.len() - 2];
     let copy = quote::format_ident!("{}_copy", &prefix);
-    let prefixed_copy = format!("wasmi_{copy}");
     let docs = format!(
         "Creates a new [`{name}`] which matches the provided one.\n\n\
         The caller is responsible for deleting the returned value via [`{prefix}_delete`].\n\n\
@@ -52,7 +50,7 @@ pub fn declare_ty(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #docs]
         #[no_mangle]
-        #[cfg_attr(feature = "prefix-symbols", export_name = #prefixed_copy)]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #copy(src: &#ty) -> ::alloc::boxed::Box<#ty> {
             ::alloc::boxed::Box::new(src.clone())
         }
@@ -66,37 +64,31 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let name = ty.to_string();
     let prefix = &name[..name.len() - 2];
     let same = quote::format_ident!("{}_same", prefix);
-    let same_prefixed = format!("wasmi_{same}");
     let same_docs = format!(
         "Returns `true` if the given references are pointing to the same [`{name}`].\n\n\
         This is not yet supported and aborts the process upon use."
     );
     let get_host_info = quote::format_ident!("{}_get_host_info", prefix);
-    let get_host_info_prefixed = format!("wasmi_{get_host_info}");
     let get_host_info_docs = format!(
         "Returns the host information of the [`{name}`].\n\n\
         This is not yet supported and always returns `NULL`."
     );
     let set_host_info = quote::format_ident!("{}_set_host_info", prefix);
-    let set_host_info_prefixed = format!("wasmi_{set_host_info}");
     let set_host_info_docs = format!(
         "Sets the host information of the [`{name}`].\n\n\
         This is not yet supported and aborts the process upon use."
     );
     let set_host_info_final = quote::format_ident!("{}_set_host_info_with_finalizer", prefix);
-    let set_host_info_final_prefixed = format!("wasmi_{set_host_info_final}");
     let set_host_info_final_docs = format!(
         "Sets the host information finalizer of the [`{name}`].\n\n\
         This is not yet supported and aborts the process upon use."
     );
     let as_ref = quote::format_ident!("{}_as_ref", prefix);
-    let as_ref_prefixed = format!("wasmi_{as_ref}");
     let as_ref_docs = format!(
         "Returns the [`{name}`] as mutable reference.\n\n\
         This is not yet supported and aborts the process upon use."
     );
     let as_ref_const = quote::format_ident!("{}_as_ref_const", prefix);
-    let as_ref_const_prefixed = format!("wasmi_{as_ref_const}");
     let as_ref_const_docs = format!(
         "Returns the [`{name}`] as immutable reference.\n\n\
         This is not yet supported and aborts the process upon use."
@@ -107,7 +99,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #same_docs]
         #[no_mangle]
-        #[cfg_attr(feature = "prefix-symbols", export_name = #same_prefixed)]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #same(_a: &#ty, _b: &#ty) -> ::core::primitive::bool {
             #[cfg(feature = "std")]
             ::std::eprintln!("`{}` is not implemented", ::core::stringify!(#same));
@@ -116,14 +108,14 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #get_host_info_docs]
         #[no_mangle]
-        #[cfg_attr(feature = "prefix-symbols", export_name = #get_host_info_prefixed)]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #get_host_info(a: &#ty) -> *mut ::core::ffi::c_void {
             ::core::ptr::null_mut()
         }
 
         #[doc = #set_host_info_docs]
         #[no_mangle]
-        #[cfg_attr(feature = "prefix-symbols", export_name = #set_host_info_prefixed)]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #set_host_info(a: &#ty, info: *mut ::core::ffi::c_void) {
             #[cfg(feature = "std")]
             ::std::eprintln!("`{}` is not implemented", ::core::stringify!(#set_host_info));
@@ -132,7 +124,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #set_host_info_final_docs]
         #[no_mangle]
-        #[cfg_attr(feature = "prefix-symbols", export_name = #set_host_info_final_prefixed)]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #set_host_info_final(
             a: &#ty,
             info: *mut ::core::ffi::c_void,
@@ -145,7 +137,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #as_ref_docs]
         #[no_mangle]
-        #[cfg_attr(feature = "prefix-symbols", export_name = #as_ref_prefixed)]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #as_ref(a: &#ty) -> ::alloc::boxed::Box<crate::wasm_ref_t> {
             #[cfg(feature = "std")]
             ::std::eprintln!("`{}` is not implemented", ::core::stringify!(#as_ref));
@@ -154,7 +146,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #as_ref_const_docs]
         #[no_mangle]
-        #[cfg_attr(feature = "prefix-symbols", export_name = #as_ref_const_prefixed)]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #as_ref_const(a: &#ty) -> ::alloc::boxed::Box<crate::wasm_ref_t> {
             #[cfg(feature = "std")]
             ::std::eprintln!("`{}` is not implemented", ::core::stringify!(#as_ref_const));
@@ -165,4 +157,40 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         // TODO: implement `wasm_ref_as_#name#_const`
     })
     .into()
+}
+
+#[proc_macro_attribute]
+pub fn prefix_symbol(
+    _attributes: proc_macro::TokenStream,
+    input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    let mut stream = TokenStream::from(input.clone()).into_iter();
+
+    let mut fn_name = None;
+
+    while let Some(token) = stream.next() {
+        match token {
+            TokenTree::Ident(ref ident) if *ident == "fn" => {
+                if let Some(TokenTree::Ident(ident_name)) = stream.next() {
+                    fn_name = Some(ident_name.to_string());
+                    break;
+                }
+            }
+            _ => continue,
+        }
+    }
+
+    if fn_name.is_none() {
+        panic!("expected a valid Rust function definition, but it does not appear in: {input:?}");
+    }
+
+    let prefixed_fn_name = format!("wasmi_{}", fn_name.unwrap());
+
+    let mut attr: proc_macro::TokenStream = quote! {
+        #[cfg_attr(feature = "prefix-symbols", export_name = #prefixed_fn_name)]
+    }
+    .into();
+    attr.extend(input);
+
+    attr
 }

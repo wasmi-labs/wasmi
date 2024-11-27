@@ -62,7 +62,7 @@ fn option_wasm_ref_t_to_ref(r: Option<&wasm_ref_t>, table_ty: &TableType) -> Was
 /// It is the caller's responsibility not to alias the [`wasm_table_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_table_new")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_table_new(
     store: &mut wasm_store_t,
     tt: &wasm_tabletype_t,
@@ -88,7 +88,7 @@ pub unsafe extern "C" fn wasm_table_new(
 /// It is the caller's responsibility not to alias the [`wasm_table_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_table_type")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_table_type(t: &wasm_table_t) -> Box<wasm_tabletype_t> {
     let table = t.table();
     let store = t.inner.store.context();
@@ -104,7 +104,7 @@ pub unsafe extern "C" fn wasm_table_type(t: &wasm_table_t) -> Box<wasm_tabletype
 /// It is the caller's responsibility not to alias the [`wasm_table_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_table_get")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_table_get(
     t: &mut wasm_table_t,
     index: wasm_table_size_t,
@@ -128,7 +128,7 @@ pub unsafe extern "C" fn wasm_table_get(
 /// It is the caller's responsibility not to alias the [`wasm_table_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_table_set")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_table_set(
     t: &mut wasm_table_t,
     index: wasm_table_size_t,
@@ -150,7 +150,7 @@ pub unsafe extern "C" fn wasm_table_set(
 /// It is the caller's responsibility not to alias the [`wasm_table_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_table_size")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_table_size(t: &wasm_table_t) -> wasm_table_size_t {
     let table = t.table();
     let store = t.inner.store.context();
@@ -167,7 +167,7 @@ pub unsafe extern "C" fn wasm_table_size(t: &wasm_table_t) -> wasm_table_size_t 
 /// It is the caller's responsibility not to alias the [`wasm_table_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_table_grow")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_table_grow(
     t: &mut wasm_table_t,
     delta: wasm_table_size_t,
@@ -182,17 +182,14 @@ pub unsafe extern "C" fn wasm_table_grow(
 
 /// Returns the [`wasm_table_t`] as mutable reference to [`wasm_extern_t`].
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_table_as_extern")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_table_as_extern(t: &mut wasm_table_t) -> &mut wasm_extern_t {
     &mut t.inner
 }
 
 /// Returns the [`wasm_table_t`] as shared reference to [`wasm_extern_t`].
 #[no_mangle]
-#[cfg_attr(
-    feature = "prefix-symbols",
-    export_name = "wasmi_wasm_table_as_extern_const"
-)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_table_as_extern_const(t: &wasm_table_t) -> &wasm_extern_t {
     &t.inner
 }

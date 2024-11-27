@@ -66,7 +66,7 @@ impl CTableType {
 ///
 /// Wraps [`TableType::new`].
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_tabletype_new")]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_tabletype_new(
     ty: Box<wasm_valtype_t>,
     limits: &wasm_limits_t,
