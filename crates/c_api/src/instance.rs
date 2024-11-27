@@ -43,7 +43,7 @@ impl wasm_instance_t {
 /// with its underlying, internal [`WasmStoreRef`].
 ///
 /// [Wasm core specification]: https://webassembly.github.io/spec/core/exec/modules.html#exec-instantiation
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub unsafe extern "C" fn wasm_instance_new(
     store: &mut wasm_store_t,
     wasm_module: &wasm_module_t,
@@ -79,7 +79,7 @@ pub unsafe extern "C" fn wasm_instance_new(
 ///
 /// It is the caller's responsibility not to alias the [`wasm_instance_t`]
 /// with its underlying, internal [`WasmStoreRef`].
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub unsafe extern "C" fn wasm_instance_exports(
     instance: &mut wasm_instance_t,
     out: &mut wasm_extern_vec_t,

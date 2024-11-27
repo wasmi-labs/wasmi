@@ -18,7 +18,7 @@ wasmi_c_api_macros::declare_own!(wasm_engine_t);
 /// The returned [`wasm_engine_t`] must be freed using [`wasm_engine_delete`].
 ///
 /// Wraps [`wasmi::Engine::default`].
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub extern "C" fn wasm_engine_new() -> Box<wasm_engine_t> {
     Box::new(wasm_engine_t {
         inner: Engine::default(),
@@ -30,7 +30,7 @@ pub extern "C" fn wasm_engine_new() -> Box<wasm_engine_t> {
 /// The returned [`wasm_engine_t`] must be freed using [`wasm_engine_delete`].
 ///
 /// Wraps [`wasmi::Engine::new`].
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub extern "C" fn wasm_engine_new_with_config(config: Box<wasm_config_t>) -> Box<wasm_engine_t> {
     Box::new(wasm_engine_t {
         inner: Engine::new(&config.inner),
@@ -42,7 +42,7 @@ pub extern "C" fn wasm_engine_new_with_config(config: Box<wasm_config_t>) -> Box
 /// The cloned [`wasm_engine_t`] has to be freed with [`wasm_engine_delete`] after use.
 ///
 /// Wraps [`wasmi::Engine::clone`].
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub extern "C" fn wasmi_engine_clone(engine: &wasm_engine_t) -> Box<wasm_engine_t> {
     Box::new(engine.clone())
 }

@@ -61,7 +61,7 @@ wasmi_c_api_macros::declare_own!(wasm_store_t);
 /// The returned [`wasm_store_t`] must be freed using [`wasm_store_delete`].
 ///
 /// Wraps [`<wasmi::Store<()>>::new`](wasmi::Store::new).
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 #[allow(clippy::arc_with_non_send_sync)]
 pub extern "C" fn wasm_store_new(engine: &wasm_engine_t) -> Box<wasm_store_t> {
     let engine = &engine.inner;
@@ -96,7 +96,7 @@ pub struct WasmiStoreData {
 /// - The returned [`wasm_store_t`] must be freed using [`wasm_store_delete`].
 ///
 /// Wraps [`<wasmi::Store<()>>::new`](wasmi::Store::new).
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub extern "C" fn wasmi_store_new(
     engine: &wasm_engine_t,
     data: *mut ffi::c_void,
@@ -119,7 +119,7 @@ pub extern "C" fn wasmi_store_new(
 /// # Safety
 ///
 /// It is the callers responsibility to provide a valid `self`.
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub extern "C" fn wasmi_store_context(
     store: &mut wasmi_store_t,
 ) -> StoreContextMut<'_, WasmiStoreData> {
@@ -127,7 +127,7 @@ pub extern "C" fn wasmi_store_context(
 }
 
 /// Returns a pointer to the foreign data of the Wasmi store context.
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub extern "C" fn wasmi_context_get_data(
     store: StoreContext<'_, WasmiStoreData>,
 ) -> *mut ffi::c_void {
@@ -135,7 +135,7 @@ pub extern "C" fn wasmi_context_get_data(
 }
 
 /// Sets the foreign data of the Wasmi store context.
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub extern "C" fn wasmi_context_set_data(
     mut store: StoreContextMut<'_, WasmiStoreData>,
     data: *mut ffi::c_void,
@@ -150,7 +150,7 @@ pub extern "C" fn wasmi_context_set_data(
 /// # Errors
 ///
 /// If [`Store::get_fuel`] errors.
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub extern "C" fn wasmi_context_get_fuel(
     store: StoreContext<'_, WasmiStoreData>,
     fuel: &mut u64,
@@ -167,7 +167,7 @@ pub extern "C" fn wasmi_context_get_fuel(
 /// # Errors
 ///
 /// If [`Store::set_fuel`] errors.
-#[cfg_attr(not(feature = "mangle-symbols"), no_mangle)]
+#[no_mangle]
 pub extern "C" fn wasmi_context_set_fuel(
     mut store: StoreContextMut<'_, WasmiStoreData>,
     fuel: u64,
