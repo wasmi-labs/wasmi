@@ -180,6 +180,9 @@ pub fn prefix_symbol(
 }
 
 fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<TokenStream, String> {
+    if !attributes.is_empty() {
+        bail!("err(prefix_symbol): attributes must be empty")
+    }
     let mut stream = input.clone().into_iter();
     let fn_token = stream.find(|tt| match tt {
         TokenTree::Ident(ref ident) if *ident == "fn" => true,
