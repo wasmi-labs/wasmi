@@ -29,6 +29,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
+- Bumped minimum supported Rust version from v1.79 -> v1.80. [#1318]
 - Replace the `wasmparser-nostd` fork with upstream `wasmparser`. [#1141]
     - This allows Wasmi to implement new Wasm proposals.
     - Unfortunately this update also regresses Wasmi translation performance
@@ -38,6 +39,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 ### Internal
 
 - Update the `wast` dependency for Wasmi's Wast runner. [#1306]
+- Update `wasm-tools` dependencies to `v0.221`. [#1318]
 
 [#1141]: https://github.com/wasmi-labs/wasmi/pull/1141
 [#1296]: https://github.com/wasmi-labs/wasmi/pull/1296
@@ -48,6 +50,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1306]: https://github.com/wasmi-labs/wasmi/pull/1306
 [#1314]: https://github.com/wasmi-labs/wasmi/pull/1314
 [#1315]: https://github.com/wasmi-labs/wasmi/pull/1315
+[#1318]: https://github.com/wasmi-labs/wasmi/pull/1318
 
 ## [`0.39.1`] - 2024-11-06
 
