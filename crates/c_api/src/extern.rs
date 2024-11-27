@@ -23,6 +23,7 @@ wasmi_c_api_macros::declare_ref!(wasm_extern_t);
 
 /// Returns the [`wasm_extern_kind`] of the [`wasm_extern_t`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_extern_kind")]
 pub extern "C" fn wasm_extern_kind(e: &wasm_extern_t) -> wasm_externkind_t {
     match e.which {
         Extern::Func(_) => wasm_externkind_t::WASM_EXTERN_FUNC,
@@ -39,6 +40,7 @@ pub extern "C" fn wasm_extern_kind(e: &wasm_extern_t) -> wasm_externkind_t {
 /// It is the caller's responsibility not to alias the [`wasm_extern_t`]
 /// with its underlying, internal [`WasmStoreRef`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_extern_type")]
 pub unsafe extern "C" fn wasm_extern_type(e: &wasm_extern_t) -> Box<wasm_externtype_t> {
     Box::new(wasm_externtype_t::from_extern_type(
         e.which.ty(e.store.context()),
@@ -49,6 +51,7 @@ pub unsafe extern "C" fn wasm_extern_type(e: &wasm_extern_t) -> Box<wasm_externt
 ///
 /// Returns `None` if `e` is not a [`wasm_func_t`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_extern_as_func")]
 pub extern "C" fn wasm_extern_as_func(e: &mut wasm_extern_t) -> Option<&mut wasm_func_t> {
     wasm_func_t::try_from_mut(e)
 }
@@ -57,6 +60,10 @@ pub extern "C" fn wasm_extern_as_func(e: &mut wasm_extern_t) -> Option<&mut wasm
 ///
 /// Returns `None` if `e` is not a [`wasm_func_t`].
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_extern_as_func_const"
+)]
 pub extern "C" fn wasm_extern_as_func_const(e: &wasm_extern_t) -> Option<&wasm_func_t> {
     wasm_func_t::try_from(e)
 }
@@ -65,6 +72,10 @@ pub extern "C" fn wasm_extern_as_func_const(e: &wasm_extern_t) -> Option<&wasm_f
 ///
 /// Returns `None` if `e` is not a [`wasm_global_t`].
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_extern_as_global"
+)]
 pub extern "C" fn wasm_extern_as_global(e: &mut wasm_extern_t) -> Option<&mut wasm_global_t> {
     wasm_global_t::try_from_mut(e)
 }
@@ -73,6 +84,10 @@ pub extern "C" fn wasm_extern_as_global(e: &mut wasm_extern_t) -> Option<&mut wa
 ///
 /// Returns `None` if `e` is not a [`wasm_global_t`].
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_extern_as_global_const"
+)]
 pub extern "C" fn wasm_extern_as_global_const(e: &wasm_extern_t) -> Option<&wasm_global_t> {
     wasm_global_t::try_from(e)
 }
@@ -81,6 +96,7 @@ pub extern "C" fn wasm_extern_as_global_const(e: &wasm_extern_t) -> Option<&wasm
 ///
 /// Returns `None` if `e` is not a [`wasm_table_t`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_extern_as_table")]
 pub extern "C" fn wasm_extern_as_table(e: &mut wasm_extern_t) -> Option<&mut wasm_table_t> {
     wasm_table_t::try_from_mut(e)
 }
@@ -89,6 +105,10 @@ pub extern "C" fn wasm_extern_as_table(e: &mut wasm_extern_t) -> Option<&mut was
 ///
 /// Returns `None` if `e` is not a [`wasm_table_t`].
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_extern_as_table_const"
+)]
 pub extern "C" fn wasm_extern_as_table_const(e: &wasm_extern_t) -> Option<&wasm_table_t> {
     wasm_table_t::try_from(e)
 }
@@ -97,6 +117,10 @@ pub extern "C" fn wasm_extern_as_table_const(e: &wasm_extern_t) -> Option<&wasm_
 ///
 /// Returns `None` if `e` is not a [`wasm_memory_t`].
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_extern_as_memory"
+)]
 pub extern "C" fn wasm_extern_as_memory(e: &mut wasm_extern_t) -> Option<&mut wasm_memory_t> {
     wasm_memory_t::try_from_mut(e)
 }
@@ -105,6 +129,10 @@ pub extern "C" fn wasm_extern_as_memory(e: &mut wasm_extern_t) -> Option<&mut wa
 ///
 /// Returns `None` if `e` is not a [`wasm_memory_t`].
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_extern_as_memory_const"
+)]
 pub extern "C" fn wasm_extern_as_memory_const(e: &wasm_extern_t) -> Option<&wasm_memory_t> {
     wasm_memory_t::try_from(e)
 }

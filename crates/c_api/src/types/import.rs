@@ -35,6 +35,7 @@ impl wasm_importtype_t {
 
 /// Creates a new [`wasm_importtype_t`] from the given `module` and `name` namespace and extern type `ty`.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_importtype_new")]
 pub extern "C" fn wasm_importtype_new(
     module: &mut wasm_name_t,
     name: &mut wasm_name_t,
@@ -53,18 +54,24 @@ pub extern "C" fn wasm_importtype_new(
 
 /// Returns a shared reference to the module namespace of the [`wasm_importtype_t`].
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_importtype_module"
+)]
 pub extern "C" fn wasm_importtype_module(it: &wasm_importtype_t) -> &wasm_name_t {
     &it.c_module
 }
 
 /// Returns a shared reference to the name namespace of the [`wasm_importtype_t`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_importtype_name")]
 pub extern "C" fn wasm_importtype_name(it: &wasm_importtype_t) -> &wasm_name_t {
     &it.c_name
 }
 
 /// Returns a shared reference to the extern type of the [`wasm_importtype_t`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_importtype_type")]
 pub extern "C" fn wasm_importtype_type(it: &wasm_importtype_t) -> &wasm_externtype_t {
     &it.c_ty
 }

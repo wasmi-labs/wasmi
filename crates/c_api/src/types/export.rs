@@ -31,6 +31,7 @@ impl wasm_exporttype_t {
 
 /// Creates a new [`wasm_exporttype_t`] with the given `name` and extern type `ty`
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_exporttype_new")]
 pub extern "C" fn wasm_exporttype_new(
     name: &mut wasm_name_t,
     ty: Box<wasm_externtype_t>,
@@ -42,12 +43,14 @@ pub extern "C" fn wasm_exporttype_new(
 
 /// Returns a shared reference to the name of the [`wasm_exporttype_t`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_exporttype_name")]
 pub extern "C" fn wasm_exporttype_name(et: &wasm_exporttype_t) -> &wasm_name_t {
     &et.c_name
 }
 
 /// Returns a shared reference to the extern type of the [`wasm_exporttype_t`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_exporttype_type")]
 pub extern "C" fn wasm_exporttype_type(et: &wasm_exporttype_t) -> &wasm_externtype_t {
     &et.c_ty
 }

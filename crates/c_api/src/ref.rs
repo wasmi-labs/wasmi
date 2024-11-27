@@ -89,6 +89,7 @@ pub(crate) fn ref_to_val(r: &wasm_ref_t) -> Val {
 ///
 /// Returns `None` if `r` was `None`.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_copy")]
 pub extern "C" fn wasm_ref_copy(r: Option<&wasm_ref_t>) -> Option<Box<wasm_ref_t>> {
     r.map(|r| Box::new(r.clone()))
 }
@@ -99,6 +100,7 @@ pub extern "C" fn wasm_ref_copy(r: Option<&wasm_ref_t>) -> Option<Box<wasm_ref_t
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_same")]
 pub extern "C" fn wasm_ref_same(_a: Option<&wasm_ref_t>, _b: Option<&wasm_ref_t>) -> bool {
     // In Wasmi we require a store to determine whether these are the same
     // reference or not and therefore we cannot support this Wasm C API.
@@ -111,6 +113,10 @@ pub extern "C" fn wasm_ref_same(_a: Option<&wasm_ref_t>, _b: Option<&wasm_ref_t>
 ///
 /// This API is unsupported and always returns a `null` pointer.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_get_host_info"
+)]
 pub extern "C" fn wasm_ref_get_host_info(_ref: Option<&wasm_ref_t>) -> *mut c_void {
     ptr::null_mut()
 }
@@ -121,6 +127,10 @@ pub extern "C" fn wasm_ref_get_host_info(_ref: Option<&wasm_ref_t>) -> *mut c_vo
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_set_host_info"
+)]
 pub extern "C" fn wasm_ref_set_host_info(_ref: Option<&wasm_ref_t>, _info: *mut c_void) {
     unimplemented!("wasm_ref_set_host_info")
 }
@@ -133,6 +143,10 @@ pub extern "C" fn wasm_ref_set_host_info(_ref: Option<&wasm_ref_t>, _info: *mut 
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_set_host_info_with_finalizer"
+)]
 pub extern "C" fn wasm_ref_set_host_info_with_finalizer(
     _ref: Option<&wasm_ref_t>,
     _info: *mut c_void,
@@ -147,6 +161,7 @@ pub extern "C" fn wasm_ref_set_host_info_with_finalizer(
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_as_extern")]
 pub extern "C" fn wasm_ref_as_extern(_ref: Option<&mut wasm_ref_t>) -> Option<&mut wasm_extern_t> {
     unimplemented!("wasm_ref_as_extern")
 }
@@ -157,6 +172,10 @@ pub extern "C" fn wasm_ref_as_extern(_ref: Option<&mut wasm_ref_t>) -> Option<&m
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_as_extern_const"
+)]
 pub extern "C" fn wasm_ref_as_extern_const(_ref: Option<&wasm_ref_t>) -> Option<&wasm_extern_t> {
     unimplemented!("wasm_ref_as_extern_const")
 }
@@ -167,6 +186,7 @@ pub extern "C" fn wasm_ref_as_extern_const(_ref: Option<&wasm_ref_t>) -> Option<
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_as_foreign")]
 pub extern "C" fn wasm_ref_as_foreign(
     _ref: Option<&mut wasm_ref_t>,
 ) -> Option<&mut wasm_foreign_t> {
@@ -179,6 +199,10 @@ pub extern "C" fn wasm_ref_as_foreign(
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_as_foreign_const"
+)]
 pub extern "C" fn wasm_ref_as_foreign_const(
     _ref: Option<&wasm_ref_t>,
 ) -> Option<&crate::wasm_foreign_t> {
@@ -191,6 +215,7 @@ pub extern "C" fn wasm_ref_as_foreign_const(
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_as_func")]
 pub extern "C" fn wasm_ref_as_func(_ref: Option<&mut wasm_ref_t>) -> Option<&mut wasm_func_t> {
     unimplemented!("wasm_ref_as_func")
 }
@@ -201,6 +226,10 @@ pub extern "C" fn wasm_ref_as_func(_ref: Option<&mut wasm_ref_t>) -> Option<&mut
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_as_func_const"
+)]
 pub extern "C" fn wasm_ref_as_func_const(_ref: Option<&wasm_ref_t>) -> Option<&wasm_func_t> {
     unimplemented!("wasm_ref_as_func_const")
 }
@@ -211,6 +240,7 @@ pub extern "C" fn wasm_ref_as_func_const(_ref: Option<&wasm_ref_t>) -> Option<&w
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_as_global")]
 pub extern "C" fn wasm_ref_as_global(_ref: Option<&mut wasm_ref_t>) -> Option<&mut wasm_global_t> {
     unimplemented!("wasm_ref_as_global")
 }
@@ -221,6 +251,10 @@ pub extern "C" fn wasm_ref_as_global(_ref: Option<&mut wasm_ref_t>) -> Option<&m
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_as_global_const"
+)]
 pub extern "C" fn wasm_ref_as_global_const(_ref: Option<&wasm_ref_t>) -> Option<&wasm_global_t> {
     unimplemented!("wasm_ref_as_global_const")
 }
@@ -231,6 +265,7 @@ pub extern "C" fn wasm_ref_as_global_const(_ref: Option<&wasm_ref_t>) -> Option<
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_as_instance")]
 pub extern "C" fn wasm_ref_as_instance(
     _ref: Option<&mut wasm_ref_t>,
 ) -> Option<&mut wasm_instance_t> {
@@ -243,6 +278,10 @@ pub extern "C" fn wasm_ref_as_instance(
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_as_instance_const"
+)]
 pub extern "C" fn wasm_ref_as_instance_const(
     _ref: Option<&wasm_ref_t>,
 ) -> Option<&wasm_instance_t> {
@@ -255,6 +294,7 @@ pub extern "C" fn wasm_ref_as_instance_const(
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_as_memory")]
 pub extern "C" fn wasm_ref_as_memory(_ref: Option<&mut wasm_ref_t>) -> Option<&mut wasm_memory_t> {
     unimplemented!("wasm_ref_as_memory")
 }
@@ -265,6 +305,10 @@ pub extern "C" fn wasm_ref_as_memory(_ref: Option<&mut wasm_ref_t>) -> Option<&m
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_as_memory_const"
+)]
 pub extern "C" fn wasm_ref_as_memory_const(_ref: Option<&wasm_ref_t>) -> Option<&wasm_memory_t> {
     unimplemented!("wasm_ref_as_memory_const")
 }
@@ -275,6 +319,7 @@ pub extern "C" fn wasm_ref_as_memory_const(_ref: Option<&wasm_ref_t>) -> Option<
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_as_module")]
 pub extern "C" fn wasm_ref_as_module(_ref: Option<&mut wasm_ref_t>) -> Option<&mut wasm_module_t> {
     unimplemented!("wasm_ref_as_module")
 }
@@ -285,6 +330,10 @@ pub extern "C" fn wasm_ref_as_module(_ref: Option<&mut wasm_ref_t>) -> Option<&m
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_as_module_const"
+)]
 pub extern "C" fn wasm_ref_as_module_const(_ref: Option<&wasm_ref_t>) -> Option<&wasm_module_t> {
     unimplemented!("wasm_ref_as_module_const")
 }
@@ -295,6 +344,7 @@ pub extern "C" fn wasm_ref_as_module_const(_ref: Option<&wasm_ref_t>) -> Option<
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_as_table")]
 pub extern "C" fn wasm_ref_as_table(_ref: Option<&mut wasm_ref_t>) -> Option<&mut wasm_table_t> {
     unimplemented!("wasm_ref_as_table")
 }
@@ -305,6 +355,10 @@ pub extern "C" fn wasm_ref_as_table(_ref: Option<&mut wasm_ref_t>) -> Option<&mu
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_as_table_const"
+)]
 pub extern "C" fn wasm_ref_as_table_const(_ref: Option<&wasm_ref_t>) -> Option<&wasm_table_t> {
     unimplemented!("wasm_ref_as_table_const")
 }
@@ -315,6 +369,7 @@ pub extern "C" fn wasm_ref_as_table_const(_ref: Option<&wasm_ref_t>) -> Option<&
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_ref_as_trap")]
 pub extern "C" fn wasm_ref_as_trap(_ref: Option<&mut wasm_ref_t>) -> Option<&mut wasm_trap_t> {
     unimplemented!("wasm_ref_as_trap")
 }
@@ -325,6 +380,10 @@ pub extern "C" fn wasm_ref_as_trap(_ref: Option<&mut wasm_ref_t>) -> Option<&mut
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(
+    feature = "prefix-symbols",
+    export_name = "wasmi_wasm_ref_as_trap_const"
+)]
 pub extern "C" fn wasm_ref_as_trap_const(_ref: Option<&wasm_ref_t>) -> Option<&wasm_trap_t> {
     unimplemented!("wasm_ref_as_trap_const")
 }
