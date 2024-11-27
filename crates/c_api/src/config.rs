@@ -21,6 +21,7 @@ wasmi_c_api_macros::declare_own!(wasm_config_t);
 ///
 /// [`wasm_engine_new_with_config`]: crate::wasm_engine_new_with_config
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_config_new() -> Box<wasm_config_t> {
     Box::new(wasm_config_t {
         inner: Config::default(),

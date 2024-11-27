@@ -26,3 +26,4 @@ doctest = false
 [features]
 default = ["std"]
 std = []
+prefix-symbols = []

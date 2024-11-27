@@ -17,6 +17,7 @@ wasmi_c_api_macros::declare_own!(wasm_frame_t);
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_frame_func_index(_frame: &wasm_frame_t<'_>) -> u32 {
     unimplemented!("wasm_frame_func_index")
 }
@@ -27,6 +28,7 @@ pub extern "C" fn wasm_frame_func_index(_frame: &wasm_frame_t<'_>) -> u32 {
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_frame_func_offset(_frame: &wasm_frame_t<'_>) -> usize {
     unimplemented!("wasm_frame_func_offset")
 }
@@ -37,6 +39,7 @@ pub extern "C" fn wasm_frame_func_offset(_frame: &wasm_frame_t<'_>) -> usize {
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_frame_instance(_arg1: *const wasm_frame_t<'_>) -> *mut wasm_instance_t {
     unimplemented!("wasm_frame_instance")
 }
@@ -47,6 +50,7 @@ pub extern "C" fn wasm_frame_instance(_arg1: *const wasm_frame_t<'_>) -> *mut wa
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_frame_module_offset(_frame: &wasm_frame_t<'_>) -> usize {
     unimplemented!("wasm_frame_module_offset")
 }
@@ -57,6 +61,7 @@ pub extern "C" fn wasm_frame_module_offset(_frame: &wasm_frame_t<'_>) -> usize {
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_frame_copy<'a>(_frame: &wasm_frame_t<'a>) -> Box<wasm_frame_t<'a>> {
     unimplemented!("wasm_frame_copy")
 }

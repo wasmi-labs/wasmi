@@ -27,6 +27,7 @@ pub fn declare_own(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     (quote! {
         #[doc = #docs]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #delete(_: ::alloc::boxed::Box<#ty>) {}
     })
     .into()
@@ -49,6 +50,7 @@ pub fn declare_ty(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #docs]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #copy(src: &#ty) -> ::alloc::boxed::Box<#ty> {
             ::alloc::boxed::Box::new(src.clone())
         }
@@ -97,6 +99,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #same_docs]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #same(_a: &#ty, _b: &#ty) -> ::core::primitive::bool {
             #[cfg(feature = "std")]
             ::std::eprintln!("`{}` is not implemented", ::core::stringify!(#same));
@@ -105,12 +108,14 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #get_host_info_docs]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #get_host_info(a: &#ty) -> *mut ::core::ffi::c_void {
             ::core::ptr::null_mut()
         }
 
         #[doc = #set_host_info_docs]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #set_host_info(a: &#ty, info: *mut ::core::ffi::c_void) {
             #[cfg(feature = "std")]
             ::std::eprintln!("`{}` is not implemented", ::core::stringify!(#set_host_info));
@@ -119,6 +124,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #set_host_info_final_docs]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #set_host_info_final(
             a: &#ty,
             info: *mut ::core::ffi::c_void,
@@ -131,6 +137,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #as_ref_docs]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #as_ref(a: &#ty) -> ::alloc::boxed::Box<crate::wasm_ref_t> {
             #[cfg(feature = "std")]
             ::std::eprintln!("`{}` is not implemented", ::core::stringify!(#as_ref));
@@ -139,6 +146,7 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         #[doc = #as_ref_const_docs]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn #as_ref_const(a: &#ty) -> ::alloc::boxed::Box<crate::wasm_ref_t> {
             #[cfg(feature = "std")]
             ::std::eprintln!("`{}` is not implemented", ::core::stringify!(#as_ref_const));
@@ -149,4 +157,60 @@ pub fn declare_ref(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         // TODO: implement `wasm_ref_as_#name#_const`
     })
     .into()
+}
+
+macro_rules! bail {
+    ($message:literal) => {{
+        return ::core::result::Result::Err(Error($message.into()));
+    }};
+}
+
+/// An error with its error message.
+struct Error(String);
+
+impl Error {
+    /// Converts the [`Error`] into a `compile_error!` token stream.
+    fn to_compile_error(&self) -> proc_macro::TokenStream {
+        let message = &self.0;
+        quote! { ::core::compile_error!(#message) }.into()
+    }
+}
+
+/// Applied on Rust `fn` items from the Wasm spec.
+///
+/// Annotates the given function with `#[export_name = $func_name]`
+/// where `$func_name` is the name of the given function.
+#[proc_macro_attribute]
+pub fn prefix_symbol(
+    attributes: proc_macro::TokenStream,
+    input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    match prefix_symbol_impl(attributes.into(), input.into()) {
+        Ok(result) => result.into(),
+        Err(error) => error.to_compile_error(),
+    }
+}
+
+fn prefix_symbol_impl(attributes: TokenStream, input: TokenStream) -> Result<TokenStream, Error> {
+    if !attributes.is_empty() {
+        bail!("err(prefix_symbol): attributes must be empty")
+    }
+    let mut stream = input.clone().into_iter();
+    let fn_token = stream.find(|tt| matches!(tt, TokenTree::Ident(ref ident) if *ident == "fn"));
+    if fn_token.is_none() {
+        bail!("can only apply on `fn` items")
+    }
+    let Some(TokenTree::Ident(fn_ident)) = stream.next() else {
+        bail!("function name must follow `fn` keyword")
+    };
+    let fn_name = fn_ident.to_string();
+    if !fn_name.starts_with("wasm_") {
+        // No prefix needed since the function is not a part of the Wasm spec.
+        return Ok(input);
+    }
+    let prefixed_fn_name = format!("wasmi_{}", fn_name);
+    Ok(quote! {
+        #[export_name = #prefixed_fn_name]
+        #input
+    })
 }
