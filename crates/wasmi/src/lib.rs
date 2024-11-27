@@ -77,7 +77,7 @@
     clippy::default_trait_access,
     clippy::items_after_statements
 )]
-#![recursion_limit = "750"]
+#![recursion_limit = "1000"]
 
 extern crate alloc;
 #[cfg(feature = "std")]
