@@ -19,6 +19,7 @@ wasmi_c_api_macros::declare_own!(wasm_engine_t);
 ///
 /// Wraps [`wasmi::Engine::default`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_engine_new() -> Box<wasm_engine_t> {
     Box::new(wasm_engine_t {
         inner: Engine::default(),
@@ -31,6 +32,7 @@ pub extern "C" fn wasm_engine_new() -> Box<wasm_engine_t> {
 ///
 /// Wraps [`wasmi::Engine::new`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_engine_new_with_config(config: Box<wasm_config_t>) -> Box<wasm_engine_t> {
     Box::new(wasm_engine_t {
         inner: Engine::new(&config.inner),

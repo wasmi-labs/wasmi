@@ -135,6 +135,7 @@ macro_rules! declare_vecs {
         #[doc = ""]
         #[doc = concat!("Returns the resulting [`", stringify!($name), "`] in `out`.")]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn $empty(out: &mut $name) {
             out.size = 0;
             out.data = ptr::null_mut();
@@ -146,6 +147,7 @@ macro_rules! declare_vecs {
         #[doc = ""]
         #[doc = concat!("Returns the resulting [`", stringify!($name), "`] in `out`.")]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn $uninit(out: &mut $name, size: usize) {
             out.set_buffer(vec![Default::default(); size].into());
         }
@@ -161,6 +163,7 @@ macro_rules! declare_vecs {
         #[doc = ""]
         #[doc = "It is the callers responsibility to provide a valid pair of `ptr` and `size`."]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub unsafe extern "C" fn $new $(<$lt>)? (
             out: &mut $name $(<$lt>)?,
             size: usize,
@@ -176,6 +179,7 @@ macro_rules! declare_vecs {
         #[doc = ""]
         #[doc = concat!("- Returns the resulting [`", stringify!($name), "`] in `out`.")]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn $copy $(<$lt>)? (
             out: &mut $name $(<$lt>)?,
             src: &$name $(<$lt>)?,
@@ -185,6 +189,7 @@ macro_rules! declare_vecs {
 
         #[doc = concat!("Frees memory associated to the [`", stringify!($name),"`].")]
         #[no_mangle]
+        #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
         pub extern "C" fn $delete $(<$lt>)? (out: &mut $name $(<$lt>)?) {
             out.take();
         }

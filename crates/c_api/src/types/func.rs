@@ -77,6 +77,7 @@ impl CFuncType {
 ///
 /// Wraps [`FuncType::new`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_functype_new(
     params: &mut wasm_valtype_vec_t,
     results: &mut wasm_valtype_vec_t,
@@ -99,6 +100,7 @@ pub extern "C" fn wasm_functype_new(
 ///
 /// Wraps [`FuncType::params`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_functype_params(ft: &wasm_functype_t) -> &wasm_valtype_vec_t {
     &ft.ty().params
 }
@@ -107,18 +109,21 @@ pub extern "C" fn wasm_functype_params(ft: &wasm_functype_t) -> &wasm_valtype_ve
 ///
 /// Wraps [`FuncType::results`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_functype_results(ft: &wasm_functype_t) -> &wasm_valtype_vec_t {
     &ft.ty().results
 }
 
 /// Returns a mutable reference to the element type of [`wasm_functype_t`] as [`wasm_externtype_t`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_functype_as_externtype(ty: &mut wasm_functype_t) -> &mut wasm_externtype_t {
     &mut ty.ext
 }
 
 /// Returns a shared reference to the element type of [`wasm_functype_t`] as [`wasm_externtype_t`].
 #[no_mangle]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_functype_as_externtype_const(ty: &wasm_functype_t) -> &wasm_externtype_t {
     &ty.ext
 }
