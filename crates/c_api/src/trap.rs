@@ -103,7 +103,7 @@ pub extern "C" fn wasm_trap_origin(_raw: &wasm_trap_t) -> Option<Box<wasm_frame_
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_trap_trace<'a>")]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_trap_trace")]
 pub extern "C" fn wasm_trap_trace<'a>(_raw: &'a wasm_trap_t, _out: &mut wasm_frame_vec_t<'a>) {
     unimplemented!("wasm_trap_trace")
 }

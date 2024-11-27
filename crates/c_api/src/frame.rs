@@ -70,7 +70,7 @@ pub extern "C" fn wasm_frame_module_offset(_frame: &wasm_frame_t<'_>) -> usize {
 ///
 /// This API is unsupported and will panic upon use.
 #[no_mangle]
-#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_frame_copy<'a>")]
+#[cfg_attr(feature = "prefix-symbols", export_name = "wasmi_wasm_frame_copy")]
 pub extern "C" fn wasm_frame_copy<'a>(_frame: &wasm_frame_t<'a>) -> Box<wasm_frame_t<'a>> {
     unimplemented!("wasm_frame_copy")
 }
