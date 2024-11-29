@@ -461,7 +461,6 @@ impl Func {
             .engine()
             .clone()
             .execute_func_resumable(ctx.as_context_mut(), self, inputs, outputs)
-            .map_err(Into::into)
             .map(ResumableCall::new)
     }
 
