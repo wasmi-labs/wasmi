@@ -226,7 +226,6 @@ impl ResumableInvocation {
         self.engine
             .clone()
             .resume_func(ctx.as_context_mut(), self, inputs, outputs)
-            .map_err(Into::into)
             .map(ResumableCall::new)
     }
 }
@@ -305,7 +304,6 @@ impl<Results> TypedResumableInvocation<Results> {
                 inputs,
                 <CallResultsTuple<Results>>::default(),
             )
-            .map_err(Into::into)
             .map(TypedResumableCall::new)
     }
 }

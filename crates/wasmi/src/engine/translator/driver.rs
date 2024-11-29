@@ -57,7 +57,7 @@ where
         finalize: impl FnOnce(CompiledFuncEntity),
     ) -> Result<T::Allocations, Error> {
         self.translator.update_pos(offset);
-        self.translator.finish(finalize).map_err(Into::into)
+        self.translator.finish(finalize)
     }
 
     /// Translates local variables of the Wasm function.
