@@ -10,7 +10,6 @@ mod for_each_op;
 mod immeditate;
 pub mod index;
 mod primitive;
-mod sequence;
 mod span;
 mod visit_regs;
 
@@ -36,7 +35,6 @@ pub use self::{
         Sign,
     },
     r#enum::Instruction,
-    sequence::{InstrIter, InstrIterMut, InstrSequence},
     span::{BoundedRegSpan, FixedRegSpan, RegSpan, RegSpanIter},
     visit_regs::VisitRegs,
 };
