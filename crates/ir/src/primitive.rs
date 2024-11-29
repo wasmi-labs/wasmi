@@ -1,4 +1,4 @@
-use crate::{core::UntypedVal, Const16, Error, Instr};
+use crate::{core::UntypedVal, Const16, Error};
 use core::marker::PhantomData;
 
 /// The sign of a value.
@@ -152,9 +152,9 @@ impl BranchOffset {
     /// # Errors
     ///
     /// If the resulting [`BranchOffset`] is out of bounds.
-    pub fn from_src_to_dst(src: Instr, dst: Instr) -> Result<Self, Error> {
-        let src = i64::from(u32::from(src));
-        let dst = i64::from(u32::from(dst));
+    pub fn from_src_to_dst(src: u32, dst: u32) -> Result<Self, Error> {
+        let src = i64::from(src);
+        let dst = i64::from(dst);
         let Some(offset) = dst.checked_sub(src) else {
             // Note: This never needs to be called on backwards branches since they are immediated resolved.
             unreachable!(
