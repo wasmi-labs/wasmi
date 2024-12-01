@@ -1742,7 +1742,6 @@ version = "0.40.0"
 dependencies = [
  "wasi-common",
  "wasmi 0.40.0",
- "wat",
  "wiggle",
 ]
 
