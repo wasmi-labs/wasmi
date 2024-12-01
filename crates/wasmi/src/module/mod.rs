@@ -201,7 +201,9 @@ impl Module {
     ///
     /// # Note
     ///
-    /// This parses, validates and translates the buffered Wasm bytecode.
+    /// - This parses, validates and translates the buffered Wasm bytecode.
+    /// - The `wasm` may be encoded as WebAssembly binary (`.wasm`) or as
+    ///   WebAssembly text format (`.wat`).
     ///
     /// # Errors
     ///
