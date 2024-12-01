@@ -30,17 +30,12 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 impl wasmi::core::HostError for Error {}
 
-/// Converts the given `.wat` into `.wasm`.
-fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
-    wat::parse_str(wat)
-}
-
 #[test]
 fn test_instantiate_in_host_call() {
     let engine = Engine::default();
     let mut store = <Store<Data>>::new(&engine, Data::Uninit);
-    let wasm = wat2wasm(include_str!("../wat/host_call_instantiation.wat")).unwrap();
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let wasm = include_str!("../wat/host_call_instantiation.wat");
+    let module = Module::new(&engine, wasm.as_bytes()).unwrap();
     let mut linker = <Linker<Data>>::new(&engine);
     linker
         .func_wrap(

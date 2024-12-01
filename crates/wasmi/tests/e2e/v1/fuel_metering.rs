@@ -13,11 +13,6 @@ fn test_setup() -> (Store<()>, Linker<()>) {
     (store, linker)
 }
 
-/// Converts the `wat` string source into `wasm` encoded byte.
-fn wat2wasm(wat: &str) -> Vec<u8> {
-    wat::parse_str(wat).unwrap()
-}
-
 /// Compiles the `wasm` encoded bytes into a [`Module`].
 ///
 /// # Panics
@@ -66,8 +61,7 @@ where
 
 #[test]
 fn metered_i32_add() {
-    let wasm = wat2wasm(
-        r#"
+    let wasm = r#"
         (module
             (func (export "test") (param $a i32) (param $b i32) (result i32)
                 (i32.add
@@ -76,9 +70,8 @@ fn metered_i32_add() {
                 )
             )
         )
-    "#,
-    );
-    let (mut store, func) = default_test_setup(&wasm);
+    "#;
+    let (mut store, func) = default_test_setup(wasm.as_bytes());
     let func = func.typed::<(i32, i32), i32>(&store).unwrap();
     // No fuel -> no success.
     assert_out_of_fuel(func.call(&mut store, (1, 2)));

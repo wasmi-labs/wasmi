@@ -2,14 +2,9 @@
 
 use wasmi::{AsContextMut, Caller, Engine, Linker, Module, Store};
 
-/// Converts the given `.wat` into `.wasm`.
-fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
-    wat::parse_str(wat)
-}
-
 fn compile_module(engine: &Engine) -> wasmi::Module {
-    let wasm = wat2wasm(include_str!("../wat/host_call_compilation.wat")).unwrap();
-    Module::new(engine, &wasm[..]).unwrap()
+    let wasm = include_str!("../wat/host_call_compilation.wat");
+    Module::new(engine, wasm.as_bytes()).unwrap()
 }
 
 #[test]
