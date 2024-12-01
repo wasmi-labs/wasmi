@@ -1,11 +1,11 @@
 use crate::{Engine, Func, Linker, Module, Store, Val};
 
 /// Common routine to setup the tests.
-fn setup_test(wat: &str) -> (Store<()>, Func) {
+fn setup_test(wasm: &str) -> (Store<()>, Func) {
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = <Linker<()>>::new(&engine);
-    let module = Module::new(&engine, wat.as_bytes()).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()

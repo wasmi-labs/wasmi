@@ -52,7 +52,7 @@ fn execute_wasm_fn_a(
     "#;
 
     let wasm = wat::parse_str(TEST_WAT).unwrap();
-    let module = Module::new(store.engine(), &wasm).unwrap();
+    let module = Module::new(store.engine(), wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()

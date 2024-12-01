@@ -58,7 +58,7 @@ fn resumable_call_smoldot_common(wasm: &str) -> (Store<TestData>, TypedFunc<(), 
     // host function, returns 10 if the output is 0 and
     // returns 20 otherwise.
     let wasm = wat::parse_str(wasm).unwrap();
-    let module = Module::new(store.engine(), &wasm[..]).unwrap();
+    let module = Module::new(store.engine(), wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
@@ -230,7 +230,7 @@ fn resumable_call() {
     )
     .unwrap();
 
-    let module = Module::new(store.engine(), &wasm[..]).unwrap();
+    let module = Module::new(store.engine(), wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()

@@ -4,7 +4,7 @@ use wasmi::{AsContextMut, Caller, Engine, Linker, Module, Store};
 
 fn compile_module(engine: &Engine) -> wasmi::Module {
     let wasm = include_str!("../wat/host_call_compilation.wat");
-    Module::new(engine, wasm.as_bytes()).unwrap()
+    Module::new(engine, wasm).unwrap()
 }
 
 #[test]

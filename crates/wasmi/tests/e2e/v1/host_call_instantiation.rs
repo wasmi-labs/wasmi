@@ -35,7 +35,7 @@ fn test_instantiate_in_host_call() {
     let engine = Engine::default();
     let mut store = <Store<Data>>::new(&engine, Data::Uninit);
     let wasm = include_str!("../wat/host_call_instantiation.wat");
-    let module = Module::new(&engine, wasm.as_bytes()).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let mut linker = <Linker<Data>>::new(&engine);
     linker
         .func_wrap(

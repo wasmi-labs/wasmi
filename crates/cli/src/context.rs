@@ -34,9 +34,9 @@ impl Context {
         }
         config.compilation_mode(compilation_mode);
         let engine = wasmi::Engine::new(&config);
-        let wasm_bytes =
+        let wasm =
             fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file:?}"))?;
-        let module = wasmi::Module::new(&engine, &wasm_bytes[..]).map_err(|error| {
+        let module = wasmi::Module::new(&engine, wasm).map_err(|error| {
             anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
         })?;
         let mut store = wasmi::Store::new(&engine, wasi_ctx);

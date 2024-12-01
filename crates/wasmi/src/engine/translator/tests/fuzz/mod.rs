@@ -260,7 +260,7 @@ fn fuzz_regression_13_execute() {
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = Linker::new(&engine);
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
@@ -325,7 +325,7 @@ fn fuzz_regression_15_01_execute() {
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = Linker::new(&engine);
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
@@ -462,7 +462,7 @@ fn audit_0_execution() {
     let wasm = wat::parse_str(wat).unwrap();
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = Instance::new(&mut store, &module, &[]).unwrap();
     let func = instance
         .get_func(&store, "")
@@ -498,7 +498,7 @@ fn audit_1_execution() {
     let wasm = wat::parse_str(wat).unwrap();
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = Instance::new(&mut store, &module, &[]).unwrap();
     let func = instance
         .get_func(&store, "")
@@ -532,7 +532,7 @@ fn audit_2_execution() {
     let wasm = wat::parse_str(wat).unwrap();
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = Instance::new(&mut store, &module, &[]).unwrap();
     let func = instance.get_func(&store, "").unwrap();
     let inputs = [Val::I32(1)];

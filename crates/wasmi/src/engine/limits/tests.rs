@@ -7,7 +7,7 @@ fn parse_with(wasm: &str, limits: EnforcedLimits) -> Result<Module, Error> {
     let mut config = Config::default();
     config.enforced_limits(limits);
     let engine = Engine::new(&config);
-    Module::new(&engine, wasm.as_bytes())
+    Module::new(&engine, wasm)
 }
 
 #[test]
