@@ -2,9 +2,10 @@ use super::*;
 
 const PARAM: WasmType = WasmType::I64;
 
-#[test] #[cfg_attr(miri, ignore)]
+#[test]
+#[cfg_attr(miri, ignore)]
 fn reg() {
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (func (param {PARAM}) (result i32)
@@ -13,13 +14,13 @@ fn reg() {
             )
         )
         "#
-    ));
-    TranslationTest::new(wasm)
-        .expect_func([
+    );
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([
             Instruction::i64_eq_imm16(
-                Reg::from_u16(1),
-                Reg::from_u16(0),
-                Const16::from_i16(0),
+                Reg::from(1),
+                Reg::from(0),
+                0,
             ),
             Instruction::return_reg(1),
         ])
@@ -27,7 +28,7 @@ fn reg() {
 }
 
 fn imm_with(value: i64) {
-    let wasm = wat2wasm(&format!(
+    let wasm = format!(
         r#"
         (module
             (func (result i32)
@@ -36,11 +37,11 @@ fn imm_with(value: i64) {
             )
         )
         "#
-    ));
-    TranslationTest::new(wasm)
-        .expect_func([Instruction::ReturnImm32 {
-            value: Const32::from(value == 0),
-        }])
+    );
+    TranslationTest::from_wat(&wasm)
+        .expect_func_instrs([
+            Instruction::return_imm32((value == 0) as u32)
+        ])
         .run();
 }
 
