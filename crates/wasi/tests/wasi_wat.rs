@@ -5,7 +5,7 @@ use wasmi_wasi::{add_to_linker, WasiCtx};
 pub fn load_instance_from_wat(wasm: &[u8]) -> (Store<WasiCtx>, wasmi::Instance) {
     let config = Config::default();
     let engine = Engine::new(&config);
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let mut linker = <Linker<WasiCtx>>::new(&engine);
     // add wasi to linker
     let wasi = WasiCtxBuilder::new()
