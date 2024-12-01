@@ -211,7 +211,8 @@ impl Module {
     /// - If Wasmi cannot translate the Wasm bytecode.
     ///
     /// [`Config`]: crate::Config
-    pub fn new(engine: &Engine, wasm: &[u8]) -> Result<Self, Error> {
+    pub fn new(engine: &Engine, wasm: impl AsRef<[u8]>) -> Result<Self, Error> {
+        let wasm = wasm.as_ref();
         #[cfg(feature = "wat")]
         let wasm = &wat::parse_bytes(wasm)?[..];
         ModuleParser::new(engine).parse_buffered(wasm)
