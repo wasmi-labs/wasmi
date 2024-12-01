@@ -28,7 +28,7 @@ fn binop_i32_eqz() {
                 )
             )",
         );
-        TranslationTest::from_wat(wasm)
+        TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(Reg::from(2), Reg::from(0), Reg::from(1)),
                 Instruction::return_reg(2),
@@ -98,7 +98,7 @@ fn binop_imm_i32_eqz_rhs() {
                 )
             )",
         );
-        TranslationTest::from_wat(wasm)
+        TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
                     Reg::from(2),
@@ -161,7 +161,7 @@ fn binop_imm_i32_eqz_lhs() {
                 )
             )",
         );
-        TranslationTest::from_wat(wasm)
+        TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
                     Reg::from(2),
@@ -219,7 +219,7 @@ fn binop_i32_eqz_double() {
                 )
             )",
         );
-        TranslationTest::from_wat(wasm)
+        TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(Reg::from(2), Reg::from(0), Reg::from(1)),
                 Instruction::return_reg(2),
@@ -280,7 +280,7 @@ fn binop_imm_i32_eqz_rhs_double() {
                 )
             )",
         );
-        TranslationTest::from_wat(wasm)
+        TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
                     Reg::from(2),
@@ -341,7 +341,7 @@ fn binop_imm_i32_eqz_lhs_double() {
                 )
             )",
         );
-        TranslationTest::from_wat(wasm)
+        TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
                     Reg::from(2),
@@ -394,7 +394,7 @@ fn binop_i32_eqz_double_invalid() {
                 )
             )",
         );
-        TranslationTest::from_wat(wasm)
+        TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(Reg::from(2), Reg::from(0), Reg::from(1)),
                 Instruction::i32_eq_imm16(Reg::from(2), Reg::from(2), 0),
@@ -435,7 +435,7 @@ fn binop_imm_i32_eqz_rhs_double_invalid() {
                 )
             )",
         );
-        TranslationTest::from_wat(wasm)
+        TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
                     Reg::from(2),
@@ -480,7 +480,7 @@ fn binop_imm_i32_eqz_lhs_double_invalid() {
                 )
             )",
         );
-        TranslationTest::from_wat(wasm)
+        TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
                     Reg::from(2),

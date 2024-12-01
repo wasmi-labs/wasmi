@@ -57,8 +57,7 @@ fn resumable_call_smoldot_common(wasm: &str) -> (Store<TestData>, TypedFunc<(), 
     // The Wasm defines a single function that calls the
     // host function, returns 10 if the output is 0 and
     // returns 20 otherwise.
-    let wasm = wat::parse_str(wasm).unwrap();
-    let module = Module::new(store.engine(), &wasm[..]).unwrap();
+    let module = Module::new(store.engine(), wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
@@ -209,8 +208,7 @@ fn resumable_call() {
         }
     });
     linker.define("env", "host_fn", host_fn).unwrap();
-    let wasm = wat::parse_str(
-        r#"
+    let wasm = r#"
             (module
                 (import "env" "host_fn" (func $host_fn (param i32) (result i32)))
                 (func (export "wasm_fn") (param $wasm_trap i32) (result i32)
@@ -226,11 +224,8 @@ fn resumable_call() {
                     (local.get $i)                                ;; return i == 4
                 )
             )
-            "#,
-    )
-    .unwrap();
-
-    let module = Module::new(store.engine(), &wasm[..]).unwrap();
+            "#;
+    let module = Module::new(store.engine(), wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()

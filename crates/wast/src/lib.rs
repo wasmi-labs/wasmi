@@ -332,7 +332,7 @@ impl WastRunner {
         let bytes = wat.encode()?;
         let engine = self.store.engine();
         let module = match self.config.parsing_mode {
-            ParsingMode::Buffered => Module::new(engine, &bytes),
+            ParsingMode::Buffered => Module::new(engine, bytes),
             ParsingMode::Streaming => Module::new_streaming(engine, &mut &bytes[..]),
         }?;
         Ok((name.map(|n| n.name()), module))

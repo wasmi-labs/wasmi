@@ -41,7 +41,7 @@ pub fn bench_config() -> Config {
 pub fn load_module_from_file(file_name: &str) -> wasmi::Module {
     let wasm = load_wasm_from_file(file_name);
     let engine = wasmi::Engine::new(&bench_config());
-    wasmi::Module::new(&engine, &wasm[..]).unwrap_or_else(|error| {
+    wasmi::Module::new(&engine, wasm).unwrap_or_else(|error| {
         panic!(
             "could not parse Wasm module from file {}: {}",
             file_name, error
@@ -84,10 +84,9 @@ pub fn wat2wasm(bytes: &[u8]) -> Vec<u8> {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-pub fn load_instance_from_wat(wat_bytes: &[u8]) -> (wasmi::Store<()>, wasmi::Instance) {
-    let wasm = wat2wasm(wat_bytes);
+pub fn load_instance_from_wat(wasm: &[u8]) -> (wasmi::Store<()>, wasmi::Instance) {
     let engine = wasmi::Engine::new(&bench_config());
-    let module = wasmi::Module::new(&engine, &wasm[..]).unwrap();
+    let module = wasmi::Module::new(&engine, wasm).unwrap();
     let linker = <wasmi::Linker<()>>::new(&engine);
     let mut store = wasmi::Store::new(&engine, ());
     let instance = linker

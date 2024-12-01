@@ -38,7 +38,7 @@ fn execute_wasm_fn_a(
     mut store: &mut Store<CallHookTestState>,
     linker: &mut Linker<CallHookTestState>,
 ) -> Result<(), Error> {
-    const TEST_WAT: &str = r#"
+    let wasm = r#"
     (module
         (import "env" "host_fn_a" (func $host_fn_a))
         (import "env" "host_fn_b" (func $host_fn_b))
@@ -50,9 +50,7 @@ fn execute_wasm_fn_a(
         )
     )
     "#;
-
-    let wasm = wat::parse_str(TEST_WAT).unwrap();
-    let module = Module::new(store.engine(), &wasm).unwrap();
+    let module = Module::new(store.engine(), wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()

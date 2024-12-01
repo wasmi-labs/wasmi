@@ -11,7 +11,7 @@ fn as_return() {
                 (br 0)
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::Return])
         .run()
 }
@@ -26,7 +26,7 @@ fn as_return_1() {
                 (br 0)
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg(Reg::from(0))])
         .run()
 }
@@ -50,7 +50,7 @@ fn as_return_1_imm() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func(
                 ExpectedFunc::new([Instruction::return_reg(Reg::from(-1))]).consts([value]),
             )
@@ -86,7 +86,7 @@ fn as_return_1_imm32() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([Instruction::return_imm32(value)])
             .run()
     }
@@ -110,7 +110,7 @@ fn as_return_1_i64imm32() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([return_i64imm32_instr(value)])
             .run()
     }
@@ -137,7 +137,7 @@ fn as_return_1_f64imm32() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([return_f64imm32_instr(value)])
             .run()
     }
@@ -168,7 +168,7 @@ fn test_br_as_return_values() {
             )
         )
         "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::copy_i64imm32(Reg::from(0), 7),

@@ -63,7 +63,7 @@ fn reg() {
         let lhs = Reg::from(1);
         let rhs = Reg::from(2);
         let result = Reg::from(3);
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([
                 Instruction::select(result, lhs),
                 Instruction::register2_ext(condition, rhs),
@@ -101,7 +101,7 @@ fn same_reg() {
             )
         "#,
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([Instruction::return_reg(Reg::from(1))])
             .run();
     }
@@ -138,7 +138,7 @@ where
         )
     "#,
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 #[test]
@@ -283,7 +283,7 @@ where
         )
     "#,
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 #[test]
@@ -462,7 +462,7 @@ where
         )
     "#,
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 #[test]
@@ -642,7 +642,7 @@ where
         )
     "#,
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 #[test]
@@ -809,7 +809,7 @@ fn fuzz_fail_01() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::i32_popcnt(1, 0),
             Instruction::i32_eq_imm16(2, 0, 0_i16),

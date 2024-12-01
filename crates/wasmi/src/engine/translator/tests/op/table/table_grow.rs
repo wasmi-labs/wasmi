@@ -14,7 +14,7 @@ fn test_reg(ty: ValType) {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             Instruction::table_grow(Reg::from(2), Reg::from(1), Reg::from(0)),
             Instruction::table_index(0),
@@ -43,7 +43,7 @@ fn test_imm16(ty: ValType, delta: u32) {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             Instruction::table_grow_imm(Reg::from(1), u32imm16(delta), Reg::from(0)),
             Instruction::table_index(0),
@@ -78,7 +78,7 @@ fn test_imm_zero(ty: ValType) {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             Instruction::table_size(Reg::from(1), 0),
             Instruction::return_reg(Reg::from(1)),
@@ -111,7 +111,7 @@ fn test_imm_value_and_zero(ty: ValType) {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             Instruction::table_size(Reg::from(1), 0),
             Instruction::return_reg(Reg::from(1)),
@@ -139,7 +139,7 @@ fn test_imm(ty: ValType, delta: u32) {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::table_grow(Reg::from(1), Reg::from(-1), Reg::from(0)),

@@ -24,10 +24,9 @@ use crate::{
     Val,
 };
 
-fn try_instantiate_from_wat(wat: &str) -> Result<(Store<()>, Instance), Error> {
-    let wasm = wat::parse_str(wat).unwrap();
+fn try_instantiate_from_wat(wasm: &str) -> Result<(Store<()>, Instance), Error> {
     let engine = Engine::default();
-    let module = Module::new(&engine, &wasm[..])?;
+    let module = Module::new(&engine, wasm)?;
     let mut store = Store::new(&engine, ());
     let mut linker = <Linker<()>>::new(&engine);
     // Define one memory that can be used by the tests as import.

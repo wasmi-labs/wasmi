@@ -24,7 +24,7 @@ fn test_load_mem0(
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr(Reg::from(1), Memory::from(0)),
             Instruction::register_and_imm32(Reg::from(0), offset),
@@ -55,7 +55,7 @@ fn test_load(
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr(Reg::from(1), Memory::from(1)),
             Instruction::register_and_imm32(Reg::from(0), offset),
@@ -81,7 +81,7 @@ fn test_load_offset16(
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr_offset16(Reg::from(1), Reg::from(0), <Const16<u32>>::from(offset)),
             Instruction::return_reg(Reg::from(1)),
@@ -110,7 +110,7 @@ fn test_load_at_mem0(
     let address = ptr
         .checked_add(offset)
         .expect("ptr+offset must be valid in this testcase");
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr_at(Reg::from(0), address),
             Instruction::return_reg(Reg::from(0)),
@@ -140,7 +140,7 @@ fn test_load_at(
     let address = ptr
         .checked_add(offset)
         .expect("ptr+offset must be valid in this testcase");
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr_at(Reg::from(0), address),
             Instruction::memory_index(1),
@@ -166,7 +166,7 @@ fn test_load_at_overflow_mem0(wasm_op: WasmOp, ptr: u32, offset: u32) {
         ptr.checked_add(offset).is_none(),
         "ptr+offset must overflow in this testcase"
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }
@@ -189,7 +189,7 @@ fn test_load_at_overflow(wasm_op: WasmOp, ptr: u32, offset: u32) {
         ptr.checked_add(offset).is_none(),
         "ptr+offset must overflow in this testcase"
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }

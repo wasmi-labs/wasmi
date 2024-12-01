@@ -27,7 +27,7 @@ where
         )
     "#,
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs(expected)
         .run();
 }
@@ -75,7 +75,7 @@ where
     );
     let result = eval(input);
     let instr = <O as WasmTy>::return_imm_instr(&result);
-    let mut testcase = TranslationTest::from_wat(&wasm);
+    let mut testcase = TranslationTest::new(&wasm);
     if let Instruction::ReturnReg { value } = &instr {
         assert!(value.is_const());
         testcase.expect_func(ExpectedFunc::new([instr]).consts([result]));
@@ -115,7 +115,7 @@ where
     "#,
     );
     let trap_code = eval(input);
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([Instruction::trap(trap_code)])
         .run();
 }

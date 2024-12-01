@@ -12,7 +12,7 @@ fn no_params() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_call_imported_0(Func::from(0))])
         .run();
 }
@@ -28,7 +28,7 @@ fn one_param_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register(0),
@@ -47,7 +47,7 @@ fn one_param_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(Func::from(0)),
@@ -69,7 +69,7 @@ fn two_params_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register2_ext(0, 1),
@@ -88,7 +88,7 @@ fn two_params_reg_lhs() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register2_ext(1, 0),
@@ -107,7 +107,7 @@ fn two_params_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(Func::from(0)),
@@ -129,7 +129,7 @@ fn three_params_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register3_ext(0, 1, 2),
@@ -148,7 +148,7 @@ fn three_params_reg_lhs() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register3_ext(2, 1, 0),
@@ -167,7 +167,7 @@ fn three_params_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(Func::from(0)),
@@ -197,7 +197,7 @@ fn params7_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register_list_ext(0, 1, 2),
@@ -226,7 +226,7 @@ fn params7_reg_lhs() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register_list_ext(6, 5, 4),
@@ -255,7 +255,7 @@ fn params7_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(Func::from(0)),
@@ -288,7 +288,7 @@ fn params8_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register_list_ext(0, 1, 2),
@@ -318,7 +318,7 @@ fn params8_reg_lhs() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register_list_ext(7, 6, 5),
@@ -348,7 +348,7 @@ fn params8_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(Func::from(0)),
@@ -382,7 +382,7 @@ fn params9_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register_list_ext(0, 1, 2),
@@ -413,7 +413,7 @@ fn params9_reg_lhs() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_call_imported(Func::from(0)),
             Instruction::register_list_ext(8, 7, 6),
@@ -444,7 +444,7 @@ fn params9_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_imported(Func::from(0)),

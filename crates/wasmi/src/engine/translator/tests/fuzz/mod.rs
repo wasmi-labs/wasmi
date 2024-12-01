@@ -12,7 +12,7 @@ use crate::{
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_0() {
     let wasm = include_str!("wat/fuzz_0.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
             Instruction::copy_imm32(Reg::from(0), 13.0_f32),
@@ -25,7 +25,7 @@ fn fuzz_regression_0() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_1() {
     let wasm = include_str!("wat/fuzz_1.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
             Instruction::copy_f64imm32(Reg::from(0), 13.0_f32),
@@ -38,7 +38,7 @@ fn fuzz_regression_1() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_2() {
     let wasm = include_str!("wat/fuzz_2.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
             Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(2)),
@@ -52,7 +52,7 @@ fn fuzz_regression_2() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_3() {
     let wasm = include_str!("wat/fuzz_3.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_internal_0(RegSpan::new(Reg::from(0)), EngineFunc::from_u32(0)),
             Instruction::call_internal_0(RegSpan::new(Reg::from(3)), EngineFunc::from_u32(0)),
@@ -65,7 +65,7 @@ fn fuzz_regression_3() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_4() {
     let wasm = include_str!("wat/fuzz_4.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 1),
             Instruction::copy(1, 0),
@@ -80,7 +80,7 @@ fn fuzz_regression_4() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_5() {
     let wasm = include_str!("wat/fuzz_5.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(1)), EngineFunc::from_u32(0)),
             Instruction::register(Reg::from(0)),
@@ -99,7 +99,7 @@ fn fuzz_regression_5() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_6() {
     let wasm = include_str!("wat/fuzz_6.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
             Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(4)),
@@ -116,7 +116,7 @@ fn fuzz_regression_6() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_7() {
     let wasm = include_str!("wat/fuzz_7.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
             Instruction::copy_imm32(Reg::from(0), 1),
@@ -129,7 +129,7 @@ fn fuzz_regression_7() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_8() {
     let wasm = include_str!("wat/fuzz_8.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(4, 1),
             Instruction::copy_imm32(Reg::from(1), 10),
@@ -145,7 +145,7 @@ fn fuzz_regression_8() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_9() {
     let wasm = include_str!("wat/fuzz_9.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(6, 1),
             Instruction::copy_imm32(Reg::from(1), 10),
@@ -166,7 +166,7 @@ fn fuzz_regression_9() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_10() {
     let wasm = include_str!("wat/fuzz_10.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(3)),
             Instruction::copy_imm32(Reg::from(1), 10),
@@ -181,7 +181,7 @@ fn fuzz_regression_10() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_11() {
     let wasm = include_str!("wat/fuzz_11.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::i32_and_imm16(Reg::from(1), Reg::from(0), 2),
             Instruction::i32_eq_imm16(Reg::from(0), Reg::from(0), 0),
@@ -196,7 +196,7 @@ fn fuzz_regression_11() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_12_f32() {
     let wasm = include_str!("wat/fuzz_12_f32.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(ExpectedFunc::new([
             Instruction::copy_imm32(Reg::from(0), u32::MAX),
             Instruction::f32_le(Reg::from(1), Reg::from(0), Reg::from(0)),
@@ -216,7 +216,7 @@ fn fuzz_regression_12_f32() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_12_f64() {
     let wasm = include_str!("wat/fuzz_12_f64.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::copy(0, -1),
@@ -242,7 +242,7 @@ fn fuzz_regression_12_f64() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_13_codegen() {
     let wasm = include_str!("wat/fuzz_13.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many_ext(0, 0, 0),
             Instruction::register(0),
@@ -255,12 +255,11 @@ fn fuzz_regression_13_codegen() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_13_execute() {
     use crate::{Engine, Linker, Store};
-    let wat = include_str!("wat/fuzz_13.wat");
-    let wasm = wat::parse_str(wat).unwrap();
+    let wasm = include_str!("wat/fuzz_13.wat");
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = Linker::new(&engine);
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
@@ -279,7 +278,7 @@ fn fuzz_regression_13_execute() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_14() {
     let wasm = include_str!("wat/fuzz_14.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::i32_and(Reg::from(2), Reg::from(0), Reg::from(1)),
@@ -294,7 +293,7 @@ fn fuzz_regression_14() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_15_01_codegen() {
     let wasm = include_str!("wat/fuzz_15_01.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             // Note:
             //
@@ -320,12 +319,11 @@ fn fuzz_regression_15_01_execute() {
     // Note: we can remove this test case once the bug is fixed
     //       since this is a codegen bug and not an executor bug.
     use crate::{Engine, Linker, Store};
-    let wat = include_str!("wat/fuzz_15_01.wat");
-    let wasm = wat::parse_str(wat).unwrap();
+    let wasm: &str = include_str!("wat/fuzz_15_01.wat");
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = Linker::new(&engine);
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
@@ -344,7 +342,7 @@ fn fuzz_regression_15_01_execute() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_15_02() {
     let wasm = include_str!("wat/fuzz_15_02.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             // Note: The bug is that `copy2` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
             ExpectedFunc::new([
@@ -365,7 +363,7 @@ fn fuzz_regression_15_02() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_15_03() {
     let wasm = include_str!("wat/fuzz_15_03.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             // Note: The bug is that `copy2` overwrites `i32_wrap_i64` which is the `index` of the `br_table`.
             ExpectedFunc::new([
@@ -397,7 +395,7 @@ fn fuzz_regression_16() {
     // for the preserved local value causing the `value` register
     // of the `i64_store_at` instruction to be 32676 instead of 2.
     let wasm = include_str!("wat/fuzz_16.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
             Instruction::global_get(Reg::from(0), Global::from(0)),
@@ -415,7 +413,7 @@ fn fuzz_regression_17() {
     // for the preserved local value causing the `value` register
     // of the `i64_store_at` instruction to be 32676 instead of 2.
     let wasm = include_str!("wat/fuzz_17.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
             Instruction::copy_i64imm32(Reg::from(0), 2),
@@ -430,7 +428,7 @@ fn fuzz_regression_17() {
 #[cfg_attr(miri, ignore)]
 fn audit_0_codegen() {
     let wasm = include_str!("wat/audit_0.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_many_ext(-1, -2, -1),
@@ -458,11 +456,10 @@ fn audit_0_codegen() {
 #[cfg_attr(miri, ignore)]
 fn audit_0_execution() {
     use crate::{Engine, Instance, Store};
-    let wat = include_str!("wat/audit_0.wat");
-    let wasm = wat::parse_str(wat).unwrap();
+    let wasm = include_str!("wat/audit_0.wat");
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = Instance::new(&mut store, &module, &[]).unwrap();
     let func = instance
         .get_func(&store, "")
@@ -478,7 +475,7 @@ fn audit_0_execution() {
 #[cfg_attr(miri, ignore)]
 fn audit_1_codegen() {
     let wasm = include_str!("wat/audit_1.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
                 RegSpan::new(Reg::from(6)),
@@ -494,11 +491,10 @@ fn audit_1_codegen() {
 #[cfg_attr(miri, ignore)]
 fn audit_1_execution() {
     use crate::{Engine, Instance, Store};
-    let wat = include_str!("wat/audit_1.wat");
-    let wasm = wat::parse_str(wat).unwrap();
+    let wasm = include_str!("wat/audit_1.wat");
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = Instance::new(&mut store, &module, &[]).unwrap();
     let func = instance
         .get_func(&store, "")
@@ -513,7 +509,7 @@ fn audit_1_execution() {
 #[cfg_attr(miri, ignore)]
 fn audit_2_codegen() {
     let wasm = include_str!("wat/audit_2.wat");
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
             Instruction::copy(0, 2),
@@ -528,11 +524,10 @@ fn audit_2_codegen() {
 #[cfg_attr(miri, ignore)]
 fn audit_2_execution() {
     use crate::{Engine, Instance, Store};
-    let wat = include_str!("wat/audit_2.wat");
-    let wasm = wat::parse_str(wat).unwrap();
+    let wasm = include_str!("wat/audit_2.wat");
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let instance = Instance::new(&mut store, &module, &[]).unwrap();
     let func = instance.get_func(&store, "").unwrap();
     let inputs = [Val::I32(1)];
