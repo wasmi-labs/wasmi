@@ -212,6 +212,8 @@ impl Module {
     ///
     /// [`Config`]: crate::Config
     pub fn new(engine: &Engine, wasm: &[u8]) -> Result<Self, Error> {
+        #[cfg(feature = "wat")]
+        let wasm = &wat::parse_bytes(wasm)?[..];
         ModuleParser::new(engine).parse_buffered(wasm)
     }
 
