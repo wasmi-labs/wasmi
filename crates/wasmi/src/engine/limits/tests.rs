@@ -1,20 +1,13 @@
 use self::engine::AvgBytesPerFunctionLimit;
 use super::*;
 use crate::{error::ErrorKind, Config, Engine, Error, Module};
-use std::vec::Vec;
-
-/// Converts the given `.wat` into `.wasm`.
-fn wat2wasm(wat: &str) -> Vec<u8> {
-    wat::parse_str(wat).unwrap()
-}
 
 /// Parses and returns the Wasm module `wasm` with the given [`EnforcedLimits`] `limits`.
 fn parse_with(wasm: &str, limits: EnforcedLimits) -> Result<Module, Error> {
-    let wasm = wat2wasm(wasm);
     let mut config = Config::default();
     config.enforced_limits(limits);
     let engine = Engine::new(&config);
-    Module::new(&engine, &wasm[..])
+    Module::new(&engine, wasm.as_bytes())
 }
 
 #[test]
