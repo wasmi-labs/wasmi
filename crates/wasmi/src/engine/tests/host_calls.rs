@@ -84,13 +84,9 @@ fn host_call_from_host_params_4_results_4() {
     );
 }
 
-fn wat2wasm(wat: &str) -> alloc::vec::Vec<u8> {
-    wat::parse_str(wat).unwrap()
-}
-
 #[test]
 fn host_tail_calls() {
-    let wat = r#"
+    let wasm = r#"
         (module
             (import "host" "sum_with_data" (func $sum_with_data (param i32) (result i32)))
             (func (export "test") (param i32) (result i32)
@@ -99,9 +95,8 @@ fn host_tail_calls() {
             )
         )
     "#;
-    let wasm = wat2wasm(wat);
     let engine = Engine::default();
-    let module = Module::new(&engine, &wasm).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let mut store = Store::new(&engine, 5_i32);
     let mut linker = Linker::new(&engine);
     linker.func_wrap("host", "sum_with_data", |caller: Caller<i32>, a: i32| {
