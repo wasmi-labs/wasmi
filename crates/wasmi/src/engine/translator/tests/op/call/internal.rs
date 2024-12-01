@@ -12,7 +12,7 @@ fn no_params() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::Return])
         .expect_func_instrs([
             Instruction::call_internal_0(RegSpan::new(Reg::from(0)), EngineFunc::from_u32(0)),
@@ -34,7 +34,7 @@ fn one_param_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg(Reg::from(0))])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(1)), EngineFunc::from_u32(0)),
@@ -57,7 +57,7 @@ fn one_param_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg(0)])
         .expect_func(
             ExpectedFunc::new([
@@ -84,7 +84,7 @@ fn two_params_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg2_ext(0, 1)])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(2)), EngineFunc::from_u32(0)),
@@ -108,7 +108,7 @@ fn two_params_reg_lhs() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg2_ext(0, 1)])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(2)), EngineFunc::from_u32(0)),
@@ -132,7 +132,7 @@ fn two_params_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg2_ext(0, 1)])
         .expect_func(
             ExpectedFunc::new([
@@ -160,7 +160,7 @@ fn three_params_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg3_ext(0, 1, 2)])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(3)), EngineFunc::from_u32(0)),
@@ -185,7 +185,7 @@ fn three_params_reg_lhs() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg3_ext(0, 1, 2)])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(3)), EngineFunc::from_u32(0)),
@@ -210,7 +210,7 @@ fn three_params_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg3_ext(0, 1, 2)])
         .expect_func(
             ExpectedFunc::new([
@@ -250,7 +250,7 @@ fn params7_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 7))])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(7)), EngineFunc::from_u32(0)),
@@ -289,7 +289,7 @@ fn params7_reg_lhs() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 7))])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(7)), EngineFunc::from_u32(0)),
@@ -328,7 +328,7 @@ fn params7_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 7))])
         .expect_func(
             ExpectedFunc::new([
@@ -372,7 +372,7 @@ fn params8_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 8))])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(8)), EngineFunc::from_u32(0)),
@@ -413,7 +413,7 @@ fn params8_reg_lhs() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 8))])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(8)), EngineFunc::from_u32(0)),
@@ -454,7 +454,7 @@ fn params8_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 8))])
         .expect_func(
             ExpectedFunc::new([
@@ -500,7 +500,7 @@ fn params9_reg() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 9))])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(9)), EngineFunc::from_u32(0)),
@@ -543,7 +543,7 @@ fn params9_reg_lhs() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 9))])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(9)), EngineFunc::from_u32(0)),
@@ -586,7 +586,7 @@ fn params9_imm() {
             )
         )
     "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 9))])
         .expect_func(
             ExpectedFunc::new([

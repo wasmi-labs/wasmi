@@ -14,7 +14,7 @@ fn copy() {
                 (memory.copy $mem0 $mem1)
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::memory_copy(Reg::from(0), Reg::from(1), Reg::from(2)),
             Instruction::memory_index(0),
@@ -38,7 +38,7 @@ fn testcase_copy_exact(len: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
 }
 
 fn test_copy_exact16(len: u32) {
@@ -96,7 +96,7 @@ fn testcase_copy_from(src: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
 }
 
 fn test_copy_from16(src: u32) {
@@ -152,7 +152,7 @@ fn testcase_copy_to(dst: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
 }
 
 fn test_copy_to16(dst: u32) {
@@ -208,7 +208,7 @@ fn testcase_copy_from_to(dst: u32, src: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
 }
 
 fn test_copy_from_to16(dst: u32, src: u32) {
@@ -279,7 +279,7 @@ fn testcase_copy_to_exact(dst: u32, len: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
 }
 
 fn test_copy_to_exact16(dst: u32, len: u32) {
@@ -350,7 +350,7 @@ fn testcase_copy_from_exact(src: u32, len: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
 }
 
 fn test_copy_from_exact16(src: u32, len: u32) {
@@ -421,7 +421,7 @@ fn testcase_copy_from_to_exact(dst: u32, src: u32, len: u32) -> TranslationTest 
             )
         )",
     );
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
 }
 
 fn test_copy_from_to_exact16(dst: u32, src: u32, len: u32) {

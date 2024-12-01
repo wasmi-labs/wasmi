@@ -63,7 +63,7 @@ where
     T: IntoIterator<Item = Instruction>,
     <T as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    let mut testcase = TranslationTest::from_wat(wasm);
+    let mut testcase = TranslationTest::new(wasm);
     for instrs in expected {
         testcase.expect_func_instrs(instrs);
     }
@@ -227,7 +227,7 @@ where
         )
     "#,
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn testcase_binary_imm_reg<T>(wasm_op: WasmOp, value: T) -> TranslationTest
@@ -249,7 +249,7 @@ where
         )
     "#,
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 /// Variant of [`test_binary_reg_imm16`] where the `rhs` operand is an immediate value.
@@ -387,7 +387,7 @@ where
         )
     "#,
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_binary_consteval<T, E>(wasm_op: WasmOp, lhs: T, rhs: T, expected: E)

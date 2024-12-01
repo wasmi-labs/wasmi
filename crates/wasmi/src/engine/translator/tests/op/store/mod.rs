@@ -43,7 +43,7 @@ fn test_store_for(
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr(Reg::from(0), Memory::from(0)),
             Instruction::register_and_imm32(Reg::from(1), offset),
@@ -76,7 +76,7 @@ fn test_store_offset16_for(
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr(Reg::from(0), offset, Reg::from(1)),
             Instruction::Return,
@@ -116,7 +116,7 @@ fn test_store_offset16_imm_for<T>(
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 make_instr(Reg::from(0), offset, Reg::from(-1)),
@@ -163,7 +163,7 @@ fn test_store_offset16_imm16_for<T>(
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([make_instr(Reg::from(0), offset, value), Instruction::Return])
         .run();
 }
@@ -206,7 +206,7 @@ fn test_store_wrap_offset16_imm_for<Src, Wrapped, Field>(
     "#
     );
     let value = Field::try_from(value.wrap()).ok().unwrap();
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([make_instr(Reg::from(0), offset, value), Instruction::Return])
         .run();
 }
@@ -255,7 +255,7 @@ fn test_store_wrap_imm_for<Src, Wrapped, Field>(
     "#
     );
     let value = Field::try_from(value.wrap()).ok().unwrap();
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr(Reg::from(0), Memory::from(0)),
             Instruction::imm16_and_imm32(value, offset),
@@ -306,7 +306,7 @@ fn test_store_imm_for<T>(
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new([
                 make_instr(Reg::from(0), Memory::from(0)),
@@ -360,7 +360,7 @@ fn test_store_imm16_for<T>(
     "#
     );
     let value = value.try_into().ok().unwrap();
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr(Reg::from(0), Memory::from(0)),
             Instruction::imm16_and_imm32(value, offset),
@@ -404,7 +404,7 @@ fn test_store_at_for(
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([make_instr(Reg::from(0), address), Instruction::Return])
         .run();
 }
@@ -440,7 +440,7 @@ fn test_store_at_overflow_for(wasm_op: WasmOp, mem_idx: u32, ptr: u32, offset: u
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }
@@ -480,7 +480,7 @@ fn test_store_at_imm_for<T>(
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new([make_instr(Reg::from(-1), address), Instruction::Return])
                 .consts([value]),
@@ -543,9 +543,7 @@ fn test_store_wrap_at_imm_for<Src, Wrapped, Field>(
         instrs.push(Instruction::memory_index(mem_idx));
     }
     instrs.push(Instruction::Return);
-    TranslationTest::from_wat(&wasm)
-        .expect_func_instrs(instrs)
-        .run();
+    TranslationTest::new(&wasm).expect_func_instrs(instrs).run();
 }
 
 fn test_store_wrap_at_imm<Src, Wrapped, Field>(
@@ -602,7 +600,7 @@ where
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }

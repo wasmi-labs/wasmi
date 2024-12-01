@@ -22,11 +22,6 @@ fn test_setup(limits: StoreLimits) -> (Store<StoreLimits>, Linker<StoreLimits>) 
     (store, linker)
 }
 
-/// Converts the `wat` string source into `wasm` encoded byte.
-fn wat2wasm(wat: &str) -> Vec<u8> {
-    wat::parse_str(wat).unwrap()
-}
-
 /// Compiles the `wasm` encoded bytes into a [`Module`].
 ///
 /// # Panics
@@ -46,7 +41,7 @@ struct Test {
 
 impl Test {
     fn new(mem_pages: i32, table_elts: i32, limits: StoreLimits) -> Result<Self, Error> {
-        let wasm = wat2wasm(&format!(
+        let wasm = format!(
             r#"
         (module
             (memory {})
@@ -58,9 +53,9 @@ impl Test {
         )
         "#,
             mem_pages, table_elts
-        ));
+        );
         let (mut store, linker) = test_setup(limits);
-        let module = create_module(&store, &wasm)?;
+        let module = create_module(&store, wasm.as_bytes())?;
         let instance = linker.instantiate(&mut store, &module)?.start(&mut store)?;
         let memory_grow = instance.get_func(&store, "memory_grow").unwrap();
         let memory_size = instance.get_func(&store, "memory_size").unwrap();

@@ -15,6 +15,9 @@
 
 use super::*;
 
+mod i32_eqz;
+mod i64_eqz;
+
 mod f32_eq;
 mod f32_ne;
 mod f64_eq;

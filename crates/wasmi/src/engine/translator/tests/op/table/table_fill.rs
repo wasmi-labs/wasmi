@@ -15,7 +15,7 @@ fn test_fill(ty: ValType) {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             Instruction::table_fill(Reg::from(0), Reg::from(2), Reg::from(1)),
             Instruction::table_index(0),
@@ -45,7 +45,7 @@ fn testcase_fill_exact(ty: ValType, len: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_fill_exact16(ty: ValType, len: u32) {
@@ -109,7 +109,7 @@ fn testcase_fill_at(ty: ValType, dst: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_fill_at16(ty: ValType, dst: u32) {
@@ -171,7 +171,7 @@ fn testcase_fill_at_exact(ty: ValType, dst: u32, len: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_fill_at_exact16(ty: ValType, dst: u32, len: u32) {
@@ -253,7 +253,7 @@ fn testcase_fill_at_exact_imm(ty: ValType, dst: u32, len: u32) -> TranslationTes
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_fill_at_exact_imm(ty: ValType, dst: u32, len: u32) {

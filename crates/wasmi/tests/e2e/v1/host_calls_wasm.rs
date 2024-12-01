@@ -23,8 +23,7 @@ fn host_calls_wasm() {
         wasm_fn.call(&mut caller, input + input).unwrap()
     });
     linker.define("env", "host_fn", host_fn).unwrap();
-    let wasm = wat::parse_str(
-        r#"
+    let wasm = r#"
         (module
             (import "env" "host_fn" (func $host_fn (param i32) (result i32)))
             (func (export "wasm_fn") (param i32) (result i32)
@@ -37,10 +36,8 @@ fn host_calls_wasm() {
                 )
             )
         )
-        "#,
-    )
-    .unwrap();
-    let module = Module::new(store.engine(), &wasm[..]).unwrap();
+        "#;
+    let module = Module::new(store.engine(), wasm).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()

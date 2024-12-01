@@ -11,7 +11,7 @@ fn const_prop() {
             )
         )
     ";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_imm32(1_i32)])
         .run()
 }

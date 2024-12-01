@@ -2,7 +2,7 @@
 
 ## 2024-11-27 - Wasmi Security Audit for v0.36+
 
-In the last months Wasmi v0.36.0 and later versions have been audited by 
+Wasmi v0.36 and partially 0.37-0.38 have been audited by 
 [Runtime Verification Inc.](https://runtimeverification.com/) contracted by
 the [Stellar Development Foundation](https://stellar.org/foundation).
 

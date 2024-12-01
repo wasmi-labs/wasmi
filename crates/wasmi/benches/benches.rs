@@ -349,7 +349,7 @@ fn bench_translate_case_best(c: &mut Criterion) {
         });
         b.iter_with_large_drop(|| {
             let engine = Engine::default();
-            let _ = Module::new(&engine, &wasm[..]).unwrap();
+            let _ = Module::new(&engine, wasm).unwrap();
         })
     });
 }
@@ -405,7 +405,7 @@ fn bench_translate_case_worst_stackbomb_small(c: &mut Criterion) {
         });
         b.iter_with_large_drop(|| {
             let engine = Engine::default();
-            let _ = Module::new(&engine, &wasm[..]).unwrap();
+            let _ = Module::new(&engine, wasm).unwrap();
         })
     });
 }
@@ -435,7 +435,7 @@ fn bench_translate_case_worst_stackbomb_big(c: &mut Criterion) {
         });
         b.iter_with_large_drop(|| {
             let engine = Engine::default();
-            let _ = Module::new(&engine, &wasm[..]).unwrap();
+            let _ = Module::new(&engine, wasm).unwrap();
         })
     });
 }
@@ -1169,9 +1169,9 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     }
 
     let mut g = c.benchmark_group("execute/call/host");
-    let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
+    let wasm = include_bytes!("wat/host_calls.wat");
     let engine = Engine::default();
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wasm).unwrap();
     let mut store = Store::new(&engine, ());
     let host0 = Func::wrap(&mut store, || ());
     let host1 = Func::wrap(&mut store, |a: i64| a);
