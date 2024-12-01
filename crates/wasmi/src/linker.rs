@@ -1048,7 +1048,7 @@ mod tests {
                 b: b_init,
             },
         );
-        let wat = r#"
+        let wasm = r#"
                 (module
                     (import "host" "get_a" (func $host_get_a (result i32)))
                     (import "host" "set_a" (func $host_set_a (param i32)))
@@ -1070,7 +1070,6 @@ mod tests {
                     )
                 )
             "#;
-        let wasm = wat::parse_str(wat).unwrap();
         let module = Module::new(&engine, wasm).unwrap();
         let instance = linker
             .instantiate(&mut store, &module)
@@ -1127,8 +1126,7 @@ mod tests {
     #[test]
     fn linker_builder_uses() {
         use crate::{Engine, Linker, Module, Store};
-        let wasm = wat::parse_str(
-            r#"
+        let wasm = r#"
             (module
                 (import "host" "func.0" (func $host_func.0))
                 (import "host" "func.1" (func $host_func.1))
@@ -1136,9 +1134,7 @@ mod tests {
                     (call $host_func.0)
                     (call $host_func.1)
                 )
-            )"#,
-        )
-        .unwrap();
+            )"#;
         let engine = Engine::default();
         let mut builder = <Linker<()>>::build();
         builder
@@ -1156,8 +1152,7 @@ mod tests {
     #[test]
     fn linker_builder_and_linker_uses() {
         use crate::{Engine, Linker, Module, Store};
-        let wasm = wat::parse_str(
-            r#"
+        let wasm = r#"
             (module
                 (import "host" "func.0" (func $host_func.0))
                 (import "host" "func.1" (func $host_func.1))
@@ -1165,9 +1160,7 @@ mod tests {
                     (call $host_func.0)
                     (call $host_func.1)
                 )
-            )"#,
-        )
-        .unwrap();
+            )"#;
         let engine = Engine::default();
         let mut builder = <Linker<()>>::build();
         builder
@@ -1203,8 +1196,7 @@ mod tests {
     #[test]
     fn populate_via_imports() {
         use crate::{Engine, Func, Linker, Memory, MemoryType, Module, Store};
-        let wasm = wat::parse_str(
-            r#"
+        let wasm = r#"
             (module
                 (import "host" "hello" (func $host_hello (param i32) (result i32)))
                 (import "env" "memory" (memory $mem 0 4096))
@@ -1213,9 +1205,7 @@ mod tests {
                     (i32.const 2)
                     i32.add
                 )
-            )"#,
-        )
-        .unwrap();
+            )"#;
         let engine = Engine::default();
         let mut linker = <Linker<()>>::new(&engine);
         let mut store = Store::new(&engine, ());

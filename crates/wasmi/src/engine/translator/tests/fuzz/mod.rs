@@ -255,8 +255,7 @@ fn fuzz_regression_13_codegen() {
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_13_execute() {
     use crate::{Engine, Linker, Store};
-    let wat = include_str!("wat/fuzz_13.wat");
-    let wasm = wat::parse_str(wat).unwrap();
+    let wasm = include_str!("wat/fuzz_13.wat");
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = Linker::new(&engine);
@@ -320,8 +319,7 @@ fn fuzz_regression_15_01_execute() {
     // Note: we can remove this test case once the bug is fixed
     //       since this is a codegen bug and not an executor bug.
     use crate::{Engine, Linker, Store};
-    let wat = include_str!("wat/fuzz_15_01.wat");
-    let wasm = wat::parse_str(wat).unwrap();
+    let wasm: &str = include_str!("wat/fuzz_15_01.wat");
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = Linker::new(&engine);
@@ -458,8 +456,7 @@ fn audit_0_codegen() {
 #[cfg_attr(miri, ignore)]
 fn audit_0_execution() {
     use crate::{Engine, Instance, Store};
-    let wat = include_str!("wat/audit_0.wat");
-    let wasm = wat::parse_str(wat).unwrap();
+    let wasm = include_str!("wat/audit_0.wat");
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let module = Module::new(&engine, wasm).unwrap();
@@ -494,8 +491,7 @@ fn audit_1_codegen() {
 #[cfg_attr(miri, ignore)]
 fn audit_1_execution() {
     use crate::{Engine, Instance, Store};
-    let wat = include_str!("wat/audit_1.wat");
-    let wasm = wat::parse_str(wat).unwrap();
+    let wasm = include_str!("wat/audit_1.wat");
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let module = Module::new(&engine, wasm).unwrap();
@@ -528,8 +524,7 @@ fn audit_2_codegen() {
 #[cfg_attr(miri, ignore)]
 fn audit_2_execution() {
     use crate::{Engine, Instance, Store};
-    let wat = include_str!("wat/audit_2.wat");
-    let wasm = wat::parse_str(wat).unwrap();
+    let wasm = include_str!("wat/audit_2.wat");
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let module = Module::new(&engine, wasm).unwrap();

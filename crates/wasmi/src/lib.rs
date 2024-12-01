@@ -22,7 +22,7 @@
 //!     // First step is to create the Wasm execution engine with some config.
 //!     // In this example we are using the default configuration.
 //!     let engine = Engine::default();
-//!     let wat = r#"
+//!     let wasm = r#"
 //!         (module
 //!             (import "host" "hello" (func $host_hello (param i32)))
 //!             (func (export "hello")
@@ -30,10 +30,7 @@
 //!             )
 //!         )
 //!     "#;
-//!     // Wasmi does not yet support parsing `.wat` so we have to convert
-//!     // out `.wat` into `.wasm` before we compile and validate it.
-//!     let wasm = wat::parse_str(&wat)?;
-//!     let module = Module::new(&engine, &mut &wasm[..])?;
+//!     let module = Module::new(&engine, wasm)?;
 //!
 //!     // All Wasm objects operate within the context of a `Store`.
 //!     // Each `Store` has a type parameter to store host-specific data,
