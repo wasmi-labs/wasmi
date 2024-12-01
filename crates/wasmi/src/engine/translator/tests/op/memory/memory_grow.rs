@@ -12,7 +12,7 @@ fn reg() {
                 (memory.grow $m)
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::memory_grow(Reg::from(1), Reg::from(0)),
             Instruction::memory_index(0),
@@ -33,7 +33,7 @@ fn test_imm16(delta: u32) {
             )
         )",
     );
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::memory_grow_by(Reg::from(0), delta),
             Instruction::memory_index(0),
@@ -65,7 +65,7 @@ fn imm_zero() {
                 (memory.grow $m)
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::memory_size(Reg::from(0), Memory::from(0)),
             Instruction::return_reg(Reg::from(0)),

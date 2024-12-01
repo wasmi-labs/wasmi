@@ -16,7 +16,7 @@ fn test_init(ty: ValType) {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             Instruction::table_init(Reg::from(0), Reg::from(1), Reg::from(2)),
             Instruction::table_index(0),
@@ -48,7 +48,7 @@ fn testcase_init_exact(ty: ValType, len: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_init_exact16(ty: ValType, len: u32) {
@@ -115,7 +115,7 @@ fn testcase_init_from(ty: ValType, src: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_init_from16(ty: ValType, src: u32) {
@@ -180,7 +180,7 @@ fn testcase_init_to(ty: ValType, dst: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_init_to16(ty: ValType, dst: u32) {
@@ -245,7 +245,7 @@ fn testcase_init_from_to(ty: ValType, dst: u32, src: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_init_from_to16(ty: ValType, dst: u32, src: u32) {
@@ -325,7 +325,7 @@ fn testcase_init_to_exact(ty: ValType, dst: u32, len: u32) -> TranslationTest {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_init_to_exact16(ty: ValType, dst: u32, len: u32) {
@@ -405,7 +405,7 @@ fn testcase_init_from_exact(ty: ValType, src: u32, len: u32) -> TranslationTest 
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_init_from_exact16(ty: ValType, src: u32, len: u32) {
@@ -485,7 +485,7 @@ fn testcase_init_from_to_exact(ty: ValType, dst: u32, src: u32, len: u32) -> Tra
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
 }
 
 fn test_init_from_to_exact16(ty: ValType, dst: u32, src: u32, len: u32) {

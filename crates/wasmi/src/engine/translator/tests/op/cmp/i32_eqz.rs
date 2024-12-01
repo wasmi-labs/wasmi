@@ -15,7 +15,7 @@ fn reg() {
         )
         "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             Instruction::i32_eq_imm16(Reg::from(1), Reg::from(0), 0),
             Instruction::return_reg(1),
@@ -34,7 +34,7 @@ fn imm_with(value: i32) {
         )
         "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([Instruction::return_imm32(u32::from(value == 0))])
         .run();
 }

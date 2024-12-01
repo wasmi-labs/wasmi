@@ -162,11 +162,13 @@ impl ExpectedFunc {
 impl TranslationTest {
     /// Creates a new [`TranslationTest`] for the given Webassembly `bytes`.
     ///
+    /// The `bytes` can either be Wasm binary (`.wasm`) or Wasm text format (`.wat`).
+    ///
     /// # Panics
     ///
     /// If the WebAssembly `bytes` is not valid WebAssembly.
     #[must_use]
-    fn new(bytes: impl AsRef<[u8]>) -> Self {
+    pub fn new(bytes: impl AsRef<[u8]>) -> Self {
         let config = {
             let mut cfg = Config::default();
             cfg.wasm_tail_call(true);
@@ -178,16 +180,6 @@ impl TranslationTest {
             expected_funcs: Vec::new(),
             has_run: AtomicBool::from(false),
         }
-    }
-
-    /// Creates a new [`TranslationTest`] for the given Webassembly `source`.
-    ///
-    /// # Panics
-    ///
-    /// If the WebAssembly `source` is not valid WebAssembly Text Format (WAT).
-    #[must_use]
-    pub fn from_wat(wasm: &str) -> Self {
-        Self::new(wasm)
     }
 
     /// Returns the [`Config`] used for the test case.

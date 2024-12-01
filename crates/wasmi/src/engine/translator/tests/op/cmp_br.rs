@@ -27,7 +27,7 @@ fn loop_backward() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(0)),
                 Instruction::Return,
@@ -150,7 +150,7 @@ fn loop_backward_imm_rhs() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expect_instr(
                     Reg::from(0),
@@ -247,7 +247,7 @@ fn loop_backward_imm_lhs() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expect_instr(
                     Reg::from(0),
@@ -335,7 +335,7 @@ fn block_forward() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
@@ -453,7 +453,7 @@ fn block_forward_nop_copy() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([
                 Instruction::global_get(Reg::from(2), Global::from(0)),
                 expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(2)),
@@ -572,7 +572,7 @@ fn if_forward_multi_value() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(3)),
                 Instruction::copy(Reg::from(2), Reg::from(0)),
@@ -660,7 +660,7 @@ fn if_forward() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
@@ -744,7 +744,7 @@ fn block_i32_eqz_fuse() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
@@ -774,7 +774,7 @@ fn if_i32_eqz_fuse() {
                 )
             )",
         );
-        TranslationTest::from_wat(&wasm)
+        TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
@@ -801,7 +801,7 @@ fn block_i64_eqz_fuse() {
                 )
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_i64_eq_imm16(Reg::from(0), 0, BranchOffset16::from(1)),
             Instruction::Return,
@@ -821,7 +821,7 @@ fn if_i64_eqz_fuse() {
                 )
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::branch_i64_ne_imm16(Reg::from(0), 0, BranchOffset16::from(1)),
             Instruction::Return,
@@ -852,7 +852,7 @@ fn cmp_br_fallback() {
     let param0: ComparatorAndOffset =
         ComparatorAndOffset::new(Comparator::I32Ne, BranchOffset::from(offset));
     let param1 = ComparatorAndOffset::new(Comparator::I32Ne, BranchOffset::from(-offset));
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func(ExpectedFunc::new(expected_instrs).consts([
             UntypedVal::from(0_i64),  // reg(-1)
             UntypedVal::from(param1), // reg(-2)
