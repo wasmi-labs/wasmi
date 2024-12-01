@@ -1684,7 +1684,6 @@ dependencies = [
  "clap",
  "wasmi 0.40.0",
  "wasmi_wasi",
- "wat",
 ]
 
 [[package]]

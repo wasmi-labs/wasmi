@@ -1,34 +1,10 @@
 use crate::display::DisplayValueType;
 use anyhow::{anyhow, bail, Error};
-use std::{ffi::OsStr, fs, path::Path};
 use wasmi::{
     core::{ValType, F32, F64},
     FuncType,
     Val,
 };
-
-/// Converts the given `.wat` into `.wasm`.
-fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
-    wat::parse_str(wat)
-}
-
-/// Returns the contents of the given `.wasm` or `.wat` file.
-///
-/// # Errors
-///
-/// If the Wasm file `wasm_file` does not exist.
-/// If the Wasm file `wasm_file` is not a valid `.wasm` or `.wat` format.
-pub fn read_wasm_or_wat(wasm_file: &Path) -> Result<Vec<u8>, Error> {
-    let mut wasm_bytes =
-        fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file:?}"))?;
-    if wasm_file.extension().and_then(OsStr::to_str) == Some("wat") {
-        let wat = String::from_utf8(wasm_bytes)
-            .map_err(|error| anyhow!("failed to read UTF-8 file {wasm_file:?}: {error}"))?;
-        wasm_bytes = wat2wasm(&wat)
-            .map_err(|error| anyhow!("failed to parse .wat file {wasm_file:?}: {error}"))?;
-    }
-    Ok(wasm_bytes)
-}
 
 /// Returns a [`Val`] buffer capable of holding the return values.
 ///
