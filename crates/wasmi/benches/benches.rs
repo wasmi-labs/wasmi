@@ -1169,7 +1169,7 @@ fn bench_execute_host_calls(c: &mut Criterion) {
     }
 
     let mut g = c.benchmark_group("execute/call/host");
-    let wasm = wat2wasm(include_bytes!("wat/host_calls.wat"));
+    let wasm = include_bytes!("wat/host_calls.wat");
     let engine = Engine::default();
     let module = Module::new(&engine, &wasm[..]).unwrap();
     let mut store = Store::new(&engine, ());
