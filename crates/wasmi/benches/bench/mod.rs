@@ -84,8 +84,7 @@ pub fn wat2wasm(bytes: &[u8]) -> Vec<u8> {
 /// # Panics
 ///
 /// If the benchmark Wasm file could not be opened, read or parsed.
-pub fn load_instance_from_wat(wat_bytes: &[u8]) -> (wasmi::Store<()>, wasmi::Instance) {
-    let wasm = wat2wasm(wat_bytes);
+pub fn load_instance_from_wat(wasm: &[u8]) -> (wasmi::Store<()>, wasmi::Instance) {
     let engine = wasmi::Engine::new(&bench_config());
     let module = wasmi::Module::new(&engine, &wasm[..]).unwrap();
     let linker = <wasmi::Linker<()>>::new(&engine);
