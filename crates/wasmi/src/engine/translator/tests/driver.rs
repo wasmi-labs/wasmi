@@ -186,11 +186,7 @@ impl TranslationTest {
     ///
     /// If the WebAssembly `source` is not valid WebAssembly Text Format (WAT).
     #[must_use]
-    pub fn from_wat(source: &str) -> Self {
-        let wasm = match wat::parse_str(source) {
-            Ok(wasm) => wasm,
-            Err(error) => panic!("failed to convert from `.wat` to `.wasm`: {error}"),
-        };
+    pub fn from_wat(wasm: &str) -> Self {
         Self::new(wasm)
     }
 
