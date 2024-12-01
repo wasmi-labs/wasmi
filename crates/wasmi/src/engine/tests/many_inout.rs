@@ -1,18 +1,11 @@
 use crate::{Engine, Func, Linker, Module, Store, Val};
-use std::vec::Vec;
-
-/// Converts the given `.wat` into `.wasm`.
-fn wat2wasm(wat: &str) -> Vec<u8> {
-    wat::parse_str(wat).unwrap()
-}
 
 /// Common routine to setup the tests.
 fn setup_test(wat: &str) -> (Store<()>, Func) {
-    let wasm = wat2wasm(wat);
     let engine = Engine::default();
     let mut store = <Store<()>>::new(&engine, ());
     let linker = <Linker<()>>::new(&engine);
-    let module = Module::new(&engine, &wasm[..]).unwrap();
+    let module = Module::new(&engine, wat.as_bytes()).unwrap();
     let instance = linker
         .instantiate(&mut store, &module)
         .unwrap()
