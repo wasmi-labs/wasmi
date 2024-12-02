@@ -48,6 +48,9 @@ macro_rules! forward_return {
     }};
 }
 
+/// Tells if execution loop shall continue or break (return) to the execution's caller.
+type ControlFlow = ::core::ops::ControlFlow<(), ()>;
+
 /// Executes compiled function instructions until execution returns from the root function.
 ///
 /// # Errors

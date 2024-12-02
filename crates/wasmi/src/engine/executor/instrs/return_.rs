@@ -1,4 +1,4 @@
-use super::{Executor, InstructionPtr};
+use super::{Executor, InstructionPtr, ControlFlow};
 use crate::{
     core::UntypedVal,
     engine::{executor::stack::FrameRegisters, utils::unreachable_unchecked},
@@ -6,9 +6,6 @@ use crate::{
     store::StoreInner,
 };
 use core::slice;
-
-/// Tells if execution loop shall continue or break (return) to the execution's caller.
-type ControlFlow = ::core::ops::ControlFlow<(), ()>;
 
 impl Executor<'_> {
     /// Returns the execution to the caller.
