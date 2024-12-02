@@ -125,13 +125,13 @@ fn host_tail_calls_1() {
     let wasm = r#"
         (module
             (import "host" "sum_with_data" (func $sum_with_data (param i32) (result i32)))
-            (func $wasm0 (param i32) (result i32)
+            (func $f (param i32) (result i32)
                 (local.get 0)
                 (return_call $sum_with_data)
             )
             (func (export "test") (param i32) (result i32)
                 (local.get 0)
-                (call $0)
+                (call $f)
             )
         )
     "#;
