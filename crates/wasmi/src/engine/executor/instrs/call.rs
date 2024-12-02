@@ -1,4 +1,4 @@
-use super::{Executor, InstructionPtr};
+use super::{ControlFlow, Executor, InstructionPtr};
 use crate::{
     core::TrapCode,
     engine::{
@@ -411,7 +411,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut Store<T>,
         func: index::Func,
-    ) -> Result<(), Error> {
+    ) -> Result<ControlFlow, Error> {
         self.execute_return_call_imported_impl::<marker::ReturnCall0, T>(store, func)
     }
 
@@ -420,7 +420,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut Store<T>,
         func: index::Func,
-    ) -> Result<(), Error> {
+    ) -> Result<ControlFlow, Error> {
         self.execute_return_call_imported_impl::<marker::ReturnCall, T>(store, func)
     }
 
@@ -429,7 +429,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut Store<T>,
         func: index::Func,
-    ) -> Result<(), Error> {
+    ) -> Result<ControlFlow, Error> {
         let func = self.get_func(func);
         let results = self.caller_results();
         self.execute_call_imported_impl::<C, T>(store, results, &func)
@@ -443,7 +443,8 @@ impl Executor<'_> {
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
-        self.execute_call_imported_impl::<marker::NestedCall0, T>(store, results, &func)
+        self.execute_call_imported_impl::<marker::NestedCall0, T>(store, results, &func)?;
+        Ok(())
     }
 
     /// Executes an [`Instruction::CallImported`].
@@ -454,7 +455,8 @@ impl Executor<'_> {
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
-        self.execute_call_imported_impl::<marker::NestedCall, T>(store, results, &func)
+        self.execute_call_imported_impl::<marker::NestedCall, T>(store, results, &func)?;
+        Ok(())
     }
 
     /// Executes an imported or indirect (tail) call instruction.
@@ -463,7 +465,7 @@ impl Executor<'_> {
         store: &mut Store<T>,
         results: RegSpan,
         func: &Func,
-    ) -> Result<(), Error> {
+    ) -> Result<ControlFlow, Error> {
         match store.inner.resolve_func(func) {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
@@ -475,16 +477,16 @@ impl Executor<'_> {
                     Some(instance),
                 )?;
                 self.cache.update(&mut store.inner, &instance);
-                Ok(())
+                Ok(ControlFlow::Continue(()))
             }
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
 
                 store.invoke_call_hook(CallHook::CallingHost)?;
-                self.execute_host_func::<C, T>(store, results, func, host_func)?;
+                let control = self.execute_host_func::<C, T>(store, results, func, host_func)?;
                 store.invoke_call_hook(CallHook::ReturningFromHost)?;
 
-                Ok(())
+                Ok(control)
             }
         }
     }
@@ -505,7 +507,7 @@ impl Executor<'_> {
         results: RegSpan,
         func: &Func,
         host_func: HostFuncEntity,
-    ) -> Result<(), Error> {
+    ) -> Result<ControlFlow, Error> {
         let len_params = host_func.len_params();
         let len_results = host_func.len_results();
         let max_inout = usize::from(len_params.max(len_results));
@@ -547,7 +549,7 @@ impl Executor<'_> {
             // provide us with valid result registers.
             unsafe { self.sp.set(result, *value) };
         }
-        Ok(())
+        Ok(ControlFlow::Continue(())) // TODO: proper return value
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
@@ -565,7 +567,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut Store<T>,
         func_type: index::FuncType,
-    ) -> Result<(), Error> {
+    ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall0, T>(
@@ -578,7 +580,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut Store<T>,
         func_type: index::FuncType,
-    ) -> Result<(), Error> {
+    ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
         let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall0, T>(
@@ -591,7 +593,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut Store<T>,
         func_type: index::FuncType,
-    ) -> Result<(), Error> {
+    ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params();
         let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall, T>(
@@ -604,7 +606,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut Store<T>,
         func_type: index::FuncType,
-    ) -> Result<(), Error> {
+    ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
         let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall, T>(
@@ -622,7 +624,8 @@ impl Executor<'_> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl::<marker::NestedCall0, T>(
             store, results, func_type, index, table,
-        )
+        )?;
+        Ok(())
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
@@ -635,7 +638,8 @@ impl Executor<'_> {
         let (index, table) = self.pull_call_indirect_params_imm16();
         self.execute_call_indirect_impl::<marker::NestedCall0, T>(
             store, results, func_type, index, table,
-        )
+        )?;
+        Ok(())
     }
 
     /// Executes an [`Instruction::CallIndirect`].
@@ -648,7 +652,8 @@ impl Executor<'_> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl::<marker::NestedCall, T>(
             store, results, func_type, index, table,
-        )
+        )?;
+        Ok(())
     }
 
     /// Executes an [`Instruction::CallIndirectImm16`].
@@ -661,7 +666,8 @@ impl Executor<'_> {
         let (index, table) = self.pull_call_indirect_params_imm16();
         self.execute_call_indirect_impl::<marker::NestedCall, T>(
             store, results, func_type, index, table,
-        )
+        )?;
+        Ok(())
     }
 
     /// Executes an [`Instruction::CallIndirect`] and [`Instruction::CallIndirect0`].
@@ -672,7 +678,7 @@ impl Executor<'_> {
         func_type: index::FuncType,
         index: u32,
         table: index::Table,
-    ) -> Result<(), Error> {
+    ) -> Result<ControlFlow, Error> {
         let table = self.get_table(table);
         let funcref = store
             .inner
