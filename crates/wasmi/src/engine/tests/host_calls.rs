@@ -99,11 +99,19 @@ fn host_tail_calls() {
     let module = Module::new(&engine, wasm).unwrap();
     let mut store = Store::new(&engine, 5_i32);
     let mut linker = Linker::new(&engine);
-    linker.func_wrap("host", "sum_with_data", |caller: Caller<i32>, a: i32| {
-        caller.data() + a
-    }).unwrap();
-    let instance = linker.instantiate(&mut store, &module).unwrap().start(&mut store).unwrap();
-    let test = instance.get_typed_func::<i32, i32>(&mut store, "test").unwrap();
+    linker
+        .func_wrap("host", "sum_with_data", |caller: Caller<i32>, a: i32| {
+            caller.data() + a
+        })
+        .unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .start(&mut store)
+        .unwrap();
+    let test = instance
+        .get_typed_func::<i32, i32>(&mut store, "test")
+        .unwrap();
 
     assert_eq!(*store.data(), 5);
     assert_eq!(test.call(&mut store, 1).unwrap(), 1 + 5);
