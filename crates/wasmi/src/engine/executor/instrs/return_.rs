@@ -1,4 +1,4 @@
-use super::{Executor, InstructionPtr, ControlFlow};
+use super::{ControlFlow, Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
     engine::{executor::stack::FrameRegisters, utils::unreachable_unchecked},
