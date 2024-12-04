@@ -1,6 +1,6 @@
 //! This submodule tests the unusual use case of calling host functions through the engine from the host side.
 
-use crate::{Caller, Config, Engine, Error, Func, Store};
+use crate::{Caller, Config, Engine, Error, Func, Linker, Module, Store};
 
 /// Setup a new `Store` for testing with initial value of 5.
 fn setup_store() -> Store<i32> {
@@ -82,4 +82,80 @@ fn host_call_from_host_params_4_results_4() {
         reverse_and_add.call(&mut store, (40, 30, 20, 10)).unwrap(),
         (20, 30, 40, 50)
     );
+}
+
+#[test]
+fn host_tail_calls_0() {
+    let wasm = r#"
+        (module
+            (import "host" "sum_with_data" (func $sum_with_data (param i32) (result i32)))
+            (func (export "test") (param i32) (result i32)
+                (local.get 0)
+                (return_call $sum_with_data)
+            )
+        )
+    "#;
+    let engine = Engine::default();
+    let module = Module::new(&engine, wasm).unwrap();
+    let mut store = Store::new(&engine, 5_i32);
+    let mut linker = Linker::new(&engine);
+    linker
+        .func_wrap("host", "sum_with_data", |caller: Caller<i32>, a: i32| {
+            caller.data() + a
+        })
+        .unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .start(&mut store)
+        .unwrap();
+    let test = instance
+        .get_typed_func::<i32, i32>(&mut store, "test")
+        .unwrap();
+
+    assert_eq!(*store.data(), 5);
+    assert_eq!(test.call(&mut store, 1).unwrap(), 1 + 5);
+    *store.data_mut() = 10;
+    assert_eq!(*store.data(), 10);
+    assert_eq!(test.call(&mut store, 5).unwrap(), 5 + 10);
+}
+
+#[test]
+fn host_tail_calls_1() {
+    let wasm = r#"
+        (module
+            (import "host" "sum_with_data" (func $sum_with_data (param i32) (result i32)))
+            (func $f (param i32) (result i32)
+                (local.get 0)
+                (return_call $sum_with_data)
+            )
+            (func (export "test") (param i32) (result i32)
+                (local.get 0)
+                (call $f)
+            )
+        )
+    "#;
+    let engine = Engine::default();
+    let module = Module::new(&engine, wasm).unwrap();
+    let mut store = Store::new(&engine, 5_i32);
+    let mut linker = Linker::new(&engine);
+    linker
+        .func_wrap("host", "sum_with_data", |caller: Caller<i32>, a: i32| {
+            caller.data() + a
+        })
+        .unwrap();
+    let instance = linker
+        .instantiate(&mut store, &module)
+        .unwrap()
+        .start(&mut store)
+        .unwrap();
+    let test = instance
+        .get_typed_func::<i32, i32>(&mut store, "test")
+        .unwrap();
+
+    assert_eq!(*store.data(), 5);
+    assert_eq!(test.call(&mut store, 1).unwrap(), 1 + 5);
+    *store.data_mut() = 10;
+    assert_eq!(*store.data(), 10);
+    assert_eq!(test.call(&mut store, 5).unwrap(), 5 + 10);
 }
