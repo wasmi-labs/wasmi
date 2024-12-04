@@ -514,9 +514,9 @@ impl Executor<'_> {
         let instance = *self.stack.calls.instance_expect();
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
         // [`ValueStack::reserve`] which might invalidate all live [`FrameRegisters`].
-        let caller = match <C as CallContext>::KIND {
-            CallKind::Nested => self.stack.calls.peek().copied(),
-            CallKind::Tail => self.stack.calls.pop().map(|(frame, _instance)| frame),
+        let (caller, popped_instance) = match <C as CallContext>::KIND {
+            CallKind::Nested => self.stack.calls.peek().copied().map(|frame| (frame, None)),
+            CallKind::Tail => self.stack.calls.pop(),
         }
         .expect("need to have a caller on the call stack");
         let buffer = self.stack.values.extend_by(max_inout, |this| {
@@ -578,6 +578,19 @@ impl Executor<'_> {
                     // call frame since we rely on Wasm validation and proper Wasm translation to
                     // provide us with valid result registers.
                     unsafe { regs.set(result, *value) };
+                }
+                self.stack.values.truncate(caller.frame_offset());
+                let new_instance = popped_instance.and_then(|_| self.stack.calls.instance());
+                if let Some(new_instance) = new_instance {
+                    self.cache.update(&mut store.inner, new_instance);
+                }
+                if let Some(caller) = self.stack.calls.peek() {
+                    Self::init_call_frame_impl(
+                        &mut self.stack.values,
+                        &mut self.sp,
+                        &mut self.ip,
+                        caller,
+                    );
                 }
                 Ok(cf)
             }
