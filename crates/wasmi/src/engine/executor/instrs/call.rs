@@ -431,8 +431,7 @@ impl Executor<'_> {
         func: index::Func,
     ) -> Result<ControlFlow, Error> {
         let func = self.get_func(func);
-        let results = self.caller_results();
-        self.execute_call_imported_impl::<C, T>(store, results, &func)
+        self.execute_call_imported_impl::<C, T>(store, None, &func)
     }
 
     /// Executes an [`Instruction::CallImported0`].
@@ -443,7 +442,7 @@ impl Executor<'_> {
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
-        self.execute_call_imported_impl::<marker::NestedCall0, T>(store, results, &func)?;
+        self.execute_call_imported_impl::<marker::NestedCall0, T>(store, Some(results), &func)?;
         Ok(())
     }
 
@@ -455,7 +454,7 @@ impl Executor<'_> {
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
-        self.execute_call_imported_impl::<marker::NestedCall, T>(store, results, &func)?;
+        self.execute_call_imported_impl::<marker::NestedCall, T>(store, Some(results), &func)?;
         Ok(())
     }
 
@@ -463,13 +462,14 @@ impl Executor<'_> {
     fn execute_call_imported_impl<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegSpan,
+        results: Option<RegSpan>,
         func: &Func,
     ) -> Result<ControlFlow, Error> {
         match store.inner.resolve_func(func) {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
                 let func_body = func.func_body();
+                let results = results.unwrap_or_else(|| self.caller_results());
                 self.prepare_compiled_func_call::<C>(
                     &mut store.inner,
                     results,
@@ -504,7 +504,7 @@ impl Executor<'_> {
     fn execute_host_func<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegSpan,
+        results: Option<RegSpan>,
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<ControlFlow, Error> {
@@ -530,6 +530,7 @@ impl Executor<'_> {
         if matches!(<C as CallContext>::KIND, CallKind::Nested) {
             self.update_instr_ptr_at(1);
         }
+        let results = results.unwrap_or_else(|| caller.results());
         self.dispatch_host_func::<T>(store, host_func, &instance)
             .map_err(|error| match self.stack.calls.is_empty() {
                 true => error,
@@ -537,19 +538,50 @@ impl Executor<'_> {
             })?;
         self.cache.update(&mut store.inner, &instance);
         let results = results.iter(len_results);
-        let returned = self.stack.values.drop_return(max_inout);
-        for (result, value) in results.zip(returned) {
-            // # Safety (1)
-            //
-            // We can safely acquire the stack pointer to the caller's and callee's (host)
-            // call frames because we just allocated the host call frame and can be sure that
-            // they are different.
-            // In the following we make sure to not access registers out of bounds of each
-            // call frame since we rely on Wasm validation and proper Wasm translation to
-            // provide us with valid result registers.
-            unsafe { self.sp.set(result, *value) };
+        match <C as CallContext>::KIND {
+            CallKind::Nested => {
+                let returned = self.stack.values.drop_return(max_inout);
+                for (result, value) in results.zip(returned) {
+                    // # Safety (1)
+                    //
+                    // We can safely acquire the stack pointer to the caller's and callee's (host)
+                    // call frames because we just allocated the host call frame and can be sure that
+                    // they are different.
+                    // In the following we make sure to not access registers out of bounds of each
+                    // call frame since we rely on Wasm validation and proper Wasm translation to
+                    // provide us with valid result registers.
+                    unsafe { self.sp.set(result, *value) };
+                }
+                Ok(ControlFlow::Continue(()))
+            }
+            CallKind::Tail => {
+                let (mut regs, cf) = match self.stack.calls.peek() {
+                    Some(frame) => {
+                        // Case: return the caller's caller frame registers.
+                        let sp = unsafe { self.stack.values.stack_ptr_at(frame.base_offset()) };
+                        (sp, ControlFlow::Continue(()))
+                    }
+                    None => {
+                        // Case: call stack is empty -> return the root frame registers.
+                        let sp = self.stack.values.root_stack_ptr();
+                        (sp, ControlFlow::Break(()))
+                    }
+                };
+                let returned = self.stack.values.drop_return(max_inout);
+                for (result, value) in results.zip(returned) {
+                    // # Safety (1)
+                    //
+                    // We can safely acquire the stack pointer to the caller's and callee's (host)
+                    // call frames because we just allocated the host call frame and can be sure that
+                    // they are different.
+                    // In the following we make sure to not access registers out of bounds of each
+                    // call frame since we rely on Wasm validation and proper Wasm translation to
+                    // provide us with valid result registers.
+                    unsafe { regs.set(result, *value) };
+                }
+                Ok(cf)
+            }
         }
-        Ok(ControlFlow::Continue(())) // TODO: proper return value
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
@@ -569,9 +601,8 @@ impl Executor<'_> {
         func_type: index::FuncType,
     ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params();
-        let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall0, T>(
-            store, results, func_type, index, table,
+            store, None, func_type, index, table,
         )
     }
 
@@ -582,9 +613,8 @@ impl Executor<'_> {
         func_type: index::FuncType,
     ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
-        let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall0, T>(
-            store, results, func_type, index, table,
+            store, None, func_type, index, table,
         )
     }
 
@@ -595,9 +625,8 @@ impl Executor<'_> {
         func_type: index::FuncType,
     ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params();
-        let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall, T>(
-            store, results, func_type, index, table,
+            store, None, func_type, index, table,
         )
     }
 
@@ -608,9 +637,8 @@ impl Executor<'_> {
         func_type: index::FuncType,
     ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
-        let results = self.caller_results();
         self.execute_call_indirect_impl::<marker::ReturnCall, T>(
-            store, results, func_type, index, table,
+            store, None, func_type, index, table,
         )
     }
 
@@ -623,7 +651,11 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl::<marker::NestedCall0, T>(
-            store, results, func_type, index, table,
+            store,
+            Some(results),
+            func_type,
+            index,
+            table,
         )?;
         Ok(())
     }
@@ -637,7 +669,11 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
         self.execute_call_indirect_impl::<marker::NestedCall0, T>(
-            store, results, func_type, index, table,
+            store,
+            Some(results),
+            func_type,
+            index,
+            table,
         )?;
         Ok(())
     }
@@ -651,7 +687,11 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
         self.execute_call_indirect_impl::<marker::NestedCall, T>(
-            store, results, func_type, index, table,
+            store,
+            Some(results),
+            func_type,
+            index,
+            table,
         )?;
         Ok(())
     }
@@ -665,7 +705,11 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
         self.execute_call_indirect_impl::<marker::NestedCall, T>(
-            store, results, func_type, index, table,
+            store,
+            Some(results),
+            func_type,
+            index,
+            table,
         )?;
         Ok(())
     }
@@ -674,7 +718,7 @@ impl Executor<'_> {
     fn execute_call_indirect_impl<C: CallContext, T>(
         &mut self,
         store: &mut Store<T>,
-        results: RegSpan,
+        results: Option<RegSpan>,
         func_type: index::FuncType,
         index: u32,
         table: index::Table,
