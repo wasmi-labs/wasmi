@@ -326,7 +326,7 @@ impl Config {
     ///
     /// # Note
     ///
-    /// Enabled by default.
+    /// Disabled by default.
     ///
     /// [`custom-page-sizes`]: https://github.com/WebAssembly/custom-page-sizes
     pub fn wasm_custom_page_sizes(&mut self, enable: bool) -> &mut Self {
