@@ -82,6 +82,12 @@ impl ValueStack {
         }
     }
 
+    /// Returns the function local constant [`UntypedVal`] of the [`Reg`] if any.
+    #[cfg(debug_assertions)]
+    pub fn resolve_const(&self, register: Reg) -> Option<UntypedVal> {
+        self.consts.get(register)
+    }
+
     /// Preserves `local.get` on the [`ProviderStack`] by shifting to the preservation space.
     ///
     /// In case there are `local.get n` with `n == preserve_index` on the [`ProviderStack`]
