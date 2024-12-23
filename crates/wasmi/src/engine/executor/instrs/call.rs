@@ -495,7 +495,7 @@ impl Executor<'_> {
     ///
     /// # Note
     ///
-    /// This uses the value stack to store paramters and results of the host function call.
+    /// This uses the value stack to store parameters and results of the host function call.
     /// Returns an [`ErrorKind::ResumableHost`] variant if the host function returned an error
     /// and there are still call frames on the call stack making it possible to resume the
     /// execution at a later point in time.
