@@ -58,7 +58,7 @@ impl Display for EnforcedLimitsError {
             }
             Self::MinAvgBytesPerFunction { limit, avg } => write!(
                 f,
-                "the Wasm module failed to meet the minumum average bytes per function of {limit}: \
+                "the Wasm module failed to meet the minimum average bytes per function of {limit}: \
                 avg={avg}"
             ),
         }
