@@ -56,7 +56,7 @@ impl Pages {
         lhs.checked_add(rhs).and_then(Self::new)
     }
 
-    /// Substracts the given amount of pages from `self`.
+    /// Subtracts the given amount of pages from `self`.
     ///
     /// Returns `None` if the subtraction underflows or the result is out of bounds.
     pub fn checked_sub<T>(self, rhs: T) -> Option<Self>

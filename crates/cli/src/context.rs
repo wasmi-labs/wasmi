@@ -21,7 +21,7 @@ impl Context {
     /// # Errors
     ///
     /// - If parsing, validating, compiling or instantiating the Wasm module failed.
-    /// - If adding WASI defintions to the linker failed.
+    /// - If adding WASI definitions to the linker failed.
     pub fn new(
         wasm_file: &Path,
         wasi_ctx: WasiCtx,

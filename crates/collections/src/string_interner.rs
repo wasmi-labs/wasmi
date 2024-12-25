@@ -84,7 +84,7 @@ impl Sym {
     }
 }
 
-/// Efficienty interns and deduplicates strings.
+/// Efficiently interns and deduplicates strings.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StringInterner {
     inner: detail::StringInternerImpl,
