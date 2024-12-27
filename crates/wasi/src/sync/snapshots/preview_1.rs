@@ -19,7 +19,7 @@ fn dummy_raw_waker() -> RawWaker {
     RawWaker::new(std::ptr::null::<()>(), vtable)
 }
 
-// Creates a dummy waker which does *nothing*, as the future itsef polls to ready at first poll
+// Creates a dummy waker which does *nothing*, as the future itself polls to ready at first poll
 // A waker is needed to do any polling at all, as it is the primary constituent of the `Context` for polling
 fn run_in_dummy_executor<F: std::future::Future>(f: F) -> Result<F::Output, wasmi::Error> {
     let mut f = Pin::from(Box::new(f));
