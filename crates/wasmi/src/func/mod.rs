@@ -226,7 +226,7 @@ impl<T> HostFuncTrampolineEntity<T> {
         // Preprocess parameters and results buffers so that we can reuse those
         // computations within the closure implementation. We put both parameters
         // and results into a single buffer which we can split to minimize the
-        // amount of allocations per trampoline invokation.
+        // amount of allocations per trampoline invocation.
         let params_iter = ty.params().iter().copied().map(Val::default);
         let results_iter = ty.results().iter().copied().map(Val::default);
         let len_params = ty.params().len();

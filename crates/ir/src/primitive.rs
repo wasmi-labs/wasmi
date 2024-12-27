@@ -363,7 +363,7 @@ pub struct ShiftAmount<T> {
     value: Const16<T>,
 }
 
-/// Integer ypes that can be used as shift amount in shift or rotate instructions.
+/// Integer types that can be used as shift amount in shift or rotate instructions.
 pub trait IntoShiftAmount: Sized {
     /// Converts `self` into a [`ShiftAmount`] if possible.
     fn into_shift_amount(self) -> Option<ShiftAmount<Self>>;
