@@ -62,7 +62,7 @@ impl CMemoryType {
 /// Creates a new [`wasm_memorytype_t`] with the given `limits`.
 ///
 /// Wraps [`MemoryType::new`].
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_memorytype_new(limits: &wasm_limits_t) -> Box<wasm_memorytype_t> {
     let memory_type = MemoryType::new(limits.min, limits.max()).unwrap();
@@ -70,14 +70,14 @@ pub extern "C" fn wasm_memorytype_new(limits: &wasm_limits_t) -> Box<wasm_memory
 }
 
 /// Returns a shared reference to the table limits of the [`wasm_memorytype_t`].
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_memorytype_limits(mt: &wasm_memorytype_t) -> &wasm_limits_t {
     &mt.ty().limits
 }
 
 /// Returns a mutable reference to the element type of [`wasm_memorytype_t`] as [`wasm_externtype_t`].
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_memorytype_as_externtype(
     ty: &mut wasm_memorytype_t,
@@ -86,7 +86,7 @@ pub extern "C" fn wasm_memorytype_as_externtype(
 }
 
 /// Returns a shared reference to the element type of [`wasm_memorytype_t`] as [`wasm_externtype_t`].
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_memorytype_as_externtype_const(
     ty: &wasm_memorytype_t,
