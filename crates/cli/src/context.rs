@@ -1,6 +1,5 @@
-use crate::utils;
 use anyhow::{anyhow, Error};
-use std::path::Path;
+use std::{fs, path::Path};
 use wasmi::{CompilationMode, Config, ExternType, Func, FuncType, Instance, Module, Store};
 use wasmi_wasi::WasiCtx;
 
@@ -22,7 +21,7 @@ impl Context {
     /// # Errors
     ///
     /// - If parsing, validating, compiling or instantiating the Wasm module failed.
-    /// - If adding WASI defintions to the linker failed.
+    /// - If adding WASI definitions to the linker failed.
     pub fn new(
         wasm_file: &Path,
         wasi_ctx: WasiCtx,
@@ -35,8 +34,9 @@ impl Context {
         }
         config.compilation_mode(compilation_mode);
         let engine = wasmi::Engine::new(&config);
-        let wasm_bytes = utils::read_wasm_or_wat(wasm_file)?;
-        let module = wasmi::Module::new(&engine, &wasm_bytes[..]).map_err(|error| {
+        let wasm =
+            fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file:?}"))?;
+        let module = wasmi::Module::new(&engine, wasm).map_err(|error| {
             anyhow!("failed to parse and validate Wasm module {wasm_file:?}: {error}")
         })?;
         let mut store = wasmi::Store::new(&engine, wasi_ctx);

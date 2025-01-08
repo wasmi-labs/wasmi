@@ -30,7 +30,7 @@ use wast::{
     Wat,
 };
 
-/// The configuation for the test runner.
+/// The configuration for the test runner.
 #[derive(Debug, Copy, Clone)]
 pub struct RunnerConfig {
     /// The Wasmi configuration used for all tests.
@@ -332,7 +332,7 @@ impl WastRunner {
         let bytes = wat.encode()?;
         let engine = self.store.engine();
         let module = match self.config.parsing_mode {
-            ParsingMode::Buffered => Module::new(engine, &bytes),
+            ParsingMode::Buffered => Module::new(engine, bytes),
             ParsingMode::Streaming => Module::new_streaming(engine, &mut &bytes[..]),
         }?;
         Ok((name.map(|n| n.name()), module))

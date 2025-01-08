@@ -14,9 +14,9 @@ categories.workspace = true
 exclude.workspace = true
 
 [dependencies]
-wasi-common = { version = "26.0.0", default-features = false, features = ["sync"]}
-wiggle = { version = "26.0.0", default-features = false }
+wasi-common = { version = "27.0.0", default-features = false, features = ["sync"]}
+wiggle = { version = "27.0.0", default-features = false }
 wasmi = { workspace = true, features = ["std"]}
 
 [dev-dependencies]
-wat = { version = "1", default-features = false }
+wasmi = { workspace = true, features = ["std", "wat"] }

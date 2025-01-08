@@ -14,7 +14,7 @@ categories.workspace = true
 exclude.workspace = true
 
 [dependencies]
-libm = "0.2.8"
+libm = { version = "0.2.11", default-features = false }
 downcast-rs = { version = "1.2", default-features = false }
 
 [dev-dependencies]

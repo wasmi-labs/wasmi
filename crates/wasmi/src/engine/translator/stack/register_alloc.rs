@@ -4,12 +4,12 @@ use crate::{
     ir::{Reg, RegSpan},
     Error,
 };
+use alloc::collections::BTreeSet;
 use core::{
     cmp::{max, min},
     num::NonZeroUsize,
 };
 use multi_stash::{Key, Key as StashKey, MultiStash};
-use std::collections::BTreeSet;
 
 #[cfg(doc)]
 use crate::engine::translator::InstrEncoder;

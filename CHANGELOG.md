@@ -8,6 +8,54 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.40.0`] - 2024-11-27
+
+This release focuses on compile time improvements for Wasmi,
+significantly reducing the time it takes to compile Wasmi and
+decrease its compiled artifact size.
+
+### Added
+
+- Added optimization for `load` and `store` lowering. [#1303]
+    - This reduces the total number of Wasmi instructions.
+- Added `prefix-symbols` crate feature to `wasmi_c_api_impl` crate. [#1315]
+    - This allows to prefix all exported symbols with `wasmi_` in order to
+      avoid duplicate symbols when linking multiple Wasm runtimes implementing
+      the Wasm C-API.
+
+### Fixed
+
+- C-API
+    - Fix a minor compilation issue. [#1296]
+    - Fix the name of `wasmi_config_compilation_mode_set` [#1298]
+- Conditionally forward the `string-interner/std` crate feature. [#1304]
+- Fix Wasmtime fuzzer oracle config usage. [#1314]
+
+### Changed
+
+- Bumped minimum supported Rust version from v1.79 -> v1.80. [#1318]
+- Replace the `wasmparser-nostd` fork with upstream `wasmparser`. [#1141]
+    - This allows Wasmi to implement new Wasm proposals.
+    - Unfortunately this update also regresses Wasmi translation performance
+      by roughly 5-15% depending on the exact Wasm blob and translation mode.
+- Update the `string-interner` and `hashbrown` dependencies. [#1305]
+
+### Internal
+
+- Update the `wast` dependency for Wasmi's Wast runner. [#1306]
+- Update `wasm-tools` dependencies to `v0.221`. [#1318]
+
+[#1141]: https://github.com/wasmi-labs/wasmi/pull/1141
+[#1296]: https://github.com/wasmi-labs/wasmi/pull/1296
+[#1298]: https://github.com/wasmi-labs/wasmi/pull/1298
+[#1303]: https://github.com/wasmi-labs/wasmi/pull/1303
+[#1304]: https://github.com/wasmi-labs/wasmi/pull/1304
+[#1305]: https://github.com/wasmi-labs/wasmi/pull/1305
+[#1306]: https://github.com/wasmi-labs/wasmi/pull/1306
+[#1314]: https://github.com/wasmi-labs/wasmi/pull/1314
+[#1315]: https://github.com/wasmi-labs/wasmi/pull/1315
+[#1318]: https://github.com/wasmi-labs/wasmi/pull/1318
+
 ## [`0.39.1`] - 2024-11-06
 
 ### Fixed

@@ -1,6 +1,18 @@
 # Wasmi News
 
-## 2024-02-07  -  Announcement: Transfer of Ownership
+## 2024-11-27 - Wasmi Security Audit for v0.36+
+
+Wasmi v0.36 and partially 0.37-0.38 have been audited by 
+[Runtime Verification Inc.](https://runtimeverification.com/) contracted by
+the [Stellar Development Foundation](https://stellar.org/foundation).
+
+The final report can be found [here](./resources/audit-2024-11-27.pdf).
+
+I want to thank the Stellar Development Foundation and Runtime Verification Inc.
+for this highly appreciated and valuable contribution which will make Wasmi an even
+more attractive option for safety critical use cases in the future.
+
+## 2024-02-07 - Announcement: Transfer of Ownership
 
 As of 2024-02-01, the original owner and maintainer of the Wasmi project, [Parity Technologies], has officially transferred ownership of the project to me, [Robin Freyler]. Since over 2 years I am the main developer and contributor for the project.
 

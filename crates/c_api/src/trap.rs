@@ -41,7 +41,8 @@ pub type wasm_message_t = wasm_name_t;
 /// # Note
 ///
 /// The `message` is expected to contain a valid null-terminated C string.
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_trap_new(
     _store: &wasm_store_t,
     message: &wasm_message_t,
@@ -73,7 +74,8 @@ pub unsafe extern "C" fn wasmi_trap_new(message: *const u8, len: usize) -> Box<w
 /// Returns the error message of the [`wasm_trap_t`].
 ///
 /// Stores the returned error message in `out`.
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_trap_message(trap: &wasm_trap_t, out: &mut wasm_message_t) {
     let mut buffer = Vec::new();
     buffer.extend_from_slice(format!("{:?}", trap.error).as_bytes());
@@ -87,7 +89,8 @@ pub extern "C" fn wasm_trap_message(trap: &wasm_trap_t, out: &mut wasm_message_t
 /// # Note
 ///
 /// This API is unsupported and will panic upon use.
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_trap_origin(_raw: &wasm_trap_t) -> Option<Box<wasm_frame_t<'_>>> {
     unimplemented!("wasm_trap_origin")
 }
@@ -99,7 +102,8 @@ pub extern "C" fn wasm_trap_origin(_raw: &wasm_trap_t) -> Option<Box<wasm_frame_
 /// # Note
 ///
 /// This API is unsupported and will panic upon use.
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_trap_trace<'a>(_raw: &'a wasm_trap_t, _out: &mut wasm_frame_vec_t<'a>) {
     unimplemented!("wasm_trap_trace")
 }

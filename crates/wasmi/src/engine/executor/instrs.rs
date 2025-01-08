@@ -48,6 +48,9 @@ macro_rules! forward_return {
     }};
 }
 
+/// Tells if execution loop shall continue or break (return) to the execution's caller.
+type ControlFlow = ::core::ops::ControlFlow<(), ()>;
+
 /// Executes compiled function instructions until execution returns from the root function.
 ///
 /// # Errors
@@ -396,22 +399,24 @@ impl<'engine> Executor<'engine> {
                     self.execute_return_call_internal(&mut store.inner, EngineFunc::from(func))?
                 }
                 Instr::ReturnCallImported0 { func } => {
-                    self.execute_return_call_imported_0::<T>(store, func)?
+                    forward_return!(self.execute_return_call_imported_0::<T>(store, func)?)
                 }
                 Instr::ReturnCallImported { func } => {
-                    self.execute_return_call_imported::<T>(store, func)?
+                    forward_return!(self.execute_return_call_imported::<T>(store, func)?)
                 }
                 Instr::ReturnCallIndirect0 { func_type } => {
-                    self.execute_return_call_indirect_0::<T>(store, func_type)?
+                    forward_return!(self.execute_return_call_indirect_0::<T>(store, func_type)?)
                 }
                 Instr::ReturnCallIndirect0Imm16 { func_type } => {
-                    self.execute_return_call_indirect_0_imm16::<T>(store, func_type)?
+                    forward_return!(
+                        self.execute_return_call_indirect_0_imm16::<T>(store, func_type)?
+                    )
                 }
                 Instr::ReturnCallIndirect { func_type } => {
-                    self.execute_return_call_indirect::<T>(store, func_type)?
+                    forward_return!(self.execute_return_call_indirect::<T>(store, func_type)?)
                 }
                 Instr::ReturnCallIndirectImm16 { func_type } => {
-                    self.execute_return_call_indirect_imm16::<T>(store, func_type)?
+                    forward_return!(self.execute_return_call_indirect_imm16::<T>(store, func_type)?)
                 }
                 Instr::CallInternal0 { results, func } => {
                     self.execute_call_internal_0(&mut store.inner, results, EngineFunc::from(func))?

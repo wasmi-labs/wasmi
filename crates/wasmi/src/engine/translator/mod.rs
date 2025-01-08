@@ -68,9 +68,9 @@ use crate::{
     FuncRef,
     FuncType,
 };
-use core::fmt;
+use alloc::vec::Vec;
+use core::{fmt, mem};
 use stack::RegisterSpace;
-use std::vec::Vec;
 use utils::Wrap;
 use wasmparser::{
     BinaryReaderError,
@@ -79,6 +79,7 @@ use wasmparser::{
     MemArg,
     ValidatorResources,
     VisitOperator,
+    WasmFeatures,
 };
 
 macro_rules! impl_typed_for {
@@ -210,6 +211,9 @@ pub trait WasmTranslator<'parser>: VisitOperator<'parser, Output = Result<(), Er
     ///   used for translation of the Wasm function body.
     fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error>;
 
+    /// Returns a reference to the [`WasmFeatures`] used by the [`WasmTranslator`].
+    fn features(&self) -> WasmFeatures;
+
     /// Translates the given local variables for the translated function.
     fn translate_locals(
         &mut self,
@@ -293,6 +297,10 @@ where
         Ok(false)
     }
 
+    fn features(&self) -> WasmFeatures {
+        self.translator.features()
+    }
+
     fn translate_locals(
         &mut self,
         amount: u32,
@@ -330,7 +338,7 @@ where
 }
 
 macro_rules! impl_visit_operator {
-    ( @mvp BrTable { $arg:ident: $argty:ty } => $visit:ident $($rest:tt)* ) => {
+    ( @mvp BrTable { $arg:ident: $argty:ty } => $visit:ident $_ann:tt $($rest:tt)* ) => {
         // We need to special case the `BrTable` operand since its
         // arguments (a.k.a. `BrTable<'a>`) are not `Copy` which all
         // the other impls make use of.
@@ -361,7 +369,7 @@ macro_rules! impl_visit_operator {
     ( @tail_call $($rest:tt)* ) => {
         impl_visit_operator!(@@supported $($rest)*);
     };
-    ( @@supported $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @@supported $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         fn $visit(&mut self $($(,$arg: $argty)*)?) -> Self::Output {
             let offset = self.current_pos();
             self.validate_then_translate(
@@ -371,7 +379,7 @@ macro_rules! impl_visit_operator {
         }
         impl_visit_operator!($($rest)*);
     };
-    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $ann:tt $($rest:tt)* ) => {
         // Wildcard match arm for all the other (yet) unsupported Wasm proposals.
         fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
             let offset = self.current_pos();
@@ -388,10 +396,11 @@ where
 {
     type Output = Result<(), Error>;
 
-    wasmparser::for_each_operator!(impl_visit_operator);
+    wasmparser::for_each_visit_operator!(impl_visit_operator);
 }
 
 /// A lazy Wasm function translator that defers translation when the function is first used.
+#[derive(Debug)]
 pub struct LazyFuncTranslator {
     /// The index of the lazily compiled function within its module.
     func_idx: FuncIdx,
@@ -399,17 +408,51 @@ pub struct LazyFuncTranslator {
     engine_func: EngineFunc,
     /// The Wasm module header information used for translation.
     module: ModuleHeader,
-    /// Optional information about lazy Wasm validation.
-    func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+    /// Information about Wasm validation during lazy translation.
+    validation: Validation,
 }
 
-impl fmt::Debug for LazyFuncTranslator {
+/// Information about Wasm validation for lazy translation.
+enum Validation {
+    /// Wasm validation is performed.
+    Checked(FuncToValidate<ValidatorResources>),
+    /// Wasm validation is checked.
+    ///
+    /// # Dev. Note
+    ///
+    /// We still need Wasm features to properly parse the Wasm.
+    Unchecked(WasmFeatures),
+}
+
+impl Validation {
+    /// Returns `true` if `self` performs validates Wasm upon lazy translation.
+    pub fn is_checked(&self) -> bool {
+        matches!(self, Self::Checked(_))
+    }
+
+    /// Returns the [`WasmFeatures`] used for Wasm parsing and validation.
+    pub fn features(&self) -> WasmFeatures {
+        match self {
+            Validation::Checked(func_to_validate) => func_to_validate.features,
+            Validation::Unchecked(wasm_features) => *wasm_features,
+        }
+    }
+
+    /// Returns the [`FuncToValidate`] if `self` is checked.
+    pub fn take_func_to_validate(&mut self) -> Option<FuncToValidate<ValidatorResources>> {
+        let features = self.features();
+        match mem::replace(self, Self::Unchecked(features)) {
+            Self::Checked(func_to_validate) => Some(func_to_validate),
+            Self::Unchecked(_) => None,
+        }
+    }
+}
+
+impl fmt::Debug for Validation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("LazyFuncTranslator")
-            .field("func_idx", &self.func_idx)
-            .field("engine_func", &self.engine_func)
-            .field("module", &self.module)
-            .field("validate", &self.func_to_validate.is_some())
+            .field("validate", &self.is_checked())
+            .field("features", &self.features())
             .finish()
     }
 }
@@ -420,13 +463,28 @@ impl LazyFuncTranslator {
         func_idx: FuncIdx,
         engine_func: EngineFunc,
         module: ModuleHeader,
-        func_to_validate: Option<FuncToValidate<ValidatorResources>>,
+        func_to_validate: FuncToValidate<ValidatorResources>,
     ) -> Self {
         Self {
             func_idx,
             engine_func,
             module,
-            func_to_validate,
+            validation: Validation::Checked(func_to_validate),
+        }
+    }
+
+    /// Create a new [`LazyFuncTranslator`] that does not validate Wasm upon lazy translation.
+    pub fn new_unchecked(
+        func_idx: FuncIdx,
+        engine_func: EngineFunc,
+        module: ModuleHeader,
+        features: WasmFeatures,
+    ) -> Self {
+        Self {
+            func_idx,
+            engine_func,
+            module,
+            validation: Validation::Unchecked(features),
         }
     }
 }
@@ -449,9 +507,14 @@ impl WasmTranslator<'_> for LazyFuncTranslator {
                 self.engine_func,
                 bytes,
                 &self.module,
-                self.func_to_validate.take(),
+                self.validation.take_func_to_validate(),
             );
         Ok(true)
+    }
+
+    #[inline]
+    fn features(&self) -> WasmFeatures {
+        self.validation.features()
     }
 
     #[inline]
@@ -481,7 +544,7 @@ impl WasmTranslator<'_> for LazyFuncTranslator {
 }
 
 macro_rules! impl_visit_operator {
-    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $ann:tt $($rest:tt)* ) => {
         #[inline]
         fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
             Ok(())
@@ -494,7 +557,7 @@ macro_rules! impl_visit_operator {
 impl<'a> VisitOperator<'a> for LazyFuncTranslator {
     type Output = Result<(), Error>;
 
-    wasmparser::for_each_operator!(impl_visit_operator);
+    wasmparser::for_each_visit_operator!(impl_visit_operator);
 }
 
 /// Type concerned with translating from Wasm bytecode to Wasmi bytecode.
@@ -534,6 +597,11 @@ impl WasmTranslator<'_> for FuncTranslator {
 
     fn setup(&mut self, _bytes: &[u8]) -> Result<bool, Error> {
         Ok(false)
+    }
+
+    #[inline]
+    fn features(&self) -> WasmFeatures {
+        self.engine.config().wasm_features()
     }
 
     fn translate_locals(

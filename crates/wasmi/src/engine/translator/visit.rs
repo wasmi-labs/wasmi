@@ -57,11 +57,11 @@ macro_rules! impl_visit_operator {
     ( @tail_call $($rest:tt)* ) => {
         impl_visit_operator!(@@skipped $($rest)*);
     };
-    ( @@skipped $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @@skipped $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         // We skip Wasm operators that we already implement manually.
         impl_visit_operator!($($rest)*);
     };
-    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $($rest:tt)* ) => {
+    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         // Wildcard match arm for all the other (yet) unsupported Wasm proposals.
         fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
             self.unsupported_operator(stringify!($op))
@@ -88,7 +88,7 @@ impl FuncTranslator {
 impl<'a> VisitOperator<'a> for FuncTranslator {
     type Output = Result<(), Error>;
 
-    wasmparser::for_each_operator!(impl_visit_operator);
+    wasmparser::for_each_visit_operator!(impl_visit_operator);
 
     fn visit_unreachable(&mut self) -> Self::Output {
         bail_unreachable!(self);
@@ -511,12 +511,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_call_indirect(
-        &mut self,
-        type_index: u32,
-        table_index: u32,
-        _table_byte: u8,
-    ) -> Self::Output {
+    fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
         bail_unreachable!(self);
         self.bump_fuel_consumption(FuelCosts::call)?;
         let type_index = FuncType::from(type_index);
@@ -979,7 +974,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         )
     }
 
-    fn visit_memory_size(&mut self, mem: u32, _mem_byte: u8) -> Self::Output {
+    fn visit_memory_size(&mut self, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let memory = index::Memory::from(mem);
         let result = self.alloc.stack.push_dynamic()?;
@@ -987,7 +982,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_memory_grow(&mut self, mem: u32, _mem_byte: u8) -> Self::Output {
+    fn visit_memory_grow(&mut self, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let delta = self.alloc.stack.pop().map_const(u32::from);
         let memory = index::Memory::from(mem);
@@ -1036,9 +1031,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_ref_null(&mut self, ty: wasmparser::ValType) -> Self::Output {
+    fn visit_ref_null(&mut self, hty: wasmparser::HeapType) -> Self::Output {
         bail_unreachable!(self);
-        let type_hint = WasmiValueType::from(ty).into_inner();
+        let type_hint = WasmiValueType::from(hty).into_inner();
         let null = match type_hint {
             ValType::FuncRef => TypedVal::from(FuncRef::null()),
             ValType::ExternRef => TypedVal::from(ExternRef::null()),

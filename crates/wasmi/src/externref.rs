@@ -5,8 +5,8 @@ use crate::{
     AsContextMut,
     StoreContext,
 };
+use alloc::boxed::Box;
 use core::{any::Any, mem, num::NonZeroU32};
-use std::boxed::Box;
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

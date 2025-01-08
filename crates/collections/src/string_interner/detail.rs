@@ -1,11 +1,11 @@
 use super::{GetOrInternWithHint, InternHint, Sym};
-use core::{cmp::Ordering, mem, ops::Deref};
-use std::{
+use alloc::{
     borrow::Borrow,
     collections::{btree_map::Entry, BTreeMap},
     sync::Arc,
     vec::Vec,
 };
+use core::{cmp::Ordering, mem, ops::Deref};
 
 pub type StringInternerImpl = StringInterner;
 

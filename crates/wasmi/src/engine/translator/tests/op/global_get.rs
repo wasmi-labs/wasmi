@@ -28,7 +28,7 @@ where
         )
     "#
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             Instruction::global_get(Reg::from(0), Global::from(0)),
             Instruction::return_reg(Reg::from(0)),
@@ -83,7 +83,7 @@ where
         )
     "#,
     );
-    let mut testcase = TranslationTest::from_wat(&wasm);
+    let mut testcase = TranslationTest::new(&wasm);
     let instr = <T as WasmTy>::return_imm_instr(&value);
     match instr {
         Instruction::ReturnReg { value: register } => {
@@ -143,7 +143,7 @@ where
         )
     "#,
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             Instruction::global_get(Reg::from(0), Global::from(0)),
             Instruction::return_reg(Reg::from(0)),
@@ -187,7 +187,7 @@ fn test_global_get_as_return_values_0() {
             )
         )
         "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::global_get(Reg::from(0), Global::from(0)),
@@ -212,7 +212,7 @@ fn test_global_get_as_return_values_1() {
             )
         )
         "#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
                 Instruction::global_get(Reg::from(0), Global::from(0)),

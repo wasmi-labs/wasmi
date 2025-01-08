@@ -4,6 +4,7 @@ use crate::{
     engine::code_map::CompiledFuncRef,
     ir::Reg,
 };
+use alloc::vec::Vec;
 use core::{
     fmt::{self, Debug},
     mem::{self, MaybeUninit},
@@ -11,7 +12,6 @@ use core::{
     ptr,
     slice,
 };
-use std::vec::Vec;
 
 #[cfg(doc)]
 use super::calls::CallFrame;

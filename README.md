@@ -23,10 +23,20 @@
 
 Wasmi is an efficient and lightweight WebAssembly interpreter with a focus on constrained and embedded systems.
 
-Version `0.31.0` has been [audited by SRLabs].
+## Security Audits
+
+Wasmi is suitable for safety critical use cases and has been audited several times already.
+
+| Wasmi Version(s) | Auditor | Contractor | Report |
+|--:|:--|:--|:--|
+| `0.36.0`-`0.38.0` | [Runtime Verification Inc.] | [Stellar Development Foundation] | [PDF](./resources/audit-2024-11-27.pdf) |
+| `0.31.0` | [SRLabs] | [Parity Technologies] | [PDF](./resources/audit-2023-12-20.pdf) |
 
 [Wasmtime]: https://github.com/bytecodealliance/wasmtime
-[audited by SRLabs]: ./resources/security-audit-2023-12-20.pdf
+[SRLabs]: https://www.srlabs.de/
+[Runtime Verification Inc.]: https://runtimeverification.com/
+[Stellar Development Foundation]: https://stellar.org/foundation
+[Parity Technologies]: https://www.parity.io/
 
 ## Distinct Features
 

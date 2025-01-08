@@ -1,10 +1,10 @@
 use crate::arena::ArenaIndex;
+use alloc::vec::Vec;
 use core::{
     fmt::{self, Debug},
     marker::PhantomData,
     ops::{Index, IndexMut},
 };
-use std::vec::Vec;
 
 /// Stores components for entities backed by a [`Vec`].
 pub struct ComponentVec<Idx, T> {

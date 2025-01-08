@@ -1,4 +1,4 @@
-use crate::{core::UntypedVal, Const16, Error, Instr};
+use crate::{core::UntypedVal, Const16, Error};
 use core::marker::PhantomData;
 
 /// The sign of a value.
@@ -152,9 +152,9 @@ impl BranchOffset {
     /// # Errors
     ///
     /// If the resulting [`BranchOffset`] is out of bounds.
-    pub fn from_src_to_dst(src: Instr, dst: Instr) -> Result<Self, Error> {
-        let src = i64::from(u32::from(src));
-        let dst = i64::from(u32::from(dst));
+    pub fn from_src_to_dst(src: u32, dst: u32) -> Result<Self, Error> {
+        let src = i64::from(src);
+        let dst = i64::from(dst);
         let Some(offset) = dst.checked_sub(src) else {
             // Note: This never needs to be called on backwards branches since they are immediated resolved.
             unreachable!(
@@ -346,7 +346,7 @@ impl ComparatorAndOffset {
     pub fn as_u64(&self) -> u64 {
         let hi = self.cmp as u64;
         let lo = self.offset.to_i32() as u64;
-        hi << 32 | lo
+        (hi << 32) | lo
     }
 }
 
@@ -363,7 +363,7 @@ pub struct ShiftAmount<T> {
     value: Const16<T>,
 }
 
-/// Integer ypes that can be used as shift amount in shift or rotate instructions.
+/// Integer types that can be used as shift amount in shift or rotate instructions.
 pub trait IntoShiftAmount: Sized {
     /// Converts `self` into a [`ShiftAmount`] if possible.
     fn into_shift_amount(self) -> Option<ShiftAmount<Self>>;

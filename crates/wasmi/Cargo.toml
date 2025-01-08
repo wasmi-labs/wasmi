@@ -19,7 +19,7 @@ exclude = [
 ]
 
 [dependencies]
-wasmparser = { version = "0.100.2", package = "wasmparser-nostd", default-features = false }
+wasmparser = { version = "0.221.0", default-features = false, features = ["validate", "features"] }
 wasmi_core = { workspace = true }
 wasmi_collections = { workspace = true }
 wasmi_ir = { workspace = true }
@@ -31,16 +31,16 @@ spin = { version = "0.9", default-features = false, features = [
 smallvec = { version = "1.13.1", features = ["union"] }
 multi-stash = { version = "0.2.0" }
 arrayvec = { version = "0.7.4", default-features = false }
+wat = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
-wat = { version = "1", default-features = false }
 assert_matches = "1.5"
 anyhow = "1"
 wasmi_wast = { workspace = true }
 criterion = { version = "0.5", default-features = false }
 
 [features]
-default = ["std"]
+default = ["std", "wat"]
 std = [
     "wasmi_core/std",
     "wasmi_collections/std",
@@ -48,8 +48,15 @@ std = [
     "spin/std",
     "arrayvec/std",
 ]
-hash-collections = ["wasmi_collections/hash-collections"]
-prefer-btree-collections = ["wasmi_collections/prefer-btree-collections"]
+hash-collections = [
+    "wasmi_collections/hash-collections",
+    "wasmparser/hash-collections",
+]
+prefer-btree-collections = [
+    "wasmi_collections/prefer-btree-collections",
+    "wasmparser/prefer-btree-collections",
+]
+wat = ["dep:wat", "std"]
 
 # Enables extra checks performed during Wasmi bytecode execution.
 #

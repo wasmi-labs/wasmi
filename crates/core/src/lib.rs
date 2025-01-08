@@ -20,9 +20,7 @@ mod units;
 mod untyped;
 mod value;
 
-#[cfg(not(feature = "std"))]
-extern crate alloc as std;
-
+extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 

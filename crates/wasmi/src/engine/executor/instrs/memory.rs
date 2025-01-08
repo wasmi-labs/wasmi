@@ -109,9 +109,7 @@ impl Executor<'_> {
         }
         let memory = self.get_memory(memory);
         let (memory, fuel) = store.resolve_memory_and_fuel_mut(&memory);
-        let return_value = memory
-            .grow(delta, Some(fuel), resource_limiter)
-            .map(u32::from);
+        let return_value = memory.grow(delta, Some(fuel), resource_limiter);
         let return_value = match return_value {
             Ok(return_value) => {
                 // The `memory.grow` operation might have invalidated the cached

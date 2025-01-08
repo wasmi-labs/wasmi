@@ -17,7 +17,7 @@ fn imm() {
                 (local.get 0)
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::return_reg(Reg::from(0)),
@@ -34,7 +34,7 @@ fn imm_tee() {
                 (local.tee 0 (i32.const 10))
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::return_imm32(10_i32),
@@ -56,7 +56,7 @@ fn overwrite_result_1() {
                 )
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::i32_add(Reg::from(0), Reg::from(0), Reg::from(1)),
             Instruction::return_reg(Reg::from(0)),
@@ -78,7 +78,7 @@ fn overwrite_call_internal_result_1() {
                 )
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg(Reg::from(0))])
         .expect_func_instrs([
             Instruction::call_internal(RegSpan::new(Reg::from(0)), EngineFunc::from_u32(0)),
@@ -100,7 +100,7 @@ fn overwrite_call_imported_result_1() {
                 )
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(RegSpan::new(Reg::from(0)), Func::from(0)),
             Instruction::register(0),
@@ -122,7 +122,7 @@ fn overwrite_call_indirect_result_1() {
                 )
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_indirect(RegSpan::new(Reg::from(0)), FuncType::from(0)),
             Instruction::call_indirect_params(Reg::from(0), Table::from(0)),
@@ -144,7 +144,7 @@ fn overwrite_select_result_1() {
                 (local.tee $condition)
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::select_imm32(Reg::from(0), 10_i32),
             Instruction::register_and_imm32(Reg::from(0), 20_i32),
@@ -168,7 +168,7 @@ fn avoid_overwrite_result_1() {
                 (local.tee $lhs)
             )
         )";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::i32_add(Reg::from(2), Reg::from(0), Reg::from(1)),
             Instruction::copy(Reg::from(0), Reg::from(2)),
@@ -188,7 +188,7 @@ fn local_set_chain() {
                 (local.get 1)
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy(Reg::from(1), Reg::from(0)),
@@ -207,7 +207,7 @@ fn local_tee_chain() {
                 (local.tee 1)
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy_imm32(Reg::from(1), 10_i32),
@@ -231,7 +231,7 @@ fn preserve_result_1() {
                 )
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Reg::from(3), Reg::from(0)),
             Instruction::i32_add(Reg::from(0), Reg::from(0), Reg::from(1)),
@@ -256,7 +256,7 @@ fn preserve_result_2() {
                 )
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Reg::from(3), Reg::from(0)),
             Instruction::i32_add(Reg::from(0), Reg::from(0), Reg::from(1)),
@@ -275,7 +275,7 @@ fn preserve_multiple_0() {
                 (local.set 0 (i32.const 10))
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Reg::from(1), Reg::from(0)),
             Instruction::copy_imm32(Reg::from(0), 10_i32),
@@ -295,7 +295,7 @@ fn preserve_multiple_1() {
                 (local.set 0 (i32.const 10))
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Reg::from(1), Reg::from(0)),
             Instruction::copy_imm32(Reg::from(0), 10_i32),
@@ -316,7 +316,7 @@ fn preserve_multiple_2() {
                 (local.set 0 (i32.const 20))
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Reg::from(3), Reg::from(0)),
             Instruction::copy_imm32(Reg::from(0), 10_i32),
@@ -340,7 +340,7 @@ fn preserve_multiple_3() {
                 (local.set 0 (i32.const 20))
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Reg::from(1), Reg::from(0)),
             Instruction::copy_imm32(Reg::from(0), 10_i32),
@@ -367,7 +367,7 @@ fn preserve_multiple_4() {
                 (local.set 0 (i32.const 20))
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Reg::from(1), Reg::from(0)),
             Instruction::copy_imm32(Reg::from(0), 10_i32),
@@ -392,7 +392,7 @@ fn preserve_multiple_5() {
                 (local.set 0 (i32.const 33))
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Reg::from(5), Reg::from(2)),
             Instruction::copy_imm32(Reg::from(2), 11_i32),
@@ -422,7 +422,7 @@ fn preserve_multiple_6() {
                 (local.set 1 (i32.const 44))
             )
         )"#;
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(Reg::from(5), Reg::from(2)),
             Instruction::copy_imm32(Reg::from(2), 11_i32),
@@ -456,7 +456,7 @@ fn merge_overwriting_local_set() {
             )
         )
     ";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy_imm32(Reg::from(1), 20_i32),
@@ -485,7 +485,7 @@ fn merge_overwriting_local_set_lhs() {
             )
         )
     ";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy_imm32(Reg::from(1), 20_i32),
@@ -513,7 +513,7 @@ fn merge_overwriting_local_set_3() {
             )
         )
     ";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy_imm32(Reg::from(1), 20_i32),
@@ -542,7 +542,7 @@ fn merge_overwriting_local_set_3_lhs() {
             )
         )
     ";
-    TranslationTest::from_wat(wasm)
+    TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_imm32(Reg::from(0), 10_i32),
             Instruction::copy_imm32(Reg::from(1), 20_i32),

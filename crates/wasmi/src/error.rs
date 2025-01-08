@@ -14,9 +14,12 @@ use crate::{
     engine::{ResumableHostError, TranslationError},
     module::ReadError,
 };
+use alloc::{boxed::Box, string::String};
 use core::{fmt, fmt::Display};
-use std::{boxed::Box, string::String};
 use wasmparser::BinaryReaderError as WasmError;
+
+#[cfg(feature = "wat")]
+use wat::Error as WatError;
 
 /// The generic Wasmi root error type.
 #[derive(Debug)]
@@ -192,6 +195,9 @@ pub enum ErrorKind {
     Limits(EnforcedLimitsError),
     /// Encountered for Wasmi bytecode related errors.
     Ir(IrError),
+    /// Encountered an error from the `wat` crate.
+    #[cfg(feature = "wat")]
+    Wat(WatError),
 }
 
 impl ErrorKind {
@@ -259,6 +265,8 @@ impl Display for ErrorKind {
             Self::Limits(error) => Display::fmt(error, f),
             Self::ResumableHost(error) => Display::fmt(error, f),
             Self::Ir(error) => Display::fmt(error, f),
+            #[cfg(feature = "wat")]
+            Self::Wat(error) => Display::fmt(error, f),
         }
     }
 }
@@ -291,6 +299,10 @@ impl_from! {
     impl From<EnforcedLimitsError> for Error::Limits;
     impl From<ResumableHostError> for Error::ResumableHost;
     impl From<IrError> for Error::Ir;
+}
+#[cfg(feature = "wat")]
+impl_from! {
+    impl From<WatError> for Error::Wat;
 }
 
 /// An error that can occur upon `memory.grow` or `table.grow`.

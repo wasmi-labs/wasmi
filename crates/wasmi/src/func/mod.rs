@@ -23,8 +23,8 @@ use super::{
     Stored,
 };
 use crate::{collections::arena::ArenaIndex, engine::ResumableCall, Engine, Error, Val};
+use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
-use std::{boxed::Box, sync::Arc};
 
 /// A raw index to a function entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -226,7 +226,7 @@ impl<T> HostFuncTrampolineEntity<T> {
         // Preprocess parameters and results buffers so that we can reuse those
         // computations within the closure implementation. We put both parameters
         // and results into a single buffer which we can split to minimize the
-        // amount of allocations per trampoline invokation.
+        // amount of allocations per trampoline invocation.
         let params_iter = ty.params().iter().copied().map(Val::default);
         let results_iter = ty.results().iter().copied().map(Val::default);
         let len_params = ty.params().len();
@@ -461,7 +461,6 @@ impl Func {
             .engine()
             .clone()
             .execute_func_resumable(ctx.as_context_mut(), self, inputs, outputs)
-            .map_err(Into::into)
             .map(ResumableCall::new)
     }
 

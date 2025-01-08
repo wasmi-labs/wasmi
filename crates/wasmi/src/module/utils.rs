@@ -1,3 +1,5 @@
+use wasmparser::AbstractHeapType;
+
 use crate::{core::ValType, FuncType, GlobalType, MemoryType, Mutability, TableType};
 
 impl TableType {
@@ -9,8 +11,19 @@ impl TableType {
     /// routine does not become part of the public API of [`TableType`].
     pub(crate) fn from_wasmparser(table_type: wasmparser::TableType) -> Self {
         let element = WasmiValueType::from(table_type.element_type).into_inner();
-        let minimum = table_type.initial;
-        let maximum = table_type.maximum;
+        let minimum: u32 = table_type
+            .initial
+            .try_into()
+            .unwrap_or_else(|_err| panic!("out of bounds minimum value: {}", table_type.initial));
+        let maximum: Option<u32> = match table_type.maximum {
+            Some(maximum) => {
+                let maximum = maximum
+                    .try_into()
+                    .unwrap_or_else(|_err| panic!("out of bounds maximum value: {}", maximum));
+                Some(maximum)
+            }
+            None => None,
+        };
         Self::new(element, minimum, maximum)
     }
 }
@@ -69,7 +82,7 @@ impl FuncType {
     ///
     /// We do not use the `From` trait here so that this conversion
     /// routine does not become part of the public API of [`FuncType`].
-    pub(crate) fn from_wasmparser(func_type: wasmparser::FuncType) -> Self {
+    pub(crate) fn from_wasmparser(func_type: &wasmparser::FuncType) -> Self {
         /// Returns the [`ValType`] from the given [`wasmparser::Type`].
         ///
         /// # Panics
@@ -106,6 +119,32 @@ impl From<ValType> for WasmiValueType {
     }
 }
 
+impl From<wasmparser::HeapType> for WasmiValueType {
+    fn from(heap_type: wasmparser::HeapType) -> Self {
+        match heap_type {
+            wasmparser::HeapType::Abstract {
+                shared: false,
+                ty: AbstractHeapType::Func,
+            } => Self::from(ValType::FuncRef),
+            wasmparser::HeapType::Abstract {
+                shared: false,
+                ty: AbstractHeapType::Extern,
+            } => Self::from(ValType::ExternRef),
+            unsupported => panic!("encountered unsupported heap type: {unsupported:?}"),
+        }
+    }
+}
+
+impl From<wasmparser::RefType> for WasmiValueType {
+    fn from(ref_type: wasmparser::RefType) -> Self {
+        match ref_type {
+            wasmparser::RefType::FUNCREF => Self::from(ValType::FuncRef),
+            wasmparser::RefType::EXTERNREF => Self::from(ValType::ExternRef),
+            unsupported => panic!("encountered unsupported reference type: {unsupported:?}"),
+        }
+    }
+}
+
 impl From<wasmparser::ValType> for WasmiValueType {
     fn from(value_type: wasmparser::ValType) -> Self {
         match value_type {
@@ -114,8 +153,7 @@ impl From<wasmparser::ValType> for WasmiValueType {
             wasmparser::ValType::F32 => Self::from(ValType::F32),
             wasmparser::ValType::F64 => Self::from(ValType::F64),
             wasmparser::ValType::V128 => panic!("wasmi does not support the `simd` Wasm proposal"),
-            wasmparser::ValType::FuncRef => Self::from(ValType::FuncRef),
-            wasmparser::ValType::ExternRef => Self::from(ValType::ExternRef),
+            wasmparser::ValType::Ref(ref_type) => WasmiValueType::from(ref_type),
         }
     }
 }

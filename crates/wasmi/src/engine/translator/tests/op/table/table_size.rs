@@ -12,7 +12,7 @@ fn test_reg(ty: ValType) {
             )
         )",
     );
-    TranslationTest::from_wat(&wasm)
+    TranslationTest::new(&wasm)
         .expect_func_instrs([
             Instruction::table_size(Reg::from(0), 0),
             Instruction::return_reg(Reg::from(0)),

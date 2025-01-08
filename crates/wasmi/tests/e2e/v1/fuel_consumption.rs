@@ -12,11 +12,6 @@ fn test_setup() -> (Store<()>, Linker<()>) {
     (store, linker)
 }
 
-/// Converts the `wat` string source into `wasm` encoded byte.
-fn wat2wasm(wat: &str) -> Vec<u8> {
-    wat::parse_str(wat).unwrap()
-}
-
 /// Compiles the `wasm` encoded bytes into a [`Module`].
 ///
 /// # Panics
@@ -71,8 +66,8 @@ fn test_module() -> &'static str {
 
 fn check_fuel_consumption(given_fuel: u64, consumed_fuel: u64) {
     assert!(given_fuel >= consumed_fuel);
-    let wasm = wat2wasm(test_module());
-    let (mut store, func) = default_test_setup(&wasm);
+    let wasm = test_module();
+    let (mut store, func) = default_test_setup(wasm.as_bytes());
     let func = func.typed::<(), i32>(&store).unwrap();
     // Now add enough fuel, so execution should succeed.
     store.set_fuel(given_fuel).unwrap(); // this is just enough fuel for a successful `memory.grow`

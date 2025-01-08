@@ -49,7 +49,8 @@ wasmi_c_api_macros::declare_own!(wasm_shared_module_t);
 ///
 /// It is the caller's responsibility not to alias the [`wasm_module_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_module_new(
     store: &mut wasm_store_t,
     binary: &wasm_byte_vec_t,
@@ -68,7 +69,8 @@ pub unsafe extern "C" fn wasm_module_new(
 ///
 /// It is the caller's responsibility not to alias the [`wasm_module_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_module_validate(
     store: &mut wasm_store_t,
     binary: &wasm_byte_vec_t,
@@ -95,7 +97,8 @@ fn fill_exports(module: &Module, out: &mut wasm_exporttype_vec_t) {
 /// Stores the queried module exports in `out`.
 ///
 /// Wraps [`Module::exports`].
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_module_exports(module: &wasm_module_t, out: &mut wasm_exporttype_vec_t) {
     fill_exports(&module.inner, out);
 }
@@ -120,7 +123,8 @@ fn fill_imports(module: &Module, out: &mut wasm_importtype_vec_t) {
 /// Stores the queried module imports in `out`.
 ///
 /// Wraps [`Module::imports`].
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_module_imports(module: &wasm_module_t, out: &mut wasm_importtype_vec_t) {
     fill_imports(&module.inner, out);
 }
@@ -131,7 +135,8 @@ pub extern "C" fn wasm_module_imports(module: &wasm_module_t, out: &mut wasm_imp
 /// - Obtain the original [`wasm_module_t`] via a call to [`wasm_module_obtain`].
 ///
 /// Wraps [`Module::clone`] (kinda).
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_module_share(module: &wasm_module_t) -> Box<wasm_shared_module_t> {
     Box::new(wasm_shared_module_t {
         inner: module.inner.clone(),
@@ -148,7 +153,8 @@ pub extern "C" fn wasm_module_share(module: &wasm_module_t) -> Box<wasm_shared_m
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
 ///
 /// Wraps [`Module::clone`] (kinda).
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_module_obtain(
     store: &mut wasm_store_t,
     shared_module: &wasm_shared_module_t,
@@ -168,7 +174,8 @@ pub unsafe extern "C" fn wasm_module_obtain(
 /// # Note
 ///
 /// This API is unsupported and will panic upon use.
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub extern "C" fn wasm_module_serialize(_module: &wasm_module_t, _ret: &mut wasm_byte_vec_t) {
     unimplemented!("wasm_module_serialize")
 }
@@ -187,7 +194,8 @@ pub extern "C" fn wasm_module_serialize(_module: &wasm_module_t, _ret: &mut wasm
 ///
 /// It is the caller's responsibility not to alias the [`wasm_module_t`]
 /// with its underlying, internal [`WasmStoreRef`](crate::WasmStoreRef).
-#[no_mangle]
+#[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
+#[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_module_deserialize(
     _store: &mut wasm_store_t,
     _binary: &wasm_byte_vec_t,

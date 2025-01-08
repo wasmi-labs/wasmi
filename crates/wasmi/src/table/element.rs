@@ -10,7 +10,7 @@ use crate::{
     Global,
     Val,
 };
-use std::boxed::Box;
+use alloc::boxed::Box;
 
 /// A raw index to a element segment entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -107,11 +107,7 @@ impl ElementSegmentEntity {
                             panic!("unexpected failed initialization of constant expression: {const_expr:?}")
                         })
                 }).collect::<Box<[_]>>();
-                Self {
-                    ty,
-                    // items: Some(elem.items_cloned()),
-                    items,
-                }
+                Self { ty, items }
             }
             module::ElementSegmentKind::Declared => Self::empty(ty),
         }

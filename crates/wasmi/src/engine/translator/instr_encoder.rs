@@ -19,7 +19,6 @@ use crate::{
         FuelCosts,
     },
     ir::{
-        self,
         BoundedRegSpan,
         BranchOffset,
         BranchOffset16,
@@ -33,25 +32,13 @@ use crate::{
     module::ModuleHeader,
     Error,
 };
+use alloc::vec::{Drain, Vec};
 use core::mem;
-use std::vec::{Drain, Vec};
 
 /// A reference to an instruction of the partially
 /// constructed function body of the [`InstrEncoder`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Instr(u32);
-
-impl From<ir::Instr> for Instr {
-    fn from(instr: ir::Instr) -> Self {
-        Self(u32::from(instr))
-    }
-}
-
-impl From<Instr> for ir::Instr {
-    fn from(instr: Instr) -> Self {
-        Self::from(instr.0)
-    }
-}
 
 impl Instr {
     /// Creates an [`Instr`] from the given `usize` value.
