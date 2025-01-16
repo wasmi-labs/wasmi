@@ -64,13 +64,13 @@ where
     }
 
     /// Calls the function named `func_name` with `args` and returns the result.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// If no Wasm source was set before.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// - If instantiation fails.
     /// - If starting the instance fails.
     /// - If there is no function named `func_name`.
