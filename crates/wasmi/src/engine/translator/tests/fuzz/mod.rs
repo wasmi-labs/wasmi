@@ -5,8 +5,7 @@ use crate::{
     core::{TrapCode, F32},
     engine::EngineFunc,
     ir::{index::Global, BranchOffset, BranchOffset16, RegSpan},
-    tests::{AssertResults, ExecutionTest},
-    Val,
+    tests::{AssertResults, AssertTrap, ExecutionTest},
 };
 
 #[test]
@@ -491,19 +490,11 @@ fn audit_1_codegen() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn audit_1_execution() {
-    use crate::{Engine, Instance, Store};
     let wasm = include_str!("wat/audit_1.wat");
-    let engine = Engine::default();
-    let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, wasm).unwrap();
-    let instance = Instance::new(&mut store, &module, &[]).unwrap();
-    let func = instance
-        .get_func(&store, "")
-        .unwrap()
-        .typed::<(), (i32, i32, i32)>(&store)
-        .unwrap();
-    let result = func.call(&mut store, ()).unwrap_err();
-    assert_eq!(result.as_trap_code(), Some(TrapCode::IntegerOverflow));
+    ExecutionTest::default()
+        .wasm(wasm)
+        .call::<(), (i32, i32, i32)>("", ())
+        .assert_trap(TrapCode::IntegerOverflow);
 }
 
 #[test]
