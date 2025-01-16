@@ -29,6 +29,10 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         // We're disabling POSIX signals on errors in the engine because
         // some fuzzers will catch them and report them as false positives.
         config.signals_based_traps(false);
+        // We tell Cranelift to not optimize the Wasm input since this
+        // improves performance of the translation process that can quickly
+        // become very slow.
+        config.cranelift_opt_level(wasmtime::OptLevel::None);
         let engine = Engine::new(&config).unwrap();
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
