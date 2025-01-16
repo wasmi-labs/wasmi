@@ -5,6 +5,7 @@ use crate::{
     core::{TrapCode, F32},
     engine::EngineFunc,
     ir::{index::Global, BranchOffset, BranchOffset16, RegSpan},
+    tests::{AssertResults, ExecutionTest},
     Val,
 };
 
@@ -523,17 +524,9 @@ fn audit_2_codegen() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn audit_2_execution() {
-    use crate::{Engine, Instance, Store};
     let wasm = include_str!("wat/audit_2.wat");
-    let engine = Engine::default();
-    let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, wasm).unwrap();
-    let instance = Instance::new(&mut store, &module, &[]).unwrap();
-    let func = instance.get_func(&store, "").unwrap();
-    let inputs = [Val::I32(1)];
-    let mut results = [0_i32; 4].map(Val::from);
-    let expected = [1_i32; 4];
-    func.call(&mut store, &inputs[..], &mut results[..])
-        .unwrap();
-    assert_eq!(results.map(|v| v.i32().unwrap()), expected,);
+    ExecutionTest::default()
+        .wasm(wasm)
+        .call::<i32, (i32, i32, i32, i32)>("", 1)
+        .assert_results((1, 1, 1, 1));
 }
