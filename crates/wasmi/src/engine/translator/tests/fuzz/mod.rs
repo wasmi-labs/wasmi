@@ -2,10 +2,10 @@
 
 use super::*;
 use crate::{
-    core::{TrapCode, F32},
+    core::TrapCode,
     engine::EngineFunc,
     ir::{index::Global, BranchOffset, BranchOffset16, RegSpan},
-    Val,
+    tests::{AssertResults, AssertTrap, ExecutionTest},
 };
 
 #[test]
@@ -254,24 +254,11 @@ fn fuzz_regression_13_codegen() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_13_execute() {
-    use crate::{Engine, Linker, Store};
     let wasm = include_str!("wat/fuzz_13.wat");
-    let engine = Engine::default();
-    let mut store = <Store<()>>::new(&engine, ());
-    let linker = Linker::new(&engine);
-    let module = Module::new(&engine, wasm).unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .ensure_no_start(&mut store)
-        .unwrap();
-    let func = instance
-        .get_func(&store, "")
-        .unwrap()
-        .typed::<(), (i32, i32, i32)>(&store)
-        .unwrap();
-    let (x, y, z) = func.call(&mut store, ()).unwrap();
-    assert!(x == 0 && y == 0 && z == 0);
+    ExecutionTest::default()
+        .wasm(wasm)
+        .call::<(), (i32, i32, i32)>("", ())
+        .assert_results((0, 0, 0));
 }
 
 #[test]
@@ -316,26 +303,11 @@ fn fuzz_regression_15_01_codegen() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fuzz_regression_15_01_execute() {
-    // Note: we can remove this test case once the bug is fixed
-    //       since this is a codegen bug and not an executor bug.
-    use crate::{Engine, Linker, Store};
-    let wasm: &str = include_str!("wat/fuzz_15_01.wat");
-    let engine = Engine::default();
-    let mut store = <Store<()>>::new(&engine, ());
-    let linker = Linker::new(&engine);
-    let module = Module::new(&engine, wasm).unwrap();
-    let instance = linker
-        .instantiate(&mut store, &module)
-        .unwrap()
-        .ensure_no_start(&mut store)
-        .unwrap();
-    let func = instance
-        .get_func(&store, "")
-        .unwrap()
-        .typed::<i64, F32>(&store)
-        .unwrap();
-    let result = func.call(&mut store, 1).unwrap();
-    assert_eq!(result, 10.0);
+    let wasm = include_str!("wat/fuzz_15_01.wat");
+    ExecutionTest::default()
+        .wasm(wasm)
+        .call::<i64, f32>("", 1)
+        .assert_results(10.0);
 }
 
 #[test]
@@ -455,20 +427,11 @@ fn audit_0_codegen() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn audit_0_execution() {
-    use crate::{Engine, Instance, Store};
     let wasm = include_str!("wat/audit_0.wat");
-    let engine = Engine::default();
-    let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, wasm).unwrap();
-    let instance = Instance::new(&mut store, &module, &[]).unwrap();
-    let func = instance
-        .get_func(&store, "")
-        .unwrap()
-        .typed::<(), (i32, i32, i32, i32)>(&store)
-        .unwrap();
-    let result = func.call(&mut store, ()).unwrap();
-    std::println!("result = {result:?}");
-    assert_eq!(result, (0, 1, 0, 1));
+    ExecutionTest::default()
+        .wasm(wasm)
+        .call::<(), (i32, i32, i32, i32)>("", ())
+        .assert_results((0, 1, 0, 1));
 }
 
 #[test]
@@ -490,19 +453,11 @@ fn audit_1_codegen() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn audit_1_execution() {
-    use crate::{Engine, Instance, Store};
     let wasm = include_str!("wat/audit_1.wat");
-    let engine = Engine::default();
-    let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, wasm).unwrap();
-    let instance = Instance::new(&mut store, &module, &[]).unwrap();
-    let func = instance
-        .get_func(&store, "")
-        .unwrap()
-        .typed::<(), (i32, i32, i32)>(&store)
-        .unwrap();
-    let result = func.call(&mut store, ()).unwrap_err();
-    assert_eq!(result.as_trap_code(), Some(TrapCode::IntegerOverflow));
+    ExecutionTest::default()
+        .wasm(wasm)
+        .call::<(), (i32, i32, i32)>("", ())
+        .assert_trap(TrapCode::IntegerOverflow);
 }
 
 #[test]
@@ -523,17 +478,9 @@ fn audit_2_codegen() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn audit_2_execution() {
-    use crate::{Engine, Instance, Store};
     let wasm = include_str!("wat/audit_2.wat");
-    let engine = Engine::default();
-    let mut store = <Store<()>>::new(&engine, ());
-    let module = Module::new(&engine, wasm).unwrap();
-    let instance = Instance::new(&mut store, &module, &[]).unwrap();
-    let func = instance.get_func(&store, "").unwrap();
-    let inputs = [Val::I32(1)];
-    let mut results = [0_i32; 4].map(Val::from);
-    let expected = [1_i32; 4];
-    func.call(&mut store, &inputs[..], &mut results[..])
-        .unwrap();
-    assert_eq!(results.map(|v| v.i32().unwrap()), expected,);
+    ExecutionTest::default()
+        .wasm(wasm)
+        .call::<i32, (i32, i32, i32, i32)>("", 1)
+        .assert_results((1, 1, 1, 1));
 }
