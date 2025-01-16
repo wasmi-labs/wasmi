@@ -33,6 +33,10 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         // improves performance of the translation process that can quickly
         // become very slow.
         config.cranelift_opt_level(wasmtime::OptLevel::None);
+        // We tell Cranelift to use a somewhat faster register allocation
+        // scheme that might yield worse codegen, but this translation time
+        // trade-off usually is not worth it during fuzzing.
+        config.cranelift_regalloc_algorithm(wasmtime::RegallocAlgorithm::SinglePass);
         let engine = Engine::new(&config).unwrap();
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
