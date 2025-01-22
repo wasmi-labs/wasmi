@@ -15,7 +15,7 @@ exclude.workspace = true
 
 [dependencies]
 libm = { version = "0.2.11", default-features = false }
-downcast-rs = { version = "2.0.1", default-features = false }
+downcast-rs = { version = "2.0.1", default-features = false, features = ["sync"] }
 
 [dev-dependencies]
 rand = "0.8.5"
