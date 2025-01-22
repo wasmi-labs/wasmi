@@ -1,5 +1,7 @@
 #![no_main]
 
+use std::fmt;
+
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
 use wasmi::Val;
@@ -9,30 +11,70 @@ use wasmi_fuzz::{
     FuzzVal,
 };
 
-fuzz_target!(|seed: &[u8]| {
-    let mut u = Unstructured::new(seed);
-    let Ok(mut fuzz_config) = FuzzSmithConfig::arbitrary(&mut u) else {
-        return;
-    };
-    let chosen_oracle = ChosenOracle::arbitrary(&mut u).unwrap_or_default();
-    fuzz_config.enable_nan_canonicalization();
-    fuzz_config.export_everything();
-    WasmiOracle::configure(&mut fuzz_config);
-    chosen_oracle.configure(&mut fuzz_config);
-    let Ok(mut smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut u) else {
-        return;
-    };
-    // Note: We cannot use built-in fuel metering of the different engines since that
-    //       would introduce unwanted non-determinism with respect to fuzz testing.
-    let Ok(_) = smith_module.ensure_termination(1_000 /* fuel */) else {
-        return;
-    };
-    let wasm_bytes = smith_module.to_bytes();
-    let wasm = wasm_bytes.as_slice();
+/// Fuzzing input for differential fuzzing.
+pub struct FuzzInput {
+    /// The chosen Wasm runtime oracle to compare against Wasmi.
+    chosen_oracle: ChosenOracle,
+    /// The fuzzed Wasm module and its configuration.
+    smith_module: wasm_smith::Module,
+}
+
+impl<'a> Arbitrary<'a> for FuzzInput {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        let mut fuzz_config = FuzzSmithConfig::arbitrary(u)?;
+        fuzz_config.enable_nan_canonicalization();
+        fuzz_config.export_everything();
+        let chosen_oracle = ChosenOracle::arbitrary(u).unwrap_or_default();
+        WasmiOracle::configure(&mut fuzz_config);
+        chosen_oracle.configure(&mut fuzz_config);
+        let smith_config: wasm_smith::Config = fuzz_config.into();
+        let mut smith_module = wasm_smith::Module::new(smith_config, u)?;
+        smith_module.ensure_termination(1_000 /* fuel */)
+            .expect("`ensure_termination` can only fail for modules that have not been created by `wasm_smith`");
+        Ok(Self {
+            chosen_oracle,
+            smith_module,
+        })
+    }
+}
+
+impl fmt::Debug for FuzzInput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        /// Prints the internal `String` as `Display` on `Debug` output.
+        pub struct Text(String);
+        impl fmt::Debug for Text {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "\n{}", self.0.as_str())
+            }
+        }
+
+        let wasm = self.smith_module.to_bytes();
+        let wat = match wasmprinter::print_bytes(wasm) {
+            Ok(wat) => wat,
+            Err(err) => format!("invalid Wasm: {err}"),
+        };
+        f.debug_struct("FuzzInput")
+            .field("chosen_oracle", &self.chosen_oracle)
+            .field("module", &self.smith_module)
+            .field("wasm", &Text(wat))
+            .finish()
+    }
+}
+
+impl FuzzInput {
+    /// Returns the fuzzed Wasm input bytes.
+    pub fn wasm(&self) -> Box<[u8]> {
+        self.smith_module.to_bytes().into()
+    }
+}
+
+fuzz_target!(|input: FuzzInput| {
+    let wasm = input.wasm();
+    let wasm = &wasm[..];
     let Some(mut wasmi_oracle) = WasmiOracle::setup(wasm) else {
         return;
     };
-    let Some(mut chosen_oracle) = chosen_oracle.setup(wasm) else {
+    let Some(mut chosen_oracle) = input.chosen_oracle.setup(wasm) else {
         return;
     };
     let exports = wasmi_oracle.exports();
