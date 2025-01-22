@@ -1768,7 +1768,7 @@ version = "0.40.0"
 dependencies = [
  "anyhow",
  "wasmi 0.40.0",
- "wast 221.0.2",
+ "wast 224.0.0",
 ]
 
 [[package]]
@@ -2019,19 +2019,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2ef140f1b49946586078353a453a1d28ba90adfc54dde75710bc1931de204d68"
 dependencies = [
  "leb128",
-]
-
-[[package]]
-name = "wast"
-version = "221.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcc4470b9de917ba199157d1f0ae104f2ae362be728c43e68c571c7715bd629e"
-dependencies = [
- "bumpalo",
- "leb128",
- "memchr",
- "unicode-width",
- "wasm-encoder 0.221.2",
 ]
 
 [[package]]
