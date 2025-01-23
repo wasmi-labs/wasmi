@@ -87,7 +87,7 @@ where
         let mut store = <Store<T>>::new(&self.engine, data);
         let linker = Linker::new(&self.engine);
         let results = linker
-            .instantiate(&mut store, &module)?
+            .instantiate(&mut store, module)?
             .start(&mut store)?
             .get_typed_func::<Args, Results>(&store, func_name)?
             .call(&mut store, args)?;
