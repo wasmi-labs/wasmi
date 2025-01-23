@@ -2649,7 +2649,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_neg(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_neg, TypedVal::f32_neg)
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f32_neg as _, TypedVal::f32_neg as _),
+            true => (
+                Instruction::f32_neg_canonicalize_nan as _,
+                TypedVal::f32_neg_canonicalize_nan as _,
+            ),
+        };
+        self.translate_unary(make_instr, consteval)
     }
 
     fn visit_f32_ceil(&mut self) -> Self::Output {
@@ -2669,22 +2676,43 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_sqrt(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_sqrt, TypedVal::f32_sqrt)
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f32_sqrt as _, TypedVal::f32_sqrt as _),
+            true => (
+                Instruction::f32_sqrt_canonicalize_nan as _,
+                TypedVal::f32_sqrt_canonicalize_nan as _,
+            ),
+        };
+        self.translate_unary(make_instr, consteval)
     }
 
     fn visit_f32_add(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f32_add as _, TypedVal::f32_add as _),
+            true => (
+                Instruction::f32_add_canonicalize_nan as _,
+                TypedVal::f32_add_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary_commutative(
-            Instruction::f32_add,
-            TypedVal::f32_add,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             Self::no_custom_opt::<Reg, f32>,
         )
     }
 
     fn visit_f32_sub(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f32_sub as _, TypedVal::f32_sub as _),
+            true => (
+                Instruction::f32_sub_canonicalize_nan as _,
+                TypedVal::f32_sub_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary(
-            Instruction::f32_sub,
-            TypedVal::f32_sub,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             Self::no_custom_opt::<Reg, f32>,
             // Unfortunately we cannot optimize for the case that `lhs == 0.0`
@@ -2695,9 +2723,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_mul(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f32_mul as _, TypedVal::f32_mul as _),
+            true => (
+                Instruction::f32_mul_canonicalize_nan as _,
+                TypedVal::f32_mul_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary_commutative::<f32>(
-            Instruction::f32_mul,
-            TypedVal::f32_mul,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             // Unfortunately we cannot apply `x * 0` or `0 * x` optimizations
             // since Wasm mandates different behaviors if `x` is infinite or
@@ -2707,9 +2742,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_div(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f32_div as _, TypedVal::f32_div as _),
+            true => (
+                Instruction::f32_div_canonicalize_nan as _,
+                TypedVal::f32_div_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary::<f32>(
-            Instruction::f32_div,
-            TypedVal::f32_div,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             Self::no_custom_opt,
             Self::no_custom_opt,
@@ -2717,9 +2759,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_min(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f32_min as _, TypedVal::f32_min as _),
+            true => (
+                Instruction::f32_min_canonicalize_nan as _,
+                TypedVal::f32_min_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary_commutative(
-            Instruction::f32_min,
-            TypedVal::f32_min,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             |this, reg: Reg, value: f32| {
                 if value.is_infinite() && value.is_sign_positive() {
@@ -2733,9 +2782,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_max(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f32_max as _, TypedVal::f32_max as _),
+            true => (
+                Instruction::f32_max_canonicalize_nan as _,
+                TypedVal::f32_max_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary_commutative(
-            Instruction::f32_max,
-            TypedVal::f32_max,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             |this, reg: Reg, value: f32| {
                 if value.is_infinite() && value.is_sign_negative() {
@@ -2749,11 +2805,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_copysign(&mut self) -> Self::Output {
-        self.translate_fcopysign::<f32>(
-            Instruction::f32_copysign,
-            Instruction::f32_copysign_imm,
-            TypedVal::f32_copysign,
-        )
+        let (make_instr, make_instr_imm, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (
+                Instruction::f32_copysign as _,
+                Instruction::f32_copysign_imm as _,
+                TypedVal::f32_copysign as _,
+            ),
+            true => (
+                Instruction::f32_copysign_canonicalize_nan as _,
+                Instruction::f32_copysign_imm_canonicalize_nan as _,
+                TypedVal::f32_copysign_canonicalize_nan as _,
+            ),
+        };
+        self.translate_fcopysign::<f32>(make_instr, make_instr_imm, consteval)
     }
 
     fn visit_f64_abs(&mut self) -> Self::Output {
@@ -2761,7 +2825,14 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_neg(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_neg, TypedVal::f64_neg)
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f64_neg as _, TypedVal::f64_neg as _),
+            true => (
+                Instruction::f64_neg_canonicalize_nan as _,
+                TypedVal::f64_neg_canonicalize_nan as _,
+            ),
+        };
+        self.translate_unary(make_instr, consteval)
     }
 
     fn visit_f64_ceil(&mut self) -> Self::Output {
@@ -2781,22 +2852,43 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_sqrt(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_sqrt, TypedVal::f64_sqrt)
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f64_sqrt as _, TypedVal::f64_sqrt as _),
+            true => (
+                Instruction::f64_sqrt_canonicalize_nan as _,
+                TypedVal::f64_sqrt_canonicalize_nan as _,
+            ),
+        };
+        self.translate_unary(make_instr, consteval)
     }
 
     fn visit_f64_add(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f64_add as _, TypedVal::f64_add as _),
+            true => (
+                Instruction::f64_add_canonicalize_nan as _,
+                TypedVal::f64_add_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary_commutative(
-            Instruction::f64_add,
-            TypedVal::f64_add,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             Self::no_custom_opt::<Reg, f64>,
         )
     }
 
     fn visit_f64_sub(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f64_sub as _, TypedVal::f64_sub as _),
+            true => (
+                Instruction::f64_sub_canonicalize_nan as _,
+                TypedVal::f64_sub_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary(
-            Instruction::f64_sub,
-            TypedVal::f64_sub,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             Self::no_custom_opt::<Reg, f64>,
             // Unfortunately we cannot optimize for the case that `lhs == 0.0`
@@ -2807,9 +2899,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_mul(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f64_mul as _, TypedVal::f64_mul as _),
+            true => (
+                Instruction::f64_mul_canonicalize_nan as _,
+                TypedVal::f64_mul_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary_commutative::<f64>(
-            Instruction::f64_mul,
-            TypedVal::f64_mul,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             // Unfortunately we cannot apply `x * 0` or `0 * x` optimizations
             // since Wasm mandates different behaviors if `x` is infinite or
@@ -2819,9 +2918,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_div(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f64_div as _, TypedVal::f64_div as _),
+            true => (
+                Instruction::f64_div_canonicalize_nan as _,
+                TypedVal::f64_div_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary::<f64>(
-            Instruction::f64_div,
-            TypedVal::f64_div,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             Self::no_custom_opt,
             Self::no_custom_opt,
@@ -2829,9 +2935,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_min(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f64_min as _, TypedVal::f64_min as _),
+            true => (
+                Instruction::f64_min_canonicalize_nan as _,
+                TypedVal::f64_min_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary_commutative(
-            Instruction::f64_min,
-            TypedVal::f64_min,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             |this, reg: Reg, value: f64| {
                 if value.is_infinite() && value.is_sign_positive() {
@@ -2845,9 +2958,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_max(&mut self) -> Self::Output {
+        let (make_instr, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (Instruction::f64_max as _, TypedVal::f64_max as _),
+            true => (
+                Instruction::f64_max_canonicalize_nan as _,
+                TypedVal::f64_max_canonicalize_nan as _,
+            ),
+        };
         self.translate_fbinary_commutative(
-            Instruction::f64_max,
-            TypedVal::f64_max,
+            make_instr,
+            consteval,
             Self::no_custom_opt,
             |this, reg: Reg, value: f64| {
                 if value.is_infinite() && value.is_sign_negative() {
@@ -2861,11 +2981,19 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_copysign(&mut self) -> Self::Output {
-        self.translate_fcopysign::<f64>(
-            Instruction::f64_copysign,
-            Instruction::f64_copysign_imm,
-            TypedVal::f64_copysign,
-        )
+        let (make_instr, make_instr_imm, consteval) = match self.is_nan_canonicalization_enabled() {
+            false => (
+                Instruction::f64_copysign as _,
+                Instruction::f64_copysign_imm as _,
+                TypedVal::f64_copysign as _,
+            ),
+            true => (
+                Instruction::f64_copysign_canonicalize_nan as _,
+                Instruction::f64_copysign_imm_canonicalize_nan as _,
+                TypedVal::f64_copysign_canonicalize_nan as _,
+            ),
+        };
+        self.translate_fcopysign::<f64>(make_instr, make_instr_imm, consteval)
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Output {
