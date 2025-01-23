@@ -16,7 +16,7 @@ pub struct FuzzInput {
     /// The chosen Wasm runtime oracle to compare against Wasmi.
     chosen_oracle: ChosenOracle,
     /// The fuzzed Wasm module and its configuration.
-    smith_module: FuzzModule,
+    module: FuzzModule,
 }
 
 impl<'a> Arbitrary<'a> for FuzzInput {
@@ -32,7 +32,7 @@ impl<'a> Arbitrary<'a> for FuzzInput {
         smith_module.ensure_termination(1_000 /* fuel */);
         Ok(Self {
             chosen_oracle,
-            smith_module,
+            module: smith_module,
         })
     }
 }
@@ -40,7 +40,7 @@ impl<'a> Arbitrary<'a> for FuzzInput {
 impl FuzzInput {
     /// Returns the fuzzed Wasm input bytes.
     pub fn wasm(&self) -> Box<[u8]> {
-        self.smith_module.wasm().into_bytes()
+        self.module.wasm().into_bytes()
     }
 }
 
