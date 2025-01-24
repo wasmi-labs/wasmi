@@ -92,20 +92,15 @@ fuzz_target!(|input: FuzzInput| {
         let oracle_name = chosen_oracle.name();
         match (result_wasmi, result_oracle) {
             (Ok(wasmi_results), Ok(oracle_results)) => {
-                if wasmi_results == oracle_results {
-                    continue;
-                }
-                let crash_input = generate_crash_inputs(wasm);
-                panic!(
-                    "\
-                    function call returned different values:\n\
-                        \tfunc: {name}\n\
-                        \tparams: {params:?}\n\
-                        \t{wasmi_name}: {wasmi_results:?}\n\
-                        \t{oracle_name}: {oracle_results:?}\n\
-                        \tcrash-report: 0x{crash_input}\n\
-                    "
-                )
+                assert_results_match(
+                    wasm,
+                    &wasmi_oracle,
+                    &*chosen_oracle,
+                    name,
+                    params,
+                    &wasmi_results,
+                    &oracle_results,
+                );
             }
             (Err(wasmi_err), Err(oracle_err)) => {
                 if wasmi_err == oracle_err {
@@ -154,6 +149,33 @@ fuzz_target!(|input: FuzzInput| {
     assert_globals_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
     assert_memories_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
 });
+
+fn assert_results_match(
+    wasm: &[u8],
+    wasmi_oracle: &WasmiOracle,
+    chosen_oracle: &dyn DifferentialOracle,
+    func_name: &str,
+    params: &[FuzzVal],
+    wasmi_results: &[FuzzVal],
+    oracle_results: &[FuzzVal],
+) {
+    if wasmi_results == oracle_results {
+        return;
+    }
+    let crash_input = generate_crash_inputs(wasm);
+    let wasmi_name = wasmi_oracle.name();
+    let oracle_name = chosen_oracle.name();
+    panic!(
+        "\
+        function call returned different values:\n\
+            \tfunc: {func_name}\n\
+            \tparams: {params:?}\n\
+            \t{wasmi_name}: {wasmi_results:?}\n\
+            \t{oracle_name}: {oracle_results:?}\n\
+            \tcrash-report: 0x{crash_input}\n\
+        "
+    )
+}
 
 /// Asserts that the global variable state is equal in both oracles.
 fn assert_globals_match(
