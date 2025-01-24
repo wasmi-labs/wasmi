@@ -146,6 +146,7 @@ fuzz_target!(|input: FuzzInput| {
     }
 });
 
+/// Asserts that the call results is equal for both oracles.
 fn assert_results_match(
     wasm: &[u8],
     wasmi_oracle: &WasmiOracle,
