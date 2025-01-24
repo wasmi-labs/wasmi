@@ -92,34 +92,34 @@ fuzz_target!(|input: FuzzInput| {
         match (result_wasmi, result_oracle) {
             (Ok(wasmi_results), Ok(oracle_results)) => {
                 assert_results_match(
-                    wasm,
                     &wasmi_oracle,
                     &*chosen_oracle,
+                    wasm,
                     name,
                     params,
                     &wasmi_results,
                     &oracle_results,
                 );
-                assert_globals_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
-                assert_memories_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
+                assert_globals_match(&mut wasmi_oracle, &mut *chosen_oracle, wasm, &exports);
+                assert_memories_match(&mut wasmi_oracle, &mut *chosen_oracle, wasm, &exports);
             }
             (Err(wasmi_err), Err(oracle_err)) => {
                 assert_errors_match(
-                    wasm,
                     &wasmi_oracle,
                     &*chosen_oracle,
+                    wasm,
                     name,
                     params,
                     wasmi_err,
                     oracle_err,
                 );
-                assert_globals_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
-                assert_memories_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
+                assert_globals_match(&mut wasmi_oracle, &mut *chosen_oracle, wasm, &exports);
+                assert_memories_match(&mut wasmi_oracle, &mut *chosen_oracle, wasm, &exports);
             }
             (wasmi_results, oracle_results) => report_divergent_behavior(
-                wasm,
                 &wasmi_oracle,
                 &*chosen_oracle,
+                wasm,
                 name,
                 params,
                 &wasmi_results,
@@ -131,9 +131,9 @@ fuzz_target!(|input: FuzzInput| {
 
 /// Asserts that the call results is equal for both oracles.
 fn assert_results_match(
-    wasm: &[u8],
     wasmi_oracle: &WasmiOracle,
     chosen_oracle: &dyn DifferentialOracle,
+    wasm: &[u8],
     func_name: &str,
     params: &[FuzzVal],
     wasmi_results: &[FuzzVal],
@@ -159,9 +159,9 @@ fn assert_results_match(
 
 /// Asserts that the call results is equal for both oracles.
 fn assert_errors_match(
-    wasm: &[u8],
     wasmi_oracle: &WasmiOracle,
     chosen_oracle: &dyn DifferentialOracle,
+    wasm: &[u8],
     func_name: &str,
     params: &[FuzzVal],
     wasmi_err: FuzzError,
@@ -187,9 +187,9 @@ fn assert_errors_match(
 
 /// Asserts that the global variable state is equal in both oracles.
 fn assert_globals_match(
-    wasm: &[u8],
     wasmi_oracle: &mut WasmiOracle,
     chosen_oracle: &mut dyn DifferentialOracle,
+    wasm: &[u8],
     exports: &ModuleExports,
 ) {
     for name in exports.globals() {
@@ -215,9 +215,9 @@ fn assert_globals_match(
 
 /// Asserts that the linear memory state is equal in both oracles.
 fn assert_memories_match(
-    wasm: &[u8],
     wasmi_oracle: &mut WasmiOracle,
     chosen_oracle: &mut dyn DifferentialOracle,
+    wasm: &[u8],
     exports: &ModuleExports,
 ) {
     for name in exports.memories() {
@@ -259,9 +259,9 @@ fn assert_memories_match(
 
 /// Reports divergent behavior between Wasmi and the chosen oracle.
 fn report_divergent_behavior(
-    wasm: &[u8],
     wasmi_oracle: &WasmiOracle,
     chosen_oracle: &dyn DifferentialOracle,
+    wasm: &[u8],
     func_name: &str,
     params: &[FuzzVal],
     wasmi_result: &Result<Box<[FuzzVal]>, FuzzError>,
