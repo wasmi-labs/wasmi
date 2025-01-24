@@ -12,6 +12,7 @@ use wasmi_fuzz::{
         ModuleExports,
         WasmiOracle,
     },
+    FuzzError,
     FuzzModule,
     FuzzVal,
 };
@@ -105,20 +106,15 @@ fuzz_target!(|input: FuzzInput| {
                 assert_memories_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
             }
             (Err(wasmi_err), Err(oracle_err)) => {
-                if wasmi_err == oracle_err {
-                    continue;
-                }
-                let crash_input = generate_crash_inputs(wasm);
-                panic!(
-                    "\
-                    function call returned different errors:\n\
-                        \tfunc: {name}\n\
-                        \tparams: {params:?}\n\
-                        \t{wasmi_name}: {wasmi_err:?}\n\
-                        \t{oracle_name}: {oracle_err:?}\n\
-                        \tcrash-report: 0x{crash_input}\n\
-                    "
-                )
+                assert_errors_match(
+                    wasm,
+                    &wasmi_oracle,
+                    &*chosen_oracle,
+                    name,
+                    params,
+                    wasmi_err,
+                    oracle_err,
+                );
             }
             (Ok(wasmi_results), Err(oracle_err)) => {
                 let crash_input = generate_crash_inputs(wasm);
@@ -172,6 +168,34 @@ fn assert_results_match(
             \tparams: {params:?}\n\
             \t{wasmi_name}: {wasmi_results:?}\n\
             \t{oracle_name}: {oracle_results:?}\n\
+            \tcrash-report: 0x{crash_input}\n\
+        "
+    )
+}
+
+/// Asserts that the call results is equal for both oracles.
+fn assert_errors_match(
+    wasm: &[u8],
+    wasmi_oracle: &WasmiOracle,
+    chosen_oracle: &dyn DifferentialOracle,
+    func_name: &str,
+    params: &[FuzzVal],
+    wasmi_err: FuzzError,
+    oracle_err: FuzzError,
+) {
+    if wasmi_err == oracle_err {
+        return;
+    }
+    let crash_input = generate_crash_inputs(wasm);
+    let wasmi_name = wasmi_oracle.name();
+    let oracle_name = chosen_oracle.name();
+    panic!(
+        "\
+        function call returned different errors:\n\
+            \tfunc: {func_name}\n\
+            \tparams: {params:?}\n\
+            \t{wasmi_name}: {wasmi_err:?}\n\
+            \t{oracle_name}: {oracle_err:?}\n\
             \tcrash-report: 0x{crash_input}\n\
         "
     )
