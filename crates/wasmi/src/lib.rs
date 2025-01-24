@@ -79,6 +79,9 @@ extern crate std;
 #[macro_use]
 mod foreach_tuple;
 
+#[cfg(test)]
+pub mod tests;
+
 mod engine;
 mod error;
 mod externref;

@@ -236,7 +236,7 @@ impl ImportKey {
     /// Creates a new [`ImportKey`] from the given `module` and `name` symbols.
     #[inline]
     pub fn new(module: Symbol, name: Symbol) -> Self {
-        let module_and_name = u64::from(module.into_u32()) << 32 | u64::from(name.into_u32());
+        let module_and_name = (u64::from(module.into_u32()) << 32) | u64::from(name.into_u32());
         Self { module_and_name }
     }
 

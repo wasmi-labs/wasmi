@@ -13,32 +13,61 @@ use wasmi::{
     StoreLimitsBuilder,
     Val,
 };
-use wasmi_fuzz::{config::ValidationMode, FuzzVal, FuzzValType, FuzzWasmiConfig};
+use wasmi_fuzz::{
+    config::ValidationMode,
+    FuzzModule,
+    FuzzSmithConfig,
+    FuzzVal,
+    FuzzValType,
+    FuzzWasmiConfig,
+};
 
-fuzz_target!(|seed: &[u8]| {
-    let mut u = Unstructured::new(seed);
-    let Ok(wasmi_config) = FuzzWasmiConfig::arbitrary(&mut u) else {
-        return;
-    };
-    let Ok(mut fuzz_config) = wasmi_fuzz::FuzzSmithConfig::arbitrary(&mut u) else {
-        return;
-    };
-    fuzz_config.export_everything();
-    let Ok(smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut u) else {
-        return;
-    };
-    let wasm_bytes = smith_module.to_bytes();
-    let wasm = wasm_bytes.as_slice();
+#[derive(Debug)]
+pub struct FuzzInput<'a> {
+    config: FuzzWasmiConfig,
+    module: FuzzModule,
+    u: Unstructured<'a>,
+}
 
-    let config = {
-        let mut config = Config::from(wasmi_config);
+impl<'a> Arbitrary<'a> for FuzzInput<'a> {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        let config = FuzzWasmiConfig::arbitrary(u)?;
+        let mut fuzz_config = FuzzSmithConfig::arbitrary(u)?;
+        fuzz_config.export_everything();
+        let module = FuzzModule::new(fuzz_config, u)?;
+        Ok(Self {
+            config,
+            module,
+            u: Unstructured::new(&[]),
+        })
+    }
+
+    fn arbitrary_take_rest(mut u: Unstructured<'a>) -> arbitrary::Result<Self> {
+        Self::arbitrary(&mut u).map(|mut input| {
+            input.u = u;
+            input
+        })
+    }
+}
+
+fuzz_target!(|input: FuzzInput| {
+    let FuzzInput {
+        config,
+        module,
+        mut u,
+    } = input;
+    let wasm_bytes = module.wasm().into_bytes();
+    let wasm = &wasm_bytes[..];
+
+    let engine_config = {
+        let mut config = Config::from(config);
         // We use Wasmi's built-in fuel metering since it is way faster
         // than `wasm_smith`'s fuel metering and thus allows the fuzzer
         // to expand its test coverage faster.
         config.consume_fuel(true);
         config
     };
-    let engine = Engine::new(&config);
+    let engine = Engine::new(&engine_config);
     let linker = Linker::new(&engine);
     let limiter = StoreLimitsBuilder::new()
         .memory_size(1000 * 0x10000)
@@ -48,7 +77,7 @@ fuzz_target!(|seed: &[u8]| {
     let Ok(_) = store.set_fuel(1000) else {
         return;
     };
-    if matches!(wasmi_config.validation_mode, ValidationMode::Unchecked) {
+    if matches!(config.validation_mode, ValidationMode::Unchecked) {
         // We validate the Wasm module before handing it over to Wasmi
         // despite `wasm_smith` stating to only produce valid Wasm.
         // Translating an invalid Wasm module is undefined behavior.
@@ -56,7 +85,7 @@ fuzz_target!(|seed: &[u8]| {
             return;
         }
     }
-    let status = match wasmi_config.validation_mode {
+    let status = match config.validation_mode {
         ValidationMode::Checked => Module::new(&engine, wasm),
         ValidationMode::Unchecked => {
             // Safety: we have just checked Wasm validity above.

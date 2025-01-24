@@ -185,7 +185,7 @@ impl Args {
             .collect::<Result<Vec<_>>>()
     }
 
-    /// Returns the arguments that the WASI invokation expects to receive.
+    /// Returns the arguments that the WASI invocation expects to receive.
     ///
     /// The first argument is always the module file name itself followed
     /// by the arguments to the invoked function if any.

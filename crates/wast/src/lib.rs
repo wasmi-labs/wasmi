@@ -30,7 +30,7 @@ use wast::{
     Wat,
 };
 
-/// The configuation for the test runner.
+/// The configuration for the test runner.
 #[derive(Debug, Copy, Clone)]
 pub struct RunnerConfig {
     /// The Wasmi configuration used for all tests.

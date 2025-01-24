@@ -62,7 +62,7 @@ where
 }
 
 #[cfg(not(feature = "std"))]
-impl<'a> Read for &'a [u8] {
+impl Read for &[u8] {
     fn read(&mut self, buffer: &mut [u8]) -> Result<usize, ReadError> {
         let len_copy = self.len().min(buffer.len());
         let (read, rest) = self.split_at(len_copy);
