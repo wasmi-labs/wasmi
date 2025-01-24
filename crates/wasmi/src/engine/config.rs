@@ -181,6 +181,7 @@ impl Config {
         features.set(WasmFeatures::TAIL_CALL, true);
         features.set(WasmFeatures::EXTENDED_CONST, true);
         features.set(WasmFeatures::FLOATS, true);
+        features.set(WasmFeatures::CUSTOM_PAGE_SIZES, false);
         features
     }
 
@@ -318,6 +319,18 @@ impl Config {
     /// [`extended-const`]: https://github.com/WebAssembly/extended-const
     pub fn wasm_extended_const(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::EXTENDED_CONST, enable);
+        self
+    }
+
+    /// Enable or disable the [`custom-page-sizes`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Disabled by default.
+    ///
+    /// [`custom-page-sizes`]: https://github.com/WebAssembly/custom-page-sizes
+    pub fn wasm_custom_page_sizes(&mut self, enable: bool) -> &mut Self {
+        self.features.set(WasmFeatures::CUSTOM_PAGE_SIZES, enable);
         self
     }
 
