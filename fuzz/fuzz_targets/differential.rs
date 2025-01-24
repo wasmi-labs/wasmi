@@ -25,6 +25,7 @@ pub struct FuzzInput<'a> {
     chosen_oracle: ChosenOracle,
     /// The fuzzed Wasm module and its configuration.
     module: FuzzModule,
+    /// Additional unstructured input data used to initialize call parameter etc.
     u: Unstructured<'a>,
 }
 
