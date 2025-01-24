@@ -115,6 +115,8 @@ fuzz_target!(|input: FuzzInput| {
                     wasmi_err,
                     oracle_err,
                 );
+                assert_globals_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
+                assert_memories_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
             }
             (Ok(wasmi_results), Err(oracle_err)) => {
                 let crash_input = generate_crash_inputs(wasm);
