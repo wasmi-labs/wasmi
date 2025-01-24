@@ -101,6 +101,8 @@ fuzz_target!(|input: FuzzInput| {
                     &wasmi_results,
                     &oracle_results,
                 );
+                assert_globals_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
+                assert_memories_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
             }
             (Err(wasmi_err), Err(oracle_err)) => {
                 if wasmi_err == oracle_err {
@@ -146,8 +148,6 @@ fuzz_target!(|input: FuzzInput| {
             }
         }
     }
-    assert_globals_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
-    assert_memories_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
 });
 
 fn assert_results_match(
