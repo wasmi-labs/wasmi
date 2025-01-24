@@ -2,7 +2,7 @@
 
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
-use wasmi::Val;
+use wasmi::core::ValType;
 use wasmi_fuzz::{
     config::FuzzSmithConfig,
     oracle::{
@@ -15,18 +15,21 @@ use wasmi_fuzz::{
     FuzzError,
     FuzzModule,
     FuzzVal,
+    FuzzValType,
 };
 
 /// Fuzzing input for differential fuzzing.
 #[derive(Debug)]
-pub struct FuzzInput {
+pub struct FuzzInput<'a> {
     /// The chosen Wasm runtime oracle to compare against Wasmi.
     chosen_oracle: ChosenOracle,
     /// The fuzzed Wasm module and its configuration.
     module: FuzzModule,
+    /// Additional unstructured input data used to initialize call parameter etc.
+    u: Unstructured<'a>,
 }
 
-impl<'a> Arbitrary<'a> for FuzzInput {
+impl<'a> Arbitrary<'a> for FuzzInput<'a> {
     fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
         let mut fuzz_config = FuzzSmithConfig::arbitrary(u)?;
         fuzz_config.enable_nan_canonicalization();
@@ -40,14 +43,15 @@ impl<'a> Arbitrary<'a> for FuzzInput {
         Ok(Self {
             chosen_oracle,
             module: smith_module,
+            u: Unstructured::new(&[]),
         })
     }
-}
 
-impl FuzzInput {
-    /// Returns the fuzzed Wasm input bytes.
-    pub fn wasm(&self) -> Box<[u8]> {
-        self.module.wasm().into_bytes()
+    fn arbitrary_take_rest(mut u: Unstructured<'a>) -> arbitrary::Result<Self> {
+        Self::arbitrary(&mut u).map(|mut input| {
+            input.u = u;
+            input
+        })
     }
 }
 
@@ -59,22 +63,24 @@ fuzz_target!(|input: FuzzInput| {
 });
 
 /// The state required to drive the differential fuzzer for a single run.
-pub struct FuzzState {
+pub struct FuzzState<'a> {
     wasmi_oracle: WasmiOracle,
     chosen_oracle: Box<dyn DifferentialOracle>,
     wasm: Box<[u8]>,
+    u: Unstructured<'a>,
 }
 
-impl FuzzState {
+impl<'a> FuzzState<'a> {
     /// Sets up the oracles for the differential fuzzing if possible.
-    pub fn setup(input: FuzzInput) -> Option<Self> {
-        let wasm = input.wasm();
+    pub fn setup(input: FuzzInput<'a>) -> Option<Self> {
+        let wasm = input.module.wasm().into_bytes();
         let wasmi_oracle = WasmiOracle::setup(&wasm[..])?;
         let chosen_oracle = input.chosen_oracle.setup(&wasm[..])?;
         Some(Self {
             wasm,
             wasmi_oracle,
             chosen_oracle,
+            u: input.u,
         })
     }
 
@@ -83,15 +89,7 @@ impl FuzzState {
         let exports = self.wasmi_oracle.exports();
         let mut params = Vec::new();
         for (name, func_type) in exports.funcs() {
-            params.clear();
-            params.extend(
-                func_type
-                    .params()
-                    .iter()
-                    .copied()
-                    .map(Val::default)
-                    .map(FuzzVal::from),
-            );
+            self.init_params(&mut params, func_type.params());
             let params = &params[..];
             let result_wasmi = self.wasmi_oracle.call(name, params);
             let result_oracle = self.chosen_oracle.call(name, params);
@@ -124,6 +122,19 @@ impl FuzzState {
                 }
             }
         }
+    }
+
+    /// Fill [`FuzzVal`]s of type `src` into `dst` using `u` for initialization.
+    ///
+    /// Clears `dst` before the operation.
+    fn init_params(&mut self, dst: &mut Vec<FuzzVal>, src: &[ValType]) {
+        dst.clear();
+        dst.extend(
+            src.iter()
+                .copied()
+                .map(FuzzValType::from)
+                .map(|ty| FuzzVal::with_type(ty, &mut self.u)),
+        );
     }
 
     /// Asserts that the call results is equal for both oracles.
