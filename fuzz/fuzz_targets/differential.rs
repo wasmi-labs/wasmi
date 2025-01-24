@@ -45,164 +45,232 @@ impl FuzzInput {
 }
 
 fuzz_target!(|input: FuzzInput| {
-    let wasm = input.wasm();
-    let wasm = &wasm[..];
-    let Some(mut wasmi_oracle) = WasmiOracle::setup(wasm) else {
+    let Some(mut state) = FuzzState::setup(input) else {
         return;
     };
-    let Some(mut chosen_oracle) = input.chosen_oracle.setup(wasm) else {
-        return;
-    };
-    let exports = wasmi_oracle.exports();
-    let mut params = Vec::new();
-    // True as long as differential execution is deterministic between both oracles.
-    for (name, func_type) in exports.funcs() {
-        params.clear();
-        params.extend(
-            func_type
-                .params()
-                .iter()
-                .copied()
-                .map(Val::default)
-                .map(FuzzVal::from),
-        );
-        let params = &params[..];
-        let result_wasmi = wasmi_oracle.call(name, params);
-        let result_oracle = chosen_oracle.call(name, params);
-        // Note: If either of the oracles returns a non-deterministic error we skip the
-        //       entire fuzz run since following function executions could be affected by
-        //       this non-determinism due to shared global state, such as global variables.
-        if let Err(wasmi_err) = &result_wasmi {
-            if wasmi_err.is_non_deterministic() {
-                return;
-            }
-        }
-        if let Err(oracle_err) = &result_oracle {
-            if oracle_err.is_non_deterministic() {
-                return;
-            }
-        }
-        let wasmi_name = wasmi_oracle.name();
-        let oracle_name = chosen_oracle.name();
-        match (result_wasmi, result_oracle) {
-            (Ok(wasmi_results), Ok(oracle_results)) => {
-                if wasmi_results == oracle_results {
-                    continue;
-                }
-                let crash_input = generate_crash_inputs(wasm);
-                panic!(
-                    "\
-                    function call returned different values:\n\
-                        \tfunc: {name}\n\
-                        \tparams: {params:?}\n\
-                        \t{wasmi_name}: {wasmi_results:?}\n\
-                        \t{oracle_name}: {oracle_results:?}\n\
-                        \tcrash-report: 0x{crash_input}\n\
-                    "
-                )
-            }
-            (Err(wasmi_err), Err(oracle_err)) => {
-                if wasmi_err == oracle_err {
-                    continue;
-                }
-                let crash_input = generate_crash_inputs(wasm);
-                panic!(
-                    "\
-                    function call returned different errors:\n\
-                        \tfunc: {name}\n\
-                        \tparams: {params:?}\n\
-                        \t{wasmi_name}: {wasmi_err:?}\n\
-                        \t{oracle_name}: {oracle_err:?}\n\
-                        \tcrash-report: 0x{crash_input}\n\
-                    "
-                )
-            }
-            (Ok(wasmi_results), Err(oracle_err)) => {
-                let crash_input = generate_crash_inputs(wasm);
-                panic!(
-                    "\
-                    function call returned results and error:\n\
-                        \tfunc: {name}\n\
-                        \tparams: {params:?}\n\
-                        \t{wasmi_name}: {wasmi_results:?}\n\
-                        \t{oracle_name}: {oracle_err:?}\n\
-                        \tcrash-report: 0x{crash_input}\n\
-                    "
-                )
-            }
-            (Err(wasmi_err), Ok(oracle_results)) => {
-                let crash_input = generate_crash_inputs(wasm);
-                panic!(
-                    "\
-                    function call returned results and error:\n\
-                        \tfunc: {name}\n\
-                        \tparams: {params:?}\n\
-                        \t{wasmi_name}: {wasmi_err:?}\n\
-                        \t{oracle_name}: {oracle_results:?}\n\
-                        \tcrash-report: 0x{crash_input}\n\
-                    "
-                )
-            }
-        }
-    }
-    for name in exports.globals() {
-        let wasmi_val = wasmi_oracle.get_global(name);
-        let oracle_val = chosen_oracle.get_global(name);
-        if wasmi_val == oracle_val {
-            continue;
-        }
-        let wasmi_name = wasmi_oracle.name();
-        let oracle_name = chosen_oracle.name();
-        let crash_input = generate_crash_inputs(wasm);
-        panic!(
-            "\
-            encountered unequal globals:\n\
-                \tglobal: {name}\n\
-                \t{wasmi_name}: {wasmi_val:?}\n\
-                \t{oracle_name}: {oracle_val:?}\n\
-                \tcrash-report: 0x{crash_input}\n\
-            "
-        )
-    }
-    for name in exports.memories() {
-        let Some(wasmi_mem) = wasmi_oracle.get_memory(name) else {
-            continue;
-        };
-        let Some(oracle_mem) = chosen_oracle.get_memory(name) else {
-            continue;
-        };
-        if wasmi_mem == oracle_mem {
-            continue;
-        }
-        let mut first_nonmatching = 0;
-        let mut byte_wasmi = 0;
-        let mut byte_oracle = 0;
-        for (n, (mem0, mem1)) in wasmi_mem.iter().zip(oracle_mem).enumerate() {
-            if mem0 != mem1 {
-                first_nonmatching = n;
-                byte_wasmi = *mem0;
-                byte_oracle = *mem1;
-                break;
-            }
-        }
-        let wasmi_name = wasmi_oracle.name();
-        let oracle_name = chosen_oracle.name();
-        let crash_input = generate_crash_inputs(wasm);
-        panic!(
-            "\
-            encountered unequal memories:\n\
-                \tmemory: {name}\n\
-                \tindex first non-matching: {first_nonmatching}\n\
-                \t{wasmi_name}: {byte_wasmi:?}\n\
-                \t{oracle_name}: {byte_oracle:?}\n\
-                \tcrash-report: 0x{crash_input}\n\
-            "
-        )
-    }
+    state.run()
 });
 
-/// Generate crash input reports for `differential` fuzzing.`
-#[track_caller]
-fn generate_crash_inputs(wasm: &[u8]) -> String {
-    wasmi_fuzz::generate_crash_inputs("differential", wasm).unwrap()
+/// The state required to drive the differential fuzzer for a single run.
+pub struct FuzzState {
+    wasmi_oracle: WasmiOracle,
+    chosen_oracle: Box<dyn DifferentialOracle>,
+    wasm: Box<[u8]>,
+}
+
+impl FuzzState {
+    /// Sets up the oracles for the differential fuzzing if possible.
+    pub fn setup(input: FuzzInput) -> Option<Self> {
+        let wasm = input.wasm();
+        let wasmi_oracle = WasmiOracle::setup(&wasm[..])?;
+        let chosen_oracle = input.chosen_oracle.setup(&wasm[..])?;
+        Some(Self {
+            wasm,
+            wasmi_oracle,
+            chosen_oracle,
+        })
+    }
+
+    /// Performs the differential fuzzing.
+    pub fn run(&mut self) {
+        let exports = self.wasmi_oracle.exports();
+        let mut params = Vec::new();
+        for (name, func_type) in exports.funcs() {
+            params.clear();
+            params.extend(
+                func_type
+                    .params()
+                    .iter()
+                    .copied()
+                    .map(Val::default)
+                    .map(FuzzVal::from),
+            );
+            let params = &params[..];
+            let result_wasmi = self.wasmi_oracle.call(name, params);
+            let result_oracle = self.chosen_oracle.call(name, params);
+            // Note: If either of the oracles returns a non-deterministic error we skip the
+            //       entire fuzz run since following function executions could be affected by
+            //       this non-determinism due to shared global state, such as global variables.
+            if let Err(wasmi_err) = &result_wasmi {
+                if wasmi_err.is_non_deterministic() {
+                    return;
+                }
+            }
+            if let Err(oracle_err) = &result_oracle {
+                if oracle_err.is_non_deterministic() {
+                    return;
+                }
+            }
+            match (result_wasmi, result_oracle) {
+                (Ok(wasmi_results), Ok(oracle_results)) => {
+                    self.assert_results_match(name, params, &wasmi_results, &oracle_results);
+                    self.assert_globals_match(&exports);
+                    self.assert_memories_match(&exports);
+                }
+                (Err(wasmi_err), Err(oracle_err)) => {
+                    self.assert_errors_match(name, params, wasmi_err, oracle_err);
+                    self.assert_globals_match(&exports);
+                    self.assert_memories_match(&exports);
+                }
+                (wasmi_results, oracle_results) => {
+                    self.report_divergent_behavior(name, params, &wasmi_results, &oracle_results)
+                }
+            }
+        }
+    }
+
+    /// Asserts that the call results is equal for both oracles.
+    fn assert_results_match(
+        &self,
+        func_name: &str,
+        params: &[FuzzVal],
+        wasmi_results: &[FuzzVal],
+        oracle_results: &[FuzzVal],
+    ) {
+        if wasmi_results == oracle_results {
+            return;
+        }
+        let wasmi_name = self.wasmi_oracle.name();
+        let oracle_name = self.chosen_oracle.name();
+        let crash_input = self.generate_crash_inputs();
+        panic!(
+            "\
+            function call returned different values:\n\
+                \tfunc: {func_name}\n\
+                \tparams: {params:?}\n\
+                \t{wasmi_name}: {wasmi_results:?}\n\
+                \t{oracle_name}: {oracle_results:?}\n\
+                \tcrash-report: 0x{crash_input}\n\
+            "
+        )
+    }
+
+    /// Asserts that the call results is equal for both oracles.
+    fn assert_errors_match(
+        &self,
+        func_name: &str,
+        params: &[FuzzVal],
+        wasmi_err: FuzzError,
+        oracle_err: FuzzError,
+    ) {
+        if wasmi_err == oracle_err {
+            return;
+        }
+        let wasmi_name = self.wasmi_oracle.name();
+        let oracle_name = self.chosen_oracle.name();
+        let crash_input = self.generate_crash_inputs();
+        panic!(
+            "\
+            function call returned different errors:\n\
+                \tfunc: {func_name}\n\
+                \tparams: {params:?}\n\
+                \t{wasmi_name}: {wasmi_err:?}\n\
+                \t{oracle_name}: {oracle_err:?}\n\
+                \tcrash-report: 0x{crash_input}\n\
+            "
+        )
+    }
+
+    /// Asserts that the global variable state is equal in both oracles.
+    fn assert_globals_match(&mut self, exports: &ModuleExports) {
+        for name in exports.globals() {
+            let wasmi_val = self.wasmi_oracle.get_global(name);
+            let oracle_val = self.chosen_oracle.get_global(name);
+            if wasmi_val == oracle_val {
+                continue;
+            }
+            let wasmi_name = self.wasmi_oracle.name();
+            let oracle_name = self.chosen_oracle.name();
+            let crash_input = self.generate_crash_inputs();
+            panic!(
+                "\
+                encountered unequal globals:\n\
+                    \tglobal: {name}\n\
+                    \t{wasmi_name}: {wasmi_val:?}\n\
+                    \t{oracle_name}: {oracle_val:?}\n\
+                    \tcrash-report: 0x{crash_input}\n\
+                "
+            )
+        }
+    }
+
+    /// Asserts that the linear memory state is equal in both oracles.
+    fn assert_memories_match(&mut self, exports: &ModuleExports) {
+        for name in exports.memories() {
+            let Some(wasmi_mem) = self.wasmi_oracle.get_memory(name) else {
+                continue;
+            };
+            let Some(oracle_mem) = self.chosen_oracle.get_memory(name) else {
+                continue;
+            };
+            if wasmi_mem == oracle_mem {
+                continue;
+            }
+            let mut first_nonmatching = 0;
+            let mut byte_wasmi = 0;
+            let mut byte_oracle = 0;
+            for (n, (mem0, mem1)) in wasmi_mem.iter().zip(oracle_mem).enumerate() {
+                if mem0 != mem1 {
+                    first_nonmatching = n;
+                    byte_wasmi = *mem0;
+                    byte_oracle = *mem1;
+                    break;
+                }
+            }
+            let wasmi_name = self.wasmi_oracle.name();
+            let oracle_name = self.chosen_oracle.name();
+            let crash_input = self.generate_crash_inputs();
+            panic!(
+                "\
+                encountered unequal memories:\n\
+                    \tmemory: {name}\n\
+                    \tindex first non-matching: {first_nonmatching}\n\
+                    \t{wasmi_name}: {byte_wasmi:?}\n\
+                    \t{oracle_name}: {byte_oracle:?}\n\
+                    \tcrash-report: 0x{crash_input}\n\
+                "
+            )
+        }
+    }
+
+    /// Reports divergent behavior between Wasmi and the chosen oracle.
+    fn report_divergent_behavior(
+        &self,
+        func_name: &str,
+        params: &[FuzzVal],
+        wasmi_result: &Result<Box<[FuzzVal]>, FuzzError>,
+        oracle_result: &Result<Box<[FuzzVal]>, FuzzError>,
+    ) {
+        assert!(matches!(
+            (&wasmi_result, &oracle_result),
+            (Ok(_), Err(_)) | (Err(_), Ok(_))
+        ));
+        let wasmi_name = self.wasmi_oracle.name();
+        let oracle_name = self.chosen_oracle.name();
+        let wasmi_state = match wasmi_result {
+            Ok(_) => "returns result",
+            Err(_) => "traps",
+        };
+        let oracle_state = match oracle_result {
+            Ok(_) => "returns result",
+            Err(_) => "traps",
+        };
+        let crash_input = self.generate_crash_inputs();
+        panic!(
+            "\
+            function call {wasmi_state} for {wasmi_name} and {oracle_state} for {oracle_name}:\n\
+                \tfunc: {func_name}\n\
+                \tparams: {params:?}\n\
+                \t{wasmi_name}: {wasmi_result:?}\n\
+                \t{oracle_name}: {oracle_result:?}\n\
+                \tcrash-report: 0x{crash_input}\n\
+            "
+        )
+    }
+
+    /// Generate crash input reports for `differential` fuzzing.`
+    #[track_caller]
+    fn generate_crash_inputs(&self) -> String {
+        wasmi_fuzz::generate_crash_inputs("differential", &self.wasm).unwrap()
+    }
 }
