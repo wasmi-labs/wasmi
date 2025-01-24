@@ -89,8 +89,6 @@ fuzz_target!(|input: FuzzInput| {
                 return;
             }
         }
-        let wasmi_name = wasmi_oracle.name();
-        let oracle_name = chosen_oracle.name();
         match (result_wasmi, result_oracle) {
             (Ok(wasmi_results), Ok(oracle_results)) => {
                 assert_results_match(
@@ -118,32 +116,15 @@ fuzz_target!(|input: FuzzInput| {
                 assert_globals_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
                 assert_memories_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
             }
-            (Ok(wasmi_results), Err(oracle_err)) => {
-                let crash_input = generate_crash_inputs(wasm);
-                panic!(
-                    "\
-                    function call returned results and error:\n\
-                        \tfunc: {name}\n\
-                        \tparams: {params:?}\n\
-                        \t{wasmi_name}: {wasmi_results:?}\n\
-                        \t{oracle_name}: {oracle_err:?}\n\
-                        \tcrash-report: 0x{crash_input}\n\
-                    "
-                )
-            }
-            (Err(wasmi_err), Ok(oracle_results)) => {
-                let crash_input = generate_crash_inputs(wasm);
-                panic!(
-                    "\
-                    function call returned results and error:\n\
-                        \tfunc: {name}\n\
-                        \tparams: {params:?}\n\
-                        \t{wasmi_name}: {wasmi_err:?}\n\
-                        \t{oracle_name}: {oracle_results:?}\n\
-                        \tcrash-report: 0x{crash_input}\n\
-                    "
-                )
-            }
+            (wasmi_results, oracle_results) => report_divergent_behavior(
+                wasm,
+                &wasmi_oracle,
+                &*chosen_oracle,
+                name,
+                params,
+                &wasmi_results,
+                &oracle_results,
+            ),
         }
     }
 });
@@ -274,6 +255,43 @@ fn assert_memories_match(
             "
         )
     }
+}
+
+/// Reports divergent behavior between Wasmi and the chosen oracle.
+fn report_divergent_behavior(
+    wasm: &[u8],
+    wasmi_oracle: &WasmiOracle,
+    chosen_oracle: &dyn DifferentialOracle,
+    func_name: &str,
+    params: &[FuzzVal],
+    wasmi_result: &Result<Box<[FuzzVal]>, FuzzError>,
+    oracle_result: &Result<Box<[FuzzVal]>, FuzzError>,
+) {
+    assert!(matches!(
+        (&wasmi_result, &oracle_result),
+        (Ok(_), Err(_)) | (Err(_), Ok(_))
+    ));
+    let wasmi_name = wasmi_oracle.name();
+    let oracle_name = chosen_oracle.name();
+    let wasmi_state = match wasmi_result {
+        Ok(_) => "returns result",
+        Err(_) => "traps",
+    };
+    let oracle_state = match oracle_result {
+        Ok(_) => "returns result",
+        Err(_) => "traps",
+    };
+    let crash_input = generate_crash_inputs(wasm);
+    panic!(
+        "\
+        function call {wasmi_state} for {wasmi_name} and {oracle_state} for {oracle_name}:\n\
+            \tfunc: {func_name}\n\
+            \tparams: {params:?}\n\
+            \t{wasmi_name}: {wasmi_result:?}\n\
+            \t{oracle_name}: {oracle_result:?}\n\
+            \tcrash-report: 0x{crash_input}\n\
+        "
+    )
 }
 
 /// Generate crash input reports for `differential` fuzzing.`
