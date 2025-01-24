@@ -9,7 +9,7 @@ use wasmi_fuzz::{
         ChosenOracle,
         DifferentialOracle,
         DifferentialOracleMeta,
-        StringSequenceIter,
+        ModuleExports,
         WasmiOracle,
     },
     FuzzModule,
@@ -151,27 +151,18 @@ fuzz_target!(|input: FuzzInput| {
             }
         }
     }
-    assert_globals_match(
-        wasm,
-        &mut wasmi_oracle,
-        &mut *chosen_oracle,
-        exports.globals(),
-    );
-    assert_memories_match(
-        wasm,
-        &mut wasmi_oracle,
-        &mut *chosen_oracle,
-        exports.memories(),
-    );
+    assert_globals_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
+    assert_memories_match(wasm, &mut wasmi_oracle, &mut *chosen_oracle, &exports);
 });
 
+/// Asserts that the global variable state is equal in both oracles.
 fn assert_globals_match(
     wasm: &[u8],
     wasmi_oracle: &mut WasmiOracle,
     chosen_oracle: &mut dyn DifferentialOracle,
-    globals: StringSequenceIter,
+    exports: &ModuleExports,
 ) {
-    for name in globals {
+    for name in exports.globals() {
         let wasmi_val = wasmi_oracle.get_global(name);
         let oracle_val = chosen_oracle.get_global(name);
         if wasmi_val == oracle_val {
@@ -192,13 +183,14 @@ fn assert_globals_match(
     }
 }
 
+/// Asserts that the linear memory state is equal in both oracles.
 fn assert_memories_match(
     wasm: &[u8],
     wasmi_oracle: &mut WasmiOracle,
     chosen_oracle: &mut dyn DifferentialOracle,
-    memories: StringSequenceIter,
+    exports: &ModuleExports,
 ) {
-    for name in memories {
+    for name in exports.memories() {
         let Some(wasmi_mem) = wasmi_oracle.get_memory(name) else {
             continue;
         };
