@@ -5,7 +5,14 @@ use libfuzzer_sys::fuzz_target;
 use wasmi::Val;
 use wasmi_fuzz::{
     config::FuzzSmithConfig,
-    oracle::{ChosenOracle, DifferentialOracle, DifferentialOracleMeta, WasmiOracle},
+    oracle::{
+        ChosenOracle,
+        DifferentialOracle,
+        DifferentialOracleMeta,
+        ModuleExports,
+        WasmiOracle,
+    },
+    FuzzError,
     FuzzModule,
     FuzzVal,
 };
