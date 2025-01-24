@@ -5,7 +5,13 @@ use libfuzzer_sys::fuzz_target;
 use wasmi::Val;
 use wasmi_fuzz::{
     config::FuzzSmithConfig,
-    oracle::{ChosenOracle, DifferentialOracle, DifferentialOracleMeta, WasmiOracle},
+    oracle::{
+        ChosenOracle,
+        DifferentialOracle,
+        DifferentialOracleMeta,
+        StringSequenceIter,
+        WasmiOracle,
+    },
     FuzzModule,
     FuzzVal,
 };
@@ -145,25 +151,12 @@ fuzz_target!(|input: FuzzInput| {
             }
         }
     }
-    for name in exports.globals() {
-        let wasmi_val = wasmi_oracle.get_global(name);
-        let oracle_val = chosen_oracle.get_global(name);
-        if wasmi_val == oracle_val {
-            continue;
-        }
-        let wasmi_name = wasmi_oracle.name();
-        let oracle_name = chosen_oracle.name();
-        let crash_input = generate_crash_inputs(wasm);
-        panic!(
-            "\
-            encountered unequal globals:\n\
-                \tglobal: {name}\n\
-                \t{wasmi_name}: {wasmi_val:?}\n\
-                \t{oracle_name}: {oracle_val:?}\n\
-                \tcrash-report: 0x{crash_input}\n\
-            "
-        )
-    }
+    assert_globals_match(
+        wasm,
+        &mut wasmi_oracle,
+        &mut *chosen_oracle,
+        exports.globals(),
+    );
     for name in exports.memories() {
         let Some(wasmi_mem) = wasmi_oracle.get_memory(name) else {
             continue;
@@ -200,6 +193,33 @@ fuzz_target!(|input: FuzzInput| {
         )
     }
 });
+
+fn assert_globals_match(
+    wasm: &[u8],
+    wasmi_oracle: &mut WasmiOracle,
+    chosen_oracle: &mut dyn DifferentialOracle,
+    globals: StringSequenceIter,
+) {
+    for name in globals {
+        let wasmi_val = wasmi_oracle.get_global(name);
+        let oracle_val = chosen_oracle.get_global(name);
+        if wasmi_val == oracle_val {
+            continue;
+        }
+        let wasmi_name = wasmi_oracle.name();
+        let oracle_name = chosen_oracle.name();
+        let crash_input = generate_crash_inputs(wasm);
+        panic!(
+            "\
+            encountered unequal globals:\n\
+                \tglobal: {name}\n\
+                \t{wasmi_name}: {wasmi_val:?}\n\
+                \t{oracle_name}: {oracle_val:?}\n\
+                \tcrash-report: 0x{crash_input}\n\
+            "
+        )
+    }
+}
 
 /// Generate crash input reports for `differential` fuzzing.`
 #[track_caller]
