@@ -10,6 +10,6 @@ pub use self::{
     config::{FuzzSmithConfig, FuzzWasmiConfig},
     crash_inputs::generate_crash_inputs,
     error::{FuzzError, TrapCode},
-    module::FuzzModule,
+    module::{FuzzModule, WasmSource, WatSource},
     value::{FuzzVal, FuzzValType},
 };
