@@ -1,22 +1,22 @@
 #![no_main]
 
-use std::fmt;
-
 use arbitrary::{Arbitrary, Unstructured};
 use libfuzzer_sys::fuzz_target;
 use wasmi::Val;
 use wasmi_fuzz::{
     config::FuzzSmithConfig,
     oracle::{ChosenOracle, DifferentialOracle, DifferentialOracleMeta, WasmiOracle},
+    FuzzModule,
     FuzzVal,
 };
 
 /// Fuzzing input for differential fuzzing.
+#[derive(Debug)]
 pub struct FuzzInput {
     /// The chosen Wasm runtime oracle to compare against Wasmi.
     chosen_oracle: ChosenOracle,
     /// The fuzzed Wasm module and its configuration.
-    smith_module: wasm_smith::Module,
+    module: FuzzModule,
 }
 
 impl<'a> Arbitrary<'a> for FuzzInput {
@@ -28,43 +28,19 @@ impl<'a> Arbitrary<'a> for FuzzInput {
         WasmiOracle::configure(&mut fuzz_config);
         chosen_oracle.configure(&mut fuzz_config);
         let smith_config: wasm_smith::Config = fuzz_config.into();
-        let mut smith_module = wasm_smith::Module::new(smith_config, u)?;
-        smith_module.ensure_termination(1_000 /* fuel */)
-            .expect("`ensure_termination` can only fail for modules that have not been created by `wasm_smith`");
+        let mut smith_module = FuzzModule::new(smith_config, u)?;
+        smith_module.ensure_termination(1_000 /* fuel */);
         Ok(Self {
             chosen_oracle,
-            smith_module,
+            module: smith_module,
         })
-    }
-}
-
-impl fmt::Debug for FuzzInput {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        /// Prints the internal `String` as `Display` on `Debug` output.
-        pub struct Text(String);
-        impl fmt::Debug for Text {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(f, "\n{}", self.0.as_str())
-            }
-        }
-
-        let wasm = self.smith_module.to_bytes();
-        let wat = match wasmprinter::print_bytes(wasm) {
-            Ok(wat) => wat,
-            Err(err) => format!("invalid Wasm: {err}"),
-        };
-        f.debug_struct("FuzzInput")
-            .field("chosen_oracle", &self.chosen_oracle)
-            .field("module", &self.smith_module)
-            .field("wasm", &Text(wat))
-            .finish()
     }
 }
 
 impl FuzzInput {
     /// Returns the fuzzed Wasm input bytes.
     pub fn wasm(&self) -> Box<[u8]> {
-        self.smith_module.to_bytes().into()
+        self.module.wasm().into_bytes()
     }
 }
 

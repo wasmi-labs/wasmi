@@ -5,25 +5,32 @@ use libfuzzer_sys::fuzz_target;
 use wasmi::{Config, Engine, Module};
 use wasmi_fuzz::{
     config::{ParsingMode, ValidationMode},
+    FuzzModule,
     FuzzWasmiConfig,
 };
 
-fuzz_target!(|seed: &[u8]| {
-    let mut u = Unstructured::new(seed);
-    let Ok(wasmi_config) = FuzzWasmiConfig::arbitrary(&mut u) else {
-        return;
-    };
-    let Ok(fuzz_config) = wasmi_fuzz::FuzzSmithConfig::arbitrary(&mut u) else {
-        return;
-    };
-    let Ok(smith_module) = wasm_smith::Module::new(fuzz_config.into(), &mut u) else {
-        return;
-    };
-    let wasm_bytes = smith_module.to_bytes();
-    let wasm = wasm_bytes.as_slice();
-    let config = Config::from(wasmi_config);
-    let engine = Engine::new(&config);
-    if matches!(wasmi_config.validation_mode, ValidationMode::Unchecked) {
+#[derive(Debug)]
+pub struct FuzzInput {
+    config: FuzzWasmiConfig,
+    module: FuzzModule,
+}
+
+impl<'a> Arbitrary<'a> for FuzzInput {
+    fn arbitrary(u: &mut Unstructured<'a>) -> arbitrary::Result<Self> {
+        let config = FuzzWasmiConfig::arbitrary(u)?;
+        let fuzz_config = wasmi_fuzz::FuzzSmithConfig::arbitrary(u)?;
+        let module = wasmi_fuzz::FuzzModule::new(fuzz_config, u)?;
+        Ok(Self { config, module })
+    }
+}
+
+fuzz_target!(|input: FuzzInput| {
+    let FuzzInput { config, module } = input;
+    let wasm_source = module.wasm();
+    let wasm = wasm_source.as_bytes();
+    let engine_config = Config::from(config);
+    let engine = Engine::new(&engine_config);
+    if matches!(config.validation_mode, ValidationMode::Unchecked) {
         // We validate the Wasm module before handing it over to Wasmi
         // despite `wasm_smith` stating to only produce valid Wasm.
         // Translating an invalid Wasm module is undefined behavior.
@@ -31,7 +38,7 @@ fuzz_target!(|seed: &[u8]| {
             return;
         }
     }
-    let status = match (wasmi_config.parsing_mode, wasmi_config.validation_mode) {
+    let status = match (config.parsing_mode, config.validation_mode) {
         (ParsingMode::Streaming, ValidationMode::Checked) => Module::new_streaming(&engine, wasm),
         (ParsingMode::Buffered, ValidationMode::Checked) => Module::new(&engine, wasm),
         (ParsingMode::Streaming, ValidationMode::Unchecked) => {
