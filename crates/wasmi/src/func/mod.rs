@@ -329,12 +329,14 @@ impl Func {
     ///
     /// This is typically used to create a host-defined function to pass as an import to a Wasm module.
     ///
-    /// - `ty`: the signature that the given closure adheres to,
-    ///         used to indicate what the inputs and outputs are.
-    /// - `func`: the native code invoked whenever this Func will be called.
-    ///           The closure is provided a [`Caller`] as its first argument
-    ///           which allows it to query information about the [`Instance`]
-    ///           that is associated to the call.
+    /// - `ty`:
+    ///   The signature that the given closure adheres to,
+    ///   used to indicate what the inputs and outputs are.
+    /// - `func`:
+    ///   The native code invoked whenever this Func will be called.
+    ///   The closure is provided a [`Caller`] as its first argument
+    ///   which allows it to query information about the [`Instance`]
+    ///   that is associated to the call.
     ///
     /// # Note
     ///

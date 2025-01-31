@@ -21,20 +21,20 @@ use crate::engine::translator::InstrEncoder;
 /// This has two phases:
 ///
 /// 1. `init`:
-///     The initialization phase registers all function inputs
-///     and local variables during parsing. After parsing all
-///     function inputs and local variables the `alloc` phase
-///     is started.
+///    The initialization phase registers all function inputs
+///    and local variables during parsing. After parsing all
+///    function inputs and local variables the `alloc` phase
+///    is started.
 /// 2. `alloc`:
-///     The allocation phase drives the allocation of dynamically
-///     used registers. These are registers that are not function
-///     inputs or registered local variables that are implicitly
-///     used during instruction execution, for example to hold
-///     and accumulate computation results temporarily.
+///    The allocation phase drives the allocation of dynamically
+///    used registers. These are registers that are not function
+///    inputs or registered local variables that are implicitly
+///    used during instruction execution, for example to hold
+///    and accumulate computation results temporarily.
 /// 3. `defrag`:
-///     The allocation phase has finished and the register allocator
-///     can now defragment allocated register space to form a consecutive
-///     block of registers in use by the function.
+///    The allocation phase has finished and the register allocator
+///    can now defragment allocated register space to form a consecutive
+///    block of registers in use by the function.
 ///
 /// The stack of registers is always ordered in this way:
 ///
