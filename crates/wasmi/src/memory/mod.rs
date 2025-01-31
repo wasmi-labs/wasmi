@@ -404,10 +404,10 @@ impl MemoryEntity {
             }
         }
         let bytes_per_page = self.memory_type.page_size();
-        let desired_byte_size = desired_size
-            .checked_mul(bytes_per_page)
-            .expect("desired size is within [min, max) page bounds")
-            as usize;
+        let Some(desired_byte_size) = desired_size.checked_mul(bytes_per_page) else {
+            return Err(EntityGrowError::InvalidGrow);
+        };
+        let desired_byte_size = desired_byte_size as usize;
 
         // The `ResourceLimiter` gets first look at the request.
         if let Some(limiter) = limiter.as_resource_limiter() {
