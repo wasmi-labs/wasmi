@@ -24,6 +24,8 @@ pub enum MemoryError {
     TooManyMemories,
     /// Tried to create memory with invalid static buffer size
     InvalidStaticBufferSize,
+    /// If a resource limiter denied allocation or growth of a linear memory.
+    ResourceLimiterDeniedAllocation,
 }
 
 #[cfg(feature = "std")]
@@ -52,6 +54,12 @@ impl Display for MemoryError {
             }
             Self::InvalidStaticBufferSize => {
                 write!(f, "tried to use too small static buffer")
+            }
+            Self::ResourceLimiterDeniedAllocation => {
+                write!(
+                    f,
+                    "a resource limiter denied to allocate or grow the linear memory"
+                )
             }
         }
     }
