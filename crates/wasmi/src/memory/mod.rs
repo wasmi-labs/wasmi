@@ -138,7 +138,7 @@ impl MemoryTypeBuilder {
         let page_size = 2_u32
             .checked_pow(u32::from(self.page_size_log2))
             .expect("page size must not overflow `u32` value");
-        let absolute_max = u64::from(u32::MAX);
+        let absolute_max = u64::from(u32::MAX) + 1;
         let minimum_byte_size = u64::from(self.minimum_pages) * u64::from(page_size);
         if minimum_byte_size > absolute_max {
             // Case: the page size and the minimum size invalidly overflows `u32`.
