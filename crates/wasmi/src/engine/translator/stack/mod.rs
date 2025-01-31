@@ -354,8 +354,8 @@ impl ValueStack {
     ///
     /// - This procedure pushes dynamic [`Reg`] onto the [`ValueStack`].
     /// - This is primarily used to allocate branch parameters for control
-    ///    flow frames such as Wasm `block`, `loop` and `if` as well as for
-    ///    instructions that may return multiple values such as `call`.
+    ///   flow frames such as Wasm `block`, `loop` and `if` as well as for
+    ///   instructions that may return multiple values such as `call`.
     ///
     /// # Errors
     ///
@@ -374,7 +374,7 @@ impl ValueStack {
     ///
     /// - This procedure does not push anything onto the [`ValueStack`].
     /// - This is primarily used to allocate branch parameters for control
-    ///    flow frames such as Wasm `block`, `loop` and `if`.
+    ///   flow frames such as Wasm `block`, `loop` and `if`.
     ///
     /// # Errors
     ///
