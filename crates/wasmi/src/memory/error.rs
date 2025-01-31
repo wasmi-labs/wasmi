@@ -44,7 +44,7 @@ impl Display for MemoryError {
                 write!(f, "out of bounds memory access")
             }
             Self::InvalidMemoryType => {
-                write!(f, "tried to create an invalid virtual memory type")
+                write!(f, "tried to create an invalid linear memory type")
             }
             Self::InvalidSubtype { ty, other } => {
                 write!(f, "memory type {ty:?} is not a subtype of {other:?}",)
