@@ -156,7 +156,7 @@ pub use self::{
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
     limits::{ResourceLimiter, StoreLimits, StoreLimitsBuilder},
     linker::{state, Linker, LinkerBuilder},
-    memory::{Memory, MemoryType},
+    memory::{Memory, MemoryType, MemoryTypeBuilder},
     module::{
         CustomSection,
         CustomSectionsIter,

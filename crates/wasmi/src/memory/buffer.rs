@@ -1,5 +1,6 @@
-use alloc::{slice, vec, vec::Vec};
-use core::mem::ManuallyDrop;
+use crate::memory::MemoryError;
+use alloc::{slice, vec::Vec};
+use core::{iter, mem::ManuallyDrop};
 
 /// A byte buffer implementation.
 ///
@@ -67,38 +68,44 @@ fn vec_into_raw_parts(vec: Vec<u8>) -> (*mut u8, usize, usize) {
 }
 
 impl ByteBuffer {
-    /// Creates a new byte buffer with the given initial length.
+    /// Creates a new byte buffer with the given initial `size` in bytes.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// If there is not enough memory to initialize `initial_len` bytes.
-    pub fn new(initial_len: usize) -> Self {
-        let vec = vec![0x00_u8; initial_len];
+    /// If the requested amount of heap bytes could not be allocated.
+    pub fn new(size: usize) -> Result<Self, MemoryError> {
+        let mut vec = Vec::new();
+        if vec.try_reserve(size).is_err() {
+            return Err(MemoryError::OutOfBoundsAllocation);
+        };
+        vec.extend(iter::repeat(0x00_u8).take(size));
         let (ptr, len, capacity) = vec_into_raw_parts(vec);
-        Self {
+        Ok(Self {
             ptr,
             len,
             capacity,
             is_static: false,
-        }
+        })
     }
 
-    /// Creates a new byte buffer with the given initial length.
+    /// Creates a new static byte buffer with the given `size` in bytes.
     ///
     /// This will zero all the bytes in `buffer[0..initial_len`].
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// If `initial_len` is greater than the length of `buffer`.
-    pub fn new_static(buffer: &'static mut [u8], initial_len: usize) -> Self {
-        assert!(initial_len <= buffer.len());
-        buffer[..initial_len].fill(0x00_u8);
-        Self {
+    /// If `size` is greater than the length of `buffer`.
+    pub fn new_static(buffer: &'static mut [u8], size: usize) -> Result<Self, MemoryError> {
+        let Some(bytes) = buffer.get_mut(..size) else {
+            return Err(MemoryError::InvalidStaticBufferSize);
+        };
+        bytes.fill(0x00_u8);
+        Ok(Self {
             ptr: buffer.as_mut_ptr(),
-            len: initial_len,
+            len: size,
             capacity: buffer.len(),
             is_static: true,
-        }
+        })
     }
 
     /// Grows the byte buffer to the given `new_size`.
@@ -108,28 +115,41 @@ impl ByteBuffer {
     /// # Panics
     ///
     /// - If the current size of the [`ByteBuffer`] is larger than `new_size`.
-    /// - If backed by static buffer and `new_size` is larger than it's capacity.
-    pub fn grow(&mut self, new_size: usize) {
-        assert!(new_size >= self.len());
+    ///
+    /// # Errors
+    ///
+    /// - If it is not possible to grow the [`ByteBuffer`] to `new_size`.
+    ///     - `vec`: If the system allocator ran out of memory to allocate.
+    ///     - `static`: If `new_size` is larger than it's the static buffer capacity.
+    pub fn grow(&mut self, new_size: usize) -> Result<(), MemoryError> {
+        assert!(self.len() <= new_size);
         match self.get_vec() {
-            Some(mut vec) => {
-                // Case: the byte buffer is backed by a `Vec<u8>`.
-                vec.resize(new_size, 0x00_u8);
-                let (ptr, len, capacity) = vec_into_raw_parts(vec);
-                self.ptr = ptr;
-                self.len = len;
-                self.capacity = capacity;
-            }
-            None => {
-                // Case: the byte buffer is backed by a `&'static [u8]`.
-                if self.capacity < new_size {
-                    panic!("cannot grow a byte buffer backed by `&'static mut [u8]` beyond its capacity")
-                }
-                let len = self.len();
-                self.len = new_size;
-                self.data_mut()[len..new_size].fill(0x00_u8);
-            }
+            Some(vec) => self.grow_vec(vec, new_size),
+            None => self.grow_static(new_size),
         }
+    }
+
+    /// Grow the byte buffer to the given `new_size` when backed by a [`Vec`].
+    fn grow_vec(&mut self, mut vec: Vec<u8>, new_size: usize) -> Result<(), MemoryError> {
+        debug_assert!(vec.len() <= new_size);
+        let additional = new_size - vec.len();
+        if vec.try_reserve(additional).is_err() {
+            return Err(MemoryError::OutOfBoundsAllocation);
+        };
+        vec.resize(new_size, 0x00_u8);
+        (self.ptr, self.len, self.capacity) = vec_into_raw_parts(vec);
+        Ok(())
+    }
+
+    /// Grow the byte buffer to the given `new_size` when backed by a `&'static [u8]`.
+    fn grow_static(&mut self, new_size: usize) -> Result<(), MemoryError> {
+        if self.capacity < new_size {
+            return Err(MemoryError::InvalidStaticBufferSize);
+        }
+        let len = self.len();
+        self.len = new_size;
+        self.data_mut()[len..new_size].fill(0x00_u8);
+        Ok(())
     }
 
     /// Returns the length of the byte buffer in bytes.
@@ -185,14 +205,14 @@ mod test {
     use super::*;
     #[test]
     fn test_basic_allocation_deallocation() {
-        let buffer = ByteBuffer::new(10);
+        let buffer = ByteBuffer::new(10).unwrap();
         assert_eq!(buffer.len(), 10);
         // Dropping the buffer should not cause UB.
     }
 
     #[test]
     fn test_basic_data_manipulation() {
-        let mut buffer = ByteBuffer::new(10);
+        let mut buffer = ByteBuffer::new(10).unwrap();
         assert_eq!(buffer.len(), 10);
         let data = buffer.data(); // test we can read the data
         assert_eq!(data, &[0; 10]);
@@ -207,7 +227,7 @@ mod test {
     fn test_static_buffer_initialization() {
         static mut BUF: [u8; 10] = [7; 10];
         let buf = unsafe { &mut *core::ptr::addr_of_mut!(BUF) };
-        let mut buffer = ByteBuffer::new_static(buf, 5);
+        let mut buffer = ByteBuffer::new_static(buf, 5).unwrap();
         assert_eq!(buffer.len(), 5);
         // Modifying the static buffer through ByteBuffer and checking its content.
         let data = buffer.data_mut();
@@ -219,8 +239,8 @@ mod test {
 
     #[test]
     fn test_growing_buffer() {
-        let mut buffer = ByteBuffer::new(5);
-        buffer.grow(10);
+        let mut buffer = ByteBuffer::new(5).unwrap();
+        buffer.grow(10).unwrap();
         assert_eq!(buffer.len(), 10);
         assert_eq!(buffer.data(), &[0; 10]);
     }
@@ -229,23 +249,22 @@ mod test {
     fn test_growing_static() {
         static mut BUF: [u8; 10] = [7; 10];
         let buf = unsafe { &mut *core::ptr::addr_of_mut!(BUF) };
-        let mut buffer = ByteBuffer::new_static(buf, 5);
+        let mut buffer = ByteBuffer::new_static(buf, 5).unwrap();
         assert_eq!(buffer.len(), 5);
         assert_eq!(buffer.data(), &[0; 5]);
-        buffer.grow(8);
+        buffer.grow(8).unwrap();
         assert_eq!(buffer.len(), 8);
         assert_eq!(buffer.data(), &[0; 8]);
-        buffer.grow(10);
+        buffer.grow(10).unwrap();
         assert_eq!(buffer.len(), 10);
         assert_eq!(buffer.data(), &[0; 10]);
     }
 
     #[test]
-    #[should_panic]
     fn test_static_buffer_overflow() {
         static mut BUF: [u8; 5] = [7; 5];
         let buf = unsafe { &mut *core::ptr::addr_of_mut!(BUF) };
-        let mut buffer = ByteBuffer::new_static(buf, 5);
-        buffer.grow(10); // This should panic.
+        let mut buffer = ByteBuffer::new_static(buf, 5).unwrap();
+        assert!(buffer.grow(10).is_err());
     }
 }

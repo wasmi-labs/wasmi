@@ -13,9 +13,10 @@ pub use self::{
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{Pages, TrapCode},
+    core::TrapCode,
     error::EntityGrowError,
     store::{Fuel, ResourceLimiterRef},
+    Error,
 };
 
 /// A raw index to a linear memory entity.
@@ -38,44 +39,173 @@ impl ArenaIndex for MemoryIdx {
 /// The memory type of a linear memory.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MemoryType {
-    initial_pages: Pages,
-    maximum_pages: Option<Pages>,
+    initial_pages: u32,
+    maximum_pages: Option<u32>,
+    page_size_log2: u8,
 }
 
-impl MemoryType {
-    /// Creates a new memory type with initial and optional maximum pages.
+/// A builder for [`MemoryType`]s.
+///
+/// Constructed via [`MemoryType::builder`] or via [`MemoryTypeBuilder::default`].
+/// Allows to incrementally build-up a [`MemoryType`]. When done, finalize creation
+/// via a call to [`MemoryTypeBuilder::build`].
+pub struct MemoryTypeBuilder {
+    minimum_pages: u32,
+    maximum_pages: Option<u32>,
+    page_size_log2: u8,
+}
+
+impl Default for MemoryTypeBuilder {
+    fn default() -> Self {
+        Self {
+            minimum_pages: 0,
+            maximum_pages: None,
+            page_size_log2: MemoryType::DEFAULT_PAGE_SIZE_LOG2,
+        }
+    }
+}
+
+impl MemoryTypeBuilder {
+    /// Create a new builder for a [`MemoryType`]` with the default settings:
+    ///
+    /// - The minimum memory size is 0 pages.
+    /// - The maximum memory size is unspecified.
+    /// - The page size is 64KiB.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the minimum number of pages the built [`MemoryType`] supports.
+    ///
+    /// The default minimum is `0`.
+    pub fn min(&mut self, minimum: u32) -> &mut Self {
+        self.minimum_pages = minimum;
+        self
+    }
+
+    /// Sets the optional maximum number of pages the built [`MemoryType`] supports.
+    ///
+    /// A value of `None` means that there is no maximum number of pages.
+    ///
+    /// The default maximum is `None`.
+    pub fn max(&mut self, maximum: Option<u32>) -> &mut Self {
+        self.maximum_pages = maximum;
+        self
+    }
+
+    /// Sets the log2 page size in bytes, for the built [`MemoryType`].
+    ///
+    /// The default value is 16, which results in the default Wasm page size of 64KiB (aka 2^16 or 65536).
+    ///
+    /// Currently, the only allowed values are 0 (page size of 1) or 16 (the default).
+    /// Future Wasm proposal extensions might change this limitation.
+    ///
+    /// Non-default page sizes are part of the [`custom-page-sizes proposal`]
+    /// for WebAssembly which is not fully standardized yet.
+    ///
+    /// [`custom-page-sizes proposal`]: https://github.com/WebAssembly/custom-page-sizes
+    pub fn page_size_log2(&mut self, page_size_log2: u8) -> &mut Self {
+        self.page_size_log2 = page_size_log2;
+        self
+    }
+
+    /// Finalize the construction of the [`MemoryType`].
     ///
     /// # Errors
     ///
-    /// If the linear memory type initial or maximum size exceeds the
-    /// maximum limits of 2^16 pages.
-    pub fn new(initial: u32, maximum: Option<u32>) -> Result<Self, MemoryError> {
-        let initial_pages = Pages::new(initial).ok_or(MemoryError::InvalidMemoryType)?;
-        let maximum_pages = match maximum {
-            Some(maximum) => Pages::new(maximum)
-                .ok_or(MemoryError::InvalidMemoryType)?
-                .into(),
-            None => None,
-        };
-        Ok(Self {
-            initial_pages,
-            maximum_pages,
+    /// If the chosen configuration for the constructed [`MemoryType`] is invalid.
+    pub fn build(self) -> Result<MemoryType, Error> {
+        self.validate()?;
+        Ok(MemoryType {
+            initial_pages: self.minimum_pages,
+            maximum_pages: self.maximum_pages,
+            page_size_log2: self.page_size_log2,
         })
     }
 
-    /// Returns the initial pages of the memory type.
-    pub fn initial_pages(self) -> Pages {
+    /// Validates the configured [`MemoryType`] of the [`MemoryTypeBuilder`].
+    ///
+    /// # Errors
+    ///
+    /// If the chosen configuration for the constructed [`MemoryType`] is invalid.
+    fn validate(&self) -> Result<(), Error> {
+        if self
+            .maximum_pages
+            .is_some_and(|max| max < self.minimum_pages)
+        {
+            // Case: maximum page size cannot be smaller than the minimum page size
+            return Err(Error::from(MemoryError::InvalidMemoryType));
+        }
+        match self.page_size_log2 {
+            0 | MemoryType::DEFAULT_PAGE_SIZE_LOG2 => {}
+            _ => {
+                // Case: currently, pages sizes log2 can only be 0 or 16.
+                // Note: Future Wasm extensions might allow more values.
+                return Err(Error::from(MemoryError::InvalidMemoryType));
+            }
+        }
+        let page_size = 2_u32
+            .checked_pow(u32::from(self.page_size_log2))
+            .expect("page size must not overflow `u32` value");
+        let absolute_max = u64::from(u32::MAX) + 1;
+        let minimum_byte_size = u64::from(self.minimum_pages) * u64::from(page_size);
+        if minimum_byte_size > absolute_max {
+            // Case: the page size and the minimum size invalidly overflows `u32`.
+            return Err(Error::from(MemoryError::InvalidMemoryType));
+        }
+        if let Some(maximum_pages) = self.maximum_pages {
+            let maximum_byte_size = u64::from(maximum_pages) * u64::from(page_size);
+            if maximum_byte_size > absolute_max {
+                // Case: the page size and the minimum size invalidly overflows `u32`.
+                return Err(Error::from(MemoryError::InvalidMemoryType));
+            }
+        }
+        Ok(())
+    }
+}
+
+impl MemoryType {
+    /// The default memory page size in KiB.
+    const DEFAULT_PAGE_SIZE_LOG2: u8 = 16; // 2^16 KiB = 64 KiB
+
+    /// Creates a new memory type with minimum and optional maximum pages.
+    ///
+    /// # Errors
+    ///
+    /// - If the `minimum` pages exceeds the `maximum` pages.
+    /// - If the `minimum` or `maximum` pages are out of bounds.
+    pub fn new(minimum: u32, maximum: Option<u32>) -> Result<Self, Error> {
+        let mut b = Self::builder();
+        b.min(minimum);
+        b.max(maximum);
+        b.build()
+    }
+
+    /// Returns a [`MemoryTypeBuilder`] to incrementally construct a [`MemoryType`].
+    pub fn builder() -> MemoryTypeBuilder {
+        MemoryTypeBuilder::default()
+    }
+
+    /// Returns the minimum pages of the memory type.
+    pub fn minimum(self) -> u32 {
         self.initial_pages
     }
 
     /// Returns the maximum pages of the memory type.
     ///
-    /// # Note
-    ///
-    /// - Returns `None` if there is no limit set.
-    /// - Maximum memory size cannot exceed `65536` pages or 4GiB.
-    pub fn maximum_pages(self) -> Option<Pages> {
+    /// Returns `None` if there is no limit set.
+    pub fn maximum(self) -> Option<u32> {
         self.maximum_pages
+    }
+
+    /// Returns the page size of the [`MemoryType`] in bytes.
+    pub fn page_size(self) -> u32 {
+        2_u32.pow(u32::from(self.page_size_log2))
+    }
+
+    /// Returns the page size of the [`MemoryType`] in log2(bytes).
+    pub fn page_size_log2(self) -> u8 {
+        self.page_size_log2
     }
 
     /// Checks if `self` is a subtype of `other`.
@@ -110,10 +240,13 @@ impl MemoryType {
     /// [import subtyping]:
     /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
     pub(crate) fn is_subtype_of(&self, other: &MemoryType) -> bool {
-        if self.initial_pages() < other.initial_pages() {
+        if self.page_size() != other.page_size() {
             return false;
         }
-        match (self.maximum_pages(), other.maximum_pages()) {
+        if self.minimum() < other.minimum() {
+            return false;
+        }
+        match (self.maximum(), other.maximum()) {
             (_, None) => true,
             (Some(max), Some(other_max)) => max <= other_max,
             _ => false,
@@ -126,7 +259,8 @@ impl MemoryType {
 pub struct MemoryEntity {
     bytes: ByteBuffer,
     memory_type: MemoryType,
-    current_pages: Pages,
+    /// Current size of the linear memory in pages.
+    size: u32,
 }
 
 impl MemoryEntity {
@@ -134,35 +268,8 @@ impl MemoryEntity {
     pub fn new(
         memory_type: MemoryType,
         limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<Self, MemoryError> {
-        let initial_pages = memory_type.initial_pages();
-        let initial_len = initial_pages.to_bytes();
-        let maximum_pages = memory_type.maximum_pages().unwrap_or_else(Pages::max);
-        let maximum_len = maximum_pages.to_bytes();
-
-        if let Some(limiter) = limiter.as_resource_limiter() {
-            if !limiter.memory_growing(0, initial_len.unwrap_or(usize::MAX), maximum_len)? {
-                // Here there's no meaningful way to map Ok(false) to
-                // INVALID_GROWTH_ERRCODE, so we just translate it to an
-                // appropriate Err(...)
-                return Err(MemoryError::OutOfBoundsAllocation);
-            }
-        }
-
-        if let Some(initial_len) = initial_len {
-            let memory = Self {
-                bytes: ByteBuffer::new(initial_len),
-                memory_type,
-                current_pages: initial_pages,
-            };
-            Ok(memory)
-        } else {
-            let err = MemoryError::OutOfBoundsAllocation;
-            if let Some(limiter) = limiter.as_resource_limiter() {
-                limiter.memory_grow_failed(&err)
-            }
-            Err(err)
-        }
+    ) -> Result<Self, Error> {
+        Self::new_impl(memory_type, limiter, ByteBuffer::new).map_err(Error::from)
     }
 
     /// Creates a new memory entity with the given memory type.
@@ -170,38 +277,62 @@ impl MemoryEntity {
         memory_type: MemoryType,
         limiter: &mut ResourceLimiterRef<'_>,
         buf: &'static mut [u8],
+    ) -> Result<Self, Error> {
+        Self::new_impl(memory_type, limiter, |initial_size| {
+            ByteBuffer::new_static(buf, initial_size)
+        })
+        .map_err(Error::from)
+    }
+
+    fn new_impl(
+        memory_type: MemoryType,
+        limiter: &mut ResourceLimiterRef<'_>,
+        make_buffer: impl FnOnce(usize) -> Result<ByteBuffer, MemoryError>,
     ) -> Result<Self, MemoryError> {
-        let initial_pages = memory_type.initial_pages();
-        let initial_len = initial_pages.to_bytes();
-        let maximum_pages = memory_type.maximum_pages().unwrap_or_else(Pages::max);
-        let maximum_len = maximum_pages.to_bytes();
+        let bytes_per_page = memory_type.page_size();
+        let minimum_pages = memory_type.minimum();
+        let maximum_pages = memory_type.maximum();
+        let bytes_per_page64 = u64::from(bytes_per_page);
+        let minimum_byte_size64 = u64::from(minimum_pages) * bytes_per_page64;
+        let maximum_byte_size64 = maximum_pages
+            .map(u64::from)
+            .map(|max| max * bytes_per_page64);
+        let absolute_max = u64::from(u32::MAX) + 1;
+        if minimum_byte_size64 > absolute_max {
+            return Err(MemoryError::InvalidMemoryType);
+        }
+        if let Some(maximum_byte_size64) = maximum_byte_size64 {
+            if maximum_byte_size64 > absolute_max {
+                return Err(MemoryError::InvalidMemoryType);
+            }
+        }
+        let Ok(minimum_byte_size) = usize::try_from(minimum_byte_size64) else {
+            return Err(MemoryError::InvalidMemoryType);
+        };
+        let Ok(maximum_byte_size) = maximum_byte_size64.map(usize::try_from).transpose() else {
+            return Err(MemoryError::InvalidMemoryType);
+        };
 
         if let Some(limiter) = limiter.as_resource_limiter() {
-            if !limiter.memory_growing(0, initial_len.unwrap_or(usize::MAX), maximum_len)? {
-                // Here there's no meaningful way to map Ok(false) to
-                // INVALID_GROWTH_ERRCODE, so we just translate it to an
-                // appropriate Err(...)
-                return Err(MemoryError::OutOfBoundsAllocation);
+            if !limiter.memory_growing(0, minimum_byte_size, maximum_byte_size)? {
+                return Err(MemoryError::ResourceLimiterDeniedAllocation);
             }
         }
 
-        if let Some(initial_len) = initial_len {
-            if buf.len() < initial_len {
-                return Err(MemoryError::InvalidStaticBufferSize);
+        let bytes = match make_buffer(minimum_byte_size) {
+            Ok(buffer) => buffer,
+            Err(error) => {
+                if let Some(limiter) = limiter.as_resource_limiter() {
+                    limiter.memory_grow_failed(&error)
+                }
+                return Err(error);
             }
-            let memory = Self {
-                bytes: ByteBuffer::new_static(buf, initial_len),
-                memory_type,
-                current_pages: initial_pages,
-            };
-            Ok(memory)
-        } else {
-            let err = MemoryError::OutOfBoundsAllocation;
-            if let Some(limiter) = limiter.as_resource_limiter() {
-                limiter.memory_grow_failed(&err)
-            }
-            Err(err)
-        }
+        };
+        Ok(Self {
+            bytes,
+            memory_type,
+            size: minimum_pages,
+        })
     }
 
     /// Returns the memory type of the linear memory.
@@ -216,20 +347,46 @@ impl MemoryEntity {
     /// This respects the current size of the [`MemoryEntity`] as
     /// its minimum size and is useful for import subtyping checks.
     pub fn dynamic_ty(&self) -> MemoryType {
-        let current_pages = self.current_pages().into();
-        let maximum_pages = self.ty().maximum_pages().map(Into::into);
-        MemoryType::new(current_pages, maximum_pages)
-            .unwrap_or_else(|_| panic!("must result in valid memory type due to invariants"))
-    }
-
-    /// Returns the amount of pages in use by the linear memory.
-    fn current_pages(&self) -> Pages {
-        self.current_pages
+        let current_pages = self.size();
+        let maximum_pages = self.ty().maximum();
+        let page_size_log2 = self.ty().page_size_log2();
+        let mut b = MemoryType::builder();
+        b.min(current_pages);
+        b.max(maximum_pages);
+        b.page_size_log2(page_size_log2);
+        b.build()
+            .expect("must result in valid memory type due to invariants")
     }
 
     /// Returns the size, in WebAssembly pages, of this Wasm linear memory.
     pub fn size(&self) -> u32 {
-        self.current_pages.into()
+        self.size
+    }
+
+    /// Returns the size of this Wasm linear memory in bytes.
+    fn size_in_bytes(&self) -> u32 {
+        let pages = self.size();
+        let bytes_per_page = self.memory_type.page_size();
+        let Some(bytes) = pages.checked_mul(bytes_per_page) else {
+            panic!(
+                "unexpected out of bounds linear memory size: \
+                (pages = {pages}, bytes_per_page = {bytes_per_page})"
+            )
+        };
+        bytes
+    }
+
+    /// Returns the maximum size of this Wasm linear memory in bytes if any.
+    fn max_size_in_bytes(&self) -> Option<u32> {
+        let max_pages = self.memory_type.maximum()?;
+        let bytes_per_page = self.memory_type.page_size();
+        let Some(max_bytes) = max_pages.checked_mul(bytes_per_page) else {
+            panic!(
+                "unexpected out of bounds linear memory maximum size: \
+                (max_pages = {max_pages}, bytes_per_page = {bytes_per_page})"
+            )
+        };
+        Some(max_bytes)
     }
 
     /// Grows the linear memory by the given amount of new pages.
@@ -238,8 +395,8 @@ impl MemoryEntity {
     ///
     /// # Errors
     ///
-    /// If the linear memory would grow beyond its maximum limit after
-    /// the grow operation.
+    /// - If the linear memory cannot be grown to the target size.
+    /// - If the `limiter` denies the growth operation.
     pub fn grow(
         &mut self,
         additional: u32,
@@ -259,40 +416,41 @@ impl MemoryEntity {
         if additional == 0 {
             return Ok(self.size());
         }
-        let Some(additional) = Pages::new(additional) else {
+        let current_byte_size = self.size_in_bytes() as usize;
+        let maximum_byte_size = self.max_size_in_bytes().map(|max| max as usize);
+        let current_size = self.size();
+        let Some(desired_size) = current_size.checked_add(additional) else {
             return Err(EntityGrowError::InvalidGrow);
         };
-
-        let current_pages = self.current_pages();
-        let maximum_pages = self.ty().maximum_pages().unwrap_or_else(Pages::max);
-        let desired_pages = current_pages.checked_add(additional);
-
-        // ResourceLimiter gets first look at the request.
-        if let Some(limiter) = limiter.as_resource_limiter() {
-            let current_size = current_pages.to_bytes().unwrap_or(usize::MAX);
-            let desired_size = desired_pages
-                .unwrap_or_else(Pages::max)
-                .to_bytes()
-                .unwrap_or(usize::MAX);
-            let maximum_size = maximum_pages.to_bytes();
-            match limiter.memory_growing(current_size, desired_size, maximum_size) {
-                Ok(true) => (),
-                Ok(false) => return Err(EntityGrowError::InvalidGrow),
-                Err(_) => return Err(EntityGrowError::TrapCode(TrapCode::GrowthOperationLimited)),
+        if let Some(maximum_size) = self.memory_type.maximum() {
+            if desired_size > maximum_size {
+                return Err(EntityGrowError::InvalidGrow);
             }
         }
+        let bytes_per_page = self.memory_type.page_size();
+        let Some(desired_byte_size) = desired_size.checked_mul(bytes_per_page) else {
+            return Err(EntityGrowError::InvalidGrow);
+        };
+        let desired_byte_size = desired_byte_size as usize;
 
-        let Some(new_pages) = desired_pages else {
-            return notify_limiter(limiter, EntityGrowError::InvalidGrow);
-        };
-        if new_pages > maximum_pages {
-            return notify_limiter(limiter, EntityGrowError::InvalidGrow);
+        // The `ResourceLimiter` gets first look at the request.
+        if let Some(limiter) = limiter.as_resource_limiter() {
+            match limiter.memory_growing(current_byte_size, desired_byte_size, maximum_byte_size) {
+                Ok(true) => Ok(()),
+                Ok(false) => Err(EntityGrowError::InvalidGrow),
+                Err(_) => Err(EntityGrowError::TrapCode(TrapCode::GrowthOperationLimited)),
+            }?;
         }
-        let Some(new_size) = new_pages.to_bytes() else {
-            return notify_limiter(limiter, EntityGrowError::InvalidGrow);
-        };
+
+        // Optionally check if there is enough fuel for the operation.
+        //
+        // This is deliberately done right before the actual growth operation in order to
+        // not charge fuel if there is any other deterministic failure preventing the expensive
+        // growth operation.
         if let Some(fuel) = fuel {
-            let additional_bytes = additional.to_bytes().unwrap_or(usize::MAX) as u64;
+            let additional_bytes = u64::from(additional)
+                .checked_mul(u64::from(bytes_per_page))
+                .expect("additional size is within [min, max) page bounds");
             if fuel
                 .consume_fuel_if(|costs| costs.fuel_for_bytes(additional_bytes))
                 .is_err()
@@ -305,9 +463,13 @@ impl MemoryEntity {
         // 1. The resource limiter validated the memory consumption.
         // 2. The growth is within bounds.
         // 3. There is enough fuel for the operation.
-        self.bytes.grow(new_size);
-        self.current_pages = new_pages;
-        Ok(u32::from(current_pages))
+        //
+        // Only the actual growing of the underlying byte buffer may now fail.
+        if self.bytes.grow(desired_byte_size).is_err() {
+            return notify_limiter(limiter, EntityGrowError::InvalidGrow);
+        }
+        self.size = desired_size;
+        Ok(current_size)
     }
 
     /// Returns a shared slice to the bytes underlying to the byte buffer.
@@ -386,7 +548,7 @@ impl Memory {
     /// # Errors
     ///
     /// If more than [`u32::MAX`] much linear memory is allocated.
-    pub fn new(mut ctx: impl AsContextMut, ty: MemoryType) -> Result<Self, MemoryError> {
+    pub fn new(mut ctx: impl AsContextMut, ty: MemoryType) -> Result<Self, Error> {
         let (inner, mut resource_limiter) = ctx
             .as_context_mut()
             .store
@@ -407,7 +569,7 @@ impl Memory {
         mut ctx: impl AsContextMut,
         ty: MemoryType,
         buf: &'static mut [u8],
-    ) -> Result<Self, MemoryError> {
+    ) -> Result<Self, Error> {
         let (inner, mut resource_limiter) = ctx
             .as_context_mut()
             .store

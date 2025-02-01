@@ -9,7 +9,7 @@ use super::{element::ElementSegmentKind, export, ConstExpr, InitDataSegment, Mod
 use crate::{
     core::UntypedVal,
     func::WasmFuncEntity,
-    memory::{DataSegment, MemoryError},
+    memory::DataSegment,
     value::WithType,
     AsContext,
     AsContextMut,
@@ -199,7 +199,7 @@ impl Module {
         &self,
         mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
-    ) -> Result<(), MemoryError> {
+    ) -> Result<(), Error> {
         context
             .as_context_mut()
             .store

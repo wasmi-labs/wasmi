@@ -276,6 +276,17 @@ macro_rules! expand_tests_mm {
     };
 }
 
+macro_rules! expand_tests_cps {
+    ( $mac:ident, $( $args:tt )* ) => {
+        $mac! {
+            $( $args )*
+
+            fn wasm_custom_page_sizes("proposals/custom-page-sizes/custom-page-sizes");
+            fn wasm_custom_page_sizes_invalid("proposals/custom-page-sizes/custom-page-sizes-invalid");
+        }
+    };
+}
+
 mod blobs {
     expand_tests! {
         include_wasm_blobs,
@@ -284,6 +295,12 @@ mod blobs {
     }
 
     expand_tests_mm! {
+        include_wasm_blobs,
+
+        let folder = "testsuite";
+    }
+
+    expand_tests_cps! {
         include_wasm_blobs,
 
         let folder = "testsuite";
@@ -303,6 +320,27 @@ mod multi_memory {
     }
 
     expand_tests_mm! {
+        define_spec_tests,
+
+        let config = test_config();
+        let runner = process_wast;
+    }
+}
+
+mod custom_page_sizes {
+    use super::*;
+
+    fn test_config() -> RunnerConfig {
+        let mut config = Config::default();
+        config.wasm_custom_page_sizes(true);
+        let parsing_mode = ParsingMode::Buffered;
+        RunnerConfig {
+            config,
+            parsing_mode,
+        }
+    }
+
+    expand_tests_cps! {
         define_spec_tests,
 
         let config = test_config();
