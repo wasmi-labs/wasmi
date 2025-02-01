@@ -185,7 +185,7 @@ impl MemoryType {
     /// Returns the maximum pages of the memory type.
     ///
     /// Returns `None` if there is no limit set.
-    pub fn maximum_pages(self) -> Option<u32> {
+    pub fn maximum(self) -> Option<u32> {
         self.maximum_pages
     }
 
@@ -237,7 +237,7 @@ impl MemoryType {
         if self.minimum() < other.minimum() {
             return false;
         }
-        match (self.maximum_pages(), other.maximum_pages()) {
+        match (self.maximum(), other.maximum()) {
             (_, None) => true,
             (Some(max), Some(other_max)) => max <= other_max,
             _ => false,
@@ -282,7 +282,7 @@ impl MemoryEntity {
     ) -> Result<Self, MemoryError> {
         let bytes_per_page = memory_type.page_size();
         let minimum_pages = memory_type.minimum();
-        let maximum_pages = memory_type.maximum_pages();
+        let maximum_pages = memory_type.maximum();
         let bytes_per_page64 = u64::from(bytes_per_page);
         let minimum_byte_size64 = u64::from(minimum_pages) * bytes_per_page64;
         let maximum_byte_size64 = maximum_pages
@@ -339,7 +339,7 @@ impl MemoryEntity {
     /// its minimum size and is useful for import subtyping checks.
     pub fn dynamic_ty(&self) -> MemoryType {
         let current_pages = self.size();
-        let maximum_pages = self.ty().maximum_pages();
+        let maximum_pages = self.ty().maximum();
         let page_size_log2 = self.ty().page_size_log2();
         let mut b = MemoryType::builder();
         b.min(current_pages);
@@ -369,7 +369,7 @@ impl MemoryEntity {
 
     /// Returns the maximum size of this Wasm linear memory in bytes if any.
     fn max_size_in_bytes(&self) -> Option<u32> {
-        let max_pages = self.memory_type.maximum_pages()?;
+        let max_pages = self.memory_type.maximum()?;
         let bytes_per_page = self.memory_type.page_size();
         let Some(max_bytes) = max_pages.checked_mul(bytes_per_page) else {
             panic!(
@@ -413,7 +413,7 @@ impl MemoryEntity {
         let Some(desired_size) = current_size.checked_add(additional) else {
             return Err(EntityGrowError::InvalidGrow);
         };
-        if let Some(maximum_size) = self.memory_type.maximum_pages() {
+        if let Some(maximum_size) = self.memory_type.maximum() {
             if desired_size > maximum_size {
                 return Err(EntityGrowError::InvalidGrow);
             }
