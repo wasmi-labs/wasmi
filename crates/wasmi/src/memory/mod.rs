@@ -39,8 +39,8 @@ impl ArenaIndex for MemoryIdx {
 /// The memory type of a linear memory.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MemoryType {
-    initial_pages: u32,
-    maximum_pages: Option<u32>,
+    min: u32,
+    max: Option<u32>,
     page_size_log2: u8,
 }
 
@@ -50,16 +50,16 @@ pub struct MemoryType {
 /// Allows to incrementally build-up a [`MemoryType`]. When done, finalize creation
 /// via a call to [`MemoryTypeBuilder::build`].
 pub struct MemoryTypeBuilder {
-    minimum_pages: u32,
-    maximum_pages: Option<u32>,
+    min: u32,
+    max: Option<u32>,
     page_size_log2: u8,
 }
 
 impl Default for MemoryTypeBuilder {
     fn default() -> Self {
         Self {
-            minimum_pages: 0,
-            maximum_pages: None,
+            min: 0,
+            max: None,
             page_size_log2: MemoryType::DEFAULT_PAGE_SIZE_LOG2,
         }
     }
@@ -79,7 +79,7 @@ impl MemoryTypeBuilder {
     ///
     /// The default minimum is `0`.
     pub fn min(&mut self, minimum: u32) -> &mut Self {
-        self.minimum_pages = minimum;
+        self.min = minimum;
         self
     }
 
@@ -89,7 +89,7 @@ impl MemoryTypeBuilder {
     ///
     /// The default maximum is `None`.
     pub fn max(&mut self, maximum: Option<u32>) -> &mut Self {
-        self.maximum_pages = maximum;
+        self.max = maximum;
         self
     }
 
@@ -117,8 +117,8 @@ impl MemoryTypeBuilder {
     pub fn build(self) -> Result<MemoryType, Error> {
         self.validate()?;
         Ok(MemoryType {
-            initial_pages: self.minimum_pages,
-            maximum_pages: self.maximum_pages,
+            min: self.min,
+            max: self.max,
             page_size_log2: self.page_size_log2,
         })
     }
@@ -129,10 +129,7 @@ impl MemoryTypeBuilder {
     ///
     /// If the chosen configuration for the constructed [`MemoryType`] is invalid.
     fn validate(&self) -> Result<(), Error> {
-        if self
-            .maximum_pages
-            .is_some_and(|max| max < self.minimum_pages)
-        {
+        if self.max.is_some_and(|max| max < self.min) {
             // Case: maximum page size cannot be smaller than the minimum page size
             return Err(Error::from(MemoryError::InvalidMemoryType));
         }
@@ -148,13 +145,13 @@ impl MemoryTypeBuilder {
             .checked_pow(u32::from(self.page_size_log2))
             .expect("page size must not overflow `u32` value");
         let absolute_max = u64::from(u32::MAX) + 1;
-        let minimum_byte_size = u64::from(self.minimum_pages) * u64::from(page_size);
+        let minimum_byte_size = u64::from(self.min) * u64::from(page_size);
         if minimum_byte_size > absolute_max {
             // Case: the page size and the minimum size invalidly overflows `u32`.
             return Err(Error::from(MemoryError::InvalidMemoryType));
         }
-        if let Some(maximum_pages) = self.maximum_pages {
-            let maximum_byte_size = u64::from(maximum_pages) * u64::from(page_size);
+        if let Some(maximum) = self.max {
+            let maximum_byte_size = u64::from(maximum) * u64::from(page_size);
             if maximum_byte_size > absolute_max {
                 // Case: the page size and the minimum size invalidly overflows `u32`.
                 return Err(Error::from(MemoryError::InvalidMemoryType));
@@ -188,14 +185,14 @@ impl MemoryType {
 
     /// Returns the minimum pages of the memory type.
     pub fn minimum(self) -> u32 {
-        self.initial_pages
+        self.min
     }
 
     /// Returns the maximum pages of the memory type.
     ///
     /// Returns `None` if there is no limit set.
     pub fn maximum(self) -> Option<u32> {
-        self.maximum_pages
+        self.max
     }
 
     /// Returns the page size of the [`MemoryType`] in bytes.
