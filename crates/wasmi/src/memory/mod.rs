@@ -66,6 +66,15 @@ impl Default for MemoryTypeBuilder {
 }
 
 impl MemoryTypeBuilder {
+    /// Create a new builder for a [`MemoryType`]` with the default settings:
+    ///
+    /// - The minimum memory size is 0 pages.
+    /// - The maximum memory size is unspecified.
+    /// - The page size is 64KiB.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Sets the minimum number of pages the built [`MemoryType`] supports.
     ///
     /// The default minimum is `0`.
