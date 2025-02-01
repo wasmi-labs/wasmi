@@ -178,7 +178,7 @@ impl MemoryType {
     }
 
     /// Returns the minimum pages of the memory type.
-    pub fn initial_pages(self) -> u32 {
+    pub fn minimum(self) -> u32 {
         self.initial_pages
     }
 
@@ -234,7 +234,7 @@ impl MemoryType {
         if self.page_size() != other.page_size() {
             return false;
         }
-        if self.initial_pages() < other.initial_pages() {
+        if self.minimum() < other.minimum() {
             return false;
         }
         match (self.maximum_pages(), other.maximum_pages()) {
@@ -281,7 +281,7 @@ impl MemoryEntity {
         make_buffer: impl FnOnce(usize) -> Result<ByteBuffer, MemoryError>,
     ) -> Result<Self, MemoryError> {
         let bytes_per_page = memory_type.page_size();
-        let minimum_pages = memory_type.initial_pages();
+        let minimum_pages = memory_type.minimum();
         let maximum_pages = memory_type.maximum_pages();
         let bytes_per_page64 = u64::from(bytes_per_page);
         let minimum_byte_size64 = u64::from(minimum_pages) * bytes_per_page64;

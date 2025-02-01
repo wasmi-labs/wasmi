@@ -50,7 +50,7 @@ impl wasm_memorytype_t {
 
 impl CMemoryType {
     pub(crate) fn new(ty: MemoryType) -> CMemoryType {
-        let min: u32 = ty.initial_pages();
+        let min: u32 = ty.minimum();
         let max: u32 = ty.maximum_pages().unwrap_or(u32::MAX);
         CMemoryType {
             ty,
