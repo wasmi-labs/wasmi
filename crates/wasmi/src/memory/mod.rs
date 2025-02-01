@@ -231,6 +231,9 @@ impl MemoryType {
     /// [import subtyping]:
     /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
     pub(crate) fn is_subtype_of(&self, other: &MemoryType) -> bool {
+        if self.page_size() != other.page_size() {
+            return false;
+        }
         if self.initial_pages() < other.initial_pages() {
             return false;
         }
@@ -337,8 +340,13 @@ impl MemoryEntity {
     pub fn dynamic_ty(&self) -> MemoryType {
         let current_pages = self.size();
         let maximum_pages = self.ty().maximum_pages();
-        MemoryType::new(current_pages, maximum_pages)
-            .unwrap_or_else(|_| panic!("must result in valid memory type due to invariants"))
+        let page_size_log2 = self.ty().page_size_log2();
+        let mut b = MemoryType::builder();
+        b.min(current_pages);
+        b.max(maximum_pages);
+        b.page_size_log2(page_size_log2);
+        b.build()
+            .expect("must result in valid memory type due to invariants")
     }
 
     /// Returns the size, in WebAssembly pages, of this Wasm linear memory.
