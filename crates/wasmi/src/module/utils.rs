@@ -44,16 +44,27 @@ impl MemoryType {
             !memory_type.shared,
             "wasmi does not support the `threads` Wasm proposal"
         );
-        let initial: u32 = memory_type
+        let minimum: u32 = memory_type
             .initial
             .try_into()
-            .expect("wasm32 memories must have a valid u32 minimum size");
+            .expect("minimum linear memory pages must be a valid `u32`");
         let maximum: Option<u32> = memory_type
             .maximum
-            .map(TryInto::try_into)
+            .map(u32::try_from)
             .transpose()
-            .expect("wasm32 memories must have a valid u32 maximum size if any");
-        Self::new(initial, maximum)
+            .expect("maximum linear memory pages must be a valid `u32` if any");
+        let page_size_log2: Option<u8> = memory_type
+            .page_size_log2
+            .map(u8::try_from)
+            .transpose()
+            .expect("page size (in log2) must be a valid `u8` if any");
+        let mut b = Self::builder();
+        b.min(minimum);
+        b.max(maximum);
+        if let Some(page_size_log2) = page_size_log2 {
+            b.page_size_log2(page_size_log2);
+        }
+        b.build()
             .expect("encountered invalid wasmparser::MemoryType after validation")
     }
 }
