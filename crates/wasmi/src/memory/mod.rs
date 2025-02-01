@@ -285,14 +285,21 @@ impl MemoryEntity {
         let maximum_byte_size64 = maximum_pages
             .map(u64::from)
             .map(|max| max * bytes_per_page64);
-        let Ok(minimum_byte_size) = u32::try_from(minimum_byte_size64) else {
+        let absolute_max = u64::from(u32::MAX) + 1;
+        if minimum_byte_size64 > absolute_max {
+            return Err(MemoryError::InvalidMemoryType);
+        }
+        if let Some(maximum_byte_size64) = maximum_byte_size64 {
+            if maximum_byte_size64 > absolute_max {
+                return Err(MemoryError::InvalidMemoryType);
+            }
+        }
+        let Ok(minimum_byte_size) = usize::try_from(minimum_byte_size64) else {
             return Err(MemoryError::InvalidMemoryType);
         };
-        let Ok(maximum_byte_size) = maximum_byte_size64.map(u32::try_from).transpose() else {
+        let Ok(maximum_byte_size) = maximum_byte_size64.map(usize::try_from).transpose() else {
             return Err(MemoryError::InvalidMemoryType);
         };
-        let minimum_byte_size = minimum_byte_size as usize;
-        let maximum_byte_size = maximum_byte_size.map(|max| max as usize);
 
         if let Some(limiter) = limiter.as_resource_limiter() {
             if !limiter.memory_growing(0, minimum_byte_size, maximum_byte_size)? {
