@@ -37,6 +37,7 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         // scheme that might yield worse codegen, but this translation time
         // trade-off usually is not worth it during fuzzing.
         config.cranelift_regalloc_algorithm(wasmtime::RegallocAlgorithm::SinglePass);
+        config.wasm_custom_page_sizes(true);
         let engine = Engine::new(&config).unwrap();
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
