@@ -287,24 +287,21 @@ impl MemoryEntity {
         let bytes_per_page = memory_type.page_size();
         let minimum_pages = memory_type.minimum();
         let maximum_pages = memory_type.maximum();
-        let bytes_per_page64 = u64::from(bytes_per_page);
-        let minimum_byte_size64 = u64::from(minimum_pages) * bytes_per_page64;
-        let maximum_byte_size64 = maximum_pages
-            .map(u64::from)
-            .map(|max| max * bytes_per_page64);
+        let minimum_byte_size = minimum_pages * bytes_per_page;
+        let maximum_byte_size = maximum_pages.map(|max| max * bytes_per_page);
         let absolute_max = u64::from(u32::MAX) + 1;
-        if minimum_byte_size64 > absolute_max {
+        if minimum_byte_size > absolute_max {
             return Err(MemoryError::InvalidMemoryType);
         }
-        if let Some(maximum_byte_size64) = maximum_byte_size64 {
+        if let Some(maximum_byte_size64) = maximum_byte_size {
             if maximum_byte_size64 > absolute_max {
                 return Err(MemoryError::InvalidMemoryType);
             }
         }
-        let Ok(minimum_byte_size) = usize::try_from(minimum_byte_size64) else {
+        let Ok(minimum_byte_size) = usize::try_from(minimum_byte_size) else {
             return Err(MemoryError::InvalidMemoryType);
         };
-        let Ok(maximum_byte_size) = maximum_byte_size64.map(usize::try_from).transpose() else {
+        let Ok(maximum_byte_size) = maximum_byte_size.map(usize::try_from).transpose() else {
             return Err(MemoryError::InvalidMemoryType);
         };
 
@@ -443,8 +440,8 @@ impl MemoryEntity {
         // not charge fuel if there is any other deterministic failure preventing the expensive
         // growth operation.
         if let Some(fuel) = fuel {
-            let additional_bytes = u64::from(additional)
-                .checked_mul(u64::from(bytes_per_page))
+            let additional_bytes = additional
+                .checked_mul(bytes_per_page)
                 .expect("additional size is within [min, max) page bounds");
             if fuel
                 .consume_fuel_if(|costs| costs.fuel_for_bytes(additional_bytes))
