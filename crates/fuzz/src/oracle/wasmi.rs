@@ -70,6 +70,7 @@ impl DifferentialOracleMeta for WasmiOracle {
             )
             .unwrap(),
         );
+        config.wasm_custom_page_sizes(true);
         let engine = Engine::new(&config);
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()

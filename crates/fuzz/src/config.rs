@@ -38,6 +38,7 @@ impl From<FuzzWasmiConfig> for wasmi::Config {
         let mut config = wasmi::Config::default();
         config.compilation_mode(fuzz.translation_mode);
         config.consume_fuel(fuzz.consume_fuel);
+        config.wasm_custom_page_sizes(true);
         config
     }
 }
@@ -100,6 +101,7 @@ impl Arbitrary<'_> for FuzzSmithConfig {
             min_uleb_size: u.int_in_range(0..=5)?,
             max_table_elements: u.int_in_range(0..=1_000_000)?,
             // Wasm proposals supported by Wasmi:
+            custom_page_sizes_enabled: true,
             bulk_memory_enabled: true,
             reference_types_enabled: false, // TODO: re-enable reference-types for differential fuzzing
             simd_enabled: false,
@@ -143,6 +145,11 @@ impl FuzzSmithConfig {
     pub fn disable_multi_memory(&mut self) {
         self.inner.multi_value_enabled = false;
         self.inner.max_memories = cmp::min(self.inner.max_memories, 1);
+    }
+
+    /// Disable the Wasm `custom-page-sizes` proposal.
+    pub fn disable_custom_page_sizes(&mut self) {
+        self.inner.custom_page_sizes_enabled = false;
     }
 }
 

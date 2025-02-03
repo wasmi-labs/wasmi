@@ -31,6 +31,7 @@ pub struct WasmiStackOracle {
 impl DifferentialOracleMeta for WasmiStackOracle {
     fn configure(config: &mut FuzzSmithConfig) {
         config.disable_multi_memory();
+        config.disable_custom_page_sizes();
     }
 
     fn setup(wasm: &[u8]) -> Option<Self>
