@@ -109,7 +109,7 @@ impl Executor<'_> {
         }
         let memory = self.get_memory(memory);
         let (memory, fuel) = store.resolve_memory_and_fuel_mut(&memory);
-        let return_value = memory.grow(delta, Some(fuel), resource_limiter);
+        let return_value = memory.grow(u64::from(delta), Some(fuel), resource_limiter);
         let return_value = match return_value {
             Ok(return_value) => {
                 // The `memory.grow` operation might have invalidated the cached
@@ -118,7 +118,7 @@ impl Executor<'_> {
                 //
                 // Safety: the instance has not changed thus calling this is valid.
                 unsafe { self.cache.update_memory(store) };
-                return_value
+                return_value as u32
             }
             Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(Error::from(trap_code)),

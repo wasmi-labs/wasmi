@@ -44,15 +44,8 @@ impl MemoryType {
             !memory_type.shared,
             "wasmi does not support the `threads` Wasm proposal"
         );
-        let minimum: u32 = memory_type
-            .initial
-            .try_into()
-            .expect("minimum linear memory pages must be a valid `u32`");
-        let maximum: Option<u32> = memory_type
-            .maximum
-            .map(u32::try_from)
-            .transpose()
-            .expect("maximum linear memory pages must be a valid `u32` if any");
+        let minimum: u64 = memory_type.initial;
+        let maximum: Option<u64> = memory_type.maximum;
         let page_size_log2: Option<u8> = memory_type
             .page_size_log2
             .map(u8::try_from)

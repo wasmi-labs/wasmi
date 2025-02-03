@@ -39,8 +39,8 @@ impl ArenaIndex for MemoryIdx {
 /// The memory type of a linear memory.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MemoryType {
-    min: u32,
-    max: Option<u32>,
+    min: u64,
+    max: Option<u64>,
     page_size_log2: u8,
 }
 
@@ -50,8 +50,8 @@ pub struct MemoryType {
 /// Allows to incrementally build-up a [`MemoryType`]. When done, finalize creation
 /// via a call to [`MemoryTypeBuilder::build`].
 pub struct MemoryTypeBuilder {
-    min: u32,
-    max: Option<u32>,
+    min: u64,
+    max: Option<u64>,
     page_size_log2: u8,
 }
 
@@ -78,7 +78,7 @@ impl MemoryTypeBuilder {
     /// Sets the minimum number of pages the built [`MemoryType`] supports.
     ///
     /// The default minimum is `0`.
-    pub fn min(&mut self, minimum: u32) -> &mut Self {
+    pub fn min(&mut self, minimum: u64) -> &mut Self {
         self.min = minimum;
         self
     }
@@ -88,7 +88,7 @@ impl MemoryTypeBuilder {
     /// A value of `None` means that there is no maximum number of pages.
     ///
     /// The default maximum is `None`.
-    pub fn max(&mut self, maximum: Option<u32>) -> &mut Self {
+    pub fn max(&mut self, maximum: Option<u64>) -> &mut Self {
         self.max = maximum;
         self
     }
@@ -141,21 +141,19 @@ impl MemoryTypeBuilder {
                 return Err(Error::from(MemoryError::InvalidMemoryType));
             }
         }
-        let page_size = 2_u32
+        let page_size = 2_u64
             .checked_pow(u32::from(self.page_size_log2))
             .expect("page size must not overflow `u32` value");
         let absolute_max = u64::from(u32::MAX) + 1;
-        let minimum_byte_size = u64::from(self.min) * u64::from(page_size);
-        if minimum_byte_size > absolute_max {
-            // Case: the page size and the minimum size invalidly overflows `u32`.
-            return Err(Error::from(MemoryError::InvalidMemoryType));
-        }
+        match self.min.checked_mul(page_size) {
+            Some(minimum_byte_size) if minimum_byte_size <= absolute_max => Ok(()),
+            _ => Err(Error::from(MemoryError::InvalidMemoryType)),
+        }?;
         if let Some(maximum) = self.max {
-            let maximum_byte_size = u64::from(maximum) * u64::from(page_size);
-            if maximum_byte_size > absolute_max {
-                // Case: the page size and the minimum size invalidly overflows `u32`.
-                return Err(Error::from(MemoryError::InvalidMemoryType));
-            }
+            match maximum.checked_mul(page_size) {
+                Some(maximum_byte_size) if maximum_byte_size <= absolute_max => Ok(()),
+                _ => Err(Error::from(MemoryError::InvalidMemoryType)),
+            }?;
         }
         Ok(())
     }
@@ -173,8 +171,8 @@ impl MemoryType {
     /// - If the `minimum` or `maximum` pages are out of bounds.
     pub fn new(minimum: u32, maximum: Option<u32>) -> Result<Self, Error> {
         let mut b = Self::builder();
-        b.min(minimum);
-        b.max(maximum);
+        b.min(u64::from(minimum));
+        b.max(maximum.map(u64::from));
         b.build()
     }
 
@@ -184,20 +182,20 @@ impl MemoryType {
     }
 
     /// Returns the minimum pages of the memory type.
-    pub fn minimum(self) -> u32 {
+    pub fn minimum(self) -> u64 {
         self.min
     }
 
     /// Returns the maximum pages of the memory type.
     ///
     /// Returns `None` if there is no limit set.
-    pub fn maximum(self) -> Option<u32> {
+    pub fn maximum(self) -> Option<u64> {
         self.max
     }
 
     /// Returns the page size of the [`MemoryType`] in bytes.
-    pub fn page_size(self) -> u32 {
-        2_u32.pow(u32::from(self.page_size_log2))
+    pub fn page_size(self) -> u64 {
+        2_u64.pow(u32::from(self.page_size_log2))
     }
 
     /// Returns the page size of the [`MemoryType`] in log2(bytes).
@@ -257,7 +255,7 @@ pub struct MemoryEntity {
     bytes: ByteBuffer,
     memory_type: MemoryType,
     /// Current size of the linear memory in pages.
-    size: u32,
+    size: u64,
 }
 
 impl MemoryEntity {
@@ -356,12 +354,12 @@ impl MemoryEntity {
     }
 
     /// Returns the size, in WebAssembly pages, of this Wasm linear memory.
-    pub fn size(&self) -> u32 {
+    pub fn size(&self) -> u64 {
         self.size
     }
 
     /// Returns the size of this Wasm linear memory in bytes.
-    fn size_in_bytes(&self) -> u32 {
+    fn size_in_bytes(&self) -> u64 {
         let pages = self.size();
         let bytes_per_page = self.memory_type.page_size();
         let Some(bytes) = pages.checked_mul(bytes_per_page) else {
@@ -374,7 +372,7 @@ impl MemoryEntity {
     }
 
     /// Returns the maximum size of this Wasm linear memory in bytes if any.
-    fn max_size_in_bytes(&self) -> Option<u32> {
+    fn max_size_in_bytes(&self) -> Option<u64> {
         let max_pages = self.memory_type.maximum()?;
         let bytes_per_page = self.memory_type.page_size();
         let Some(max_bytes) = max_pages.checked_mul(bytes_per_page) else {
@@ -396,14 +394,14 @@ impl MemoryEntity {
     /// - If the `limiter` denies the growth operation.
     pub fn grow(
         &mut self,
-        additional: u32,
+        additional: u64,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<u32, EntityGrowError> {
+    ) -> Result<u64, EntityGrowError> {
         fn notify_limiter(
             limiter: &mut ResourceLimiterRef<'_>,
             err: EntityGrowError,
-        ) -> Result<u32, EntityGrowError> {
+        ) -> Result<u64, EntityGrowError> {
             if let Some(limiter) = limiter.as_resource_limiter() {
                 limiter.memory_grow_failed(&MemoryError::OutOfBoundsGrowth)
             }
@@ -609,7 +607,7 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn size(&self, ctx: impl AsContext) -> u32 {
+    pub fn size(&self, ctx: impl AsContext) -> u64 {
         ctx.as_context().store.inner.resolve_memory(self).size()
     }
 
@@ -625,7 +623,7 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn grow(&self, mut ctx: impl AsContextMut, additional: u32) -> Result<u32, MemoryError> {
+    pub fn grow(&self, mut ctx: impl AsContextMut, additional: u64) -> Result<u64, MemoryError> {
         let (inner, mut limiter) = ctx
             .as_context_mut()
             .store
