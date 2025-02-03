@@ -76,6 +76,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`gc`] | 📅 | Not yet implemented. [(#775)] |
 | [`threads`] | 📅 | Not yet implemented. [(#777)] |
 | [`exception-handling`] | 📅 | Not yet implemented. [(#1037)] |
+| [`memory64`] | 📅 | Not yet implemented. [(#1357)] |
 | | |
 | [WASI] | 👨‍🔬 | Experimental support for WASI (`wasip1`) via the [`wasmi_wasi` crate]. |
 | [C-API] | 👨‍🔬 | Experimental support for the official Wasm C-API via the [`wasmi_c_api_impl` crate]. |
@@ -96,6 +97,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [`relaxed-simd`]: https://github.com/WebAssembly/relaxed-simd
 [`exception-handling`]: https://github.com/WebAssembly/exception-handling
 [`custom-page-sizes`]: https://github.com/WebAssembly/custom-page-sizes
+[`memory64`]: https://github.com/WebAssembly/memory64
 
 [WASI]: https://github.com/WebAssembly/WASI
 [C-API]: https://github.com/WebAssembly/wasm-c-api
@@ -117,6 +119,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#1037)]: https://github.com/wasmi-labs/wasmi/issues/1137
 [(#1197)]: https://github.com/wasmi-labs/wasmi/issues/1197
 [(#1191)]: https://github.com/wasmi-labs/wasmi/issues/1191
+[(#1357)]: https://github.com/wasmi-labs/wasmi/issues/1357
 
 ## Development
 
