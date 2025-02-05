@@ -343,12 +343,12 @@ jobs:
       - name: Run cargo-tarpaulin (default features)
         uses: actions-rs/tarpaulin@v0.1.3
         with:
-          version: "0.18.0"
+          version: "0.31.5"
           args: --workspace --locked
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v5.3.1
         with:
-          token: ${{secrets.CODECOV_TOKEN}}
+          # token: ${{secrets.CODECOV_TOKEN}} # not required for public repos
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
