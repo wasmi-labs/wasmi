@@ -357,7 +357,7 @@ jobs:
           path: cobertura.xml
 
   coverage2:
-    name: coverage
+    name: Coverage 2.0
     runs-on: ubuntu-latest
     container:
       image: xd009642/tarpaulin:develop-nightly
