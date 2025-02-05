@@ -331,9 +331,6 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-  coverage2:
-    name: Coverage 2.0
-    runs-on: ubuntu-latest
     container:
       image: xd009642/tarpaulin:develop-nightly
       options: --security-opt seccomp=unconfined
