@@ -349,6 +349,7 @@ jobs:
         uses: codecov/codecov-action@v5.3.1
         with:
           # token: ${{secrets.CODECOV_TOKEN}} # not required for public repos
+          fail_ci_if_error: true
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
