@@ -283,6 +283,7 @@ macro_rules! expand_tests_cps {
 
             fn wasm_custom_page_sizes("proposals/custom-page-sizes/custom-page-sizes");
             fn wasm_custom_page_sizes_invalid("proposals/custom-page-sizes/custom-page-sizes-invalid");
+            fn wasm_custom_page_sizes_memory_max("proposals/custom-page-sizes/memory_max");
         }
     };
 }
