@@ -70,8 +70,8 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`extended-const`] | ✅ | ≥ `0.29.0` [(#707)] |
 | [`multi-memory`] | ✅ | ≥ `0.37.0` [(#1191)] |
 | [`custom-page-sizes`] | ✅ | ≥ `0.41.0` [(#1197)] |
-| [`simd`] | ❌ | Unlikely to be supported. |
-| [`relaxed-simd`] | ❌ | Unlikely to be supported. Depends on `simd`. |
+| [`simd`] | 📅 | Not yet implemented. [(#1364)] |
+| [`relaxed-simd`] | 📅 | Not yet implemented. Depends on `simd`. |
 | [`function-references`] | 📅 | Not yet implemented. [(#774)] |
 | [`gc`] | 📅 | Not yet implemented. [(#775)] |
 | [`threads`] | 📅 | Not yet implemented. [(#777)] |
@@ -120,6 +120,7 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#1197)]: https://github.com/wasmi-labs/wasmi/issues/1197
 [(#1191)]: https://github.com/wasmi-labs/wasmi/issues/1191
 [(#1357)]: https://github.com/wasmi-labs/wasmi/issues/1357
+[(#1364)]: https://github.com/wasmi-labs/wasmi/issues/1364
 
 ## Development
 
