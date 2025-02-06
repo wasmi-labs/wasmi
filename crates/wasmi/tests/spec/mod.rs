@@ -284,6 +284,31 @@ macro_rules! expand_tests_cps {
             fn wasm_custom_page_sizes("proposals/custom-page-sizes/custom-page-sizes");
             fn wasm_custom_page_sizes_invalid("proposals/custom-page-sizes/custom-page-sizes-invalid");
             fn wasm_custom_page_sizes_memory_max("proposals/custom-page-sizes/memory_max");
+            fn wasm_custom_page_sizes_memory_max64("proposals/custom-page-sizes/memory_max_i64");
+        }
+    };
+}
+
+macro_rules! expand_tests_memory64 {
+    ( $mac:ident, $( $args:tt )* ) => {
+        $mac! {
+            $( $args )*
+
+            fn wasm_memory64("proposals/memory64/float_exprs");
+            fn wasm_memory64_address64("proposals/wasm-3.0/address64");
+            fn wasm_memory64_align64("proposals/wasm-3.0/align64");
+            fn wasm_memory64_endianness64("proposals/wasm-3.0/endianness64");
+            fn wasm_memory64_float_memory64("proposals/wasm-3.0/float_memory64");
+            fn wasm_memory64_memory_grow64("proposals/wasm-3.0/memory_grow64");
+            fn wasm_memory64_memory_trap64("proposals/wasm-3.0/memory_trap64");
+            fn wasm_memory64_memory_redundancy64("proposals/wasm-3.0/memory_redundancy64");
+            fn wasm_memory64_memory64("proposals/wasm-3.0/memory64");
+            fn wasm_memory64_table_copy_mixed("proposals/wasm-3.0/table_copy_mixed");
+            fn wasm_memory64_memory_copy64("proposals/wasm-3.0/memory_copy");
+            fn wasm_memory64_memory_fill64("proposals/wasm-3.0/memory_fill");
+            fn wasm_memory64_memory_init64("proposals/wasm-3.0/memory_init");
+            fn wasm_memory64_table64("proposals/wasm-3.0/table");
+            fn wasm_memory64_imports("proposals/wasm-3.0/imports");
         }
     };
 }
@@ -302,6 +327,12 @@ mod blobs {
     }
 
     expand_tests_cps! {
+        include_wasm_blobs,
+
+        let folder = "testsuite";
+    }
+
+    expand_tests_memory64! {
         include_wasm_blobs,
 
         let folder = "testsuite";
@@ -342,6 +373,26 @@ mod custom_page_sizes {
     }
 
     expand_tests_cps! {
+        define_spec_tests,
+
+        let config = test_config();
+        let runner = process_wast;
+    }
+}
+
+mod memory64 {
+    use super::*;
+
+    fn test_config() -> RunnerConfig {
+        let config = Config::default();
+        let parsing_mode = ParsingMode::Buffered;
+        RunnerConfig {
+            config,
+            parsing_mode,
+        }
+    }
+
+    expand_tests_memory64! {
         define_spec_tests,
 
         let config = test_config();
