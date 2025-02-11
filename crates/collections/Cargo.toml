@@ -15,7 +15,7 @@ exclude.workspace = true
 
 [dependencies]
 hashbrown = { version = "0.15.1", default-features = false, optional = true, features = ["default-hasher", "inline-more"] }
-string-interner = { version = "0.18", default-features = false, optional = true, features = ["inline-more", "backends"] }
+string-interner = { version = "0.19", default-features = false, optional = true, features = ["inline-more", "backends"] }
 
 [features]
 default = ["std"]
