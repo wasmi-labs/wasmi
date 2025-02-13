@@ -358,6 +358,9 @@ impl MemoryType {
     /// [import subtyping]:
     /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
     pub(crate) fn is_subtype_of(&self, other: &MemoryType) -> bool {
+        if self.is_64() != other.is_64() {
+            return false;
+        }
         if self.page_size() != other.page_size() {
             return false;
         }
