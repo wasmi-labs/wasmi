@@ -224,14 +224,6 @@ impl MemoryTypeBuilder {
     ///
     /// If the chosen configuration for the constructed [`MemoryType`] is invalid.
     fn validate(&self) -> Result<(), Error> {
-        if self
-            .inner
-            .maximum
-            .is_some_and(|max| max < self.inner.minimum)
-        {
-            // Case: maximum page size cannot be smaller than the minimum page size
-            return Err(Error::from(MemoryError::InvalidMemoryType));
-        }
         match self.inner.page_size_log2 {
             0 | MemoryType::DEFAULT_PAGE_SIZE_LOG2 => {}
             _ => {
@@ -240,21 +232,26 @@ impl MemoryTypeBuilder {
                 return Err(Error::from(MemoryError::InvalidMemoryType));
             }
         }
-        let page_size = 2_u64
-            .checked_pow(u32::from(self.inner.page_size_log2))
-            .expect("page size must not overflow `u32` value");
-        let absolute_max = u64::from(u32::MAX) + 1;
-        let minimum_byte_size = self.inner.minimum * page_size;
+        let absolute_max = self.inner.max_size_based_on_index_type();
+        let Ok(minimum_byte_size) = self.inner.minimum_byte_size() else {
+            // Case: the minimum size overflows a `u64`
+            return Err(Error::from(MemoryError::InvalidMemoryType));
+        };
         if minimum_byte_size > absolute_max {
-            // Case: the page size and the minimum size invalidly overflows `u32`.
+            // Case: the page size and the minimum size overflows.
             return Err(Error::from(MemoryError::InvalidMemoryType));
         }
-        if let Some(maximum_pages) = self.inner.maximum {
-            let maximum_byte_size = u64::from(maximum_pages) * u64::from(page_size);
-            if maximum_byte_size > absolute_max {
-                // Case: the page size and the minimum size invalidly overflows `u32`.
-                return Err(Error::from(MemoryError::InvalidMemoryType));
-            }
+        let Ok(maximum_byte_size) = self.inner.maximum_byte_size() else {
+            // Case: the maximum size overflows a `u64`
+            return Err(Error::from(MemoryError::InvalidMemoryType));
+        };
+        if maximum_byte_size > absolute_max {
+            // Case: the page size and the maximum size overflows.
+            return Err(Error::from(MemoryError::InvalidMemoryType));
+        }
+        if maximum_byte_size > minimum_byte_size {
+            // Case: maximum size must be at least as large as minimum size
+            return Err(Error::from(MemoryError::InvalidMemoryType));
         }
         Ok(())
     }
