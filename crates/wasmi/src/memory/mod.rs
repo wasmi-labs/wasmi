@@ -36,6 +36,93 @@ impl ArenaIndex for MemoryIdx {
     }
 }
 
+/// The index type used for addressing a linear memory.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum IndexType {
+    /// A 32-bit address type.
+    I32,
+    /// A 64-bit address type.
+    I64,
+}
+
+/// Internal memory type data and details.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct MemoryTypeInner {
+    /// The initial or minimum amount of pages.
+    minimum: u64,
+    /// The optional maximum amount of pages.
+    maximum: Option<u64>,
+    /// The size of a page log2.
+    page_size_log2: u8,
+    /// The index type used to address a linear memory.
+    index_type: IndexType,
+}
+
+/// A type to indicate that a size calculation has overflown.
+#[derive(Debug, Copy, Clone)]
+pub struct SizeOverflow;
+
+impl MemoryTypeInner {
+    /// Returns the minimum size, in bytes, that the linear memory must have.
+    ///
+    /// # Errors
+    ///
+    /// If the calculation of the minimum size overflows the `u64` return type.
+    /// This means that the linear memory can't be allocated.
+    /// The caller is responsible to deal with that situation.
+    pub fn minimum_byte_size(&self) -> Result<u64, SizeOverflow> {
+        self.minimum
+            .checked_mul(self.page_size())
+            .ok_or(SizeOverflow)
+    }
+
+    /// Returns the maximum size, in bytes, that the linear memory must have.
+    /// 
+    /// # Note
+    /// 
+    /// If the maximum size of a memory type is not specified a concrete
+    /// maximum value is returned dependent on the index type of the memory type.
+    ///
+    /// # Errors
+    ///
+    /// If the calculation of the maximum size overflows the `u64` return type.
+    /// This means that the linear memory can't be allocated.
+    /// The caller is responsible to deal with that situation.
+    pub fn maximum_byte_size(&self) -> Result<u64, SizeOverflow> {
+        match self.maximum {
+            Some(max) => {
+                max.checked_mul(self.page_size()).ok_or(SizeOverflow)
+            }
+            None => {
+                let min = self.minimum_byte_size()?;
+                Ok(min.max(self.max_size_based_on_index_type()))
+            }
+        }
+    }
+
+    /// Returns the size of the linear memory pages in bytes.
+    pub fn page_size(&self) -> u64 {
+        debug_assert!(
+            self.page_size_log2 == 16 || self.page_size_log2 == 0,
+            "invalid `page_size_log2`: {}; must be 16 or 0",
+            self.page_size_log2
+        );
+        1 << self.page_size_log2
+    }
+
+    /// Returns the maximum size linear memory is allowed to have.
+    /// 
+    /// This is based on the index type used by the memory type.
+    pub fn max_size_based_on_index_type(&self) -> u64 {
+        const WASM32_MAX_SIZE: u64 = 1 << 32;
+        const WASM64_MAX_SIZE: u64 = 1 << 48;
+        match self.index_type {
+            IndexType::I32 => WASM32_MAX_SIZE,
+            IndexType::I64 => WASM64_MAX_SIZE,
+        }
+    }
+}
+
 /// The memory type of a linear memory.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MemoryType {
