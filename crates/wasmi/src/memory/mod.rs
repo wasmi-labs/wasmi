@@ -378,10 +378,9 @@ impl MemoryType {
 /// A linear memory entity.
 #[derive(Debug)]
 pub struct MemoryEntity {
+    /// The size of `bytes` will always be a multiple of a page size.
     bytes: ByteBuffer,
     memory_type: MemoryType,
-    /// Current size of the linear memory in pages.
-    size: u32,
 }
 
 impl MemoryEntity {
@@ -449,11 +448,7 @@ impl MemoryEntity {
                 return Err(error);
             }
         };
-        Ok(Self {
-            bytes,
-            memory_type,
-            size: minimum_pages,
-        })
+        Ok(Self { bytes, memory_type })
     }
 
     /// Returns the memory type of the linear memory.
@@ -480,14 +475,14 @@ impl MemoryEntity {
     }
 
     /// Returns the size, in WebAssembly pages, of this Wasm linear memory.
-    pub fn size(&self) -> u32 {
-        self.size
+    pub fn size(&self) -> u64 {
+        (self.bytes.len() as u64) >> self.memory_type.page_size_log2()
     }
 
     /// Returns the size of this Wasm linear memory in bytes.
-    fn size_in_bytes(&self) -> u32 {
+    fn size_in_bytes(&self) -> u64 {
         let pages = self.size();
-        let bytes_per_page = self.memory_type.page_size();
+        let bytes_per_page = u64::from(self.memory_type.page_size());
         let Some(bytes) = pages.checked_mul(bytes_per_page) else {
             panic!(
                 "unexpected out of bounds linear memory size: \
@@ -498,9 +493,9 @@ impl MemoryEntity {
     }
 
     /// Returns the maximum size of this Wasm linear memory in bytes if any.
-    fn max_size_in_bytes(&self) -> Option<u32> {
+    fn max_size_in_bytes(&self) -> Option<u64> {
         let max_pages = self.memory_type.maximum()?;
-        let bytes_per_page = self.memory_type.page_size();
+        let bytes_per_page = u64::from(self.memory_type.page_size());
         let Some(max_bytes) = max_pages.checked_mul(bytes_per_page) else {
             panic!(
                 "unexpected out of bounds linear memory maximum size: \
@@ -520,14 +515,14 @@ impl MemoryEntity {
     /// - If the `limiter` denies the growth operation.
     pub fn grow(
         &mut self,
-        additional: u32,
+        additional: u64,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<u32, EntityGrowError> {
+    ) -> Result<u64, EntityGrowError> {
         fn notify_limiter(
             limiter: &mut ResourceLimiterRef<'_>,
             err: EntityGrowError,
-        ) -> Result<u32, EntityGrowError> {
+        ) -> Result<u64, EntityGrowError> {
             if let Some(limiter) = limiter.as_resource_limiter() {
                 limiter.memory_grow_failed(&MemoryError::OutOfBoundsGrowth)
             }
@@ -548,7 +543,7 @@ impl MemoryEntity {
                 return Err(EntityGrowError::InvalidGrow);
             }
         }
-        let bytes_per_page = self.memory_type.page_size();
+        let bytes_per_page = u64::from(self.memory_type.page_size());
         let Some(desired_byte_size) = desired_size.checked_mul(bytes_per_page) else {
             return Err(EntityGrowError::InvalidGrow);
         };
@@ -569,8 +564,8 @@ impl MemoryEntity {
         // not charge fuel if there is any other deterministic failure preventing the expensive
         // growth operation.
         if let Some(fuel) = fuel {
-            let additional_bytes = u64::from(additional)
-                .checked_mul(u64::from(bytes_per_page))
+            let additional_bytes = additional
+                .checked_mul(bytes_per_page)
                 .expect("additional size is within [min, max) page bounds");
             if fuel
                 .consume_fuel_if(|costs| costs.fuel_for_bytes(additional_bytes))
@@ -589,7 +584,6 @@ impl MemoryEntity {
         if self.bytes.grow(desired_byte_size).is_err() {
             return notify_limiter(limiter, EntityGrowError::InvalidGrow);
         }
-        self.size = desired_size;
         Ok(current_size)
     }
 
@@ -733,7 +727,7 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn size(&self, ctx: impl AsContext) -> u32 {
+    pub fn size(&self, ctx: impl AsContext) -> u64 {
         ctx.as_context().store.inner.resolve_memory(self).size()
     }
 
@@ -749,7 +743,7 @@ impl Memory {
     /// # Panics
     ///
     /// Panics if `ctx` does not own this [`Memory`].
-    pub fn grow(&self, mut ctx: impl AsContextMut, additional: u32) -> Result<u32, MemoryError> {
+    pub fn grow(&self, mut ctx: impl AsContextMut, additional: u64) -> Result<u64, MemoryError> {
         let (inner, mut limiter) = ctx
             .as_context_mut()
             .store
