@@ -161,6 +161,21 @@ impl MemoryTypeBuilder {
         Self::default()
     }
 
+    /// Set whether this is a 64-bit memory type or not.
+    ///
+    /// By default a memory is a 32-bit, a.k.a. `false`.
+    ///
+    /// 64-bit memories are part of the [Wasm `memory64` proposal].
+    /// 
+    /// [Wasm `memory64` proposal]: https://github.com/WebAssembly/memory64
+    pub fn memory64(&mut self, memory64: bool) -> &mut Self {
+        self.inner.index_type = match memory64 {
+            true => IndexType::I64,
+            false => IndexType::I32,
+        };
+        self
+    }
+
     /// Sets the minimum number of pages the built [`MemoryType`] supports.
     ///
     /// The default minimum is `0`.
@@ -266,9 +281,34 @@ impl MemoryType {
         b.build()
     }
 
+    /// Creates a new 64-bit memory type with minimum and optional maximum pages.
+    ///
+    /// # Errors
+    ///
+    /// - If the `minimum` pages exceeds the `maximum` pages.
+    /// - If the `minimum` or `maximum` pages are out of bounds.
+    /// 
+    /// 64-bit memories are part of the [Wasm `memory64` proposal].
+    /// 
+    /// [Wasm `memory64` proposal]: https://github.com/WebAssembly/memory64
+    pub fn new64(minimum: u64, maximum: Option<u64>) -> Result<Self, Error> {
+        let mut b = Self::builder();
+        b.memory64(true);
+        b.min(minimum);
+        b.max(maximum);
+        b.build()
+    }
+
     /// Returns a [`MemoryTypeBuilder`] to incrementally construct a [`MemoryType`].
     pub fn builder() -> MemoryTypeBuilder {
         MemoryTypeBuilder::default()
+    }
+
+    /// Returns `true` if this is a 64-bit [`MemoryType`].
+    ///
+    /// 64-bit memories are part of the Wasm `memory64` proposal.
+    pub fn is_64(&self) -> bool {
+        matches!(self.inner.index_type, IndexType::I64)
     }
 
     /// Returns the minimum pages of the memory type.
