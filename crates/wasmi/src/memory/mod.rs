@@ -77,9 +77,9 @@ impl MemoryTypeInner {
     }
 
     /// Returns the maximum size, in bytes, that the linear memory must have.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// If the maximum size of a memory type is not specified a concrete
     /// maximum value is returned dependent on the index type of the memory type.
     ///
@@ -90,9 +90,7 @@ impl MemoryTypeInner {
     /// The caller is responsible to deal with that situation.
     pub fn maximum_byte_size(&self) -> Result<u64, SizeOverflow> {
         match self.maximum {
-            Some(max) => {
-                max.checked_mul(self.page_size()).ok_or(SizeOverflow)
-            }
+            Some(max) => max.checked_mul(self.page_size()).ok_or(SizeOverflow),
             None => {
                 let min = self.minimum_byte_size()?;
                 Ok(min.max(self.max_size_based_on_index_type()))
@@ -111,7 +109,7 @@ impl MemoryTypeInner {
     }
 
     /// Returns the maximum size linear memory is allowed to have.
-    /// 
+    ///
     /// This is based on the index type used by the memory type.
     pub fn max_size_based_on_index_type(&self) -> u64 {
         const WASM32_MAX_SIZE: u64 = 1 << 32;
@@ -146,7 +144,7 @@ impl Default for MemoryTypeBuilder {
                 maximum: None,
                 page_size_log2: MemoryType::DEFAULT_PAGE_SIZE_LOG2,
                 index_type: IndexType::I32,
-            }
+            },
         }
     }
 }
@@ -166,7 +164,7 @@ impl MemoryTypeBuilder {
     /// By default a memory is a 32-bit, a.k.a. `false`.
     ///
     /// 64-bit memories are part of the [Wasm `memory64` proposal].
-    /// 
+    ///
     /// [Wasm `memory64` proposal]: https://github.com/WebAssembly/memory64
     pub fn memory64(&mut self, memory64: bool) -> &mut Self {
         self.inner.index_type = match memory64 {
@@ -217,9 +215,7 @@ impl MemoryTypeBuilder {
     /// If the chosen configuration for the constructed [`MemoryType`] is invalid.
     pub fn build(self) -> Result<MemoryType, Error> {
         self.validate()?;
-        Ok(MemoryType {
-            inner: self.inner,
-        })
+        Ok(MemoryType { inner: self.inner })
     }
 
     /// Validates the configured [`MemoryType`] of the [`MemoryTypeBuilder`].
@@ -287,9 +283,9 @@ impl MemoryType {
     ///
     /// - If the `minimum` pages exceeds the `maximum` pages.
     /// - If the `minimum` or `maximum` pages are out of bounds.
-    /// 
+    ///
     /// 64-bit memories are part of the [Wasm `memory64` proposal].
-    /// 
+    ///
     /// [Wasm `memory64` proposal]: https://github.com/WebAssembly/memory64
     pub fn new64(minimum: u64, maximum: Option<u64>) -> Result<Self, Error> {
         let mut b = Self::builder();
