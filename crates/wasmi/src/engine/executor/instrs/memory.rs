@@ -76,7 +76,7 @@ impl Executor<'_> {
         result: Reg,
         delta: Reg,
     ) -> Result<(), Error> {
-        let delta: u32 = self.get_register_as(delta);
+        let delta: u64 = self.get_register_as(delta);
         let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
         self.execute_memory_grow_impl(store, result, delta, &mut resource_limiter)
     }
@@ -89,6 +89,7 @@ impl Executor<'_> {
         delta: u32,
     ) -> Result<(), Error> {
         let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
+        let delta = u64::from(delta);
         self.execute_memory_grow_impl(store, result, delta, &mut resource_limiter)
     }
 
@@ -98,7 +99,7 @@ impl Executor<'_> {
         &mut self,
         store: &'store mut StoreInner,
         result: Reg,
-        delta: u32,
+        delta: u64,
         resource_limiter: &mut ResourceLimiterRef<'store>,
     ) -> Result<(), Error> {
         let memory = self.fetch_memory_index(1);

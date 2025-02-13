@@ -317,7 +317,7 @@ pub enum EntityGrowError {
 impl EntityGrowError {
     /// The WebAssembly specification demands to return this value
     /// if the `memory.grow` or `table.grow` operations fail.
-    pub const ERROR_CODE: u32 = u32::MAX;
+    pub const ERROR_CODE: u64 = u64::MAX;
 }
 
 impl From<TrapCode> for EntityGrowError {
