@@ -22,7 +22,7 @@ fn fill() {
         .run()
 }
 
-fn testcase_fill_exact(len: u32) -> TranslationTest {
+fn testcase_fill_exact(len: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -38,10 +38,10 @@ fn testcase_fill_exact(len: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_fill_exact16(len: u32) {
+fn test_fill_exact16(len: u64) {
     testcase_fill_exact(len)
         .expect_func_instrs([
-            Instruction::memory_fill_exact(Reg::from(0), Reg::from(1), u32imm16(len)),
+            Instruction::memory_fill_exact(Reg::from(0), Reg::from(1), u64imm16(len)),
             Instruction::memory_index(0),
             Instruction::Return,
         ])
@@ -54,10 +54,10 @@ fn fill_exact16() {
     test_fill_exact16(0);
     test_fill_exact16(1);
     test_fill_exact16(42);
-    test_fill_exact16(u32::from(u16::MAX));
+    test_fill_exact16(u64::from(u16::MAX));
 }
 
-fn test_fill_exact(len: u32) {
+fn test_fill_exact(len: u64) {
     testcase_fill_exact(len)
         .expect_func(
             ExpectedFunc::new([
@@ -73,8 +73,8 @@ fn test_fill_exact(len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_exact() {
-    test_fill_exact(u32::from(u16::MAX) + 1);
-    test_fill_exact(u32::MAX);
+    test_fill_exact(u64::from(u16::MAX) + 1);
+    test_fill_exact(u64::from(u32::MAX));
 }
 
 fn testcase_fill_imm(value: u32) -> TranslationTest {
@@ -114,7 +114,7 @@ fn fill_imm() {
     test_fill_imm(u32::MAX);
 }
 
-fn testcase_fill_at(dst: u32) -> TranslationTest {
+fn testcase_fill_at(dst: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -130,10 +130,10 @@ fn testcase_fill_at(dst: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_fill_at16(dst: u32) {
+fn test_fill_at16(dst: u64) {
     testcase_fill_at(dst)
         .expect_func_instrs([
-            Instruction::memory_fill_at(u32imm16(dst), Reg::from(0), Reg::from(1)),
+            Instruction::memory_fill_at(u64imm16(dst), Reg::from(0), Reg::from(1)),
             Instruction::memory_index(0),
             Instruction::Return,
         ])
@@ -144,10 +144,10 @@ fn test_fill_at16(dst: u32) {
 #[cfg_attr(miri, ignore)]
 fn fill_at16() {
     test_fill_at16(0);
-    test_fill_at16(u32::from(u16::MAX));
+    test_fill_at16(u64::from(u16::MAX));
 }
 
-fn test_fill_at(dst: u32) {
+fn test_fill_at(dst: u64) {
     testcase_fill_at(dst)
         .expect_func(
             ExpectedFunc::new([
@@ -163,11 +163,11 @@ fn test_fill_at(dst: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill_at() {
-    test_fill_at(u32::from(u16::MAX) + 1);
-    test_fill_at(u32::MAX);
+    test_fill_at(u64::from(u16::MAX) + 1);
+    test_fill_at(u64::from(u32::MAX));
 }
 
-fn testcase_fill_at_imm(dst: u32, value: u32) -> TranslationTest {
+fn testcase_fill_at_imm(dst: u64, value: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -183,10 +183,10 @@ fn testcase_fill_at_imm(dst: u32, value: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_fill_at16_imm(dst: u32, value: u32) {
+fn test_fill_at16_imm(dst: u64, value: u64) {
     testcase_fill_at_imm(dst, value)
         .expect_func_instrs([
-            Instruction::memory_fill_at_imm(u32imm16(dst), value as u8, Reg::from(0)),
+            Instruction::memory_fill_at_imm(u64imm16(dst), value as u8, Reg::from(0)),
             Instruction::memory_index(0),
             Instruction::Return,
         ])
@@ -196,16 +196,16 @@ fn test_fill_at16_imm(dst: u32, value: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill_at16_imm() {
-    let dst_values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
+    let dst_values = [0, 1, u64::from(u16::MAX) - 1, u64::from(u16::MAX)];
     let test_values = [
         0,
         1,
         42,
-        u32::from(u16::MAX) - 1,
-        u32::from(u16::MAX),
-        u32::from(u16::MAX) + 1,
-        u32::MAX - 1,
-        u32::MAX,
+        u64::from(u16::MAX) - 1,
+        u64::from(u16::MAX),
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
     ];
     for dst in dst_values {
         for value in test_values {
@@ -214,7 +214,7 @@ fn fill_at16_imm() {
     }
 }
 
-fn test_fill_at_imm(dst: u32, value: u32) {
+fn test_fill_at_imm(dst: u64, value: u64) {
     testcase_fill_at_imm(dst, value)
         .expect_func(
             ExpectedFunc::new([
@@ -230,7 +230,11 @@ fn test_fill_at_imm(dst: u32, value: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill_at_imm() {
-    let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
+    let values = [
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
+    ];
     for dst in values {
         for value in values {
             if dst == value {
@@ -245,7 +249,7 @@ fn fill_at_imm() {
     }
 }
 
-fn testcase_fill_at_exact(dst: u32, len: u32) -> TranslationTest {
+fn testcase_fill_at_exact(dst: u64, len: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -261,10 +265,10 @@ fn testcase_fill_at_exact(dst: u32, len: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_fill_at_exact16(dst: u32, len: u32) {
+fn test_fill_at_exact16(dst: u64, len: u64) {
     testcase_fill_at_exact(dst, len)
         .expect_func_instrs([
-            Instruction::memory_fill_at_exact(u32imm16(dst), Reg::from(0), u32imm16(len)),
+            Instruction::memory_fill_at_exact(u64imm16(dst), Reg::from(0), u64imm16(len)),
             Instruction::memory_index(0),
             Instruction::Return,
         ])
@@ -274,7 +278,7 @@ fn test_fill_at_exact16(dst: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill_to_exact16() {
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
+    let values = [0, 1, u64::from(u16::MAX) - 1, u64::from(u16::MAX)];
     for dst in values {
         for len in values {
             test_fill_at_exact16(dst, len);
@@ -282,7 +286,7 @@ fn fill_to_exact16() {
     }
 }
 
-fn test_fill_at_exact(dst: u32, len: u32) {
+fn test_fill_at_exact(dst: u64, len: u64) {
     testcase_fill_at_exact(dst, len)
         .expect_func(
             ExpectedFunc::new([
@@ -298,7 +302,11 @@ fn test_fill_at_exact(dst: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill_at_exact() {
-    let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
+    let values = [
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
+    ];
     for dst in values {
         for value in values {
             if dst == value {
@@ -313,7 +321,7 @@ fn fill_at_exact() {
     }
 }
 
-fn testcase_fill_imm_exact(value: u32, len: u32) -> TranslationTest {
+fn testcase_fill_imm_exact(value: u64, len: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -329,10 +337,10 @@ fn testcase_fill_imm_exact(value: u32, len: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_fill_imm_exact16(value: u32, len: u32) {
+fn test_fill_imm_exact16(value: u64, len: u64) {
     testcase_fill_imm_exact(value, len)
         .expect_func_instrs([
-            Instruction::memory_fill_imm_exact(Reg::from(0), value as u8, u32imm16(len)),
+            Instruction::memory_fill_imm_exact(Reg::from(0), value as u8, u64imm16(len)),
             Instruction::memory_index(0),
             Instruction::Return,
         ])
@@ -342,16 +350,16 @@ fn test_fill_imm_exact16(value: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill_imm_exact16() {
-    let len_values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
+    let len_values = [0, 1, u64::from(u16::MAX) - 1, u64::from(u16::MAX)];
     let values = [
         0,
         1,
         42,
-        u32::from(u16::MAX) - 1,
-        u32::from(u16::MAX),
-        u32::from(u16::MAX) + 1,
-        u32::MAX - 1,
-        u32::MAX,
+        u64::from(u16::MAX) - 1,
+        u64::from(u16::MAX),
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
     ];
     for value in values {
         for len in len_values {
@@ -360,7 +368,7 @@ fn fill_imm_exact16() {
     }
 }
 
-fn test_fill_imm_exact(value: u32, len: u32) {
+fn test_fill_imm_exact(value: u64, len: u64) {
     testcase_fill_imm_exact(value, len)
         .expect_func(
             ExpectedFunc::new([
@@ -376,7 +384,11 @@ fn test_fill_imm_exact(value: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill_imm_exact() {
-    let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
+    let values = [
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
+    ];
     for dst in values {
         for value in values {
             if dst == value {
@@ -391,7 +403,7 @@ fn fill_imm_exact() {
     }
 }
 
-fn testcase_fill_at_imm_exact(dst: u32, value: u32, len: u32) -> TranslationTest {
+fn testcase_fill_at_imm_exact(dst: u64, value: u64, len: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -407,10 +419,10 @@ fn testcase_fill_at_imm_exact(dst: u32, value: u32, len: u32) -> TranslationTest
     TranslationTest::new(wasm)
 }
 
-fn test_fill_at_imm_exact16(dst: u32, value: u32, len: u32) {
+fn test_fill_at_imm_exact16(dst: u64, value: u64, len: u64) {
     testcase_fill_at_imm_exact(dst, value, len)
         .expect_func_instrs([
-            Instruction::memory_fill_at_imm_exact(u32imm16(dst), value as u8, u32imm16(len)),
+            Instruction::memory_fill_at_imm_exact(u64imm16(dst), value as u8, u64imm16(len)),
             Instruction::memory_index(0),
             Instruction::Return,
         ])
@@ -420,7 +432,7 @@ fn test_fill_at_imm_exact16(dst: u32, value: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill_at_imm_exact16() {
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
+    let values = [0, 1, u64::from(u16::MAX) - 1, u64::from(u16::MAX)];
     for dst in values {
         for value in values {
             for len in values {
@@ -430,7 +442,7 @@ fn fill_at_imm_exact16() {
     }
 }
 
-fn test_fill_at_imm_exact(dst: u32, value: u32, len: u32) {
+fn test_fill_at_imm_exact(dst: u64, value: u64, len: u64) {
     testcase_fill_at_imm_exact(dst, value, len)
         .expect_func(
             ExpectedFunc::new([
@@ -446,7 +458,11 @@ fn test_fill_at_imm_exact(dst: u32, value: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn fill_at_imm_exact() {
-    let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
+    let values = [
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
+    ];
     for dst in values {
         for value in values {
             for len in values {
