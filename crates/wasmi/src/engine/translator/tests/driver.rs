@@ -172,6 +172,7 @@ impl TranslationTest {
         let config = {
             let mut cfg = Config::default();
             cfg.wasm_tail_call(true);
+            cfg.wasm_memory64(false);
             cfg
         };
         Self {

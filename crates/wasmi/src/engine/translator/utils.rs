@@ -101,6 +101,35 @@ macro_rules! impl_provider_new_const16 {
 impl_provider_new_const16!(u32);
 impl_provider_new_const16!(u64);
 
+impl super::FuncTranslator {
+    /// Converts the `provider` to an index-type constant value.
+    ///
+    /// The behavior is different wether `memory64` is enabled or disabled.
+    pub(super) fn as_index_type_const(
+        &mut self,
+        provider: TypedProvider,
+    ) -> Result<Provider<Const16<u64>>, Error> {
+        let value = match provider {
+            Provider::Register(reg) => return Ok(Provider::Register(reg)),
+            Provider::Const(value) => value,
+        };
+        match self.is_memory64_enabled() {
+            true => {
+                if let Ok(value) = Const16::try_from(u64::from(value)) {
+                    return Ok(Provider::Const(value));
+                }
+            }
+            false => {
+                if let Ok(value) = Const16::try_from(u32::from(value)) {
+                    return Ok(Provider::Const(<Const16<u64>>::cast(value)));
+                }
+            }
+        }
+        let register = self.alloc.stack.alloc_const(value)?;
+        Ok(Provider::Register(register))
+    }
+}
+
 impl TypedProvider {
     /// Returns the `i16` [`Reg`] index if the [`TypedProvider`] is a [`Reg`].
     fn register_index(&self) -> Option<i16> {

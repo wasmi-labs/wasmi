@@ -18,6 +18,13 @@ pub struct Const16<T> {
     marker: PhantomData<fn() -> T>,
 }
 
+impl Const16<u64> {
+    /// Casts the `Const16<u32>` to a `Const16<u64>` value.
+    pub fn cast(const16: Const16<u32>) -> Self {
+        Self::new(const16.inner)
+    }
+}
+
 impl<T> Const16<T> {
     /// Returns `true` if the [`Const16`] is equal to zero.
     pub fn is_zero(&self) -> bool {

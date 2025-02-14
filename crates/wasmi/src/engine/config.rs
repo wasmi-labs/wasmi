@@ -347,6 +347,11 @@ impl Config {
         self
     }
 
+    /// Returns `true` if the Wasm `memory64` proposal is enabled.
+    pub(crate) fn get_wasm_memory64(&self) -> bool {
+        self.features.contains(WasmFeatures::MEMORY64)
+    }
+
     /// Enable or disable Wasm floating point (`f32` and `f64`) instructions and types.
     ///
     /// Enabled by default.

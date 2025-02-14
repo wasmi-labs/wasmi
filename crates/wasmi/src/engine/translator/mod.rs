@@ -722,6 +722,11 @@ impl FuncTranslator {
         &self.engine
     }
 
+    /// Returns `true` if the Wasm `memory64` proposal is enabled.
+    fn is_memory64_enabled(&self) -> bool {
+        self.engine().config().get_wasm_memory64()
+    }
+
     /// Initializes a newly constructed [`FuncTranslator`].
     fn init(mut self) -> Result<Self, Error> {
         self.alloc.reset();
