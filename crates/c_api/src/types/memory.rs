@@ -50,8 +50,12 @@ impl wasm_memorytype_t {
 
 impl CMemoryType {
     pub(crate) fn new(ty: MemoryType) -> CMemoryType {
-        let min: u32 = ty.minimum();
-        let max: u32 = ty.maximum().unwrap_or(u32::MAX);
+        let Ok(min) = u32::try_from(ty.minimum()) else {
+            panic!("memory minimum size out of bounds: {}", ty.minimum())
+        };
+        let Ok(max) = u32::try_from(ty.maximum().unwrap_or(u64::from(u32::MAX))) else {
+            panic!("memory maximum size out of bounds: {:?}", ty.maximum())
+        };
         CMemoryType {
             ty,
             limits: wasm_limits_t { min, max },
