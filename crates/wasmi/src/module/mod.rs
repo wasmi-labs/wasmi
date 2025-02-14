@@ -106,6 +106,11 @@ impl ModuleHeader {
         &self.inner.globals[global_idx.into_u32() as usize]
     }
 
+    /// Returns the [`MemoryType`] the the indexed global variable.
+    pub fn get_type_of_memory(&self, memory_idx: MemoryIdx) -> &MemoryType {
+        &self.inner.memories[memory_idx.into_u32() as usize]
+    }
+
     /// Returns the [`EngineFunc`] for the given [`FuncIdx`].
     ///
     /// Returns `None` if [`FuncIdx`] refers to an imported function.

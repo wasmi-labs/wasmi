@@ -21,8 +21,15 @@ use crate::{
         BlockType,
         FuelCosts,
     },
-    ir::{self, index, index::FuncType, BoundedRegSpan, Const16, Instruction, Reg},
-    module::{self, FuncIdx, WasmiValueType},
+    ir::{
+        self,
+        index::{self, FuncType},
+        BoundedRegSpan,
+        Const16,
+        Instruction,
+        Reg,
+    },
+    module::{self, FuncIdx, MemoryIdx, WasmiValueType},
     Error,
     ExternRef,
     FuncRef,
@@ -3047,10 +3054,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_init(&mut self, data_index: u32, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let memory = index::Memory::from(mem);
+        let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
         let (dst, src, len) = self.alloc.stack.pop3();
-        let dst = self.as_index_type_const(dst)?;
-        let src = self.as_index_type_const(src)?;
-        let len = self.as_index_type_const(len)?;
+        let dst = self.as_index_type_const(dst, &memory_type)?;
+        let src = self.as_index_type_const(src, &memory_type)?;
+        let len = self.as_index_type_const(len, &memory_type)?;
         let instr = match (dst, src, len) {
             (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
                 Instruction::memory_init(dst, src, len)
@@ -3097,10 +3105,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let dst_memory = index::Memory::from(dst_mem);
         let src_memory = index::Memory::from(src_mem);
+        let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(dst_mem));
         let (dst, src, len) = self.alloc.stack.pop3();
-        let dst = self.as_index_type_const(dst)?;
-        let src = self.as_index_type_const(src)?;
-        let len = self.as_index_type_const(len)?;
+        let dst = self.as_index_type_const(dst, &memory_type)?;
+        let src = self.as_index_type_const(src, &memory_type)?;
+        let len = self.as_index_type_const(len, &memory_type)?;
         let instr = match (dst, src, len) {
             (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
                 Instruction::memory_copy(dst, src, len)
@@ -3140,10 +3149,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_memory_fill(&mut self, mem: u32) -> Self::Output {
         bail_unreachable!(self);
         let memory = index::Memory::from(mem);
+        let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
         let (dst, value, len) = self.alloc.stack.pop3();
-        let dst = self.as_index_type_const(dst)?;
+        let dst = self.as_index_type_const(dst, &memory_type)?;
         let value = value.map_const(|value| u32::from(value) as u8);
-        let len = self.as_index_type_const(len)?;
+        let len = self.as_index_type_const(len, &memory_type)?;
         let instr = match (dst, value, len) {
             (Provider::Register(dst), Provider::Register(value), Provider::Register(len)) => {
                 Instruction::memory_fill(dst, value, len)

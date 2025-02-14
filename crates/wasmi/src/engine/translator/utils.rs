@@ -2,6 +2,7 @@ use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
     ir::{BoundedRegSpan, Const16, Reg, RegSpan, Sign},
     Error,
+    MemoryType,
 };
 
 /// A WebAssembly integer. Either `i32` or `i64`.
@@ -108,12 +109,13 @@ impl super::FuncTranslator {
     pub(super) fn as_index_type_const(
         &mut self,
         provider: TypedProvider,
+        memory_type: &MemoryType,
     ) -> Result<Provider<Const16<u64>>, Error> {
         let value = match provider {
             Provider::Register(reg) => return Ok(Provider::Register(reg)),
             Provider::Const(value) => value,
         };
-        match self.is_memory64_enabled() {
+        match memory_type.is_64() {
             true => {
                 if let Ok(value) = Const16::try_from(u64::from(value)) {
                     return Ok(Provider::Const(value));
