@@ -249,7 +249,7 @@ impl MemoryTypeBuilder {
             // Case: the page size and the maximum size overflows.
             return Err(Error::from(MemoryError::InvalidMemoryType));
         }
-        if maximum_byte_size > minimum_byte_size {
+        if minimum_byte_size > maximum_byte_size {
             // Case: maximum size must be at least as large as minimum size
             return Err(Error::from(MemoryError::InvalidMemoryType));
         }
