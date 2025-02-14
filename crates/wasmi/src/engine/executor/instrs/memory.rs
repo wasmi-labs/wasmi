@@ -136,9 +136,9 @@ impl Executor<'_> {
         src: Reg,
         len: Reg,
     ) -> Result<(), Error> {
-        let dst: u32 = self.get_register_as(dst);
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = self.get_register_as(len);
+        let dst: u64 = self.get_register_as(dst);
+        let src: u64 = self.get_register_as(src);
+        let len: u64 = self.get_register_as(len);
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -146,13 +146,13 @@ impl Executor<'_> {
     pub fn execute_memory_copy_to(
         &mut self,
         store: &mut StoreInner,
-        dst: Const16<u32>,
+        dst: Const16<u64>,
         src: Reg,
         len: Reg,
     ) -> Result<(), Error> {
-        let dst: u32 = dst.into();
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = self.get_register_as(len);
+        let dst: u64 = dst.into();
+        let src: u64 = self.get_register_as(src);
+        let len: u64 = self.get_register_as(len);
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -161,12 +161,12 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
-        src: Const16<u32>,
+        src: Const16<u64>,
         len: Reg,
     ) -> Result<(), Error> {
-        let dst: u32 = self.get_register_as(dst);
-        let src: u32 = src.into();
-        let len: u32 = self.get_register_as(len);
+        let dst: u64 = self.get_register_as(dst);
+        let src: u64 = src.into();
+        let len: u64 = self.get_register_as(len);
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -174,13 +174,13 @@ impl Executor<'_> {
     pub fn execute_memory_copy_from_to(
         &mut self,
         store: &mut StoreInner,
-        dst: Const16<u32>,
-        src: Const16<u32>,
+        dst: Const16<u64>,
+        src: Const16<u64>,
         len: Reg,
     ) -> Result<(), Error> {
-        let dst: u32 = dst.into();
-        let src: u32 = src.into();
-        let len: u32 = self.get_register_as(len);
+        let dst: u64 = dst.into();
+        let src: u64 = src.into();
+        let len: u64 = self.get_register_as(len);
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -190,11 +190,11 @@ impl Executor<'_> {
         store: &mut StoreInner,
         dst: Reg,
         src: Reg,
-        len: Const16<u32>,
+        len: Const16<u64>,
     ) -> Result<(), Error> {
-        let dst: u32 = self.get_register_as(dst);
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = len.into();
+        let dst: u64 = self.get_register_as(dst);
+        let src: u64 = self.get_register_as(src);
+        let len: u64 = len.into();
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -202,13 +202,13 @@ impl Executor<'_> {
     pub fn execute_memory_copy_to_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Const16<u32>,
+        dst: Const16<u64>,
         src: Reg,
-        len: Const16<u32>,
+        len: Const16<u64>,
     ) -> Result<(), Error> {
-        let dst: u32 = dst.into();
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = len.into();
+        let dst: u64 = dst.into();
+        let src: u64 = self.get_register_as(src);
+        let len: u64 = len.into();
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -217,12 +217,12 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
-        src: Const16<u32>,
-        len: Const16<u32>,
+        src: Const16<u64>,
+        len: Const16<u64>,
     ) -> Result<(), Error> {
-        let dst: u32 = self.get_register_as(dst);
-        let src: u32 = src.into();
-        let len: u32 = len.into();
+        let dst: u64 = self.get_register_as(dst);
+        let src: u64 = src.into();
+        let len: u64 = len.into();
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -230,13 +230,13 @@ impl Executor<'_> {
     pub fn execute_memory_copy_from_to_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Const16<u32>,
-        src: Const16<u32>,
-        len: Const16<u32>,
+        dst: Const16<u64>,
+        src: Const16<u64>,
+        len: Const16<u64>,
     ) -> Result<(), Error> {
-        let dst: u32 = dst.into();
-        let src: u32 = src.into();
-        let len: u32 = len.into();
+        let dst: u64 = dst.into();
+        let src: u64 = src.into();
+        let len: u64 = len.into();
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -245,14 +245,21 @@ impl Executor<'_> {
     fn execute_memory_copy_impl(
         &mut self,
         store: &mut StoreInner,
-        dst_index: u32,
-        src_index: u32,
-        len: u32,
+        dst_index: u64,
+        src_index: u64,
+        len: u64,
     ) -> Result<(), Error> {
+        let Ok(dst_index) = usize::try_from(dst_index) else {
+            return Err(Error::from(TrapCode::MemoryOutOfBounds));
+        };
+        let Ok(src_index) = usize::try_from(src_index) else {
+            return Err(Error::from(TrapCode::MemoryOutOfBounds));
+        };
+        let Ok(len) = usize::try_from(len) else {
+            return Err(Error::from(TrapCode::MemoryOutOfBounds));
+        };
         let dst_memory = self.fetch_memory_index(1);
         let src_memory = self.fetch_memory_index(2);
-        let src_index = src_index as usize;
-        let dst_index = dst_index as usize;
         if src_memory == dst_memory {
             return self
                 .execute_memory_copy_within_impl(store, src_memory, dst_index, src_index, len);
@@ -265,14 +272,14 @@ impl Executor<'_> {
         let src_bytes = src_memory
             .data()
             .get(src_index..)
-            .and_then(|memory| memory.get(..len as usize))
+            .and_then(|memory| memory.get(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         let dst_bytes = dst_memory
             .data_mut()
             .get_mut(dst_index..)
-            .and_then(|memory| memory.get_mut(..len as usize))
+            .and_then(|memory| memory.get_mut(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(u64::from(len)))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
         dst_bytes.copy_from_slice(src_bytes);
         self.try_next_instr_at(3)
     }
@@ -284,7 +291,7 @@ impl Executor<'_> {
         memory: Memory,
         dst_index: usize,
         src_index: usize,
-        len: u32,
+        len: usize,
     ) -> Result<(), Error> {
         let memory = self.get_memory(memory);
         let (memory, fuel) = store.resolve_memory_and_fuel_mut(&memory);
@@ -298,7 +305,7 @@ impl Executor<'_> {
             .get(dst_index..)
             .and_then(|memory| memory.get(..len as usize))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(u64::from(len)))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
         bytes.copy_within(src_index..src_index.wrapping_add(len as usize), dst_index);
         self.try_next_instr_at(3)
     }
