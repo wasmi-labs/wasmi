@@ -79,6 +79,17 @@ fn u32imm16(value: u32) -> Const16<u32> {
         .unwrap_or_else(|_| panic!("value must be 16-bit encodable: {}", value))
 }
 
+/// Creates an [`Const32<u64>`] from the given `u64` value.
+///
+/// # Panics
+///
+/// If the `value` cannot be converted into `u64` losslessly.
+#[track_caller]
+fn u64imm16(value: u64) -> Const16<u64> {
+    <Const16<u64>>::try_from(value)
+        .unwrap_or_else(|_| panic!("value must be 16-bit encodable: {}", value))
+}
+
 /// Creates an [`Const32<i64>`] from the given `i64` value.
 ///
 /// # Panics
