@@ -51,7 +51,7 @@ impl MemoryType {
             b.page_size_log2(page_size_log2);
         }
         b.build()
-            .expect("encountered invalid wasmparser::MemoryType after validation")
+            .unwrap_or_else(|err| panic!("received invalid `MemoryType` from `wasmparser`: {err}"))
     }
 }
 
