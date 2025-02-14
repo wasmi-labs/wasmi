@@ -73,26 +73,33 @@ impl WasmFloat for f64 {
     }
 }
 
-impl Provider<Const16<u32>> {
-    /// Creates a new `table` or `memory` index [`Provider`] from the general [`TypedProvider`].
-    ///
-    /// # Note
-    ///
-    /// This is a convenience function and used by translation
-    /// procedures for certain Wasm `table` instructions.
-    pub fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, Error> {
-        match provider {
-            TypedProvider::Const(value) => match Const16::try_from(u32::from(value)).ok() {
-                Some(value) => Ok(Self::Const(value)),
-                None => {
-                    let register = stack.alloc_const(value)?;
-                    Ok(Self::Register(register))
+macro_rules! impl_provider_new_const16 {
+    ($ty:ty) => {
+        impl Provider<Const16<$ty>> {
+            /// Creates a new `table` or `memory` index [`Provider`] from the general [`TypedProvider`].
+            ///
+            /// # Note
+            ///
+            /// This is a convenience function and used by translation
+            /// procedures for certain Wasm `table` instructions.
+            pub fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, Error> {
+                match provider {
+                    TypedProvider::Const(value) => match Const16::try_from(<$ty>::from(value)).ok()
+                    {
+                        Some(value) => Ok(Self::Const(value)),
+                        None => {
+                            let register = stack.alloc_const(value)?;
+                            Ok(Self::Register(register))
+                        }
+                    },
+                    TypedProvider::Register(index) => Ok(Self::Register(index)),
                 }
-            },
-            TypedProvider::Register(index) => Ok(Self::Register(index)),
+            }
         }
-    }
+    };
 }
+impl_provider_new_const16!(u32);
+impl_provider_new_const16!(u64);
 
 impl TypedProvider {
     /// Returns the `i16` [`Reg`] index if the [`TypedProvider`] is a [`Reg`].

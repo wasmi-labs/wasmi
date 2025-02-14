@@ -3048,9 +3048,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let memory = index::Memory::from(mem);
         let (dst, src, len) = self.alloc.stack.pop3();
-        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
-        let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
-        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
+        let dst = <Provider<Const16<u64>>>::new(dst, &mut self.alloc.stack)?;
+        let src = <Provider<Const16<u64>>>::new(src, &mut self.alloc.stack)?;
+        let len = <Provider<Const16<u64>>>::new(len, &mut self.alloc.stack)?;
         let instr = match (dst, src, len) {
             (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
                 Instruction::memory_init(dst, src, len)
@@ -3098,9 +3098,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let dst_memory = index::Memory::from(dst_mem);
         let src_memory = index::Memory::from(src_mem);
         let (dst, src, len) = self.alloc.stack.pop3();
-        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
-        let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
-        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
+        let dst = <Provider<Const16<u64>>>::new(dst, &mut self.alloc.stack)?;
+        let src = <Provider<Const16<u64>>>::new(src, &mut self.alloc.stack)?;
+        let len = <Provider<Const16<u64>>>::new(len, &mut self.alloc.stack)?;
         let instr = match (dst, src, len) {
             (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
                 Instruction::memory_copy(dst, src, len)
@@ -3141,9 +3141,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let memory = index::Memory::from(mem);
         let (dst, value, len) = self.alloc.stack.pop3();
-        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
+        let dst = <Provider<Const16<u64>>>::new(dst, &mut self.alloc.stack)?;
         let value = value.map_const(|value| u32::from(value) as u8);
-        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
+        let len = <Provider<Const16<u64>>>::new(len, &mut self.alloc.stack)?;
         let instr = match (dst, value, len) {
             (Provider::Register(dst), Provider::Register(value), Provider::Register(len)) => {
                 Instruction::memory_fill(dst, value, len)
