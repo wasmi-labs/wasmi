@@ -42,7 +42,7 @@ decrease its compiled artifact size.
 
 ### Internal
 
-- Update the `wast` dependency for Wasmi's Wast runner. [#1306]
+- Update the `wastee` dependency for Wasmi's Waste runner. [#1306]
 - Update `wasm-tools` dependencies to `v0.221`. [#1318]
 
 [#1141]: https://github.com/wasmi-labs/wasmi/pull/1141
@@ -98,9 +98,9 @@ decrease its compiled artifact size.
       between Wasm runtimes in `differential` fuzzing.
   - Add `wasmi_fuzz` crate for better code organization. [#1252]
   - Merged `translate` and `translate_metered` fuzzers. [#1249]
-- Modernize Wasmi `.wast` directives runner. [#1279]
+- Modernize Wasmi `.wastee` directives runner. [#1279]
   - Overall this significantly improved readability and maintainability
-    of the Wasmi `.wast` directives runner.
+    of the Wasmi `.wastee` directives runner.
 
 [#1243]: https://github.com/wasmi-labs/wasmi/pull/1243
 [#1249]: https://github.com/wasmi-labs/wasmi/pull/1249
@@ -536,7 +536,7 @@ decrease its compiled artifact size.
   - This allows Wasmi developers to better inspect performance changes over longer periods of time.
 - Updated dev. dependencies:
   - `criterion 0.4.0` -> `0.5.0`
-  - `wast 0.52.0` -> `0.62.0`
+  - `wastee 0.52.0` -> `0.62.0`
 
 ## [`0.30.0`] - 2023-05-28
 
@@ -585,7 +585,7 @@ decrease its compiled artifact size.
 - Added support for `Linker` defined host functions. (https://github.com/wasmi-labs/wasmi/pull/692)
   - Apparently this PR introduced some performance wins for the Wasm target according to our tests.
     This information shall be taken with a grain of salt since we are not sure why those performance
-    improvement occured since the PR's functionality is orthogonal to Wasm engine performance.
+    improvement occurred since the PR's functionality is orthogonal to Wasm engine performance.
   - Required precursor refactoring PR: https://github.com/wasmi-labs/wasmi/pull/681
 
 [`tail-call`]: https://github.com/WebAssembly/tail-call
@@ -653,7 +653,7 @@ decrease its compiled artifact size.
 - Wasmi CLI: Add WASI support. (https://github.com/wasmi-labs/wasmi/pull/597)
   - Big shoutout to [Onigbinde Oluwamuyiwa Elijah](https://github.com/OLUWAMUYIWA) for contributing this to Wasmi!
 - Add built-in support for fuel metering. (https://github.com/wasmi-labs/wasmi/pull/653)
-  - This allows to control the runtime of Wasm executions in a deterministic fasion
+  - This allows to control the runtime of Wasm executions in a deterministic fashion
     effectively avoiding the halting problem by charging for executed instructions.
     Not using the feature will not affect the execution efficiency of Wasmi for users.
 - Add `Pages::checked_sub` method. (https://github.com/wasmi-labs/wasmi/pull/660)
@@ -729,7 +729,7 @@ decrease its compiled artifact size.
 
 ### Internal
 
-- Update `wast` dependency from version `0.44` to `0.52`. (https://github.com/wasmi-labs/wasmi/pull/632)
+- Update `wastee` dependency from version `0.44` to `0.52`. (https://github.com/wasmi-labs/wasmi/pull/632)
 - Update the Wasm spec testsuite to the most recent commit: `3a04b2cf9`
 - Improve error reporting for the internal Wasm spec testsuite runner.
   - It will now show proper span information in many more cases.
@@ -936,7 +936,7 @@ decrease its compiled artifact size.
 
 ### Added
 
-- Added Contibution Guidelines and Code of Conduct to the repository. (https://github.com/wasmi-labs/wasmi/pull/485)
+- Added Contribution Guidelines and Code of Conduct to the repository. (https://github.com/wasmi-labs/wasmi/pull/485)
 
 ### Changed
 
@@ -1222,5 +1222,5 @@ decrease its compiled artifact size.
 
 ### Changed
 
-- Updated `parity-wasm` from verion `0.41` to `0.42`.
+- Updated `parity-wasm` from version `0.41` to `0.42`.
 - Bumped `wasmi-validation` from version `0.3.1` to `0.4.0`.
