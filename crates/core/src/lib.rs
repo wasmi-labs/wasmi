@@ -40,5 +40,5 @@ pub use self::{
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedVal},
-    value::ValType,
+    value::{CanonicalizeNan, ValType},
 };
