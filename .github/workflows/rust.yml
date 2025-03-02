@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.81.0
+      - uses: dtolnay/rust-toolchain@1.82.0
       - uses: Swatinem/rust-cache@v2
       - run: >-
           cargo check
@@ -215,7 +215,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
-          toolchain: nightly-2024-10-18
+          toolchain: nightly-2025-03-01
       - name: Cache
         uses: Swatinem/rust-cache@v2
         with:

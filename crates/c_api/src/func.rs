@@ -169,7 +169,7 @@ fn prepare_params_and_results(
     let len_params = params.len();
     dst.reserve(len_params + len_results);
     dst.extend(params);
-    dst.extend(iter::repeat(Val::FuncRef(FuncRef::null())).take(len_results));
+    dst.extend(iter::repeat_n(Val::FuncRef(FuncRef::null()), len_results));
     let (params, results) = dst.split_at_mut(len_params);
     (params, results)
 }
