@@ -243,16 +243,16 @@ mod tests {
 
     #[test]
     fn test_ops_f32() {
-        let mut rng = rand::thread_rng();
-        let iter = iter::repeat(()).map(|_| rng.gen());
+        let mut rng = rand::rng();
+        let iter = iter::repeat(()).map(|_| rng.random());
 
         test_ops::<F32, f32, _>(iter.take(1000));
     }
 
     #[test]
     fn test_ops_f64() {
-        let mut rng = rand::thread_rng();
-        let iter = iter::repeat(()).map(|_| rng.gen());
+        let mut rng = rand::rng();
+        let iter = iter::repeat(()).map(|_| rng.random());
 
         test_ops::<F64, f64, _>(iter.take(1000));
     }
