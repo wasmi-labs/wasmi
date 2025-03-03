@@ -78,7 +78,7 @@ impl ByteBuffer {
         if vec.try_reserve(size).is_err() {
             return Err(MemoryError::OutOfBoundsAllocation);
         };
-        vec.extend(iter::repeat(0x00_u8).take(size));
+        vec.extend(iter::repeat_n(0x00_u8, size));
         let (ptr, len, capacity) = vec_into_raw_parts(vec);
         Ok(Self {
             ptr,
