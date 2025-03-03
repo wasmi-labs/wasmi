@@ -527,7 +527,7 @@ impl Executor<'_> {
         let return_value = table.grow_untyped(delta, value, Some(fuel), resource_limiter);
         let return_value = match return_value {
             Ok(return_value) => return_value,
-            Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
+            Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE as u32,
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(Error::from(trap_code)),
         };
         self.set_register(result, return_value);

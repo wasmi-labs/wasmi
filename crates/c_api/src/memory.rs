@@ -132,7 +132,11 @@ pub unsafe extern "C" fn wasm_memory_data_size(m: &wasm_memory_t) -> usize {
 #[cfg_attr(not(feature = "prefix-symbols"), no_mangle)]
 #[cfg_attr(feature = "prefix-symbols", wasmi_c_api_macros::prefix_symbol)]
 pub unsafe extern "C" fn wasm_memory_size(m: &wasm_memory_t) -> wasm_memory_pages_t {
-    m.memory().size(m.inner.store.context())
+    let size = m.memory().size(m.inner.store.context());
+    let Ok(size32) = u32::try_from(size) else {
+        panic!("linear memory pages out of bounds: {size}")
+    };
+    size32
 }
 
 /// Grows the [`wasm_memory_t`] by `delta` Wasm pages.
@@ -153,5 +157,5 @@ pub unsafe extern "C" fn wasm_memory_grow(
 ) -> bool {
     let memory = m.memory();
     let mut store = m.inner.store.context_mut();
-    memory.grow(&mut store, delta).is_ok()
+    memory.grow(&mut store, u64::from(delta)).is_ok()
 }

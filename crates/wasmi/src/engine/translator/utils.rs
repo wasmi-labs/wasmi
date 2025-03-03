@@ -2,6 +2,7 @@ use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
     ir::{BoundedRegSpan, Const16, Reg, RegSpan, Sign},
     Error,
+    MemoryType,
 };
 
 /// A WebAssembly integer. Either `i32` or `i64`.
@@ -73,24 +74,61 @@ impl WasmFloat for f64 {
     }
 }
 
-impl Provider<Const16<u32>> {
-    /// Creates a new `table` or `memory` index [`Provider`] from the general [`TypedProvider`].
-    ///
-    /// # Note
-    ///
-    /// This is a convenience function and used by translation
-    /// procedures for certain Wasm `table` instructions.
-    pub fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, Error> {
-        match provider {
-            TypedProvider::Const(value) => match Const16::try_from(u32::from(value)).ok() {
-                Some(value) => Ok(Self::Const(value)),
-                None => {
-                    let register = stack.alloc_const(value)?;
-                    Ok(Self::Register(register))
+macro_rules! impl_provider_new_const16 {
+    ($ty:ty) => {
+        impl Provider<Const16<$ty>> {
+            /// Creates a new `table` or `memory` index [`Provider`] from the general [`TypedProvider`].
+            ///
+            /// # Note
+            ///
+            /// This is a convenience function and used by translation
+            /// procedures for certain Wasm `table` instructions.
+            pub fn new(provider: TypedProvider, stack: &mut ValueStack) -> Result<Self, Error> {
+                match provider {
+                    TypedProvider::Const(value) => match Const16::try_from(<$ty>::from(value)).ok()
+                    {
+                        Some(value) => Ok(Self::Const(value)),
+                        None => {
+                            let register = stack.alloc_const(value)?;
+                            Ok(Self::Register(register))
+                        }
+                    },
+                    TypedProvider::Register(index) => Ok(Self::Register(index)),
                 }
-            },
-            TypedProvider::Register(index) => Ok(Self::Register(index)),
+            }
         }
+    };
+}
+impl_provider_new_const16!(u32);
+impl_provider_new_const16!(u64);
+
+impl super::FuncTranslator {
+    /// Converts the `provider` to an index-type constant value.
+    ///
+    /// The behavior is different wether `memory64` is enabled or disabled.
+    pub(super) fn as_index_type_const(
+        &mut self,
+        provider: TypedProvider,
+        memory_type: &MemoryType,
+    ) -> Result<Provider<Const16<u64>>, Error> {
+        let value = match provider {
+            Provider::Register(reg) => return Ok(Provider::Register(reg)),
+            Provider::Const(value) => value,
+        };
+        match memory_type.is_64() {
+            true => {
+                if let Ok(value) = Const16::try_from(u64::from(value)) {
+                    return Ok(Provider::Const(value));
+                }
+            }
+            false => {
+                if let Ok(value) = Const16::try_from(u32::from(value)) {
+                    return Ok(Provider::Const(<Const16<u64>>::cast(value)));
+                }
+            }
+        }
+        let register = self.alloc.stack.alloc_const(value)?;
+        Ok(Provider::Register(register))
     }
 }
 

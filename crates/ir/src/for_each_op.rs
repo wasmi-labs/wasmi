@@ -5058,7 +5058,7 @@ macro_rules! for_each_op {
             #[snake_name(memory_copy_to)]
             MemoryCopyTo {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` memory.
                 src: Reg,
                 /// The number of copied bytes.
@@ -5077,7 +5077,7 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Reg,
                 /// The start index of the `src` memory.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of copied bytes.
                 len: Reg,
             },
@@ -5092,9 +5092,9 @@ macro_rules! for_each_op {
             #[snake_name(memory_copy_from_to)]
             MemoryCopyFromTo {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` memory.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of copied bytes.
                 len: Reg,
             },
@@ -5117,7 +5117,7 @@ macro_rules! for_each_op {
                 /// The start index of the `src` memory.
                 src: Reg,
                 /// The number of copied bytes.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `dst`.
             ///
@@ -5134,11 +5134,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_copy_to_exact)]
             MemoryCopyToExact {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` memory.
                 src: Reg,
                 /// The number of copied bytes.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
             ///
@@ -5157,9 +5157,9 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Reg,
                 /// The start index of the `src` memory.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of copied bytes.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::MemoryCopy`] with a constant 16-bit `len` and `src`.
             ///
@@ -5176,11 +5176,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_copy_from_to_exact)]
             MemoryCopyFromToExact {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` memory.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of copied bytes.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
 
             /// Wasm `memory.fill` instruction.
@@ -5207,7 +5207,7 @@ macro_rules! for_each_op {
             #[snake_name(memory_fill_at)]
             MemoryFillAt {
                 /// The start index of the memory to fill.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The byte value used to fill the memory.
                 value: Reg,
                 /// The number of bytes to fill.
@@ -5239,7 +5239,7 @@ macro_rules! for_each_op {
                 /// The byte value used to fill the memory.
                 value: Reg,
                 /// The number of bytes to fill.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::MemoryFill`] with constant `dst` index and `value`.
             ///
@@ -5249,7 +5249,7 @@ macro_rules! for_each_op {
             #[snake_name(memory_fill_at_imm)]
             MemoryFillAtImm {
                 /// The start index of the memory to fill.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The byte value used to fill the memory.
                 value: u8,
                 /// The number of bytes to fill.
@@ -5263,11 +5263,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_fill_at_exact)]
             MemoryFillAtExact {
                 /// The start index of the memory to fill.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The byte value used to fill the memory.
                 value: Reg,
                 /// The number of bytes to fill.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::MemoryFill`] with constant fill `value` and `len`.
             ///
@@ -5281,7 +5281,7 @@ macro_rules! for_each_op {
                 /// The byte value used to fill the memory.
                 value: u8,
                 /// The number of bytes to fill.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::MemoryFill`] with constant `dst` index, fill `value` and `len`.
             ///
@@ -5291,11 +5291,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_fill_at_imm_exact)]
             MemoryFillAtImmExact {
                 /// The start index of the memory to fill.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The byte value used to fill the memory.
                 value: u8,
                 /// The number of bytes to fill.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
 
             /// Wasm `memory.init <data>` instruction.
@@ -5328,7 +5328,7 @@ macro_rules! for_each_op {
             #[snake_name(memory_init_to)]
             MemoryInitTo {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` data segment.
                 src: Reg,
                 /// The number of initialized bytes.
@@ -5347,7 +5347,7 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Reg,
                 /// The start index of the `src` data segment.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of initialized bytes.
                 len: Reg,
             },
@@ -5362,9 +5362,9 @@ macro_rules! for_each_op {
             #[snake_name(memory_init_from_to)]
             MemoryInitFromTo {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` data segment.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of initialized bytes.
                 len: Reg,
             },
@@ -5383,7 +5383,7 @@ macro_rules! for_each_op {
                 /// The start index of the `src` data segment.
                 src: Reg,
                 /// The number of initialized bytes.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `dst`.
             ///
@@ -5396,11 +5396,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_init_to_exact)]
             MemoryInitToExact {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` data segment.
                 src: Reg,
                 /// The number of initialized bytes.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
             ///
@@ -5415,9 +5415,9 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Reg,
                 /// The start index of the `src` data segment.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of initialized bytes.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
             ///
@@ -5430,11 +5430,11 @@ macro_rules! for_each_op {
             #[snake_name(memory_init_from_to_exact)]
             MemoryInitFromToExact {
                 /// The start index of the `dst` memory.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` data segment.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of initialized bytes.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
 
             /// A [`Table`] instruction parameter.

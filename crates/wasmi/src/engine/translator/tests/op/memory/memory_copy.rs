@@ -24,7 +24,7 @@ fn copy() {
         .run()
 }
 
-fn testcase_copy_exact(len: u32) -> TranslationTest {
+fn testcase_copy_exact(len: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -41,10 +41,10 @@ fn testcase_copy_exact(len: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_copy_exact16(len: u32) {
+fn test_copy_exact16(len: u64) {
     testcase_copy_exact(len)
         .expect_func_instrs([
-            Instruction::memory_copy_exact(Reg::from(0), Reg::from(1), u32imm16(len)),
+            Instruction::memory_copy_exact(Reg::from(0), Reg::from(1), u64imm16(len)),
             Instruction::memory_index(0),
             Instruction::memory_index(1),
             Instruction::Return,
@@ -58,10 +58,10 @@ fn copy_exact16() {
     test_copy_exact16(0);
     test_copy_exact16(1);
     test_copy_exact16(42);
-    test_copy_exact16(u32::from(u16::MAX));
+    test_copy_exact16(u64::from(u16::MAX));
 }
 
-fn test_copy_exact(len: u32) {
+fn test_copy_exact(len: u64) {
     testcase_copy_exact(len)
         .expect_func(
             ExpectedFunc::new([
@@ -78,11 +78,11 @@ fn test_copy_exact(len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_exact() {
-    test_copy_exact(u32::from(u16::MAX) + 1);
-    test_copy_exact(u32::MAX);
+    test_copy_exact(u64::from(u16::MAX) + 1);
+    test_copy_exact(u64::from(u32::MAX));
 }
 
-fn testcase_copy_from(src: u32) -> TranslationTest {
+fn testcase_copy_from(src: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -99,10 +99,10 @@ fn testcase_copy_from(src: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_copy_from16(src: u32) {
+fn test_copy_from16(src: u64) {
     testcase_copy_from(src)
         .expect_func_instrs([
-            Instruction::memory_copy_from(Reg::from(0), u32imm16(src), Reg::from(1)),
+            Instruction::memory_copy_from(Reg::from(0), u64imm16(src), Reg::from(1)),
             Instruction::memory_index(0),
             Instruction::memory_index(1),
             Instruction::Return,
@@ -114,10 +114,10 @@ fn test_copy_from16(src: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_from16() {
     test_copy_from16(0);
-    test_copy_from16(u32::from(u16::MAX));
+    test_copy_from16(u64::from(u16::MAX));
 }
 
-fn test_copy_from(src: u32) {
+fn test_copy_from(src: u64) {
     testcase_copy_from(src)
         .expect_func(
             ExpectedFunc::new([
@@ -134,11 +134,11 @@ fn test_copy_from(src: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_from() {
-    test_copy_from(u32::from(u16::MAX) + 1);
-    test_copy_from(u32::MAX);
+    test_copy_from(u64::from(u16::MAX) + 1);
+    test_copy_from(u64::from(u32::MAX));
 }
 
-fn testcase_copy_to(dst: u32) -> TranslationTest {
+fn testcase_copy_to(dst: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -155,10 +155,10 @@ fn testcase_copy_to(dst: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_copy_to16(dst: u32) {
+fn test_copy_to16(dst: u64) {
     testcase_copy_to(dst)
         .expect_func_instrs([
-            Instruction::memory_copy_to(u32imm16(dst), Reg::from(0), Reg::from(1)),
+            Instruction::memory_copy_to(u64imm16(dst), Reg::from(0), Reg::from(1)),
             Instruction::memory_index(0),
             Instruction::memory_index(1),
             Instruction::Return,
@@ -170,10 +170,10 @@ fn test_copy_to16(dst: u32) {
 #[cfg_attr(miri, ignore)]
 fn copy_to16() {
     test_copy_to16(0);
-    test_copy_to16(u32::from(u16::MAX));
+    test_copy_to16(u64::from(u16::MAX));
 }
 
-fn test_copy_to(dst: u32) {
+fn test_copy_to(dst: u64) {
     testcase_copy_to(dst)
         .expect_func(
             ExpectedFunc::new([
@@ -190,11 +190,11 @@ fn test_copy_to(dst: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_to() {
-    test_copy_to(u32::from(u16::MAX) + 1);
-    test_copy_to(u32::MAX);
+    test_copy_to(u64::from(u16::MAX) + 1);
+    test_copy_to(u64::from(u32::MAX));
 }
 
-fn testcase_copy_from_to(dst: u32, src: u32) -> TranslationTest {
+fn testcase_copy_from_to(dst: u64, src: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -211,10 +211,10 @@ fn testcase_copy_from_to(dst: u32, src: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_copy_from_to16(dst: u32, src: u32) {
+fn test_copy_from_to16(dst: u64, src: u64) {
     testcase_copy_from_to(dst, src)
         .expect_func_instrs([
-            Instruction::memory_copy_from_to(u32imm16(dst), u32imm16(src), Reg::from(0)),
+            Instruction::memory_copy_from_to(u64imm16(dst), u64imm16(src), Reg::from(0)),
             Instruction::memory_index(0),
             Instruction::memory_index(1),
             Instruction::Return,
@@ -225,7 +225,7 @@ fn test_copy_from_to16(dst: u32, src: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_from_to16() {
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
+    let values = [0, 1, u64::from(u16::MAX) - 1, u64::from(u16::MAX)];
     for dst in values {
         for src in values {
             test_copy_from_to16(dst, src);
@@ -233,7 +233,7 @@ fn copy_from_to16() {
     }
 }
 
-fn test_copy_from_to(dst: u32, src: u32) {
+fn test_copy_from_to(dst: u64, src: u64) {
     testcase_copy_from_to(dst, src)
         .expect_func(
             ExpectedFunc::new([
@@ -250,7 +250,11 @@ fn test_copy_from_to(dst: u32, src: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_from_to() {
-    let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
+    let values = [
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
+    ];
     for dst in values {
         for src in values {
             if dst == src {
@@ -265,7 +269,7 @@ fn copy_from_to() {
     }
 }
 
-fn testcase_copy_to_exact(dst: u32, len: u32) -> TranslationTest {
+fn testcase_copy_to_exact(dst: u64, len: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -282,10 +286,10 @@ fn testcase_copy_to_exact(dst: u32, len: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_copy_to_exact16(dst: u32, len: u32) {
+fn test_copy_to_exact16(dst: u64, len: u64) {
     testcase_copy_to_exact(dst, len)
         .expect_func_instrs([
-            Instruction::memory_copy_to_exact(u32imm16(dst), Reg::from(0), u32imm16(len)),
+            Instruction::memory_copy_to_exact(u64imm16(dst), Reg::from(0), u64imm16(len)),
             Instruction::memory_index(0),
             Instruction::memory_index(1),
             Instruction::Return,
@@ -296,7 +300,7 @@ fn test_copy_to_exact16(dst: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_to_exact16() {
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
+    let values = [0, 1, u64::from(u16::MAX) - 1, u64::from(u16::MAX)];
     for dst in values {
         for len in values {
             test_copy_to_exact16(dst, len);
@@ -304,7 +308,7 @@ fn copy_to_exact16() {
     }
 }
 
-fn test_copy_to_exact(dst: u32, len: u32) {
+fn test_copy_to_exact(dst: u64, len: u64) {
     testcase_copy_to_exact(dst, len)
         .expect_func(
             ExpectedFunc::new([
@@ -321,7 +325,11 @@ fn test_copy_to_exact(dst: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_to_exact() {
-    let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
+    let values = [
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
+    ];
     for dst in values {
         for src in values {
             if dst == src {
@@ -336,7 +344,7 @@ fn copy_to_exact() {
     }
 }
 
-fn testcase_copy_from_exact(src: u32, len: u32) -> TranslationTest {
+fn testcase_copy_from_exact(src: u64, len: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -353,10 +361,10 @@ fn testcase_copy_from_exact(src: u32, len: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_copy_from_exact16(src: u32, len: u32) {
+fn test_copy_from_exact16(src: u64, len: u64) {
     testcase_copy_from_exact(src, len)
         .expect_func_instrs([
-            Instruction::memory_copy_from_exact(Reg::from(0), u32imm16(src), u32imm16(len)),
+            Instruction::memory_copy_from_exact(Reg::from(0), u64imm16(src), u64imm16(len)),
             Instruction::memory_index(0),
             Instruction::memory_index(1),
             Instruction::Return,
@@ -367,7 +375,7 @@ fn test_copy_from_exact16(src: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_from_exact16() {
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
+    let values = [0, 1, u64::from(u16::MAX) - 1, u64::from(u16::MAX)];
     for dst in values {
         for len in values {
             test_copy_from_exact16(dst, len);
@@ -375,7 +383,7 @@ fn copy_from_exact16() {
     }
 }
 
-fn test_copy_from_exact(src: u32, len: u32) {
+fn test_copy_from_exact(src: u64, len: u64) {
     testcase_copy_from_exact(src, len)
         .expect_func(
             ExpectedFunc::new([
@@ -392,7 +400,11 @@ fn test_copy_from_exact(src: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_from_exact() {
-    let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
+    let values = [
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
+    ];
     for dst in values {
         for src in values {
             if dst == src {
@@ -407,7 +419,7 @@ fn copy_from_exact() {
     }
 }
 
-fn testcase_copy_from_to_exact(dst: u32, src: u32, len: u32) -> TranslationTest {
+fn testcase_copy_from_to_exact(dst: u64, src: u64, len: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -424,10 +436,10 @@ fn testcase_copy_from_to_exact(dst: u32, src: u32, len: u32) -> TranslationTest 
     TranslationTest::new(wasm)
 }
 
-fn test_copy_from_to_exact16(dst: u32, src: u32, len: u32) {
+fn test_copy_from_to_exact16(dst: u64, src: u64, len: u64) {
     testcase_copy_from_to_exact(dst, src, len)
         .expect_func_instrs([
-            Instruction::memory_copy_from_to_exact(u32imm16(dst), u32imm16(src), u32imm16(len)),
+            Instruction::memory_copy_from_to_exact(u64imm16(dst), u64imm16(src), u64imm16(len)),
             Instruction::memory_index(0),
             Instruction::memory_index(1),
             Instruction::Return,
@@ -438,7 +450,7 @@ fn test_copy_from_to_exact16(dst: u32, src: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_from_to_exact16() {
-    let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
+    let values = [0, 1, u64::from(u16::MAX) - 1, u64::from(u16::MAX)];
     for dst in values {
         for src in values {
             for len in values {
@@ -448,7 +460,7 @@ fn copy_from_to_exact16() {
     }
 }
 
-fn test_copy_from_to_exact(dst: u32, src: u32, len: u32) {
+fn test_copy_from_to_exact(dst: u64, src: u64, len: u64) {
     testcase_copy_from_to_exact(dst, src, len)
         .expect_func(
             ExpectedFunc::new([
@@ -465,7 +477,11 @@ fn test_copy_from_to_exact(dst: u32, src: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn copy_from_to_exact() {
-    let values = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
+    let values = [
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
+    ];
     for dst in values {
         for src in values {
             for len in values {
