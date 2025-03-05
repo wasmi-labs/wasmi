@@ -403,3 +403,46 @@ impl_shift_amount! {
     (i32, 32),
     (i64, 64),
 }
+
+/// A 64-bit offset in Wasmi bytecode.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct Offset64(u64);
+
+/// The high 32 bits of an [`Offset64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct Offset64Hi(pub(crate) u32);
+
+/// The low 32 bits of an [`Offset64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct Offset64Lo(pub(crate) u32);
+
+impl Offset64 {
+    /// Creates a new [`Offset64`] lo-hi pair from the given `offset`.
+    pub fn new(offset: u64) -> (Offset64Hi, Offset64Lo) {
+        let offset_lo = (offset & 0xFFFF_FFFF) as u32;
+        let offset_hi = (offset >> 32) as u32;
+        (Offset64Hi(offset_hi), Offset64Lo(offset_lo))
+    }
+
+    /// Combines the given [`Offset64`] lo-hi pair into an [`Offset64`].
+    pub fn combine(hi: Offset64Hi, lo: Offset64Lo) -> Self {
+        let hi = hi.0 as u64;
+        let lo = lo.0 as u64;
+        Self((hi << 32) | lo)
+    }
+}
+
+impl From<u64> for Offset64 {
+    fn from(offset: u64) -> Self {
+        Self(offset)
+    }
+}
+
+impl From<Offset64> for u64 {
+    fn from(offset: Offset64) -> Self {
+        offset.0
+    }
+}
