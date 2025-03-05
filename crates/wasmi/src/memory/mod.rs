@@ -67,13 +67,15 @@ impl MemoryTypeInner {
     ///
     /// # Errors
     ///
-    /// If the calculation of the minimum size overflows the `u64` return type.
+    /// If the calculation of the minimum size overflows the maximum size.
     /// This means that the linear memory can't be allocated.
     /// The caller is responsible to deal with that situation.
-    pub fn minimum_byte_size(&self) -> Result<u64, SizeOverflow> {
-        self.minimum
-            .checked_mul(self.page_size())
-            .ok_or(SizeOverflow)
+    fn minimum_byte_size(&self) -> Result<u128, SizeOverflow> {
+        let min = u128::from(self.minimum);
+        if min > self.absolute_max() {
+            return Err(SizeOverflow);
+        }
+        Ok(min << self.page_size_log2)
     }
 
     /// Returns the maximum size, in bytes, that the linear memory must have.
@@ -85,21 +87,24 @@ impl MemoryTypeInner {
     ///
     /// # Errors
     ///
-    /// If the calculation of the maximum size overflows the `u64` return type.
+    /// If the calculation of the maximum size overflows the index type.
     /// This means that the linear memory can't be allocated.
     /// The caller is responsible to deal with that situation.
-    pub fn maximum_byte_size(&self) -> Result<u64, SizeOverflow> {
+    fn maximum_byte_size(&self) -> Result<u128, SizeOverflow> {
         match self.maximum {
-            Some(max) => max.checked_mul(self.page_size()).ok_or(SizeOverflow),
-            None => {
-                let min = self.minimum_byte_size()?;
-                Ok(min.max(self.max_size_based_on_index_type()))
+            Some(max) => {
+                let max = u128::from(max);
+                if max > self.absolute_max() {
+                    return Err(SizeOverflow);
+                }
+                Ok(max << self.page_size_log2)
             }
+            None => Ok(self.max_size_based_on_index_type()),
         }
     }
 
     /// Returns the size of the linear memory pages in bytes.
-    pub fn page_size(&self) -> u64 {
+    fn page_size(&self) -> u64 {
         debug_assert!(
             self.page_size_log2 == 16 || self.page_size_log2 == 0,
             "invalid `page_size_log2`: {}; must be 16 or 0",
@@ -108,16 +113,24 @@ impl MemoryTypeInner {
         1 << self.page_size_log2
     }
 
-    /// Returns the maximum size linear memory is allowed to have.
+    /// Returns the maximum size in bytes allowed by the `index_type` of this memory type.
     ///
-    /// This is based on the index type used by the memory type.
-    pub fn max_size_based_on_index_type(&self) -> u64 {
-        const WASM32_MAX_SIZE: u64 = 1 << 32;
-        const WASM64_MAX_SIZE: u64 = 1 << 48;
+    /// # Note
+    ///
+    /// - This does _not_ take into account the page size.
+    /// - This is based _only_ on the index type used by the memory type.
+    fn max_size_based_on_index_type(&self) -> u128 {
+        const WASM32_MAX_SIZE: u128 = 1 << 32;
+        const WASM64_MAX_SIZE: u128 = 1 << 64;
         match self.index_type {
             IndexType::I32 => WASM32_MAX_SIZE,
             IndexType::I64 => WASM64_MAX_SIZE,
         }
+    }
+
+    /// Returns the absolute maximum size in pages that a linear memory is allowed to have.
+    fn absolute_max(&self) -> u128 {
+        self.max_size_based_on_index_type() >> self.page_size_log2
     }
 }
 
@@ -232,26 +245,19 @@ impl MemoryTypeBuilder {
                 return Err(Error::from(MemoryError::InvalidMemoryType));
             }
         }
-        let absolute_max = self.inner.max_size_based_on_index_type();
-        let Ok(minimum_byte_size) = self.inner.minimum_byte_size() else {
-            // Case: the minimum size overflows a `u64`
-            return Err(Error::from(MemoryError::InvalidMemoryType));
-        };
-        if minimum_byte_size > absolute_max {
-            // Case: the page size and the minimum size overflows.
+        if self.inner.minimum_byte_size().is_err() {
+            // Case: the minimum size overflows a `absolute_max`
             return Err(Error::from(MemoryError::InvalidMemoryType));
         }
-        let Ok(maximum_byte_size) = self.inner.maximum_byte_size() else {
-            // Case: the maximum size overflows a `u64`
-            return Err(Error::from(MemoryError::InvalidMemoryType));
-        };
-        if maximum_byte_size > absolute_max {
-            // Case: the page size and the maximum size overflows.
-            return Err(Error::from(MemoryError::InvalidMemoryType));
-        }
-        if minimum_byte_size > maximum_byte_size {
-            // Case: maximum size must be at least as large as minimum size
-            return Err(Error::from(MemoryError::InvalidMemoryType));
+        if let Some(max) = self.inner.maximum {
+            if self.inner.maximum_byte_size().is_err() {
+                // Case: the maximum size overflows a `absolute_max`
+                return Err(Error::from(MemoryError::InvalidMemoryType));
+            }
+            if self.inner.minimum > max {
+                // Case: maximum size must be at least as large as minimum size
+                return Err(Error::from(MemoryError::InvalidMemoryType));
+            }
         }
         Ok(())
     }
@@ -409,37 +415,34 @@ impl MemoryEntity {
         limiter: &mut ResourceLimiterRef<'_>,
         make_buffer: impl FnOnce(usize) -> Result<ByteBuffer, MemoryError>,
     ) -> Result<Self, MemoryError> {
-        let bytes_per_page = memory_type.page_size();
-        let minimum_pages = memory_type.minimum();
-        let maximum_pages = memory_type.maximum();
-        let bytes_per_page64 = u64::from(bytes_per_page);
-        let minimum_byte_size64 = u64::from(minimum_pages) * bytes_per_page64;
-        let maximum_byte_size64 = maximum_pages
-            .map(u64::from)
-            .map(|max| max * bytes_per_page64);
-        let absolute_max = u64::from(u32::MAX) + 1;
-        if minimum_byte_size64 > absolute_max {
-            return Err(MemoryError::InvalidMemoryType);
-        }
-        if let Some(maximum_byte_size64) = maximum_byte_size64 {
-            if maximum_byte_size64 > absolute_max {
-                return Err(MemoryError::InvalidMemoryType);
-            }
-        }
-        let Ok(minimum_byte_size) = usize::try_from(minimum_byte_size64) else {
-            return Err(MemoryError::InvalidMemoryType);
+        let Ok(min_size) = memory_type.inner.minimum_byte_size() else {
+            return Err(MemoryError::MinimumSizeOverflow);
         };
-        let Ok(maximum_byte_size) = maximum_byte_size64.map(usize::try_from).transpose() else {
-            return Err(MemoryError::InvalidMemoryType);
+        let Ok(min_size) = usize::try_from(min_size) else {
+            return Err(MemoryError::MinimumSizeOverflow);
+        };
+        let max_size = match memory_type.inner.maximum {
+            Some(max) => {
+                let max = u128::from(max);
+                if max > memory_type.inner.absolute_max() {
+                    return Err(MemoryError::MaximumSizeOverflow); 
+                }
+                let max_size = max << memory_type.inner.page_size_log2;
+                let Ok(max_size) = usize::try_from(max_size) else {
+                    return Err(MemoryError::MaximumSizeOverflow);
+                };
+                Some(max_size)
+            }
+            None => None,
         };
 
         if let Some(limiter) = limiter.as_resource_limiter() {
-            if !limiter.memory_growing(0, minimum_byte_size, maximum_byte_size)? {
+            if !limiter.memory_growing(0, min_size, max_size)? {
                 return Err(MemoryError::ResourceLimiterDeniedAllocation);
             }
         }
 
-        let bytes = match make_buffer(minimum_byte_size) {
+        let bytes = match make_buffer(min_size) {
             Ok(buffer) => buffer,
             Err(error) => {
                 if let Some(limiter) = limiter.as_resource_limiter() {
