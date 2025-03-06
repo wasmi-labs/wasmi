@@ -437,7 +437,19 @@ impl Offset64 {
 
 #[test]
 fn test_offset64_split_combine() {
-    let test_values = [0, 1, 1 << 1, u64::MAX, u64::MAX - 1, 42, 77, u64::MAX >> 1];
+    let test_values = [
+        0,
+        1,
+        1 << 1,
+        u64::MAX,
+        u64::MAX - 1,
+        42,
+        77,
+        u64::MAX >> 1,
+        0xFFFF_FFFF_0000_0000,
+        0x0000_0000_FFFF_FFFF,
+        0xF0F0_F0F0_0F0F_0F0F,
+    ];
     for value in test_values {
         let (hi, lo) = Offset64::split(value);
         let combined = u64::from(Offset64::combine(hi, lo));
