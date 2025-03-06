@@ -426,6 +426,11 @@ impl From<u32> for Offset64Hi {
 pub struct Offset64Lo(pub(crate) u32);
 
 impl Offset64 {
+    /// Creates a new [`Offset64`] with value zero.
+    pub fn zero() -> Self {
+        Self(0)
+    }
+
     /// Creates a new [`Offset64`] lo-hi pair from the given `offset`.
     pub fn split(offset: u64) -> (Offset64Hi, Offset64Lo) {
         let offset_lo = (offset & 0xFFFF_FFFF) as u32;
@@ -472,8 +477,8 @@ impl From<u32> for Address32 {
     }
 }
 
-impl From<Address32> for Offset64 {
+impl From<Address32> for u64 {
     fn from(address: Address32) -> Self {
-        Offset64::from(u64::from(address.0))
+        u64::from(address.0)
     }
 }

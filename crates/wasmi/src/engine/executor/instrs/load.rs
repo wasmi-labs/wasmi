@@ -137,13 +137,12 @@ impl Executor<'_> {
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
         let memory = self.fetch_optional_memory(1);
-        let offset = Offset64::from(address);
         self.execute_load_extend(
             store,
             memory,
             result,
-            UntypedVal::from(0u32),
-            offset,
+            UntypedVal::from(u64::from(address)),
+            Offset64::zero(),
             load_extend,
         )?;
         self.try_next_instr()

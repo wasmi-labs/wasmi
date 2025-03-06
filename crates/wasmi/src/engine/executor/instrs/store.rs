@@ -228,8 +228,8 @@ impl Executor<'_> {
         self.execute_store_wrap(
             store,
             memory,
-            UntypedVal::from(0u32),
-            Offset64::from(address),
+            UntypedVal::from(u64::from(address)),
+            Offset64::zero(),
             self.get_register(value),
             store_op,
         )?;
@@ -250,8 +250,8 @@ impl Executor<'_> {
         self.execute_store_wrap(
             store,
             memory,
-            UntypedVal::from(0u32),
-            Offset64::from(address),
+            UntypedVal::from(u64::from(address)),
+            Offset64::zero(),
             T::from(value).into(),
             store_op,
         )?;
