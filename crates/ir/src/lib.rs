@@ -24,6 +24,7 @@ pub use self::{
     immeditate::{AnyConst16, AnyConst32, Const16, Const32},
     index::Reg,
     primitive::{
+        Address32,
         BlockFuel,
         BranchOffset,
         BranchOffset16,

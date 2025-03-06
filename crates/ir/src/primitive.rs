@@ -1,4 +1,4 @@
-use crate::{core::UntypedVal, Const16, Error};
+use crate::{core::UntypedVal, immeditate::OutOfBoundsConst, Const16, Const32, Error};
 use core::marker::PhantomData;
 
 /// The sign of a value.
@@ -456,5 +456,30 @@ impl From<u64> for Offset64 {
 impl From<Offset64> for u64 {
     fn from(offset: Offset64) -> Self {
         offset.0
+    }
+}
+
+/// A 32-bit memory address used for some load and store instructions.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Address32(Const32<u64>);
+
+impl TryFrom<u64> for Address32 {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(address: u64) -> Result<Self, Self::Error> {
+        <Const32<u64>>::try_from(address).map(Self)
+    }
+}
+
+impl From<u32> for Address32 {
+    fn from(address: u32) -> Self {
+        Self(<Const32<u64>>::from(address))
+    }
+}
+
+impl From<Address32> for Offset64 {
+    fn from(address: Address32) -> Self {
+        Offset64::from(u64::from(address.0))
     }
 }

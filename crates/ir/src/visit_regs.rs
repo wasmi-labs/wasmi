@@ -95,6 +95,7 @@ impl_host_visitor_for!(
     Offset64,
     Offset64Lo,
     Offset64Hi,
+    Address32,
 );
 
 /// Type-wrapper to signal that the wrapped [`Reg`], [`RegSpan`] (etc.) is a result.

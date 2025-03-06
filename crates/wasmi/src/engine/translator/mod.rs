@@ -46,6 +46,7 @@ use crate::{
     engine::{config::FuelCosts, BlockType, EngineFunc},
     ir::{
         index,
+        Address32,
         AnyConst16,
         BoundedRegSpan,
         BranchOffset,
@@ -1945,7 +1946,7 @@ impl FuncTranslator {
         memarg: MemArg,
         make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
         make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Const16<u64>) -> Instruction,
-        make_instr_at: fn(result: Reg, address: Const32<u64>) -> Instruction,
+        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -1956,7 +1957,7 @@ impl FuncTranslator {
                 let Some(address) = self.effective_address(memory, ptr, offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
-                if let Ok(address) = <Const32<u64>>::try_from(address) {
+                if let Ok(address) = Address32::try_from(address) {
                     let result = self.alloc.stack.push_dynamic()?;
                     self.push_fueled_instr(make_instr_at(result, address), FuelCosts::load)?;
                     if !memory.is_default() {
@@ -2006,8 +2007,8 @@ impl FuncTranslator {
         make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
         make_instr_offset16: fn(ptr: Reg, offset: Const16<u64>, value: Reg) -> Instruction,
         make_instr_offset16_imm: fn(ptr: Reg, offset: Const16<u64>, value: Field) -> Instruction,
-        make_instr_at: fn(value: Reg, address: Const32<u64>) -> Instruction,
-        make_instr_at_imm: fn(value: Field, address: Const32<u64>) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
         Src: Copy + From<TypedVal>,
@@ -2044,8 +2045,8 @@ impl FuncTranslator {
         make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
         make_instr_offset16: fn(ptr: Reg, offset: Const16<u64>, value: Reg) -> Instruction,
         make_instr_offset16_imm: fn(ptr: Reg, offset: Const16<u64>, value: Field) -> Instruction,
-        make_instr_at: fn(value: Reg, address: Const32<u64>) -> Instruction,
-        make_instr_at_imm: fn(value: Field, address: Const32<u64>) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
         Src: Copy + Wrap<Wrapped> + From<TypedVal>,
@@ -2060,7 +2061,7 @@ impl FuncTranslator {
                 let Some(address) = self.effective_address(memory, ptr, offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
-                if let Ok(address) = <Const32<u64>>::try_from(address) {
+                if let Ok(address) = Address32::try_from(address) {
                     return self.translate_istore_wrap_at::<Src, Wrapped, Field>(
                         memory,
                         address,
@@ -2125,10 +2126,10 @@ impl FuncTranslator {
     fn translate_istore_wrap_at<Src, Wrapped, Field>(
         &mut self,
         memory: index::Memory,
-        address: Const32<u64>,
+        address: Address32,
         value: TypedProvider,
-        make_instr_at: fn(value: Reg, address: Const32<u64>) -> Instruction,
-        make_instr_at_imm: fn(value: Field, address: Const32<u64>) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
         Src: Copy + From<TypedVal> + Wrap<Wrapped>,
@@ -2215,7 +2216,7 @@ impl FuncTranslator {
         memarg: MemArg,
         make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
         make_instr_offset16: fn(ptr: Reg, offset: Const16<u64>, value: Reg) -> Instruction,
-        make_instr_at: fn(value: Reg, address: Const32<u64>) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -2226,7 +2227,7 @@ impl FuncTranslator {
                 let Some(address) = self.effective_address(memory, ptr, offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
-                if let Ok(address) = <Const32<u64>>::try_from(address) {
+                if let Ok(address) = Address32::try_from(address) {
                     return self.translate_fstore_at(memory, address, value, make_instr_at);
                 }
                 let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
@@ -2261,9 +2262,9 @@ impl FuncTranslator {
     fn translate_fstore_at(
         &mut self,
         memory: index::Memory,
-        address: Const32<u64>,
+        address: Address32,
         value: TypedProvider,
-        make_instr_at: fn(value: Reg, address: Const32<u64>) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         let value = self.alloc.stack.provider2reg(&value)?;
         self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;

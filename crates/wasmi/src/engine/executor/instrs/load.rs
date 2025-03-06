@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedVal},
-    ir::{index::Memory, Const16, Const32, Offset64, Offset64Hi, Offset64Lo, Reg},
+    ir::{index::Memory, Address32, Const16, Offset64, Offset64Hi, Offset64Lo, Reg},
     store::StoreInner,
     Error,
 };
@@ -133,11 +133,11 @@ impl Executor<'_> {
         &mut self,
         store: &StoreInner,
         result: Reg,
-        address: Const32<u64>,
+        address: Address32,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
         let memory = self.fetch_optional_memory(1);
-        let offset = Offset64::from(u64::from(address));
+        let offset = Offset64::from(address);
         self.execute_load_extend(
             store,
             memory,
@@ -180,7 +180,7 @@ macro_rules! impl_execute_load {
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
-            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: Const32<u64>) -> Result<(), Error> {
+            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: Address32) -> Result<(), Error> {
                 self.execute_load_at_impl(store, result, address, $impl_fn)
             }
 

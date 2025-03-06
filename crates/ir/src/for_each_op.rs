@@ -1500,7 +1500,7 @@ macro_rules! for_each_op {
             Load32At {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Load instruction for 32-bit values.
             ///
@@ -1552,7 +1552,7 @@ macro_rules! for_each_op {
             Load64At {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Load instruction for 64-bit values.
             ///
@@ -1600,7 +1600,7 @@ macro_rules! for_each_op {
             I32Load8sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i32.load8_s` equivalent Wasmi instruction.
             ///
@@ -1648,7 +1648,7 @@ macro_rules! for_each_op {
             I32Load8uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i32.load8_u` equivalent Wasmi instruction.
             ///
@@ -1696,7 +1696,7 @@ macro_rules! for_each_op {
             I32Load16sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i32.load16_s` equivalent Wasmi instruction.
             ///
@@ -1744,7 +1744,7 @@ macro_rules! for_each_op {
             I32Load16uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i32.load16_u` equivalent Wasmi instruction.
             ///
@@ -1792,7 +1792,7 @@ macro_rules! for_each_op {
             I64Load8sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i64.load8_s` equivalent Wasmi instruction.
             ///
@@ -1840,7 +1840,7 @@ macro_rules! for_each_op {
             I64Load8uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i64.load8_u` equivalent Wasmi instruction.
             ///
@@ -1888,7 +1888,7 @@ macro_rules! for_each_op {
             I64Load16sAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i64.load16_s` equivalent Wasmi instruction.
             ///
@@ -1936,7 +1936,7 @@ macro_rules! for_each_op {
             I64Load16uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i64.load16_u` equivalent Wasmi instruction.
             ///
@@ -1984,7 +1984,7 @@ macro_rules! for_each_op {
             I64Load32sAt {
                 @result: Reg,
                  /// The `ptr+offset` address of the `load` instruction.
-                 address: Const32<u64>,
+                 address: Address32,
             },
             /// Wasm `i64.load32_s` equivalent Wasmi instruction.
             ///
@@ -2032,7 +2032,7 @@ macro_rules! for_each_op {
             I64Load32uAt {
                 @result: Reg,
                 /// The `ptr+offset` address of the `load` instruction.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i64.load32_u` equivalent Wasmi instruction.
             ///
@@ -2101,7 +2101,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
 
             /// Store instruction for 64-bit values.
@@ -2156,7 +2156,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
 
             /// Wasm `i32.store` equivalent Wasmi instruction.
@@ -2211,7 +2211,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Const16<i32>,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
 
             /// Wasm `i32.store` equivalent Wasmi instruction.
@@ -2298,7 +2298,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i32.store8` equivalent Wasmi instruction.
             ///
@@ -2316,7 +2316,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: i8,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
 
             /// Wasm `i32.store16` equivalent Wasmi instruction.
@@ -2403,7 +2403,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i32.store16` equivalent Wasmi instruction.
             ///
@@ -2421,7 +2421,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: i16,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
 
             /// Wasm `i64.store` equivalent Wasmi instruction.
@@ -2476,7 +2476,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Const16<i64>,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
 
             /// Wasm `i64.store8` equivalent Wasmi instruction.
@@ -2563,7 +2563,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i64.store8` equivalent Wasmi instruction.
             ///
@@ -2581,7 +2581,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: i8,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
 
             /// Wasm `i64.store16` equivalent Wasmi instruction.
@@ -2668,7 +2668,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i64.store16` equivalent Wasmi instruction.
             ///
@@ -2686,7 +2686,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: i16,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
 
             /// Wasm `i64.store32` equivalent Wasmi instruction.
@@ -2773,7 +2773,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Reg,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
             /// Wasm `i64.store32` equivalent Wasmi instruction.
             ///
@@ -2791,7 +2791,7 @@ macro_rules! for_each_op {
                 /// The value to be stored.
                 value: Const16<i32>,
                 /// The constant address to store the value.
-                address: Const32<u64>,
+                address: Address32,
             },
 
             /// Wasm `i32.eq` equivalent Wasmi instruction.
