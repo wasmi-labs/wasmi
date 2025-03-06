@@ -11,21 +11,46 @@ fn offset16(offset: u16) -> Offset16 {
     Offset16::try_from(u64::from(offset)).unwrap()
 }
 
+/// Adjusts a translation test to use memories with that specified index type.
+enum IndexType {
+    /// The 32-bit index type.
+    ///
+    /// This is WebAssembly's default.
+    Memory32,
+    /// The 64-bit index type.
+    ///
+    /// This got introduced by the Wasm `memory64` proposal.
+    Memory64,
+}
+
+impl IndexType {
+    /// Returns the `.wat` string reprensetation for the [`IndexType`].
+    fn wat(self) -> &'static str {
+        match self {
+            Self::Memory32 => "i32",
+            Self::Memory64 => "i64",
+        }
+    }
+}
+
 fn test_load_mem0(
     wasm_op: WasmOp,
+    index_ty: IndexType,
     make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
-    offset: u32,
+    offset: impl Into<u64>,
 ) {
+    let offset = offset.into();
     assert!(
-        offset > u32::from(u16::MAX),
+        offset > u64::from(u16::MAX),
         "offset must not be 16-bit encodable in this testcase"
     );
+    let index_ty = index_ty.wat();
     let result_ty = wasm_op.result_ty();
     let wasm = format!(
         r#"
         (module
-            (memory 1)
-            (func (param $ptr i32) (result {result_ty})
+            (memory {index_ty} 1)
+            (func (param $ptr {index_ty}) (result {result_ty})
                 local.get $ptr
                 {wasm_op} offset={offset}
             )
@@ -44,20 +69,23 @@ fn test_load_mem0(
 
 fn test_load(
     wasm_op: WasmOp,
+    index_ty: IndexType,
     make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
-    offset: u32,
+    offset: impl Into<u64>,
 ) {
+    let offset = offset.into();
     assert!(
-        offset > u32::from(u16::MAX),
+        offset > u64::from(u16::MAX),
         "offset must not be 16-bit encodable in this testcase"
     );
+    let index_ty = index_ty.wat();
     let result_ty = wasm_op.result_ty();
     let wasm = format!(
         r#"
         (module
-            (memory $mem0 1)
-            (memory $mem1 1)
-            (func (param $ptr i32) (result {result_ty})
+            (memory {index_ty} $mem0 1)
+            (memory {index_ty} $mem1 1)
+            (func (param $ptr {index_ty}) (result {result_ty})
                 local.get $ptr
                 {wasm_op} $mem1 offset={offset}
             )
@@ -210,17 +238,62 @@ macro_rules! generate_tests {
         #[test]
         #[cfg_attr(miri, ignore)]
         fn reg_mem0() {
-            test_load_mem0(WASM_OP, $make_instr, u32::from(u16::MAX) + 1);
-            test_load_mem0(WASM_OP, $make_instr, u32::MAX - 1);
-            test_load_mem0(WASM_OP, $make_instr, u32::MAX);
+            test_load_mem0(
+                WASM_OP,
+                IndexType::Memory32,
+                $make_instr,
+                u32::from(u16::MAX) + 1,
+            );
+            test_load_mem0(WASM_OP, IndexType::Memory32, $make_instr, u32::MAX - 1);
+            test_load_mem0(WASM_OP, IndexType::Memory32, $make_instr, u32::MAX);
+        }
+
+        #[test]
+        #[cfg_attr(miri, ignore)]
+        fn reg_mem0_memory64() {
+            test_load_mem0(
+                WASM_OP,
+                IndexType::Memory64,
+                $make_instr,
+                u64::from(u16::MAX) + 1,
+            );
+            test_load_mem0(WASM_OP, IndexType::Memory64, $make_instr, u32::MAX);
+            test_load_mem0(
+                WASM_OP,
+                IndexType::Memory64,
+                $make_instr,
+                u64::from(u32::MAX) + 1,
+            );
+            test_load_mem0(WASM_OP, IndexType::Memory64, $make_instr, u64::MAX - 1);
+            test_load_mem0(WASM_OP, IndexType::Memory64, $make_instr, u64::MAX);
         }
 
         #[test]
         #[cfg_attr(miri, ignore)]
         fn reg() {
-            test_load(WASM_OP, $make_instr, u32::from(u16::MAX) + 1);
-            test_load(WASM_OP, $make_instr, u32::MAX - 1);
-            test_load(WASM_OP, $make_instr, u32::MAX);
+            test_load(
+                WASM_OP,
+                IndexType::Memory32,
+                $make_instr,
+                u32::from(u16::MAX) + 1,
+            );
+            test_load(WASM_OP, IndexType::Memory32, $make_instr, u32::MAX - 1);
+            test_load(WASM_OP, IndexType::Memory32, $make_instr, u32::MAX);
+        }
+
+        #[test]
+        #[cfg_attr(miri, ignore)]
+        fn reg_memory64() {
+            test_load(WASM_OP, IndexType::Memory32, $make_instr, 0_u64);
+            test_load(WASM_OP, IndexType::Memory32, $make_instr, u32::MAX);
+            test_load(
+                WASM_OP,
+                IndexType::Memory64,
+                $make_instr,
+                u64::from(u32::MAX) + 1,
+            );
+            test_load(WASM_OP, IndexType::Memory64, $make_instr, u64::MAX - 1);
+            test_load(WASM_OP, IndexType::Memory64, $make_instr, u64::MAX);
         }
 
         #[test]
