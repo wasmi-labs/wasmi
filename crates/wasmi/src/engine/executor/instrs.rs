@@ -1639,7 +1639,7 @@ impl Executor<'_> {
         match *addr.get() {
             Instruction::MemoryIndex { index } => {
                 hint::cold();
-                self.ip = addr;
+                self.ip.add(1);
                 index
             }
             _ => index::Memory::from(0),
