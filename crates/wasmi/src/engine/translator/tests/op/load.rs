@@ -6,6 +6,11 @@ use crate::{
     ir::{Offset16, Offset64, Offset64Lo},
 };
 
+/// Creates an [`Offset16`] from the given `offset`.
+fn offset16(offset: u16) -> Offset16 {
+    Offset16::try_from(u64::from(offset)).unwrap()
+}
+
 fn test_load_mem0(
     wasm_op: WasmOp,
     make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
@@ -68,11 +73,6 @@ fn test_load(
             Instruction::return_reg(Reg::from(1)),
         ])
         .run();
-}
-
-/// Creates an [`Offset16`] from the given `offset`.
-fn offset16(offset: u16) -> Offset16 {
-    Offset16::try_from(u64::from(offset)).unwrap()
 }
 
 fn test_load_offset16(
