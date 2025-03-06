@@ -3,9 +3,8 @@
 use super::*;
 use crate::{
     core::TrapCode,
-    ir::{Offset16, Offset64Lo},
+    ir::{Offset16, Offset64, Offset64Lo},
 };
-use wasmi_ir::Offset64;
 
 fn test_load_mem0(
     wasm_op: WasmOp,
