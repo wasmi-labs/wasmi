@@ -427,10 +427,8 @@ impl MemoryEntity {
                 if max > memory_type.inner.absolute_max() {
                     return Err(MemoryError::MaximumSizeOverflow);
                 }
-                let max_size = max << memory_type.inner.page_size_log2;
-                let Ok(max_size) = usize::try_from(max_size) else {
-                    return Err(MemoryError::MaximumSizeOverflow);
-                };
+                let max_size =
+                    usize::try_from(max << memory_type.inner.page_size_log2).unwrap_or(usize::MAX);
                 Some(max_size)
             }
             None => None,
