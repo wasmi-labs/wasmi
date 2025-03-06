@@ -13,11 +13,7 @@ impl Executor<'_> {
     /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
     fn fetch_ptr_and_offset_hi(&self) -> (Reg, Offset64Hi) {
         // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
-        unsafe {
-            let (value, offset_hi) = self.fetch_reg_and_imm32();
-            let offset_hi = Offset64Hi::from(u32::from(offset_hi));
-            (value, offset_hi)
-        }
+        unsafe { self.fetch_reg_and_offset_hi() }
     }
 
     /// Fetches the bytes of the default memory at index 0.

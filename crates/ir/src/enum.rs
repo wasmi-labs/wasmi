@@ -224,9 +224,38 @@ impl Instruction {
         Self::register_and_imm32(reg, offset_hi.0)
     }
 
+    /// Returns `Some` [`Reg`] and [`Offset64Hi`] if encoded properly.
+    ///
+    /// # Errors
+    ///
+    /// Returns back `self` if it was an incorrect [`Instruction`].
+    /// This allows for a better error message to inform the user.
+    pub fn filter_register_and_offset_hi(self) -> Result<(Reg, Offset64Hi), Self> {
+        if let Instruction::RegisterAndImm32 { reg, imm } = self {
+            return Ok((reg, Offset64Hi(u32::from(imm))));
+        }
+        Err(self)
+    }
+
     /// Creates a new [`Instruction::Imm16AndImm32`] from the given `value` and `offset_hi`.
     pub fn imm16_and_offset_hi(value: impl Into<AnyConst16>, offset_hi: Offset64Hi) -> Self {
         Self::imm16_and_imm32(value, offset_hi.0)
+    }
+
+    /// Returns `Some` [`Reg`] and [`Offset64Hi`] if encoded properly.
+    ///
+    /// # Errors
+    ///
+    /// Returns back `self` if it was an incorrect [`Instruction`].
+    /// This allows for a better error message to inform the user.
+    pub fn filter_imm16_and_offset_hi<T>(self) -> Result<(T, Offset64Hi), Self>
+    where
+        T: From<AnyConst16>,
+    {
+        if let Instruction::Imm16AndImm32 { imm16, imm32 } = self {
+            return Ok((T::from(imm16), Offset64Hi(u32::from(imm32))));
+        }
+        Err(self)
     }
 }
 

@@ -414,12 +414,6 @@ pub struct Offset64(u64);
 #[repr(transparent)]
 pub struct Offset64Hi(pub(crate) u32);
 
-impl From<u32> for Offset64Hi {
-    fn from(value: u32) -> Self {
-        Self(value)
-    }
-}
-
 /// The low 32 bits of an [`Offset64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]

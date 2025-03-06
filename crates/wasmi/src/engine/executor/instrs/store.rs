@@ -4,7 +4,7 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::utils::unreachable_unchecked,
-    ir::{index::Memory, Address32, AnyConst16, Const16, Instruction, Offset64, Offset64Lo, Reg},
+    ir::{index::Memory, Address32, AnyConst16, Const16, Offset64, Offset64Lo, Reg},
     store::StoreInner,
     Error,
 };
@@ -21,11 +21,7 @@ impl Executor<'_> {
     /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
     fn fetch_value_and_offset_hi(&self) -> (Reg, Offset64Hi) {
         // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
-        unsafe {
-            let (value, offset_hi) = self.fetch_reg_and_imm32();
-            let offset_hi = Offset64Hi::from(u32::from(offset_hi));
-            (value, offset_hi)
-        }
+        unsafe { self.fetch_reg_and_offset_hi() }
     }
 
     /// Returns the immediate `value` and `offset_hi` parameters for a `load` [`Instruction`].
@@ -35,18 +31,13 @@ impl Executor<'_> {
     {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
-        match *addr.get() {
-            Instruction::Imm16AndImm32 { imm16, imm32 } => {
-                (T::from(imm16), Offset64Hi::from(u32::from(imm32)))
-            }
-            unexpected => {
-                // Safety: Wasmi translation guarantees that [`Instruction::Imm16AndImm32`] exists.
-                unsafe {
-                    unreachable_unchecked!(
-                        "expected `Instruction::Imm16AndImm32` but found {unexpected:?}"
-                    )
-                }
-            }
+        match addr.get().filter_imm16_and_offset_hi::<T>() {
+            Ok(value) => value,
+            Err(instr) => unsafe {
+                unreachable_unchecked!(
+                    "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
+                )
+            },
         }
     }
 
