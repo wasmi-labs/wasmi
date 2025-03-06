@@ -1980,7 +1980,7 @@ impl FuncTranslator {
                 return Ok(());
             }
         }
-        let (offset_hi, offset_lo) = Offset64::new(offset);
+        let (offset_hi, offset_lo) = Offset64::split(offset);
         self.push_fueled_instr(make_instr(result, offset_lo), FuelCosts::load)?;
         self.alloc
             .instr_encoder
@@ -2087,7 +2087,7 @@ impl FuncTranslator {
                 return Ok(());
             }
         }
-        let (offset_hi, offset_lo) = Offset64::new(offset);
+        let (offset_hi, offset_lo) = Offset64::split(offset);
         let (instr, param) = match value {
             TypedProvider::Register(value) => (
                 make_instr(ptr, offset_lo),
@@ -2233,7 +2233,7 @@ impl FuncTranslator {
                 (zero_ptr, address)
             }
         };
-        let (offset_hi, offset_lo) = Offset64::new(offset);
+        let (offset_hi, offset_lo) = Offset64::split(offset);
         let value = self.alloc.stack.provider2reg(&value)?;
         if memory.is_default() {
             if let Ok(offset) = <Const16<u64>>::try_from(offset) {

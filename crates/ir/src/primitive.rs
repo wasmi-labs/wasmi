@@ -433,7 +433,7 @@ impl From<u32> for Offset64Lo {
 
 impl Offset64 {
     /// Creates a new [`Offset64`] lo-hi pair from the given `offset`.
-    pub fn new(offset: u64) -> (Offset64Hi, Offset64Lo) {
+    pub fn split(offset: u64) -> (Offset64Hi, Offset64Lo) {
         let offset_lo = (offset & 0xFFFF_FFFF) as u32;
         let offset_hi = (offset >> 32) as u32;
         (Offset64Hi(offset_hi), Offset64Lo(offset_lo))
