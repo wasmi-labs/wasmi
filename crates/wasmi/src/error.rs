@@ -315,9 +315,15 @@ pub enum EntityGrowError {
 }
 
 impl EntityGrowError {
-    /// The WebAssembly specification demands to return this value
-    /// if the `memory.grow` or `table.grow` operations fail.
-    pub const ERROR_CODE: u64 = u64::MAX;
+    /// The error code returned by `memory.grow` and `table.grow` upon failure.
+    ///
+    /// This is the value used for 32-bit memory or table indices.
+    pub const ERROR_CODE_32: u64 = u32::MAX as u64;
+
+    /// The error code returned by `memory.grow` and `table.grow` upon failure.
+    ///
+    /// This is the value used for 64-bit memory or table indices.
+    pub const ERROR_CODE_64: u64 = u64::MAX;
 }
 
 impl From<TrapCode> for EntityGrowError {

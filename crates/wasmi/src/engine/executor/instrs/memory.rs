@@ -121,7 +121,10 @@ impl Executor<'_> {
                 unsafe { self.cache.update_memory(store) };
                 return_value
             }
-            Err(EntityGrowError::InvalidGrow) => EntityGrowError::ERROR_CODE,
+            Err(EntityGrowError::InvalidGrow) => match memory.ty().is_64() {
+                true => EntityGrowError::ERROR_CODE_64,
+                false => EntityGrowError::ERROR_CODE_32,
+            },
             Err(EntityGrowError::TrapCode(trap_code)) => return Err(Error::from(trap_code)),
         };
         self.set_register(result, return_value);
