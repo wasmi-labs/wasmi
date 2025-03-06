@@ -2,22 +2,21 @@ use super::Executor;
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::{executor::instr_ptr::InstructionPtr, utils::unreachable_unchecked},
-    ir::{index::Memory, Const16, Instruction, Reg},
+    ir::{index::Memory, Const16, Const32, Instruction, Offset64, Offset64Hi, Offset64Lo, Reg},
     store::StoreInner,
     Error,
 };
 
 /// The function signature of Wasm load operations.
-type WasmLoadOp =
-    fn(memory: &[u8], address: UntypedVal, offset: u32) -> Result<UntypedVal, TrapCode>;
+type WasmLoadOp = fn(memory: &[u8], ptr: UntypedVal, offset: u64) -> Result<UntypedVal, TrapCode>;
 
 impl Executor<'_> {
     /// Returns the `ptr` and `offset` parameters for a `load` [`Instruction`].
-    fn fetch_ptr_and_offset(&self) -> (Reg, u32) {
+    fn fetch_ptr_and_offset_hi(&self) -> (Reg, Offset64Hi) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Instruction::RegisterAndImm32 { reg, imm } => (reg, u32::from(imm)),
+            Instruction::RegisterAndImm32 { reg, imm } => (reg, Offset64Hi::from(u32::from(imm))),
             instr => {
                 // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
                 unsafe {
@@ -86,11 +85,11 @@ impl Executor<'_> {
         memory: Memory,
         result: Reg,
         address: UntypedVal,
-        offset: u32,
+        offset: Offset64,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
         let memory = self.fetch_memory_bytes(memory, store);
-        let loaded_value = load_extend(memory, address, offset)?;
+        let loaded_value = load_extend(memory, address, u64::from(offset))?;
         self.set_register(result, loaded_value);
         Ok(())
     }
@@ -112,11 +111,11 @@ impl Executor<'_> {
         &mut self,
         result: Reg,
         address: UntypedVal,
-        offset: u32,
+        offset: Offset64,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
         let memory = self.fetch_default_memory_bytes();
-        let loaded_value = load_extend(memory, address, offset)?;
+        let loaded_value = load_extend(memory, address, u64::from(offset))?;
         self.set_register(result, loaded_value);
         Ok(())
     }
@@ -126,11 +125,13 @@ impl Executor<'_> {
         &mut self,
         store: &StoreInner,
         result: Reg,
-        memory: Memory,
+        offset_lo: Offset64Lo,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
-        let (ptr, offset) = self.fetch_ptr_and_offset();
+        let (ptr, offset_hi) = self.fetch_ptr_and_offset_hi();
+        let memory = self.fetch_optional_memory(2);
         let address = self.get_register(ptr);
+        let offset = Offset64::combine(offset_hi, offset_lo);
         self.execute_load_extend(store, memory, result, address, offset, load_extend)?;
         self.try_next_instr_at(2)
     }
@@ -140,11 +141,11 @@ impl Executor<'_> {
         &mut self,
         store: &StoreInner,
         result: Reg,
-        address: u32,
+        address: Const32<u64>,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
-        let memory = self.fetch_optional_memory();
-        let offset = address;
+        let memory = self.fetch_optional_memory(1);
+        let offset = Offset64::from(u64::from(address));
         self.execute_load_extend(
             store,
             memory,
@@ -161,11 +162,11 @@ impl Executor<'_> {
         &mut self,
         result: Reg,
         ptr: Reg,
-        offset: Const16<u32>,
+        offset: Const16<u64>,
         load_extend: WasmLoadOp,
     ) -> Result<(), Error> {
-        let offset = u32::from(offset);
         let address = self.get_register(ptr);
+        let offset = Offset64::from(u64::from(offset));
         self.execute_load_extend_mem0(result, address, offset, load_extend)?;
         self.try_next_instr()
     }
@@ -182,17 +183,17 @@ macro_rules! impl_execute_load {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load), "`].")]
-            pub fn $fn_load(&mut self, store: &StoreInner, result: Reg, memory: Memory) -> Result<(), Error> {
-                self.execute_load_impl(store, result, memory, $impl_fn)
+            pub fn $fn_load(&mut self, store: &StoreInner, result: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
+                self.execute_load_impl(store, result, offset_lo, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
-            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: u32) -> Result<(), Error> {
+            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: Const32<u64>) -> Result<(), Error> {
                 self.execute_load_at_impl(store, result, address, $impl_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]
-            pub fn $fn_load_off16(&mut self, result: Reg, ptr: Reg, offset: Const16<u32>) -> Result<(), Error> {
+            pub fn $fn_load_off16(&mut self, result: Reg, ptr: Reg, offset: Const16<u64>) -> Result<(), Error> {
                 self.execute_load_offset16_impl(result, ptr, offset, $impl_fn)
             }
         )*
