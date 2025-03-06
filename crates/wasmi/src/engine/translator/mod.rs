@@ -1907,12 +1907,7 @@ impl FuncTranslator {
     }
 
     /// Returns the effective address `ptr+offset` if it is valid.
-    fn effective_address(ptr: u32, offset: u32) -> Option<u32> {
-        ptr.checked_add(offset)
-    }
-
-    /// Returns the effective address `ptr+offset` if it is valid.
-    fn effective_address_v2(&self, mem: index::Memory, ptr: TypedVal, offset: u64) -> Option<u64> {
+    fn effective_address(&self, mem: index::Memory, ptr: TypedVal, offset: u64) -> Option<u64> {
         let memory_type = *self
             .module
             .get_type_of_memory(MemoryIdx::from(u32::from(mem)));
@@ -1958,7 +1953,7 @@ impl FuncTranslator {
         let (ptr, offset) = match ptr {
             Provider::Register(ptr) => (ptr, offset),
             Provider::Const(ptr) => {
-                let Some(address) = self.effective_address_v2(memory, ptr, offset) else {
+                let Some(address) = self.effective_address(memory, ptr, offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
                 if let Ok(address) = <Const32<u64>>::try_from(address) {
@@ -2062,7 +2057,7 @@ impl FuncTranslator {
         let (ptr, offset) = match ptr {
             Provider::Register(ptr) => (ptr, offset),
             Provider::Const(ptr) => {
-                let Some(address) = self.effective_address_v2(memory, ptr, offset) else {
+                let Some(address) = self.effective_address(memory, ptr, offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
                 if let Ok(address) = <Const32<u64>>::try_from(address) {
@@ -2228,7 +2223,7 @@ impl FuncTranslator {
         let (ptr, offset) = match ptr {
             Provider::Register(ptr) => (ptr, offset),
             Provider::Const(ptr) => {
-                let Some(address) = self.effective_address_v2(memory, ptr, offset) else {
+                let Some(address) = self.effective_address(memory, ptr, offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
                 if let Ok(address) = <Const32<u64>>::try_from(address) {
