@@ -4,7 +4,7 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::utils::unreachable_unchecked,
-    ir::{index::Memory, Address32, AnyConst16, Const16, Offset64, Offset64Lo, Reg},
+    ir::{index::Memory, Address32, AnyConst16, Const16, Offset16, Offset64, Offset64Lo, Reg},
     store::StoreInner,
     Error,
 };
@@ -119,12 +119,12 @@ impl Executor<'_> {
     fn execute_store_wrap_mem0(
         &mut self,
         address: UntypedVal,
-        offset: u64,
+        offset: Offset64,
         value: UntypedVal,
         store_wrap: WasmStoreOp,
     ) -> Result<(), Error> {
         let memory = self.fetch_default_memory_bytes_mut();
-        store_wrap(memory, address, offset, value)?;
+        store_wrap(memory, address, u64::from(offset), value)?;
         Ok(())
     }
 
@@ -176,13 +176,13 @@ impl Executor<'_> {
     fn execute_store_offset16(
         &mut self,
         ptr: Reg,
-        offset: Const16<u64>,
+        offset: Offset16,
         value: Reg,
         store_op: WasmStoreOp,
     ) -> Result<(), Error> {
         self.execute_store_wrap_mem0(
             self.get_register(ptr),
-            u64::from(offset),
+            Offset64::from(offset),
             self.get_register(value),
             store_op,
         )?;
@@ -192,7 +192,7 @@ impl Executor<'_> {
     fn execute_store_offset16_imm16<T, V>(
         &mut self,
         ptr: Reg,
-        offset: Const16<u64>,
+        offset: Offset16,
         value: V,
         store_op: WasmStoreOp,
     ) -> Result<(), Error>
@@ -201,7 +201,7 @@ impl Executor<'_> {
     {
         self.execute_store_wrap_mem0(
             self.get_register(ptr),
-            u64::from(offset),
+            Offset64::from(offset),
             T::from(value).into(),
             store_op,
         )?;
@@ -270,7 +270,7 @@ macro_rules! impl_execute_istore {
             pub fn $fn_store_off16_imm16(
                 &mut self,
                 ptr: Reg,
-                offset: Const16<u64>,
+                offset: Offset16,
                 value: $from_ty,
             ) -> Result<(), Error> {
                 self.execute_store_offset16_imm16::<$to_ty, _>(ptr, offset, value, $impl_fn)
@@ -340,7 +340,7 @@ macro_rules! impl_execute_istore_trunc {
             pub fn $fn_store_off16(
                 &mut self,
                 ptr: Reg,
-                offset: Const16<u64>,
+                offset: Offset16,
                 value: Reg,
             ) -> Result<(), Error> {
                 self.execute_store_offset16(ptr, offset, value, $impl_fn)
@@ -427,7 +427,7 @@ macro_rules! impl_execute_store {
             pub fn $fn_store_off16(
                 &mut self,
                 ptr: Reg,
-                offset: Const16<u64>,
+                offset: Offset16,
                 value: Reg,
             ) -> Result<(), Error> {
                 self.execute_store_offset16(ptr, offset, value, $impl_fn)

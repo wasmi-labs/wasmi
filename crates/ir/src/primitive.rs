@@ -405,17 +405,17 @@ impl_shift_amount! {
 }
 
 /// A 64-bit offset in Wasmi bytecode.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Offset64(u64);
 
 /// The high 32 bits of an [`Offset64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Offset64Hi(pub(crate) u32);
 
 /// The low 32 bits of an [`Offset64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Offset64Lo(pub(crate) u32);
 
@@ -444,6 +444,25 @@ impl From<u64> for Offset64 {
 impl From<Offset64> for u64 {
     fn from(offset: Offset64) -> Self {
         offset.0
+    }
+}
+
+/// A 16-bit encoded load or store address offset.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Offset16(Const16<u64>);
+
+impl TryFrom<u64> for Offset16 {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(address: u64) -> Result<Self, Self::Error> {
+        <Const16<u64>>::try_from(address).map(Self)
+    }
+}
+
+impl From<Offset16> for Offset64 {
+    fn from(offset: Offset16) -> Self {
+        Offset64(u64::from(offset.0))
     }
 }
 

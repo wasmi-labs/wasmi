@@ -54,6 +54,7 @@ use crate::{
         Const32,
         Instruction,
         IntoShiftAmount,
+        Offset16,
         Offset64,
         Offset64Lo,
         Reg,
@@ -1945,7 +1946,7 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Const16<u64>) -> Instruction,
+        make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Offset16) -> Instruction,
         make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -1976,7 +1977,7 @@ impl FuncTranslator {
         };
         let result = self.alloc.stack.push_dynamic()?;
         if memory.is_default() {
-            if let Ok(offset) = <Const16<u64>>::try_from(offset) {
+            if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_fueled_instr(make_instr_offset16(result, ptr, offset), FuelCosts::load)?;
                 return Ok(());
             }
@@ -2005,8 +2006,8 @@ impl FuncTranslator {
         memarg: MemArg,
         make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
         make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset16: fn(ptr: Reg, offset: Const16<u64>, value: Reg) -> Instruction,
-        make_instr_offset16_imm: fn(ptr: Reg, offset: Const16<u64>, value: Field) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
         make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
         make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
@@ -2043,8 +2044,8 @@ impl FuncTranslator {
         memarg: MemArg,
         make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
         make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset16: fn(ptr: Reg, offset: Const16<u64>, value: Reg) -> Instruction,
-        make_instr_offset16_imm: fn(ptr: Reg, offset: Const16<u64>, value: Field) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
         make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
         make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
@@ -2168,14 +2169,14 @@ impl FuncTranslator {
         ptr: Reg,
         offset: u64,
         value: TypedProvider,
-        make_instr_offset16: fn(Reg, Const16<u64>, Reg) -> Instruction,
-        make_instr_offset16_imm: fn(Reg, Const16<u64>, Field) -> Instruction,
+        make_instr_offset16: fn(Reg, Offset16, Reg) -> Instruction,
+        make_instr_offset16_imm: fn(Reg, Offset16, Field) -> Instruction,
     ) -> Result<Option<Instr>, Error>
     where
         Src: Copy + From<TypedVal> + Wrap<Wrapped>,
         Field: TryFrom<Wrapped>,
     {
-        let Ok(offset16) = <Const16<u64>>::try_from(offset) else {
+        let Ok(offset16) = Offset16::try_from(offset) else {
             return Ok(None);
         };
         let instr = match value {
@@ -2215,7 +2216,7 @@ impl FuncTranslator {
         &mut self,
         memarg: MemArg,
         make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset16: fn(ptr: Reg, offset: Const16<u64>, value: Reg) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
         make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -2237,7 +2238,7 @@ impl FuncTranslator {
         let (offset_hi, offset_lo) = Offset64::split(offset);
         let value = self.alloc.stack.provider2reg(&value)?;
         if memory.is_default() {
-            if let Ok(offset) = <Const16<u64>>::try_from(offset) {
+            if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_fueled_instr(make_instr_offset16(ptr, offset, value), FuelCosts::store)?;
                 return Ok(());
             }

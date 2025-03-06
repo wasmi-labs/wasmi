@@ -31,6 +31,7 @@ pub use self::{
         Comparator,
         ComparatorAndOffset,
         IntoShiftAmount,
+        Offset16,
         Offset64,
         Offset64Hi,
         Offset64Lo,

@@ -1514,7 +1514,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Load instruction for 64-bit values.
@@ -1566,7 +1566,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Wasm `i32.load8_s` equivalent Wasmi instruction.
@@ -1614,7 +1614,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Wasm `i32.load8_u` equivalent Wasmi instruction.
@@ -1662,7 +1662,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Wasm `i32.load16_s` equivalent Wasmi instruction.
@@ -1710,7 +1710,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Wasm `i32.load16_u` equivalent Wasmi instruction.
@@ -1758,7 +1758,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Wasm `i64.load8_s` equivalent Wasmi instruction.
@@ -1806,7 +1806,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Wasm `i64.load8_u` equivalent Wasmi instruction.
@@ -1854,7 +1854,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Wasm `i64.load16_s` equivalent Wasmi instruction.
@@ -1902,7 +1902,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Wasm `i64.load16_u` equivalent Wasmi instruction.
@@ -1950,7 +1950,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Wasm `i64.load32_s` equivalent Wasmi instruction.
@@ -1998,7 +1998,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Wasm `i64.load32_u` equivalent Wasmi instruction.
@@ -2046,7 +2046,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `load` instruction.
                 ptr: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
             },
 
             /// Store instruction for 32-bit values.
@@ -2081,7 +2081,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2136,7 +2136,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2191,7 +2191,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: Const16<i32>,
             },
@@ -2263,7 +2263,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2278,7 +2278,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: i8,
             },
@@ -2368,7 +2368,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2383,7 +2383,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: i16,
             },
@@ -2456,7 +2456,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: Const16<i64>,
             },
@@ -2528,7 +2528,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2543,7 +2543,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: i8,
             },
@@ -2633,7 +2633,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2648,7 +2648,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: i16,
             },
@@ -2738,7 +2738,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: Reg,
             },
@@ -2753,7 +2753,7 @@ macro_rules! for_each_op {
                 /// The register storing the pointer of the `store` instruction.
                 ptr: Reg,
                 /// The register storing the pointer offset of the `store` instruction.
-                offset: Const16<u64>,
+                offset: Offset16,
                 /// The value to be stored.
                 value: Const16<i32>,
             },
