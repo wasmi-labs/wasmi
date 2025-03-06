@@ -142,7 +142,7 @@ impl Executor<'_> {
             memory,
             result,
             UntypedVal::from(u64::from(address)),
-            Offset64::zero(),
+            Offset64::from(0),
             load_extend,
         )?;
         self.try_next_instr()

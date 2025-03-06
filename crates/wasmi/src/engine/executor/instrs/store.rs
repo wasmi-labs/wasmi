@@ -229,7 +229,7 @@ impl Executor<'_> {
             store,
             memory,
             UntypedVal::from(u64::from(address)),
-            Offset64::zero(),
+            Offset64::from(0),
             self.get_register(value),
             store_op,
         )?;
@@ -251,7 +251,7 @@ impl Executor<'_> {
             store,
             memory,
             UntypedVal::from(u64::from(address)),
-            Offset64::zero(),
+            Offset64::from(0),
             T::from(value).into(),
             store_op,
         )?;
