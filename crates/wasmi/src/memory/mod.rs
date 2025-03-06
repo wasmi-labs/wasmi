@@ -556,7 +556,9 @@ impl MemoryEntity {
         let Some(desired_byte_size) = desired_size.checked_mul(bytes_per_page) else {
             return Err(EntityGrowError::InvalidGrow);
         };
-        let desired_byte_size = desired_byte_size as usize;
+        let Ok(desired_byte_size) = usize::try_from(desired_byte_size) else {
+            return Err(EntityGrowError::InvalidGrow);
+        };
 
         // The `ResourceLimiter` gets first look at the request.
         if let Some(limiter) = limiter.as_resource_limiter() {
