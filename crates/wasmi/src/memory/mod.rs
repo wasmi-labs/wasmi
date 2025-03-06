@@ -104,7 +104,7 @@ impl MemoryTypeInner {
     }
 
     /// Returns the size of the linear memory pages in bytes.
-    fn page_size(&self) -> u64 {
+    fn page_size(&self) -> u32 {
         debug_assert!(
             self.page_size_log2 == 16 || self.page_size_log2 == 0,
             "invalid `page_size_log2`: {}; must be 16 or 0",
@@ -324,7 +324,7 @@ impl MemoryType {
 
     /// Returns the page size of the [`MemoryType`] in bytes.
     pub fn page_size(self) -> u32 {
-        2_u32.pow(u32::from(self.inner.page_size_log2))
+        self.inner.page_size()
     }
 
     /// Returns the page size of the [`MemoryType`] in log2(bytes).
