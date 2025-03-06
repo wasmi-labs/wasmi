@@ -535,9 +535,6 @@ impl MemoryEntity {
             Err(err)
         }
 
-        /// The maximum size in bytes of a 32-bit linear memory.
-        const WASM32_MAX_SIZE: u64 = 1 << 32;
-
         if additional == 0 {
             return Ok(self.size());
         }
@@ -547,6 +544,9 @@ impl MemoryEntity {
         let Some(desired_size) = current_size.checked_add(additional) else {
             return Err(EntityGrowError::InvalidGrow);
         };
+        if u128::from(desired_size) > self.memory_type.inner.absolute_max() {
+            return Err(EntityGrowError::InvalidGrow);
+        }
         if let Some(maximum_size) = self.memory_type.maximum() {
             if desired_size > maximum_size {
                 return Err(EntityGrowError::InvalidGrow);
@@ -556,10 +556,6 @@ impl MemoryEntity {
         let Some(desired_byte_size) = desired_size.checked_mul(bytes_per_page) else {
             return Err(EntityGrowError::InvalidGrow);
         };
-        if !self.ty().is_64() && desired_byte_size > WASM32_MAX_SIZE {
-            // Case: 32-bit memories cannot grow beyond a size of 32-bit.
-            return Err(EntityGrowError::InvalidGrow);
-        }
         let desired_byte_size = desired_byte_size as usize;
 
         // The `ResourceLimiter` gets first look at the request.
