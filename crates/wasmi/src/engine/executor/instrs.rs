@@ -1635,7 +1635,7 @@ impl Executor<'_> {
     #[inline(always)]
     fn fetch_optional_memory(&mut self, delta: usize) -> index::Memory {
         let mut addr: InstructionPtr = self.ip;
-        addr.add(1);
+        addr.add(delta);
         match *addr.get() {
             Instruction::MemoryIndex { index } => {
                 hint::cold();
