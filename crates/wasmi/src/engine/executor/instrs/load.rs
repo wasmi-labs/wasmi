@@ -1,8 +1,7 @@
 use super::Executor;
 use crate::{
     core::{TrapCode, UntypedVal},
-    engine::{executor::instr_ptr::InstructionPtr, utils::unreachable_unchecked},
-    ir::{index::Memory, Const16, Const32, Instruction, Offset64, Offset64Hi, Offset64Lo, Reg},
+    ir::{index::Memory, Const16, Const32, Offset64, Offset64Hi, Offset64Lo, Reg},
     store::StoreInner,
     Error,
 };
@@ -11,20 +10,13 @@ use crate::{
 type WasmLoadOp = fn(memory: &[u8], ptr: UntypedVal, offset: u64) -> Result<UntypedVal, TrapCode>;
 
 impl Executor<'_> {
-    /// Returns the `ptr` and `offset` parameters for a `load` [`Instruction`].
+    /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
     fn fetch_ptr_and_offset_hi(&self) -> (Reg, Offset64Hi) {
-        let mut addr: InstructionPtr = self.ip;
-        addr.add(1);
-        match *addr.get() {
-            Instruction::RegisterAndImm32 { reg, imm } => (reg, Offset64Hi::from(u32::from(imm))),
-            instr => {
-                // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
-                unsafe {
-                    unreachable_unchecked!(
-                        "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
-                    )
-                }
-            }
+        // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
+        unsafe {
+            let (value, offset_hi) = self.fetch_reg_and_imm32();
+            let offset_hi = Offset64Hi::from(u32::from(offset_hi));
+            (value, offset_hi)
         }
     }
 

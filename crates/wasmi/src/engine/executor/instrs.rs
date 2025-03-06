@@ -9,7 +9,7 @@ use crate::{
         DedupFuncType,
         EngineFunc,
     },
-    ir::{index, BlockFuel, Const16, Instruction, Reg, ShiftAmount},
+    ir::{index, AnyConst32, BlockFuel, Const16, Instruction, Reg, ShiftAmount},
     memory::DataSegment,
     store::StoreInner,
     table::ElementSegment,
@@ -1643,6 +1643,20 @@ impl Executor<'_> {
                 index
             }
             _ => index::Memory::from(0),
+        }
+    }
+
+    /// Returns the [`Reg`] and [`AnyConst32`] parameters for an [`Instruction`].
+    unsafe fn fetch_reg_and_imm32(&self) -> (Reg, AnyConst32) {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(1);
+        match *addr.get() {
+            Instruction::RegisterAndImm32 { reg, imm } => (reg, imm),
+            instr => unsafe {
+                unreachable_unchecked!(
+                    "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
+                )
+            },
         }
     }
 }
