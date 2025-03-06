@@ -1,11 +1,15 @@
 //! Translation tests for all Wasm `load` instructions.
 
 use super::*;
-use crate::{core::TrapCode, ir::index::Memory};
+use crate::{
+    core::TrapCode,
+    ir::{Offset16, Offset64Lo},
+};
+use wasmi_ir::Offset64;
 
 fn test_load_mem0(
     wasm_op: WasmOp,
-    make_instr: fn(result: Reg, memory: Memory) -> Instruction,
+    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
     offset: u32,
 ) {
     assert!(
@@ -24,10 +28,11 @@ fn test_load_mem0(
         )
     "#
     );
+    let (offset_hi, offset_lo) = Offset64::split(u64::from(offset));
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            make_instr(Reg::from(1), Memory::from(0)),
-            Instruction::register_and_imm32(Reg::from(0), offset),
+            make_instr(Reg::from(1), offset_lo),
+            Instruction::register_and_offset_hi(Reg::from(0), offset_hi),
             Instruction::return_reg(Reg::from(1)),
         ])
         .run();
@@ -35,7 +40,7 @@ fn test_load_mem0(
 
 fn test_load(
     wasm_op: WasmOp,
-    make_instr: fn(result: Reg, memory: Memory) -> Instruction,
+    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
     offset: u32,
 ) {
     assert!(
@@ -55,19 +60,26 @@ fn test_load(
         )
     "#
     );
+    let (offset_hi, offset_lo) = Offset64::split(u64::from(offset));
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            make_instr(Reg::from(1), Memory::from(1)),
-            Instruction::register_and_imm32(Reg::from(0), offset),
+            make_instr(Reg::from(1), offset_lo),
+            Instruction::register_and_offset_hi(Reg::from(0), offset_hi),
+            Instruction::memory_index(1),
             Instruction::return_reg(Reg::from(1)),
         ])
         .run();
 }
 
+/// Creates an [`Offset16`] from the given `offset`.
+fn offset16(offset: u16) -> Offset16 {
+    Offset16::try_from(u64::from(offset)).unwrap()
+}
+
 fn test_load_offset16(
     wasm_op: WasmOp,
     offset: u16,
-    make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Const16<u32>) -> Instruction,
+    make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Offset16) -> Instruction,
 ) {
     let result_ty = wasm_op.result_ty();
     let wasm = format!(
@@ -83,7 +95,7 @@ fn test_load_offset16(
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            make_instr_offset16(Reg::from(1), Reg::from(0), <Const16<u32>>::from(offset)),
+            make_instr_offset16(Reg::from(1), Reg::from(0), offset16(offset)),
             Instruction::return_reg(Reg::from(1)),
         ])
         .run();
