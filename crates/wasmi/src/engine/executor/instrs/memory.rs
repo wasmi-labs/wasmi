@@ -302,14 +302,14 @@ impl Executor<'_> {
         // These accesses just perform the bounds checks required by the Wasm spec.
         bytes
             .get(src_index..)
-            .and_then(|memory| memory.get(..len as usize))
+            .and_then(|memory| memory.get(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         bytes
             .get(dst_index..)
-            .and_then(|memory| memory.get(..len as usize))
+            .and_then(|memory| memory.get(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
         fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
-        bytes.copy_within(src_index..src_index.wrapping_add(len as usize), dst_index);
+        bytes.copy_within(src_index..src_index.wrapping_add(len), dst_index);
         self.try_next_instr_at(3)
     }
 
