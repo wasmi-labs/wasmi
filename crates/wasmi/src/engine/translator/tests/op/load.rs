@@ -262,6 +262,82 @@ fn test_load_at_overflow(wasm_op: WasmOp, index_ty: IndexType, ptr: u64, offset:
         .run();
 }
 
+fn test_load_at_fallback_mem0(
+    wasm_op: WasmOp,
+    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+    ptr: u64,
+    offset: u64,
+) {
+    let result_ty = wasm_op.result_ty();
+    let wasm = format!(
+        r#"
+        (module
+            (memory i64 1)
+            (func (result {result_ty})
+                i64.const {ptr}
+                {wasm_op} offset={offset}
+            )
+        )
+    "#
+    );
+    let Some(address64) = ptr.checked_add(offset) else {
+        panic!("ptr+offset must be a valid 64-bit result but found: ptr={ptr}, offset={offset}")
+    };
+    if u32::try_from(address64).is_ok() {
+        panic!("ptr+offset must not fit into a `u32` value but found: ptr={ptr}, offset={offset}")
+    }
+    let (offset_hi, offset_lo) = Offset64::split(address64);
+    TranslationTest::new(&wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                make_instr(Reg::from(0), offset_lo),
+                Instruction::register_and_offset_hi(Reg::from(-1), offset_hi),
+                Instruction::return_reg(Reg::from(0)),
+            ])
+            .consts([0_u64]),
+        )
+        .run();
+}
+
+fn test_load_at_fallback(
+    wasm_op: WasmOp,
+    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+    ptr: u64,
+    offset: u64,
+) {
+    let result_ty = wasm_op.result_ty();
+    let wasm = format!(
+        r#"
+        (module
+            (memory $mem0 i64 1)
+            (memory $mem1 i64 1)
+            (func (result {result_ty})
+                i64.const {ptr}
+                {wasm_op} $mem1 offset={offset}
+            )
+        )
+    "#
+    );
+    let Some(address64) = ptr.checked_add(offset) else {
+        panic!("ptr+offset must be a valid 64-bit result but found: ptr={ptr}, offset={offset}")
+    };
+    if u32::try_from(address64).is_ok() {
+        panic!("ptr+offset must not fit into a `u32` value but found: ptr={ptr}, offset={offset}")
+    }
+    let (offset_hi, offset_lo) = Offset64::split(address64);
+    TranslationTest::new(&wasm)
+        .expect_func(
+            ExpectedFunc::new([
+                make_instr(Reg::from(0), offset_lo),
+                Instruction::register_and_offset_hi(Reg::from(-1), offset_hi),
+                Instruction::memory_index(1),
+                Instruction::return_reg(Reg::from(0)),
+            ])
+            .consts([0_u64]),
+        )
+        .run();
+}
+
 macro_rules! generate_tests {
     ( $wasm_op:ident, $make_instr:expr, $make_instr_offset16:expr, $make_instr_at:expr ) => {
         #[test]
@@ -399,6 +475,40 @@ macro_rules! generate_tests {
             .into_iter()
             .for_each(|(index_ty, ptr, offset)| {
                 test_load_at_overflow(WASM_OP, index_ty, ptr, offset);
+            })
+        }
+
+        #[test]
+        #[cfg_attr(miri, ignore)]
+        fn at_fallback_mem0() {
+            [
+                (u64::from(u32::MAX), 1),
+                (1, u64::from(u32::MAX)),
+                (1, u64::MAX - 1),
+                (u64::MAX - 1, 1),
+                (0, u64::MAX),
+                (u64::MAX, 0),
+            ]
+            .into_iter()
+            .for_each(|(ptr, offset)| {
+                test_load_at_fallback_mem0(WASM_OP, $make_instr, ptr, offset);
+            })
+        }
+
+        #[test]
+        #[cfg_attr(miri, ignore)]
+        fn at_fallback() {
+            [
+                (u64::from(u32::MAX), 1),
+                (1, u64::from(u32::MAX)),
+                (1, u64::MAX - 1),
+                (u64::MAX - 1, 1),
+                (0, u64::MAX),
+                (u64::MAX, 0),
+            ]
+            .into_iter()
+            .for_each(|(ptr, offset)| {
+                test_load_at_fallback(WASM_OP, $make_instr, ptr, offset);
             })
         }
     };
