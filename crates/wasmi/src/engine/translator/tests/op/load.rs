@@ -45,13 +45,17 @@ macro_rules! iter_filter_opts {
     }};
 }
 
+/// Convenience type to create Wat memories with a tagged memory index.
 pub struct MemIdx(u32);
+
 impl fmt::Display for MemIdx {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "$mem{}", self.0)
     }
 }
+
 impl MemIdx {
+    /// Returns the `$mem{n}` memory index used by some Wasm memory instructions.
     fn instr(self) -> Option<Instruction> {
         match self.0 {
             0 => None,
