@@ -154,7 +154,6 @@ fn test_load_at_mem0(
         .checked_add(offset)
         .expect("ptr+offset must be valid in this testcase");
     let address = u32::try_from(address).expect("ptr+offset must fit into a `u32` value");
-
     TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr_at(Reg::from(0), address),
@@ -165,18 +164,20 @@ fn test_load_at_mem0(
 
 fn test_load_at(
     wasm_op: WasmOp,
+    index_ty: IndexType,
     make_instr_at: fn(result: Reg, address: u32) -> Instruction,
-    ptr: u32,
-    offset: u32,
+    ptr: u64,
+    offset: u64,
 ) {
     let result_ty = wasm_op.result_ty();
+    let index_ty = index_ty.wat();
     let wasm = format!(
         r#"
         (module
-            (memory $mem0 1)
-            (memory $mem1 1)
+            (memory $mem0 {index_ty} 1)
+            (memory $mem1 {index_ty} 1)
             (func (result {result_ty})
-                i32.const {ptr}
+                {index_ty}.const {ptr}
                 {wasm_op} $mem1 offset={offset}
             )
         )
@@ -185,6 +186,7 @@ fn test_load_at(
     let address = ptr
         .checked_add(offset)
         .expect("ptr+offset must be valid in this testcase");
+    let address = u32::try_from(address).expect("ptr+offset must fit into a `u32` value");
     TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr_at(Reg::from(0), address),
@@ -323,9 +325,18 @@ macro_rules! generate_tests {
         #[test]
         #[cfg_attr(miri, ignore)]
         fn at() {
-            test_load_at(WASM_OP, $make_instr_at, 42, 5);
-            test_load_at(WASM_OP, $make_instr_at, u32::MAX, 0);
-            test_load_at(WASM_OP, $make_instr_at, 0, u32::MAX);
+            [
+                (0, 0),
+                (42, 5),
+                (u64::from(u32::MAX), 0),
+                (0, u64::from(u32::MAX)),
+            ]
+            .into_iter()
+            .for_each(|(ptr, offset)| {
+                for index_ty in [IndexType::Memory32, IndexType::Memory64] {
+                    test_load_at(WASM_OP, index_ty, $make_instr_at, ptr, offset);
+                }
+            })
         }
 
         #[test]
