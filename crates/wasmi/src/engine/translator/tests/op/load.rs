@@ -85,7 +85,7 @@ fn test_load(
         )
     "#
     );
-    let (offset_hi, offset_lo) = Offset64::split(u64::from(offset));
+    let (offset_hi, offset_lo) = Offset64::split(offset);
     TranslationTest::new(&wasm)
         .expect_func_instrs(iter_filter_opts![
             make_instr(Reg::from(1), offset_lo),
