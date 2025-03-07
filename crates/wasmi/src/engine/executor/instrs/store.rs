@@ -1,10 +1,18 @@
-use wasmi_ir::Offset64Hi;
-
 use super::{Executor, InstructionPtr};
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::utils::unreachable_unchecked,
-    ir::{index::Memory, Address32, AnyConst16, Const16, Offset16, Offset64, Offset64Lo, Reg},
+    ir::{
+        index::Memory,
+        Address32,
+        AnyConst16,
+        Const16,
+        Offset16,
+        Offset64,
+        Offset64Hi,
+        Offset64Lo,
+        Reg,
+    },
     store::StoreInner,
     Error,
 };
