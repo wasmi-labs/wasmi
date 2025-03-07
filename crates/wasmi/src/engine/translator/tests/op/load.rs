@@ -12,6 +12,7 @@ fn offset16(offset: u16) -> Offset16 {
 }
 
 /// Adjusts a translation test to use memories with that specified index type.
+#[derive(Copy, Clone)]
 enum IndexType {
     /// The 32-bit index type.
     ///
@@ -196,46 +197,66 @@ fn test_load_at(
         .run();
 }
 
-fn test_load_at_overflow_mem0(wasm_op: WasmOp, ptr: u32, offset: u32) {
+/// Asserts that `ptr+offset` overflow either `i32` or `i64` depending on `index_ty`.
+fn assert_overflowing_ptr_offset(index_ty: IndexType, ptr: u64, offset: u64) {
+    match index_ty {
+        IndexType::Memory32 => {
+            let Ok(ptr32) = u32::try_from(ptr) else {
+                panic!("ptr must be a 32-bit value but found: {ptr}");
+            };
+            let Ok(offset32) = u32::try_from(offset) else {
+                panic!("offset must be a 32-bit value but found: {offset}");
+            };
+            assert!(
+                ptr32.checked_add(offset32).is_none(),
+                "ptr+offset must overflow in this testcase (32-bit)"
+            );
+        }
+        IndexType::Memory64 => {
+            assert!(
+                ptr.checked_add(offset).is_none(),
+                "ptr+offset must overflow in this testcase (64-bit)"
+            );
+        }
+    }
+}
+
+fn test_load_at_overflow_mem0(wasm_op: WasmOp, index_ty: IndexType, ptr: u64, offset: u64) {
     let result_ty = wasm_op.result_ty();
+    let index_repr = index_ty.wat();
     let wasm = format!(
         r#"
         (module
-            (memory 1)
+            (memory {index_repr} 1)
             (func (result {result_ty})
-                i32.const {ptr}
+                {index_repr}.const {ptr}
                 {wasm_op} offset={offset}
             )
         )
     "#
     );
-    assert!(
-        ptr.checked_add(offset).is_none(),
-        "ptr+offset must overflow in this testcase"
-    );
+    assert_overflowing_ptr_offset(index_ty, ptr, offset);
     TranslationTest::new(&wasm)
         .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
         .run();
 }
 
-fn test_load_at_overflow(wasm_op: WasmOp, ptr: u32, offset: u32) {
+fn test_load_at_overflow(wasm_op: WasmOp, index_ty: IndexType, ptr: u64, offset: u64) {
     let result_ty = wasm_op.result_ty();
+    let index_repr = index_ty.wat();
     let wasm = format!(
         r#"
         (module
-            (memory $mem0 1)
-            (memory $mem1 1)
+            (memory $mem0 {index_repr} 1)
+            (memory $mem1 {index_repr} 1)
             (func (result {result_ty})
-                i32.const {ptr}
+                {index_repr}.const {ptr}
                 {wasm_op} $mem1 offset={offset}
             )
         )
     "#
     );
-    assert!(
-        ptr.checked_add(offset).is_none(),
-        "ptr+offset must overflow in this testcase"
-    );
+    assert_overflowing_ptr_offset(index_ty, ptr, offset);
     TranslationTest::new(&wasm)
         .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
         .run();
@@ -342,17 +363,43 @@ macro_rules! generate_tests {
         #[test]
         #[cfg_attr(miri, ignore)]
         fn at_overflow_mem0() {
-            test_load_at_overflow_mem0(WASM_OP, u32::MAX, 1);
-            test_load_at_overflow_mem0(WASM_OP, 1, u32::MAX);
-            test_load_at_overflow_mem0(WASM_OP, u32::MAX, u32::MAX);
+            [
+                (IndexType::Memory32, u64::from(u32::MAX), 1),
+                (IndexType::Memory32, 1, u64::from(u32::MAX)),
+                (
+                    IndexType::Memory32,
+                    u64::from(u32::MAX),
+                    u64::from(u32::MAX),
+                ),
+                (IndexType::Memory64, u64::MAX, 1),
+                (IndexType::Memory64, 1, u64::MAX),
+                (IndexType::Memory64, u64::MAX, u64::MAX),
+            ]
+            .into_iter()
+            .for_each(|(index_ty, ptr, offset)| {
+                test_load_at_overflow_mem0(WASM_OP, index_ty, ptr, offset);
+            })
         }
 
         #[test]
         #[cfg_attr(miri, ignore)]
         fn at_overflow() {
-            test_load_at_overflow(WASM_OP, u32::MAX, 1);
-            test_load_at_overflow(WASM_OP, 1, u32::MAX);
-            test_load_at_overflow(WASM_OP, u32::MAX, u32::MAX);
+            [
+                (IndexType::Memory32, u64::from(u32::MAX), 1),
+                (IndexType::Memory32, 1, u64::from(u32::MAX)),
+                (
+                    IndexType::Memory32,
+                    u64::from(u32::MAX),
+                    u64::from(u32::MAX),
+                ),
+                (IndexType::Memory64, u64::MAX, 1),
+                (IndexType::Memory64, 1, u64::MAX),
+                (IndexType::Memory64, u64::MAX, u64::MAX),
+            ]
+            .into_iter()
+            .for_each(|(index_ty, ptr, offset)| {
+                test_load_at_overflow(WASM_OP, index_ty, ptr, offset);
+            })
         }
     };
 }
