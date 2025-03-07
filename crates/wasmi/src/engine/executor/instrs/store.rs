@@ -9,6 +9,9 @@ use crate::{
     Error,
 };
 
+#[cfg(doc)]
+use crate::ir::Instruction;
+
 /// The function signature of Wasm store operations.
 type WasmStoreOp = fn(
     memory: &mut [u8],

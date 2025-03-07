@@ -6,6 +6,9 @@ use crate::{
     Error,
 };
 
+#[cfg(doc)]
+use crate::ir::Instruction;
+
 /// The function signature of Wasm load operations.
 type WasmLoadOp = fn(memory: &[u8], ptr: UntypedVal, offset: u64) -> Result<UntypedVal, TrapCode>;
 

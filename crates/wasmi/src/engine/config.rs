@@ -341,7 +341,7 @@ impl Config {
     ///
     /// Disabled by default.
     ///
-    /// [`custom-page-sizes`]: https://github.com/WebAssembly/memory64
+    /// [`memory64`]: https://github.com/WebAssembly/memory64
     pub fn wasm_memory64(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::MEMORY64, enable);
         self
