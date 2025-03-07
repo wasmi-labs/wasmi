@@ -105,15 +105,17 @@ fn test_load(
 
 fn test_load_offset16(
     wasm_op: WasmOp,
+    index_ty: IndexType,
     offset: u16,
     make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Offset16) -> Instruction,
 ) {
     let result_ty = wasm_op.result_ty();
+    let index_ty = index_ty.wat();
     let wasm = format!(
         r#"
         (module
-            (memory 1)
-            (func (param $ptr i32) (result {result_ty})
+            (memory {index_ty} 1)
+            (func (param $ptr {index_ty}) (result {result_ty})
                 local.get $ptr
                 {wasm_op} offset={offset}
             )
@@ -130,17 +132,19 @@ fn test_load_offset16(
 
 fn test_load_at_mem0(
     wasm_op: WasmOp,
+    index_ty: IndexType,
     make_instr_at: fn(result: Reg, address: u32) -> Instruction,
-    ptr: u32,
-    offset: u32,
+    ptr: u64,
+    offset: u64,
 ) {
     let result_ty = wasm_op.result_ty();
+    let index_ty = index_ty.wat();
     let wasm = format!(
         r#"
         (module
-            (memory 1)
+            (memory {index_ty} 1)
             (func (result {result_ty})
-                i32.const {ptr}
+                {index_ty}.const {ptr}
                 {wasm_op} offset={offset}
             )
         )
@@ -149,6 +153,8 @@ fn test_load_at_mem0(
     let address = ptr
         .checked_add(offset)
         .expect("ptr+offset must be valid in this testcase");
+    let address = u32::try_from(address).expect("ptr+offset must fit into a `u32` value");
+
     TranslationTest::new(&wasm)
         .expect_func_instrs([
             make_instr_at(Reg::from(0), address),
@@ -288,16 +294,30 @@ macro_rules! generate_tests {
         #[test]
         #[cfg_attr(miri, ignore)]
         fn offset16() {
-            test_load_offset16(WASM_OP, 0, $make_instr_offset16);
-            test_load_offset16(WASM_OP, u16::MAX, $make_instr_offset16);
+            [0, 1, u16::MAX - 1, u16::MAX]
+                .into_iter()
+                .for_each(|offset| {
+                    for index_ty in [IndexType::Memory32, IndexType::Memory64] {
+                        test_load_offset16(WASM_OP, index_ty, offset, $make_instr_offset16);
+                    }
+                })
         }
 
         #[test]
         #[cfg_attr(miri, ignore)]
         fn at_mem0() {
-            test_load_at_mem0(WASM_OP, $make_instr_at, 42, 5);
-            test_load_at_mem0(WASM_OP, $make_instr_at, u32::MAX, 0);
-            test_load_at_mem0(WASM_OP, $make_instr_at, 0, u32::MAX);
+            [
+                (0, 0),
+                (42, 5),
+                (u64::from(u32::MAX), 0),
+                (0, u64::from(u32::MAX)),
+            ]
+            .into_iter()
+            .for_each(|(ptr, offset)| {
+                for index_ty in [IndexType::Memory32, IndexType::Memory64] {
+                    test_load_at_mem0(WASM_OP, index_ty, $make_instr_at, ptr, offset);
+                }
+            })
         }
 
         #[test]
