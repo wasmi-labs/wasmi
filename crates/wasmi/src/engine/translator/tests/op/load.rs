@@ -5,6 +5,7 @@ use crate::{
     core::TrapCode,
     ir::{Offset16, Offset64, Offset64Lo},
 };
+use core::fmt;
 
 /// Creates an [`Offset16`] from the given `offset`.
 fn offset16(offset: u16) -> Offset16 {
@@ -34,43 +35,35 @@ impl IndexType {
     }
 }
 
-fn test_load_mem0(
-    wasm_op: WasmOp,
-    index_ty: IndexType,
-    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
-    offset: impl Into<u64>,
-) {
-    let offset = offset.into();
-    assert!(
-        offset > u64::from(u16::MAX),
-        "offset must not be 16-bit encodable in this testcase"
-    );
-    let index_ty = index_ty.wat();
-    let result_ty = wasm_op.result_ty();
-    let wasm = format!(
-        r#"
-        (module
-            (memory {index_ty} 1)
-            (func (param $ptr {index_ty}) (result {result_ty})
-                local.get $ptr
-                {wasm_op} offset={offset}
-            )
-        )
-    "#
-    );
-    let (offset_hi, offset_lo) = Offset64::split(u64::from(offset));
-    TranslationTest::new(&wasm)
-        .expect_func_instrs([
-            make_instr(Reg::from(1), offset_lo),
-            Instruction::register_and_offset_hi(Reg::from(0), offset_hi),
-            Instruction::return_reg(Reg::from(1)),
-        ])
-        .run();
+/// Macro that turns an iterator over `Option<T>` into an iterator over `T`.
+///
+/// - Filters out all the `None` items yielded by the input iterator.
+/// - Allows to specify `Some` items as just `T` as convenience.
+macro_rules! iter_filter_opts {
+    [ $($item:expr),* $(,)? ] => {{
+        [ $( Option::from($item) ),* ].into_iter().filter_map(|x| x)
+    }};
+}
+
+pub struct MemIdx(u32);
+impl fmt::Display for MemIdx {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "$mem{}", self.0)
+    }
+}
+impl MemIdx {
+    fn instr(self) -> Option<Instruction> {
+        match self.0 {
+            0 => None,
+            n => Some(Instruction::memory_index(n)),
+        }
+    }
 }
 
 fn test_load(
     wasm_op: WasmOp,
     index_ty: IndexType,
+    memory_index: MemIdx,
     make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
     offset: impl Into<u64>,
 ) {
@@ -88,17 +81,17 @@ fn test_load(
             (memory $mem1 {index_ty} 1)
             (func (param $ptr {index_ty}) (result {result_ty})
                 local.get $ptr
-                {wasm_op} $mem1 offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
     );
     let (offset_hi, offset_lo) = Offset64::split(u64::from(offset));
     TranslationTest::new(&wasm)
-        .expect_func_instrs([
+        .expect_func_instrs(iter_filter_opts![
             make_instr(Reg::from(1), offset_lo),
             Instruction::register_and_offset_hi(Reg::from(0), offset_hi),
-            Instruction::memory_index(1),
+            memory_index.instr(),
             Instruction::return_reg(Reg::from(1)),
         ])
         .run();
@@ -131,41 +124,10 @@ fn test_load_offset16(
         .run();
 }
 
-fn test_load_at_mem0(
-    wasm_op: WasmOp,
-    index_ty: IndexType,
-    make_instr_at: fn(result: Reg, address: u32) -> Instruction,
-    ptr: u64,
-    offset: u64,
-) {
-    let result_ty = wasm_op.result_ty();
-    let index_ty = index_ty.wat();
-    let wasm = format!(
-        r#"
-        (module
-            (memory {index_ty} 1)
-            (func (result {result_ty})
-                {index_ty}.const {ptr}
-                {wasm_op} offset={offset}
-            )
-        )
-    "#
-    );
-    let address = ptr
-        .checked_add(offset)
-        .expect("ptr+offset must be valid in this testcase");
-    let address = u32::try_from(address).expect("ptr+offset must fit into a `u32` value");
-    TranslationTest::new(&wasm)
-        .expect_func_instrs([
-            make_instr_at(Reg::from(0), address),
-            Instruction::return_reg(Reg::from(0)),
-        ])
-        .run();
-}
-
 fn test_load_at(
     wasm_op: WasmOp,
     index_ty: IndexType,
+    memory_index: MemIdx,
     make_instr_at: fn(result: Reg, address: u32) -> Instruction,
     ptr: u64,
     offset: u64,
@@ -179,7 +141,7 @@ fn test_load_at(
             (memory $mem1 {index_ty} 1)
             (func (result {result_ty})
                 {index_ty}.const {ptr}
-                {wasm_op} $mem1 offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
@@ -189,9 +151,9 @@ fn test_load_at(
         .expect("ptr+offset must be valid in this testcase");
     let address = u32::try_from(address).expect("ptr+offset must fit into a `u32` value");
     TranslationTest::new(&wasm)
-        .expect_func_instrs([
+        .expect_func_instrs(iter_filter_opts![
             make_instr_at(Reg::from(0), address),
-            Instruction::memory_index(1),
+            memory_index.instr(),
             Instruction::return_reg(0),
         ])
         .run();
@@ -221,27 +183,13 @@ fn assert_overflowing_ptr_offset(index_ty: IndexType, ptr: u64, offset: u64) {
     }
 }
 
-fn test_load_at_overflow_mem0(wasm_op: WasmOp, index_ty: IndexType, ptr: u64, offset: u64) {
-    let result_ty = wasm_op.result_ty();
-    let index_repr = index_ty.wat();
-    let wasm = format!(
-        r#"
-        (module
-            (memory {index_repr} 1)
-            (func (result {result_ty})
-                {index_repr}.const {ptr}
-                {wasm_op} offset={offset}
-            )
-        )
-    "#
-    );
-    assert_overflowing_ptr_offset(index_ty, ptr, offset);
-    TranslationTest::new(&wasm)
-        .expect_func_instrs([Instruction::trap(TrapCode::MemoryOutOfBounds)])
-        .run();
-}
-
-fn test_load_at_overflow(wasm_op: WasmOp, index_ty: IndexType, ptr: u64, offset: u64) {
+fn test_load_at_overflow(
+    wasm_op: WasmOp,
+    index_ty: IndexType,
+    memory_index: MemIdx,
+    ptr: u64,
+    offset: u64,
+) {
     let result_ty = wasm_op.result_ty();
     let index_repr = index_ty.wat();
     let wasm = format!(
@@ -251,7 +199,7 @@ fn test_load_at_overflow(wasm_op: WasmOp, index_ty: IndexType, ptr: u64, offset:
             (memory $mem1 {index_repr} 1)
             (func (result {result_ty})
                 {index_repr}.const {ptr}
-                {wasm_op} $mem1 offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
@@ -262,45 +210,9 @@ fn test_load_at_overflow(wasm_op: WasmOp, index_ty: IndexType, ptr: u64, offset:
         .run();
 }
 
-fn test_load_at_fallback_mem0(
-    wasm_op: WasmOp,
-    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
-    ptr: u64,
-    offset: u64,
-) {
-    let result_ty = wasm_op.result_ty();
-    let wasm = format!(
-        r#"
-        (module
-            (memory i64 1)
-            (func (result {result_ty})
-                i64.const {ptr}
-                {wasm_op} offset={offset}
-            )
-        )
-    "#
-    );
-    let Some(address64) = ptr.checked_add(offset) else {
-        panic!("ptr+offset must be a valid 64-bit result but found: ptr={ptr}, offset={offset}")
-    };
-    if u32::try_from(address64).is_ok() {
-        panic!("ptr+offset must not fit into a `u32` value but found: ptr={ptr}, offset={offset}")
-    }
-    let (offset_hi, offset_lo) = Offset64::split(address64);
-    TranslationTest::new(&wasm)
-        .expect_func(
-            ExpectedFunc::new([
-                make_instr(Reg::from(0), offset_lo),
-                Instruction::register_and_offset_hi(Reg::from(-1), offset_hi),
-                Instruction::return_reg(Reg::from(0)),
-            ])
-            .consts([0_u64]),
-        )
-        .run();
-}
-
 fn test_load_at_fallback(
     wasm_op: WasmOp,
+    memory_index: MemIdx,
     make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
     ptr: u64,
     offset: u64,
@@ -313,7 +225,7 @@ fn test_load_at_fallback(
             (memory $mem1 i64 1)
             (func (result {result_ty})
                 i64.const {ptr}
-                {wasm_op} $mem1 offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
@@ -327,10 +239,10 @@ fn test_load_at_fallback(
     let (offset_hi, offset_lo) = Offset64::split(address64);
     TranslationTest::new(&wasm)
         .expect_func(
-            ExpectedFunc::new([
+            ExpectedFunc::new(iter_filter_opts![
                 make_instr(Reg::from(0), offset_lo),
                 Instruction::register_and_offset_hi(Reg::from(-1), offset_hi),
-                Instruction::memory_index(1),
+                memory_index.instr(),
                 Instruction::return_reg(Reg::from(0)),
             ])
             .consts([0_u64]),
@@ -346,7 +258,7 @@ macro_rules! generate_tests {
             [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX]
                 .into_iter()
                 .for_each(|offset| {
-                    test_load_mem0(WASM_OP, IndexType::Memory32, $make_instr, offset);
+                    test_load(WASM_OP, IndexType::Memory32, MemIdx(0), $make_instr, offset);
                 })
         }
 
@@ -363,7 +275,7 @@ macro_rules! generate_tests {
             ]
             .into_iter()
             .for_each(|offset| {
-                test_load_mem0(WASM_OP, IndexType::Memory64, $make_instr, offset);
+                test_load(WASM_OP, IndexType::Memory64, MemIdx(0), $make_instr, offset);
             })
         }
 
@@ -372,7 +284,9 @@ macro_rules! generate_tests {
         fn reg() {
             [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX]
                 .into_iter()
-                .for_each(|offset| test_load(WASM_OP, IndexType::Memory32, $make_instr, offset))
+                .for_each(|offset| {
+                    test_load(WASM_OP, IndexType::Memory32, MemIdx(1), $make_instr, offset)
+                })
         }
 
         #[test]
@@ -387,7 +301,9 @@ macro_rules! generate_tests {
                 u64::MAX,
             ]
             .into_iter()
-            .for_each(|offset| test_load(WASM_OP, IndexType::Memory64, $make_instr, offset))
+            .for_each(|offset| {
+                test_load(WASM_OP, IndexType::Memory64, MemIdx(1), $make_instr, offset)
+            })
         }
 
         #[test]
@@ -414,7 +330,7 @@ macro_rules! generate_tests {
             .into_iter()
             .for_each(|(ptr, offset)| {
                 for index_ty in [IndexType::Memory32, IndexType::Memory64] {
-                    test_load_at_mem0(WASM_OP, index_ty, $make_instr_at, ptr, offset);
+                    test_load_at(WASM_OP, index_ty, MemIdx(0), $make_instr_at, ptr, offset);
                 }
             })
         }
@@ -431,7 +347,7 @@ macro_rules! generate_tests {
             .into_iter()
             .for_each(|(ptr, offset)| {
                 for index_ty in [IndexType::Memory32, IndexType::Memory64] {
-                    test_load_at(WASM_OP, index_ty, $make_instr_at, ptr, offset);
+                    test_load_at(WASM_OP, index_ty, MemIdx(1), $make_instr_at, ptr, offset);
                 }
             })
         }
@@ -453,7 +369,7 @@ macro_rules! generate_tests {
             ]
             .into_iter()
             .for_each(|(index_ty, ptr, offset)| {
-                test_load_at_overflow_mem0(WASM_OP, index_ty, ptr, offset);
+                test_load_at_overflow(WASM_OP, index_ty, MemIdx(0), ptr, offset);
             })
         }
 
@@ -474,7 +390,7 @@ macro_rules! generate_tests {
             ]
             .into_iter()
             .for_each(|(index_ty, ptr, offset)| {
-                test_load_at_overflow(WASM_OP, index_ty, ptr, offset);
+                test_load_at_overflow(WASM_OP, index_ty, MemIdx(1), ptr, offset);
             })
         }
 
@@ -491,7 +407,7 @@ macro_rules! generate_tests {
             ]
             .into_iter()
             .for_each(|(ptr, offset)| {
-                test_load_at_fallback_mem0(WASM_OP, $make_instr, ptr, offset);
+                test_load_at_fallback(WASM_OP, MemIdx(0), $make_instr, ptr, offset);
             })
         }
 
@@ -508,7 +424,7 @@ macro_rules! generate_tests {
             ]
             .into_iter()
             .for_each(|(ptr, offset)| {
-                test_load_at_fallback(WASM_OP, $make_instr, ptr, offset);
+                test_load_at_fallback(WASM_OP, MemIdx(1), $make_instr, ptr, offset);
             })
         }
     };
