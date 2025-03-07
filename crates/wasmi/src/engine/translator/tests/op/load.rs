@@ -41,7 +41,7 @@ impl IndexType {
 /// - Allows to specify `Some` items as just `T` as convenience.
 macro_rules! iter_filter_opts {
     [ $($item:expr),* $(,)? ] => {{
-        [ $( Option::from($item) ),* ].into_iter().filter_map(|x| x)
+        [ $( ::core::option::Option::from($item) ),* ].into_iter().filter_map(|x| x)
     }};
 }
 
