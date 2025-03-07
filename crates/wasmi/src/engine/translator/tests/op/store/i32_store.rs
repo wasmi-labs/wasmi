@@ -20,7 +20,7 @@ fn imm() {
         i32::MAX - 1,
     ];
     for value in values {
-        test_store_imm::<i32>(WASM_OP, value, Instruction::store32);
+        test_store_imm::<i32>(WASM_OP, Instruction::store32, value);
     }
 }
 
@@ -70,13 +70,13 @@ fn offset16_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn offset16_imm16() {
-    test_store_offset16_imm16::<i16>(WASM_OP, 0, Instruction::i32_store_offset16_imm16);
-    test_store_offset16_imm16::<i16>(WASM_OP, 1, Instruction::i32_store_offset16_imm16);
-    test_store_offset16_imm16::<i16>(WASM_OP, -1, Instruction::i32_store_offset16_imm16);
-    test_store_offset16_imm16::<i16>(WASM_OP, i16::MIN + 1, Instruction::i32_store_offset16_imm16);
-    test_store_offset16_imm16::<i16>(WASM_OP, i16::MAX - 1, Instruction::i32_store_offset16_imm16);
-    test_store_offset16_imm16::<i16>(WASM_OP, i16::MIN, Instruction::i32_store_offset16_imm16);
-    test_store_offset16_imm16::<i16>(WASM_OP, i16::MAX, Instruction::i32_store_offset16_imm16);
+    test_store_offset16_imm16::<i16>(WASM_OP, Instruction::i32_store_offset16_imm16, 0);
+    test_store_offset16_imm16::<i16>(WASM_OP, Instruction::i32_store_offset16_imm16, 1);
+    test_store_offset16_imm16::<i16>(WASM_OP, Instruction::i32_store_offset16_imm16, -1);
+    test_store_offset16_imm16::<i16>(WASM_OP, Instruction::i32_store_offset16_imm16, i16::MIN + 1);
+    test_store_offset16_imm16::<i16>(WASM_OP, Instruction::i32_store_offset16_imm16, i16::MAX - 1);
+    test_store_offset16_imm16::<i16>(WASM_OP, Instruction::i32_store_offset16_imm16, i16::MIN);
+    test_store_offset16_imm16::<i16>(WASM_OP, Instruction::i32_store_offset16_imm16, i16::MAX);
 }
 
 #[test]

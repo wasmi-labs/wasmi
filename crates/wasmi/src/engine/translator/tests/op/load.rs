@@ -7,11 +7,6 @@ use crate::{
 };
 use core::fmt;
 
-/// Creates an [`Offset16`] from the given `offset`.
-fn offset16(offset: u16) -> Offset16 {
-    Offset16::try_from(u64::from(offset)).unwrap()
-}
-
 /// Adjusts a translation test to use memories with that specified index type.
 #[derive(Copy, Clone)]
 enum IndexType {

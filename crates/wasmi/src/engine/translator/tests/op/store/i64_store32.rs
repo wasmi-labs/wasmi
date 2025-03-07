@@ -18,7 +18,7 @@ fn imm() {
         i64::from(i32::MIN) + i64::from(i16::MAX) - 1,
     ];
     for value in values {
-        test_store_imm::<i64>(WASM_OP, value, Instruction::i64_store32);
+        test_store_imm::<i64>(WASM_OP, Instruction::i64_store32, value);
     }
 }
 
@@ -40,7 +40,7 @@ fn imm16() {
         i64::MAX - 1,
     ];
     for value in values {
-        test_store_wrap_imm::<i64, i32, i16>(WASM_OP, value, Instruction::i64_store32_imm16);
+        test_store_wrap_imm::<i64, i32, i16>(WASM_OP, Instruction::i64_store32_imm16, value);
     }
 }
 

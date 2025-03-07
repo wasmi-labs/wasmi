@@ -28,7 +28,7 @@ fn imm() {
         i64::MAX - 1,
     ];
     for value in values {
-        test_store_wrap_imm::<i64, i8, i8>(WASM_OP, value, Instruction::i64_store8_imm);
+        test_store_wrap_imm::<i64, i8, i8>(WASM_OP, Instruction::i64_store8_imm, value);
     }
 }
 

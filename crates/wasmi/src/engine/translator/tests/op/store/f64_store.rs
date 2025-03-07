@@ -11,13 +11,13 @@ fn reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm() {
-    test_store_imm::<f64>(WASM_OP, 0.0, Instruction::store64);
-    test_store_imm::<f64>(WASM_OP, 1.0, Instruction::store64);
-    test_store_imm::<f64>(WASM_OP, -1.0, Instruction::store64);
-    test_store_imm::<f64>(WASM_OP, 42.25, Instruction::store64);
-    test_store_imm::<f64>(WASM_OP, f64::INFINITY, Instruction::store64);
-    test_store_imm::<f64>(WASM_OP, f64::NEG_INFINITY, Instruction::store64);
-    test_store_imm::<f64>(WASM_OP, f64::NAN, Instruction::store64);
+    test_store_imm::<f64>(WASM_OP, Instruction::store64, 0.0);
+    test_store_imm::<f64>(WASM_OP, Instruction::store64, 1.0);
+    test_store_imm::<f64>(WASM_OP, Instruction::store64, -1.0);
+    test_store_imm::<f64>(WASM_OP, Instruction::store64, 42.25);
+    test_store_imm::<f64>(WASM_OP, Instruction::store64, f64::INFINITY);
+    test_store_imm::<f64>(WASM_OP, Instruction::store64, f64::NEG_INFINITY);
+    test_store_imm::<f64>(WASM_OP, Instruction::store64, f64::NAN);
 }
 
 #[test]

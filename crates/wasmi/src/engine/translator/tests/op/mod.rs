@@ -54,6 +54,7 @@ use super::{
     WasmOp,
     WasmType,
 };
+use crate::ir::Offset16;
 use std::format;
 
 /// Creates an [`Const32<i32>`] from the given `i32` value.
@@ -150,4 +151,9 @@ fn return_f64imm32_instr(value: f64) -> Instruction {
 #[track_caller]
 fn return_nez_f64imm32_instr(condition: Reg, value: f64) -> Instruction {
     Instruction::return_nez_f64imm32(condition, f64imm32(value))
+}
+
+/// Creates an [`Offset16`] from the given `offset`.
+fn offset16(offset: u16) -> Offset16 {
+    Offset16::try_from(u64::from(offset)).unwrap()
 }
