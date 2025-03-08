@@ -27,7 +27,6 @@ fn test_store_for(
     index_ty: IndexType,
     offset: u64,
 ) {
-    let offset = offset.into();
     assert!(
         u16::try_from(offset).is_err() || !memory_index.is_default(),
         "this test requires non-16 bit offsets or non-default memory \
