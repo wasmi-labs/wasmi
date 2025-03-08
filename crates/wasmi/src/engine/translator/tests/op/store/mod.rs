@@ -876,7 +876,7 @@ where
     }
 }
 
-fn test_store_at_imm_fallback_for<T, Wrapped>(
+fn test_store_at_imm16_fallback_for<T, Wrapped>(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
     memory_index: MemIdx,
@@ -923,7 +923,7 @@ fn test_store_at_imm_fallback_for<T, Wrapped>(
         .run();
 }
 
-fn test_store_wrap_at_imm_fallback<T, Wrapped>(
+fn test_store_wrap_at_imm16_fallback<T, Wrapped>(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
     value: T,
@@ -942,7 +942,7 @@ fn test_store_wrap_at_imm_fallback<T, Wrapped>(
         (u64::MAX - 1, 1),
     ];
     for (ptr, offset) in ptrs_and_offsets {
-        test_store_at_imm_fallback_for::<T, Wrapped>(
+        test_store_at_imm16_fallback_for::<T, Wrapped>(
             wasm_op,
             make_instr,
             MemIdx(0),
@@ -950,7 +950,7 @@ fn test_store_wrap_at_imm_fallback<T, Wrapped>(
             offset,
             value,
         );
-        test_store_at_imm_fallback_for::<T, Wrapped>(
+        test_store_at_imm16_fallback_for::<T, Wrapped>(
             wasm_op,
             make_instr,
             MemIdx(1),
@@ -961,7 +961,7 @@ fn test_store_wrap_at_imm_fallback<T, Wrapped>(
     }
 }
 
-fn test_store_at_imm_fallback<T>(
+fn test_store_at_imm16_fallback<T>(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
     value: T,
@@ -969,5 +969,5 @@ fn test_store_at_imm_fallback<T>(
     T: Copy + TryInto<AnyConst16>,
     DisplayWasm<T>: Display,
 {
-    test_store_wrap_at_imm_fallback::<T, T>(wasm_op, make_instr, value)
+    test_store_wrap_at_imm16_fallback::<T, T>(wasm_op, make_instr, value)
 }

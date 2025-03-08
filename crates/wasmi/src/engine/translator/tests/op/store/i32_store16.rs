@@ -138,6 +138,6 @@ fn at_imm_fallback() {
     ]
     .into_iter()
     .for_each(|value| {
-        test_store_wrap_at_imm_fallback::<i32, i16>(WASM_OP, Instruction::i32_store16_imm, value);
+        test_store_wrap_at_imm16_fallback::<i32, i16>(WASM_OP, Instruction::i32_store16_imm, value);
     })
 }
