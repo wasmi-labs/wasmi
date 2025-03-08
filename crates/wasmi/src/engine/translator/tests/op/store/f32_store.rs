@@ -24,9 +24,9 @@ fn reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm() {
-    DEFAULT_TEST_VALUES.into_iter().for_each(|value| {
+    for value in DEFAULT_TEST_VALUES {
         test_store_imm::<f32>(WASM_OP, Instruction::store32, value);
-    })
+    }
 }
 
 #[test]
@@ -38,9 +38,9 @@ fn offset16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn offset16_imm() {
-    DEFAULT_TEST_VALUES.into_iter().for_each(|value| {
+    for value in DEFAULT_TEST_VALUES {
         test_store_offset16_imm::<f32>(WASM_OP, value, Instruction::store32_offset16);
-    })
+    }
 }
 
 #[test]
@@ -64,15 +64,15 @@ fn at_fallback() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn at_imm() {
-    DEFAULT_TEST_VALUES.into_iter().for_each(|value| {
+    for value in DEFAULT_TEST_VALUES {
         test_store_at_imm::<f32>(WASM_OP, value, Instruction::store32_at);
-    })
+    }
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn at_imm_overflow() {
-    DEFAULT_TEST_VALUES.into_iter().for_each(|value| {
+    for value in DEFAULT_TEST_VALUES {
         test_store_at_imm_overflow(WASM_OP, value);
-    })
+    }
 }
