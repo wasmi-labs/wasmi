@@ -176,37 +176,11 @@ macro_rules! generate_tests {
     ( $wasm_op:ident, $make_instr:expr, $make_instr_offset16:expr, $make_instr_at:expr ) => {
         #[test]
         #[cfg_attr(miri, ignore)]
-        fn reg_mem0() {
-            [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX]
-                .into_iter()
-                .for_each(|offset| {
-                    test_load(WASM_OP, IndexType::Memory32, MemIdx(0), $make_instr, offset);
-                })
-        }
-
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn reg_mem0_memory64() {
-            [
-                u64::from(u16::MAX) + 1,
-                u64::from(u32::MAX) - 1,
-                u64::from(u32::MAX),
-                u64::from(u32::MAX) + 1,
-                u64::MAX - 1,
-                u64::MAX,
-            ]
-            .into_iter()
-            .for_each(|offset| {
-                test_load(WASM_OP, IndexType::Memory64, MemIdx(0), $make_instr, offset);
-            })
-        }
-
-        #[test]
-        #[cfg_attr(miri, ignore)]
         fn reg() {
             [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX]
                 .into_iter()
                 .for_each(|offset| {
+                    test_load(WASM_OP, IndexType::Memory32, MemIdx(0), $make_instr, offset);
                     test_load(WASM_OP, IndexType::Memory32, MemIdx(1), $make_instr, offset)
                 })
         }
@@ -224,6 +198,7 @@ macro_rules! generate_tests {
             ]
             .into_iter()
             .for_each(|offset| {
+                test_load(WASM_OP, IndexType::Memory64, MemIdx(0), $make_instr, offset);
                 test_load(WASM_OP, IndexType::Memory64, MemIdx(1), $make_instr, offset)
             })
         }
@@ -242,23 +217,6 @@ macro_rules! generate_tests {
 
         #[test]
         #[cfg_attr(miri, ignore)]
-        fn at_mem0() {
-            [
-                (0, 0),
-                (42, 5),
-                (u64::from(u32::MAX), 0),
-                (0, u64::from(u32::MAX)),
-            ]
-            .into_iter()
-            .for_each(|(ptr, offset)| {
-                for index_ty in [IndexType::Memory32, IndexType::Memory64] {
-                    test_load_at(WASM_OP, index_ty, MemIdx(0), $make_instr_at, ptr, offset);
-                }
-            })
-        }
-
-        #[test]
-        #[cfg_attr(miri, ignore)]
         fn at() {
             [
                 (0, 0),
@@ -269,29 +227,9 @@ macro_rules! generate_tests {
             .into_iter()
             .for_each(|(ptr, offset)| {
                 for index_ty in [IndexType::Memory32, IndexType::Memory64] {
+                    test_load_at(WASM_OP, index_ty, MemIdx(0), $make_instr_at, ptr, offset);
                     test_load_at(WASM_OP, index_ty, MemIdx(1), $make_instr_at, ptr, offset);
                 }
-            })
-        }
-
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn at_overflow_mem0() {
-            [
-                (IndexType::Memory32, u64::from(u32::MAX), 1),
-                (IndexType::Memory32, 1, u64::from(u32::MAX)),
-                (
-                    IndexType::Memory32,
-                    u64::from(u32::MAX),
-                    u64::from(u32::MAX),
-                ),
-                (IndexType::Memory64, u64::MAX, 1),
-                (IndexType::Memory64, 1, u64::MAX),
-                (IndexType::Memory64, u64::MAX, u64::MAX),
-            ]
-            .into_iter()
-            .for_each(|(index_ty, ptr, offset)| {
-                test_load_at_overflow(WASM_OP, index_ty, MemIdx(0), ptr, offset);
             })
         }
 
@@ -312,24 +250,8 @@ macro_rules! generate_tests {
             ]
             .into_iter()
             .for_each(|(index_ty, ptr, offset)| {
+                test_load_at_overflow(WASM_OP, index_ty, MemIdx(0), ptr, offset);
                 test_load_at_overflow(WASM_OP, index_ty, MemIdx(1), ptr, offset);
-            })
-        }
-
-        #[test]
-        #[cfg_attr(miri, ignore)]
-        fn at_fallback_mem0() {
-            [
-                (u64::from(u32::MAX), 1),
-                (1, u64::from(u32::MAX)),
-                (1, u64::MAX - 1),
-                (u64::MAX - 1, 1),
-                (0, u64::MAX),
-                (u64::MAX, 0),
-            ]
-            .into_iter()
-            .for_each(|(ptr, offset)| {
-                test_load_at_fallback(WASM_OP, MemIdx(0), $make_instr, ptr, offset);
             })
         }
 
@@ -346,6 +268,7 @@ macro_rules! generate_tests {
             ]
             .into_iter()
             .for_each(|(ptr, offset)| {
+                test_load_at_fallback(WASM_OP, MemIdx(0), $make_instr, ptr, offset);
                 test_load_at_fallback(WASM_OP, MemIdx(1), $make_instr, ptr, offset);
             })
         }
