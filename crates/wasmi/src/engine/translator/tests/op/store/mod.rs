@@ -766,7 +766,7 @@ fn test_store_wrap_at_imm_for<Src, Wrapped, Field>(
     offset: u32,
     value: Src,
 ) where
-    Src: Copy + Into<UntypedVal> + Wrap<Wrapped>,
+    Src: Copy + Wrap<Wrapped>,
     Field: TryFrom<Wrapped> + Into<AnyConst16>,
     DisplayWasm<Src>: Display,
 {
