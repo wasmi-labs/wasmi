@@ -1,3 +1,13 @@
+/// Macro that turns an iterator over `Option<T>` into an iterator over `T`.
+///
+/// - Filters out all the `None` items yielded by the input iterator.
+/// - Allows to specify `Some` items as just `T` as convenience.
+macro_rules! iter_filter_opts {
+    [ $($item:expr),* $(,)? ] => {{
+        [ $( ::core::option::Option::from($item) ),* ].into_iter().filter_map(|x| x)
+    }};
+}
+
 mod binary;
 mod block;
 mod br;
@@ -56,6 +66,7 @@ use super::{
 };
 use crate::ir::Offset16;
 use std::format;
+use std::fmt;
 
 /// Creates an [`Const32<i32>`] from the given `i32` value.
 ///
@@ -156,4 +167,46 @@ fn return_nez_f64imm32_instr(condition: Reg, value: f64) -> Instruction {
 /// Creates an [`Offset16`] from the given `offset`.
 fn offset16(offset: u16) -> Offset16 {
     Offset16::try_from(u64::from(offset)).unwrap()
+}
+
+/// Adjusts a translation test to use memories with that specified index type.
+#[derive(Copy, Clone)]
+enum IndexType {
+    /// The 32-bit index type.
+    ///
+    /// This is WebAssembly's default.
+    Memory32,
+    /// The 64-bit index type.
+    ///
+    /// This got introduced by the Wasm `memory64` proposal.
+    Memory64,
+}
+
+impl IndexType {
+    /// Returns the `.wat` string reprensetation for the [`IndexType`] of a `memory` declaration.
+    fn wat(self) -> &'static str {
+        match self {
+            Self::Memory32 => "i32",
+            Self::Memory64 => "i64",
+        }
+    }
+}
+
+/// Convenience type to create Wat memories with a tagged memory index.
+pub struct MemIdx(u32);
+
+impl fmt::Display for MemIdx {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "$mem{}", self.0)
+    }
+}
+
+impl MemIdx {
+    /// Returns the `$mem{n}` memory index used by some Wasm memory instructions.
+    fn instr(self) -> Option<Instruction> {
+        match self.0 {
+            0 => None,
+            n => Some(Instruction::memory_index(n)),
+        }
+    }
 }

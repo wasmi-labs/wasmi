@@ -5,59 +5,6 @@ use crate::{
     core::TrapCode,
     ir::{Offset16, Offset64, Offset64Lo},
 };
-use core::fmt;
-
-/// Adjusts a translation test to use memories with that specified index type.
-#[derive(Copy, Clone)]
-enum IndexType {
-    /// The 32-bit index type.
-    ///
-    /// This is WebAssembly's default.
-    Memory32,
-    /// The 64-bit index type.
-    ///
-    /// This got introduced by the Wasm `memory64` proposal.
-    Memory64,
-}
-
-impl IndexType {
-    /// Returns the `.wat` string reprensetation for the [`IndexType`] of a `memory` declaration.
-    fn wat(self) -> &'static str {
-        match self {
-            Self::Memory32 => "i32",
-            Self::Memory64 => "i64",
-        }
-    }
-}
-
-/// Macro that turns an iterator over `Option<T>` into an iterator over `T`.
-///
-/// - Filters out all the `None` items yielded by the input iterator.
-/// - Allows to specify `Some` items as just `T` as convenience.
-macro_rules! iter_filter_opts {
-    [ $($item:expr),* $(,)? ] => {{
-        [ $( ::core::option::Option::from($item) ),* ].into_iter().filter_map(|x| x)
-    }};
-}
-
-/// Convenience type to create Wat memories with a tagged memory index.
-pub struct MemIdx(u32);
-
-impl fmt::Display for MemIdx {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "$mem{}", self.0)
-    }
-}
-
-impl MemIdx {
-    /// Returns the `$mem{n}` memory index used by some Wasm memory instructions.
-    fn instr(self) -> Option<Instruction> {
-        match self.0 {
-            0 => None,
-            n => Some(Instruction::memory_index(n)),
-        }
-    }
-}
 
 fn test_load(
     wasm_op: WasmOp,
