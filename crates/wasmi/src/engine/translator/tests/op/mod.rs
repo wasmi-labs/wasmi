@@ -65,8 +65,7 @@ use super::{
     WasmType,
 };
 use crate::ir::Offset16;
-use std::format;
-use std::fmt;
+use std::{fmt, format};
 
 /// Creates an [`Const32<i32>`] from the given `i32` value.
 ///
@@ -170,7 +169,6 @@ fn offset16(offset: u16) -> Offset16 {
 }
 
 /// Adjusts a translation test to use memories with that specified index type.
-#[derive(Copy, Clone)]
 enum IndexType {
     /// The 32-bit index type.
     ///
@@ -184,7 +182,7 @@ enum IndexType {
 
 impl IndexType {
     /// Returns the `.wat` string reprensetation for the [`IndexType`] of a `memory` declaration.
-    fn wat(self) -> &'static str {
+    fn wat(&self) -> &'static str {
         match self {
             Self::Memory32 => "i32",
             Self::Memory64 => "i64",
@@ -203,7 +201,7 @@ impl fmt::Display for MemIdx {
 
 impl MemIdx {
     /// Returns the `$mem{n}` memory index used by some Wasm memory instructions.
-    fn instr(self) -> Option<Instruction> {
+    fn instr(&self) -> Option<Instruction> {
         match self.0 {
             0 => None,
             n => Some(Instruction::memory_index(n)),
