@@ -631,6 +631,60 @@ fn test_store_at_overflow(wasm_op: WasmOp) {
     })
 }
 
+fn test_store_at_fallback_for(
+    wasm_op: WasmOp,
+    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+    memory_index: MemIdx,
+    ptr: u64,
+    offset: u64,
+) {
+    let param_ty = wasm_op.param_ty();
+    let wasm = format!(
+        r#"
+        (module
+            (memory $mem0 i64 1)
+            (memory $mem1 i64 1)
+            (func (param $value {param_ty})
+                i64.const {ptr}
+                local.get $value
+                {wasm_op} {memory_index} offset={offset}
+            )
+        )
+    "#
+    );
+    let address = ptr.checked_add(offset).unwrap();
+    let (offset_hi, offset_lo) = Offset64::split(address);
+    TranslationTest::new(&wasm)
+        .expect_func(
+            ExpectedFunc::new(iter_filter_opts![
+                make_instr(Reg::from(-1), offset_lo),
+                Instruction::register_and_offset_hi(Reg::from(0), offset_hi),
+                memory_index.instr(),
+                Instruction::Return,
+            ])
+            .consts([0_u64]),
+        )
+        .run();
+}
+
+fn test_store_at_fallback(
+    wasm_op: WasmOp,
+    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+) {
+    [
+        (u64::from(u32::MAX), 1),
+        (1, u64::from(u32::MAX)),
+        (u64::from(u32::MAX), u64::from(u32::MAX)),
+        (u64::MAX - 1, 1),
+        (1, u64::MAX - 1),
+    ]
+    .into_iter()
+    .for_each(|(ptr, offset)| {
+        test_store_at_fallback_for(wasm_op, make_instr, MemIdx(0), ptr, offset);
+        test_store_at_fallback_for(wasm_op, make_instr, MemIdx(1), ptr, offset);
+    })
+}
+
 fn test_store_at_imm_for<T>(
     wasm_op: WasmOp,
     make_instr: fn(value: Reg, address: u32) -> Instruction,

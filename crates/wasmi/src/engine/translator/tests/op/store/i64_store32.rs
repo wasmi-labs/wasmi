@@ -119,6 +119,12 @@ fn at_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
+fn at_fallback() {
+    test_store_at_fallback(WASM_OP, Instruction::i64_store32);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
 fn at_imm16() {
     let values = [
         0,

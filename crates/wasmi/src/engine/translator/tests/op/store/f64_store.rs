@@ -51,6 +51,12 @@ fn at_overflow() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
+fn at_fallback() {
+    test_store_at_fallback(WASM_OP, Instruction::store64);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
 fn at_imm() {
     test_store_at_imm::<f64>(WASM_OP, 0.0, Instruction::store64_at);
     test_store_at_imm::<f64>(WASM_OP, 1.0, Instruction::store64_at);

@@ -93,6 +93,12 @@ fn at_overflow() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
+fn at_fallback() {
+    test_store_at_fallback(WASM_OP, Instruction::store32);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
 fn at_imm() {
     test_store_at_imm::<i32>(WASM_OP, i32::from(i16::MAX) + 1, Instruction::store32_at);
     test_store_at_imm::<i32>(WASM_OP, i32::MAX - 1, Instruction::store32_at);

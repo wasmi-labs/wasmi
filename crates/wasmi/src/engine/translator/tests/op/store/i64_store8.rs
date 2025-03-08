@@ -87,6 +87,12 @@ fn at_overflow() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
+fn at_fallback() {
+    test_store_at_fallback(WASM_OP, Instruction::i64_store8);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
 fn at_imm() {
     let values = [
         0,
