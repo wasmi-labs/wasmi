@@ -6,7 +6,6 @@ use crate::{
     engine::translator::utils::Wrap,
     ir::{AnyConst16, Offset16, Offset64, Offset64Lo},
 };
-use std::vec;
 
 mod f32_store;
 mod f64_store;
@@ -532,58 +531,80 @@ fn test_store_imm16<T>(
 
 fn test_store_at_for(
     wasm_op: WasmOp,
+    make_instr: fn(value: Reg, address: u32) -> Instruction,
+    index_ty: IndexType,
+    memory_index: MemIdx,
     ptr: u32,
     offset: u32,
-    make_instr: fn(value: Reg, address: u32) -> Instruction,
 ) {
     let address = ptr
         .checked_add(offset)
         .expect("testcase requires valid ptr+offset address");
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let wasm = format!(
         r#"
         (module
-            (memory 1)
+            (memory $mem0 {index_ty} 1)
+            (memory $mem1 {index_ty} 1)
             (func (param $value {param_ty})
-                i32.const {ptr}
+                {index_ty}.const {ptr}
                 local.get $value
-                {wasm_op} offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
     );
     TranslationTest::new(&wasm)
-        .expect_func_instrs([make_instr(Reg::from(0), address), Instruction::Return])
+        .expect_func_instrs(iter_filter_opts![
+            make_instr(Reg::from(0), address),
+            memory_index.instr(),
+            Instruction::Return,
+        ])
         .run();
 }
 
 fn test_store_at(wasm_op: WasmOp, make_instr: fn(value: Reg, address: u32) -> Instruction) {
-    test_store_at_for(wasm_op, 0, 0, make_instr);
-    test_store_at_for(wasm_op, 0, 1, make_instr);
-    test_store_at_for(wasm_op, 1, 0, make_instr);
-    test_store_at_for(wasm_op, 1, 1, make_instr);
-    test_store_at_for(wasm_op, 1000, 1000, make_instr);
-    test_store_at_for(wasm_op, 1, u32::MAX - 1, make_instr);
-    test_store_at_for(wasm_op, u32::MAX - 1, 1, make_instr);
-    test_store_at_for(wasm_op, 0, u32::MAX, make_instr);
-    test_store_at_for(wasm_op, u32::MAX, 0, make_instr);
+    for (ptr, offset) in [
+        (0, 0),
+        (0, 1),
+        (1, 0),
+        (1, 1),
+        (1000, 1000),
+        (1, u32::MAX - 1),
+        (u32::MAX - 1, 1),
+        (0, u32::MAX),
+        (u32::MAX, 0),
+    ] {
+        for mem_idx in [0, 1].map(MemIdx) {
+            for index_ty in [IndexType::Memory32, IndexType::Memory64] {
+                test_store_at_for(wasm_op, make_instr, index_ty, mem_idx, ptr, offset);
+            }
+        }
+    }
 }
 
-fn test_store_at_overflow_for(wasm_op: WasmOp, mem_idx: u32, ptr: u32, offset: u32) {
-    assert!(
-        ptr.checked_add(offset).is_none(),
-        "testcase expects overflowing ptr+offset address"
-    );
+fn test_store_at_overflow_for(
+    wasm_op: WasmOp,
+    index_ty: IndexType,
+    memory_index: MemIdx,
+    ptr: impl Into<u64>,
+    offset: impl Into<u64>,
+) {
+    let ptr = ptr.into();
+    let offset = offset.into();
+    assert_overflowing_ptr_offset(index_ty, ptr, offset);
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let wasm = format!(
         r#"
         (module
-            (memory $mem0 1)
-            (memory $mem1 1)
+            (memory $mem0 {index_ty} 1)
+            (memory $mem1 {index_ty} 1)
             (func (param $value {param_ty})
-                i32.const {ptr}
+                {index_ty}.const {ptr}
                 local.get $value
-                {wasm_op} $mem{mem_idx} offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
@@ -594,19 +615,33 @@ fn test_store_at_overflow_for(wasm_op: WasmOp, mem_idx: u32, ptr: u32, offset: u
 }
 
 fn test_store_at_overflow(wasm_op: WasmOp) {
-    let ptrs_and_offsets = [(1, u32::MAX), (u32::MAX, 1), (u32::MAX, u32::MAX)];
-    for (ptr, offset) in ptrs_and_offsets {
-        test_store_at_overflow_for(wasm_op, 0, ptr, offset);
-        test_store_at_overflow_for(wasm_op, 1, ptr, offset);
-    }
+    [
+        (IndexType::Memory32, u64::from(u32::MAX), 1),
+        (IndexType::Memory32, 1, u64::from(u32::MAX)),
+        (
+            IndexType::Memory32,
+            u64::from(u32::MAX),
+            u64::from(u32::MAX),
+        ),
+        (IndexType::Memory64, u64::MAX, 1),
+        (IndexType::Memory64, 1, u64::MAX),
+        (IndexType::Memory64, u64::MAX, u64::MAX),
+    ]
+    .into_iter()
+    .for_each(|(index_ty, ptr, offset)| {
+        test_store_at_overflow_for(wasm_op, index_ty, MemIdx(0), ptr, offset);
+        test_store_at_overflow_for(wasm_op, index_ty, MemIdx(1), ptr, offset);
+    })
 }
 
 fn test_store_at_imm_for<T>(
     wasm_op: WasmOp,
+    make_instr: fn(value: Reg, address: u32) -> Instruction,
+    index_ty: IndexType,
+    memory_index: MemIdx,
     ptr: u32,
     offset: u32,
     value: T,
-    make_instr: fn(value: Reg, address: u32) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
@@ -616,22 +651,28 @@ fn test_store_at_imm_for<T>(
         .expect("testcase requires valid ptr+offset address");
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let wasm = format!(
         r#"
         (module
-            (memory 1)
+            (memory $mem0 {index_ty} 1)
+            (memory $mem1 {index_ty} 1)
             (func
-                i32.const {ptr}
+                {index_ty}.const {ptr}
                 {param_ty}.const {display_value}
-                {wasm_op} offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
     );
     TranslationTest::new(&wasm)
         .expect_func(
-            ExpectedFunc::new([make_instr(Reg::from(-1), address), Instruction::Return])
-                .consts([value]),
+            ExpectedFunc::new(iter_filter_opts![
+                make_instr(Reg::from(-1), address),
+                memory_index.instr(),
+                Instruction::Return,
+            ])
+            .consts([value]),
         )
         .run();
 }
@@ -644,24 +685,35 @@ fn test_store_at_imm<T>(
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
-    test_store_at_imm_for(wasm_op, 0, 0, value, make_instr);
-    test_store_at_imm_for(wasm_op, 0, 1, value, make_instr);
-    test_store_at_imm_for(wasm_op, 1, 0, value, make_instr);
-    test_store_at_imm_for(wasm_op, 1, 1, value, make_instr);
-    test_store_at_imm_for(wasm_op, 1000, 1000, value, make_instr);
-    test_store_at_imm_for(wasm_op, 1, u32::MAX - 1, value, make_instr);
-    test_store_at_imm_for(wasm_op, u32::MAX - 1, 1, value, make_instr);
-    test_store_at_imm_for(wasm_op, 0, u32::MAX, value, make_instr);
-    test_store_at_imm_for(wasm_op, u32::MAX, 0, value, make_instr);
+    [
+        (0, 0),
+        (0, 1),
+        (1, 0),
+        (1, 1),
+        (1000, 1000),
+        (1, u32::MAX - 1),
+        (u32::MAX - 1, 1),
+        (0, u32::MAX),
+        (u32::MAX, 0),
+    ]
+    .into_iter()
+    .for_each(|(ptr, offset)| {
+        for mem_idx in [0, 1].map(MemIdx) {
+            for index_ty in [IndexType::Memory32, IndexType::Memory64] {
+                test_store_at_imm_for(wasm_op, make_instr, index_ty, mem_idx, ptr, offset, value);
+            }
+        }
+    })
 }
 
 fn test_store_wrap_at_imm_for<Src, Wrapped, Field>(
     wasm_op: WasmOp,
-    mem_idx: u32,
+    make_instr: fn(value: Field, address: u32) -> Instruction,
+    index_ty: IndexType,
+    memory_index: MemIdx,
     ptr: u32,
     offset: u32,
     value: Src,
-    make_instr: fn(value: Field, address: u32) -> Instruction,
 ) where
     Src: Copy + Into<UntypedVal> + Wrap<Wrapped>,
     Field: TryFrom<Wrapped> + Into<AnyConst16>,
@@ -672,32 +724,34 @@ fn test_store_wrap_at_imm_for<Src, Wrapped, Field>(
         .expect("testcase requires valid ptr+offset address");
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let wasm = format!(
         r#"
         (module
-            (memory $mem0 1)
-            (memory $mem1 1)
+            (memory $mem0 {index_ty} 1)
+            (memory $mem1 {index_ty} 1)
             (func
-                i32.const {ptr}
+                {index_ty}.const {ptr}
                 {param_ty}.const {display_value}
-                {wasm_op} $mem{mem_idx} offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
     );
     let value = Field::try_from(value.wrap()).ok().unwrap();
-    let mut instrs = vec![make_instr(value, address)];
-    if mem_idx != 0 {
-        instrs.push(Instruction::memory_index(mem_idx));
-    }
-    instrs.push(Instruction::Return);
-    TranslationTest::new(&wasm).expect_func_instrs(instrs).run();
+    TranslationTest::new(&wasm)
+        .expect_func_instrs(iter_filter_opts![
+            make_instr(value, address),
+            memory_index.instr(),
+            Instruction::Return,
+        ])
+        .run();
 }
 
 fn test_store_wrap_at_imm<Src, Wrapped, Field>(
     wasm_op: WasmOp,
-    value: Src,
     make_instr: fn(value: Field, address: u32) -> Instruction,
+    value: Src,
 ) where
     Src: Copy + Into<UntypedVal> + Wrap<Wrapped>,
     Field: TryFrom<Wrapped> + Into<AnyConst16>,
@@ -715,17 +769,23 @@ fn test_store_wrap_at_imm<Src, Wrapped, Field>(
         (u32::MAX, 0),
     ];
     for (ptr, offset) in ptrs_and_offsets {
-        test_store_wrap_at_imm_for::<Src, Wrapped, Field>(
-            wasm_op, 0, ptr, offset, value, make_instr,
-        );
-        test_store_wrap_at_imm_for::<Src, Wrapped, Field>(
-            wasm_op, 1, ptr, offset, value, make_instr,
-        );
+        for mem_idx in [0, 1].map(MemIdx) {
+            for index_ty in [IndexType::Memory32, IndexType::Memory64] {
+                test_store_wrap_at_imm_for::<Src, Wrapped, Field>(
+                    wasm_op, make_instr, index_ty, mem_idx, ptr, offset, value,
+                );
+            }
+        }
     }
 }
 
-fn test_store_at_imm_overflow_for<T>(wasm_op: WasmOp, mem_idx: u8, ptr: u32, offset: u32, value: T)
-where
+fn test_store_at_imm_overflow_for<T>(
+    wasm_op: WasmOp,
+    memory_index: MemIdx,
+    ptr: u32,
+    offset: u32,
+    value: T,
+) where
     T: Copy,
     DisplayWasm<T>: Display,
 {
@@ -743,7 +803,7 @@ where
             (func
                 i32.const {ptr}
                 {param_ty}.const {display_value}
-                {wasm_op} $mem{mem_idx} offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
@@ -760,7 +820,7 @@ where
 {
     let ptrs_and_offsets = [(1, u32::MAX), (u32::MAX, 1), (u32::MAX, u32::MAX)];
     for (ptr, offset) in ptrs_and_offsets {
-        test_store_at_imm_overflow_for(wasm_op, 0, ptr, offset, value);
-        test_store_at_imm_overflow_for(wasm_op, 1, ptr, offset, value);
+        test_store_at_imm_overflow_for(wasm_op, MemIdx(0), ptr, offset, value);
+        test_store_at_imm_overflow_for(wasm_op, MemIdx(1), ptr, offset, value);
     }
 }

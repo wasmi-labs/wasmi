@@ -169,6 +169,7 @@ fn offset16(offset: u16) -> Offset16 {
 }
 
 /// Adjusts a translation test to use memories with that specified index type.
+#[derive(Copy, Clone)]
 enum IndexType {
     /// The 32-bit index type.
     ///
@@ -211,6 +212,30 @@ impl MemIdx {
         match self.0 {
             0 => None,
             n => Some(Instruction::memory_index(n)),
+        }
+    }
+}
+
+/// Asserts that `ptr+offset` overflow either `i32` or `i64` depending on `index_ty`.
+fn assert_overflowing_ptr_offset(index_ty: IndexType, ptr: u64, offset: u64) {
+    match index_ty {
+        IndexType::Memory32 => {
+            let Ok(ptr32) = u32::try_from(ptr) else {
+                panic!("ptr must be a 32-bit value but found: {ptr}");
+            };
+            let Ok(offset32) = u32::try_from(offset) else {
+                panic!("offset must be a 32-bit value but found: {offset}");
+            };
+            assert!(
+                ptr32.checked_add(offset32).is_none(),
+                "ptr+offset must overflow in this testcase (32-bit)"
+            );
+        }
+        IndexType::Memory64 => {
+            assert!(
+                ptr.checked_add(offset).is_none(),
+                "ptr+offset must overflow in this testcase (64-bit)"
+            );
         }
     }
 }

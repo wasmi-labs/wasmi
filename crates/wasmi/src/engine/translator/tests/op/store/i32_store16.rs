@@ -103,7 +103,7 @@ fn at_imm() {
         i32::MAX,
     ];
     for value in values {
-        test_store_wrap_at_imm::<i32, i16, i16>(WASM_OP, value, Instruction::i32_store16_at_imm);
+        test_store_wrap_at_imm::<i32, i16, i16>(WASM_OP, Instruction::i32_store16_at_imm, value);
     }
 }
 
