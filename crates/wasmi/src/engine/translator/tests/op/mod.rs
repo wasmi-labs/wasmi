@@ -200,6 +200,11 @@ impl fmt::Display for MemIdx {
 }
 
 impl MemIdx {
+    /// Returns `true` if [`MemIdx`] refers to the default Wasm memory index.
+    fn is_default(&self) -> bool {
+        self.0 == 0
+    }
+
     /// Returns the `$mem{n}` memory index used by some Wasm memory instructions.
     fn instr(&self) -> Option<Instruction> {
         match self.0 {
