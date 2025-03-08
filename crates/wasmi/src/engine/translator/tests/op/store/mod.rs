@@ -31,7 +31,8 @@ fn test_store_for(
     let offset = offset.into();
     assert!(
         u16::try_from(offset).is_err() || !memory_index.is_default(),
-        "this test requires non-16 bit offsets but found {offset}"
+        "this test requires non-16 bit offsets or non-default memory \
+        but found: offset={offset}, memory={memory_index}"
     );
     let param_ty = wasm_op.param_ty();
     let index_ty = index_ty.wat();
@@ -92,14 +93,16 @@ fn test_store(wasm_op: WasmOp, make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -
 fn test_store_offset16_for(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+    index_ty: IndexType,
     offset: u16,
 ) {
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let wasm = format!(
         r#"
         (module
-            (memory 1)
-            (func (param $ptr i32) (param $value {param_ty})
+            (memory {index_ty} 1)
+            (func (param $ptr {index_ty}) (param $value {param_ty})
                 local.get $ptr
                 local.get $value
                 {wasm_op} offset={offset}
@@ -119,14 +122,18 @@ fn test_store_offset16(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
 ) {
-    test_store_offset16_for(wasm_op, make_instr, 0);
-    test_store_offset16_for(wasm_op, make_instr, u16::MAX - 1);
-    test_store_offset16_for(wasm_op, make_instr, u16::MAX);
+    [0, 1, u16::MAX - 1, u16::MAX]
+        .into_iter()
+        .for_each(|offset| {
+            test_store_offset16_for(wasm_op, make_instr, IndexType::Memory32, offset);
+            test_store_offset16_for(wasm_op, make_instr, IndexType::Memory64, offset);
+        })
 }
 
 fn test_store_offset16_imm_for<T>(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+    index_ty: IndexType,
     offset: u16,
     value: T,
 ) where
@@ -134,12 +141,13 @@ fn test_store_offset16_imm_for<T>(
     DisplayWasm<T>: Display,
 {
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let display_value = DisplayWasm::from(value);
     let wasm = format!(
         r#"
         (module
-            (memory 1)
-            (func (param $ptr i32)
+            (memory {index_ty} 1)
+            (func (param $ptr {index_ty})
                 local.get $ptr
                 {param_ty}.const {display_value}
                 {wasm_op} offset={offset}
@@ -166,14 +174,18 @@ fn test_store_offset16_imm<T>(
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
-    test_store_offset16_imm_for(wasm_op, make_instr, 0, value);
-    test_store_offset16_imm_for(wasm_op, make_instr, u16::MAX - 1, value);
-    test_store_offset16_imm_for(wasm_op, make_instr, u16::MAX, value);
+    [0, 1, u16::MAX - 1, u16::MAX]
+        .into_iter()
+        .for_each(|offset| {
+            test_store_offset16_imm_for(wasm_op, make_instr, IndexType::Memory32, offset, value);
+            test_store_offset16_imm_for(wasm_op, make_instr, IndexType::Memory64, offset, value);
+        })
 }
 
 fn test_store_offset16_imm16_for<T>(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset: Offset16, value: T) -> Instruction,
+    index_ty: IndexType,
     offset: u16,
     value: T,
 ) where
@@ -181,12 +193,13 @@ fn test_store_offset16_imm16_for<T>(
     DisplayWasm<T>: Display,
 {
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let display_value = DisplayWasm::from(value);
     let wasm = format!(
         r#"
         (module
-            (memory 1)
-            (func (param $ptr i32)
+            (memory {index_ty} 1)
+            (func (param $ptr {index_ty})
                 local.get $ptr
                 {param_ty}.const {display_value}
                 {wasm_op} offset={offset}
@@ -210,14 +223,18 @@ fn test_store_offset16_imm16<T>(
     T: Copy,
     DisplayWasm<T>: Display,
 {
-    test_store_offset16_imm16_for(wasm_op, make_instr, 0, value);
-    test_store_offset16_imm16_for(wasm_op, make_instr, u16::MAX - 1, value);
-    test_store_offset16_imm16_for(wasm_op, make_instr, u16::MAX, value);
+    [0, 1, u16::MAX - 1, u16::MAX]
+        .into_iter()
+        .for_each(|offset| {
+            test_store_offset16_imm16_for(wasm_op, make_instr, IndexType::Memory32, offset, value);
+            test_store_offset16_imm16_for(wasm_op, make_instr, IndexType::Memory64, offset, value);
+        })
 }
 
 fn test_store_wrap_offset16_imm_for<Src, Wrapped, Field>(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
+    index_ty: IndexType,
     offset: u16,
     value: Src,
 ) where
@@ -226,12 +243,13 @@ fn test_store_wrap_offset16_imm_for<Src, Wrapped, Field>(
     DisplayWasm<Src>: Display,
 {
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let display_value = DisplayWasm::from(value);
     let wasm = format!(
         r#"
         (module
-            (memory 1)
-            (func (param $ptr i32)
+            (memory {index_ty} 1)
+            (func (param $ptr {index_ty})
                 local.get $ptr
                 {param_ty}.const {display_value}
                 {wasm_op} offset={offset}
@@ -257,15 +275,31 @@ fn test_store_wrap_offset16_imm<Src, Wrapped, Field>(
     Field: TryFrom<Wrapped>,
     DisplayWasm<Src>: Display,
 {
-    let offsets = [0, u16::MAX - 1, u16::MAX];
-    for offset in offsets {
-        test_store_wrap_offset16_imm_for(wasm_op, make_instr, offset, value);
-    }
+    [0, 1, u16::MAX - 1, u16::MAX]
+        .into_iter()
+        .for_each(|offset| {
+            test_store_wrap_offset16_imm_for(
+                wasm_op,
+                make_instr,
+                IndexType::Memory32,
+                offset,
+                value,
+            );
+            test_store_wrap_offset16_imm_for(
+                wasm_op,
+                make_instr,
+                IndexType::Memory64,
+                offset,
+                value,
+            );
+        })
 }
 
 fn test_store_wrap_imm_for<Src, Wrapped, Field>(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    index_ty: IndexType,
+    memory_index: MemIdx,
     offset: u64,
     value: Src,
 ) where
@@ -274,19 +308,22 @@ fn test_store_wrap_imm_for<Src, Wrapped, Field>(
     DisplayWasm<Src>: Display,
 {
     assert!(
-        u16::try_from(offset).is_err(),
-        "this test requires non-16 bit offsets but found {offset}"
+        u16::try_from(offset).is_err() || !memory_index.is_default(),
+        "this test requires non-16 bit offsets or non-default memory \
+        but found: offset={offset}, memory={memory_index}"
     );
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let display_value = DisplayWasm::from(value);
     let wasm = format!(
         r#"
         (module
-            (memory 1)
-            (func (param $ptr i32)
+            (memory $mem0 {index_ty} 1)
+            (memory $mem1 {index_ty} 1)
+            (func (param $ptr {index_ty})
                 local.get $ptr
                 {param_ty}.const {display_value}
-                {wasm_op} offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
@@ -294,9 +331,10 @@ fn test_store_wrap_imm_for<Src, Wrapped, Field>(
     let (offset_hi, offset_lo) = Offset64::split(offset);
     let value = Field::try_from(value.wrap()).ok().unwrap();
     TranslationTest::new(&wasm)
-        .expect_func_instrs([
+        .expect_func_instrs(iter_filter_opts![
             make_instr(Reg::from(0), offset_lo),
             Instruction::imm16_and_offset_hi(value, offset_hi),
+            memory_index.instr(),
             Instruction::Return,
         ])
         .run();
@@ -311,19 +349,38 @@ fn test_store_wrap_imm<Src, Wrapped, Field>(
     Field: TryFrom<Wrapped> + Into<AnyConst16>,
     DisplayWasm<Src>: Display,
 {
-    let offsets = [
+    for offset in [
         u64::from(u16::MAX) + 1,
         u64::from(u32::MAX) - 1,
         u64::from(u32::MAX),
-    ];
-    for offset in offsets {
-        test_store_wrap_imm_for::<Src, Wrapped, Field>(wasm_op, make_instr, offset, value);
+    ] {
+        for mem_idx in [0, 1].map(MemIdx) {
+            for index_ty in [IndexType::Memory32, IndexType::Memory64] {
+                test_store_wrap_imm_for::<Src, Wrapped, Field>(
+                    wasm_op, make_instr, index_ty, mem_idx, offset, value,
+                );
+            }
+        }
+    }
+    for offset in [u64::from(u32::MAX) + 1, u64::MAX - 1, u64::MAX] {
+        for mem_idx in [0, 1].map(MemIdx) {
+            test_store_wrap_imm_for::<Src, Wrapped, Field>(
+                wasm_op,
+                make_instr,
+                IndexType::Memory64,
+                mem_idx,
+                offset,
+                value,
+            );
+        }
     }
 }
 
 fn test_store_imm_for<T>(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    index_ty: IndexType,
+    memory_index: MemIdx,
     offset: impl Into<u64>,
     value: T,
 ) where
@@ -332,19 +389,22 @@ fn test_store_imm_for<T>(
 {
     let offset = offset.into();
     assert!(
-        u16::try_from(offset).is_err(),
-        "this test requires non-16 bit offsets but found {offset}"
+        u16::try_from(offset).is_err() || !memory_index.is_default(),
+        "this test requires non-16 bit offsets or non-default memory \
+        but found: offset={offset}, memory={memory_index}"
     );
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let display_value = DisplayWasm::from(value);
     let wasm = format!(
         r#"
         (module
-            (memory 1)
-            (func (param $ptr i32)
+            (memory $mem0 {index_ty} 1)
+            (memory $mem1 {index_ty} 1)
+            (func (param $ptr {index_ty})
                 local.get $ptr
                 {param_ty}.const {display_value}
-                {wasm_op} offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
@@ -352,9 +412,10 @@ fn test_store_imm_for<T>(
     let (offset_hi, offset_lo) = Offset64::split(offset);
     TranslationTest::new(&wasm)
         .expect_func(
-            ExpectedFunc::new([
+            ExpectedFunc::new(iter_filter_opts![
                 make_instr(Reg::from(0), offset_lo),
                 Instruction::register_and_offset_hi(Reg::from(-1), offset_hi),
+                memory_index.instr(),
                 Instruction::Return,
             ])
             .consts([value]),
@@ -370,15 +431,32 @@ fn test_store_imm<T>(
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
-    let offsets = [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX];
-    for offset in offsets {
-        test_store_imm_for::<T>(wasm_op, make_instr, offset, value);
+    for offset in [u32::from(u16::MAX) + 1, u32::MAX - 1, u32::MAX] {
+        for mem_idx in [0, 1].map(MemIdx) {
+            for index_ty in [IndexType::Memory32, IndexType::Memory64] {
+                test_store_imm_for::<T>(wasm_op, make_instr, index_ty, mem_idx, offset, value);
+            }
+        }
+    }
+    for offset in [u64::from(u32::MAX) + 1, u64::MAX - 1, u64::MAX] {
+        for mem_idx in [0, 1].map(MemIdx) {
+            test_store_imm_for::<T>(
+                wasm_op,
+                make_instr,
+                IndexType::Memory64,
+                mem_idx,
+                offset,
+                value,
+            );
+        }
     }
 }
 
 fn test_store_imm16_for<T>(
     wasm_op: WasmOp,
     make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    index_ty: IndexType,
+    memory_index: MemIdx,
     value: T,
     offset: impl Into<u64>,
 ) where
@@ -387,19 +465,22 @@ fn test_store_imm16_for<T>(
 {
     let offset = offset.into();
     assert!(
-        u16::try_from(offset).is_err(),
-        "this test requires non-16 bit offsets but found {offset}"
+        u16::try_from(offset).is_err() || !memory_index.is_default(),
+        "this test requires non-16 bit offsets or non-default memory \
+        but found: offset={offset}, memory={memory_index}"
     );
     let param_ty = wasm_op.param_ty();
+    let index_ty = index_ty.wat();
     let display_value = DisplayWasm::from(value);
     let wasm = format!(
         r#"
         (module
-            (memory 1)
-            (func (param $ptr i32)
+            (memory $mem0 {index_ty} 1)
+            (memory $mem1 {index_ty} 1)
+            (func (param $ptr {index_ty})
                 local.get $ptr
                 {param_ty}.const {display_value}
-                {wasm_op} offset={offset}
+                {wasm_op} {memory_index} offset={offset}
             )
         )
     "#
@@ -407,9 +488,10 @@ fn test_store_imm16_for<T>(
     let (offset_hi, offset_lo) = Offset64::split(offset);
     let value = value.try_into().ok().unwrap();
     TranslationTest::new(&wasm)
-        .expect_func_instrs([
+        .expect_func_instrs(iter_filter_opts![
             make_instr(Reg::from(0), offset_lo),
             Instruction::imm16_and_offset_hi(value, offset_hi),
+            memory_index.instr(),
             Instruction::Return,
         ])
         .run();
@@ -423,9 +505,29 @@ fn test_store_imm16<T>(
     T: Copy + TryInto<AnyConst16>,
     DisplayWasm<T>: Display,
 {
-    test_store_imm16_for(wasm_op, make_instr, value, u32::from(u16::MAX) + 1);
-    test_store_imm16_for(wasm_op, make_instr, value, u32::MAX - 1);
-    test_store_imm16_for(wasm_op, make_instr, value, u32::MAX);
+    for offset in [
+        u64::from(u16::MAX) + 1,
+        u64::from(u32::MAX) - 1,
+        u64::from(u32::MAX),
+    ] {
+        for mem_idx in [0, 1].map(MemIdx) {
+            for index_ty in [IndexType::Memory32, IndexType::Memory64] {
+                test_store_imm16_for(wasm_op, make_instr, index_ty, mem_idx, value, offset);
+            }
+        }
+    }
+    for offset in [u64::from(u32::MAX) + 1, u64::MAX - 1, u64::MAX] {
+        for mem_idx in [0, 1].map(MemIdx) {
+            test_store_imm16_for(
+                wasm_op,
+                make_instr,
+                IndexType::Memory64,
+                mem_idx,
+                value,
+                offset,
+            );
+        }
+    }
 }
 
 fn test_store_at_for(

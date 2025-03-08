@@ -191,6 +191,7 @@ impl IndexType {
 }
 
 /// Convenience type to create Wat memories with a tagged memory index.
+#[derive(Copy, Clone)]
 pub struct MemIdx(u32);
 
 impl fmt::Display for MemIdx {
