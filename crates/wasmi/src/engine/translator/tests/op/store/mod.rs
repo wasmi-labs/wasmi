@@ -875,3 +875,99 @@ where
         test_store_at_imm_overflow_for(wasm_op, MemIdx(1), ptr, offset, value);
     }
 }
+
+fn test_store_at_imm_fallback_for<T, Wrapped>(
+    wasm_op: WasmOp,
+    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    memory_index: MemIdx,
+    ptr: u64,
+    offset: u64,
+    value: T,
+) where
+    T: Copy + Wrap<Wrapped>,
+    Wrapped: TryInto<AnyConst16>,
+    DisplayWasm<T>: Display,
+{
+    assert!(
+        u32::try_from(ptr.saturating_add(offset)).is_err(),
+        "testcase expects overflowing 32-bit ptr+offset address"
+    );
+    let display_value = DisplayWasm::from(value);
+    let param_ty = wasm_op.param_ty();
+    let wasm = format!(
+        r#"
+        (module
+            (memory $mem0 i64 1)
+            (memory $mem1 i64 1)
+            (func
+                i64.const {ptr}
+                {param_ty}.const {display_value}
+                {wasm_op} {memory_index} offset={offset}
+            )
+        )
+    "#
+    );
+    let address = ptr.checked_add(offset).unwrap();
+    let (offset_hi, offset_lo) = Offset64::split(address);
+    let value = value.wrap().try_into().ok().unwrap();
+    TranslationTest::new(&wasm)
+        .expect_func(
+            ExpectedFunc::new(iter_filter_opts![
+                make_instr(Reg::from(-1), offset_lo),
+                Instruction::imm16_and_offset_hi(value, offset_hi),
+                memory_index.instr(),
+                Instruction::Return,
+            ])
+            .consts([0_u64]),
+        )
+        .run();
+}
+
+fn test_store_wrap_at_imm_fallback<T, Wrapped>(
+    wasm_op: WasmOp,
+    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    value: T,
+) where
+    T: Copy + Wrap<Wrapped>,
+    Wrapped: TryInto<AnyConst16>,
+    DisplayWasm<T>: Display,
+{
+    let ptrs_and_offsets = [
+        (1, u64::from(u32::MAX)),
+        (u64::from(u32::MAX), 1),
+        (u64::from(u32::MAX), u64::from(u32::MAX)),
+        (0, u64::MAX),
+        (u64::MAX, 0),
+        (1, u64::MAX - 1),
+        (u64::MAX - 1, 1),
+    ];
+    for (ptr, offset) in ptrs_and_offsets {
+        test_store_at_imm_fallback_for::<T, Wrapped>(
+            wasm_op,
+            make_instr,
+            MemIdx(0),
+            ptr,
+            offset,
+            value,
+        );
+        test_store_at_imm_fallback_for::<T, Wrapped>(
+            wasm_op,
+            make_instr,
+            MemIdx(1),
+            ptr,
+            offset,
+            value,
+        );
+    }
+}
+
+fn test_store_at_imm_fallback<T>(
+    wasm_op: WasmOp,
+    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    value: T,
+) where
+    T: Copy + TryInto<AnyConst16>,
+    DisplayWasm<T>: Display,
+{
+    test_store_wrap_at_imm_fallback::<T, T>(wasm_op, make_instr, value)
+}
