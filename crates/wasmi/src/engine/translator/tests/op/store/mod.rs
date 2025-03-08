@@ -587,11 +587,9 @@ fn test_store_at_overflow_for(
     wasm_op: WasmOp,
     index_ty: IndexType,
     memory_index: MemIdx,
-    ptr: impl Into<u64>,
-    offset: impl Into<u64>,
+    ptr: u64,
+    offset: u64,
 ) {
-    let ptr = ptr.into();
-    let offset = offset.into();
     assert_overflowing_ptr_offset(index_ty, ptr, offset);
     let param_ty = wasm_op.param_ty();
     let index_ty = index_ty.wat();
