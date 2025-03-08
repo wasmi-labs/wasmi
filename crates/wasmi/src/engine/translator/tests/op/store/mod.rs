@@ -60,6 +60,7 @@ fn test_store_for(
 }
 
 fn test_store(wasm_op: WasmOp, make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction) {
+    // Case: offsets that cannot be 16-bit encoded:
     [
         u64::from(u16::MAX) + 1,
         u64::from(u32::MAX) - 1,
@@ -72,12 +73,14 @@ fn test_store(wasm_op: WasmOp, make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -
         test_store_for(wasm_op, make_instr, MemIdx(0), IndexType::Memory64, offset);
         test_store_for(wasm_op, make_instr, MemIdx(1), IndexType::Memory64, offset);
     });
+    // Case: 64-bit offsets and `memory64`:
     [u64::from(u32::MAX) + 1, u64::MAX - 1, u64::MAX]
         .into_iter()
         .for_each(|offset| {
             test_store_for(wasm_op, make_instr, MemIdx(0), IndexType::Memory64, offset);
             test_store_for(wasm_op, make_instr, MemIdx(1), IndexType::Memory64, offset);
         });
+    // Case: 16-bit offsets but non-default memory index:
     [0, 1, u64::from(u16::MAX) - 1, u64::from(u16::MAX)]
         .into_iter()
         .for_each(|offset| {
