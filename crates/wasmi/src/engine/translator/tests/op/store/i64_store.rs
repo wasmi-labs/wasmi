@@ -108,10 +108,9 @@ fn at_imm() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm_at_overflow() {
-    test_store_at_imm_overflow(WASM_OP, 0);
-    test_store_at_imm_overflow(WASM_OP, 1);
-    test_store_at_imm_overflow(WASM_OP, -1);
-    test_store_at_imm_overflow(WASM_OP, 42);
-    test_store_at_imm_overflow(WASM_OP, i64::MIN);
-    test_store_at_imm_overflow(WASM_OP, i64::MAX);
+    [0, 1, -1, 42, i64::MIN, i64::MAX]
+        .into_iter()
+        .for_each(|value| {
+            test_store_at_imm_overflow(WASM_OP, value);
+        })
 }
