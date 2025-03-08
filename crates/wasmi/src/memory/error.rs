@@ -26,6 +26,10 @@ pub enum MemoryError {
     InvalidStaticBufferSize,
     /// If a resource limiter denied allocation or growth of a linear memory.
     ResourceLimiterDeniedAllocation,
+    // The minimum size of the memory type overflows the system index type.
+    MinimumSizeOverflow,
+    // The maximum size of the memory type overflows the system index type.
+    MaximumSizeOverflow,
 }
 
 #[cfg(feature = "std")]
@@ -59,6 +63,18 @@ impl Display for MemoryError {
                 write!(
                     f,
                     "a resource limiter denied to allocate or grow the linear memory"
+                )
+            }
+            Self::MinimumSizeOverflow => {
+                write!(
+                    f,
+                    "the minimum size of the memory type overflows the system index type"
+                )
+            }
+            Self::MaximumSizeOverflow => {
+                write!(
+                    f,
+                    "the maximum size of the memory type overflows the system index type"
                 )
             }
         }

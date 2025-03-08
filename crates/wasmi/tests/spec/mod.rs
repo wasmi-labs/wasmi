@@ -60,7 +60,8 @@ fn mvp_config() -> Config {
         .wasm_saturating_float_to_int(false)
         .wasm_sign_extension(false)
         .wasm_multi_value(false)
-        .wasm_multi_memory(false);
+        .wasm_multi_memory(false)
+        .wasm_memory64(false);
     config
 }
 
@@ -284,6 +285,31 @@ macro_rules! expand_tests_cps {
             fn wasm_custom_page_sizes("proposals/custom-page-sizes/custom-page-sizes");
             fn wasm_custom_page_sizes_invalid("proposals/custom-page-sizes/custom-page-sizes-invalid");
             fn wasm_custom_page_sizes_memory_max("proposals/custom-page-sizes/memory_max");
+            fn wasm_custom_page_sizes_memory_max64("proposals/custom-page-sizes/memory_max_i64");
+        }
+    };
+}
+
+macro_rules! expand_tests_memory64 {
+    ( $mac:ident, $( $args:tt )* ) => {
+        $mac! {
+            $( $args )*
+
+            fn wasm_memory64_float_exprs("proposals/memory64/float_exprs");
+            fn wasm_address64("proposals/wasm-3.0/address64");
+            fn wasm_align64("proposals/wasm-3.0/align64");
+            fn wasm_endianness64("proposals/wasm-3.0/endianness64");
+            fn wasm_float_memory64("proposals/wasm-3.0/float_memory64");
+            fn wasm_memory_grow64("proposals/wasm-3.0/memory_grow64");
+            fn wasm_memory_trap64("proposals/wasm-3.0/memory_trap64");
+            fn wasm_memory_redundancy64("proposals/wasm-3.0/memory_redundancy64");
+            fn wasm_memory64("proposals/wasm-3.0/memory64");
+            fn wasm_table_copy_mixed("proposals/wasm-3.0/table_copy_mixed");
+            fn wasm_memory_copy64("proposals/wasm-3.0/memory_copy");
+            fn wasm_memory_fill64("proposals/wasm-3.0/memory_fill");
+            fn wasm_memory_init64("proposals/wasm-3.0/memory_init");
+            fn wasm_table64("proposals/wasm-3.0/table");
+            fn wasm_imports64("proposals/wasm-3.0/imports");
         }
     };
 }
@@ -306,13 +332,20 @@ mod blobs {
 
         let folder = "testsuite";
     }
+
+    expand_tests_memory64! {
+        include_wasm_blobs,
+
+        let folder = "testsuite";
+    }
 }
 
 mod multi_memory {
     use super::*;
 
     fn test_config() -> RunnerConfig {
-        let config = Config::default();
+        let mut config = Config::default();
+        config.wasm_memory64(false);
         let parsing_mode = ParsingMode::Buffered;
         RunnerConfig {
             config,
@@ -342,6 +375,27 @@ mod custom_page_sizes {
     }
 
     expand_tests_cps! {
+        define_spec_tests,
+
+        let config = test_config();
+        let runner = process_wast;
+    }
+}
+
+mod memory64 {
+    use super::*;
+
+    fn test_config() -> RunnerConfig {
+        let mut config = Config::default();
+        config.wasm_memory64(true);
+        let parsing_mode = ParsingMode::Buffered;
+        RunnerConfig {
+            config,
+            parsing_mode,
+        }
+    }
+
+    expand_tests_memory64! {
         define_spec_tests,
 
         let config = test_config();

@@ -1,4 +1,4 @@
-use crate::{core::TrapCode, for_each_op, index::*, *};
+use crate::{core::TrapCode, for_each_op, index::*, primitive::Offset64Hi, *};
 use ::core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
 macro_rules! define_enum {
@@ -217,6 +217,45 @@ impl Instruction {
         reg2: impl Into<Reg>,
     ) -> Self {
         Self::register_list([reg0.into(), reg1.into(), reg2.into()])
+    }
+
+    /// Creates a new [`Instruction::RegisterAndImm32`] from the given `reg` and `offset_hi`.
+    pub fn register_and_offset_hi(reg: impl Into<Reg>, offset_hi: Offset64Hi) -> Self {
+        Self::register_and_imm32(reg, offset_hi.0)
+    }
+
+    /// Returns `Some` [`Reg`] and [`Offset64Hi`] if encoded properly.
+    ///
+    /// # Errors
+    ///
+    /// Returns back `self` if it was an incorrect [`Instruction`].
+    /// This allows for a better error message to inform the user.
+    pub fn filter_register_and_offset_hi(self) -> Result<(Reg, Offset64Hi), Self> {
+        if let Instruction::RegisterAndImm32 { reg, imm } = self {
+            return Ok((reg, Offset64Hi(u32::from(imm))));
+        }
+        Err(self)
+    }
+
+    /// Creates a new [`Instruction::Imm16AndImm32`] from the given `value` and `offset_hi`.
+    pub fn imm16_and_offset_hi(value: impl Into<AnyConst16>, offset_hi: Offset64Hi) -> Self {
+        Self::imm16_and_imm32(value, offset_hi.0)
+    }
+
+    /// Returns `Some` [`Reg`] and [`Offset64Hi`] if encoded properly.
+    ///
+    /// # Errors
+    ///
+    /// Returns back `self` if it was an incorrect [`Instruction`].
+    /// This allows for a better error message to inform the user.
+    pub fn filter_imm16_and_offset_hi<T>(self) -> Result<(T, Offset64Hi), Self>
+    where
+        T: From<AnyConst16>,
+    {
+        if let Instruction::Imm16AndImm32 { imm16, imm32 } = self {
+            return Ok((T::from(imm16), Offset64Hi(u32::from(imm32))));
+        }
+        Err(self)
     }
 }
 
