@@ -12,6 +12,8 @@ fn reg() {
 #[cfg_attr(miri, ignore)]
 fn imm() {
     test_store_imm::<f64>(WASM_OP, Instruction::store64, 0.0);
+    test_store_imm::<f64>(WASM_OP, Instruction::store64, 0.5);
+    test_store_imm::<f64>(WASM_OP, Instruction::store64, -0.5);
     test_store_imm::<f64>(WASM_OP, Instruction::store64, 1.0);
     test_store_imm::<f64>(WASM_OP, Instruction::store64, -1.0);
     test_store_imm::<f64>(WASM_OP, Instruction::store64, 42.25);
@@ -70,9 +72,12 @@ fn at_imm() {
 #[cfg_attr(miri, ignore)]
 fn at_imm_overflow() {
     test_store_at_imm_overflow(WASM_OP, 0.0);
+    test_store_at_imm_overflow(WASM_OP, 0.5);
+    test_store_at_imm_overflow(WASM_OP, -0.5);
     test_store_at_imm_overflow(WASM_OP, 1.0);
     test_store_at_imm_overflow(WASM_OP, -1.0);
     test_store_at_imm_overflow(WASM_OP, 42.25);
+    test_store_at_imm_overflow(WASM_OP, -42.25);
     test_store_at_imm_overflow(WASM_OP, f64::NEG_INFINITY);
     test_store_at_imm_overflow(WASM_OP, f64::INFINITY);
     test_store_at_imm_overflow(WASM_OP, f64::NAN);
