@@ -25,7 +25,7 @@ fn no_params_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn no_params_imm16() {
-    fn test_with(index: u32) {
+    fn test_with(index: u64) {
         let wasm = format!(
             r#"
             (module
@@ -41,15 +41,15 @@ fn no_params_imm16() {
         TranslationTest::new(&wasm)
             .expect_func_instrs([
                 Instruction::return_call_indirect_0_imm16(FuncType::from(0)),
-                Instruction::call_indirect_params_imm16(u32imm16(index), Table::from(0)),
+                Instruction::call_indirect_params_imm16(u64imm16(index), Table::from(0)),
             ])
             .run();
     }
 
     test_with(0);
     test_with(1);
-    test_with(u32::from(u16::MAX) - 1);
-    test_with(u32::from(u16::MAX));
+    test_with(u64::from(u16::MAX) - 1);
+    test_with(u64::from(u16::MAX));
 }
 
 #[test]
@@ -78,7 +78,7 @@ fn one_reg_param_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn one_reg_param_imm16() {
-    fn test_with(index: u32) {
+    fn test_with(index: u64) {
         let wasm = format!(
             r#"
             (module
@@ -95,7 +95,7 @@ fn one_reg_param_imm16() {
         TranslationTest::new(&wasm)
             .expect_func_instrs([
                 Instruction::return_call_indirect_imm16(FuncType::from(0)),
-                Instruction::call_indirect_params_imm16(u32imm16(index), Table::from(0)),
+                Instruction::call_indirect_params_imm16(u64imm16(index), Table::from(0)),
                 Instruction::register(1),
             ])
             .run();
@@ -103,8 +103,8 @@ fn one_reg_param_imm16() {
 
     test_with(0);
     test_with(1);
-    test_with(u32::from(u16::MAX) - 1);
-    test_with(u32::from(u16::MAX));
+    test_with(u64::from(u16::MAX) - 1);
+    test_with(u64::from(u16::MAX));
 }
 
 #[test]
@@ -170,7 +170,7 @@ fn one_imm_param_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn one_imm_param_imm16() {
-    fn test_with(index: u32) {
+    fn test_with(index: u64) {
         let wasm = format!(
             r#"
             (module
@@ -188,7 +188,7 @@ fn one_imm_param_imm16() {
             .expect_func(
                 ExpectedFunc::new([
                     Instruction::return_call_indirect_imm16(FuncType::from(0)),
-                    Instruction::call_indirect_params_imm16(u32imm16(index), Table::from(0)),
+                    Instruction::call_indirect_params_imm16(u64imm16(index), Table::from(0)),
                     Instruction::register(-1),
                 ])
                 .consts([10_i32]),
@@ -198,8 +198,8 @@ fn one_imm_param_imm16() {
 
     test_with(0);
     test_with(1);
-    test_with(u32::from(u16::MAX) - 1);
-    test_with(u32::from(u16::MAX));
+    test_with(u64::from(u16::MAX) - 1);
+    test_with(u64::from(u16::MAX));
 }
 
 #[test]
@@ -317,7 +317,7 @@ fn two_imm_params_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_reg_params_imm16() {
-    fn test_with(index: u32) {
+    fn test_with(index: u64) {
         let wasm = format!(
             r#"
             (module
@@ -332,7 +332,7 @@ fn two_reg_params_imm16() {
             )
         "#,
         );
-        let elem_index = u32imm16(index);
+        let elem_index = u64imm16(index);
         TranslationTest::new(&wasm)
             .expect_func_instrs([
                 Instruction::return_call_indirect_imm16(FuncType::from(0)),
@@ -344,14 +344,14 @@ fn two_reg_params_imm16() {
 
     test_with(0);
     test_with(1);
-    test_with(u32::from(u16::MAX) - 1);
-    test_with(u32::from(u16::MAX));
+    test_with(u64::from(u16::MAX) - 1);
+    test_with(u64::from(u16::MAX));
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_reg_params_lhs_imm16() {
-    fn test_with(index: u32) {
+    fn test_with(index: u64) {
         let wasm = format!(
             r#"
             (module
@@ -366,7 +366,7 @@ fn two_reg_params_lhs_imm16() {
             )
         "#,
         );
-        let elem_index = u32imm16(index);
+        let elem_index = u64imm16(index);
         TranslationTest::new(&wasm)
             .expect_func_instrs([
                 Instruction::return_call_indirect_imm16(FuncType::from(0)),
@@ -378,14 +378,14 @@ fn two_reg_params_lhs_imm16() {
 
     test_with(0);
     test_with(1);
-    test_with(u32::from(u16::MAX) - 1);
-    test_with(u32::from(u16::MAX));
+    test_with(u64::from(u16::MAX) - 1);
+    test_with(u64::from(u16::MAX));
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn two_imm_params_imm16() {
-    fn test_with(index: u32) {
+    fn test_with(index: u64) {
         let wasm = format!(
             r#"
             (module
@@ -400,7 +400,7 @@ fn two_imm_params_imm16() {
             )
         "#,
         );
-        let elem_index = u32imm16(index);
+        let elem_index = u64imm16(index);
         TranslationTest::new(&wasm)
             .expect_func(
                 ExpectedFunc::new([
@@ -415,8 +415,8 @@ fn two_imm_params_imm16() {
 
     test_with(0);
     test_with(1);
-    test_with(u32::from(u16::MAX) - 1);
-    test_with(u32::from(u16::MAX));
+    test_with(u64::from(u16::MAX) - 1);
+    test_with(u64::from(u16::MAX));
 }
 
 #[test]
@@ -503,7 +503,7 @@ fn three_imm_params_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn three_imm_params_imm16() {
-    fn test_with(index: u32) {
+    fn test_with(index: u64) {
         let wasm = format!(
             r#"
             (module
@@ -519,7 +519,7 @@ fn three_imm_params_imm16() {
             )
         "#,
         );
-        let elem_index = u32imm16(index);
+        let elem_index = u64imm16(index);
         TranslationTest::new(&wasm)
             .expect_func(
                 ExpectedFunc::new([
@@ -534,8 +534,8 @@ fn three_imm_params_imm16() {
 
     test_with(0);
     test_with(1);
-    test_with(u32::from(u16::MAX) - 1);
-    test_with(u32::from(u16::MAX));
+    test_with(u64::from(u16::MAX) - 1);
+    test_with(u64::from(u16::MAX));
 }
 
 #[test]

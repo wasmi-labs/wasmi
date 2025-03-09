@@ -62,7 +62,7 @@ use crate::{
         ShiftAmount,
         Sign,
     },
-    module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader},
+    module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, TableIdx},
     Engine,
     Error,
     ExternRef,
@@ -2596,21 +2596,11 @@ impl FuncTranslator {
         index: Provider<TypedVal>,
         table_index: u32,
     ) -> Result<Instruction, Error> {
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table_index));
+        let index = self.as_index_type_const16(index, table_type.index_ty())?;
         let instr = match index {
-            TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
-                Some(index) => {
-                    // Case: the index is encodable as 16-bit constant value
-                    //       which allows us to use an optimized instruction.
-                    Instruction::call_indirect_params_imm16(index, table_index)
-                }
-                None => {
-                    // Case: the index is not encodable as 16-bit constant value
-                    //       and we need to allocate it as function local constant.
-                    let index = self.alloc.stack.alloc_const(index)?;
-                    Instruction::call_indirect_params(index, table_index)
-                }
-            },
-            TypedProvider::Register(index) => Instruction::call_indirect_params(index, table_index),
+            Provider::Register(index) => Instruction::call_indirect_params(index, table_index),
+            Provider::Const(index) => Instruction::call_indirect_params_imm16(index, table_index),
         };
         Ok(instr)
     }

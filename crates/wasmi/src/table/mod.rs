@@ -13,7 +13,7 @@ use crate::{
     Val,
 };
 use alloc::vec::Vec;
-use core::cmp::max;
+use core::{cmp::max, iter};
 
 mod element;
 mod error;
@@ -78,6 +78,7 @@ impl TableType {
         Self::new_impl(element, IndexType::I64, min, max)
     }
 
+    /// Convenience constructor to create a new [`TableType`].
     fn new_impl(element: ValType, index_ty: IndexType, min: u64, max: Option<u64>) -> Self {
         let absolute_max = index_ty.max_size();
         assert!(u128::from(min) <= absolute_max);
@@ -88,7 +89,7 @@ impl TableType {
             element,
             min,
             max,
-            index_ty: IndexType::I64,
+            index_ty,
         }
     }
 
@@ -97,6 +98,11 @@ impl TableType {
     /// 64-bit memories are part of the Wasm `memory64` proposal.
     pub fn is_64(&self) -> bool {
         self.index_ty.is_64()
+    }
+
+    /// Returns the [`IndexType`] used by the [`MemoryType`].
+    pub(crate) fn index_ty(&self) -> IndexType {
+        self.index_ty
     }
 
     /// Returns the [`ValType`] of elements stored in the [`Table`].
@@ -214,7 +220,7 @@ impl TableEntity {
             }
             return Err(error);
         };
-        elements[..min_size].fill(init.into());
+        elements.extend(iter::repeat_n::<UntypedVal>(init.into(), min_size));
         Ok(Self { ty, elements })
     }
 
@@ -292,16 +298,25 @@ impl TableEntity {
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, EntityGrowError> {
-        let current = self.elements.len();
         let Ok(delta_size) = usize::try_from(delta) else {
             return Err(EntityGrowError::InvalidGrow);
         };
-        let Some(desired) = current.checked_add(delta_size) else {
+        let Some(desired) = self.size().checked_add(delta) else {
+            return Err(EntityGrowError::InvalidGrow);
+        };
+        // We need to divide the `max_size` (in bytes) by 8 because each table element requires 8 bytes.
+        let max_size = self.ty.index_ty.max_size() / 8;
+        if u128::from(desired) > max_size {
+            return Err(EntityGrowError::InvalidGrow);
+        }
+        let current = self.elements.len();
+        let Ok(desired) = usize::try_from(desired) else {
             return Err(EntityGrowError::InvalidGrow);
         };
         let Ok(maximum) = self.ty.maximum().map(usize::try_from).transpose() else {
             return Err(EntityGrowError::InvalidGrow);
         };
+
         // ResourceLimiter gets first look at the request.
         if let Some(limiter) = limiter.as_resource_limiter() {
             match limiter.table_growing(current, desired, maximum) {

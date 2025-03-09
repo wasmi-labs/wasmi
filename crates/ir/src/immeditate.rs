@@ -255,6 +255,13 @@ impl<T> Const32<T> {
     }
 }
 
+impl Const32<u64> {
+    /// Casts the `Const16<u32>` to a `Const16<u64>` value.
+    pub fn cast(const32: Const32<u32>) -> Self {
+        Self::new(const32.inner)
+    }
+}
+
 impl<T> Clone for Const32<T> {
     fn clone(&self) -> Self {
         *self

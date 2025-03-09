@@ -1,8 +1,8 @@
 use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
-    ir::{BoundedRegSpan, Const16, Reg, RegSpan, Sign},
+    ir::{BoundedRegSpan, Const16, Const32, Reg, RegSpan, Sign},
     Error,
-    MemoryType,
+    IndexType,
 };
 
 /// A WebAssembly integer. Either `i32` or `i64`.
@@ -103,28 +103,61 @@ impl_provider_new_const16!(u32);
 impl_provider_new_const16!(u64);
 
 impl super::FuncTranslator {
-    /// Converts the `provider` to an index-type constant value.
+    /// Converts the `provider` to a 16-bit index-type constant value.
     ///
-    /// The behavior is different wether `memory64` is enabled or disabled.
-    pub(super) fn as_index_type_const(
+    /// # Note
+    ///
+    /// - Turns immediates that cannot be 16-bit encoded into function local constants.
+    /// - The behavior is different wether `memory64` is enabled or disabled.
+    pub(super) fn as_index_type_const16(
         &mut self,
         provider: TypedProvider,
-        memory_type: &MemoryType,
+        index_type: IndexType,
     ) -> Result<Provider<Const16<u64>>, Error> {
         let value = match provider {
             Provider::Register(reg) => return Ok(Provider::Register(reg)),
             Provider::Const(value) => value,
         };
-        match memory_type.is_64() {
-            true => {
+        match index_type {
+            IndexType::I64 => {
                 if let Ok(value) = Const16::try_from(u64::from(value)) {
                     return Ok(Provider::Const(value));
                 }
             }
-            false => {
+            IndexType::I32 => {
                 if let Ok(value) = Const16::try_from(u32::from(value)) {
                     return Ok(Provider::Const(<Const16<u64>>::cast(value)));
                 }
+            }
+        }
+        let register = self.alloc.stack.alloc_const(value)?;
+        Ok(Provider::Register(register))
+    }
+
+    /// Converts the `provider` to a 32-bit index-type constant value.
+    ///
+    /// # Note
+    ///
+    /// - Turns immediates that cannot be 32-bit encoded into function local constants.
+    /// - The behavior is different wether `memory64` is enabled or disabled.
+    pub(super) fn as_index_type_const32(
+        &mut self,
+        provider: TypedProvider,
+        index_type: IndexType,
+    ) -> Result<Provider<Const32<u64>>, Error> {
+        let value = match provider {
+            Provider::Register(reg) => return Ok(Provider::Register(reg)),
+            Provider::Const(value) => value,
+        };
+        match index_type {
+            IndexType::I64 => {
+                if let Ok(value) = Const32::try_from(u64::from(value)) {
+                    return Ok(Provider::Const(value));
+                }
+            }
+            IndexType::I32 => {
+                let value = Const32::from(u32::from(value));
+                return Ok(Provider::Const(<Const32<u64>>::cast(value)));
             }
         }
         let register = self.alloc.stack.alloc_const(value)?;

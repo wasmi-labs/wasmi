@@ -4686,7 +4686,7 @@ macro_rules! for_each_op {
             TableGetImm {
                 @result: Reg,
                 /// The constant `index` value of the table element to get.
-                index: u32,
+                index: Const32<u64>,
             },
 
             /// A Wasm `table.size` instruction.
@@ -4719,7 +4719,7 @@ macro_rules! for_each_op {
                 /// The register holding the `value` of the instruction.
                 value: Reg,
                 /// The constant `index` of the instruction.
-                index: u32,
+                index: Const32<u64>,
             },
 
             /// Wasm `table.copy <dst> <src>` instruction.
@@ -4752,7 +4752,7 @@ macro_rules! for_each_op {
             #[snake_name(table_copy_to)]
             TableCopyTo {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
@@ -4771,7 +4771,7 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` table.
                 dst: Reg,
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of copied elements.
                 len: Reg,
             },
@@ -4786,9 +4786,9 @@ macro_rules! for_each_op {
             #[snake_name(table_copy_from_to)]
             TableCopyFromTo {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of copied elements.
                 len: Reg,
             },
@@ -4811,7 +4811,7 @@ macro_rules! for_each_op {
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `dst`.
             ///
@@ -4828,11 +4828,11 @@ macro_rules! for_each_op {
             #[snake_name(table_copy_to_exact)]
             TableCopyToExact {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `src`.
             ///
@@ -4851,9 +4851,9 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` table.
                 dst: Reg,
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
             /// Variant of [`Instruction::TableCopy`] with a constant 16-bit `len` and `src`.
             ///
@@ -4870,11 +4870,11 @@ macro_rules! for_each_op {
             #[snake_name(table_copy_from_to_exact)]
             TableCopyFromToExact {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` table.
-                src: Const16<u32>,
+                src: Const16<u64>,
                 /// The number of copied elements.
-                len: Const16<u32>,
+                len: Const16<u64>,
             },
 
             /// Wasm `table.init <table> <elem>` instruction.
@@ -4907,7 +4907,7 @@ macro_rules! for_each_op {
             #[snake_name(table_init_to)]
             TableInitTo {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
@@ -4941,7 +4941,7 @@ macro_rules! for_each_op {
             #[snake_name(table_init_from_to)]
             TableInitFromTo {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` table.
                 src: Const16<u32>,
                 /// The number of copied elements.
@@ -4983,7 +4983,7 @@ macro_rules! for_each_op {
             #[snake_name(table_init_to_exact)]
             TableInitToExact {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` table.
                 src: Reg,
                 /// The number of copied elements.
@@ -5025,7 +5025,7 @@ macro_rules! for_each_op {
             #[snake_name(table_init_from_to_exact)]
             TableInitFromToExact {
                 /// The start index of the `dst` table.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The start index of the `src` table.
                 src: Const16<u32>,
                 /// The number of copied elements.
@@ -5054,7 +5054,7 @@ macro_rules! for_each_op {
             #[snake_name(table_fill_at)]
             TableFillAt {
                 /// The start index of the table to fill.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The number of elements to fill.
                 len: Reg,
                 /// The value of the filled elements.
@@ -5070,7 +5070,7 @@ macro_rules! for_each_op {
                 /// The start index of the table to fill.
                 dst: Reg,
                 /// The number of elements to fill.
-                len: Const16<u32>,
+                len: Const16<u64>,
                 /// The value of the filled elements.
                 value: Reg,
             },
@@ -5082,9 +5082,9 @@ macro_rules! for_each_op {
             #[snake_name(table_fill_at_exact)]
             TableFillAtExact {
                 /// The start index of the table to fill.
-                dst: Const16<u32>,
+                dst: Const16<u64>,
                 /// The number of elements to fill.
-                len: Const16<u32>,
+                len: Const16<u64>,
                 /// The value of the filled elements.
                 value: Reg,
             },
@@ -5111,7 +5111,7 @@ macro_rules! for_each_op {
             TableGrowImm {
                 @result: Reg,
                 /// The number of elements to add to the table.
-                delta: Const16<u32>,
+                delta: Const16<u64>,
                 /// The value that is used to fill up the new cells.
                 value: Reg,
             },
@@ -5748,7 +5748,7 @@ macro_rules! for_each_op {
             #[snake_name(call_indirect_params_imm16)]
             CallIndirectParamsImm16 {
                 /// The index of the called function in the table.
-                index: Const16<u32>,
+                index: Const16<u64>,
                 /// The table which holds the called function at the index.
                 table: Table,
             },

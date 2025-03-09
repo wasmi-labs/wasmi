@@ -29,7 +29,7 @@ use crate::{
         Instruction,
         Reg,
     },
-    module::{self, FuncIdx, MemoryIdx, WasmiValueType},
+    module::{self, FuncIdx, MemoryIdx, TableIdx, WasmiValueType},
     Error,
     ExternRef,
     FuncRef,
@@ -3056,7 +3056,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let memory = index::Memory::from(mem);
         let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
         let (dst, src, len) = self.alloc.stack.pop3();
-        let dst = self.as_index_type_const(dst, &memory_type)?;
+        let dst = self.as_index_type_const16(dst, memory_type.index_ty())?;
         let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
         let instr = match (dst, src, len) {
@@ -3105,11 +3105,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let dst_memory = index::Memory::from(dst_mem);
         let src_memory = index::Memory::from(src_mem);
-        let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(dst_mem));
+
         let (dst, src, len) = self.alloc.stack.pop3();
-        let dst = self.as_index_type_const(dst, &memory_type)?;
-        let src = self.as_index_type_const(src, &memory_type)?;
-        let len = self.as_index_type_const(len, &memory_type)?;
+
+        let dst_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(dst_mem));
+        let src_memory_type = *self.module.get_type_of_memory(MemoryIdx::from(src_mem));
+        let min_index_ty = dst_memory_type.index_ty().min(&src_memory_type.index_ty());
+        let dst = self.as_index_type_const16(dst, dst_memory_type.index_ty())?;
+        let src = self.as_index_type_const16(src, src_memory_type.index_ty())?;
+        let len = self.as_index_type_const16(len, min_index_ty)?;
+
         let instr = match (dst, src, len) {
             (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
                 Instruction::memory_copy(dst, src, len)
@@ -3151,9 +3156,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let memory = index::Memory::from(mem);
         let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
         let (dst, value, len) = self.alloc.stack.pop3();
-        let dst = self.as_index_type_const(dst, &memory_type)?;
+        let dst = self.as_index_type_const16(dst, memory_type.index_ty())?;
         let value = value.map_const(|value| u32::from(value) as u8);
-        let len = self.as_index_type_const(len, &memory_type)?;
+        let len = self.as_index_type_const16(len, memory_type.index_ty())?;
         let instr = match (dst, value, len) {
             (Provider::Register(dst), Provider::Register(value), Provider::Register(len)) => {
                 Instruction::memory_fill(dst, value, len)
@@ -3190,7 +3195,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_init(&mut self, elem_index: u32, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.alloc.stack.pop3();
-        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table));
+        let dst = self.as_index_type_const16(dst, table_type.index_ty())?;
         let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
         let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
         let instr = match (dst, src, len) {
@@ -3238,9 +3244,12 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_copy(&mut self, dst_table: u32, src_table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, src, len) = self.alloc.stack.pop3();
-        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
-        let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
-        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
+        let dst_table_type = *self.module.get_type_of_table(TableIdx::from(dst_table));
+        let src_table_type = *self.module.get_type_of_table(TableIdx::from(src_table));
+        let min_index_ty = dst_table_type.index_ty().min(&src_table_type.index_ty());
+        let dst = self.as_index_type_const16(dst, dst_table_type.index_ty())?;
+        let src = self.as_index_type_const16(src, src_table_type.index_ty())?;
+        let len = self.as_index_type_const16(len, min_index_ty)?;
         let instr = match (dst, src, len) {
             (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
                 Instruction::table_copy(dst, src, len)
@@ -3280,8 +3289,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_fill(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let (dst, value, len) = self.alloc.stack.pop3();
-        let dst = <Provider<Const16<u32>>>::new(dst, &mut self.alloc.stack)?;
-        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table));
+        let dst = self.as_index_type_const16(dst, table_type.index_ty())?;
+        let len = self.as_index_type_const16(len, table_type.index_ty())?;
         let value = match value {
             TypedProvider::Register(value) => value,
             TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
@@ -3309,19 +3319,15 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_table_get(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let index = self.alloc.stack.pop();
         let result = self.alloc.stack.push_dynamic()?;
-        match index {
-            TypedProvider::Register(index) => {
-                self.push_fueled_instr(Instruction::table_get(result, index), FuelCosts::entity)?;
-            }
-            TypedProvider::Const(index) => {
-                self.push_fueled_instr(
-                    Instruction::table_get_imm(result, u32::from(index)),
-                    FuelCosts::entity,
-                )?;
-            }
-        }
+        let index = self.as_index_type_const32(index, table_type.index_ty())?;
+        let instr = match index {
+            Provider::Register(index) => Instruction::table_get(result, index),
+            Provider::Const(index) => Instruction::table_get_imm(result, index),
+        };
+        self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_index(table))?;
@@ -3330,14 +3336,16 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_table_set(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let (index, value) = self.alloc.stack.pop2();
+        let index = self.as_index_type_const32(index, table_type.index_ty())?;
         let value = match value {
             TypedProvider::Register(value) => value,
             TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,
         };
         let instr = match index {
-            TypedProvider::Register(index) => Instruction::table_set(index, value),
-            TypedProvider::Const(index) => Instruction::table_set_at(value, u32::from(index)),
+            Provider::Register(index) => Instruction::table_set(index, value),
+            Provider::Const(index) => Instruction::table_set_at(value, index),
         };
         self.push_fueled_instr(instr, FuelCosts::entity)?;
         self.alloc
@@ -3348,9 +3356,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_table_grow(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table));
         let (value, delta) = self.alloc.stack.pop2();
+        let delta = self.as_index_type_const16(delta, table_type.index_ty())?;
         if let Provider::Const(delta) = delta {
-            if u32::from(delta) == 0 {
+            if u64::from(delta) == 0 {
                 // Case: growing by 0 elements.
                 //
                 // Since `table.grow` returns the `table.size` before the
@@ -3361,7 +3371,6 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 return Ok(());
             }
         }
-        let delta = <Provider<Const16<u32>>>::new(delta, &mut self.alloc.stack)?;
         let value = match value {
             TypedProvider::Register(value) => value,
             TypedProvider::Const(value) => self.alloc.stack.alloc_const(value)?,

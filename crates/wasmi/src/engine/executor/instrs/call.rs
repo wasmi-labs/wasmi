@@ -177,11 +177,11 @@ impl Executor<'_> {
     /// - This is required for some instructions that do not fit into
     ///   a single instruction word and store a [`index::Table`] value in
     ///   another instruction word.
-    fn pull_call_indirect_params(&mut self) -> (u32, index::Table) {
+    fn pull_call_indirect_params(&mut self) -> (u64, index::Table) {
         self.ip.add(1);
         match *self.ip.get() {
             Instruction::CallIndirectParams { index, table } => {
-                let index = u32::from(self.get_register(index));
+                let index: u64 = self.get_register_as(index);
                 (index, table)
             }
             unexpected => {
@@ -206,11 +206,11 @@ impl Executor<'_> {
     /// - This is required for some instructions that do not fit into
     ///   a single instruction word and store a [`index::Table`] value in
     ///   another instruction word.
-    fn pull_call_indirect_params_imm16(&mut self) -> (u32, index::Table) {
+    fn pull_call_indirect_params_imm16(&mut self) -> (u64, index::Table) {
         self.ip.add(1);
         match *self.ip.get() {
             Instruction::CallIndirectParamsImm16 { index, table } => {
-                let index = u32::from(index);
+                let index: u64 = index.into();
                 (index, table)
             }
             unexpected => {
@@ -733,7 +733,7 @@ impl Executor<'_> {
         store: &mut Store<T>,
         results: Option<RegSpan>,
         func_type: index::FuncType,
-        index: u32,
+        index: u64,
         table: index::Table,
     ) -> Result<ControlFlow, Error> {
         let table = self.get_table(table);

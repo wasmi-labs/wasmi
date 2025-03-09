@@ -22,4 +22,12 @@ impl IndexType {
             Self::I64 => WASM64_MAX_SIZE,
         }
     }
+
+    /// Returns the minimum [`IndexType`] between `self` and `other`.
+    pub fn min(&self, other: &Self) -> Self {
+        match (self, other) {
+            (IndexType::I64, IndexType::I64) => IndexType::I64,
+            _ => IndexType::I32,
+        }
+    }
 }

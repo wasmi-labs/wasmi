@@ -30,7 +30,7 @@ fn reg() {
     test_reg(ValType::ExternRef);
 }
 
-fn test_imm16(ty: ValType, delta: u32) {
+fn test_imm16(ty: ValType, delta: u64) {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -45,7 +45,7 @@ fn test_imm16(ty: ValType, delta: u32) {
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::table_grow_imm(Reg::from(1), u32imm16(delta), Reg::from(0)),
+            Instruction::table_grow_imm(Reg::from(1), u64imm16(delta), Reg::from(0)),
             Instruction::table_index(0),
             Instruction::return_reg(Reg::from(1)),
         ])
@@ -55,14 +55,14 @@ fn test_imm16(ty: ValType, delta: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn imm16() {
-    fn test_for(delta: u32) {
+    fn test_for(delta: u64) {
         test_imm16(ValType::FuncRef, delta);
         test_imm16(ValType::ExternRef, delta);
     }
     test_for(1);
     test_for(42);
-    test_for(u32::from(u16::MAX) - 1);
-    test_for(u32::from(u16::MAX));
+    test_for(u64::from(u16::MAX) - 1);
+    test_for(u64::from(u16::MAX));
 }
 
 fn test_imm_zero(ty: ValType) {
