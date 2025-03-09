@@ -1,5 +1,5 @@
+use crate::{core::ValType, FuncType, GlobalType, IndexType, MemoryType, Mutability, TableType};
 use wasmparser::AbstractHeapType;
-use crate::{IndexType, core::ValType, FuncType, GlobalType, MemoryType, Mutability, TableType};
 
 impl TableType {
     /// Creates a new [`TableType`] from the given `wasmparser` primitive.
