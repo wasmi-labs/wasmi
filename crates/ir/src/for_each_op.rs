@@ -5477,7 +5477,7 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Reg,
                 /// The start index of the `src` data segment.
-                src: Const16<u64>,
+                src: Const16<u32>,
                 /// The number of initialized bytes.
                 len: Reg,
             },
@@ -5494,7 +5494,7 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Const16<u64>,
                 /// The start index of the `src` data segment.
-                src: Const16<u64>,
+                src: Const16<u32>,
                 /// The number of initialized bytes.
                 len: Reg,
             },
@@ -5513,7 +5513,7 @@ macro_rules! for_each_op {
                 /// The start index of the `src` data segment.
                 src: Reg,
                 /// The number of initialized bytes.
-                len: Const16<u64>,
+                len: Const16<u32>,
             },
             /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `dst`.
             ///
@@ -5530,7 +5530,7 @@ macro_rules! for_each_op {
                 /// The start index of the `src` data segment.
                 src: Reg,
                 /// The number of initialized bytes.
-                len: Const16<u64>,
+                len: Const16<u32>,
             },
             /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
             ///
@@ -5545,9 +5545,9 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Reg,
                 /// The start index of the `src` data segment.
-                src: Const16<u64>,
+                src: Const16<u32>,
                 /// The number of initialized bytes.
-                len: Const16<u64>,
+                len: Const16<u32>,
             },
             /// Variant of [`Instruction::MemoryInit`] with a constant 16-bit `len` and `src`.
             ///
@@ -5562,9 +5562,9 @@ macro_rules! for_each_op {
                 /// The start index of the `dst` memory.
                 dst: Const16<u64>,
                 /// The start index of the `src` data segment.
-                src: Const16<u64>,
+                src: Const16<u32>,
                 /// The number of initialized bytes.
-                len: Const16<u64>,
+                len: Const16<u32>,
             },
 
             /// A [`Table`] instruction parameter.

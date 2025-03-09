@@ -3057,8 +3057,8 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
         let (dst, src, len) = self.alloc.stack.pop3();
         let dst = self.as_index_type_const(dst, &memory_type)?;
-        let src = self.as_index_type_const(src, &memory_type)?;
-        let len = self.as_index_type_const(len, &memory_type)?;
+        let src = <Provider<Const16<u32>>>::new(src, &mut self.alloc.stack)?;
+        let len = <Provider<Const16<u32>>>::new(len, &mut self.alloc.stack)?;
         let instr = match (dst, src, len) {
             (Provider::Register(dst), Provider::Register(src), Provider::Register(len)) => {
                 Instruction::memory_init(dst, src, len)

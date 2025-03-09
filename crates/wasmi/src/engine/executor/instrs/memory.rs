@@ -458,8 +458,8 @@ impl Executor<'_> {
         len: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = self.get_register_as(len);
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = self.get_register_as(len);
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -472,8 +472,8 @@ impl Executor<'_> {
         len: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = self.get_register_as(len);
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = self.get_register_as(len);
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -482,12 +482,12 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
-        src: Const16<u64>,
+        src: Const16<u32>,
         len: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
-        let src: u64 = src.into();
-        let len: u64 = self.get_register_as(len);
+        let src: u32 = src.into();
+        let len: u32 = self.get_register_as(len);
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -496,12 +496,12 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u64>,
-        src: Const16<u64>,
+        src: Const16<u32>,
         len: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let src: u64 = src.into();
-        let len: u64 = self.get_register_as(len);
+        let src: u32 = src.into();
+        let len: u32 = self.get_register_as(len);
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -511,11 +511,11 @@ impl Executor<'_> {
         store: &mut StoreInner,
         dst: Reg,
         src: Reg,
-        len: Const16<u64>,
+        len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = len.into();
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -525,11 +525,11 @@ impl Executor<'_> {
         store: &mut StoreInner,
         dst: Const16<u64>,
         src: Reg,
-        len: Const16<u64>,
+        len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = len.into();
+        let src: u32 = self.get_register_as(src);
+        let len: u32 = len.into();
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -538,12 +538,12 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Reg,
-        src: Const16<u64>,
-        len: Const16<u64>,
+        src: Const16<u32>,
+        len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
-        let src: u64 = src.into();
-        let len: u64 = len.into();
+        let src: u32 = src.into();
+        let len: u32 = len.into();
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -552,12 +552,12 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u64>,
-        src: Const16<u64>,
-        len: Const16<u64>,
+        src: Const16<u32>,
+        len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let src: u64 = src.into();
-        let len: u64 = len.into();
+        let src: u32 = src.into();
+        let len: u32 = len.into();
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -567,8 +567,8 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: u64,
-        src: u64,
-        len: u64,
+        src: u32,
+        len: u32,
     ) -> Result<(), Error> {
         let Ok(dst_index) = usize::try_from(dst) else {
             return Err(Error::from(TrapCode::MemoryOutOfBounds));
