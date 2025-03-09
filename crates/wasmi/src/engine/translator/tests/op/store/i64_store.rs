@@ -123,7 +123,7 @@ fn imm_at_overflow() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn at_imm_fallback() {
+fn at_imm16_fallback() {
     [
         0,
         -1,
@@ -139,4 +139,19 @@ fn at_imm_fallback() {
     .for_each(|value| {
         test_store_at_imm16_fallback::<i64>(WASM_OP, Instruction::i64_store_imm16, value);
     })
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn at_imm_fallback() {
+    for value in [
+        i64::from(i16::MIN) - 1,
+        i64::from(i16::MAX) + 1,
+        i64::MIN,
+        i64::MIN + 1,
+        i64::MAX - 1,
+        i64::MAX,
+    ] {
+        test_store_at_imm_fallback::<i64>(WASM_OP, Instruction::store64, value);
+    }
 }

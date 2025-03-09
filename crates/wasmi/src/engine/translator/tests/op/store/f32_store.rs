@@ -76,3 +76,11 @@ fn at_imm_overflow() {
         test_store_at_imm_overflow(WASM_OP, value);
     }
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn at_imm_fallback() {
+    for value in DEFAULT_TEST_VALUES {
+        test_store_at_imm_fallback(WASM_OP, Instruction::store32, value);
+    }
+}
