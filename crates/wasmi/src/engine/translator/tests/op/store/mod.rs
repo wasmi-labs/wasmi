@@ -942,22 +942,11 @@ fn test_store_wrap_at_imm16_fallback<T, Wrapped>(
         (u64::MAX - 1, 1),
     ];
     for (ptr, offset) in ptrs_and_offsets {
-        test_store_at_imm16_fallback_for::<T, Wrapped>(
-            wasm_op,
-            make_instr,
-            MemIdx(0),
-            ptr,
-            offset,
-            value,
-        );
-        test_store_at_imm16_fallback_for::<T, Wrapped>(
-            wasm_op,
-            make_instr,
-            MemIdx(1),
-            ptr,
-            offset,
-            value,
-        );
+        for mem_idx in [0, 1].map(MemIdx) {
+            test_store_at_imm16_fallback_for::<T, Wrapped>(
+                wasm_op, make_instr, mem_idx, ptr, offset, value,
+            );
+        }
     }
 }
 
