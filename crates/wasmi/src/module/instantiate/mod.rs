@@ -292,7 +292,7 @@ impl Module {
             let element =
                 ElementSegment::new(context.as_context_mut(), segment, get_func, get_global);
             if let ElementSegmentKind::Active(active) = segment.kind() {
-                let dst_index = u32::from(Self::eval_init_expr(
+                let dst_index = u64::from(Self::eval_init_expr(
                     context.as_context(),
                     builder,
                     active.offset(),
@@ -304,12 +304,12 @@ impl Module {
                 let len_table = table.size(&context);
                 let len_items = element.size(&context);
                 dst_index
-                    .checked_add(len_items)
+                    .checked_add(u64::from(len_items))
                     .filter(|&max_index| max_index <= len_table)
                     .ok_or(InstantiationError::ElementSegmentDoesNotFit {
                         table,
-                        offset: dst_index,
-                        amount: len_items,
+                        table_index: dst_index,
+                        len: len_items,
                     })?;
                 let (table, elem) = context
                     .as_context_mut()

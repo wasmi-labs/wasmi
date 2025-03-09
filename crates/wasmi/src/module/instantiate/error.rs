@@ -45,9 +45,9 @@ pub enum InstantiationError {
         /// The table of the element segment.
         table: Table,
         /// The offset to store the `amount` of elements into the table.
-        offset: u32,
+        table_index: u64,
         /// The amount of elements with which the table is initialized at the `offset`.
-        amount: u32,
+        len: u32,
     },
     /// Caused when the `start` function was unexpectedly found in the instantiated module.
     FoundStartFn {
@@ -79,8 +79,8 @@ impl Display for InstantiationError {
             }
             Self::ElementSegmentDoesNotFit {
                 table,
-                offset,
-                amount,
+                table_index: offset,
+                len: amount,
             } => write!(
                 f,
                 "out of bounds table access: {table:?} does not fit {amount} elements starting from offset {offset}",

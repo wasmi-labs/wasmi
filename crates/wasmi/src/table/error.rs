@@ -6,14 +6,22 @@ use core::{fmt, fmt::Display};
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum TableError {
+    /// Tried to allocate more virtual memory than technically possible.
+    OutOfSystemMemory,
+    /// The minimum size of the table type overflows the system index type.
+    MinimumSizeOverflow,
+    /// The maximum size of the table type overflows the system index type.
+    MaximumSizeOverflow,
+    /// If a resource limiter denied allocation or growth of a linear memory.
+    ResourceLimiterDeniedAllocation,
     /// Occurs when growing a table out of its set bounds.
     GrowOutOfBounds {
         /// The maximum allowed table size.
-        maximum: u32,
+        maximum: u64,
         /// The current table size before the growth operation.
-        current: u32,
+        current: u64,
         /// The amount of requested invalid growth.
-        delta: u32,
+        delta: u64,
     },
     /// Occurs when operating with a [`Table`](crate::Table) and mismatching element types.
     ElementTypeMismatch {
@@ -25,9 +33,9 @@ pub enum TableError {
     /// Occurs when accessing the table out of bounds.
     AccessOutOfBounds {
         /// The current size of the table.
-        current: u32,
+        current: u64,
         /// The accessed index that is out of bounds.
-        offset: u32,
+        index: u64,
     },
     /// Occur when coping elements of tables out of bounds.
     CopyOutOfBounds,
@@ -47,6 +55,21 @@ impl std::error::Error for TableError {}
 impl Display for TableError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::OutOfSystemMemory => {
+                write!(
+                    f,
+                    "tried to allocate more virtual memory than available on the system"
+                )
+            }
+            Self::MinimumSizeOverflow => {
+                write!(f, "the minimum table size overflows the system bounds")
+            }
+            Self::MaximumSizeOverflow => {
+                write!(f, "the maximum table size overflows the system bounds")
+            }
+            Self::ResourceLimiterDeniedAllocation => {
+                write!(f, "a resource limiter denied to allocate or grow the table")
+            }
             Self::GrowOutOfBounds {
                 maximum,
                 current,
@@ -61,7 +84,10 @@ impl Display for TableError {
             Self::ElementTypeMismatch { expected, actual } => {
                 write!(f, "encountered mismatching table element type, expected {expected:?} but found {actual:?}")
             }
-            Self::AccessOutOfBounds { current, offset } => {
+            Self::AccessOutOfBounds {
+                current,
+                index: offset,
+            } => {
                 write!(
                     f,
                     "out of bounds access of table element {offset} \
