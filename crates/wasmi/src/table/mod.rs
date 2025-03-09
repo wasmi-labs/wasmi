@@ -610,7 +610,7 @@ impl TableEntity {
             .and_then(|elements| elements.get_mut(..len_size))
             .ok_or(TrapCode::TableOutOfBounds)?;
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(u64::from(len)))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len))?;
         }
         dst.fill(val);
         Ok(())
