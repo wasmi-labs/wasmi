@@ -106,7 +106,7 @@ impl ModuleHeader {
         &self.inner.globals[global_idx.into_u32() as usize]
     }
 
-    /// Returns the [`MemoryType`] the the indexed global variable.
+    /// Returns the [`MemoryType`] the the indexed Wasm memory.
     pub fn get_type_of_memory(&self, memory_idx: MemoryIdx) -> &MemoryType {
         &self.inner.memories[memory_idx.into_u32() as usize]
     }
