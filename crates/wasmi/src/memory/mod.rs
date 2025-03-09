@@ -294,7 +294,12 @@ impl MemoryType {
     ///
     /// 64-bit memories are part of the Wasm `memory64` proposal.
     pub fn is_64(&self) -> bool {
-        self.inner.index_type.is_64()
+        self.index_ty().is_64()
+    }
+
+    /// Returns the [`IndexType`] used by the [`MemoryType`].
+    pub(crate) fn index_ty(&self) -> IndexType {
+        self.inner.index_type
     }
 
     /// Returns the minimum pages of the memory type.
