@@ -17,6 +17,7 @@ use crate::{
     error::EntityGrowError,
     store::{Fuel, ResourceLimiterRef},
     Error,
+    IndexType,
 };
 
 /// A raw index to a linear memory entity.
@@ -34,15 +35,6 @@ impl ArenaIndex for MemoryIdx {
         });
         Self(value)
     }
-}
-
-/// The index type used for addressing a linear memory.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum IndexType {
-    /// A 32-bit address type.
-    I32,
-    /// A 64-bit address type.
-    I64,
 }
 
 /// Internal memory type data and details.
@@ -120,12 +112,7 @@ impl MemoryTypeInner {
     /// - This does _not_ take into account the page size.
     /// - This is based _only_ on the index type used by the memory type.
     fn max_size_based_on_index_type(&self) -> u128 {
-        const WASM32_MAX_SIZE: u128 = 1 << 32;
-        const WASM64_MAX_SIZE: u128 = 1 << 64;
-        match self.index_type {
-            IndexType::I32 => WASM32_MAX_SIZE,
-            IndexType::I64 => WASM64_MAX_SIZE,
-        }
+        self.index_type.max_size()
     }
 
     /// Returns the absolute maximum size in pages that a linear memory is allowed to have.
@@ -307,7 +294,7 @@ impl MemoryType {
     ///
     /// 64-bit memories are part of the Wasm `memory64` proposal.
     pub fn is_64(&self) -> bool {
-        matches!(self.inner.index_type, IndexType::I64)
+        self.inner.index_type.is_64()
     }
 
     /// Returns the minimum pages of the memory type.
