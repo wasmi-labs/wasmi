@@ -79,7 +79,7 @@ impl TableType {
     }
 
     /// Convenience constructor to create a new [`TableType`].
-    fn new_impl(element: ValType, index_ty: IndexType, min: u64, max: Option<u64>) -> Self {
+    pub(crate) fn new_impl(element: ValType, index_ty: IndexType, min: u64, max: Option<u64>) -> Self {
         let absolute_max = index_ty.max_size();
         assert!(u128::from(min) <= absolute_max);
         max.inspect(|&max| {

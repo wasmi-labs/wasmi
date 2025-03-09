@@ -1,6 +1,5 @@
 use wasmparser::AbstractHeapType;
-
-use crate::{core::ValType, FuncType, GlobalType, MemoryType, Mutability, TableType};
+use crate::{IndexType, core::ValType, FuncType, GlobalType, MemoryType, Mutability, TableType};
 
 impl TableType {
     /// Creates a new [`TableType`] from the given `wasmparser` primitive.
@@ -11,20 +10,13 @@ impl TableType {
     /// routine does not become part of the public API of [`TableType`].
     pub(crate) fn from_wasmparser(table_type: wasmparser::TableType) -> Self {
         let element = WasmiValueType::from(table_type.element_type).into_inner();
-        let minimum: u32 = table_type
-            .initial
-            .try_into()
-            .unwrap_or_else(|_err| panic!("out of bounds minimum value: {}", table_type.initial));
-        let maximum: Option<u32> = match table_type.maximum {
-            Some(maximum) => {
-                let maximum = maximum
-                    .try_into()
-                    .unwrap_or_else(|_err| panic!("out of bounds maximum value: {}", maximum));
-                Some(maximum)
-            }
-            None => None,
+        let minimum: u64 = table_type.initial;
+        let maximum: Option<u64> = table_type.maximum;
+        let index_ty = match table_type.table64 {
+            true => IndexType::I64,
+            false => IndexType::I32,
         };
-        Self::new(element, minimum, maximum)
+        Self::new_impl(element, index_ty, minimum, maximum)
     }
 }
 
