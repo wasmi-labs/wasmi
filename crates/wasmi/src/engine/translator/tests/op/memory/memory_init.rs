@@ -79,7 +79,7 @@ fn test_copy_exact(len: u32) {
 #[cfg_attr(miri, ignore)]
 fn init_exact() {
     test_copy_exact(u32::from(u16::MAX) + 1);
-    test_copy_exact(u32::from(u32::MAX));
+    test_copy_exact(u32::MAX);
 }
 
 fn testcase_init_from(src: u32) -> TranslationTest {
@@ -135,7 +135,7 @@ fn test_copy_from(src: u32) {
 #[cfg_attr(miri, ignore)]
 fn init_from() {
     test_copy_from(u32::from(u16::MAX) + 1);
-    test_copy_from(u32::from(u32::MAX));
+    test_copy_from(u32::MAX);
 }
 
 fn testcase_init_to(dst: u64) -> TranslationTest {
