@@ -96,8 +96,8 @@ impl Arbitrary<'_> for FuzzSmithConfig {
             max_instructions: u.int_in_range(0..=MAX_MAXIMUM)?,
             max_memories: u.int_in_range(0..=100)?,
             max_tables: u.int_in_range(0..=100)?,
-            max_memory32_bytes: u.int_in_range(0..=u32::MAX as u64 + 1)?,
-            max_memory64_bytes: 0, // Wasm `memory64`` proposal
+            max_memory32_bytes: u.int_in_range(0..=u64::from(u32::MAX) + 1)?,
+            max_memory64_bytes: u.int_in_range(0..=u128::from(u64::MAX) + 1)?,
             min_uleb_size: u.int_in_range(0..=5)?,
             max_table_elements: u.int_in_range(0..=1_000_000)?,
             // Wasm proposals supported by Wasmi:
@@ -106,7 +106,7 @@ impl Arbitrary<'_> for FuzzSmithConfig {
             reference_types_enabled: false, // TODO: re-enable reference-types for differential fuzzing
             simd_enabled: false,
             multi_value_enabled: true,
-            memory64_enabled: false,
+            memory64_enabled: true,
             saturating_float_to_int_enabled: true,
             sign_extension_ops_enabled: true,
             relaxed_simd_enabled: false,
@@ -142,14 +142,25 @@ impl FuzzSmithConfig {
     }
 
     /// Disable the Wasm `multi-memory` proposal.
+    ///
+    /// This is required by some supported Wasm runtime oracles.
     pub fn disable_multi_memory(&mut self) {
         self.inner.multi_value_enabled = false;
         self.inner.max_memories = cmp::min(self.inner.max_memories, 1);
     }
 
     /// Disable the Wasm `custom-page-sizes` proposal.
+    ///
+    /// This is required by some supported Wasm runtime oracles.
     pub fn disable_custom_page_sizes(&mut self) {
         self.inner.custom_page_sizes_enabled = false;
+    }
+
+    /// Disable the Wasm `memory64` proposal.
+    ///
+    /// This is required by some supported Wasm runtime oracles.
+    pub fn disable_memory64(&mut self) {
+        self.inner.memory64_enabled = false;
     }
 }
 
