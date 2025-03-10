@@ -1849,7 +1849,6 @@ dependencies = [
  "bitflags",
  "hashbrown",
  "indexmap",
- "semver",
 ]
 
 [[package]]
