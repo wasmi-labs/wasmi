@@ -295,22 +295,22 @@ macro_rules! expand_tests_memory64 {
         $mac! {
             $( $args )*
 
-            fn wasm_address64("proposals/memory64/address64");
-            fn wasm_align64("proposals/memory64/align64");
-            fn wasm_call_indirect64("proposals/memory64/call_indirect");
-            fn wasm_endianness64("proposals/memory64/endianness64");
-            fn wasm_float_memory64("proposals/memory64/float_memory64");
-            fn wasm_load64("proposals/memory64/load64");
-            fn wasm_memory_grow64("proposals/memory64/memory_grow64");
-            fn wasm_memory_trap64("proposals/memory64/memory_trap64");
-            fn wasm_memory_redundancy64("proposals/memory64/memory_redundancy64");
-            fn wasm_memory64("proposals/memory64/memory64");
-            fn wasm_memory_copy64("proposals/memory64/memory_copy");
-            fn wasm_memory_fill64("proposals/memory64/memory_fill");
-            fn wasm_memory_init64("proposals/memory64/memory_init");
-            fn wasm_imports64("proposals/memory64/imports");
-            fn wasm_table64("proposals/memory64/table");
-            fn wasm_table_copy_mixed("proposals/memory64/table_copy_mixed");
+            fn wasm_address64("memory64/address64");
+            fn wasm_align64("memory64/align64");
+            fn wasm_call_indirect64("memory64/call_indirect");
+            fn wasm_endianness64("memory64/endianness64");
+            fn wasm_float_memory64("memory64/float_memory64");
+            fn wasm_load64("memory64/load64");
+            fn wasm_memory_grow64("memory64/memory_grow64");
+            fn wasm_memory_trap64("memory64/memory_trap64");
+            fn wasm_memory_redundancy64("memory64/memory_redundancy64");
+            fn wasm_memory64("memory64/memory64");
+            fn wasm_memory_copy64("memory64/memory_copy");
+            fn wasm_memory_fill64("memory64/memory_fill");
+            fn wasm_memory_init64("memory64/memory_init");
+            fn wasm_imports64("memory64/imports");
+            fn wasm_table64("memory64/table");
+            fn wasm_table_copy_mixed("memory64/table_copy_mixed");
         }
     };
 }
@@ -337,7 +337,7 @@ mod blobs {
     expand_tests_memory64! {
         include_wasm_blobs,
 
-        let folder = "memory64";
+        let folder = "wasmi-tests";
     }
 }
 
