@@ -28,6 +28,10 @@ type WasmStoreOp = fn(
     value: UntypedVal,
 ) -> Result<(), TrapCode>;
 
+/// The function signature of Wasm store operations.
+type WasmStoreAtOp =
+    fn(memory: &mut [u8], address: usize, value: UntypedVal) -> Result<(), TrapCode>;
+
 impl Executor<'_> {
     /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
     fn fetch_value_and_offset_hi(&self) -> (Reg, Offset64Hi) {
@@ -114,6 +118,29 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let memory = self.fetch_memory_bytes_mut(memory, store);
         store_wrap(memory, address, u64::from(offset), value)?;
+        Ok(())
+    }
+
+    /// Executes a generic Wasm `store[N]` operation.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `{i32, i64, f32, f64}.store`
+    /// - `{i32, i64}.store8`
+    /// - `{i32, i64}.store16`
+    /// - `i64.store32`
+    fn execute_store_wrap_at(
+        &mut self,
+        store: &mut StoreInner,
+        memory: Memory,
+        address: Address32,
+        value: UntypedVal,
+        store_wrap_at: WasmStoreAtOp,
+    ) -> Result<(), Error> {
+        let memory = self.fetch_memory_bytes_mut(memory, store);
+        store_wrap_at(memory, usize::from(address), value)?;
         Ok(())
     }
 
@@ -224,16 +251,15 @@ impl Executor<'_> {
         store: &mut StoreInner,
         address: Address32,
         value: Reg,
-        store_op: WasmStoreOp,
+        store_at_op: WasmStoreAtOp,
     ) -> Result<(), Error> {
         let memory = self.fetch_optional_memory(1);
-        self.execute_store_wrap(
+        self.execute_store_wrap_at(
             store,
             memory,
-            UntypedVal::from(u64::from(address)),
-            Offset64::from(0),
+            address,
             self.get_register(value),
-            store_op,
+            store_at_op,
         )?;
         self.try_next_instr()
     }
@@ -243,20 +269,13 @@ impl Executor<'_> {
         store: &mut StoreInner,
         address: Address32,
         value: V,
-        store_op: WasmStoreOp,
+        store_at_op: WasmStoreAtOp,
     ) -> Result<(), Error>
     where
         T: From<V> + Into<UntypedVal>,
     {
         let memory = self.fetch_optional_memory(1);
-        self.execute_store_wrap(
-            store,
-            memory,
-            UntypedVal::from(u64::from(address)),
-            Offset64::from(0),
-            T::from(value).into(),
-            store_op,
-        )?;
+        self.execute_store_wrap_at(store, memory, address, T::from(value).into(), store_at_op)?;
         self.try_next_instr()
     }
 }
@@ -268,13 +287,14 @@ macro_rules! impl_execute_istore {
             (Instruction::$var_store_imm:ident, $fn_store_imm:ident),
             (Instruction::$var_store_off16_imm16:ident, $fn_store_off16_imm16:ident),
             (Instruction::$var_store_at_imm16:ident, $fn_store_at_imm16:ident),
-            $impl_fn:expr $(,)?
+            $store_fn:expr,
+            $store_at_fn:expr $(,)?
         )
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_imm), "`].")]
             pub fn $fn_store_imm(&mut self, store: &mut StoreInner, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
-                self.execute_store_imm::<$to_ty>(store, ptr, offset_lo, $impl_fn)
+                self.execute_store_imm::<$to_ty>(store, ptr, offset_lo, $store_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16_imm16), "`].")]
@@ -284,7 +304,7 @@ macro_rules! impl_execute_istore {
                 offset: Offset16,
                 value: $from_ty,
             ) -> Result<(), Error> {
-                self.execute_store_offset16_imm16::<$to_ty, _>(ptr, offset, value, $impl_fn)
+                self.execute_store_offset16_imm16::<$to_ty, _>(ptr, offset, value, $store_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at_imm16), "`].")]
@@ -294,7 +314,7 @@ macro_rules! impl_execute_istore {
                 address: Address32,
                 value: $from_ty,
             ) -> Result<(), Error> {
-                self.execute_store_at_imm16::<$to_ty, _>(store, address, value, $impl_fn)
+                self.execute_store_at_imm16::<$to_ty, _>(store, address, value, $store_at_fn)
             }
         )*
     };
@@ -307,6 +327,7 @@ impl Executor<'_> {
             (Instruction::I32StoreOffset16Imm16, execute_i32_store_offset16_imm16),
             (Instruction::I32StoreAtImm16, execute_i32_store_at_imm16),
             UntypedVal::store32,
+            UntypedVal::store32_at,
         ),
         (
             (Const16<i64> => i64),
@@ -314,6 +335,7 @@ impl Executor<'_> {
             (Instruction::I64StoreOffset16Imm16, execute_i64_store_offset16_imm16),
             (Instruction::I64StoreAtImm16, execute_i64_store_at_imm16),
             UntypedVal::store64,
+            UntypedVal::store64_at,
         ),
     }
 }
@@ -328,7 +350,8 @@ macro_rules! impl_execute_istore_trunc {
             (Instruction::$var_store_off16_imm16:ident, $fn_store_off16_imm16:ident),
             (Instruction::$var_store_at:ident, $fn_store_at:ident),
             (Instruction::$var_store_at_imm16:ident, $fn_store_at_imm16:ident),
-            $impl_fn:expr $(,)?
+            $store_fn:expr,
+            $store_at_fn:expr $(,)?
         )
     ),* $(,)? ) => {
         $(
@@ -338,13 +361,14 @@ macro_rules! impl_execute_istore_trunc {
                     (Instruction::$var_store_imm, $fn_store_imm),
                     (Instruction::$var_store_off16_imm16, $fn_store_off16_imm16),
                     (Instruction::$var_store_at_imm16, $fn_store_at_imm16),
-                    $impl_fn,
+                    $store_fn,
+                    $store_at_fn,
                 )
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
             pub fn $fn_store(&mut self, store: &mut StoreInner, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
-                self.execute_store(store, ptr, offset_lo, $impl_fn)
+                self.execute_store(store, ptr, offset_lo, $store_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
@@ -354,12 +378,12 @@ macro_rules! impl_execute_istore_trunc {
                 offset: Offset16,
                 value: Reg,
             ) -> Result<(), Error> {
-                self.execute_store_offset16(ptr, offset, value, $impl_fn)
+                self.execute_store_offset16(ptr, offset, value, $store_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
             pub fn $fn_store_at(&mut self, store: &mut StoreInner, address: Address32, value: Reg) -> Result<(), Error> {
-                self.execute_store_at(store, address, value, $impl_fn)
+                self.execute_store_at(store, address, value, $store_at_fn)
             }
         )*
     };
@@ -375,6 +399,7 @@ impl Executor<'_> {
             (Instruction::I32Store8At, execute_i32_store8_at),
             (Instruction::I32Store8AtImm, execute_i32_store8_at_imm),
             UntypedVal::i32_store8,
+            UntypedVal::i32_store8_at,
         ),
         (
             (i16 => i16),
@@ -385,6 +410,7 @@ impl Executor<'_> {
             (Instruction::I32Store16At, execute_i32_store16_at),
             (Instruction::I32Store16AtImm, execute_i32_store16_at_imm),
             UntypedVal::i32_store16,
+            UntypedVal::i32_store16_at,
         ),
         (
             (i8 => i8),
@@ -395,6 +421,7 @@ impl Executor<'_> {
             (Instruction::I64Store8At, execute_i64_store8_at),
             (Instruction::I64Store8AtImm, execute_i64_store8_at_imm),
             UntypedVal::i64_store8,
+            UntypedVal::i64_store8_at,
         ),
         (
             (i16 => i16),
@@ -405,6 +432,7 @@ impl Executor<'_> {
             (Instruction::I64Store16At, execute_i64_store16_at),
             (Instruction::I64Store16AtImm, execute_i64_store16_at_imm),
             UntypedVal::i64_store16,
+            UntypedVal::i64_store16_at,
         ),
         (
             (Const16<i32> => i32),
@@ -415,6 +443,7 @@ impl Executor<'_> {
             (Instruction::I64Store32At, execute_i64_store32_at),
             (Instruction::I64Store32AtImm16, execute_i64_store32_at_imm16),
             UntypedVal::i64_store32,
+            UntypedVal::i64_store32_at,
         ),
     }
 }
@@ -425,13 +454,14 @@ macro_rules! impl_execute_store {
             (Instruction::$var_store:ident, $fn_store:ident),
             (Instruction::$var_store_off16:ident, $fn_store_off16:ident),
             (Instruction::$var_store_at:ident, $fn_store_at:ident),
-            $impl_fn:expr $(,)?
+            $store_fn:expr,
+            $store_at_fn:expr $(,)?
         )
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
             pub fn $fn_store(&mut self, store: &mut StoreInner, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
-                self.execute_store(store, ptr, offset_lo, $impl_fn)
+                self.execute_store(store, ptr, offset_lo, $store_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
@@ -441,12 +471,12 @@ macro_rules! impl_execute_store {
                 offset: Offset16,
                 value: Reg,
             ) -> Result<(), Error> {
-                self.execute_store_offset16(ptr, offset, value, $impl_fn)
+                self.execute_store_offset16(ptr, offset, value, $store_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
-            pub fn $fn_store_at(&mut self, store: &mut StoreInner,address: Address32, value: Reg) -> Result<(), Error> {
-                self.execute_store_at(store, address, value, $impl_fn)
+            pub fn $fn_store_at(&mut self, store: &mut StoreInner, address: Address32, value: Reg) -> Result<(), Error> {
+                self.execute_store_at(store, address, value, $store_at_fn)
             }
         )*
     }
@@ -459,12 +489,14 @@ impl Executor<'_> {
             (Instruction::Store32Offset16, execute_store32_offset16),
             (Instruction::Store32At, execute_store32_at),
             UntypedVal::store32,
+            UntypedVal::store32_at,
         ),
         (
             (Instruction::Store64, execute_store64),
             (Instruction::Store64Offset16, execute_store64_offset16),
             (Instruction::Store64At, execute_store64_at),
             UntypedVal::store64,
+            UntypedVal::store64_at,
         ),
     }
 }
