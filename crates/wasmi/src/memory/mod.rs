@@ -464,10 +464,12 @@ impl MemoryEntity {
         let current_pages = self.size();
         let maximum_pages = self.ty().maximum();
         let page_size_log2 = self.ty().page_size_log2();
+        let is_64 = self.ty().is_64();
         let mut b = MemoryType::builder();
         b.min(current_pages);
         b.max(maximum_pages);
         b.page_size_log2(page_size_log2);
+        b.memory64(is_64);
         b.build()
             .expect("must result in valid memory type due to invariants")
     }
