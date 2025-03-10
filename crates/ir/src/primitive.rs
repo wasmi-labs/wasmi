@@ -1,4 +1,4 @@
-use crate::{core::UntypedVal, Const16, Error};
+use crate::{core::UntypedVal, immeditate::OutOfBoundsConst, Const16, Const32, Error};
 use core::marker::PhantomData;
 
 /// The sign of a value.
@@ -402,4 +402,113 @@ macro_rules! impl_shift_amount {
 impl_shift_amount! {
     (i32, 32),
     (i64, 64),
+}
+
+/// A 64-bit offset in Wasmi bytecode.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Offset64(u64);
+
+/// The high 32 bits of an [`Offset64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Offset64Hi(pub(crate) u32);
+
+/// The low 32 bits of an [`Offset64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Offset64Lo(pub(crate) u32);
+
+impl Offset64 {
+    /// Creates a new [`Offset64`] lo-hi pair from the given `offset`.
+    pub fn split(offset: u64) -> (Offset64Hi, Offset64Lo) {
+        let offset_lo = (offset & 0xFFFF_FFFF) as u32;
+        let offset_hi = (offset >> 32) as u32;
+        (Offset64Hi(offset_hi), Offset64Lo(offset_lo))
+    }
+
+    /// Combines the given [`Offset64`] lo-hi pair into an [`Offset64`].
+    pub fn combine(hi: Offset64Hi, lo: Offset64Lo) -> Self {
+        let hi = hi.0 as u64;
+        let lo = lo.0 as u64;
+        Self((hi << 32) | lo)
+    }
+}
+
+#[test]
+fn test_offset64_split_combine() {
+    let test_values = [
+        0,
+        1,
+        1 << 1,
+        u64::MAX,
+        u64::MAX - 1,
+        42,
+        77,
+        u64::MAX >> 1,
+        0xFFFF_FFFF_0000_0000,
+        0x0000_0000_FFFF_FFFF,
+        0xF0F0_F0F0_0F0F_0F0F,
+    ];
+    for value in test_values {
+        let (hi, lo) = Offset64::split(value);
+        let combined = u64::from(Offset64::combine(hi, lo));
+        assert_eq!(combined, value);
+    }
+}
+
+impl From<u64> for Offset64 {
+    fn from(offset: u64) -> Self {
+        Self(offset)
+    }
+}
+
+impl From<Offset64> for u64 {
+    fn from(offset: Offset64) -> Self {
+        offset.0
+    }
+}
+
+/// A 16-bit encoded load or store address offset.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Offset16(Const16<u64>);
+
+impl TryFrom<u64> for Offset16 {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(address: u64) -> Result<Self, Self::Error> {
+        <Const16<u64>>::try_from(address).map(Self)
+    }
+}
+
+impl From<Offset16> for Offset64 {
+    fn from(offset: Offset16) -> Self {
+        Offset64(u64::from(offset.0))
+    }
+}
+
+/// A 32-bit memory address used for some load and store instructions.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Address32(Const32<u64>);
+
+impl TryFrom<u64> for Address32 {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(address: u64) -> Result<Self, Self::Error> {
+        <Const32<u64>>::try_from(address).map(Self)
+    }
+}
+
+impl From<u32> for Address32 {
+    fn from(address: u32) -> Self {
+        Self(<Const32<u64>>::from(address))
+    }
+}
+
+impl From<Address32> for u64 {
+    fn from(address: Address32) -> Self {
+        u64::from(address.0)
+    }
 }

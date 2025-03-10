@@ -182,6 +182,7 @@ impl Config {
         features.set(WasmFeatures::EXTENDED_CONST, true);
         features.set(WasmFeatures::FLOATS, true);
         features.set(WasmFeatures::CUSTOM_PAGE_SIZES, false);
+        features.set(WasmFeatures::MEMORY64, true);
         features
     }
 
@@ -331,6 +332,18 @@ impl Config {
     /// [`custom-page-sizes`]: https://github.com/WebAssembly/custom-page-sizes
     pub fn wasm_custom_page_sizes(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::CUSTOM_PAGE_SIZES, enable);
+        self
+    }
+
+    /// Enable or disable the [`memory64`] Wasm proposal for the [`Config`].
+    ///
+    /// # Note
+    ///
+    /// Disabled by default.
+    ///
+    /// [`memory64`]: https://github.com/WebAssembly/memory64
+    pub fn wasm_memory64(&mut self, enable: bool) -> &mut Self {
+        self.features.set(WasmFeatures::MEMORY64, enable);
         self
     }
 

@@ -76,7 +76,7 @@ impl ByteBuffer {
     pub fn new(size: usize) -> Result<Self, MemoryError> {
         let mut vec = Vec::new();
         if vec.try_reserve(size).is_err() {
-            return Err(MemoryError::OutOfBoundsAllocation);
+            return Err(MemoryError::OutOfSystemMemory);
         };
         vec.extend(iter::repeat_n(0x00_u8, size));
         let (ptr, len, capacity) = vec_into_raw_parts(vec);
@@ -134,7 +134,7 @@ impl ByteBuffer {
         debug_assert!(vec.len() <= new_size);
         let additional = new_size - vec.len();
         if vec.try_reserve(additional).is_err() {
-            return Err(MemoryError::OutOfBoundsAllocation);
+            return Err(MemoryError::OutOfSystemMemory);
         };
         vec.resize(new_size, 0x00_u8);
         (self.ptr, self.len, self.capacity) = vec_into_raw_parts(vec);

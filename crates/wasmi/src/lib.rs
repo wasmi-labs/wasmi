@@ -87,6 +87,7 @@ mod error;
 mod externref;
 mod func;
 mod global;
+mod index_ty;
 mod instance;
 mod limits;
 mod linker;
@@ -175,6 +176,7 @@ pub use self::{
 use self::{
     func::{FuncEntity, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
+    index_ty::IndexType,
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{DataSegmentEntity, DataSegmentIdx, MemoryEntity, MemoryIdx},
     store::Stored,

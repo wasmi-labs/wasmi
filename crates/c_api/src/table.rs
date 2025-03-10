@@ -110,7 +110,7 @@ pub unsafe extern "C" fn wasm_table_get(
     index: wasm_table_size_t,
 ) -> Option<Box<wasm_ref_t>> {
     let table = t.table();
-    let value = table.get(t.inner.store.context_mut(), index)?;
+    let value = table.get(t.inner.store.context_mut(), u64::from(index))?;
     let wasm_ref = match value {
         wasmi::Val::FuncRef(r) => WasmRef::Func(r),
         wasmi::Val::ExternRef(r) => WasmRef::Extern(r),
@@ -137,7 +137,11 @@ pub unsafe extern "C" fn wasm_table_set(
     let table = t.table();
     let new_value = option_wasm_ref_t_to_ref(new_value, &table.ty(t.inner.store.context()));
     table
-        .set(t.inner.store.context_mut(), index, new_value.into())
+        .set(
+            t.inner.store.context_mut(),
+            u64::from(index),
+            new_value.into(),
+        )
         .is_ok()
 }
 
@@ -154,7 +158,8 @@ pub unsafe extern "C" fn wasm_table_set(
 pub unsafe extern "C" fn wasm_table_size(t: &wasm_table_t) -> wasm_table_size_t {
     let table = t.table();
     let store = t.inner.store.context();
-    table.size(store)
+    let size = table.size(store);
+    u32::try_from(size).unwrap()
 }
 /// Grows the number of cells of the [`wasm_table_t`] by `delta`.
 ///
@@ -176,7 +181,7 @@ pub unsafe extern "C" fn wasm_table_grow(
     let table = t.table();
     let init = option_wasm_ref_t_to_ref(init, &table.ty(t.inner.store.context()));
     table
-        .grow(t.inner.store.context_mut(), delta, init.into())
+        .grow(t.inner.store.context_mut(), u64::from(delta), init.into())
         .is_ok()
 }
 

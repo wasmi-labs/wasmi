@@ -1,3 +1,13 @@
+/// Macro that turns an iterator over `Option<T>` into an iterator over `T`.
+///
+/// - Filters out all the `None` items yielded by the input iterator.
+/// - Allows to specify `Some` items as just `T` as convenience.
+macro_rules! iter_filter_opts {
+    [ $($item:expr),* $(,)? ] => {{
+        [ $( ::core::option::Option::from($item) ),* ].into_iter().filter_map(|x| x)
+    }};
+}
+
 mod binary;
 mod block;
 mod br;
@@ -54,7 +64,8 @@ use super::{
     WasmOp,
     WasmType,
 };
-use std::format;
+use crate::ir::Offset16;
+use std::{fmt, format};
 
 /// Creates an [`Const32<i32>`] from the given `i32` value.
 ///
@@ -76,6 +87,17 @@ fn i32imm16(value: i32) -> Const16<i32> {
 #[track_caller]
 fn u32imm16(value: u32) -> Const16<u32> {
     <Const16<u32>>::try_from(value)
+        .unwrap_or_else(|_| panic!("value must be 16-bit encodable: {}", value))
+}
+
+/// Creates an [`Const32<u64>`] from the given `u64` value.
+///
+/// # Panics
+///
+/// If the `value` cannot be converted into `u64` losslessly.
+#[track_caller]
+fn u64imm16(value: u64) -> Const16<u64> {
+    <Const16<u64>>::try_from(value)
         .unwrap_or_else(|_| panic!("value must be 16-bit encodable: {}", value))
 }
 
@@ -139,4 +161,81 @@ fn return_f64imm32_instr(value: f64) -> Instruction {
 #[track_caller]
 fn return_nez_f64imm32_instr(condition: Reg, value: f64) -> Instruction {
     Instruction::return_nez_f64imm32(condition, f64imm32(value))
+}
+
+/// Creates an [`Offset16`] from the given `offset`.
+fn offset16(offset: u16) -> Offset16 {
+    Offset16::try_from(u64::from(offset)).unwrap()
+}
+
+/// Adjusts a translation test to use memories with that specified index type.
+#[derive(Copy, Clone)]
+enum IndexType {
+    /// The 32-bit index type.
+    ///
+    /// This is WebAssembly's default.
+    Memory32,
+    /// The 64-bit index type.
+    ///
+    /// This got introduced by the Wasm `memory64` proposal.
+    Memory64,
+}
+
+impl IndexType {
+    /// Returns the `.wat` string reprensetation for the [`IndexType`] of a `memory` declaration.
+    fn wat(&self) -> &'static str {
+        match self {
+            Self::Memory32 => "i32",
+            Self::Memory64 => "i64",
+        }
+    }
+}
+
+/// Convenience type to create Wat memories with a tagged memory index.
+#[derive(Copy, Clone)]
+pub struct MemIdx(u32);
+
+impl fmt::Display for MemIdx {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "$mem{}", self.0)
+    }
+}
+
+impl MemIdx {
+    /// Returns `true` if [`MemIdx`] refers to the default Wasm memory index.
+    fn is_default(&self) -> bool {
+        self.0 == 0
+    }
+
+    /// Returns the `$mem{n}` memory index used by some Wasm memory instructions.
+    fn instr(&self) -> Option<Instruction> {
+        match self.0 {
+            0 => None,
+            n => Some(Instruction::memory_index(n)),
+        }
+    }
+}
+
+/// Asserts that `ptr+offset` overflow either `i32` or `i64` depending on `index_ty`.
+fn assert_overflowing_ptr_offset(index_ty: IndexType, ptr: u64, offset: u64) {
+    match index_ty {
+        IndexType::Memory32 => {
+            let Ok(ptr32) = u32::try_from(ptr) else {
+                panic!("ptr must be a 32-bit value but found: {ptr}");
+            };
+            let Ok(offset32) = u32::try_from(offset) else {
+                panic!("offset must be a 32-bit value but found: {offset}");
+            };
+            assert!(
+                ptr32.checked_add(offset32).is_none(),
+                "ptr+offset must overflow in this testcase (32-bit)"
+            );
+        }
+        IndexType::Memory64 => {
+            assert!(
+                ptr.checked_add(offset).is_none(),
+                "ptr+offset must overflow in this testcase (64-bit)"
+            );
+        }
+    }
 }

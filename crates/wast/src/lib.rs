@@ -95,6 +95,11 @@ impl WastRunner {
             TableType::new(ValType::FuncRef, 10, Some(20)),
             Val::default(ValType::FuncRef),
         )?;
+        let table64 = Table::new(
+            &mut *store,
+            TableType::new64(ValType::FuncRef, 0, None),
+            Val::default(ValType::FuncRef),
+        )?;
         let global_i32 = Global::new(&mut *store, Val::I32(666), Mutability::Const);
         let global_i64 = Global::new(&mut *store, Val::I64(666), Mutability::Const);
         let global_f32 = Global::new(
@@ -110,6 +115,7 @@ impl WastRunner {
 
         self.linker.define("spectest", "memory", default_memory)?;
         self.linker.define("spectest", "table", default_table)?;
+        self.linker.define("spectest", "table64", table64)?;
         self.linker.define("spectest", "global_i32", global_i32)?;
         self.linker.define("spectest", "global_i64", global_i64)?;
         self.linker.define("spectest", "global_f32", global_f32)?;

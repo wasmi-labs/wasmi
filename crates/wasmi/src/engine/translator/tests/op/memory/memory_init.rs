@@ -138,7 +138,7 @@ fn init_from() {
     test_copy_from(u32::MAX);
 }
 
-fn testcase_init_to(dst: u32) -> TranslationTest {
+fn testcase_init_to(dst: u64) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -155,10 +155,10 @@ fn testcase_init_to(dst: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_copy_to16(dst: u32) {
+fn test_copy_to16(dst: u64) {
     testcase_init_to(dst)
         .expect_func_instrs([
-            Instruction::memory_init_to(u32imm16(dst), Reg::from(0), Reg::from(1)),
+            Instruction::memory_init_to(u64imm16(dst), Reg::from(0), Reg::from(1)),
             Instruction::memory_index(0),
             Instruction::data_index(0),
             Instruction::Return,
@@ -170,10 +170,10 @@ fn test_copy_to16(dst: u32) {
 #[cfg_attr(miri, ignore)]
 fn init_to16() {
     test_copy_to16(0);
-    test_copy_to16(u32::from(u16::MAX));
+    test_copy_to16(u64::from(u16::MAX));
 }
 
-fn test_copy_to(dst: u32) {
+fn test_copy_to(dst: u64) {
     testcase_init_to(dst)
         .expect_func(
             ExpectedFunc::new([
@@ -190,11 +190,11 @@ fn test_copy_to(dst: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn init_to() {
-    test_copy_to(u32::from(u16::MAX) + 1);
-    test_copy_to(u32::MAX);
+    test_copy_to(u64::from(u16::MAX) + 1);
+    test_copy_to(u64::from(u32::MAX));
 }
 
-fn testcase_init_from_to(dst: u32, src: u32) -> TranslationTest {
+fn testcase_init_from_to(dst: u64, src: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -211,10 +211,10 @@ fn testcase_init_from_to(dst: u32, src: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_copy_from_to16(dst: u32, src: u32) {
+fn test_copy_from_to16(dst: u64, src: u32) {
     testcase_init_from_to(dst, src)
         .expect_func_instrs([
-            Instruction::memory_init_from_to(u32imm16(dst), u32imm16(src), Reg::from(0)),
+            Instruction::memory_init_from_to(u64imm16(dst), u32imm16(src), Reg::from(0)),
             Instruction::memory_index(0),
             Instruction::data_index(0),
             Instruction::Return,
@@ -228,12 +228,12 @@ fn init_from_to16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
         for src in values {
-            test_copy_from_to16(dst, src);
+            test_copy_from_to16(u64::from(dst), src);
         }
     }
 }
 
-fn test_copy_from_to(dst: u32, src: u32) {
+fn test_copy_from_to(dst: u64, src: u32) {
     testcase_init_from_to(dst, src)
         .expect_func(
             ExpectedFunc::new([
@@ -242,7 +242,7 @@ fn test_copy_from_to(dst: u32, src: u32) {
                 Instruction::data_index(0),
                 Instruction::Return,
             ])
-            .consts([dst, src]),
+            .consts([dst, u64::from(src)]),
         )
         .run()
 }
@@ -260,12 +260,12 @@ fn init_from_to() {
                 // Ideally we'd have yet another test for that case.
                 continue;
             }
-            test_copy_from_to(dst, src);
+            test_copy_from_to(u64::from(dst), src);
         }
     }
 }
 
-fn testcase_init_to_exact(dst: u32, len: u32) -> TranslationTest {
+fn testcase_init_to_exact(dst: u64, len: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -282,10 +282,10 @@ fn testcase_init_to_exact(dst: u32, len: u32) -> TranslationTest {
     TranslationTest::new(wasm)
 }
 
-fn test_copy_to_exact16(dst: u32, len: u32) {
+fn test_copy_to_exact16(dst: u64, len: u32) {
     testcase_init_to_exact(dst, len)
         .expect_func_instrs([
-            Instruction::memory_init_to_exact(u32imm16(dst), Reg::from(0), u32imm16(len)),
+            Instruction::memory_init_to_exact(u64imm16(dst), Reg::from(0), u32imm16(len)),
             Instruction::memory_index(0),
             Instruction::data_index(0),
             Instruction::Return,
@@ -299,12 +299,12 @@ fn init_to_exact16() {
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
         for len in values {
-            test_copy_to_exact16(dst, len);
+            test_copy_to_exact16(u64::from(dst), len);
         }
     }
 }
 
-fn test_copy_to_exact(dst: u32, len: u32) {
+fn test_copy_to_exact(dst: u64, len: u32) {
     testcase_init_to_exact(dst, len)
         .expect_func(
             ExpectedFunc::new([
@@ -313,7 +313,7 @@ fn test_copy_to_exact(dst: u32, len: u32) {
                 Instruction::data_index(0),
                 Instruction::Return,
             ])
-            .consts([dst, len]),
+            .consts([dst, u64::from(len)]),
         )
         .run()
 }
@@ -331,7 +331,7 @@ fn init_to_exact() {
                 // Ideally we'd have yet another test for that case.
                 continue;
             }
-            test_copy_to_exact(dst, src);
+            test_copy_to_exact(u64::from(dst), src);
         }
     }
 }
@@ -407,7 +407,7 @@ fn init_from_exact() {
     }
 }
 
-fn testcase_init_from_to_exact(dst: u32, src: u32, len: u32) -> TranslationTest {
+fn testcase_init_from_to_exact(dst: u64, src: u32, len: u32) -> TranslationTest {
     let wasm = &format!(
         r"
         (module
@@ -424,10 +424,10 @@ fn testcase_init_from_to_exact(dst: u32, src: u32, len: u32) -> TranslationTest 
     TranslationTest::new(wasm)
 }
 
-fn test_copy_from_to_exact16(dst: u32, src: u32, len: u32) {
+fn test_copy_from_to_exact16(dst: u64, src: u32, len: u32) {
     testcase_init_from_to_exact(dst, src, len)
         .expect_func_instrs([
-            Instruction::memory_init_from_to_exact(u32imm16(dst), u32imm16(src), u32imm16(len)),
+            Instruction::memory_init_from_to_exact(u64imm16(dst), u32imm16(src), u32imm16(len)),
             Instruction::memory_index(0),
             Instruction::data_index(0),
             Instruction::Return,
@@ -442,13 +442,13 @@ fn init_from_to_exact16() {
     for dst in values {
         for src in values {
             for len in values {
-                test_copy_from_to_exact16(dst, src, len);
+                test_copy_from_to_exact16(u64::from(dst), src, len);
             }
         }
     }
 }
 
-fn test_copy_from_to_exact(dst: u32, src: u32, len: u32) {
+fn test_copy_from_to_exact(dst: u64, src: u32, len: u32) {
     testcase_init_from_to_exact(dst, src, len)
         .expect_func(
             ExpectedFunc::new([
@@ -457,7 +457,7 @@ fn test_copy_from_to_exact(dst: u32, src: u32, len: u32) {
                 Instruction::data_index(0),
                 Instruction::Return,
             ])
-            .consts([dst, src, len]),
+            .consts([dst, u64::from(src), u64::from(len)]),
         )
         .run()
 }
@@ -476,7 +476,7 @@ fn init_from_to_exact() {
                     // Ideally we'd have yet another test for that case.
                     continue;
                 }
-                test_copy_from_to_exact(dst, src, len);
+                test_copy_from_to_exact(u64::from(dst), src, len);
             }
         }
     }

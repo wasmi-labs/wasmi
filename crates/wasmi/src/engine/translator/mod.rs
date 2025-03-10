@@ -46,6 +46,7 @@ use crate::{
     engine::{config::FuelCosts, BlockType, EngineFunc},
     ir::{
         index,
+        Address32,
         AnyConst16,
         BoundedRegSpan,
         BranchOffset,
@@ -53,12 +54,15 @@ use crate::{
         Const32,
         Instruction,
         IntoShiftAmount,
+        Offset16,
+        Offset64,
+        Offset64Lo,
         Reg,
         RegSpan,
         ShiftAmount,
         Sign,
     },
-    module::{FuncIdx, FuncTypeIdx, ModuleHeader},
+    module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, TableIdx},
     Engine,
     Error,
     ExternRef,
@@ -1899,20 +1903,29 @@ impl FuncTranslator {
     /// # Panics
     ///
     /// If the [`MemArg`] offset is not 32-bit.
-    fn decode_memarg(memarg: MemArg) -> (index::Memory, u32) {
+    fn decode_memarg(memarg: MemArg) -> (index::Memory, u64) {
         let memory = index::Memory::from(memarg.memory);
-        let offset = u32::try_from(memarg.offset).unwrap_or_else(|_| {
-            panic!(
-                "encountered 64-bit memory load/store offset: {}",
-                memarg.offset
-            )
-        });
-        (memory, offset)
+        (memory, memarg.offset)
     }
 
     /// Returns the effective address `ptr+offset` if it is valid.
-    fn effective_address(ptr: u32, offset: u32) -> Option<u32> {
-        ptr.checked_add(offset)
+    fn effective_address(&self, mem: index::Memory, ptr: TypedVal, offset: u64) -> Option<u64> {
+        let memory_type = *self
+            .module
+            .get_type_of_memory(MemoryIdx::from(u32::from(mem)));
+        let ptr = match memory_type.is_64() {
+            true => u64::from(ptr),
+            false => u64::from(u32::from(ptr)),
+        };
+        let Some(address) = ptr.checked_add(offset) else {
+            // Case: address overflows any legal memory index.
+            return None;
+        };
+        if !memory_type.is_64() && address >= 1 << 32 {
+            // Case: address overflows the 32-bit memory index.
+            return None;
+        }
+        Some(address)
     }
 
     /// Translates a Wasm `load` instruction to Wasmi bytecode.
@@ -1932,40 +1945,53 @@ impl FuncTranslator {
     fn translate_load(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(result: Reg, memory: index::Memory) -> Instruction,
-        make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Const16<u32>) -> Instruction,
-        make_instr_at: fn(result: Reg, address: u32) -> Instruction,
+        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Offset16) -> Instruction,
+        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
         let ptr = self.alloc.stack.pop();
-        let ptr = match ptr {
-            Provider::Register(ptr) => ptr,
+        let (ptr, offset) = match ptr {
+            Provider::Register(ptr) => (ptr, offset),
             Provider::Const(ptr) => {
-                let Some(address) = Self::effective_address(u32::from(ptr), offset) else {
+                let Some(address) = self.effective_address(memory, ptr, offset) else {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
-                let result = self.alloc.stack.push_dynamic()?;
-                self.push_fueled_instr(make_instr_at(result, address), FuelCosts::load)?;
-                if !memory.is_default() {
-                    self.alloc
-                        .instr_encoder
-                        .append_instr(Instruction::memory_index(memory))?;
+                if let Ok(address) = Address32::try_from(address) {
+                    let result = self.alloc.stack.push_dynamic()?;
+                    self.push_fueled_instr(make_instr_at(result, address), FuelCosts::load)?;
+                    if !memory.is_default() {
+                        self.alloc
+                            .instr_encoder
+                            .append_instr(Instruction::memory_index(memory))?;
+                    }
+                    return Ok(());
                 }
-                return Ok(());
+                // Case: we cannot use specialized encoding and thus have to fall back
+                //       to the general case where `ptr` is zero and `offset` stores the
+                //       `ptr+offset` address value.
+                let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
+                (zero_ptr, address)
             }
         };
         let result = self.alloc.stack.push_dynamic()?;
         if memory.is_default() {
-            if let Ok(offset) = <Const16<u32>>::try_from(offset) {
+            if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_fueled_instr(make_instr_offset16(result, ptr, offset), FuelCosts::load)?;
                 return Ok(());
             }
         }
-        self.push_fueled_instr(make_instr(result, memory), FuelCosts::load)?;
+        let (offset_hi, offset_lo) = Offset64::split(offset);
+        self.push_fueled_instr(make_instr(result, offset_lo), FuelCosts::load)?;
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register_and_imm32(ptr, offset))?;
+            .append_instr(Instruction::register_and_offset_hi(ptr, offset_hi))?;
+        if !memory.is_default() {
+            self.alloc
+                .instr_encoder
+                .append_instr(Instruction::memory_index(memory))?;
+        }
         Ok(())
     }
 
@@ -1978,12 +2004,12 @@ impl FuncTranslator {
     fn translate_istore<Src, Field>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Reg, memory: index::Memory) -> Instruction,
-        make_instr_imm: fn(ptr: Reg, memory: index::Memory) -> Instruction,
-        make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
-        make_instr_offset16_imm: fn(ptr: Reg, offset: u16, value: Field) -> Instruction,
-        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
-        make_instr_at_imm: fn(value: Field, address: u32) -> Instruction,
+        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
         Src: Copy + From<TypedVal>,
@@ -2016,12 +2042,12 @@ impl FuncTranslator {
     fn translate_istore_wrap<Src, Wrapped, Field>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Reg, memory: index::Memory) -> Instruction,
-        make_instr_imm: fn(ptr: Reg, memory: index::Memory) -> Instruction,
-        make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
-        make_instr_offset16_imm: fn(ptr: Reg, offset: u16, value: Field) -> Instruction,
-        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
-        make_instr_at_imm: fn(value: Field, address: u32) -> Instruction,
+        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
         Src: Copy + Wrap<Wrapped> + From<TypedVal>,
@@ -2030,17 +2056,26 @@ impl FuncTranslator {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
         let (ptr, value) = self.alloc.stack.pop2();
-        let ptr = match ptr {
-            Provider::Register(ptr) => ptr,
+        let (ptr, offset) = match ptr {
+            Provider::Register(ptr) => (ptr, offset),
             Provider::Const(ptr) => {
-                return self.translate_istore_wrap_at::<Src, Wrapped, Field>(
-                    memory,
-                    u32::from(ptr),
-                    offset,
-                    value,
-                    make_instr_at,
-                    make_instr_at_imm,
-                )
+                let Some(address) = self.effective_address(memory, ptr, offset) else {
+                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
+                };
+                if let Ok(address) = Address32::try_from(address) {
+                    return self.translate_istore_wrap_at::<Src, Wrapped, Field>(
+                        memory,
+                        address,
+                        value,
+                        make_instr_at,
+                        make_instr_at_imm,
+                    );
+                }
+                // Case: we cannot use specialized encoding and thus have to fall back
+                //       to the general case where `ptr` is zero and `offset` stores the
+                //       `ptr+offset` address value.
+                let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
+                (zero_ptr, address)
             }
         };
         if memory.is_default() {
@@ -2054,24 +2089,33 @@ impl FuncTranslator {
                 return Ok(());
             }
         }
+        let (offset_hi, offset_lo) = Offset64::split(offset);
         let (instr, param) = match value {
             TypedProvider::Register(value) => (
-                make_instr(ptr, memory),
-                Instruction::register_and_imm32(value, offset),
+                make_instr(ptr, offset_lo),
+                Instruction::register_and_offset_hi(value, offset_hi),
             ),
             TypedProvider::Const(value) => match Field::try_from(Src::from(value).wrap()).ok() {
                 Some(value) => (
-                    make_instr_imm(ptr, memory),
-                    Instruction::imm16_and_imm32(value, offset),
+                    make_instr_imm(ptr, offset_lo),
+                    Instruction::imm16_and_offset_hi(value, offset_hi),
                 ),
                 None => (
-                    make_instr(ptr, memory),
-                    Instruction::register_and_imm32(self.alloc.stack.alloc_const(value)?, offset),
+                    make_instr(ptr, offset_lo),
+                    Instruction::register_and_offset_hi(
+                        self.alloc.stack.alloc_const(value)?,
+                        offset_hi,
+                    ),
                 ),
             },
         };
         self.push_fueled_instr(instr, FuelCosts::store)?;
         self.alloc.instr_encoder.append_instr(param)?;
+        if !memory.is_default() {
+            self.alloc
+                .instr_encoder
+                .append_instr(Instruction::memory_index(memory))?;
+        }
         Ok(())
     }
 
@@ -2083,19 +2127,15 @@ impl FuncTranslator {
     fn translate_istore_wrap_at<Src, Wrapped, Field>(
         &mut self,
         memory: index::Memory,
-        ptr: u32,
-        offset: u32,
+        address: Address32,
         value: TypedProvider,
-        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
-        make_instr_at_imm: fn(value: Field, address: u32) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
         Src: Copy + From<TypedVal> + Wrap<Wrapped>,
         Field: TryFrom<Wrapped>,
     {
-        let Some(address) = Self::effective_address(ptr, offset) else {
-            return self.translate_trap(TrapCode::MemoryOutOfBounds);
-        };
         match value {
             Provider::Register(value) => {
                 self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
@@ -2127,16 +2167,16 @@ impl FuncTranslator {
     fn translate_istore_wrap_mem0<Src, Wrapped, Field>(
         &mut self,
         ptr: Reg,
-        offset: u32,
+        offset: u64,
         value: TypedProvider,
-        make_instr_offset16: fn(Reg, u16, Reg) -> Instruction,
-        make_instr_offset16_imm: fn(Reg, u16, Field) -> Instruction,
+        make_instr_offset16: fn(Reg, Offset16, Reg) -> Instruction,
+        make_instr_offset16_imm: fn(Reg, Offset16, Field) -> Instruction,
     ) -> Result<Option<Instr>, Error>
     where
         Src: Copy + From<TypedVal> + Wrap<Wrapped>,
         Field: TryFrom<Wrapped>,
     {
-        let Ok(offset16) = u16::try_from(offset) else {
+        let Ok(offset16) = Offset16::try_from(offset) else {
             return Ok(None);
         };
         let instr = match value {
@@ -2175,36 +2215,43 @@ impl FuncTranslator {
     fn translate_fstore(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Reg, memory: index::Memory) -> Instruction,
-        make_instr_offset16: fn(ptr: Reg, offset: u16, value: Reg) -> Instruction,
-        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
+        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
         let (ptr, value) = self.alloc.stack.pop2();
-        let ptr = match ptr {
-            Provider::Register(ptr) => ptr,
+        let (ptr, offset) = match ptr {
+            Provider::Register(ptr) => (ptr, offset),
             Provider::Const(ptr) => {
-                return self.translate_fstore_at(
-                    memory,
-                    u32::from(ptr),
-                    offset,
-                    value,
-                    make_instr_at,
-                )
+                let Some(address) = self.effective_address(memory, ptr, offset) else {
+                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
+                };
+                if let Ok(address) = Address32::try_from(address) {
+                    return self.translate_fstore_at(memory, address, value, make_instr_at);
+                }
+                let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
+                (zero_ptr, address)
             }
         };
+        let (offset_hi, offset_lo) = Offset64::split(offset);
         let value = self.alloc.stack.provider2reg(&value)?;
         if memory.is_default() {
-            if let Ok(offset) = u16::try_from(offset) {
+            if let Ok(offset) = Offset16::try_from(offset) {
                 self.push_fueled_instr(make_instr_offset16(ptr, offset, value), FuelCosts::store)?;
                 return Ok(());
             }
         }
-        self.push_fueled_instr(make_instr(ptr, memory), FuelCosts::store)?;
+        self.push_fueled_instr(make_instr(ptr, offset_lo), FuelCosts::store)?;
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register_and_imm32(value, offset))?;
+            .append_instr(Instruction::register_and_offset_hi(value, offset_hi))?;
+        if !memory.is_default() {
+            self.alloc
+                .instr_encoder
+                .append_instr(Instruction::memory_index(memory))?;
+        }
         Ok(())
     }
 
@@ -2216,14 +2263,10 @@ impl FuncTranslator {
     fn translate_fstore_at(
         &mut self,
         memory: index::Memory,
-        ptr: u32,
-        offset: u32,
+        address: Address32,
         value: TypedProvider,
-        make_instr_at: fn(value: Reg, address: u32) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
-        let Some(address) = Self::effective_address(ptr, offset) else {
-            return self.translate_trap(TrapCode::MemoryOutOfBounds);
-        };
         let value = self.alloc.stack.provider2reg(&value)?;
         self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
         if !memory.is_default() {
@@ -2553,21 +2596,11 @@ impl FuncTranslator {
         index: Provider<TypedVal>,
         table_index: u32,
     ) -> Result<Instruction, Error> {
+        let table_type = *self.module.get_type_of_table(TableIdx::from(table_index));
+        let index = self.as_index_type_const16(index, table_type.index_ty())?;
         let instr = match index {
-            TypedProvider::Const(index) => match <Const16<u32>>::try_from(u32::from(index)).ok() {
-                Some(index) => {
-                    // Case: the index is encodable as 16-bit constant value
-                    //       which allows us to use an optimized instruction.
-                    Instruction::call_indirect_params_imm16(index, table_index)
-                }
-                None => {
-                    // Case: the index is not encodable as 16-bit constant value
-                    //       and we need to allocate it as function local constant.
-                    let index = self.alloc.stack.alloc_const(index)?;
-                    Instruction::call_indirect_params(index, table_index)
-                }
-            },
-            TypedProvider::Register(index) => Instruction::call_indirect_params(index, table_index),
+            Provider::Register(index) => Instruction::call_indirect_params(index, table_index),
+            Provider::Const(index) => Instruction::call_indirect_params_imm16(index, table_index),
         };
         Ok(instr)
     }

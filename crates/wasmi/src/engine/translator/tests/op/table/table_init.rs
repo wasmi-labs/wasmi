@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::ValType;
+use crate::core::{UntypedVal, ValType};
 
 fn test_init(ty: ValType) {
     let display_ty = DisplayValueType::from(ty);
@@ -165,7 +165,7 @@ fn init_from() {
     test_for(u32::MAX);
 }
 
-fn testcase_init_to(ty: ValType, dst: u32) -> TranslationTest {
+fn testcase_init_to(ty: ValType, dst: u64) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -183,10 +183,10 @@ fn testcase_init_to(ty: ValType, dst: u32) -> TranslationTest {
     TranslationTest::new(&wasm)
 }
 
-fn test_init_to16(ty: ValType, dst: u32) {
+fn test_init_to16(ty: ValType, dst: u64) {
     testcase_init_to(ty, dst)
         .expect_func_instrs([
-            Instruction::table_init_to(u32imm16(dst), Reg::from(0), Reg::from(1)),
+            Instruction::table_init_to(u64imm16(dst), Reg::from(0), Reg::from(1)),
             Instruction::table_index(0),
             Instruction::elem_index(0),
             Instruction::Return,
@@ -197,15 +197,15 @@ fn test_init_to16(ty: ValType, dst: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn init_to16() {
-    fn test_for(dst: u32) {
+    fn test_for(dst: u64) {
         test_init_to16(ValType::FuncRef, dst);
         test_init_to16(ValType::ExternRef, dst);
     }
     test_for(0);
-    test_for(u32::from(u16::MAX));
+    test_for(u64::from(u16::MAX));
 }
 
-fn test_init_to(ty: ValType, dst: u32) {
+fn test_init_to(ty: ValType, dst: u64) {
     testcase_init_to(ty, dst)
         .expect_func(
             ExpectedFunc::new([
@@ -222,15 +222,15 @@ fn test_init_to(ty: ValType, dst: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn init_to() {
-    fn test_for(dst: u32) {
+    fn test_for(dst: u64) {
         test_init_to(ValType::FuncRef, dst);
         test_init_to(ValType::ExternRef, dst);
     }
-    test_for(u32::from(u16::MAX) + 1);
-    test_for(u32::MAX);
+    test_for(u64::from(u16::MAX) + 1);
+    test_for(u64::from(u32::MAX));
 }
 
-fn testcase_init_from_to(ty: ValType, dst: u32, src: u32) -> TranslationTest {
+fn testcase_init_from_to(ty: ValType, dst: u64, src: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -248,10 +248,10 @@ fn testcase_init_from_to(ty: ValType, dst: u32, src: u32) -> TranslationTest {
     TranslationTest::new(&wasm)
 }
 
-fn test_init_from_to16(ty: ValType, dst: u32, src: u32) {
+fn test_init_from_to16(ty: ValType, dst: u64, src: u32) {
     testcase_init_from_to(ty, dst, src)
         .expect_func_instrs([
-            Instruction::table_init_from_to(u32imm16(dst), u32imm16(src), Reg::from(0)),
+            Instruction::table_init_from_to(u64imm16(dst), u32imm16(src), Reg::from(0)),
             Instruction::table_index(0),
             Instruction::elem_index(0),
             Instruction::Return,
@@ -262,19 +262,19 @@ fn test_init_from_to16(ty: ValType, dst: u32, src: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn init_from_to16() {
-    fn test_for(dst: u32, src: u32) {
+    fn test_for(dst: u64, src: u32) {
         test_init_from_to16(ValType::FuncRef, dst, src);
         test_init_from_to16(ValType::ExternRef, dst, src);
     }
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
         for src in values {
-            test_for(dst, src);
+            test_for(u64::from(dst), src);
         }
     }
 }
 
-fn test_init_from_to(ty: ValType, dst: u32, src: u32) {
+fn test_init_from_to(ty: ValType, dst: u64, src: u32) {
     testcase_init_from_to(ty, dst, src)
         .expect_func(
             ExpectedFunc::new([
@@ -283,7 +283,7 @@ fn test_init_from_to(ty: ValType, dst: u32, src: u32) {
                 Instruction::elem_index(0),
                 Instruction::Return,
             ])
-            .consts([dst, src]),
+            .consts([UntypedVal::from(dst), UntypedVal::from(src)]),
         )
         .run()
 }
@@ -291,7 +291,7 @@ fn test_init_from_to(ty: ValType, dst: u32, src: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn init_from_to() {
-    fn test_for(dst: u32, src: u32) {
+    fn test_for(dst: u64, src: u32) {
         test_init_from_to(ValType::FuncRef, dst, src);
         test_init_from_to(ValType::ExternRef, dst, src);
     }
@@ -305,12 +305,12 @@ fn init_from_to() {
                 // Ideally we'd have yet another test for that case.
                 continue;
             }
-            test_for(dst, src);
+            test_for(u64::from(dst), src);
         }
     }
 }
 
-fn testcase_init_to_exact(ty: ValType, dst: u32, len: u32) -> TranslationTest {
+fn testcase_init_to_exact(ty: ValType, dst: u64, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -328,10 +328,10 @@ fn testcase_init_to_exact(ty: ValType, dst: u32, len: u32) -> TranslationTest {
     TranslationTest::new(&wasm)
 }
 
-fn test_init_to_exact16(ty: ValType, dst: u32, len: u32) {
+fn test_init_to_exact16(ty: ValType, dst: u64, len: u32) {
     testcase_init_to_exact(ty, dst, len)
         .expect_func_instrs([
-            Instruction::table_init_to_exact(u32imm16(dst), Reg::from(0), u32imm16(len)),
+            Instruction::table_init_to_exact(u64imm16(dst), Reg::from(0), u32imm16(len)),
             Instruction::table_index(0),
             Instruction::elem_index(0),
             Instruction::Return,
@@ -342,19 +342,19 @@ fn test_init_to_exact16(ty: ValType, dst: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn init_to_exact16() {
-    fn test_for(dst: u32, len: u32) {
+    fn test_for(dst: u64, len: u32) {
         test_init_to_exact16(ValType::FuncRef, dst, len);
         test_init_to_exact16(ValType::ExternRef, dst, len);
     }
     let values = [0, 1, u32::from(u16::MAX) - 1, u32::from(u16::MAX)];
     for dst in values {
         for len in values {
-            test_for(dst, len);
+            test_for(u64::from(dst), len);
         }
     }
 }
 
-fn test_init_to_exact(ty: ValType, dst: u32, len: u32) {
+fn test_init_to_exact(ty: ValType, dst: u64, len: u32) {
     testcase_init_to_exact(ty, dst, len)
         .expect_func(
             ExpectedFunc::new([
@@ -363,7 +363,7 @@ fn test_init_to_exact(ty: ValType, dst: u32, len: u32) {
                 Instruction::elem_index(0),
                 Instruction::Return,
             ])
-            .consts([dst, len]),
+            .consts([UntypedVal::from(dst), UntypedVal::from(len)]),
         )
         .run()
 }
@@ -371,7 +371,7 @@ fn test_init_to_exact(ty: ValType, dst: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn init_to_exact() {
-    fn test_for(dst: u32, len: u32) {
+    fn test_for(dst: u64, len: u32) {
         test_init_to_exact(ValType::FuncRef, dst, len);
         test_init_to_exact(ValType::ExternRef, dst, len);
     }
@@ -385,7 +385,7 @@ fn init_to_exact() {
                 // Ideally we'd have yet another test for that case.
                 continue;
             }
-            test_for(dst, src);
+            test_for(u64::from(dst), src);
         }
     }
 }
@@ -470,7 +470,7 @@ fn init_from_exact() {
     }
 }
 
-fn testcase_init_from_to_exact(ty: ValType, dst: u32, src: u32, len: u32) -> TranslationTest {
+fn testcase_init_from_to_exact(ty: ValType, dst: u64, src: u32, len: u32) -> TranslationTest {
     let display_ty = DisplayValueType::from(ty);
     let wasm = format!(
         r"
@@ -488,10 +488,10 @@ fn testcase_init_from_to_exact(ty: ValType, dst: u32, src: u32, len: u32) -> Tra
     TranslationTest::new(&wasm)
 }
 
-fn test_init_from_to_exact16(ty: ValType, dst: u32, src: u32, len: u32) {
+fn test_init_from_to_exact16(ty: ValType, dst: u64, src: u32, len: u32) {
     testcase_init_from_to_exact(ty, dst, src, len)
         .expect_func_instrs([
-            Instruction::table_init_from_to_exact(u32imm16(dst), u32imm16(src), u32imm16(len)),
+            Instruction::table_init_from_to_exact(u64imm16(dst), u32imm16(src), u32imm16(len)),
             Instruction::table_index(0),
             Instruction::elem_index(0),
             Instruction::Return,
@@ -502,7 +502,7 @@ fn test_init_from_to_exact16(ty: ValType, dst: u32, src: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn init_from_to_exact16() {
-    fn test_for(dst: u32, src: u32, len: u32) {
+    fn test_for(dst: u64, src: u32, len: u32) {
         test_init_from_to_exact16(ValType::FuncRef, dst, src, len);
         test_init_from_to_exact16(ValType::ExternRef, dst, src, len);
     }
@@ -510,13 +510,13 @@ fn init_from_to_exact16() {
     for dst in values {
         for src in values {
             for len in values {
-                test_for(dst, src, len);
+                test_for(u64::from(dst), src, len);
             }
         }
     }
 }
 
-fn test_init_from_to_exact(ty: ValType, dst: u32, src: u32, len: u32) {
+fn test_init_from_to_exact(ty: ValType, dst: u64, src: u32, len: u32) {
     testcase_init_from_to_exact(ty, dst, src, len)
         .expect_func(
             ExpectedFunc::new([
@@ -525,7 +525,11 @@ fn test_init_from_to_exact(ty: ValType, dst: u32, src: u32, len: u32) {
                 Instruction::elem_index(0),
                 Instruction::Return,
             ])
-            .consts([dst, src, len]),
+            .consts([
+                UntypedVal::from(dst),
+                UntypedVal::from(src),
+                UntypedVal::from(len),
+            ]),
         )
         .run()
 }
@@ -533,7 +537,7 @@ fn test_init_from_to_exact(ty: ValType, dst: u32, src: u32, len: u32) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn init_from_to_exact() {
-    fn test_for(dst: u32, src: u32, len: u32) {
+    fn test_for(dst: u64, src: u32, len: u32) {
         test_init_from_to_exact(ValType::FuncRef, dst, src, len);
         test_init_from_to_exact(ValType::ExternRef, dst, src, len);
     }
@@ -548,7 +552,7 @@ fn init_from_to_exact() {
                     // Ideally we'd have yet another test for that case.
                     continue;
                 }
-                test_for(dst, src, len);
+                test_for(u64::from(dst), src, len);
             }
         }
     }

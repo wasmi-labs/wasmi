@@ -106,6 +106,16 @@ impl ModuleHeader {
         &self.inner.globals[global_idx.into_u32() as usize]
     }
 
+    /// Returns the [`MemoryType`] the the indexed Wasm memory.
+    pub fn get_type_of_memory(&self, memory_idx: MemoryIdx) -> &MemoryType {
+        &self.inner.memories[memory_idx.into_u32() as usize]
+    }
+
+    /// Returns the [`TableType`] the the indexed Wasm table.
+    pub fn get_type_of_table(&self, table_idx: TableIdx) -> &TableType {
+        &self.inner.tables[table_idx.into_u32() as usize]
+    }
+
     /// Returns the [`EngineFunc`] for the given [`FuncIdx`].
     ///
     /// Returns `None` if [`FuncIdx`] refers to an imported function.

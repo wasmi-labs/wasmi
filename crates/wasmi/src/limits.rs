@@ -79,9 +79,9 @@ pub trait ResourceLimiter {
     /// return values of this function indicates.
     fn table_growing(
         &mut self,
-        current: u32,
-        desired: u32,
-        maximum: Option<u32>,
+        current: usize,
+        desired: usize,
+        maximum: Option<usize>,
     ) -> Result<bool, TableError>;
 
     /// Notifies the resource limiter that growing a linear memory, permitted by
@@ -152,7 +152,7 @@ impl StoreLimitsBuilder {
     /// they're all allowed to reach up to the `limit` specified.
     ///
     /// By default, table elements will not be limited.
-    pub fn table_elements(mut self, limit: u32) -> Self {
+    pub fn table_elements(mut self, limit: usize) -> Self {
         self.0.table_elements = Some(limit);
         self
     }
@@ -224,7 +224,7 @@ impl Default for StoreLimitsBuilder {
 #[derive(Clone, Debug)]
 pub struct StoreLimits {
     memory_size: Option<usize>,
-    table_elements: Option<u32>,
+    table_elements: Option<usize>,
     instances: usize,
     tables: usize,
     memories: usize,
@@ -259,17 +259,16 @@ impl ResourceLimiter for StoreLimits {
             },
         };
         if !allow && self.trap_on_grow_failure {
-            Err(MemoryError::OutOfBoundsGrowth)
-        } else {
-            Ok(allow)
+            return Err(MemoryError::ResourceLimiterDeniedAllocation);
         }
+        Ok(allow)
     }
 
     fn table_growing(
         &mut self,
-        current: u32,
-        desired: u32,
-        maximum: Option<u32>,
+        _current: usize,
+        desired: usize,
+        maximum: Option<usize>,
     ) -> Result<bool, TableError> {
         let allow = match self.table_elements {
             Some(limit) if desired > limit => false,
@@ -279,14 +278,9 @@ impl ResourceLimiter for StoreLimits {
             },
         };
         if !allow && self.trap_on_grow_failure {
-            Err(TableError::GrowOutOfBounds {
-                maximum: maximum.unwrap_or(u32::MAX),
-                current,
-                delta: desired - current,
-            })
-        } else {
-            Ok(allow)
+            return Err(TableError::ResourceLimiterDeniedAllocation);
         }
+        Ok(allow)
     }
 
     fn instances(&self) -> usize {

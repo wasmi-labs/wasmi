@@ -28,7 +28,7 @@ fn imm() {
         i32::MAX - 1,
     ];
     for value in values {
-        test_store_wrap_imm::<i32, i16, i16>(WASM_OP, value, Instruction::i32_store16_imm);
+        test_store_wrap_imm::<i32, i16, i16>(WASM_OP, Instruction::i32_store16_imm, value);
     }
 }
 
@@ -87,6 +87,12 @@ fn at_overflow() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
+fn at_fallback() {
+    test_store_at_fallback(WASM_OP, Instruction::i32_store16);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
 fn at_imm() {
     let values = [
         0,
@@ -103,7 +109,7 @@ fn at_imm() {
         i32::MAX,
     ];
     for value in values {
-        test_store_wrap_at_imm::<i32, i16, i16>(WASM_OP, value, Instruction::i32_store16_at_imm);
+        test_store_wrap_at_imm::<i32, i16, i16>(WASM_OP, Instruction::i32_store16_at_imm, value);
     }
 }
 
@@ -114,4 +120,24 @@ fn imm_at_overflow() {
     for value in values {
         test_store_at_imm_overflow(WASM_OP, value);
     }
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn at_imm_fallback() {
+    [
+        0,
+        -1,
+        1,
+        -42,
+        42,
+        i32::from(i16::MIN),
+        i32::from(i16::MIN) + 1,
+        i32::from(i16::MAX) - 1,
+        i32::from(i16::MAX),
+    ]
+    .into_iter()
+    .for_each(|value| {
+        test_store_wrap_at_imm16_fallback::<i32, i16>(WASM_OP, Instruction::i32_store16_imm, value);
+    })
 }

@@ -55,8 +55,11 @@ impl CTableType {
             ty,
             element: wasm_valtype_t { ty: ty.element() },
             limits: wasm_limits_t {
-                min: ty.minimum(),
-                max: ty.maximum().unwrap_or(u32::MAX),
+                min: u32::try_from(ty.minimum()).unwrap(),
+                max: ty
+                    .maximum()
+                    .map(|max| u32::try_from(max).unwrap())
+                    .unwrap_or(u32::MAX),
             },
         }
     }
