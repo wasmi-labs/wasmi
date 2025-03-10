@@ -372,8 +372,7 @@ fn fuzz_regression_16() {
             Instruction::copy(2, 0),
             Instruction::global_get(Reg::from(0), Global::from(0)),
             Instruction::global_set(Reg::from(0), Global::from(0)),
-            Instruction::store64_at(Reg::from(2), 2147483647_u32),
-            Instruction::trap(TrapCode::UnreachableCodeReached),
+            Instruction::trap(TrapCode::MemoryOutOfBounds),
         ])
         .run()
 }

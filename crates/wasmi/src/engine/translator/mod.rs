@@ -1921,6 +1921,14 @@ impl FuncTranslator {
             // Case: address overflows any legal memory index.
             return None;
         };
+        if let Some(max) = memory_type.maximum() {
+            // The memory's maximum size in bytes.
+            let max_size = max << memory_type.page_size_log2();
+            if address > max_size {
+                // Case: address overflows the memory's maximum size.
+                return None;
+            }
+        }
         if !memory_type.is_64() && address >= 1 << 32 {
             // Case: address overflows the 32-bit memory index.
             return None;
