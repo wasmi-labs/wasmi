@@ -16,16 +16,16 @@ publish = false
 
 [dependencies]
 wasmi = { workspace = true, features = ["std"] }
-wasmi-stack = { package = "wasmi", version = "0.31.2", optional = true }
-wasmtime = { version = "30.0.2", optional = true, default-features = false, features = [
+wasmtime = { workspace = true, optional = true, features = [
     "cranelift",
     "runtime",
     "std",
 ] }
-wasm-smith = "0.226.0"
+wasm-smith = { workspace = true }
+wasmprinter = { workspace = true }
+wasmi-stack = { package = "wasmi", version = "0.31.2", optional = true }
 arbitrary = "1.3.2"
 sha2 = "0.10"
-wasmprinter = { version = "0.226.0", default-features = false }
 anyhow = "1.0.91"
 
 [features]

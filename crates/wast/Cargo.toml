@@ -15,5 +15,5 @@ exclude.workspace = true
 
 [dependencies]
 wasmi = { workspace = true, features = ["std"] }
-wast = { version = "226.0.0", default-features = false, features = ["wasm-module"] }
+wast = { workspace = true, features = ["wasm-module"] }
 anyhow = "1.0"
