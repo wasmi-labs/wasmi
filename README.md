@@ -70,13 +70,13 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 | [`extended-const`] | ✅ | ≥ `0.29.0` [(#707)] |
 | [`multi-memory`] | ✅ | ≥ `0.37.0` [(#1191)] |
 | [`custom-page-sizes`] | ✅ | ≥ `0.41.0` [(#1197)] |
+| [`memory64`] | ✅ | ≥ `0.41.0` [(#1357)] |
 | [`simd`] | 📅 | Not yet implemented. [(#1364)] |
 | [`relaxed-simd`] | 📅 | Not yet implemented. Depends on `simd`. |
 | [`function-references`] | 📅 | Not yet implemented. [(#774)] |
 | [`gc`] | 📅 | Not yet implemented. [(#775)] |
 | [`threads`] | 📅 | Not yet implemented. [(#777)] |
 | [`exception-handling`] | 📅 | Not yet implemented. [(#1037)] |
-| [`memory64`] | 📅 | Not yet implemented. [(#1357)] |
 | [`wide-arithmetic`] | 📅 | Not yet implemented. [(#1369)] |
 | | |
 | [WASI] | 👨‍🔬 | Experimental support for WASI (`wasip1`) via the [`wasmi_wasi` crate]. |
