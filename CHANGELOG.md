@@ -26,7 +26,10 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 
 ### Changed
 
-- Bumped Minimum Support Rust Version to v1.82. [#1375] 
+- Bumped Minimum Support Rust Version to v1.82. [#1375]
+- The `memory.grow` and `table.grow` instructions now trap instead of panic when out of system memory.
+  - This change was part of the changes introduced by the support
+    for the Wasm `memory64` and `custom-page-sizes` proposals.
 
 ### Internal
 
