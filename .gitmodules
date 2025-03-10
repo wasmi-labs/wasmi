@@ -4,3 +4,6 @@
 [submodule "crates/wasmi/benches/rust"]
 	path = crates/wasmi/benches/rust
 	url = https://github.com/wasmi-labs/rust-benchmarks
+[submodule "memory64"]
+	path = crates/wasmi/tests/spec/memory64
+	url = https://github.com/WebAssembly/testsuite
