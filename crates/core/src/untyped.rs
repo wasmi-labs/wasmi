@@ -191,7 +191,7 @@ macro_rules! gen_load_fn {
     (
         (fn $load_fn:ident, fn $load_at_fn:ident, $wrapped:ty => $ty:ty); $($rest:tt)*
     ) => {
-        #[doc = concat!("Executes a Wasmi `", stringify!($name), "` instruction.")]
+        #[doc = concat!("Executes a Wasmi `", stringify!($load_fn), "` instruction.")]
         ///
         /// # Errors
         ///
@@ -201,7 +201,7 @@ macro_rules! gen_load_fn {
             Self::load_extend::<$ty, $wrapped>(memory, ptr, offset)
         }
 
-        #[doc = concat!("Executes a Wasmi `", stringify!($name), "` instruction.")]
+        #[doc = concat!("Executes a Wasmi `", stringify!($load_at_fn), "` instruction.")]
         ///
         /// # Errors
         ///
@@ -285,7 +285,7 @@ macro_rules! gen_store_fn {
     (
         (fn $store_fn:ident, fn $store_at_fn:ident, $ty:ty => $wrapped:ty); $($rest:tt)*
     ) => {
-        #[doc = concat!("Executes a Wasmi `", stringify!($name), "` instruction.")]
+        #[doc = concat!("Executes a Wasmi `", stringify!($store_fn), "` instruction.")]
         ///
         /// # Errors
         ///
@@ -295,7 +295,7 @@ macro_rules! gen_store_fn {
             Self::store_wrap::<$ty, $wrapped>(memory, ptr, offset, value)
         }
 
-        #[doc = concat!("Executes a Wasmi `", stringify!($name), "` instruction.")]
+        #[doc = concat!("Executes a Wasmi `", stringify!($store_at_fn), "` instruction.")]
         ///
         /// # Errors
         ///
