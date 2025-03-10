@@ -36,6 +36,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
     - Improve debug output of fuzzers. [#1344]
     - Differential fuzzer now uses fuzz input to randomize function parameters. [#1348]
     - Allow fuzzing the Wasm `custom-page-sizes` proposal implementation. [#1354]
+    - Allow fuzzing the Wasm `memory64` proposal implementation. [#1379]
 - Update the Wasm spec testsuite. [#1361]
 - Update `wasm-tools` dependencies to v226. [#1374]
 - Update to `string-interner` v0.19. [#1367]
@@ -54,6 +55,7 @@ Dates in this file are formattes as `YYYY-MM-DD`.
 [#1375]: https://github.com/wasmi-labs/wasmi/pull/1375
 [#1374]: https://github.com/wasmi-labs/wasmi/pull/1374
 [#1371]: https://github.com/wasmi-labs/wasmi/pull/1371
+[#1379]: https://github.com/wasmi-labs/wasmi/pull/1379
 
 ## [`0.40.0`] - 2024-11-27
 
