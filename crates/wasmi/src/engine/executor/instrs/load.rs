@@ -12,6 +12,9 @@ use crate::ir::Instruction;
 /// The function signature of Wasm load operations.
 type WasmLoadOp = fn(memory: &[u8], ptr: UntypedVal, offset: u64) -> Result<UntypedVal, TrapCode>;
 
+/// The function signature of Wasm load operations.
+type WasmLoadAtOp = fn(memory: &[u8], address: usize) -> Result<UntypedVal, TrapCode>;
+
 impl Executor<'_> {
     /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
     fn fetch_ptr_and_offset_hi(&self) -> (Reg, Offset64Hi) {
@@ -85,6 +88,33 @@ impl Executor<'_> {
         Ok(())
     }
 
+    /// Executes a generic Wasm `load[N_{s|u}]` operation.
+    ///
+    /// # Note
+    ///
+    /// This can be used to emulate the following Wasm operands:
+    ///
+    /// - `{i32, i64, f32, f64}.load`
+    /// - `{i32, i64}.load8_s`
+    /// - `{i32, i64}.load8_u`
+    /// - `{i32, i64}.load16_s`
+    /// - `{i32, i64}.load16_u`
+    /// - `i64.load32_s`
+    /// - `i64.load32_u`
+    fn execute_load_extend_at(
+        &mut self,
+        store: &StoreInner,
+        memory: Memory,
+        result: Reg,
+        address: Address32,
+        load_extend_at: WasmLoadAtOp,
+    ) -> Result<(), Error> {
+        let memory = self.fetch_memory_bytes(memory, store);
+        let loaded_value = load_extend_at(memory, usize::from(address))?;
+        self.set_register(result, loaded_value);
+        Ok(())
+    }
+
     /// Executes a generic Wasm `store[N_{s|u}]` operation on the default memory.
     ///
     /// # Note
@@ -133,17 +163,10 @@ impl Executor<'_> {
         store: &StoreInner,
         result: Reg,
         address: Address32,
-        load_extend: WasmLoadOp,
+        load_extend_at: WasmLoadAtOp,
     ) -> Result<(), Error> {
         let memory = self.fetch_optional_memory(1);
-        self.execute_load_extend(
-            store,
-            memory,
-            result,
-            UntypedVal::from(u64::from(address)),
-            Offset64::from(0),
-            load_extend,
-        )?;
+        self.execute_load_extend_at(store, memory, result, address, load_extend_at)?;
         self.try_next_instr()
     }
 
@@ -168,23 +191,24 @@ macro_rules! impl_execute_load {
             (Instruction::$var_load:expr, $fn_load:ident),
             (Instruction::$var_load_at:expr, $fn_load_at:ident),
             (Instruction::$var_load_off16:expr, $fn_load_off16:ident),
-            $impl_fn:expr $(,)?
+            $load_fn:expr,
+            $load_at_fn:expr $(,)?
         )
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load), "`].")]
             pub fn $fn_load(&mut self, store: &StoreInner, result: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
-                self.execute_load_impl(store, result, offset_lo, $impl_fn)
+                self.execute_load_impl(store, result, offset_lo, $load_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
             pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: Address32) -> Result<(), Error> {
-                self.execute_load_at_impl(store, result, address, $impl_fn)
+                self.execute_load_at_impl(store, result, address, $load_at_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]
             pub fn $fn_load_off16(&mut self, result: Reg, ptr: Reg, offset: Offset16) -> Result<(), Error> {
-                self.execute_load_offset16_impl(result, ptr, offset, $impl_fn)
+                self.execute_load_offset16_impl(result, ptr, offset, $load_fn)
             }
         )*
     }
@@ -197,12 +221,14 @@ impl Executor<'_> {
             (Instruction::Load32At, execute_load32_at),
             (Instruction::Load32Offset16, execute_load32_offset16),
             UntypedVal::load32,
+            UntypedVal::load32_at,
         ),
         (
             (Instruction::Load64, execute_load64),
             (Instruction::Load64At, execute_load64_at),
             (Instruction::Load64Offset16, execute_load64_offset16),
             UntypedVal::load64,
+            UntypedVal::load64_at,
         ),
 
         (
@@ -210,24 +236,28 @@ impl Executor<'_> {
             (Instruction::I32Load8sAt, execute_i32_load8_s_at),
             (Instruction::I32Load8sOffset16, execute_i32_load8_s_offset16),
             UntypedVal::i32_load8_s,
+            UntypedVal::i32_load8_s_at,
         ),
         (
             (Instruction::I32Load8u, execute_i32_load8_u),
             (Instruction::I32Load8uAt, execute_i32_load8_u_at),
             (Instruction::I32Load8uOffset16, execute_i32_load8_u_offset16),
             UntypedVal::i32_load8_u,
+            UntypedVal::i32_load8_u_at,
         ),
         (
             (Instruction::I32Load16s, execute_i32_load16_s),
             (Instruction::I32Load16sAt, execute_i32_load16_s_at),
             (Instruction::I32Load16sOffset16, execute_i32_load16_s_offset16),
             UntypedVal::i32_load16_s,
+            UntypedVal::i32_load16_s_at,
         ),
         (
             (Instruction::I32Load16u, execute_i32_load16_u),
             (Instruction::I32Load16uAt, execute_i32_load16_u_at),
             (Instruction::I32Load16uOffset16, execute_i32_load16_u_offset16),
             UntypedVal::i32_load16_u,
+            UntypedVal::i32_load16_u_at,
         ),
 
         (
@@ -235,36 +265,42 @@ impl Executor<'_> {
             (Instruction::I64Load8sAt, execute_i64_load8_s_at),
             (Instruction::I64Load8sOffset16, execute_i64_load8_s_offset16),
             UntypedVal::i64_load8_s,
+            UntypedVal::i64_load8_s_at,
         ),
         (
             (Instruction::I64Load8u, execute_i64_load8_u),
             (Instruction::I64Load8uAt, execute_i64_load8_u_at),
             (Instruction::I64Load8uOffset16, execute_i64_load8_u_offset16),
             UntypedVal::i64_load8_u,
+            UntypedVal::i64_load8_u_at,
         ),
         (
             (Instruction::I64Load16s, execute_i64_load16_s),
             (Instruction::I64Load16sAt, execute_i64_load16_s_at),
             (Instruction::I64Load16sOffset16, execute_i64_load16_s_offset16),
             UntypedVal::i64_load16_s,
+            UntypedVal::i64_load16_s_at,
         ),
         (
             (Instruction::I64Load16u, execute_i64_load16_u),
             (Instruction::I64Load16uAt, execute_i64_load16_u_at),
             (Instruction::I64Load16uOffset16, execute_i64_load16_u_offset16),
             UntypedVal::i64_load16_u,
+            UntypedVal::i64_load16_u_at,
         ),
         (
             (Instruction::I64Load32s, execute_i64_load32_s),
             (Instruction::I64Load32sAt, execute_i64_load32_s_at),
             (Instruction::I64Load32sOffset16, execute_i64_load32_s_offset16),
             UntypedVal::i64_load32_s,
+            UntypedVal::i64_load32_s_at,
         ),
         (
             (Instruction::I64Load32u, execute_i64_load32_u),
             (Instruction::I64Load32uAt, execute_i64_load32_u_at),
             (Instruction::I64Load32uOffset16, execute_i64_load32_u_offset16),
             UntypedVal::i64_load32_u,
+            UntypedVal::i64_load32_u_at,
         ),
     }
 }

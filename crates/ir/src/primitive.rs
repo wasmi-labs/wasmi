@@ -1,4 +1,4 @@
-use crate::{core::UntypedVal, immeditate::OutOfBoundsConst, Const16, Const32, Error};
+use crate::{core::UntypedVal, immeditate::OutOfBoundsConst, Const16, Error};
 use core::marker::PhantomData;
 
 /// The sign of a value.
@@ -488,27 +488,66 @@ impl From<Offset16> for Offset64 {
     }
 }
 
+/// A 64-bit memory address used for some load and store instructions.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Address(u64);
+
+impl TryFrom<u64> for Address {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(address: u64) -> Result<Self, OutOfBoundsConst> {
+        if usize::try_from(address).is_err() {
+            return Err(OutOfBoundsConst);
+        };
+        Ok(Self(address))
+    }
+}
+
+impl From<Address> for usize {
+    fn from(address: Address) -> Self {
+        // Note: no checks are needed since we statically ensured that
+        // `Address32` can be safely and losslessly cast to `usize`.
+        debug_assert!(usize::try_from(address.0).is_ok());
+        address.0 as usize
+    }
+}
+
+impl From<Address> for u64 {
+    fn from(address: Address) -> Self {
+        address.0
+    }
+}
+
 /// A 32-bit memory address used for some load and store instructions.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct Address32(Const32<u64>);
+pub struct Address32(u32);
 
-impl TryFrom<u64> for Address32 {
+impl TryFrom<Address> for Address32 {
     type Error = OutOfBoundsConst;
 
-    fn try_from(address: u64) -> Result<Self, Self::Error> {
-        <Const32<u64>>::try_from(address).map(Self)
+    fn try_from(address: Address) -> Result<Self, OutOfBoundsConst> {
+        let Ok(address) = u32::try_from(u64::from(address)) else {
+            return Err(OutOfBoundsConst);
+        };
+        Ok(Self(address))
     }
 }
 
+// TODO: remove this impl since it destroys our cast-invariant below
+//       only used in test code so far.
 impl From<u32> for Address32 {
     fn from(address: u32) -> Self {
-        Self(<Const32<u64>>::from(address))
+        Self(address)
     }
 }
 
-impl From<Address32> for u64 {
+impl From<Address32> for usize {
     fn from(address: Address32) -> Self {
-        u64::from(address.0)
+        // Note: no checks are needed since we statically ensured that
+        // `Address32` can be safely and losslessly cast to `usize`.
+        debug_assert!(usize::try_from(address.0).is_ok());
+        address.0 as usize
     }
 }

@@ -46,6 +46,7 @@ use crate::{
     engine::{config::FuelCosts, BlockType, EngineFunc},
     ir::{
         index,
+        Address,
         Address32,
         AnyConst16,
         BoundedRegSpan,
@@ -1909,7 +1910,7 @@ impl FuncTranslator {
     }
 
     /// Returns the effective address `ptr+offset` if it is valid.
-    fn effective_address(&self, mem: index::Memory, ptr: TypedVal, offset: u64) -> Option<u64> {
+    fn effective_address(&self, mem: index::Memory, ptr: TypedVal, offset: u64) -> Option<Address> {
         let memory_type = *self
             .module
             .get_type_of_memory(MemoryIdx::from(u32::from(mem)));
@@ -1921,10 +1922,22 @@ impl FuncTranslator {
             // Case: address overflows any legal memory index.
             return None;
         };
+        if let Some(max) = memory_type.maximum() {
+            // The memory's maximum size in bytes.
+            let max_size = max << memory_type.page_size_log2();
+            if address > max_size {
+                // Case: address overflows the memory's maximum size.
+                return None;
+            }
+        }
         if !memory_type.is_64() && address >= 1 << 32 {
             // Case: address overflows the 32-bit memory index.
             return None;
         }
+        let Ok(address) = Address::try_from(address) else {
+            // Case: address is too big for the system to handle properly.
+            return None;
+        };
         Some(address)
     }
 
@@ -1972,7 +1985,7 @@ impl FuncTranslator {
                 //       to the general case where `ptr` is zero and `offset` stores the
                 //       `ptr+offset` address value.
                 let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
-                (zero_ptr, address)
+                (zero_ptr, u64::from(address))
             }
         };
         let result = self.alloc.stack.push_dynamic()?;
@@ -2075,7 +2088,7 @@ impl FuncTranslator {
                 //       to the general case where `ptr` is zero and `offset` stores the
                 //       `ptr+offset` address value.
                 let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
-                (zero_ptr, address)
+                (zero_ptr, u64::from(address))
             }
         };
         if memory.is_default() {
@@ -2232,7 +2245,7 @@ impl FuncTranslator {
                     return self.translate_fstore_at(memory, address, value, make_instr_at);
                 }
                 let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
-                (zero_ptr, address)
+                (zero_ptr, u64::from(address))
             }
         };
         let (offset_hi, offset_lo) = Offset64::split(offset);
