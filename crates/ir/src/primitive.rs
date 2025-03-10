@@ -535,14 +535,6 @@ impl TryFrom<Address> for Address32 {
     }
 }
 
-// TODO: remove this impl since it destroys our cast-invariant below
-//       only used in test code so far.
-impl From<u32> for Address32 {
-    fn from(address: u32) -> Self {
-        Self(address)
-    }
-}
-
 impl From<Address32> for usize {
     fn from(address: Address32) -> Self {
         // Note: no checks are needed since we statically ensured that
