@@ -8,6 +8,53 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.41.0`] - 2025-03-10
+
+### Added
+
+- Added support for the Wasm `memory64` proposal. [#1371]
+    - The `memory64` proposal is enabled by default in `wasmi` and the Wasmi CLI.
+- Added support for the Wasm `custom-page-sizes` proposal. [#1349]
+    - The `custom-page-sizes` proposal is enabled by default in `wasmi` and the Wasmi CLI.
+- Added support to for Wat inputs in `Module::new` and `Module::new_unchecked`. [#1328]
+    - There deliberately is no Wat support in `Module::new_streaming` since Wat cannot be stream compiled.
+
+### Fixed
+
+- Fixed a bug that could lead to crashes when tail calling host functions. [#1329]
+- Fixed a bug that `no_mange` and `export_name` where used at the same time. [#1337]
+
+### Changed
+
+- Bumped Minimum Support Rust Version to v1.82. [#1375] 
+
+### Internal
+
+- No longer use `libm` default features. [#1322]
+- Implemented several improvements to our fuzzing infrastructure:
+    - Significantly improved Wasmtime translation (JIT) times. [#1339]
+    - Improve debug output of fuzzers. [#1344]
+    - Differential fuzzer now uses fuzz input to randomize function parameters. [#1348]
+    - Allow fuzzing the Wasm `custom-page-sizes` proposal implementation. [#1354]
+- Update the Wasm spec testsuite. [#1361]
+- Update `wasm-tools` dependencies to v226. [#1374]
+- Update to `string-interner` v0.19. [#1367]
+
+[#1322]: https://github.com/wasmi-labs/wasmi/pull/1322
+[#1328]: https://github.com/wasmi-labs/wasmi/pull/1328
+[#1329]: https://github.com/wasmi-labs/wasmi/pull/1329
+[#1337]: https://github.com/wasmi-labs/wasmi/pull/1337
+[#1339]: https://github.com/wasmi-labs/wasmi/pull/1339
+[#1344]: https://github.com/wasmi-labs/wasmi/pull/1344
+[#1348]: https://github.com/wasmi-labs/wasmi/pull/1348
+[#1349]: https://github.com/wasmi-labs/wasmi/pull/1349
+[#1354]: https://github.com/wasmi-labs/wasmi/pull/1354
+[#1361]: https://github.com/wasmi-labs/wasmi/pull/1361
+[#1367]: https://github.com/wasmi-labs/wasmi/pull/1367
+[#1375]: https://github.com/wasmi-labs/wasmi/pull/1375
+[#1374]: https://github.com/wasmi-labs/wasmi/pull/1374
+[#1371]: https://github.com/wasmi-labs/wasmi/pull/1371
+
 ## [`0.40.0`] - 2024-11-27
 
 This release focuses on compile time improvements for Wasmi,
