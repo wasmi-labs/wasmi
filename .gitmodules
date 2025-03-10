@@ -7,3 +7,6 @@
 [submodule "memory64"]
 	path = crates/wasmi/tests/spec/memory64
 	url = https://github.com/WebAssembly/testsuite
+[submodule "crates/wasmi/tests/spec/wasmi-tests"]
+	path = crates/wasmi/tests/spec/wasmi-tests
+	url = https://github.com/Robbepop/wasmi-tests
