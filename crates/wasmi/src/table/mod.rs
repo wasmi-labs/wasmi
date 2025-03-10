@@ -105,7 +105,7 @@ impl TableType {
         self.index_ty.is_64()
     }
 
-    /// Returns the [`IndexType`] used by the [`MemoryType`].
+    /// Returns the [`IndexType`] used by the [`TableType`].
     pub(crate) fn index_ty(&self) -> IndexType {
         self.index_ty
     }
