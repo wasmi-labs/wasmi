@@ -64,7 +64,7 @@ use super::{
     WasmOp,
     WasmType,
 };
-use crate::ir::Offset16;
+use crate::ir::{Address, Address32, Offset16};
 use std::{fmt, format};
 
 /// Creates an [`Const32<i32>`] from the given `i32` value.
@@ -238,4 +238,18 @@ fn assert_overflowing_ptr_offset(index_ty: IndexType, ptr: u64, offset: u64) {
             );
         }
     }
+}
+
+/// Returns the effective 32-bit address for `ptr+offset`.
+fn effective_address32(ptr: u64, offset: u64) -> Address32 {
+    let Some(addr) = ptr.checked_add(offset) else {
+        panic!("ptr+offset must not overflow in this testcase")
+    };
+    let Ok(addr) = Address::try_from(addr) else {
+        panic!("ptr+offset must fit in a `usize` for this testcase")
+    };
+    let Ok(addr32) = Address32::try_from(addr) else {
+        panic!("ptr+offset must fit in a `u32` for this testcase")
+    };
+    addr32
 }

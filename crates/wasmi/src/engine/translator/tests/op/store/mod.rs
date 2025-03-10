@@ -4,7 +4,7 @@ use super::*;
 use crate::{
     core::UntypedVal,
     engine::translator::utils::Wrap,
-    ir::{AnyConst16, Offset16, Offset64, Offset64Lo},
+    ir::{Address32, AnyConst16, Offset16, Offset64, Offset64Lo},
 };
 
 mod f32_store;
@@ -530,15 +530,13 @@ fn test_store_imm16<T>(
 
 fn test_store_at_for(
     wasm_op: WasmOp,
-    make_instr: fn(value: Reg, address: u32) -> Instruction,
+    make_instr: fn(value: Reg, address: Address32) -> Instruction,
     index_ty: IndexType,
     memory_index: MemIdx,
-    ptr: u32,
-    offset: u32,
+    ptr: u64,
+    offset: u64,
 ) {
-    let address = ptr
-        .checked_add(offset)
-        .expect("testcase requires valid ptr+offset address");
+    let address = effective_address32(ptr, offset);
     let param_ty = wasm_op.param_ty();
     let index_ty = index_ty.wat();
     let wasm = format!(
@@ -563,17 +561,17 @@ fn test_store_at_for(
         .run();
 }
 
-fn test_store_at(wasm_op: WasmOp, make_instr: fn(value: Reg, address: u32) -> Instruction) {
+fn test_store_at(wasm_op: WasmOp, make_instr: fn(value: Reg, address: Address32) -> Instruction) {
     for (ptr, offset) in [
         (0, 0),
         (0, 1),
         (1, 0),
         (1, 1),
         (1000, 1000),
-        (1, u32::MAX - 1),
-        (u32::MAX - 1, 1),
-        (0, u32::MAX),
-        (u32::MAX, 0),
+        (1, u64::from(u32::MAX) - 1),
+        (u64::from(u32::MAX) - 1, 1),
+        (0, u64::from(u32::MAX)),
+        (u64::from(u32::MAX), 0),
     ] {
         for mem_idx in [0, 1].map(MemIdx) {
             for index_ty in [IndexType::Memory32, IndexType::Memory64] {
@@ -687,19 +685,17 @@ fn test_store_at_fallback(
 
 fn test_store_at_imm_for<T>(
     wasm_op: WasmOp,
-    make_instr: fn(value: Reg, address: u32) -> Instruction,
+    make_instr: fn(value: Reg, address: Address32) -> Instruction,
     index_ty: IndexType,
     memory_index: MemIdx,
-    ptr: u32,
-    offset: u32,
+    ptr: u64,
+    offset: u64,
     value: T,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
 {
-    let address = ptr
-        .checked_add(offset)
-        .expect("testcase requires valid ptr+offset address");
+    let address = effective_address32(ptr, offset);
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
     let index_ty = index_ty.wat();
@@ -731,7 +727,7 @@ fn test_store_at_imm_for<T>(
 fn test_store_at_imm<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(value: Reg, address: u32) -> Instruction,
+    make_instr: fn(value: Reg, address: Address32) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
@@ -742,10 +738,10 @@ fn test_store_at_imm<T>(
         (1, 0),
         (1, 1),
         (1000, 1000),
-        (1, u32::MAX - 1),
-        (u32::MAX - 1, 1),
-        (0, u32::MAX),
-        (u32::MAX, 0),
+        (1, u64::from(u32::MAX) - 1),
+        (u64::from(u32::MAX) - 1, 1),
+        (0, u64::from(u32::MAX)),
+        (u64::from(u32::MAX), 0),
     ]
     .into_iter()
     .for_each(|(ptr, offset)| {
@@ -759,20 +755,18 @@ fn test_store_at_imm<T>(
 
 fn test_store_wrap_at_imm_for<Src, Wrapped, Field>(
     wasm_op: WasmOp,
-    make_instr: fn(value: Field, address: u32) -> Instruction,
+    make_instr: fn(value: Field, address: Address32) -> Instruction,
     index_ty: IndexType,
     memory_index: MemIdx,
-    ptr: u32,
-    offset: u32,
+    ptr: u64,
+    offset: u64,
     value: Src,
 ) where
     Src: Copy + Wrap<Wrapped>,
     Field: TryFrom<Wrapped> + Into<AnyConst16>,
     DisplayWasm<Src>: Display,
 {
-    let address = ptr
-        .checked_add(offset)
-        .expect("testcase requires valid ptr+offset address");
+    let address = effective_address32(ptr, offset);
     let display_value = DisplayWasm::from(value);
     let param_ty = wasm_op.param_ty();
     let index_ty = index_ty.wat();
@@ -801,7 +795,7 @@ fn test_store_wrap_at_imm_for<Src, Wrapped, Field>(
 
 fn test_store_wrap_at_imm<Src, Wrapped, Field>(
     wasm_op: WasmOp,
-    make_instr: fn(value: Field, address: u32) -> Instruction,
+    make_instr: fn(value: Field, address: Address32) -> Instruction,
     value: Src,
 ) where
     Src: Copy + Into<UntypedVal> + Wrap<Wrapped>,
@@ -814,10 +808,10 @@ fn test_store_wrap_at_imm<Src, Wrapped, Field>(
         (1, 0),
         (1, 1),
         (1000, 1000),
-        (1, u32::MAX - 1),
-        (u32::MAX - 1, 1),
-        (0, u32::MAX),
-        (u32::MAX, 0),
+        (1, u64::from(u32::MAX) - 1),
+        (u64::from(u32::MAX) - 1, 1),
+        (0, u64::from(u32::MAX)),
+        (u64::from(u32::MAX), 0),
     ];
     for (ptr, offset) in ptrs_and_offsets {
         for mem_idx in [0, 1].map(MemIdx) {

@@ -4,7 +4,7 @@ use super::*;
 use crate::{
     core::TrapCode,
     engine::EngineFunc,
-    ir::{index::Global, BranchOffset, BranchOffset16, RegSpan},
+    ir::{index::Global, Address, Address32, BranchOffset, BranchOffset16, RegSpan},
     tests::{AssertResults, AssertTrap, ExecutionTest},
 };
 
@@ -384,12 +384,14 @@ fn fuzz_regression_17() {
     // for the preserved local value causing the `value` register
     // of the `i64_store_at` instruction to be 32676 instead of 2.
     let wasm = include_str!("wat/fuzz_17.wat");
+    let addr = Address::try_from(4294967295_u64).unwrap();
+    let addr32 = Address32::try_from(addr).unwrap();
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
             Instruction::copy_i64imm32(Reg::from(0), 2),
             Instruction::copy_imm32(Reg::from(1), -1.0_f32),
-            Instruction::store64_at(Reg::from(2), 4294967295_u32),
+            Instruction::store64_at(Reg::from(2), addr32),
             Instruction::trap(TrapCode::UnreachableCodeReached),
         ])
         .run()

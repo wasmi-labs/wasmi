@@ -3,7 +3,7 @@
 use super::*;
 use crate::{
     core::TrapCode,
-    ir::{Offset16, Offset64, Offset64Lo},
+    ir::{Address32, Offset16, Offset64, Offset64Lo},
 };
 
 fn test_load(
@@ -74,7 +74,7 @@ fn test_load_at(
     wasm_op: WasmOp,
     index_ty: IndexType,
     memory_index: MemIdx,
-    make_instr_at: fn(result: Reg, address: u32) -> Instruction,
+    make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
     ptr: u64,
     offset: u64,
 ) {
@@ -92,10 +92,7 @@ fn test_load_at(
         )
     "#
     );
-    let address = ptr
-        .checked_add(offset)
-        .expect("ptr+offset must be valid in this testcase");
-    let address = u32::try_from(address).expect("ptr+offset must fit into a `u32` value");
+    let address = effective_address32(ptr, offset);
     TranslationTest::new(&wasm)
         .expect_func_instrs(iter_filter_opts![
             make_instr_at(Reg::from(0), address),
