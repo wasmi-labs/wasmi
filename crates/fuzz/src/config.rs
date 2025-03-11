@@ -39,6 +39,7 @@ impl From<FuzzWasmiConfig> for wasmi::Config {
         config.compilation_mode(fuzz.translation_mode);
         config.consume_fuel(fuzz.consume_fuel);
         config.wasm_custom_page_sizes(true);
+        config.wasm_wide_arithmetic(true);
         config
     }
 }
@@ -109,6 +110,7 @@ impl Arbitrary<'_> for FuzzSmithConfig {
             memory64_enabled: true,
             saturating_float_to_int_enabled: true,
             sign_extension_ops_enabled: true,
+            wide_arithmetic_enabled: true,
             relaxed_simd_enabled: false,
             exceptions_enabled: false,
             threads_enabled: false,
@@ -154,6 +156,13 @@ impl FuzzSmithConfig {
     /// This is required by some supported Wasm runtime oracles.
     pub fn disable_custom_page_sizes(&mut self) {
         self.inner.custom_page_sizes_enabled = false;
+    }
+
+    /// Disable the Wasm `wide-arithmetic` proposal.
+    ///
+    /// This is required by some supported Wasm runtime oracles.
+    pub fn disable_wide_arithmetic(&mut self) {
+        self.inner.wide_arithmetic_enabled = false;
     }
 
     /// Disable the Wasm `memory64` proposal.
