@@ -2945,6 +2945,7 @@ impl FuncTranslator {
             rhs_hi: UntypedVal,
         ) -> (UntypedVal, UntypedVal),
     ) -> Result<(), Error> {
+        bail_unreachable!(self);
         let (rhs_lo, rhs_hi) = self.alloc.stack.pop2();
         let (lhs_lo, lhs_hi) = self.alloc.stack.pop2();
         if let (
