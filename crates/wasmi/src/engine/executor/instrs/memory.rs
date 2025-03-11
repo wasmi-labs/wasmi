@@ -6,6 +6,7 @@ use crate::{
     ir::{
         index::{Data, Memory},
         Const16,
+        Const32,
         Instruction,
         Reg,
     },
@@ -86,7 +87,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut Store<T>,
         result: Reg,
-        delta: u32,
+        delta: Const32<u64>,
     ) -> Result<(), Error> {
         let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
         let delta = u64::from(delta);

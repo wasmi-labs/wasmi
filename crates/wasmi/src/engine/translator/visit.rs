@@ -994,17 +994,24 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_memory_grow(&mut self, mem: u32) -> Self::Output {
         bail_unreachable!(self);
-        let delta = self.alloc.stack.pop().map_const(u32::from);
         let memory = index::Memory::from(mem);
+        let memory_type = *self.module.get_type_of_memory(MemoryIdx::from(mem));
+        let delta = self.alloc.stack.pop();
+        let delta = self.as_index_type_const32(delta, memory_type.index_ty())?;
         let result = self.alloc.stack.push_dynamic()?;
-        if let Provider::Const(0) = delta {
-            // Case: growing by 0 pages.
-            //
-            // Since `memory.grow` returns the `memory.size` before the
-            // operation a `memory.grow` with `delta` of 0 can be translated
-            // as `memory.size` instruction instead.
-            self.push_fueled_instr(Instruction::memory_size(result, memory), FuelCosts::entity)?;
-            return Ok(());
+        if let Provider::Const(delta) = delta {
+            if u64::from(delta) == 0 {
+                // Case: growing by 0 pages.
+                //
+                // Since `memory.grow` returns the `memory.size` before the
+                // operation a `memory.grow` with `delta` of 0 can be translated
+                // as `memory.size` instruction instead.
+                self.push_fueled_instr(
+                    Instruction::memory_size(result, memory),
+                    FuelCosts::entity,
+                )?;
+                return Ok(());
+            }
         }
         let instr = match delta {
             Provider::Const(delta) => Instruction::memory_grow_by(result, delta),
