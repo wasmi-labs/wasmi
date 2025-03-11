@@ -786,3 +786,34 @@ mod tests {
         )
     }
 }
+
+/// Trait implemented by floating point types for NaN canonicalization.
+pub trait CanonicalizeNan {
+    /// Canonicalizes `self` if it is NaN.
+    fn canonicalize_nan(self) -> Self;
+}
+
+macro_rules! impl_caninocalize_nan {
+    ( $( $ty:ty as $nan_val:literal),* $(,)? ) => {
+        $(
+            impl CanonicalizeNan for $ty {
+                fn canonicalize_nan(self) -> Self {
+                    if self.is_nan() {
+                        let canonicalized = Self::from_bits($nan_val);
+                        debug_assert!(canonicalized.is_nan());
+                        return canonicalized
+                    }
+                    self
+                }
+            }
+        )*
+    };
+}
+impl_caninocalize_nan! {
+    // Note: These patterns ensures that the sign bit can be either 0 or 1,
+    //       the exponent bits are all set to 1 (indicating an infinity or NaN),
+    //       and the fraction (mantissa) bits are all zero, except the most significant bit
+    //       of the fraction is set to 1 to indicate a quiet NaN.
+    f32 as 0x7FC00000_u32,
+    f64 as 0x7FF8000000000000_u64,
+}

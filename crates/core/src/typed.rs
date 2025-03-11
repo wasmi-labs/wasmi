@@ -299,19 +299,23 @@ impl TypedVal {
 
         fn f32_abs(f32) -> f32;
         fn f32_neg(f32) -> f32;
+        fn f32_neg_canonicalize_nan(f32) -> f32;
         fn f32_ceil(f32) -> f32;
         fn f32_floor(f32) -> f32;
         fn f32_trunc(f32) -> f32;
         fn f32_nearest(f32) -> f32;
         fn f32_sqrt(f32) -> f32;
+        fn f32_sqrt_canonicalize_nan(f32) -> f32;
 
         fn f64_abs(f64) -> f64;
         fn f64_neg(f64) -> f64;
+        fn f64_neg_canonicalize_nan(f64) -> f64;
         fn f64_ceil(f64) -> f64;
         fn f64_floor(f64) -> f64;
         fn f64_trunc(f64) -> f64;
         fn f64_nearest(f64) -> f64;
         fn f64_sqrt(f64) -> f64;
+        fn f64_sqrt_canonicalize_nan(f64) -> f64;
 
         fn f32_add(f32, f32) -> f32;
         fn f32_sub(f32, f32) -> f32;
@@ -321,6 +325,14 @@ impl TypedVal {
         fn f32_max(f32, f32) -> f32;
         fn f32_copysign(f32, f32) -> f32;
 
+        fn f32_add_canonicalize_nan(f32, f32) -> f32;
+        fn f32_sub_canonicalize_nan(f32, f32) -> f32;
+        fn f32_mul_canonicalize_nan(f32, f32) -> f32;
+        fn f32_div_canonicalize_nan(f32, f32) -> f32;
+        fn f32_min_canonicalize_nan(f32, f32) -> f32;
+        fn f32_max_canonicalize_nan(f32, f32) -> f32;
+        fn f32_copysign_canonicalize_nan(f32, f32) -> f32;
+
         fn f64_add(f64, f64) -> f64;
         fn f64_sub(f64, f64) -> f64;
         fn f64_mul(f64, f64) -> f64;
@@ -328,6 +340,14 @@ impl TypedVal {
         fn f64_min(f64, f64) -> f64;
         fn f64_max(f64, f64) -> f64;
         fn f64_copysign(f64, f64) -> f64;
+
+        fn f64_add_canonicalize_nan(f64, f64) -> f64;
+        fn f64_sub_canonicalize_nan(f64, f64) -> f64;
+        fn f64_mul_canonicalize_nan(f64, f64) -> f64;
+        fn f64_div_canonicalize_nan(f64, f64) -> f64;
+        fn f64_min_canonicalize_nan(f64, f64) -> f64;
+        fn f64_max_canonicalize_nan(f64, f64) -> f64;
+        fn f64_copysign_canonicalize_nan(f64, f64) -> f64;
 
         // Conversions
 

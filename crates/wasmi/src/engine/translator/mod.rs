@@ -804,6 +804,11 @@ impl FuncTranslator {
         self.fuel_costs.as_ref()
     }
 
+    /// Returns `true` if NaN canonicalization is enabled in the associated [`Config`].
+    fn is_nan_canonicalization_enabled(&self) -> bool {
+        self.engine.config().get_canonicalize_nans()
+    }
+
     /// Returns the most recent [`Instruction::ConsumeFuel`] in the translation process.
     ///
     /// Returns `None` if fuel metering is disabled.
