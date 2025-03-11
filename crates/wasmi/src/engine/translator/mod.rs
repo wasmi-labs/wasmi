@@ -2957,8 +2957,8 @@ impl FuncTranslator {
         {
             let (result_lo, result_hi) =
                 const_eval(lhs_lo.into(), lhs_hi.into(), rhs_lo.into(), rhs_hi.into());
-            self.alloc.stack.push_const(i64::from(result_hi));
             self.alloc.stack.push_const(i64::from(result_lo));
+            self.alloc.stack.push_const(i64::from(result_hi));
             return Ok(());
         }
         let rhs_lo = match rhs_lo {
@@ -3033,14 +3033,14 @@ impl FuncTranslator {
         let imm_in = i64::from(imm_in);
         if imm_in == 0 {
             // Case: `mul(x, 0)` or `mul(0, x)` always evaluates to 0.
-            self.alloc.stack.push_const(0_i64); // hi-bits
             self.alloc.stack.push_const(0_i64); // lo-bits
+            self.alloc.stack.push_const(0_i64); // hi-bits
             return Ok(true);
         }
         if imm_in == 1 {
             // Case: `mul(x, 1)` or `mul(0, x)` always evaluates to just `x`.
-            self.alloc.stack.push_const(0_i64);
-            self.alloc.stack.push_register(reg_in)?;
+            self.alloc.stack.push_register(reg_in)?; // lo-bits
+            self.alloc.stack.push_const(0_i64); // hi-bits
             return Ok(true);
         }
         Ok(false)
