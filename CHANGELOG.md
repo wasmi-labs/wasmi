@@ -8,6 +8,26 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.42.0`] - 2025-03-11
+
+### Added
+
+- Added support for the Wasm `wide-arithmetic` proposal. [#1369]
+    - The `wide-arithmetic` proposal is disabled by default in `wasmi`
+      library and enabled by default in the Wasmi CLI.
+
+### Changed
+
+- Optimized memory accesses with a constant `ptr` value. [#1381]
+
+### Internal
+
+- Update `wasm-tools` dependencies from v226 to v227. [#1380]
+
+[#1369]: https://github.com/wasmi-labs/wasmi/pull/1369
+[#1380]: https://github.com/wasmi-labs/wasmi/pull/1380
+[#1381]: https://github.com/wasmi-labs/wasmi/pull/1381
+
 ## [`0.41.1`] - 2025-03-11
 
 ### Fixed
