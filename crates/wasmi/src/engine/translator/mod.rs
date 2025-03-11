@@ -53,6 +53,7 @@ use crate::{
         BranchOffset,
         Const16,
         Const32,
+        FixedRegSpan,
         Instruction,
         IntoShiftAmount,
         Offset16,
@@ -2953,7 +2954,58 @@ impl FuncTranslator {
         make_instr: fn(results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) -> Instruction,
         const_eval: fn(lhs: UntypedVal, rhs: UntypedVal) -> (UntypedVal, UntypedVal),
     ) -> Result<(), Error> {
-        todo!()
+        bail_unreachable!(self);
+        let (lhs, rhs) = self.alloc.stack.pop2();
+        let (lhs, rhs) = match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => (lhs, rhs),
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                if self.try_opt_i64_mul_wide_sx(lhs, rhs).is_ok() {
+                    return Ok(());
+                }
+                let rhs = self.alloc.stack.alloc_const(rhs)?;
+                (lhs, rhs)
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => {
+                if self.try_opt_i64_mul_wide_sx(rhs, lhs).is_ok() {
+                    return Ok(());
+                }
+                let lhs = self.alloc.stack.alloc_const(lhs)?;
+                (lhs, rhs)
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                let (result_lo, result_hi) = const_eval(lhs.into(), rhs.into());
+                self.alloc.stack.push_const(i64::from(result_hi));
+                self.alloc.stack.push_const(i64::from(result_lo));
+                return Ok(());
+            }
+        };
+        let results = self.alloc.stack.push_dynamic_n(2)?;
+        let results = <FixedRegSpan<2>>::new(results).unwrap_or_else(|_| {
+            panic!("`i64.mul_wide_sx` requires 2 results but found: {results:?}")
+        });
+        self.push_fueled_instr(make_instr(results, lhs, rhs), FuelCosts::base)?;
+        Ok(())
+    }
+
+    /// Try to optimize a `i64.mul_wide_sx` instruction with one [`Reg`] and one immediate input.
+    ///
+    /// - Returns `Ok(true)` if the optimiation was applied successfully.
+    /// - Returns `Ok(false)` if no optimization was applied.
+    fn try_opt_i64_mul_wide_sx(&mut self, reg_in: Reg, imm_in: TypedVal) -> Result<bool, Error> {
+        let imm_in = i64::from(imm_in);
+        if imm_in == 0 {
+            // Case: `mul(x, 0)` or `mul(0, x)` always evaluates to 0.
+            self.alloc.stack.push_const(0_i64); // hi-bits
+            self.alloc.stack.push_const(0_i64); // lo-bits
+            return Ok(true);
+        }
+        if imm_in == 1 {
+            // Case: `mul(x, 1)` or `mul(0, x)` always evaluates to just `x`.
+            self.alloc.stack.push_const(0_i64);
+            self.alloc.stack.push_register(reg_in)?;
+            return Ok(true);
+        }
+        Ok(false)
     }
 }
 
