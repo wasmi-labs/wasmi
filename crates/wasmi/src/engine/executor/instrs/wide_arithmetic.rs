@@ -1,0 +1,91 @@
+use super::{Executor, InstructionPtr};
+use crate::{
+    core::UntypedVal,
+    engine::utils::unreachable_unchecked,
+    ir::{FixedRegSpan, Instruction, Reg},
+};
+
+/// Parameters for the `i64.add128` and `i64.sub128` instructions.
+struct Params128 {
+    /// The register storing the high 64-bit part of the `lhs` parameter value.
+    lhs_hi: Reg,
+    /// The register storing the low 64-bit part of the `rhs` parameter value.
+    rhs_lo: Reg,
+    /// The register storing the low 64-bit part of the `rhs` parameter value.
+    rhs_hi: Reg,
+}
+
+impl Executor<'_> {
+    /// Fetches the parameters required by the `i64.add128` and `i64.sub128` instructions.
+    fn fetch_params128(&self) -> Params128 {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(1);
+        match *addr.get() {
+            Instruction::Register3 { regs } => Params128 {
+                lhs_hi: regs[0],
+                rhs_lo: regs[1],
+                rhs_hi: regs[2],
+            },
+            unexpected => {
+                // Safety: Wasmi translation guarantees that [`Instruction::MemoryIndex`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::Register3` but found: {unexpected:?}"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Executes an [`Instruction::I64Add128`].
+    pub fn execute_i64_add128(&mut self, results: [Reg; 2], lhs_lo: Reg) {
+        let Params128 {
+            lhs_hi,
+            rhs_lo,
+            rhs_hi,
+        } = self.fetch_params128();
+        let lhs_lo = self.get_register(lhs_lo);
+        let lhs_hi = self.get_register(lhs_hi);
+        let rhs_lo = self.get_register(rhs_lo);
+        let rhs_hi = self.get_register(rhs_hi);
+        let (result_lo, result_hi) = UntypedVal::i64_add128(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
+        self.set_register(results[0], result_lo);
+        self.set_register(results[1], result_hi);
+    }
+
+    /// Executes an [`Instruction::I64Sub128`].
+    pub fn execute_i64_sub128(&mut self, results: [Reg; 2], lhs_lo: Reg) {
+        let Params128 {
+            lhs_hi,
+            rhs_lo,
+            rhs_hi,
+        } = self.fetch_params128();
+        let lhs_lo = self.get_register(lhs_lo);
+        let lhs_hi = self.get_register(lhs_hi);
+        let rhs_lo = self.get_register(rhs_lo);
+        let rhs_hi = self.get_register(rhs_hi);
+        let (result_lo, result_hi) = UntypedVal::i64_sub128(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
+        self.set_register(results[0], result_lo);
+        self.set_register(results[1], result_hi);
+    }
+
+    /// Executes an [`Instruction::I64MulWideS`].
+    pub fn execute_i64_mul_wide_s(&mut self, results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) {
+        let lhs = self.get_register(lhs);
+        let rhs = self.get_register(rhs);
+        let (result_lo, result_hi) = UntypedVal::i64_mul_wide_s(lhs, rhs);
+        let results = results.to_array();
+        self.set_register(results[0], result_lo);
+        self.set_register(results[1], result_hi);
+    }
+
+    /// Executes an [`Instruction::I64MulWideU`].
+    pub fn execute_i64_mul_wide_u(&mut self, results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) {
+        let lhs = self.get_register(lhs);
+        let rhs = self.get_register(rhs);
+        let (result_lo, result_hi) = UntypedVal::i64_mul_wide_u(lhs, rhs);
+        let results = results.to_array();
+        self.set_register(results[0], result_lo);
+        self.set_register(results[1], result_hi);
+    }
+}
