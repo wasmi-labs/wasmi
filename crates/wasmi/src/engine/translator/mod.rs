@@ -2997,14 +2997,14 @@ impl FuncTranslator {
         let (lhs, rhs) = match (lhs, rhs) {
             (Provider::Register(lhs), Provider::Register(rhs)) => (lhs, rhs),
             (Provider::Register(lhs), Provider::Const(rhs)) => {
-                if self.try_opt_i64_mul_wide_sx(lhs, rhs).is_ok() {
+                if self.try_opt_i64_mul_wide_sx(lhs, rhs)? {
                     return Ok(());
                 }
                 let rhs = self.alloc.stack.alloc_const(rhs)?;
                 (lhs, rhs)
             }
             (Provider::Const(lhs), Provider::Register(rhs)) => {
-                if self.try_opt_i64_mul_wide_sx(rhs, lhs).is_ok() {
+                if self.try_opt_i64_mul_wide_sx(rhs, lhs)? {
                     return Ok(());
                 }
                 let lhs = self.alloc.stack.alloc_const(lhs)?;
