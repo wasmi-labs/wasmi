@@ -8,6 +8,17 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.41.1`] - 2025-03-11
+
+### Fixed
+
+- Fixed a Wasmi CLI crash when using `.wat` formatted Wasm files. [#1385]
+- Fixed a crash when translating `memory.grow` with an `i64.const` delta parameter. [#1384]
+  - Note: this can only occur when using the Wasm `memory64` proposal.
+
+[#1384]: https://github.com/wasmi-labs/wasmi/pull/1384
+[#1385]: https://github.com/wasmi-labs/wasmi/pull/1385
+
 ## [`0.41.0`] - 2025-03-10
 
 ### Added
