@@ -4191,7 +4191,7 @@ macro_rules! for_each_op {
             /// This instruction is part of the Wasm `wide-arithmetic` proposal.
             #[snake_name(i64_mul_wide_s)]
             I64MulWideS {
-                @result: FixedRegSpan<2>,
+                @results: FixedRegSpan<2>,
                 /// The `lhs` input value for the instruction.
                 lhs: Reg,
                 /// The `rhs` input value for the instruction.
@@ -4204,7 +4204,7 @@ macro_rules! for_each_op {
             /// This instruction is part of the Wasm `wide-arithmetic` proposal.
             #[snake_name(i64_mul_wide_u)]
             I64MulWideU {
-                @result: FixedRegSpan<2>,
+                @results: FixedRegSpan<2>,
                 /// The `lhs` input value for the instruction.
                 lhs: Reg,
                 /// The `rhs` input value for the instruction.
