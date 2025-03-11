@@ -1195,8 +1195,8 @@ impl UntypedVal {
     ///
     /// This instruction is part of the Wasm `wide-arithmetic` proposal.
     pub fn i64_mul_wide_s(self, rhs: Self) -> (Self, Self) {
-        let lhs = i128::from(u64::from(self));
-        let rhs = i128::from(u64::from(rhs));
+        let lhs = i128::from(i64::from(self));
+        let rhs = i128::from(i64::from(rhs));
         let result = lhs.wrapping_mul(rhs);
         Self::split128(result)
     }
