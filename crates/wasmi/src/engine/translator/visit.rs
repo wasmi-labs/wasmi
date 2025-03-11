@@ -64,6 +64,9 @@ macro_rules! impl_visit_operator {
     ( @tail_call $($rest:tt)* ) => {
         impl_visit_operator!(@@skipped $($rest)*);
     };
+    ( @wide_arithmetic $($rest:tt)* ) => {
+        impl_visit_operator!(@@skipped $($rest)*);
+    };
     ( @@skipped $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         // We skip Wasm operators that we already implement manually.
         impl_visit_operator!($($rest)*);
@@ -3392,5 +3395,21 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let result = self.alloc.stack.push_dynamic()?;
         self.push_fueled_instr(Instruction::table_size(result, table), FuelCosts::entity)?;
         Ok(())
+    }
+
+    fn visit_i64_add128(&mut self) -> Self::Output {
+        self.translate_i64_binop128(Instruction::i64_add128, UntypedVal::i64_add128)
+    }
+
+    fn visit_i64_sub128(&mut self) -> Self::Output {
+        self.translate_i64_binop128(Instruction::i64_sub128, UntypedVal::i64_sub128)
+    }
+
+    fn visit_i64_mul_wide_s(&mut self) -> Self::Output {
+        self.translate_i64_mul_wide_sx(Instruction::i64_mul_wide_s, UntypedVal::i64_mul_wide_s)
+    }
+
+    fn visit_i64_mul_wide_u(&mut self) -> Self::Output {
+        self.translate_i64_mul_wide_sx(Instruction::i64_mul_wide_u, UntypedVal::i64_mul_wide_u)
     }
 }

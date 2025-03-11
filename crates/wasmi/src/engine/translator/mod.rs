@@ -371,6 +371,9 @@ macro_rules! impl_visit_operator {
     ( @tail_call $($rest:tt)* ) => {
         impl_visit_operator!(@@supported $($rest)*);
     };
+    ( @wide_arithmetic $($rest:tt)* ) => {
+        impl_visit_operator!(@@supported $($rest)*);
+    };
     ( @@supported $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         fn $visit(&mut self $($(,$arg: $argty)*)?) -> Self::Output {
             let offset = self.current_pos();
@@ -2928,6 +2931,29 @@ impl FuncTranslator {
         })?;
         self.reachable = false;
         Ok(())
+    }
+
+    /// Translates a Wasm `i64.binop128` instruction from the `wide-arithmetic` proposal.
+    fn translate_i64_binop128(
+        &mut self,
+        make_instr: fn(results: [Reg; 2], lhs_lo: Reg) -> Instruction,
+        const_eval: fn(
+            lhs_lo: UntypedVal,
+            lhs_hi: UntypedVal,
+            rhs_lo: UntypedVal,
+            rhs_hi: UntypedVal,
+        ) -> (UntypedVal, UntypedVal),
+    ) -> Result<(), Error> {
+        todo!()
+    }
+
+    /// Translates a Wasm `i64.mul_wide_sx` instruction from the `wide-arithmetic` proposal.
+    fn translate_i64_mul_wide_sx(
+        &mut self,
+        make_instr: fn(results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) -> Instruction,
+        const_eval: fn(lhs: UntypedVal, rhs: UntypedVal) -> (UntypedVal, UntypedVal),
+    ) -> Result<(), Error> {
+        todo!()
     }
 }
 
