@@ -15,7 +15,7 @@ use super::{
     TypedVal,
 };
 use crate::{
-    core::{TrapCode, ValType, F32, F64},
+    core::{TrapCode, UntypedVal, ValType, F32, F64},
     engine::{
         translator::{AcquiredTarget, Provider},
         BlockType,
