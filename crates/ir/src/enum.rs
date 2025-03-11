@@ -92,6 +92,7 @@ impl IntoReg for Reg {
         Some(self)
     }
 }
+impl IntoReg for [Reg; 2] {}
 impl IntoReg for RegSpan {}
 impl<const N: u16> IntoReg for FixedRegSpan<N> {}
 impl IntoReg for () {}
