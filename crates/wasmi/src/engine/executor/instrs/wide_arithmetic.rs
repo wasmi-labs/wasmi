@@ -57,6 +57,7 @@ impl Executor<'_> {
         let (result_lo, result_hi) = binop(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
         self.set_register(results[0], result_lo);
         self.set_register(results[1], result_hi);
+        self.next_instr_at(2)
     }
 
     /// Executes an [`Instruction::I64Add128`].
@@ -83,6 +84,7 @@ impl Executor<'_> {
         let results = results.to_array();
         self.set_register(results[0], result_lo);
         self.set_register(results[1], result_hi);
+        self.next_instr()
     }
 
     /// Executes an [`Instruction::I64MulWideS`].
