@@ -53,6 +53,7 @@ use crate::{
         BranchOffset,
         Const16,
         Const32,
+        FixedRegSpan,
         Instruction,
         IntoShiftAmount,
         Offset16,
@@ -369,6 +370,9 @@ macro_rules! impl_visit_operator {
         impl_visit_operator!(@@supported $($rest)*);
     };
     ( @tail_call $($rest:tt)* ) => {
+        impl_visit_operator!(@@supported $($rest)*);
+    };
+    ( @wide_arithmetic $($rest:tt)* ) => {
         impl_visit_operator!(@@supported $($rest)*);
     };
     ( @@supported $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
@@ -2928,6 +2932,118 @@ impl FuncTranslator {
         })?;
         self.reachable = false;
         Ok(())
+    }
+
+    /// Translates a Wasm `i64.binop128` instruction from the `wide-arithmetic` proposal.
+    fn translate_i64_binop128(
+        &mut self,
+        make_instr: fn(results: [Reg; 2], lhs_lo: Reg) -> Instruction,
+        const_eval: fn(
+            lhs_lo: UntypedVal,
+            lhs_hi: UntypedVal,
+            rhs_lo: UntypedVal,
+            rhs_hi: UntypedVal,
+        ) -> (UntypedVal, UntypedVal),
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let (rhs_lo, rhs_hi) = self.alloc.stack.pop2();
+        let (lhs_lo, lhs_hi) = self.alloc.stack.pop2();
+        if let (
+            Provider::Const(lhs_lo),
+            Provider::Const(lhs_hi),
+            Provider::Const(rhs_lo),
+            Provider::Const(rhs_hi),
+        ) = (lhs_lo, lhs_hi, rhs_lo, rhs_hi)
+        {
+            let (result_lo, result_hi) =
+                const_eval(lhs_lo.into(), lhs_hi.into(), rhs_lo.into(), rhs_hi.into());
+            self.alloc.stack.push_const(i64::from(result_lo));
+            self.alloc.stack.push_const(i64::from(result_hi));
+            return Ok(());
+        }
+        let rhs_lo = match rhs_lo {
+            Provider::Register(reg) => reg,
+            Provider::Const(rhs_lo) => self.alloc.stack.alloc_const(rhs_lo)?,
+        };
+        let rhs_hi = match rhs_hi {
+            Provider::Register(reg) => reg,
+            Provider::Const(rhs_hi) => self.alloc.stack.alloc_const(rhs_hi)?,
+        };
+        let lhs_lo = match lhs_lo {
+            Provider::Register(reg) => reg,
+            Provider::Const(lhs_lo) => self.alloc.stack.alloc_const(lhs_lo)?,
+        };
+        let lhs_hi = match lhs_hi {
+            Provider::Register(reg) => reg,
+            Provider::Const(lhs_hi) => self.alloc.stack.alloc_const(lhs_hi)?,
+        };
+        let result_lo = self.alloc.stack.push_dynamic()?;
+        let result_hi = self.alloc.stack.push_dynamic()?;
+        self.push_fueled_instr(make_instr([result_lo, result_hi], lhs_lo), FuelCosts::base)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register3_ext(lhs_hi, rhs_lo, rhs_hi))?;
+        Ok(())
+    }
+
+    /// Translates a Wasm `i64.mul_wide_sx` instruction from the `wide-arithmetic` proposal.
+    fn translate_i64_mul_wide_sx(
+        &mut self,
+        make_instr: fn(results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) -> Instruction,
+        const_eval: fn(lhs: UntypedVal, rhs: UntypedVal) -> (UntypedVal, UntypedVal),
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let (lhs, rhs) = self.alloc.stack.pop2();
+        let (lhs, rhs) = match (lhs, rhs) {
+            (Provider::Register(lhs), Provider::Register(rhs)) => (lhs, rhs),
+            (Provider::Register(lhs), Provider::Const(rhs)) => {
+                if self.try_opt_i64_mul_wide_sx(lhs, rhs)? {
+                    return Ok(());
+                }
+                let rhs = self.alloc.stack.alloc_const(rhs)?;
+                (lhs, rhs)
+            }
+            (Provider::Const(lhs), Provider::Register(rhs)) => {
+                if self.try_opt_i64_mul_wide_sx(rhs, lhs)? {
+                    return Ok(());
+                }
+                let lhs = self.alloc.stack.alloc_const(lhs)?;
+                (lhs, rhs)
+            }
+            (Provider::Const(lhs), Provider::Const(rhs)) => {
+                let (result_lo, result_hi) = const_eval(lhs.into(), rhs.into());
+                self.alloc.stack.push_const(i64::from(result_hi));
+                self.alloc.stack.push_const(i64::from(result_lo));
+                return Ok(());
+            }
+        };
+        let results = self.alloc.stack.push_dynamic_n(2)?;
+        let results = <FixedRegSpan<2>>::new(results).unwrap_or_else(|_| {
+            panic!("`i64.mul_wide_sx` requires 2 results but found: {results:?}")
+        });
+        self.push_fueled_instr(make_instr(results, lhs, rhs), FuelCosts::base)?;
+        Ok(())
+    }
+
+    /// Try to optimize a `i64.mul_wide_sx` instruction with one [`Reg`] and one immediate input.
+    ///
+    /// - Returns `Ok(true)` if the optimiation was applied successfully.
+    /// - Returns `Ok(false)` if no optimization was applied.
+    fn try_opt_i64_mul_wide_sx(&mut self, reg_in: Reg, imm_in: TypedVal) -> Result<bool, Error> {
+        let imm_in = i64::from(imm_in);
+        if imm_in == 0 {
+            // Case: `mul(x, 0)` or `mul(0, x)` always evaluates to 0.
+            self.alloc.stack.push_const(0_i64); // lo-bits
+            self.alloc.stack.push_const(0_i64); // hi-bits
+            return Ok(true);
+        }
+        if imm_in == 1 {
+            // Case: `mul(x, 1)` or `mul(0, x)` always evaluates to just `x`.
+            self.alloc.stack.push_register(reg_in)?; // lo-bits
+            self.alloc.stack.push_const(0_i64); // hi-bits
+            return Ok(true);
+        }
+        Ok(false)
     }
 }
 

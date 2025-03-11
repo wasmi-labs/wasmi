@@ -1144,6 +1144,76 @@ impl UntypedVal {
     pub fn i64_trunc_sat_f64_u(self) -> Self {
         self.execute_unary(<f64 as TruncateSaturateInto<u64>>::truncate_saturate_into)
     }
+
+    /// Combines the two 64-bit `lo` and `hi` into a single `i128` value.
+    fn combine128(lo: Self, hi: Self) -> i128 {
+        let lo = i128::from(u64::from(lo));
+        let hi = i128::from(u64::from(hi));
+        (hi << 64) | lo
+    }
+
+    /// Splits the single `i128` value into a 64-bit `lo` and `hi` part.
+    fn split128(value: i128) -> (Self, Self) {
+        let hi = (value >> 64) as u64;
+        let lo = value as u64;
+        (Self::from(lo), Self::from(hi))
+    }
+
+    /// Execute an `i64.add128` Wasm instruction.
+    ///
+    /// Returns a pair of `(lo, hi)` 64-bit values representing the 128-bit result.
+    ///
+    /// # Note
+    ///
+    /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+    pub fn i64_add128(lhs_lo: Self, lhs_hi: Self, rhs_lo: Self, rhs_hi: Self) -> (Self, Self) {
+        let lhs = Self::combine128(lhs_lo, lhs_hi);
+        let rhs = Self::combine128(rhs_lo, rhs_hi);
+        let result = lhs.wrapping_add(rhs);
+        Self::split128(result)
+    }
+
+    /// Execute an `i64.sub128` Wasm instruction.
+    ///
+    /// Returns a pair of `(lo, hi)` 64-bit values representing the 128-bit result.
+    ///
+    /// # Note
+    ///
+    /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+    pub fn i64_sub128(lhs_lo: Self, lhs_hi: Self, rhs_lo: Self, rhs_hi: Self) -> (Self, Self) {
+        let lhs = Self::combine128(lhs_lo, lhs_hi);
+        let rhs = Self::combine128(rhs_lo, rhs_hi);
+        let result = lhs.wrapping_sub(rhs);
+        Self::split128(result)
+    }
+
+    /// Execute an `i64.mul_wide_s` Wasm instruction.
+    ///
+    /// Returns a pair of `(lo, hi)` 64-bit values representing the 128-bit result.
+    ///
+    /// # Note
+    ///
+    /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+    pub fn i64_mul_wide_s(self, rhs: Self) -> (Self, Self) {
+        let lhs = i128::from(i64::from(self));
+        let rhs = i128::from(i64::from(rhs));
+        let result = lhs.wrapping_mul(rhs);
+        Self::split128(result)
+    }
+
+    /// Execute an `i64.mul_wide_s` Wasm instruction.
+    ///
+    /// Returns a pair of `(lo, hi)` 64-bit values representing the 128-bit result.
+    ///
+    /// # Note
+    ///
+    /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+    pub fn i64_mul_wide_u(self, rhs: Self) -> (Self, Self) {
+        let lhs = u128::from(u64::from(self));
+        let rhs = u128::from(u64::from(rhs));
+        let result = lhs.wrapping_mul(rhs);
+        Self::split128(result as i128)
+    }
 }
 
 /// Macro to help implement generic trait implementations for tuple types.

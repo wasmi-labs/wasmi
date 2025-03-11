@@ -108,6 +108,13 @@ impl HostVisitor for Res<&'_ mut Reg> {
     }
 }
 
+impl HostVisitor for Res<&'_ mut [Reg; 2]> {
+    fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
+        visitor.visit_result_reg(&mut self.0[0]);
+        visitor.visit_result_reg(&mut self.0[1]);
+    }
+}
+
 impl HostVisitor for Res<&'_ mut RegSpan> {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         visitor.visit_result_regs(self.0, None);

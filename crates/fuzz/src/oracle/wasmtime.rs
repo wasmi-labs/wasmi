@@ -38,6 +38,7 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         // trade-off usually is not worth it during fuzzing.
         config.cranelift_regalloc_algorithm(wasmtime::RegallocAlgorithm::SinglePass);
         config.wasm_custom_page_sizes(true);
+        config.wasm_wide_arithmetic(true);
         let engine = Engine::new(&config).unwrap();
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()

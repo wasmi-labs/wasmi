@@ -85,6 +85,7 @@ fn test_config(consume_fuel: bool, parsing_mode: ParsingMode) -> RunnerConfig {
         .wasm_reference_types(true)
         .wasm_tail_call(true)
         .wasm_extended_const(true)
+        .wasm_wide_arithmetic(true)
         .consume_fuel(consume_fuel);
     RunnerConfig {
         config,
@@ -192,6 +193,7 @@ macro_rules! expand_tests {
             fn wasm_utf8_import_field("utf8-import-field");
             fn wasm_utf8_import_module("utf8-import-module");
             fn wasm_utf8_invalid_encoding("utf8-invalid-encoding");
+            fn wasm_wide_arithmetic("proposals/wide-arithmetic/wide-arithmetic");
         }
     };
 }

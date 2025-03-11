@@ -4148,6 +4148,69 @@ macro_rules! for_each_op {
                 input: Reg,
             },
 
+            /// Wasm `i64.add128` instruction.
+            ///
+            /// # Note
+            ///
+            /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
+            #[snake_name(i64_add128)]
+            I64Add128 {
+                // Note:
+                // - We are not using `FixedRegSpan` to be able to change both results independently.
+                // - This allows for more `local.set` optimizations.
+                @results: [Reg; 2],
+                /// The 64 hi-bits of the `lhs` input parameter.
+                lhs_lo: Reg,
+            },
+            /// Wasm `i64.sub128` instruction.
+            ///
+            /// # Note
+            ///
+            /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
+            #[snake_name(i64_sub128)]
+            I64Sub128 {
+                // Note:
+                // - We are not using `FixedRegSpan` to be able to change both results independently.
+                // - This allows for more `local.set` optimizations.
+                @results: [Reg; 2],
+                /// The low 64-bits of the `lhs` input parameter.
+                lhs_lo: Reg,
+            },
+            /// Wasm `i64.mul_wide_s` instruction.
+            ///
+            /// # Note
+            ///
+            /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+            #[snake_name(i64_mul_wide_s)]
+            I64MulWideS {
+                @results: FixedRegSpan<2>,
+                /// The `lhs` input value for the instruction.
+                lhs: Reg,
+                /// The `rhs` input value for the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64.mul_wide_u` instruction.
+            ///
+            /// # Note
+            ///
+            /// This instruction is part of the Wasm `wide-arithmetic` proposal.
+            #[snake_name(i64_mul_wide_u)]
+            I64MulWideU {
+                @results: FixedRegSpan<2>,
+                /// The `lhs` input value for the instruction.
+                lhs: Reg,
+                /// The `rhs` input value for the instruction.
+                rhs: Reg,
+            },
+
             /// Wasm `i32.extend8_s` instruction.
             ///
             /// # Note

@@ -39,6 +39,7 @@ mod select;
 mod store;
 mod table;
 mod unary;
+mod wide_arithmetic;
 
 macro_rules! forward_return {
     ($expr:expr) => {{
@@ -990,6 +991,14 @@ impl<'engine> Executor<'engine> {
                 Instr::I64RotrBy { result, lhs, rhs } => self.execute_i64_rotr_by(result, lhs, rhs),
                 Instr::I64RotrImm16 { result, lhs, rhs } => {
                     self.execute_i64_rotr_imm16(result, lhs, rhs)
+                }
+                Instr::I64Add128 { results, lhs_lo } => self.execute_i64_add128(results, lhs_lo),
+                Instr::I64Sub128 { results, lhs_lo } => self.execute_i64_sub128(results, lhs_lo),
+                Instr::I64MulWideS { results, lhs, rhs } => {
+                    self.execute_i64_mul_wide_s(results, lhs, rhs)
+                }
+                Instr::I64MulWideU { results, lhs, rhs } => {
+                    self.execute_i64_mul_wide_u(results, lhs, rhs)
                 }
                 Instr::I32WrapI64 { result, input } => self.execute_i32_wrap_i64(result, input),
                 Instr::I32Extend8S { result, input } => self.execute_i32_extend8_s(result, input),

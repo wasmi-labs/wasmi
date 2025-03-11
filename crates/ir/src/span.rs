@@ -64,6 +64,16 @@ pub struct FixedRegSpan<const N: u16> {
     span: RegSpan,
 }
 
+impl FixedRegSpan<2> {
+    /// Returns an array of the results represented by `self`.
+    pub fn to_array(self) -> [Reg; 2] {
+        let span = self.span();
+        let fst = span.head();
+        let snd = fst.next();
+        [fst, snd]
+    }
+}
+
 impl<const N: u16> FixedRegSpan<N> {
     /// Creates a new [`RegSpan`] starting with the given `start` [`Reg`].
     pub fn new(span: RegSpan) -> Result<Self, Error> {

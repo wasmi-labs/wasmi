@@ -34,6 +34,7 @@ impl Context {
         }
         config.compilation_mode(compilation_mode);
         config.wasm_custom_page_sizes(true);
+        config.wasm_wide_arithmetic(true);
         let engine = wasmi::Engine::new(&config);
         let wasm =
             fs::read(wasm_file).map_err(|_| anyhow!("failed to read Wasm file {wasm_file:?}"))?;

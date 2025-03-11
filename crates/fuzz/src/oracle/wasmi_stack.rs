@@ -33,6 +33,7 @@ impl DifferentialOracleMeta for WasmiStackOracle {
         config.disable_multi_memory();
         config.disable_custom_page_sizes();
         config.disable_memory64();
+        config.disable_wide_arithmetic();
     }
 
     fn setup(wasm: &[u8]) -> Option<Self>

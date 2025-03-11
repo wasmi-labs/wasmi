@@ -183,6 +183,7 @@ impl Config {
         features.set(WasmFeatures::FLOATS, true);
         features.set(WasmFeatures::CUSTOM_PAGE_SIZES, false);
         features.set(WasmFeatures::MEMORY64, true);
+        features.set(WasmFeatures::WIDE_ARITHMETIC, false);
         features
     }
 
@@ -344,6 +345,16 @@ impl Config {
     /// [`memory64`]: https://github.com/WebAssembly/memory64
     pub fn wasm_memory64(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::MEMORY64, enable);
+        self
+    }
+
+    /// Enable or disable the [`wide-arithmetic`] Wasm proposal for the [`Config`].
+    ///
+    /// Disabled by default.
+    ///
+    /// [`wide-arithmetic`]: https://github.com/WebAssembly/wide-arithmetic
+    pub fn wasm_wide_arithmetic(&mut self, enable: bool) -> &mut Self {
+        self.features.set(WasmFeatures::WIDE_ARITHMETIC, enable);
         self
     }
 
