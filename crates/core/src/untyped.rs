@@ -361,790 +361,278 @@ impl UntypedVal {
     {
         op(T::from(self), T::from(rhs)).map(Into::into)
     }
-
-    /// Execute `i32.add` Wasm operation.
-    pub fn i32_add(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <i32 as ArithmeticOps<i32>>::add)
-    }
-
-    /// Execute `i64.add` Wasm operation.
-    pub fn i64_add(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <i64 as ArithmeticOps<i64>>::add)
-    }
-
-    /// Execute `i32.sub` Wasm operation.
-    pub fn i32_sub(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <i32 as ArithmeticOps<i32>>::sub)
-    }
-
-    /// Execute `i64.sub` Wasm operation.
-    pub fn i64_sub(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <i64 as ArithmeticOps<i64>>::sub)
-    }
-
-    /// Execute `i32.mul` Wasm operation.
-    pub fn i32_mul(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <i32 as ArithmeticOps<i32>>::mul)
-    }
-
-    /// Execute `i64.mul` Wasm operation.
-    pub fn i64_mul(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <i64 as ArithmeticOps<i64>>::mul)
-    }
-
-    /// Execute `i32.div_s` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `rhs` is equal to zero.
-    /// - If the operation result overflows.
-    pub fn i32_div_s(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <i32 as Integer<i32>>::div)
-    }
-
-    /// Execute `i64.div_s` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `rhs` is equal to zero.
-    /// - If the operation result overflows.
-    pub fn i64_div_s(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <i64 as Integer<i64>>::div)
-    }
-
-    /// Execute `i32.div_u` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `rhs` is equal to zero.
-    /// - If the operation result overflows.
-    pub fn i32_div_u(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <u32 as Integer<u32>>::div)
-    }
-
-    /// Execute `i64.div_u` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `rhs` is equal to zero.
-    /// - If the operation result overflows.
-    pub fn i64_div_u(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <u64 as Integer<u64>>::div)
-    }
-
-    /// Execute `i32.rem_s` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `rhs` is equal to zero.
-    /// - If the operation result overflows.
-    pub fn i32_rem_s(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <i32 as Integer<i32>>::rem)
-    }
-
-    /// Execute `i64.rem_s` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `rhs` is equal to zero.
-    /// - If the operation result overflows.
-    pub fn i64_rem_s(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <i64 as Integer<i64>>::rem)
-    }
-
-    /// Execute `i32.rem_u` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `rhs` is equal to zero.
-    /// - If the operation result overflows.
-    pub fn i32_rem_u(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <u32 as Integer<u32>>::rem)
-    }
-
-    /// Execute `i64.rem_u` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `rhs` is equal to zero.
-    /// - If the operation result overflows.
-    pub fn i64_rem_u(self, rhs: Self) -> Result<Self, TrapCode> {
-        self.try_execute_binary(rhs, <u64 as Integer<u64>>::rem)
-    }
-
-    /// Execute `i32.and` Wasm operation.
-    pub fn i32_and(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, _>(rhs, op!(&))
-    }
-
-    /// Execute `i64.and` Wasm operation.
-    pub fn i64_and(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, _>(rhs, op!(&))
-    }
-
-    /// Execute `i32.or` Wasm operation.
-    pub fn i32_or(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, _>(rhs, op!(|))
-    }
-
-    /// Execute `i64.or` Wasm operation.
-    pub fn i64_or(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, _>(rhs, op!(|))
-    }
-
-    /// Execute `i32.xor` Wasm operation.
-    pub fn i32_xor(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, _>(rhs, op!(^))
-    }
-
-    /// Execute `i64.xor` Wasm operation.
-    pub fn i64_xor(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, _>(rhs, op!(^))
-    }
-
-    /// Execute `i32.shl` Wasm operation.
-    pub fn i32_shl(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, _>(rhs, |lhs, rhs| lhs.shl(rhs & 0x1F))
-    }
-
-    /// Execute `i64.shl` Wasm operation.
-    pub fn i64_shl(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, _>(rhs, |lhs, rhs| lhs.shl(rhs & 0x3F))
-    }
-
-    /// Execute `i32.shr_s` Wasm operation.
-    pub fn i32_shr_s(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, _>(rhs, |lhs, rhs| lhs.shr(rhs & 0x1F))
-    }
-
-    /// Execute `i64.shr_s` Wasm operation.
-    pub fn i64_shr_s(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, _>(rhs, |lhs, rhs| lhs.shr(rhs & 0x3F))
-    }
-
-    /// Execute `i32.shr_u` Wasm operation.
-    pub fn i32_shr_u(self, rhs: Self) -> Self {
-        self.execute_binary::<u32, _>(rhs, |lhs, rhs| lhs.shr(rhs & 0x1F))
-    }
-
-    /// Execute `i64.shr_u` Wasm operation.
-    pub fn i64_shr_u(self, rhs: Self) -> Self {
-        self.execute_binary::<u64, _>(rhs, |lhs, rhs| lhs.shr(rhs & 0x3F))
-    }
-
-    /// Execute `i32.clz` Wasm operation.
-    pub fn i32_clz(self) -> Self {
-        self.execute_unary(<i32 as Integer<i32>>::leading_zeros)
-    }
-
-    /// Execute `i64.clz` Wasm operation.
-    pub fn i64_clz(self) -> Self {
-        self.execute_unary(<i64 as Integer<i64>>::leading_zeros)
-    }
-
-    /// Execute `i32.ctz` Wasm operation.
-    pub fn i32_ctz(self) -> Self {
-        self.execute_unary(<i32 as Integer<i32>>::trailing_zeros)
-    }
-
-    /// Execute `i64.ctz` Wasm operation.
-    pub fn i64_ctz(self) -> Self {
-        self.execute_unary(<i64 as Integer<i64>>::trailing_zeros)
-    }
-
-    /// Execute `i32.popcnt` Wasm operation.
-    pub fn i32_popcnt(self) -> Self {
-        self.execute_unary(<i32 as Integer<i32>>::count_ones)
-    }
-
-    /// Execute `i64.popcnt` Wasm operation.
-    pub fn i64_popcnt(self) -> Self {
-        self.execute_unary(<i64 as Integer<i64>>::count_ones)
-    }
-
-    /// Execute `i32.rotl` Wasm operation.
-    pub fn i32_rotl(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <i32 as Integer<i32>>::rotl)
-    }
-
-    /// Execute `i64.rotl` Wasm operation.
-    pub fn i64_rotl(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <i64 as Integer<i64>>::rotl)
-    }
-
-    /// Execute `i32.rotr` Wasm operation.
-    pub fn i32_rotr(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <i32 as Integer<i32>>::rotr)
-    }
-
-    /// Execute `i64.rotr` Wasm operation.
-    pub fn i64_rotr(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <i64 as Integer<i64>>::rotr)
-    }
-
-    /// Execute `i32.eqz` Wasm operation.
-    pub fn i32_eqz(self) -> Self {
-        self.execute_unary::<i32, bool>(|value| value == 0)
-    }
-
-    /// Execute `i64.eqz` Wasm operation.
-    pub fn i64_eqz(self) -> Self {
-        self.execute_unary::<i64, bool>(|value| value == 0)
-    }
-
-    /// Execute `i32.eq` Wasm operation.
-    pub fn i32_eq(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, bool>(rhs, op!(==))
-    }
-
-    /// Execute `i64.eq` Wasm operation.
-    pub fn i64_eq(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, bool>(rhs, op!(==))
-    }
-
-    /// Execute `f32.eq` Wasm operation.
-    pub fn f32_eq(self, rhs: Self) -> Self {
-        self.execute_binary::<F32, bool>(rhs, op!(==))
-    }
-
-    /// Execute `f64.eq` Wasm operation.
-    pub fn f64_eq(self, rhs: Self) -> Self {
-        self.execute_binary::<F64, bool>(rhs, op!(==))
-    }
-
-    /// Execute `i32.ne` Wasm operation.
-    pub fn i32_ne(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, bool>(rhs, op!(!=))
-    }
-
-    /// Execute `i64.ne` Wasm operation.
-    pub fn i64_ne(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, bool>(rhs, op!(!=))
-    }
-
-    /// Execute `f32.ne` Wasm operation.
-    pub fn f32_ne(self, rhs: Self) -> Self {
-        self.execute_binary::<F32, bool>(rhs, op!(!=))
-    }
-
-    /// Execute `f64.ne` Wasm operation.
-    pub fn f64_ne(self, rhs: Self) -> Self {
-        self.execute_binary::<F64, bool>(rhs, op!(!=))
-    }
-
-    /// Execute `i32.lt_s` Wasm operation.
-    pub fn i32_lt_s(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, bool>(rhs, op!(<))
-    }
-
-    /// Execute `i64.lt_s` Wasm operation.
-    pub fn i64_lt_s(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, bool>(rhs, op!(<))
-    }
-
-    /// Execute `i32.lt_u` Wasm operation.
-    pub fn i32_lt_u(self, rhs: Self) -> Self {
-        self.execute_binary::<u32, bool>(rhs, op!(<))
-    }
-
-    /// Execute `i64.lt_u` Wasm operation.
-    pub fn i64_lt_u(self, rhs: Self) -> Self {
-        self.execute_binary::<u64, bool>(rhs, op!(<))
-    }
-
-    /// Execute `f32.lt` Wasm operation.
-    pub fn f32_lt(self, rhs: Self) -> Self {
-        self.execute_binary::<F32, bool>(rhs, op!(<))
-    }
-
-    /// Execute `f64.lt` Wasm operation.
-    pub fn f64_lt(self, rhs: Self) -> Self {
-        self.execute_binary::<F64, bool>(rhs, op!(<))
-    }
-
-    /// Execute `i32.le_s` Wasm operation.
-    pub fn i32_le_s(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, bool>(rhs, op!(<=))
-    }
-
-    /// Execute `i64.le_s` Wasm operation.
-    pub fn i64_le_s(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, bool>(rhs, op!(<=))
-    }
-
-    /// Execute `i32.le_u` Wasm operation.
-    pub fn i32_le_u(self, rhs: Self) -> Self {
-        self.execute_binary::<u32, bool>(rhs, op!(<=))
-    }
-
-    /// Execute `i64.le_u` Wasm operation.
-    pub fn i64_le_u(self, rhs: Self) -> Self {
-        self.execute_binary::<u64, bool>(rhs, op!(<=))
-    }
-
-    /// Execute `f32.le` Wasm operation.
-    pub fn f32_le(self, rhs: Self) -> Self {
-        self.execute_binary::<F32, bool>(rhs, op!(<=))
-    }
-
-    /// Execute `f64.le` Wasm operation.
-    pub fn f64_le(self, rhs: Self) -> Self {
-        self.execute_binary::<F64, bool>(rhs, op!(<=))
-    }
-
-    /// Execute `i32.gt_s` Wasm operation.
-    pub fn i32_gt_s(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, bool>(rhs, op!(>))
-    }
-
-    /// Execute `i64.gt_s` Wasm operation.
-    pub fn i64_gt_s(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, bool>(rhs, op!(>))
-    }
-
-    /// Execute `i32.gt_u` Wasm operation.
-    pub fn i32_gt_u(self, rhs: Self) -> Self {
-        self.execute_binary::<u32, bool>(rhs, op!(>))
-    }
-
-    /// Execute `i64.gt_u` Wasm operation.
-    pub fn i64_gt_u(self, rhs: Self) -> Self {
-        self.execute_binary::<u64, bool>(rhs, op!(>))
-    }
-
-    /// Execute `f32.gt` Wasm operation.
-    pub fn f32_gt(self, rhs: Self) -> Self {
-        self.execute_binary::<F32, bool>(rhs, op!(>))
-    }
-
-    /// Execute `f64.gt` Wasm operation.
-    pub fn f64_gt(self, rhs: Self) -> Self {
-        self.execute_binary::<F64, bool>(rhs, op!(>))
-    }
-
-    /// Execute `i32.ge_s` Wasm operation.
-    pub fn i32_ge_s(self, rhs: Self) -> Self {
-        self.execute_binary::<i32, bool>(rhs, op!(>=))
-    }
-
-    /// Execute `i64.ge_s` Wasm operation.
-    pub fn i64_ge_s(self, rhs: Self) -> Self {
-        self.execute_binary::<i64, bool>(rhs, op!(>=))
-    }
-
-    /// Execute `i32.ge_u` Wasm operation.
-    pub fn i32_ge_u(self, rhs: Self) -> Self {
-        self.execute_binary::<u32, bool>(rhs, op!(>=))
-    }
-
-    /// Execute `i64.ge_u` Wasm operation.
-    pub fn i64_ge_u(self, rhs: Self) -> Self {
-        self.execute_binary::<u64, bool>(rhs, op!(>=))
-    }
-
-    /// Execute `f32.ge` Wasm operation.
-    pub fn f32_ge(self, rhs: Self) -> Self {
-        self.execute_binary::<F32, bool>(rhs, op!(>=))
-    }
-
-    /// Execute `f64.ge` Wasm operation.
-    pub fn f64_ge(self, rhs: Self) -> Self {
-        self.execute_binary::<F64, bool>(rhs, op!(>=))
-    }
-
-    /// Execute `f32.abs` Wasm operation.
-    pub fn f32_abs(self) -> Self {
-        self.execute_unary(<f32 as Float>::abs)
-    }
-
-    /// Execute `f32.neg` Wasm operation.
-    pub fn f32_neg(self) -> Self {
-        self.execute_unary(<f32 as Neg>::neg)
-    }
-
-    /// Execute `f32.ceil` Wasm operation.
-    pub fn f32_ceil(self) -> Self {
-        self.execute_unary(<f32 as Float>::ceil)
-    }
-
-    /// Execute `f32.floor` Wasm operation.
-    pub fn f32_floor(self) -> Self {
-        self.execute_unary(<f32 as Float>::floor)
-    }
-
-    /// Execute `f32.trunc` Wasm operation.
-    pub fn f32_trunc(self) -> Self {
-        self.execute_unary(<f32 as Float>::trunc)
-    }
-
-    /// Execute `f32.nearest` Wasm operation.
-    pub fn f32_nearest(self) -> Self {
-        self.execute_unary(<f32 as Float>::nearest)
-    }
-
-    /// Execute `f32.sqrt` Wasm operation.
-    pub fn f32_sqrt(self) -> Self {
-        self.execute_unary(<f32 as Float>::sqrt)
-    }
-
-    /// Execute `f64.abs` Wasm operation.
-    pub fn f64_abs(self) -> Self {
-        self.execute_unary(<f64 as Float>::abs)
-    }
-
-    /// Execute `f64.neg` Wasm operation.
-    pub fn f64_neg(self) -> Self {
-        self.execute_unary(<f64 as Neg>::neg)
-    }
-
-    /// Execute `f64.ceil` Wasm operation.
-    pub fn f64_ceil(self) -> Self {
-        self.execute_unary(<f64 as Float>::ceil)
-    }
-
-    /// Execute `f64.floor` Wasm operation.
-    pub fn f64_floor(self) -> Self {
-        self.execute_unary(<f64 as Float>::floor)
-    }
-
-    /// Execute `f64.trunc` Wasm operation.
-    pub fn f64_trunc(self) -> Self {
-        self.execute_unary(<f64 as Float>::trunc)
-    }
-
-    /// Execute `f64.nearest` Wasm operation.
-    pub fn f64_nearest(self) -> Self {
-        self.execute_unary(<f64 as Float>::nearest)
-    }
-
-    /// Execute `f64.sqrt` Wasm operation.
-    pub fn f64_sqrt(self) -> Self {
-        self.execute_unary(<f64 as Float>::sqrt)
-    }
-
-    /// Execute `f32.add` Wasm operation.
-    pub fn f32_add(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <f32 as ArithmeticOps>::add)
-    }
-
-    /// Execute `f64.add` Wasm operation.
-    pub fn f64_add(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <f64 as ArithmeticOps>::add)
-    }
-
-    /// Execute `f32.sub` Wasm operation.
-    pub fn f32_sub(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <f32 as ArithmeticOps>::sub)
-    }
-
-    /// Execute `f64.sub` Wasm operation.
-    pub fn f64_sub(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <f64 as ArithmeticOps>::sub)
-    }
-
-    /// Execute `f32.mul` Wasm operation.
-    pub fn f32_mul(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <f32 as ArithmeticOps>::mul)
-    }
-
-    /// Execute `f64.mul` Wasm operation.
-    pub fn f64_mul(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <f64 as ArithmeticOps>::mul)
-    }
-
-    /// Execute `f32.div` Wasm operation.
-    pub fn f32_div(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <f32 as Float>::div)
-    }
-
-    /// Execute `f64.div` Wasm operation.
-    pub fn f64_div(self, rhs: Self) -> Self {
-        self.execute_binary(rhs, <f64 as Float>::div)
-    }
-
-    /// Execute `f32.min` Wasm operation.
-    pub fn f32_min(self, other: Self) -> Self {
-        self.execute_binary(other, <f32 as Float>::min)
-    }
-
-    /// Execute `f64.min` Wasm operation.
-    pub fn f64_min(self, other: Self) -> Self {
-        self.execute_binary(other, <f64 as Float>::min)
-    }
-
-    /// Execute `f32.max` Wasm operation.
-    pub fn f32_max(self, other: Self) -> Self {
-        self.execute_binary(other, <f32 as Float>::max)
-    }
-
-    /// Execute `f64.max` Wasm operation.
-    pub fn f64_max(self, other: Self) -> Self {
-        self.execute_binary(other, <f64 as Float>::max)
-    }
-
-    /// Execute `f32.copysign` Wasm operation.
-    pub fn f32_copysign(self, other: Self) -> Self {
-        self.execute_binary(other, <f32 as Float>::copysign)
-    }
-
-    /// Execute `f64.copysign` Wasm operation.
-    pub fn f64_copysign(self, other: Self) -> Self {
-        self.execute_binary(other, <f64 as Float>::copysign)
-    }
-
-    /// Execute `i32.wrap_i64` Wasm operation.
-    pub fn i32_wrap_i64(self) -> Self {
-        self.execute_unary(<i64 as WrapInto<i32>>::wrap_into)
-    }
-
-    /// Execute `i32.trunc_f32_s` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `self` is NaN (not a number).
-    /// - If `self` is positive or negative infinity.
-    /// - If the integer value of `self` is out of bounds of the target type.
-    ///
-    /// Read more about the failure cases in the [WebAssembly specification].
-    ///
-    /// [WebAssembly specification]:
-    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
-    pub fn i32_trunc_f32_s(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<f32 as TryTruncateInto<i32, TrapCode>>::try_truncate_into)
-    }
-
-    /// Execute `i32.trunc_f32_u` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `self` is NaN (not a number).
-    /// - If `self` is positive or negative infinity.
-    /// - If the integer value of `self` is out of bounds of the target type.
-    ///
-    /// Read more about the failure cases in the [WebAssembly specification].
-    ///
-    /// [WebAssembly specification]:
-    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
-    pub fn i32_trunc_f32_u(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<f32 as TryTruncateInto<u32, TrapCode>>::try_truncate_into)
-    }
-
-    /// Execute `i32.trunc_f64_s` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `self` is NaN (not a number).
-    /// - If `self` is positive or negative infinity.
-    /// - If the integer value of `self` is out of bounds of the target type.
-    ///
-    /// Read more about the failure cases in the [WebAssembly specification].
-    ///
-    /// [WebAssembly specification]:
-    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
-    pub fn i32_trunc_f64_s(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<f64 as TryTruncateInto<i32, TrapCode>>::try_truncate_into)
-    }
-
-    /// Execute `i32.trunc_f64_u` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `self` is NaN (not a number).
-    /// - If `self` is positive or negative infinity.
-    /// - If the integer value of `self` is out of bounds of the target type.
-    ///
-    /// Read more about the failure cases in the [WebAssembly specification].
-    ///
-    /// [WebAssembly specification]:
-    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
-    pub fn i32_trunc_f64_u(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<f64 as TryTruncateInto<u32, TrapCode>>::try_truncate_into)
-    }
-
-    /// Execute `i64.extend_i32_s` Wasm operation.
-    pub fn i64_extend_i32_s(self) -> Self {
-        self.execute_unary(<i32 as ExtendInto<i64>>::extend_into)
-    }
-
-    /// Execute `i64.trunc_f32_s` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `self` is NaN (not a number).
-    /// - If `self` is positive or negative infinity.
-    /// - If the integer value of `self` is out of bounds of the target type.
-    ///
-    /// Read more about the failure cases in the [WebAssembly specification].
-    ///
-    /// [WebAssembly specification]:
-    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
-    pub fn i64_trunc_f32_s(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<f32 as TryTruncateInto<i64, TrapCode>>::try_truncate_into)
-    }
-
-    /// Execute `i64.trunc_f32_u` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `self` is NaN (not a number).
-    /// - If `self` is positive or negative infinity.
-    /// - If the integer value of `self` is out of bounds of the target type.
-    ///
-    /// Read more about the failure cases in the [WebAssembly specification].
-    ///
-    /// [WebAssembly specification]:
-    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
-    pub fn i64_trunc_f32_u(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<f32 as TryTruncateInto<u64, TrapCode>>::try_truncate_into)
-    }
-
-    /// Execute `i64.trunc_f64_s` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `self` is NaN (not a number).
-    /// - If `self` is positive or negative infinity.
-    /// - If the integer value of `self` is out of bounds of the target type.
-    ///
-    /// Read more about the failure cases in the [WebAssembly specification].
-    ///
-    /// [WebAssembly specification]:
-    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
-    pub fn i64_trunc_f64_s(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<f64 as TryTruncateInto<i64, TrapCode>>::try_truncate_into)
-    }
-
-    /// Execute `i64.trunc_f64_u` Wasm operation.
-    ///
-    /// # Errors
-    ///
-    /// - If `self` is NaN (not a number).
-    /// - If `self` is positive or negative infinity.
-    /// - If the integer value of `self` is out of bounds of the target type.
-    ///
-    /// Read more about the failure cases in the [WebAssembly specification].
-    ///
-    /// [WebAssembly specification]:
-    /// https://webassembly.github.io/spec/core/exec/numerics.html#op-trunc-s
-    pub fn i64_trunc_f64_u(self) -> Result<Self, TrapCode> {
-        self.try_execute_unary(<f64 as TryTruncateInto<u64, TrapCode>>::try_truncate_into)
-    }
-
-    /// Execute `f32.convert_i32_s` Wasm operation.
-    pub fn f32_convert_i32_s(self) -> Self {
-        self.execute_unary(<i32 as ExtendInto<F32>>::extend_into)
-    }
-
-    /// Execute `f32.convert_i32_u` Wasm operation.
-    pub fn f32_convert_i32_u(self) -> Self {
-        self.execute_unary(<u32 as ExtendInto<F32>>::extend_into)
-    }
-
-    /// Execute `f32.convert_i64_s` Wasm operation.
-    pub fn f32_convert_i64_s(self) -> Self {
-        self.execute_unary(<i64 as WrapInto<F32>>::wrap_into)
-    }
-
-    /// Execute `f32.convert_i64_u` Wasm operation.
-    pub fn f32_convert_i64_u(self) -> Self {
-        self.execute_unary(<u64 as WrapInto<F32>>::wrap_into)
-    }
-
-    /// Execute `f32.demote_f64` Wasm operation.
-    pub fn f32_demote_f64(self) -> Self {
-        self.execute_unary(<F64 as WrapInto<F32>>::wrap_into)
-    }
-
-    /// Execute `f64.convert_i32_s` Wasm operation.
-    pub fn f64_convert_i32_s(self) -> Self {
-        self.execute_unary(<i32 as ExtendInto<F64>>::extend_into)
-    }
-
-    /// Execute `f64.convert_i32_u` Wasm operation.
-    pub fn f64_convert_i32_u(self) -> Self {
-        self.execute_unary(<u32 as ExtendInto<F64>>::extend_into)
-    }
-
-    /// Execute `f64.convert_i64_s` Wasm operation.
-    pub fn f64_convert_i64_s(self) -> Self {
-        self.execute_unary(<i64 as ExtendInto<F64>>::extend_into)
-    }
-
-    /// Execute `f64.convert_i64_u` Wasm operation.
-    pub fn f64_convert_i64_u(self) -> Self {
-        self.execute_unary(<u64 as ExtendInto<F64>>::extend_into)
-    }
-
-    /// Execute `f64.promote_f32` Wasm operation.
-    pub fn f64_promote_f32(self) -> Self {
-        self.execute_unary(<f32 as ExtendInto<F64>>::extend_into)
-    }
-
-    /// Execute `i32.extend8_s` Wasm operation.
-    pub fn i32_extend8_s(self) -> Self {
-        self.execute_unary(<i32 as SignExtendFrom<i8>>::sign_extend_from)
-    }
-
-    /// Execute `i32.extend16_s` Wasm operation.
-    pub fn i32_extend16_s(self) -> Self {
-        self.execute_unary(<i32 as SignExtendFrom<i16>>::sign_extend_from)
-    }
-
-    /// Execute `i64.extend8_s` Wasm operation.
-    pub fn i64_extend8_s(self) -> Self {
-        self.execute_unary(<i64 as SignExtendFrom<i8>>::sign_extend_from)
-    }
-
-    /// Execute `i64.extend16_s` Wasm operation.
-    pub fn i64_extend16_s(self) -> Self {
-        self.execute_unary(<i64 as SignExtendFrom<i16>>::sign_extend_from)
-    }
-
-    /// Execute `i64.extend32_s` Wasm operation.
-    pub fn i64_extend32_s(self) -> Self {
-        self.execute_unary(<i64 as SignExtendFrom<i32>>::sign_extend_from)
-    }
-
-    /// Execute `i32.trunc_sat_f32_s` Wasm operation.
-    pub fn i32_trunc_sat_f32_s(self) -> Self {
-        self.execute_unary(<f32 as TruncateSaturateInto<i32>>::truncate_saturate_into)
-    }
-
-    /// Execute `i32.trunc_sat_f32_u` Wasm operation.
-    pub fn i32_trunc_sat_f32_u(self) -> Self {
-        self.execute_unary(<f32 as TruncateSaturateInto<u32>>::truncate_saturate_into)
-    }
-
-    /// Execute `i32.trunc_sat_f64_s` Wasm operation.
-    pub fn i32_trunc_sat_f64_s(self) -> Self {
-        self.execute_unary(<f64 as TruncateSaturateInto<i32>>::truncate_saturate_into)
-    }
-
-    /// Execute `i32.trunc_sat_f64_u` Wasm operation.
-    pub fn i32_trunc_sat_f64_u(self) -> Self {
-        self.execute_unary(<f64 as TruncateSaturateInto<u32>>::truncate_saturate_into)
-    }
-
-    /// Execute `i64.trunc_sat_f32_s` Wasm operation.
-    pub fn i64_trunc_sat_f32_s(self) -> Self {
-        self.execute_unary(<f32 as TruncateSaturateInto<i64>>::truncate_saturate_into)
-    }
-
-    /// Execute `i64.trunc_sat_f32_u` Wasm operation.
-    pub fn i64_trunc_sat_f32_u(self) -> Self {
-        self.execute_unary(<f32 as TruncateSaturateInto<u64>>::truncate_saturate_into)
-    }
-
-    /// Execute `i64.trunc_sat_f64_s` Wasm operation.
-    pub fn i64_trunc_sat_f64_s(self) -> Self {
-        self.execute_unary(<f64 as TruncateSaturateInto<i64>>::truncate_saturate_into)
-    }
-
-    /// Execute `i64.trunc_sat_f64_u` Wasm operation.
-    pub fn i64_trunc_sat_f64_u(self) -> Self {
-        self.execute_unary(<f64 as TruncateSaturateInto<u64>>::truncate_saturate_into)
-    }
-
+}
+
+macro_rules! impl_untyped_val {
+    (
+        $(#[$attr:meta])*
+        fn $name:ident(value: $ty:ty) -> Result<$ret_ty:ty> = $f:expr; $($tt:tt)*
+    ) => {
+        #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
+        ///
+        /// # Errors
+        ///
+        $( #[$attr] )*
+        pub fn $name(self) -> Result<Self, TrapCode> {
+            self.try_execute_unary::<$ty, $ret_ty>($f)
+        }
+
+        impl_untyped_val!( $($tt)* );
+    };
+    (
+        fn $name:ident(value: $ty:ty) -> $ret_ty:ty = $f:expr; $($tt:tt)*
+    ) => {
+        #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
+        pub fn $name(self) -> Self {
+            self.execute_unary::<$ty, $ret_ty>($f)
+        }
+
+        impl_untyped_val!( $($tt)* );
+    };
+    (
+        $(#[$attr:meta])*
+        fn $name:ident(lhs: $lhs_ty:ty, rhs: $rhs_ty:ty) -> Result<$ret_ty:ty> = $f:expr; $($tt:tt)*
+    ) => {
+        #[doc = concat!("Execute the fallible `", stringify!($name), "` Wasm instruction.")]
+        ///
+        /// # Errors
+        ///
+        $( #[$attr] )*
+        pub fn $name(self, rhs: Self) -> Result<Self, TrapCode> {
+            self.try_execute_binary::<$lhs_ty, $ret_ty>(rhs, $f)
+        }
+
+        impl_untyped_val!( $($tt)* );
+    };
+    (
+        fn $name:ident(lhs: $lhs_ty:ty, rhs: $rhs_ty:ty) -> $ret_ty:ty = $f:expr; $($tt:tt)*
+    ) => {
+        #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
+        pub fn $name(self, rhs: Self) -> Self {
+            self.execute_binary::<$lhs_ty, $ret_ty>(rhs, $f)
+        }
+
+        impl_untyped_val!( $($tt)* );
+    };
+    () => {};
+}
+
+impl UntypedVal {
+    impl_untyped_val! {
+        // Wasm Integer Instructions
+
+        fn i32_add(lhs: i32, rhs: i32) -> i32 = ArithmeticOps::add;
+        fn i64_add(lhs: i64, rhs: i64) -> i64 = ArithmeticOps::add;
+        fn i32_sub(lhs: i32, rhs: i32) -> i32 = ArithmeticOps::sub;
+        fn i64_sub(lhs: i64, rhs: i64) -> i64 = ArithmeticOps::sub;
+        fn i32_mul(lhs: i32, rhs: i32) -> i32 = ArithmeticOps::mul;
+        fn i64_mul(lhs: i64, rhs: i64) -> i64 = ArithmeticOps::mul;
+
+        fn i32_and(lhs: i32, rhs: i32) -> i32 = op!(&);
+        fn i64_and(lhs: i64, rhs: i64) -> i64 = op!(&);
+        fn i32_or(lhs: i32, rhs: i32) -> i32 = op!(|);
+        fn i64_or(lhs: i64, rhs: i64) -> i64 = op!(|);
+        fn i32_xor(lhs: i32, rhs: i32) -> i32 = op!(^);
+        fn i64_xor(lhs: i64, rhs: i64) -> i64 = op!(^);
+
+        fn i32_shl(lhs: i32, rhs: i32) -> i32 = |l, r| l.shl(r & 0x1F);
+        fn i64_shl(lhs: i64, rhs: i64) -> i64 = |l, r| l.shl(r & 0x3F);
+        fn i32_shr_s(lhs: i32, rhs: i32) -> i32 = |l, r| l.shr(r & 0x1F);
+        fn i64_shr_s(lhs: i64, rhs: i64) -> i64 = |l, r| l.shr(r & 0x3F);
+        fn i32_shr_u(lhs: u32, rhs: u32) -> u32 = |l, r| l.shr(r & 0x1F);
+        fn i64_shr_u(lhs: u64, rhs: u64) -> u64 = |l, r| l.shr(r & 0x3F);
+        fn i32_rotl(lhs: i32, rhs: i32) -> i32 = Integer::rotl;
+        fn i64_rotl(lhs: i64, rhs: i64) -> i64 = Integer::rotl;
+        fn i32_rotr(lhs: i32, rhs: i32) -> i32 = Integer::rotr;
+        fn i64_rotr(lhs: i64, rhs: i64) -> i64 = Integer::rotr;
+    }
+
+    impl_untyped_val! {
+        // Wasm Integer Division and Remainder Instructions
+
+        /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
+        /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
+        fn i32_div_s(lhs: i32, rhs: i32) -> Result<i32> = Integer::div;
+        /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
+        /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
+        fn i64_div_s(lhs: i64, rhs: i64) -> Result<i64> = Integer::div;
+        /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
+        /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
+        fn i32_div_u(lhs: u32, rhs: u32) -> Result<u32> = Integer::div;
+        /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
+        /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
+        fn i64_div_u(lhs: u64, rhs: u64) -> Result<u64> = Integer::div;
+        /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
+        /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
+        fn i32_rem_s(lhs: i32, rhs: i32) -> Result<i32> = Integer::rem;
+        /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
+        /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
+        fn i64_rem_s(lhs: i64, rhs: i64) -> Result<i64> = Integer::rem;
+        /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
+        /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
+        fn i32_rem_u(lhs: u32, rhs: u32) -> Result<u32> = Integer::rem;
+        /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
+        /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
+        fn i64_rem_u(lhs: u64, rhs: u64) -> Result<u64> = Integer::rem;
+    }
+
+    impl_untyped_val! {
+        // Wasm Unary Instructions
+
+        fn i32_clz(value: i32) -> i32 = Integer::leading_zeros;
+        fn i64_clz(value: i64) -> i64 = Integer::leading_zeros;
+        fn i32_ctz(value: i32) -> i32 = Integer::trailing_zeros;
+        fn i64_ctz(value: i64) -> i64 = Integer::trailing_zeros;
+        fn i32_popcnt(value: i32) -> i32 = Integer::count_ones;
+        fn i64_popcnt(value: i64) -> i64 = Integer::count_ones;
+
+        fn i32_eqz(value: i32) -> bool = |v| v == 0;
+        fn i64_eqz(value: i64) -> bool = |v| v == 0;
+    }
+
+    impl_untyped_val! {
+        // Wasm Comparison Instructions
+
+        fn i32_eq(lhs: i32, rhs: i32) -> bool = op!(==);
+        fn i64_eq(lhs: i64, rhs: i64) -> bool = op!(==);
+        fn f32_eq(lhs: f32, rhs: f32) -> bool = op!(==);
+        fn f64_eq(lhs: f64, rhs: f64) -> bool = op!(==);
+        fn i32_ne(lhs: i32, rhs: i32) -> bool = op!(!=);
+        fn i64_ne(lhs: i64, rhs: i64) -> bool = op!(!=);
+        fn f32_ne(lhs: f32, rhs: f32) -> bool = op!(!=);
+        fn f64_ne(lhs: f64, rhs: f64) -> bool = op!(!=);
+
+        fn i32_lt_s(lhs: i32, rhs: i32) -> bool = op!(<);
+        fn i64_lt_s(lhs: i64, rhs: i64) -> bool = op!(<);
+        fn i32_lt_u(lhs: u32, rhs: u32) -> bool = op!(<);
+        fn i64_lt_u(lhs: u64, rhs: u64) -> bool = op!(<);
+        fn f32_lt(lhs: f32, rhs: f32) -> bool = op!(<);
+        fn f64_lt(lhs: f64, rhs: f64) -> bool = op!(<);
+
+        fn i32_le_s(lhs: i32, rhs: i32) -> bool = op!(<=);
+        fn i64_le_s(lhs: i64, rhs: i64) -> bool = op!(<=);
+        fn i32_le_u(lhs: u32, rhs: u32) -> bool = op!(<=);
+        fn i64_le_u(lhs: u64, rhs: u64) -> bool = op!(<=);
+        fn f32_le(lhs: f32, rhs: f32) -> bool = op!(<=);
+        fn f64_le(lhs: f64, rhs: f64) -> bool = op!(<=);
+
+        fn i32_gt_s(lhs: i32, rhs: i32) -> bool = op!(>);
+        fn i64_gt_s(lhs: i64, rhs: i64) -> bool = op!(>);
+        fn i32_gt_u(lhs: u32, rhs: u32) -> bool = op!(>);
+        fn i64_gt_u(lhs: u64, rhs: u64) -> bool = op!(>);
+        fn f32_gt(lhs: f32, rhs: f32) -> bool = op!(>);
+        fn f64_gt(lhs: f64, rhs: f64) -> bool = op!(>);
+
+        fn i32_ge_s(lhs: i32, rhs: i32) -> bool = op!(>=);
+        fn i64_ge_s(lhs: i64, rhs: i64) -> bool = op!(>=);
+        fn i32_ge_u(lhs: u32, rhs: u32) -> bool = op!(>=);
+        fn i64_ge_u(lhs: u64, rhs: u64) -> bool = op!(>=);
+        fn f32_ge(lhs: f32, rhs: f32) -> bool = op!(>=);
+        fn f64_ge(lhs: f64, rhs: f64) -> bool = op!(>=);
+    }
+
+    impl_untyped_val! {
+        // Wasm Float Instructions
+
+        fn f32_abs(value: f32) -> f32 = Float::abs;
+        fn f64_abs(value: f64) -> f64 = Float::abs;
+        fn f32_neg(value: f32) -> f32 = Neg::neg;
+        fn f64_neg(value: f64) -> f64 = Neg::neg;
+        fn f32_ceil(value: f32) -> f32 = Float::ceil;
+        fn f64_ceil(value: f64) -> f64 = Float::ceil;
+        fn f32_floor(value: f32) -> f32 = Float::floor;
+        fn f64_floor(value: f64) -> f64 = Float::floor;
+        fn f32_trunc(value: f32) -> f32 = Float::trunc;
+        fn f64_trunc(value: f64) -> f64 = Float::trunc;
+        fn f32_nearest(value: f32) -> f32 = Float::nearest;
+        fn f64_nearest(value: f64) -> f64 = Float::nearest;
+        fn f32_sqrt(value: f32) -> f32 = Float::sqrt;
+        fn f64_sqrt(value: f64) -> f64 = Float::sqrt;
+
+        fn f32_add(lhs: f32, rhs: f32) -> f32 = ArithmeticOps::add;
+        fn f64_add(lhs: f64, rhs: f64) -> f64 = ArithmeticOps::add;
+        fn f32_sub(lhs: f32, rhs: f32) -> f32 = ArithmeticOps::sub;
+        fn f64_sub(lhs: f64, rhs: f64) -> f64 = ArithmeticOps::sub;
+        fn f32_mul(lhs: f32, rhs: f32) -> f32 = ArithmeticOps::mul;
+        fn f64_mul(lhs: f64, rhs: f64) -> f64 = ArithmeticOps::mul;
+        fn f32_div(lhs: f32, rhs: f32) -> f32 = Float::div;
+        fn f64_div(lhs: f64, rhs: f64) -> f64 = Float::div;
+        fn f32_min(lhs: f32, rhs: f32) -> f32 = Float::min;
+        fn f64_min(lhs: f64, rhs: f64) -> f64 = Float::min;
+        fn f32_max(lhs: f32, rhs: f32) -> f32 = Float::max;
+        fn f64_max(lhs: f64, rhs: f64) -> f64 = Float::max;
+        fn f32_copysign(lhs: f32, rhs: f32) -> f32 = Float::copysign;
+        fn f64_copysign(lhs: f64, rhs: f64) -> f64 = Float::copysign;
+    }
+
+    impl_untyped_val! {
+        // Wasm Conversion Routines
+
+        fn i32_wrap_i64(value: i64) -> i32 = |v| v as i32;
+        fn i64_extend_i32_s(value: i32) -> i64 = |v| v as i64;
+        fn f32_demote_f64(value: f64) -> f32 = |v| v as f32;
+        fn f64_promote_f32(value: f32) -> f64 = |v| v as f64;
+
+        /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
+        /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `i32` value
+        fn i32_trunc_f32_s(value: f32) -> Result<i32> = TryTruncateInto::try_truncate_into;
+        /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
+        /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `i64` value
+        fn i64_trunc_f32_s(value: f32) -> Result<i64> = TryTruncateInto::try_truncate_into;
+        /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
+        /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `u32` value
+        fn i32_trunc_f32_u(value: f32) -> Result<u32> = TryTruncateInto::try_truncate_into;
+        /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
+        /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `u64` value
+        fn i64_trunc_f32_u(value: f32) -> Result<u64> = TryTruncateInto::try_truncate_into;
+        /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
+        /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `i32` value
+        fn i32_trunc_f64_s(value: f64) -> Result<i32> = TryTruncateInto::try_truncate_into;
+        /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
+        /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `i64` value
+        fn i64_trunc_f64_s(value: f64) -> Result<i64> = TryTruncateInto::try_truncate_into;
+        /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
+        /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `u32` value
+        fn i32_trunc_f64_u(value: f64) -> Result<u32> = TryTruncateInto::try_truncate_into;
+        /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
+        /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `u64` value
+        fn i64_trunc_f64_u(value: f64) -> Result<u64> = TryTruncateInto::try_truncate_into;
+
+        fn f32_convert_i32_s(value: i32) -> f32 = |v| v as f32;
+        fn f32_convert_i32_u(value: u32) -> f32 = |v| v as f32;
+        fn f32_convert_i64_s(value: i64) -> f32 = |v| v as f32;
+        fn f32_convert_i64_u(value: u64) -> f32 = |v| v as f32;
+        fn f64_convert_i32_s(value: i32) -> f64 = |v| v as f64;
+        fn f64_convert_i32_u(value: u32) -> f64 = |v| v as f64;
+        fn f64_convert_i64_s(value: i64) -> f64 = |v| v as f64;
+        fn f64_convert_i64_u(value: u64) -> f64 = |v| v as f64;
+    }
+
+    impl_untyped_val! {
+        // Wasm `sign-extension` proposal
+
+        fn i32_extend8_s(value: i32) -> i32 = <_ as SignExtendFrom<i8>>::sign_extend_from;
+        fn i32_extend16_s(value: i32) -> i32 = <_ as SignExtendFrom<i16>>::sign_extend_from;
+        fn i64_extend8_s(value: i64) -> i64 = <_ as SignExtendFrom<i8>>::sign_extend_from;
+        fn i64_extend16_s(value: i64) -> i64 = <_ as SignExtendFrom<i16>>::sign_extend_from;
+        fn i64_extend32_s(value: i64) -> i64 = <_ as SignExtendFrom<i32>>::sign_extend_from;
+    }
+
+    impl_untyped_val! {
+        // Wasm `saturating-float-to-int` proposal
+
+        fn i32_trunc_sat_f32_s(value: f32) -> i32 = TruncateSaturateInto::truncate_saturate_into;
+        fn i32_trunc_sat_f32_u(value: f32) -> u32 = TruncateSaturateInto::truncate_saturate_into;
+        fn i32_trunc_sat_f64_s(value: f64) -> i32 = TruncateSaturateInto::truncate_saturate_into;
+        fn i32_trunc_sat_f64_u(value: f64) -> u32 = TruncateSaturateInto::truncate_saturate_into;
+        fn i64_trunc_sat_f32_s(value: f32) -> i64 = TruncateSaturateInto::truncate_saturate_into;
+        fn i64_trunc_sat_f32_u(value: f32) -> u64 = TruncateSaturateInto::truncate_saturate_into;
+        fn i64_trunc_sat_f64_s(value: f64) -> i64 = TruncateSaturateInto::truncate_saturate_into;
+        fn i64_trunc_sat_f64_u(value: f64) -> u64 = TruncateSaturateInto::truncate_saturate_into;
+    }
+}
+
+impl UntypedVal {
     /// Combines the two 64-bit `lo` and `hi` into a single `i128` value.
     fn combine128(lo: Self, hi: Self) -> i128 {
         let lo = i128::from(u64::from(lo));
