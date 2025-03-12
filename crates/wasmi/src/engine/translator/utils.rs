@@ -108,7 +108,7 @@ impl super::FuncTranslator {
     /// # Note
     ///
     /// - Turns immediates that cannot be 16-bit encoded into function local constants.
-    /// - The behavior is different wether `memory64` is enabled or disabled.
+    /// - The behavior is different whether `memory64` is enabled or disabled.
     pub(super) fn as_index_type_const16(
         &mut self,
         provider: TypedProvider,
@@ -139,7 +139,7 @@ impl super::FuncTranslator {
     /// # Note
     ///
     /// - Turns immediates that cannot be 32-bit encoded into function local constants.
-    /// - The behavior is different wether `memory64` is enabled or disabled.
+    /// - The behavior is different whether `memory64` is enabled or disabled.
     pub(super) fn as_index_type_const32(
         &mut self,
         provider: TypedProvider,

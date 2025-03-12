@@ -136,7 +136,7 @@ impl Engine {
     ///
     /// # Note
     ///
-    /// Users should ues [`Engine::default`] to construct a default [`Engine`].
+    /// Users should use [`Engine::default`] to construct a default [`Engine`].
     pub fn new(config: &Config) -> Self {
         Self {
             inner: Arc::new(EngineInner::new(config)),

@@ -173,7 +173,7 @@ impl Executor<'_> {
     /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
     /// - This is done by encoding an [`Instruction::TableGet`] instruction
     ///   word following the actual instruction where the [`index::Table`]
-    ///   paremeter belongs to.
+    ///   parameter belongs to.
     /// - This is required for some instructions that do not fit into
     ///   a single instruction word and store a [`index::Table`] value in
     ///   another instruction word.
@@ -202,7 +202,7 @@ impl Executor<'_> {
     /// - This advances the [`InstructionPtr`] to the next [`Instruction`].
     /// - This is done by encoding an [`Instruction::TableGet`] instruction
     ///   word following the actual instruction where the [`index::Table`]
-    ///   paremeter belongs to.
+    ///   parameter belongs to.
     /// - This is required for some instructions that do not fit into
     ///   a single instruction word and store a [`index::Table`] value in
     ///   another instruction word.
