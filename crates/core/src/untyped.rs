@@ -569,9 +569,9 @@ impl UntypedVal {
         // Wasm Conversion Routines
 
         fn i32_wrap_i64(value: i64) -> i32 = |v| v as i32;
-        fn i64_extend_i32_s(value: i32) -> i64 = |v| v as i64;
+        fn i64_extend_i32_s(value: i32) -> i64 = i64::from;
         fn f32_demote_f64(value: f64) -> f32 = |v| v as f32;
-        fn f64_promote_f32(value: f32) -> f64 = |v| v as f64;
+        fn f64_promote_f32(value: f32) -> f64 = f64::from;
 
         /// - [`TrapCode::BadConversionToInteger`]: if `value` is NaN
         /// - [`TrapCode::IntegerOverflow`]: if `value` exceeds the bounds of an `i32` value
@@ -602,8 +602,8 @@ impl UntypedVal {
         fn f32_convert_i32_u(value: u32) -> f32 = |v| v as f32;
         fn f32_convert_i64_s(value: i64) -> f32 = |v| v as f32;
         fn f32_convert_i64_u(value: u64) -> f32 = |v| v as f32;
-        fn f64_convert_i32_s(value: i32) -> f64 = |v| v as f64;
-        fn f64_convert_i32_u(value: u32) -> f64 = |v| v as f64;
+        fn f64_convert_i32_s(value: i32) -> f64 = f64::from;
+        fn f64_convert_i32_u(value: u32) -> f64 = f64::from;
         fn f64_convert_i64_s(value: i64) -> f64 = |v| v as f64;
         fn f64_convert_i64_u(value: u64) -> f64 = |v| v as f64;
     }
