@@ -26,7 +26,7 @@ impl FuzzModule {
         }
     }
 
-    /// Returns the machine readble [`WasmSource`] code.
+    /// Returns the machine readable [`WasmSource`] code.
     pub fn wasm(&self) -> WasmSource {
         WasmSource {
             bytes: self.module.to_bytes(),
