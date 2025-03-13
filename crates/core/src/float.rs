@@ -88,11 +88,11 @@ macro_rules! float {
 }
 
 float! {
-    /// A NaN preserving `f32` type.
+    /// A 32-bit `f32` type.
     struct F32(f32 as u32);
 }
 
 float! {
-    /// A NaN preserving `f64` type.
+    /// A 64-bit `f64` type.
     struct F64(f64 as u64);
 }
