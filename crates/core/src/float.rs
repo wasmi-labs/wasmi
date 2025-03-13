@@ -1,96 +1,85 @@
 macro_rules! float {
     (
         $( #[$docs:meta] )*
-        struct $for:ident($rep:ty as $is:ty);
-    ) => {
-        float!(
-            $(#[$docs])*
-            struct $for($rep as $is, #bits = 1 << (::core::mem::size_of::<$is>() * 8 - 1));
-        );
-    };
-    (
-        $( #[$docs:meta] )*
-        struct $for:ident($rep:ty as $is:ty, #bits = $sign_bit:expr);
+        struct $name:ident($prim:ty as $bits:ty);
     ) => {
         $(#[$docs])*
         #[derive(Copy, Clone)]
-        pub struct $for($rep);
+        pub struct $name($bits);
 
-        impl $for {
+        impl $name {
             /// Creates a float from its underlying bits.
             #[inline]
-            pub fn from_bits(other: $rep) -> Self {
+            pub fn from_bits(other: $bits) -> Self {
                 Self(other)
             }
 
             /// Returns the underlying bits of the float.
             #[inline]
-            pub fn to_bits(self) -> $rep {
+            pub fn to_bits(self) -> $bits {
                 self.0
             }
 
             /// Creates a float from the respective primitive float type.
             #[inline]
-            pub fn from_float(float: $is) -> Self {
-                Self(float.to_bits())
+            pub fn from_float(float: $prim) -> Self {
+                Self::from_bits(float.to_bits())
             }
 
             /// Returns the respective primitive float type.
             #[inline]
-            pub fn to_float(self) -> $is {
-                <$is>::from_bits(self.0)
+            pub fn to_float(self) -> $prim {
+                <$prim>::from_bits(self.to_bits())
             }
         }
 
-        impl ::core::convert::From<$is> for $for {
+        impl ::core::convert::From<$prim> for $name {
             #[inline]
-            fn from(float: $is) -> $for {
+            fn from(float: $prim) -> $name {
                 Self::from_float(float)
             }
         }
 
-        impl ::core::convert::From<$for> for $is {
+        impl ::core::convert::From<$name> for $prim {
             #[inline]
-            fn from(float: $for) -> $is {
+            fn from(float: $name) -> $prim {
                 float.to_float()
             }
         }
 
-        impl<T: ::core::convert::Into<$for> + ::core::marker::Copy> ::core::cmp::PartialEq<T> for $for {
+        impl ::core::cmp::PartialEq<$name> for $name {
             #[inline]
-            fn eq(&self, other: &T) -> ::core::primitive::bool {
-                <$is as ::core::convert::From<Self>>::from(*self)
-                    .eq(&<$is as ::core::convert::From<Self>>::from((*other).into()))
+            fn eq(&self, other: &$name) -> ::core::primitive::bool {
+                self.to_float().eq(&other.to_float())
             }
         }
 
-        impl<T: ::core::convert::Into<$for> + ::core::marker::Copy> ::core::cmp::PartialOrd<T> for $for {
+        impl ::core::cmp::PartialOrd<$name> for $name {
             #[inline]
-            fn partial_cmp(&self, other: &T) -> ::core::option::Option<::core::cmp::Ordering> {
-                <$is as ::core::convert::From<Self>>::from(*self)
-                    .partial_cmp(&<$is as ::core::convert::From<Self>>::from((*other).into()))
+            fn partial_cmp(&self, other: &$name) -> ::core::option::Option<::core::cmp::Ordering> {
+                self.to_float().partial_cmp(&other.to_float())
             }
         }
 
-        impl ::core::fmt::Debug for $for {
+        impl ::core::fmt::Debug for $name {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 if self.to_float().is_nan() {
                     return core::write!(f, "nan:0x{:X?}", self.to_bits())
                 }
-                <$is as ::core::fmt::Debug>::fmt(
-                    &<$is as ::core::convert::From<Self>>::from(*self),
+                <$prim as ::core::fmt::Debug>::fmt(
+                    &<$prim as ::core::convert::From<Self>>::from(*self),
                     f,
                 )
             }
         }
 
-        impl ::core::fmt::Display for $for {
+        impl ::core::fmt::Display for $name {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 if self.to_float().is_nan() {
                     return core::write!(f, "nan:0x{:X?}", self.to_bits())
                 }
-                <$is as ::core::fmt::Display>::fmt(
-                    &<$is as ::core::convert::From<Self>>::from(*self),
+                <$prim as ::core::fmt::Display>::fmt(
+                    &<$prim as ::core::convert::From<Self>>::from(*self),
                     f,
                 )
             }
@@ -100,10 +89,10 @@ macro_rules! float {
 
 float! {
     /// A NaN preserving `f32` type.
-    struct F32(u32 as f32);
+    struct F32(f32 as u32);
 }
 
 float! {
     /// A NaN preserving `f64` type.
-    struct F64(u64 as f64);
+    struct F64(f64 as u64);
 }
