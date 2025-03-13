@@ -364,10 +364,10 @@ impl UntypedVal {
         fn i64_div_s(lhs: i64, rhs: i64) -> Result<i64>;
         /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
         /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-        fn i32_div_u(lhs: u32, rhs: u32) -> Result<u32>;
+        fn i32_div_u(lhs: u32, rhs: u32) -> Result<i32>;
         /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
         /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-        fn i64_div_u(lhs: u64, rhs: u64) -> Result<u64>;
+        fn i64_div_u(lhs: u64, rhs: u64) -> Result<i64>;
         /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
         /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
         fn i32_rem_s(lhs: i32, rhs: i32) -> Result<i32>;
@@ -376,10 +376,10 @@ impl UntypedVal {
         fn i64_rem_s(lhs: i64, rhs: i64) -> Result<i64>;
         /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
         /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-        fn i32_rem_u(lhs: u32, rhs: u32) -> Result<u32>;
+        fn i32_rem_u(lhs: u32, rhs: u32) -> Result<i32>;
         /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
         /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-        fn i64_rem_u(lhs: u64, rhs: u64) -> Result<u64>;
+        fn i64_rem_u(lhs: u64, rhs: u64) -> Result<i64>;
     }
 
     impl_untyped_val! {
