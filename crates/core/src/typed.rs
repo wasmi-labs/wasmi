@@ -123,49 +123,57 @@ macro_rules! impl_forwarding {
         )*
     };
     ( @impl #[fallible] fn $name:ident($lhs_ty:ty, $rhs_ty:ty) -> $result_ty:ty ) => {
-        #[doc = concat!("Forwards to [`UntypedVal::", stringify!($name), "`] with debug type checks.")]
+        #[doc = concat!("Forwards to [`wasm::", stringify!($name), "`] with debug type checks.")]
         #[doc = ""]
         #[doc = "# Errors"]
         #[doc = ""]
-        #[doc = concat!("If [`UntypedVal::", stringify!($name), "`] returns an error.")]
+        #[doc = concat!("If the forwarded [`wasm::", stringify!($name), "`] returns an error.")]
         #[doc = ""]
         #[doc = "# Panics (Debug)"]
         #[doc = ""]
         #[doc = "If type checks fail."]
+        #[doc = ""]
+        #[doc = concat!("[`wasm::", stringify!($name), "`]: crate::wasm::", stringify!($name))]
         pub fn $name(self, other: Self) -> Result<Self, TrapCode> {
             wasm::$name(self.into(), other.into()).map(Self::from)
         }
     };
     ( @impl fn $name:ident($lhs_ty:ty, $rhs_ty:ty) -> $result_ty:ty ) => {
-        #[doc = concat!("Forwards to [`UntypedVal::", stringify!($name), "`] with debug type checks.")]
+        #[doc = concat!("Forwards to [`wasm::", stringify!($name), "`] with debug type checks.")]
         #[doc = ""]
         #[doc = "# Panics (Debug)"]
         #[doc = ""]
         #[doc = "If type checks fail."]
+        #[doc = ""]
+        #[doc = concat!("[`wasm::", stringify!($name), "`]: crate::wasm::", stringify!($name))]
         pub fn $name(self, other: Self) -> Self {
             wasm::$name(self.into(), other.into()).into()
         }
     };
     ( @impl #[fallible] fn $name:ident($input_ty:ty) -> $result_ty:ty ) => {
-        #[doc = concat!("Forwards to [`UntypedVal::", stringify!($name), "`] with debug type checks.")]
+        #[doc = concat!("Forwards to [`wasm::", stringify!($name), "`] with debug type checks.")]
         #[doc = ""]
         #[doc = "# Errors"]
         #[doc = ""]
-        #[doc = concat!("If [`UntypedVal::", stringify!($name), "`] returns an error.")]
+        #[doc = concat!("If the forwarded [`wasm::", stringify!($name), "`] returns an error.")]
         #[doc = ""]
         #[doc = "# Panics (Debug)"]
         #[doc = ""]
         #[doc = "If type checks fail."]
+        #[doc = ""]
+        #[doc = concat!("[`wasm::", stringify!($name), "`]: crate::wasm::", stringify!($name))]
         pub fn $name(self) -> Result<Self, TrapCode> {
             wasm::$name(self.into()).map(Self::from)
         }
     };
     ( @impl fn $name:ident($input_ty:ty) -> $result_ty:ty ) => {
-        #[doc = concat!("Forwards to [`UntypedVal::", stringify!($name), "`] with debug type checks.")]
+        #[doc = concat!("Forwards to [`wasm::", stringify!($name), "`] with debug type checks.")]
         #[doc = ""]
         #[doc = "# Panics (Debug)"]
         #[doc = ""]
         #[doc = "If type checks fail."]
+        #[doc = ""]
+        #[doc = concat!("[`wasm::", stringify!($name), "`]: crate::wasm::", stringify!($name))]
         pub fn $name(self) -> Self {
             wasm::$name(self.into()).into()
         }
