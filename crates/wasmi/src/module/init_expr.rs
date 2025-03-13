@@ -266,10 +266,10 @@ impl ConstExpr {
                     stack.push(Op::constant(value));
                 }
                 wasmparser::Operator::F32Const { value } => {
-                    stack.push(Op::constant(F32::from(value.bits())));
+                    stack.push(Op::constant(F32::from_bits(value.bits())));
                 }
                 wasmparser::Operator::F64Const { value } => {
-                    stack.push(Op::constant(F64::from(value.bits())));
+                    stack.push(Op::constant(F64::from_bits(value.bits())));
                 }
                 wasmparser::Operator::GlobalGet { global_index } => {
                     stack.push(Op::global(global_index));
