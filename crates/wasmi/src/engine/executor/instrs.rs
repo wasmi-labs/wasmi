@@ -1484,14 +1484,6 @@ impl Executor<'_> {
 
     /// Executes a generic unary [`Instruction`].
     #[inline(always)]
-    fn execute_unary(&mut self, result: Reg, input: Reg, op: fn(UntypedVal) -> UntypedVal) {
-        let value = self.get_register(input);
-        self.set_register(result, op(value));
-        self.next_instr();
-    }
-
-    /// Executes a generic unary [`Instruction`].
-    #[inline(always)]
     fn execute_unary_t<P, R>(&mut self, result: Reg, input: Reg, op: fn(P) -> R)
     where
         UntypedVal: ReadAs<P> + WriteAs<R>,
