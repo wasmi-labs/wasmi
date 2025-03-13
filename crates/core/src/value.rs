@@ -665,27 +665,23 @@ mod tests {
 
     #[test]
     fn wasm_float_min_regression_works() {
-        assert_eq!(Float::min(-0.0_f32, 0.0_f32).to_bits(), 0x8000_0000,);
-        assert_eq!(Float::min(0.0_f32, -0.0_f32).to_bits(), 0x8000_0000,);
+        assert_eq!(Float::min(-0.0_f32, 0.0_f32).to_bits(), 0x8000_0000);
+        assert_eq!(Float::min(0.0_f32, -0.0_f32).to_bits(), 0x8000_0000);
     }
 
     #[test]
     fn wasm_float_max_regression_works() {
-        assert_eq!(Float::max(-0.0_f32, 0.0_f32).to_bits(), 0x0000_0000,);
-        assert_eq!(Float::max(0.0_f32, -0.0_f32).to_bits(), 0x0000_0000,);
+        assert_eq!(Float::max(-0.0_f32, 0.0_f32).to_bits(), 0x0000_0000);
+        assert_eq!(Float::max(0.0_f32, -0.0_f32).to_bits(), 0x0000_0000);
     }
 
     #[test]
     fn copysign_regression_works() {
         // This test has been directly extracted from a WebAssembly Specification assertion.
-        assert!(F32::from_bits(0xFFC00000).to_float().is_nan());
+        assert!(f32::from_bits(0xFFC00000).is_nan());
         assert_eq!(
-            Float::copysign(
-                f32::from(F32::from_bits(0xFFC00000)),
-                f32::from(F32::from_bits(0x0000_0000))
-            )
-            .to_bits(),
-            F32::from_bits(0x7FC00000).to_bits()
+            Float::copysign(f32::from_bits(0xFFC00000), f32::from_bits(0x0000_0000)),
+            f32::from_bits(0x7FC00000),
         )
     }
 }
