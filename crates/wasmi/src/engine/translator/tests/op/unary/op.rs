@@ -1,4 +1,5 @@
 use super::*;
+use crate::core::wasm;
 
 mod i32_clz {
     use super::*;
@@ -197,20 +198,6 @@ mod f32_nearest {
 
     const OP_NAME: &str = "nearest";
 
-    /// We simply use the `f32_nearest` implementation from the `wasmi_core` crate.
-    ///
-    /// # Note
-    ///
-    /// Rust currently does not ship with a proper rounding function for floats
-    /// that has the same behavior as mandated by the WebAssembly specification.
-    /// There is an issue to add a proper `round_ties_even` to Rust and we should
-    /// use it once it is stabilized.
-    ///
-    /// More information here: https://github.com/rust-lang/rust/issues/96710
-    fn f32_nearest(input: f32) -> f32 {
-        f32::from(UntypedVal::f32_nearest(UntypedVal::from(input)))
-    }
-
     #[test]
     #[cfg_attr(miri, ignore)]
     fn reg() {
@@ -220,8 +207,8 @@ mod f32_nearest {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn imm() {
-        unary_imm::<f32>(OP_NAME, 42.5, f32_nearest);
-        unary_imm::<f32>(OP_NAME, -42.5, f32_nearest);
+        unary_imm::<f32>(OP_NAME, 42.5, wasm::f32_nearest);
+        unary_imm::<f32>(OP_NAME, -42.5, wasm::f32_nearest);
     }
 }
 
@@ -345,20 +332,6 @@ mod f64_nearest {
 
     const OP_NAME: &str = "nearest";
 
-    /// We simply use the `f32_nearest` implementation from the `wasmi_core` crate.
-    ///
-    /// # Note
-    ///
-    /// Rust currently does not ship with a proper rounding function for floats
-    /// that has the same behavior as mandated by the WebAssembly specification.
-    /// There is an issue to add a proper `round_ties_even` to Rust and we should
-    /// use it once it is stabilized.
-    ///
-    /// More information here: https://github.com/rust-lang/rust/issues/96710
-    fn f64_nearest(input: f64) -> f64 {
-        f64::from(UntypedVal::f64_nearest(UntypedVal::from(input)))
-    }
-
     #[test]
     #[cfg_attr(miri, ignore)]
     fn reg() {
@@ -368,8 +341,8 @@ mod f64_nearest {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn imm() {
-        unary_imm::<f64>(OP_NAME, 42.5, f64_nearest);
-        unary_imm::<f64>(OP_NAME, -42.5, f64_nearest);
+        unary_imm::<f64>(OP_NAME, 42.5, wasm::f64_nearest);
+        unary_imm::<f64>(OP_NAME, -42.5, wasm::f64_nearest);
     }
 }
 
@@ -392,12 +365,6 @@ mod f64_sqrt {
     }
 }
 
-macro_rules! wrap_untyped {
-    ($name:ident) => {
-        |input| <_>::from(UntypedVal::$name(UntypedVal::from(input)))
-    };
-}
-
 mod i32_extend8_s {
     use super::*;
 
@@ -412,10 +379,9 @@ mod i32_extend8_s {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn imm() {
-        let consteval = wrap_untyped!(i32_extend8_s);
-        unary_imm::<i32>(OP_NAME, 0xFF, consteval);
-        unary_imm::<i32>(OP_NAME, 42, consteval);
-        unary_imm::<i32>(OP_NAME, -42, consteval);
+        unary_imm::<i32>(OP_NAME, 0xFF, wasm::i32_extend8_s);
+        unary_imm::<i32>(OP_NAME, 42, wasm::i32_extend8_s);
+        unary_imm::<i32>(OP_NAME, -42, wasm::i32_extend8_s);
     }
 }
 
@@ -433,10 +399,9 @@ mod i32_extend16_s {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn imm() {
-        let consteval = wrap_untyped!(i32_extend16_s);
-        unary_imm::<i32>(OP_NAME, 0xFFFF, consteval);
-        unary_imm::<i32>(OP_NAME, 42, consteval);
-        unary_imm::<i32>(OP_NAME, -42, consteval);
+        unary_imm::<i32>(OP_NAME, 0xFFFF, wasm::i32_extend16_s);
+        unary_imm::<i32>(OP_NAME, 42, wasm::i32_extend16_s);
+        unary_imm::<i32>(OP_NAME, -42, wasm::i32_extend16_s);
     }
 }
 
@@ -454,10 +419,9 @@ mod i64_extend8_s {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn imm() {
-        let consteval = wrap_untyped!(i64_extend8_s);
-        unary_imm::<i64>(OP_NAME, 0xFF, consteval);
-        unary_imm::<i64>(OP_NAME, 42, consteval);
-        unary_imm::<i64>(OP_NAME, -42, consteval);
+        unary_imm::<i64>(OP_NAME, 0xFF, wasm::i64_extend8_s);
+        unary_imm::<i64>(OP_NAME, 42, wasm::i64_extend8_s);
+        unary_imm::<i64>(OP_NAME, -42, wasm::i64_extend8_s);
     }
 }
 
@@ -475,10 +439,9 @@ mod i64_extend16_s {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn imm() {
-        let consteval = wrap_untyped!(i64_extend16_s);
-        unary_imm::<i64>(OP_NAME, 0xFFFF, consteval);
-        unary_imm::<i64>(OP_NAME, 42, consteval);
-        unary_imm::<i64>(OP_NAME, -42, consteval);
+        unary_imm::<i64>(OP_NAME, 0xFFFF, wasm::i64_extend16_s);
+        unary_imm::<i64>(OP_NAME, 42, wasm::i64_extend16_s);
+        unary_imm::<i64>(OP_NAME, -42, wasm::i64_extend16_s);
     }
 }
 
@@ -496,9 +459,8 @@ mod i64_extend32_s {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn imm() {
-        let consteval = wrap_untyped!(i64_extend32_s);
-        unary_imm::<i64>(OP_NAME, 0xFFFF_FFFF, consteval);
-        unary_imm::<i64>(OP_NAME, 42, consteval);
-        unary_imm::<i64>(OP_NAME, -42, consteval);
+        unary_imm::<i64>(OP_NAME, 0xFFFF_FFFF, wasm::i64_extend32_s);
+        unary_imm::<i64>(OP_NAME, 42, wasm::i64_extend32_s);
+        unary_imm::<i64>(OP_NAME, -42, wasm::i64_extend32_s);
     }
 }
