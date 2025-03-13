@@ -1,7 +1,7 @@
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
-    core::{hint, TrapCode, UntypedVal},
+    core::{hint, wasm, ReadAs, TrapCode, UntypedVal, WriteAs},
     engine::{
         code_map::CodeMap,
         executor::stack::{CallFrame, FrameRegisters, ValueStack},
@@ -1375,6 +1375,14 @@ impl Executor<'_> {
         T::from(self.get_register(register))
     }
 
+    /// Returns the [`Reg`] value.
+    fn get_register_as_2<T>(&self, register: Reg) -> T
+    where
+        UntypedVal: ReadAs<T>,
+    {
+        unsafe { self.sp.read_as::<T>(register) }
+    }
+
     /// Sets the [`Reg`] value to `value`.
     fn set_register(&mut self, register: Reg, value: impl Into<UntypedVal>) {
         // Safety: - It is the responsibility of the `Executor`
@@ -1383,6 +1391,19 @@ impl Executor<'_> {
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
         unsafe { self.sp.set(register, value.into()) };
+    }
+
+    /// Sets the [`Reg`] value to `value`.
+    fn set_register_as<T>(&mut self, register: Reg, value: T)
+    where
+        UntypedVal: WriteAs<T>,
+    {
+        // Safety: - It is the responsibility of the `Executor`
+        //           implementation to keep the `sp` pointer valid
+        //           whenever this method is accessed.
+        //         - This is done by updating the `sp` pointer whenever
+        //           the heap underlying the value stack is changed.
+        unsafe { self.sp.write_as::<T>(register, value) };
     }
 
     /// Shifts the instruction pointer to the next instruction.
