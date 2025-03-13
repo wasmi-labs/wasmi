@@ -428,12 +428,13 @@ impl UntypedVal {
     }
 
     /// Execute an infallible generic operation on `T` that returns an `R`.
-    fn execute_binary<T, R>(self, rhs: Self, op: fn(T, T) -> R) -> Self
+    fn execute_binary<Lhs, Rhs, Result>(self, rhs: Self, op: fn(Lhs, Rhs) -> Result) -> Self
     where
-        T: From<Self>,
-        R: Into<Self>,
+        Lhs: From<Self>,
+        Rhs: From<Self>,
+        Result: Into<Self>,
     {
-        op(T::from(self), T::from(rhs)).into()
+        op(Lhs::from(self), Rhs::from(rhs)).into()
     }
 
     /// Execute a fallible generic operation on `T` that returns an `R`.
@@ -496,7 +497,7 @@ macro_rules! impl_untyped_val {
     ) => {
         #[doc = concat!("Execute the `", stringify!($name), "` Wasm instruction.")]
         pub fn $name(self, rhs: Self) -> Self {
-            self.execute_binary::<$lhs_ty, $ret_ty>(rhs, $crate::wasm::$name)
+            self.execute_binary::<$lhs_ty, $rhs_ty, $ret_ty>(rhs, $crate::wasm::$name)
         }
 
         impl_untyped_val!( $($tt)* );
@@ -526,8 +527,8 @@ impl UntypedVal {
         fn i64_shl(lhs: i64, rhs: i64) -> i64;
         fn i32_shr_s(lhs: i32, rhs: i32) -> i32;
         fn i64_shr_s(lhs: i64, rhs: i64) -> i64;
-        fn i32_shr_u(lhs: u32, rhs: u32) -> u32;
-        fn i64_shr_u(lhs: u64, rhs: u64) -> u64;
+        fn i32_shr_u(lhs: i32, rhs: i32) -> i32;
+        fn i64_shr_u(lhs: i64, rhs: i64) -> i64;
         fn i32_rotl(lhs: i32, rhs: i32) -> i32;
         fn i64_rotl(lhs: i64, rhs: i64) -> i64;
         fn i32_rotr(lhs: i32, rhs: i32) -> i32;

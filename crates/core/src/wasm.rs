@@ -86,12 +86,12 @@ impl_untyped_val! {
     fn i32_xor(lhs: i32, rhs: i32) -> i32 = op!(^);
     fn i64_xor(lhs: i64, rhs: i64) -> i64 = op!(^);
 
-    fn i32_shl(lhs: i32, rhs: i32) -> i32 = |l: i32, r: i32| -> i32 {l.shl(r & 0x1F) };
-    fn i64_shl(lhs: i64, rhs: i64) -> i64 = |l: i64, r: i64| -> i64 {l.shl(r & 0x3F) };
-    fn i32_shr_s(lhs: i32, rhs: i32) -> i32 = |l: i32, r: i32| -> i32 {l.shr(r & 0x1F) };
-    fn i64_shr_s(lhs: i64, rhs: i64) -> i64 = |l: i64, r: i64| -> i64 {l.shr(r & 0x3F) };
-    fn i32_shr_u(lhs: u32, rhs: u32) -> u32 = |l: u32, r: u32| -> u32 {l.shr(r & 0x1F) };
-    fn i64_shr_u(lhs: u64, rhs: u64) -> u64 = |l: u64, r: u64| -> u64 {l.shr(r & 0x3F) };
+    fn i32_shl(lhs: i32, rhs: i32) -> i32 = |l: i32, r: i32| -> i32 { l.shl(r & 0x1F) };
+    fn i64_shl(lhs: i64, rhs: i64) -> i64 = |l: i64, r: i64| -> i64 { l.shl(r & 0x3F) };
+    fn i32_shr_s(lhs: i32, rhs: i32) -> i32 = |l: i32, r: i32| -> i32 { l.shr(r & 0x1F) };
+    fn i64_shr_s(lhs: i64, rhs: i64) -> i64 = |l: i64, r: i64| -> i64 { l.shr(r & 0x3F) };
+    fn i32_shr_u(lhs: i32, rhs: i32) -> i32 = |l: i32, r: i32| -> i32 { (l as u32).shr(r & 0x1F) as _ };
+    fn i64_shr_u(lhs: i64, rhs: i64) -> i64 = |l: i64, r: i64| -> i64 { (l as u64).shr(r & 0x3F) as _ };
     fn i32_rotl(lhs: i32, rhs: i32) -> i32 = Integer::rotl;
     fn i64_rotl(lhs: i64, rhs: i64) -> i64 = Integer::rotl;
     fn i32_rotr(lhs: i32, rhs: i32) -> i32 = Integer::rotr;
