@@ -196,16 +196,6 @@ impl_little_endian_convert_float!(
     struct F64(u64);
 );
 
-/// Arithmetic operations.
-pub trait ArithmeticOps<T = Self>: Copy {
-    /// Add two values.
-    fn add(self, other: T) -> T;
-    /// Subtract two values.
-    fn sub(self, other: T) -> T;
-    /// Multiply two values.
-    fn mul(self, other: T) -> T;
-}
-
 /// Integer value.
 pub trait Integer<T>: ArithmeticOps<T> {
     /// Counts leading zeros in the bitwise representation of the value.
@@ -428,54 +418,6 @@ impl_sign_extend_from! {
     impl SignExtendFrom<i16> for i64;
     impl SignExtendFrom<i32> for i64;
 }
-
-macro_rules! impl_integer_arithmetic_ops {
-    ($type: ident) => {
-        impl ArithmeticOps<$type> for $type {
-            #[inline]
-            fn add(self, other: $type) -> $type {
-                self.wrapping_add(other)
-            }
-            #[inline]
-            fn sub(self, other: $type) -> $type {
-                self.wrapping_sub(other)
-            }
-            #[inline]
-            fn mul(self, other: $type) -> $type {
-                self.wrapping_mul(other)
-            }
-        }
-    };
-}
-
-impl_integer_arithmetic_ops!(i32);
-impl_integer_arithmetic_ops!(u32);
-impl_integer_arithmetic_ops!(i64);
-impl_integer_arithmetic_ops!(u64);
-
-macro_rules! impl_float_arithmetic_ops {
-    ($type:ty) => {
-        impl ArithmeticOps<Self> for $type {
-            #[inline]
-            fn add(self, other: Self) -> Self {
-                self + other
-            }
-            #[inline]
-            fn sub(self, other: Self) -> Self {
-                self - other
-            }
-            #[inline]
-            fn mul(self, other: Self) -> Self {
-                self * other
-            }
-        }
-    };
-}
-
-impl_float_arithmetic_ops!(f32);
-impl_float_arithmetic_ops!(f64);
-impl_float_arithmetic_ops!(F32);
-impl_float_arithmetic_ops!(F64);
 
 macro_rules! impl_integer {
     ($type:ty) => {
