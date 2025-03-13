@@ -220,6 +220,31 @@ pub trait Integer<T>: ArithmeticOps<T> {
     ///
     /// If `other` is equal to zero.
     fn rem(self, other: T) -> Result<T, TrapCode>;
+
+/// Integer types that have an unsigned mirroring type.
+pub trait Unsigned {
+    /// The unsigned type.
+    type Uint;
+
+    /// Converts `self` losslessly to the unsigned type.
+    fn to_unsigned(self) -> Self::Uint;
+}
+
+impl Unsigned for i32 {
+    type Uint = u32;
+    #[inline]
+    fn to_unsigned(self) -> Self::Uint {
+        self as _
+    }
+}
+
+impl Unsigned for i64 {
+    type Uint = u64;
+    #[inline]
+    fn to_unsigned(self) -> Self::Uint {
+        self as _
+    }
+}
 }
 
 /// Float-point value.
