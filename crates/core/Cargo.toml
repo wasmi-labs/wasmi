@@ -25,10 +25,10 @@ default = ["std"]
 # Use `no-default-features` for a `no_std` build.
 std = ["downcast-rs/std"]
 
-# Enable this to use 128-bit register cells.
+# Enable this to use 128-bit untyped values.
 #
 # This mainly affects the `UntypedVal` type since it acts as Wasmi's register cell type.
-register128 = []
+value128 = []
 
 [package.metadata.cargo-udeps.ignore]
 # cargo-udeps cannot detect that libm is used for no_std targets only.
