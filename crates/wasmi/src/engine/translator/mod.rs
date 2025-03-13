@@ -2952,8 +2952,8 @@ impl FuncTranslator {
         {
             let (result_lo, result_hi) =
                 const_eval(lhs_lo.into(), lhs_hi.into(), rhs_lo.into(), rhs_hi.into());
-            self.alloc.stack.push_const(i64::from(result_lo));
-            self.alloc.stack.push_const(i64::from(result_hi));
+            self.alloc.stack.push_const(result_lo);
+            self.alloc.stack.push_const(result_hi);
             return Ok(());
         }
         let rhs_lo = match rhs_lo {
@@ -3007,8 +3007,8 @@ impl FuncTranslator {
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
                 let (result_lo, result_hi) = const_eval(lhs.into(), rhs.into());
-                self.alloc.stack.push_const(i64::from(result_hi));
-                self.alloc.stack.push_const(i64::from(result_lo));
+                self.alloc.stack.push_const(result_hi);
+                self.alloc.stack.push_const(result_lo);
                 return Ok(());
             }
         };
