@@ -456,3 +456,73 @@ gen_store_fn! {
     (fn i64_store16, fn i64_store16_at, i64 => i16);
     (fn i64_store32, fn i64_store32_at, i64 => i32);
 }
+
+/// Combines the two 64-bit `lo` and `hi` into a single `i128` value.
+fn combine128(lo: i64, hi: i64) -> i128 {
+    let lo = i128::from(lo as u64);
+    let hi = i128::from(hi as u64);
+    (hi << 64) | lo
+}
+
+/// Splits the single `i128` value into a 64-bit `lo` and `hi` part.
+fn split128(value: i128) -> (i64, i64) {
+    let hi = (value >> 64) as i64;
+    let lo = value as i64;
+    (lo, hi)
+}
+
+/// Execute an `i64.add128` Wasm instruction.
+///
+/// Returns a pair of `(lo, hi)` 64-bit values representing the 128-bit result.
+///
+/// # Note
+///
+/// This instruction is part of the Wasm `wide-arithmetic` proposal.
+pub fn i64_add128(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64) {
+    let lhs = combine128(lhs_lo, lhs_hi);
+    let rhs = combine128(rhs_lo, rhs_hi);
+    let result = lhs.wrapping_add(rhs);
+    split128(result)
+}
+
+/// Execute an `i64.sub128` Wasm instruction.
+///
+/// Returns a pair of `(lo, hi)` 64-bit values representing the 128-bit result.
+///
+/// # Note
+///
+/// This instruction is part of the Wasm `wide-arithmetic` proposal.
+pub fn i64_sub128(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64) {
+    let lhs = combine128(lhs_lo, lhs_hi);
+    let rhs = combine128(rhs_lo, rhs_hi);
+    let result = lhs.wrapping_sub(rhs);
+    split128(result)
+}
+
+/// Execute an `i64.mul_wide_s` Wasm instruction.
+///
+/// Returns a pair of `(lo, hi)` 64-bit values representing the 128-bit result.
+///
+/// # Note
+///
+/// This instruction is part of the Wasm `wide-arithmetic` proposal.
+pub fn i64_mul_wide_s(lhs: i64, rhs: i64) -> (i64, i64) {
+    let lhs = i128::from(lhs);
+    let rhs = i128::from(rhs);
+    let result = lhs.wrapping_mul(rhs);
+    split128(result)
+}
+
+/// Execute an `i64.mul_wide_s` Wasm instruction.
+///
+/// Returns a pair of `(lo, hi)` 64-bit values representing the 128-bit result.
+///
+/// # Note
+///
+/// This instruction is part of the Wasm `wide-arithmetic` proposal.
+pub fn i64_mul_wide_u(lhs: i64, rhs: i64) -> (i64, i64) {
+    let lhs = u128::from(lhs as u64);
+    let rhs = u128::from(rhs as u64);
+    let result = lhs.wrapping_mul(rhs);
+    split128(result as i128)
+}
