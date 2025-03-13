@@ -656,7 +656,6 @@ macro_rules! impl_wasm_float {
         }
     };
 }
-
 impl_wasm_float!(f32);
 impl_wasm_float!(f64);
 
