@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    core::UntypedVal,
+    core::{ReadAs, UntypedVal},
     engine::utils::unreachable_unchecked,
     ir::{
         BranchOffset,
@@ -39,7 +39,7 @@ impl Executor<'_> {
 
     /// Fetches the branch table index value and normalizes it to clamp between `0..len_targets`.
     fn fetch_branch_table_offset(&self, index: Reg, len_targets: u32) -> usize {
-        let index: u32 = self.get_register_as(index);
+        let index: u32 = self.get_register_as::<u32>(index);
         // The index of the default target which is the last target of the slice.
         let max_index = len_targets - 1;
         // A normalized index will always yield a target without panicking.
@@ -203,7 +203,7 @@ impl Executor<'_> {
         offset: impl Into<BranchOffset>,
         f: fn(T, T) -> bool,
     ) where
-        T: From<UntypedVal>,
+        UntypedVal: ReadAs<T>,
     {
         let lhs: T = self.get_register_as(lhs);
         let rhs: T = self.get_register_as(rhs);
@@ -221,7 +221,8 @@ impl Executor<'_> {
         offset: BranchOffset16,
         f: fn(T, T) -> bool,
     ) where
-        T: From<UntypedVal> + From<Const16<T>>,
+        T: From<Const16<T>>,
+        UntypedVal: ReadAs<T>,
     {
         let lhs: T = self.get_register_as(lhs);
         let rhs = T::from(rhs);
@@ -239,7 +240,8 @@ impl Executor<'_> {
         offset: BranchOffset16,
         f: fn(T, T) -> bool,
     ) where
-        T: From<UntypedVal> + From<Const16<T>>,
+        T: From<Const16<T>>,
+        UntypedVal: ReadAs<T>,
     {
         let lhs = T::from(lhs);
         let rhs: T = self.get_register_as(rhs);
@@ -408,8 +410,8 @@ impl Executor<'_> {
     /// Executes an [`Instruction::BranchCmpFallback`].
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
         use Comparator as C;
-        let params = self.get_register(params);
-        let Some(params) = ComparatorAndOffset::from_untyped(params) else {
+        let params: u64 = self.get_register_as(params);
+        let Some(params) = ComparatorAndOffset::from_u64(params) else {
             panic!("encountered invalidaly encoded ComparatorOffsetParam: {params:?}")
         };
         let offset = params.offset;

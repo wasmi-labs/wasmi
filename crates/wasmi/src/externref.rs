@@ -104,7 +104,6 @@ fn externref_sizeof() {
     //     size_of(ExternRef) == size_of(ExternObject) == size_of(UntypedValue)
     use core::mem::size_of;
     assert_eq!(size_of::<ExternRef>(), size_of::<u64>());
-    assert_eq!(size_of::<ExternRef>(), size_of::<UntypedVal>());
     assert_eq!(size_of::<ExternRef>(), size_of::<ExternObject>());
 }
 

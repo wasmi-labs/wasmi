@@ -2938,12 +2938,7 @@ impl FuncTranslator {
     fn translate_i64_binop128(
         &mut self,
         make_instr: fn(results: [Reg; 2], lhs_lo: Reg) -> Instruction,
-        const_eval: fn(
-            lhs_lo: UntypedVal,
-            lhs_hi: UntypedVal,
-            rhs_lo: UntypedVal,
-            rhs_hi: UntypedVal,
-        ) -> (UntypedVal, UntypedVal),
+        const_eval: fn(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64),
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (rhs_lo, rhs_hi) = self.alloc.stack.pop2();
@@ -2957,8 +2952,8 @@ impl FuncTranslator {
         {
             let (result_lo, result_hi) =
                 const_eval(lhs_lo.into(), lhs_hi.into(), rhs_lo.into(), rhs_hi.into());
-            self.alloc.stack.push_const(i64::from(result_lo));
-            self.alloc.stack.push_const(i64::from(result_hi));
+            self.alloc.stack.push_const(result_lo);
+            self.alloc.stack.push_const(result_hi);
             return Ok(());
         }
         let rhs_lo = match rhs_lo {
@@ -2990,7 +2985,7 @@ impl FuncTranslator {
     fn translate_i64_mul_wide_sx(
         &mut self,
         make_instr: fn(results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) -> Instruction,
-        const_eval: fn(lhs: UntypedVal, rhs: UntypedVal) -> (UntypedVal, UntypedVal),
+        const_eval: fn(lhs: i64, rhs: i64) -> (i64, i64),
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (lhs, rhs) = self.alloc.stack.pop2();
@@ -3012,8 +3007,8 @@ impl FuncTranslator {
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
                 let (result_lo, result_hi) = const_eval(lhs.into(), rhs.into());
-                self.alloc.stack.push_const(i64::from(result_hi));
-                self.alloc.stack.push_const(i64::from(result_lo));
+                self.alloc.stack.push_const(result_hi);
+                self.alloc.stack.push_const(result_lo);
                 return Ok(());
             }
         };
