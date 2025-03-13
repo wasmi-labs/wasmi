@@ -18,6 +18,7 @@ mod trap;
 mod typed;
 mod untyped;
 mod value;
+pub mod wasm;
 
 extern crate alloc;
 #[cfg(feature = "std")]
