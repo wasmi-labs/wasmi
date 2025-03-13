@@ -11,9 +11,9 @@
     clippy::items_after_statements
 )]
 
+mod float;
 pub mod hint;
 mod host_error;
-mod nan_preserving_float;
 mod trap;
 mod typed;
 mod untyped;
@@ -35,8 +35,8 @@ use self::value::{
     WrapInto,
 };
 pub use self::{
+    float::{F32, F64},
     host_error::HostError,
-    nan_preserving_float::{F32, F64},
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, ReadAs, UntypedError, UntypedVal, WriteAs},

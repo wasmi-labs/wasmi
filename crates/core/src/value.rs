@@ -1,8 +1,4 @@
-use crate::{
-    hint::unlikely,
-    nan_preserving_float::{F32, F64},
-    TrapCode,
-};
+use crate::{hint::unlikely, TrapCode, F32, F64};
 
 /// Type of a value.
 ///
