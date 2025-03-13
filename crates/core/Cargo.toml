@@ -17,9 +17,6 @@ exclude.workspace = true
 libm = { version = "0.2.11", default-features = false }
 downcast-rs = { version = "2.0.1", default-features = false, features = ["sync"] }
 
-[dev-dependencies]
-rand = "0.9.0"
-
 [features]
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
