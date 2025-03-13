@@ -1,11 +1,17 @@
+//! Execution helpers for Wasm or Wasmi instructions.
+
 use crate::{
+    value::{LoadInto, StoreFrom},
     ArithmeticOps,
+    ExtendInto,
     Float,
     Integer,
+    LittleEndianConvert,
     SignExtendFrom,
     TrapCode,
     TruncateSaturateInto,
     TryTruncateInto,
+    WrapInto,
 };
 use core::ops::{Neg, Shl, Shr};
 
@@ -280,4 +286,173 @@ impl_untyped_val! {
     fn i64_trunc_sat_f32_u(value: f32) -> u64 = TruncateSaturateInto::truncate_saturate_into;
     fn i64_trunc_sat_f64_s(value: f64) -> i64 = TruncateSaturateInto::truncate_saturate_into;
     fn i64_trunc_sat_f64_u(value: f64) -> u64 = TruncateSaturateInto::truncate_saturate_into;
+}
+
+/// Calculates the effective address of a linear memory access.
+///
+/// # Errors
+///
+/// If the resulting effective address overflows.
+fn effective_address(ptr: u64, offset: u64) -> Result<usize, TrapCode> {
+    let Some(address) = ptr.checked_add(offset) else {
+        return Err(TrapCode::MemoryOutOfBounds);
+    };
+    usize::try_from(address).map_err(|_| TrapCode::MemoryOutOfBounds)
+}
+
+/// Executes a generic `T.loadN_[s|u]` Wasm operation.
+///
+/// # Errors
+///
+/// - If `ptr + offset` overflows.
+/// - If `ptr + offset` loads out of bounds from `memory`.
+fn load_extend<T, U>(memory: &[u8], ptr: u64, offset: u64) -> Result<T, TrapCode>
+where
+    U: LittleEndianConvert + ExtendInto<T>,
+{
+    let address = effective_address(ptr, offset)?;
+    load_extend_at::<T, U>(memory, address)
+}
+
+/// Executes a generic `T.loadN_[s|u]` Wasm operation.
+///
+/// # Errors
+///
+/// If `address` loads out of bounds from `memory`.
+fn load_extend_at<T, U>(memory: &[u8], address: usize) -> Result<T, TrapCode>
+where
+    U: LittleEndianConvert + ExtendInto<T>,
+{
+    let mut buffer = <<U as LittleEndianConvert>::Bytes as Default>::default();
+    buffer.load_into(memory, address)?;
+    let value: T = <U as LittleEndianConvert>::from_le_bytes(buffer).extend_into();
+    Ok(value)
+}
+
+macro_rules! gen_load_fn {
+    (
+        (fn $load_fn:ident, fn $load_at_fn:ident, $ty:ty); $($rest:tt)*
+    ) => {
+        gen_load_fn!(
+            (fn $load_fn, fn $load_at_fn, $ty => $ty);
+        );
+        gen_load_fn!($($rest)*);
+    };
+    (
+        (fn $load_fn:ident, fn $load_at_fn:ident, $wrapped:ty => $ty:ty); $($rest:tt)*
+    ) => {
+        #[doc = concat!("Executes a Wasmi `", stringify!($load_fn), "` instruction.")]
+        ///
+        /// # Errors
+        ///
+        /// - If `ptr + offset` overflows.
+        /// - If `ptr + offset` loads out of bounds from `memory`.
+        pub fn $load_fn(memory: &[u8], ptr: u64, offset: u64) -> Result<$ty, TrapCode> {
+            load_extend::<$ty, $wrapped>(memory, ptr, offset)
+        }
+
+        #[doc = concat!("Executes a Wasmi `", stringify!($load_at_fn), "` instruction.")]
+        ///
+        /// # Errors
+        ///
+        /// If `address` loads out of bounds from `memory`.
+        pub fn $load_at_fn(memory: &[u8], address: usize) -> Result<$ty, TrapCode> {
+            load_extend_at::<$ty, $wrapped>(memory, address)
+        }
+
+        gen_load_fn!($($rest)*);
+    };
+    () => {};
+}
+
+gen_load_fn! {
+    (fn load32, fn load32_at, u32);
+    (fn load64, fn load64_at, u64);
+    (fn i32_load8_s, fn i32_load8_s_at, i8 => i32);
+    (fn i32_load8_u, fn i32_load8_u_at, u8 => i32);
+    (fn i32_load16_s, fn i32_load16_s_at, i16 => i32);
+    (fn i32_load16_u, fn i32_load16_u_at, u16 => i32);
+    (fn i64_load8_s, fn i64_load8_s_at, i8 => i64);
+    (fn i64_load8_u, fn i64_load8_u_at, u8 => i64);
+    (fn i64_load16_s, fn i64_load16_s_at, i16 => i64);
+    (fn i64_load16_u, fn i64_load16_u_at, u16 => i64);
+    (fn i64_load32_s, fn i64_load32_s_at, i32 => i64);
+    (fn i64_load32_u, fn i64_load32_u_at, u32 => i64);
+}
+
+/// Executes a generic `T.store[N]` Wasm operation.
+///
+/// # Errors
+///
+/// - If `ptr + offset` overflows.
+/// - If `ptr + offset` stores out of bounds from `memory`.
+fn store_wrap<T, U>(memory: &mut [u8], ptr: u64, offset: u64, value: T) -> Result<(), TrapCode>
+where
+    T: WrapInto<U>,
+    U: LittleEndianConvert,
+{
+    let address = effective_address(ptr, offset)?;
+    store_wrap_at::<T, U>(memory, address, value)
+}
+
+/// Executes a generic `T.store[N]` Wasm operation.
+///
+/// # Errors
+///
+/// - If `address` stores out of bounds from `memory`.
+fn store_wrap_at<T, U>(memory: &mut [u8], address: usize, value: T) -> Result<(), TrapCode>
+where
+    T: WrapInto<U>,
+    U: LittleEndianConvert,
+{
+    let wrapped = value.wrap_into();
+    let buffer = <U as LittleEndianConvert>::into_le_bytes(wrapped);
+    buffer.store_from(memory, address)?;
+    Ok(())
+}
+
+macro_rules! gen_store_fn {
+    (
+        (fn $store_fn:ident, fn $store_at_fn:ident, $ty:ty); $($rest:tt)*
+    ) => {
+        gen_store_fn!(
+            (fn $store_fn, fn $store_at_fn, $ty => $ty);
+        );
+        gen_store_fn!($($rest)*);
+    };
+    (
+        (fn $store_fn:ident, fn $store_at_fn:ident, $ty:ty => $wrapped:ty); $($rest:tt)*
+    ) => {
+        #[doc = concat!("Executes a Wasmi `", stringify!($store_fn), "` instruction.")]
+        ///
+        /// # Errors
+        ///
+        /// - If `ptr + offset` overflows.
+        /// - If `ptr + offset` stores out of bounds from `memory`.
+        pub fn $store_fn(memory: &mut [u8], ptr: u64, offset: u64, value: $ty) -> Result<(), TrapCode> {
+            store_wrap::<$ty, $wrapped>(memory, ptr, offset, value)
+        }
+
+        #[doc = concat!("Executes a Wasmi `", stringify!($store_at_fn), "` instruction.")]
+        ///
+        /// # Errors
+        ///
+        /// If `address` stores out of bounds from `memory`.
+        pub fn $store_at_fn(memory: &mut [u8], address: usize, value: $ty) -> Result<(), TrapCode> {
+            store_wrap_at::<$ty, $wrapped>(memory, address, value)
+        }
+
+        gen_store_fn!($($rest)*);
+    };
+    () => {};
+}
+
+gen_store_fn! {
+    (fn store32, fn store32_at, u32);
+    (fn store64, fn store64_at, u64);
+    (fn i32_store8, fn i32_store8_at, i32 => i8);
+    (fn i32_store16, fn i32_store16_at, i32 => i16);
+    (fn i64_store8, fn i64_store8_at, i64 => i8);
+    (fn i64_store16, fn i64_store16_at, i64 => i16);
+    (fn i64_store32, fn i64_store32_at, i64 => i32);
 }
