@@ -1505,21 +1505,6 @@ impl Executor<'_> {
 
     /// Executes a generic binary [`Instruction`].
     #[inline(always)]
-    fn execute_binary(
-        &mut self,
-        result: Reg,
-        lhs: Reg,
-        rhs: Reg,
-        op: fn(UntypedVal, UntypedVal) -> UntypedVal,
-    ) {
-        let lhs = self.get_register(lhs);
-        let rhs = self.get_register(rhs);
-        self.set_register(result, op(lhs, rhs));
-        self.next_instr();
-    }
-
-    /// Executes a generic binary [`Instruction`].
-    #[inline(always)]
     fn execute_binary_t<Lhs, Rhs, Result>(
         &mut self,
         result: Reg,
@@ -1532,24 +1517,6 @@ impl Executor<'_> {
         let lhs = self.get_register_as_2::<Lhs>(lhs);
         let rhs = self.get_register_as_2::<Rhs>(rhs);
         self.set_register_as::<Result>(result, op(lhs, rhs));
-        self.next_instr();
-    }
-
-    /// Executes a generic binary [`Instruction`].
-    #[inline(always)]
-    fn execute_binary_imm16_rhs<T>(
-        &mut self,
-        result: Reg,
-        lhs: Reg,
-        rhs: Const16<T>,
-        op: fn(UntypedVal, UntypedVal) -> UntypedVal,
-    ) where
-        T: From<Const16<T>>,
-        UntypedVal: From<T>,
-    {
-        let lhs = self.get_register(lhs);
-        let rhs = UntypedVal::from(<T>::from(rhs));
-        self.set_register(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -1568,24 +1535,6 @@ impl Executor<'_> {
         let lhs = self.get_register_as_2::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
         self.set_register_as::<T>(result, op(lhs, rhs));
-        self.next_instr();
-    }
-
-    /// Executes a generic binary [`Instruction`] with reversed operands.
-    #[inline(always)]
-    fn execute_binary_imm16_lhs<T>(
-        &mut self,
-        result: Reg,
-        lhs: Const16<T>,
-        rhs: Reg,
-        op: fn(UntypedVal, UntypedVal) -> UntypedVal,
-    ) where
-        T: From<Const16<T>>,
-        UntypedVal: From<T>,
-    {
-        let lhs = UntypedVal::from(<T>::from(lhs));
-        let rhs = self.get_register(rhs);
-        self.set_register(result, op(lhs, rhs));
         self.next_instr();
     }
 
