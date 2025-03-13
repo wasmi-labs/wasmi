@@ -196,64 +196,98 @@ impl_little_endian_convert_float!(
     struct F64(u64);
 );
 
-/// Arithmetic operations.
-pub trait ArithmeticOps<T = Self>: Copy {
-    /// Add two values.
-    fn add(self, other: T) -> T;
-    /// Subtract two values.
-    fn sub(self, other: T) -> T;
-    /// Multiply two values.
-    fn mul(self, other: T) -> T;
+/// Integer value.
+pub trait Integer: Sized + Unsigned {
+    /// Returns `true` if `self` is zero.
+    #[allow(clippy::wrong_self_convention)]
+    fn is_zero(self) -> bool;
+    /// Counts leading zeros in the bitwise representation of the value.
+    fn leading_zeros(self) -> Self;
+    /// Counts trailing zeros in the bitwise representation of the value.
+    fn trailing_zeros(self) -> Self;
+    /// Counts 1-bits in the bitwise representation of the value.
+    fn count_ones(self) -> Self;
+    /// Shift-left `self` by `other`.
+    fn shl(lhs: Self, rhs: Self) -> Self;
+    /// Signed shift-right `self` by `other`.
+    fn shr_s(lhs: Self, rhs: Self) -> Self;
+    /// Unsigned shift-right `self` by `other`.
+    fn shr_u(lhs: Self, rhs: Self) -> Self;
+    /// Get left bit rotation result.
+    fn rotl(lhs: Self, rhs: Self) -> Self;
+    /// Get right bit rotation result.
+    fn rotr(lhs: Self, rhs: Self) -> Self;
+    /// Signed integer division.
+    ///
+    /// # Errors
+    ///
+    /// If `other` is equal to zero.
+    fn div_s(lhs: Self, rhs: Self) -> Result<Self, TrapCode>;
+    /// Unsigned integer division.
+    ///
+    /// # Errors
+    ///
+    /// If `other` is equal to zero.
+    fn div_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self, TrapCode>;
+    /// Signed integer remainder.
+    ///
+    /// # Errors
+    ///
+    /// If `other` is equal to zero.
+    fn rem_s(lhs: Self, rhs: Self) -> Result<Self, TrapCode>;
+    /// Unsigned integer remainder.
+    ///
+    /// # Errors
+    ///
+    /// If `other` is equal to zero.
+    fn rem_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self, TrapCode>;
 }
 
-/// Integer value.
-pub trait Integer<T>: ArithmeticOps<T> {
-    /// Counts leading zeros in the bitwise representation of the value.
-    fn leading_zeros(self) -> T;
-    /// Counts trailing zeros in the bitwise representation of the value.
-    fn trailing_zeros(self) -> T;
-    /// Counts 1-bits in the bitwise representation of the value.
-    fn count_ones(self) -> T;
-    /// Get left bit rotation result.
-    fn rotl(self, other: T) -> T;
-    /// Get right bit rotation result.
-    fn rotr(self, other: T) -> T;
-    /// Divide two values.
-    ///
-    /// # Errors
-    ///
-    /// If `other` is equal to zero.
-    fn div(self, other: T) -> Result<T, TrapCode>;
-    /// Get division remainder.
-    ///
-    /// # Errors
-    ///
-    /// If `other` is equal to zero.
-    fn rem(self, other: T) -> Result<T, TrapCode>;
+/// Integer types that have an unsigned mirroring type.
+pub trait Unsigned {
+    /// The unsigned type.
+    type Uint;
+
+    /// Converts `self` losslessly to the unsigned type.
+    fn to_unsigned(self) -> Self::Uint;
+}
+
+impl Unsigned for i32 {
+    type Uint = u32;
+    #[inline]
+    fn to_unsigned(self) -> Self::Uint {
+        self as _
+    }
+}
+
+impl Unsigned for i64 {
+    type Uint = u64;
+    #[inline]
+    fn to_unsigned(self) -> Self::Uint {
+        self as _
+    }
 }
 
 /// Float-point value.
-pub trait Float<T = Self>: ArithmeticOps<T> {
+pub trait Float: Sized {
     /// Get absolute value.
-    fn abs(self) -> T;
+    fn abs(self) -> Self;
     /// Returns the largest integer less than or equal to a number.
-    fn floor(self) -> T;
+    fn floor(self) -> Self;
     /// Returns the smallest integer greater than or equal to a number.
-    fn ceil(self) -> T;
+    fn ceil(self) -> Self;
     /// Returns the integer part of a number.
-    fn trunc(self) -> T;
+    fn trunc(self) -> Self;
     /// Returns the nearest integer to a number. Ties are round to even number.
-    fn nearest(self) -> T;
+    fn nearest(self) -> Self;
     /// Takes the square root of a number.
-    fn sqrt(self) -> T;
-    /// Returns the division of the two numbers.
-    fn div(self, other: T) -> T;
+    fn sqrt(self) -> Self;
     /// Returns the minimum of the two numbers.
-    fn min(self, other: T) -> T;
+    fn min(lhs: Self, rhs: Self) -> Self;
     /// Returns the maximum of the two numbers.
-    fn max(self, other: T) -> T;
+    fn max(lhs: Self, rhs: Self) -> Self;
     /// Sets sign of this value to the sign of other value.
-    fn copysign(self, other: T) -> T;
+    fn copysign(lhs: Self, rhs: Self) -> Self;
 }
 
 macro_rules! impl_wrap_into {
@@ -431,57 +465,13 @@ impl_sign_extend_from! {
     impl SignExtendFrom<i32> for i64;
 }
 
-macro_rules! impl_integer_arithmetic_ops {
-    ($type: ident) => {
-        impl ArithmeticOps<$type> for $type {
-            #[inline]
-            fn add(self, other: $type) -> $type {
-                self.wrapping_add(other)
-            }
-            #[inline]
-            fn sub(self, other: $type) -> $type {
-                self.wrapping_sub(other)
-            }
-            #[inline]
-            fn mul(self, other: $type) -> $type {
-                self.wrapping_mul(other)
-            }
-        }
-    };
-}
-
-impl_integer_arithmetic_ops!(i32);
-impl_integer_arithmetic_ops!(u32);
-impl_integer_arithmetic_ops!(i64);
-impl_integer_arithmetic_ops!(u64);
-
-macro_rules! impl_float_arithmetic_ops {
-    ($type:ty) => {
-        impl ArithmeticOps<Self> for $type {
-            #[inline]
-            fn add(self, other: Self) -> Self {
-                self + other
-            }
-            #[inline]
-            fn sub(self, other: Self) -> Self {
-                self - other
-            }
-            #[inline]
-            fn mul(self, other: Self) -> Self {
-                self * other
-            }
-        }
-    };
-}
-
-impl_float_arithmetic_ops!(f32);
-impl_float_arithmetic_ops!(f64);
-impl_float_arithmetic_ops!(F32);
-impl_float_arithmetic_ops!(F64);
-
 macro_rules! impl_integer {
-    ($type:ty) => {
-        impl Integer<Self> for $type {
+    ($ty:ty) => {
+        impl Integer for $ty {
+            #[inline]
+            fn is_zero(self) -> bool {
+                self == 0
+            }
             #[inline]
             #[allow(clippy::cast_lossless)]
             fn leading_zeros(self) -> Self {
@@ -498,38 +488,66 @@ macro_rules! impl_integer {
                 self.count_ones() as _
             }
             #[inline]
-            fn rotl(self, other: Self) -> Self {
-                self.rotate_left(other as u32)
+            fn shl(lhs: Self, rhs: Self) -> Self {
+                lhs.wrapping_shl(rhs as u32)
             }
             #[inline]
-            fn rotr(self, other: Self) -> Self {
-                self.rotate_right(other as u32)
+            fn shr_s(lhs: Self, rhs: Self) -> Self {
+                lhs.wrapping_shr(rhs as u32)
             }
             #[inline]
-            fn div(self, other: Self) -> Result<Self, TrapCode> {
-                if unlikely(other == 0) {
+            fn shr_u(lhs: Self, rhs: Self) -> Self {
+                lhs.to_unsigned().wrapping_shr(rhs as u32) as _
+            }
+            #[inline]
+            fn rotl(lhs: Self, rhs: Self) -> Self {
+                lhs.rotate_left(rhs as u32)
+            }
+            #[inline]
+            fn rotr(lhs: Self, rhs: Self) -> Self {
+                lhs.rotate_right(rhs as u32)
+            }
+            #[inline]
+            fn div_s(lhs: Self, rhs: Self) -> Result<Self, TrapCode> {
+                if unlikely(rhs == 0) {
                     return Err(TrapCode::IntegerDivisionByZero);
                 }
-                let (result, overflow) = self.overflowing_div(other);
+                let (result, overflow) = lhs.overflowing_div(rhs);
                 if unlikely(overflow) {
                     return Err(TrapCode::IntegerOverflow);
                 }
                 Ok(result)
             }
             #[inline]
-            fn rem(self, other: Self) -> Result<Self, TrapCode> {
-                if unlikely(other == 0) {
+            fn div_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self, TrapCode> {
+                if unlikely(rhs == 0) {
                     return Err(TrapCode::IntegerDivisionByZero);
                 }
-                Ok(self.wrapping_rem(other))
+                let (result, overflow) = lhs.overflowing_div(rhs);
+                if unlikely(overflow) {
+                    return Err(TrapCode::IntegerOverflow);
+                }
+                Ok(result as _)
+            }
+            #[inline]
+            fn rem_s(lhs: Self, rhs: Self) -> Result<Self, TrapCode> {
+                if unlikely(rhs == 0) {
+                    return Err(TrapCode::IntegerDivisionByZero);
+                }
+                Ok(lhs.wrapping_rem(rhs))
+            }
+            #[inline]
+            fn rem_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self, TrapCode> {
+                if unlikely(rhs == 0) {
+                    return Err(TrapCode::IntegerDivisionByZero);
+                }
+                Ok(lhs.wrapping_rem(rhs) as _)
             }
         }
     };
 }
 impl_integer!(i32);
-impl_integer!(u32);
 impl_integer!(i64);
-impl_integer!(u64);
 
 // We cannot call the math functions directly, because they are not all available in `core`.
 // In no-std cases we instead rely on `libm`.
@@ -537,7 +555,7 @@ impl_integer!(u64);
 macro_rules! impl_float {
     (type $type:ident as $repr:ty) => {
         // In this particular instance we want to directly compare floating point numbers.
-        impl Float<Self> for $type {
+        impl Float for $type {
             #[inline]
             fn abs(self) -> Self {
                 WasmFloatExt::abs(<$repr>::from(self)).into()
@@ -563,56 +581,52 @@ macro_rules! impl_float {
                 WasmFloatExt::sqrt(<$repr>::from(self)).into()
             }
             #[inline]
-            fn div(self, other: Self) -> Self {
-                self / other
-            }
-            #[inline]
-            fn min(self, other: Self) -> Self {
+            fn min(lhs: Self, rhs: Self) -> Self {
                 // Note: equal to the unstable `f32::minimum` method.
                 //
                 // Once `f32::minimum` is stable we can simply use it here.
-                if self < other {
-                    self
-                } else if other < self {
-                    other
-                } else if self == other {
-                    if <$repr>::is_sign_negative(<$repr>::from(self))
-                        && <$repr>::is_sign_positive(<$repr>::from(other))
+                if lhs < rhs {
+                    lhs
+                } else if rhs < lhs {
+                    rhs
+                } else if lhs == rhs {
+                    if <$repr>::is_sign_negative(<$repr>::from(lhs))
+                        && <$repr>::is_sign_positive(<$repr>::from(rhs))
                     {
-                        self
+                        lhs
                     } else {
-                        other
+                        rhs
                     }
                 } else {
                     // At least one input is NaN. Use `+` to perform NaN propagation and quieting.
-                    self + other
+                    lhs + rhs
                 }
             }
             #[inline]
-            fn max(self, other: Self) -> Self {
+            fn max(lhs: Self, rhs: Self) -> Self {
                 // Note: equal to the unstable `f32::maximum` method.
                 //
                 // Once `f32::maximum` is stable we can simply use it here.
-                if self > other {
-                    self
-                } else if other > self {
-                    other
-                } else if self == other {
-                    if <$repr>::is_sign_positive(<$repr>::from(self))
-                        && <$repr>::is_sign_negative(<$repr>::from(other))
+                if lhs > rhs {
+                    lhs
+                } else if rhs > lhs {
+                    rhs
+                } else if lhs == rhs {
+                    if <$repr>::is_sign_positive(<$repr>::from(lhs))
+                        && <$repr>::is_sign_negative(<$repr>::from(rhs))
                     {
-                        self
+                        lhs
                     } else {
-                        other
+                        rhs
                     }
                 } else {
                     // At least one input is NaN. Use `+` to perform NaN propagation and quieting.
-                    self + other
+                    lhs + rhs
                 }
             }
             #[inline]
-            fn copysign(self, other: Self) -> Self {
-                WasmFloatExt::copysign(<$repr>::from(self), <$repr>::from(other)).into()
+            fn copysign(lhs: Self, rhs: Self) -> Self {
+                WasmFloatExt::copysign(<$repr>::from(lhs), <$repr>::from(rhs)).into()
             }
         }
     };
@@ -776,12 +790,9 @@ mod tests {
     #[test]
     fn copysign_regression_works() {
         // This test has been directly extracted from a WebAssembly Specification assertion.
-        use Float as _;
         assert!(F32::from_bits(0xFFC00000).is_nan());
         assert_eq!(
-            F32::from_bits(0xFFC00000)
-                .copysign(F32::from_bits(0x0000_0000))
-                .to_bits(),
+            Float::copysign(F32::from_bits(0xFFC00000), F32::from_bits(0x0000_0000),).to_bits(),
             F32::from_bits(0x7FC00000).to_bits()
         )
     }

@@ -1,4 +1,5 @@
 use super::*;
+use crate::core::wasm;
 
 mod i32_wrap_i64 {
     use super::*;
@@ -95,7 +96,7 @@ macro_rules! signed_trunc_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm_ok() {
                     fn consteval_ok(input: $input_ty) -> $output_ty {
-                        <$output_ty>::from(UntypedVal::from(input).$name().expect("testcase expects Ok result"))
+                        wasm::$name(input).expect("testcase expects Ok result")
                     }
 
                     conversion_imm::<$input_ty, $output_ty>(OP, 0.0, consteval_ok);
@@ -107,7 +108,7 @@ macro_rules! signed_trunc_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm_err() {
                     fn consteval_err(input: $input_ty) -> TrapCode {
-                        UntypedVal::from(input).$name().expect_err("testcase expects Err result")
+                        wasm::$name(input).expect_err("testcase expects Err result")
                     }
 
                     fallible_conversion_imm_err::<$input_ty, $output_ty>(OP, <$input_ty>::NAN, consteval_err);
@@ -144,7 +145,7 @@ macro_rules! unsigned_trunc_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm_ok() {
                     fn consteval_ok(input: $input_ty) -> $output_ty {
-                        <$output_ty>::from(UntypedVal::from(input).$name().expect("testcase expects Ok result"))
+                        wasm::$name(input).expect("testcase expects Ok result") as _
                     }
 
                     conversion_imm::<$input_ty, $output_ty>(OP, 0.0, consteval_ok);
@@ -155,7 +156,7 @@ macro_rules! unsigned_trunc_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm_err() {
                     fn consteval_err(input: $input_ty) -> TrapCode {
-                        UntypedVal::from(input).$name().expect_err("testcase expects Err result")
+                        wasm::$name(input).expect_err("testcase expects Err result")
                     }
 
                     fallible_conversion_imm_err::<$input_ty, $output_ty>(OP, -42.5, consteval_err);
@@ -193,7 +194,7 @@ macro_rules! trunc_sat_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm() {
                     fn consteval(input: $input_ty) -> $output_ty {
-                        <$output_ty>::from(UntypedVal::$name(input.into()))
+                        wasm::$name(input) as _
                     }
 
                     conversion_imm::<$input_ty, $output_ty>(OP, 0.0, consteval);
@@ -237,7 +238,7 @@ macro_rules! convert_tests {
                 #[test] #[cfg_attr(miri, ignore)]
                 fn imm() {
                     fn consteval(input: $input_ty) -> $output_ty {
-                        <$output_ty>::from(UntypedVal::$name(input.into()))
+                        wasm::$name(input as _)
                     }
 
                     conversion_imm::<$input_ty, $output_ty>(OP, 0, consteval);
@@ -275,7 +276,7 @@ mod f32_demote_f64 {
     #[cfg_attr(miri, ignore)]
     fn imm() {
         fn consteval(input: f64) -> f32 {
-            f32::from(UntypedVal::from(input).f32_demote_f64())
+            wasm::f32_demote_f64(input)
         }
 
         conversion_imm::<f64, f32>(OP, 0.0, consteval);
@@ -301,7 +302,7 @@ mod f64_promote_f32 {
     #[cfg_attr(miri, ignore)]
     fn imm() {
         fn consteval(input: f32) -> f64 {
-            f64::from(UntypedVal::from(input).f64_promote_f32())
+            wasm::f64_promote_f32(input)
         }
 
         conversion_imm::<f32, f64>(OP, 0.0, consteval);

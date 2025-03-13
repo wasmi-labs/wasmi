@@ -8,7 +8,7 @@
 
 use super::FuncIdx;
 use crate::{
-    core::{UntypedVal, F32, F64},
+    core::{wasm, UntypedVal, F32, F64},
     ExternRef,
     FuncRef,
     Val,
@@ -202,7 +202,7 @@ macro_rules! def_expr {
         Op::expr(move |ctx: &dyn EvalContext| -> Option<UntypedVal> {
             let lhs = $lhs.eval(ctx)?;
             let rhs = $rhs.eval(ctx)?;
-            Some($expr(lhs, rhs))
+            Some($expr(lhs.into(), rhs.into()).into())
         })
     }};
 }
@@ -218,7 +218,13 @@ impl ConstExpr {
         /// A buffer required for translation of Wasm const expressions.
         type TranslationBuffer = SmallVec<[Op; 3]>;
         /// Convenience function to create the various expression operators.
-        fn expr_op(stack: &mut TranslationBuffer, expr: fn(UntypedVal, UntypedVal) -> UntypedVal) {
+        fn expr_op<Lhs, Rhs, T>(stack: &mut TranslationBuffer, expr: fn(Lhs, Rhs) -> T)
+        where
+            Lhs: From<UntypedVal> + 'static,
+            Rhs: From<UntypedVal> + 'static,
+            T: 'static,
+            UntypedVal: From<T>,
+        {
             let rhs = stack
                 .pop()
                 .expect("must have rhs operator on the stack due to Wasm validation");
@@ -287,12 +293,12 @@ impl ConstExpr {
                 wasmparser::Operator::RefFunc { function_index } => {
                     stack.push(Op::funcref(function_index));
                 }
-                wasmparser::Operator::I32Add => expr_op(&mut stack, UntypedVal::i32_add),
-                wasmparser::Operator::I32Sub => expr_op(&mut stack, UntypedVal::i32_sub),
-                wasmparser::Operator::I32Mul => expr_op(&mut stack, UntypedVal::i32_mul),
-                wasmparser::Operator::I64Add => expr_op(&mut stack, UntypedVal::i64_add),
-                wasmparser::Operator::I64Sub => expr_op(&mut stack, UntypedVal::i64_sub),
-                wasmparser::Operator::I64Mul => expr_op(&mut stack, UntypedVal::i64_mul),
+                wasmparser::Operator::I32Add => expr_op(&mut stack, wasm::i32_add),
+                wasmparser::Operator::I32Sub => expr_op(&mut stack, wasm::i32_sub),
+                wasmparser::Operator::I32Mul => expr_op(&mut stack, wasm::i32_mul),
+                wasmparser::Operator::I64Add => expr_op(&mut stack, wasm::i64_add),
+                wasmparser::Operator::I64Sub => expr_op(&mut stack, wasm::i64_sub),
+                wasmparser::Operator::I64Mul => expr_op(&mut stack, wasm::i64_mul),
                 wasmparser::Operator::End => break,
                 op => panic!("encountered invalid Wasm const expression operator: {op:?}"),
             };
