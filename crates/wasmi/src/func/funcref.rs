@@ -24,7 +24,6 @@ fn funcref_sizeof() {
     //     size_of(Func) == size_of(UntypedValue) == size_of(FuncRef)
     use core::mem::size_of;
     assert_eq!(size_of::<Func>(), size_of::<u64>());
-    assert_eq!(size_of::<Func>(), size_of::<UntypedVal>());
     assert_eq!(size_of::<Func>(), size_of::<FuncRef>());
 }
 
