@@ -269,25 +269,25 @@ impl Unsigned for i64 {
 }
 
 /// Float-point value.
-pub trait Float<T = Self> {
+pub trait Float: Sized {
     /// Get absolute value.
-    fn abs(self) -> T;
+    fn abs(self) -> Self;
     /// Returns the largest integer less than or equal to a number.
-    fn floor(self) -> T;
+    fn floor(self) -> Self;
     /// Returns the smallest integer greater than or equal to a number.
-    fn ceil(self) -> T;
+    fn ceil(self) -> Self;
     /// Returns the integer part of a number.
-    fn trunc(self) -> T;
+    fn trunc(self) -> Self;
     /// Returns the nearest integer to a number. Ties are round to even number.
-    fn nearest(self) -> T;
+    fn nearest(self) -> Self;
     /// Takes the square root of a number.
-    fn sqrt(self) -> T;
+    fn sqrt(self) -> Self;
     /// Returns the minimum of the two numbers.
-    fn min(self, other: T) -> T;
+    fn min(self, rhs: Self) -> Self;
     /// Returns the maximum of the two numbers.
-    fn max(self, other: T) -> T;
+    fn max(self, rhs: Self) -> Self;
     /// Sets sign of this value to the sign of other value.
-    fn copysign(self, other: T) -> T;
+    fn copysign(self, rhs: Self) -> Self;
 }
 
 macro_rules! impl_wrap_into {
@@ -555,7 +555,7 @@ impl_integer!(i64);
 macro_rules! impl_float {
     (type $type:ident as $repr:ty) => {
         // In this particular instance we want to directly compare floating point numbers.
-        impl Float<Self> for $type {
+        impl Float for $type {
             #[inline]
             fn abs(self) -> Self {
                 WasmFloatExt::abs(<$repr>::from(self)).into()
