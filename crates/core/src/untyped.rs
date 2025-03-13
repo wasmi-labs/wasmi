@@ -116,12 +116,12 @@ impl UntypedVal {
     /// Reads the low 64-bit of the [`UntypedVal`].
     ///
     /// In contract to [`UntypedVal::to_bits64`] this ignores the high-bits entirely.
-    const fn read_lo64(&self) -> u64 {
+    fn read_lo64(&self) -> u64 {
         self.lo64
     }
 
     /// Writes the low 64-bit of the [`UntypedVal`].
-    const fn write_lo64(&mut self, bits: u64) {
+    fn write_lo64(&mut self, bits: u64) {
         self.lo64 = bits;
     }
 
