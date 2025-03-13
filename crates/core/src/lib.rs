@@ -25,7 +25,6 @@ extern crate alloc;
 extern crate std;
 
 use self::value::{
-    ArithmeticOps,
     ExtendInto,
     Float,
     Integer,
