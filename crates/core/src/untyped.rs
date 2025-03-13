@@ -40,8 +40,10 @@ impl UntypedVal {
         Self { lo64 }
     }
 
-    /// Returns the underlying bits of the [`UntypedVal`].
-    pub const fn to_bits(self) -> u64 {
+    /// Returns the underlying lower 64-bits of the [`UntypedVal`].
+    ///
+    /// This ignores the high 64-bits of the [`UntypedVal`] if any.
+    pub const fn to_bits64(self) -> u64 {
         self.lo64
     }
 }
@@ -51,7 +53,7 @@ macro_rules! impl_from_untyped_for_int {
         $(
             impl From<UntypedVal> for $int {
                 fn from(untyped: UntypedVal) -> Self {
-                    untyped.to_bits() as _
+                    untyped.to_bits64() as _
                 }
             }
         )*
@@ -74,7 +76,7 @@ impl_from_untyped_for_float!(f32, f64, F32, F64);
 
 impl From<UntypedVal> for bool {
     fn from(untyped: UntypedVal) -> Self {
-        untyped.to_bits() != 0
+        untyped.to_bits64() != 0
     }
 }
 
