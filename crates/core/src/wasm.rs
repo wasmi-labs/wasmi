@@ -2,7 +2,6 @@
 
 use crate::{
     value::{LoadInto, StoreFrom},
-    ArithmeticOps,
     ExtendInto,
     Float,
     Integer,
@@ -13,7 +12,7 @@ use crate::{
     TryTruncateInto,
     WrapInto,
 };
-use core::ops::{Neg, Shl, Shr};
+use core::ops::Neg;
 
 macro_rules! op {
     ( $operator:tt ) => {{
@@ -78,12 +77,12 @@ macro_rules! impl_untyped_val {
 impl_untyped_val! {
     // Wasm Integer Instructions
 
-    fn i32_add(lhs: i32, rhs: i32) -> i32 = ArithmeticOps::add;
-    fn i64_add(lhs: i64, rhs: i64) -> i64 = ArithmeticOps::add;
-    fn i32_sub(lhs: i32, rhs: i32) -> i32 = ArithmeticOps::sub;
-    fn i64_sub(lhs: i64, rhs: i64) -> i64 = ArithmeticOps::sub;
-    fn i32_mul(lhs: i32, rhs: i32) -> i32 = ArithmeticOps::mul;
-    fn i64_mul(lhs: i64, rhs: i64) -> i64 = ArithmeticOps::mul;
+    fn i32_add(lhs: i32, rhs: i32) -> i32 = i32::wrapping_add;
+    fn i64_add(lhs: i64, rhs: i64) -> i64 = i64::wrapping_add;
+    fn i32_sub(lhs: i32, rhs: i32) -> i32 = i32::wrapping_sub;
+    fn i64_sub(lhs: i64, rhs: i64) -> i64 = i64::wrapping_sub;
+    fn i32_mul(lhs: i32, rhs: i32) -> i32 = i32::wrapping_mul;
+    fn i64_mul(lhs: i64, rhs: i64) -> i64 = i64::wrapping_mul;
 
     fn i32_and(lhs: i32, rhs: i32) -> i32 = op!(&);
     fn i64_and(lhs: i64, rhs: i64) -> i64 = op!(&);
@@ -92,12 +91,12 @@ impl_untyped_val! {
     fn i32_xor(lhs: i32, rhs: i32) -> i32 = op!(^);
     fn i64_xor(lhs: i64, rhs: i64) -> i64 = op!(^);
 
-    fn i32_shl(lhs: i32, rhs: i32) -> i32 = |l: i32, r: i32| -> i32 { l.shl(r & 0x1F) };
-    fn i64_shl(lhs: i64, rhs: i64) -> i64 = |l: i64, r: i64| -> i64 { l.shl(r & 0x3F) };
-    fn i32_shr_s(lhs: i32, rhs: i32) -> i32 = |l: i32, r: i32| -> i32 { l.shr(r & 0x1F) };
-    fn i64_shr_s(lhs: i64, rhs: i64) -> i64 = |l: i64, r: i64| -> i64 { l.shr(r & 0x3F) };
-    fn i32_shr_u(lhs: i32, rhs: i32) -> i32 = |l: i32, r: i32| -> i32 { (l as u32).shr(r & 0x1F) as _ };
-    fn i64_shr_u(lhs: i64, rhs: i64) -> i64 = |l: i64, r: i64| -> i64 { (l as u64).shr(r & 0x3F) as _ };
+    fn i32_shl(lhs: i32, rhs: i32) -> i32 = Integer::shl;
+    fn i64_shl(lhs: i64, rhs: i64) -> i64 = Integer::shl;
+    fn i32_shr_s(lhs: i32, rhs: i32) -> i32 = Integer::shr_s;
+    fn i64_shr_s(lhs: i64, rhs: i64) -> i64 = Integer::shr_s;
+    fn i32_shr_u(lhs: i32, rhs: i32) -> i32 = Integer::shr_u;
+    fn i64_shr_u(lhs: i64, rhs: i64) -> i64 = Integer::shr_u;
     fn i32_rotl(lhs: i32, rhs: i32) -> i32 = Integer::rotl;
     fn i64_rotl(lhs: i64, rhs: i64) -> i64 = Integer::rotl;
     fn i32_rotr(lhs: i32, rhs: i32) -> i32 = Integer::rotr;
@@ -109,28 +108,28 @@ impl_untyped_val! {
 
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i32_div_s(lhs: i32, rhs: i32) -> Result<i32> = Integer::div;
+    fn i32_div_s(lhs: i32, rhs: i32) -> Result<i32> = Integer::div_s;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i64_div_s(lhs: i64, rhs: i64) -> Result<i64> = Integer::div;
+    fn i64_div_s(lhs: i64, rhs: i64) -> Result<i64> = Integer::div_s;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i32_div_u(lhs: u32, rhs: u32) -> Result<u32> = Integer::div;
+    fn i32_div_u(lhs: u32, rhs: u32) -> Result<i32> = Integer::div_u;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i64_div_u(lhs: u64, rhs: u64) -> Result<u64> = Integer::div;
+    fn i64_div_u(lhs: u64, rhs: u64) -> Result<i64> = Integer::div_u;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i32_rem_s(lhs: i32, rhs: i32) -> Result<i32> = Integer::rem;
+    fn i32_rem_s(lhs: i32, rhs: i32) -> Result<i32> = Integer::rem_s;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i64_rem_s(lhs: i64, rhs: i64) -> Result<i64> = Integer::rem;
+    fn i64_rem_s(lhs: i64, rhs: i64) -> Result<i64> = Integer::rem_s;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i32_rem_u(lhs: u32, rhs: u32) -> Result<u32> = Integer::rem;
+    fn i32_rem_u(lhs: u32, rhs: u32) -> Result<i32> = Integer::rem_u;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i64_rem_u(lhs: u64, rhs: u64) -> Result<u64> = Integer::rem;
+    fn i64_rem_u(lhs: u64, rhs: u64) -> Result<i64> = Integer::rem_u;
 }
 
 impl_untyped_val! {
@@ -142,9 +141,8 @@ impl_untyped_val! {
     fn i64_ctz(value: i64) -> i64 = Integer::trailing_zeros;
     fn i32_popcnt(value: i32) -> i32 = Integer::count_ones;
     fn i64_popcnt(value: i64) -> i64 = Integer::count_ones;
-
-    fn i32_eqz(value: i32) -> bool = |v| v == 0;
-    fn i64_eqz(value: i64) -> bool = |v| v == 0;
+    fn i32_eqz(value: i32) -> bool = Integer::is_zero;
+    fn i64_eqz(value: i64) -> bool = Integer::is_zero;
 }
 
 impl_untyped_val! {
@@ -206,14 +204,14 @@ impl_untyped_val! {
     fn f32_sqrt(value: f32) -> f32 = Float::sqrt;
     fn f64_sqrt(value: f64) -> f64 = Float::sqrt;
 
-    fn f32_add(lhs: f32, rhs: f32) -> f32 = ArithmeticOps::add;
-    fn f64_add(lhs: f64, rhs: f64) -> f64 = ArithmeticOps::add;
-    fn f32_sub(lhs: f32, rhs: f32) -> f32 = ArithmeticOps::sub;
-    fn f64_sub(lhs: f64, rhs: f64) -> f64 = ArithmeticOps::sub;
-    fn f32_mul(lhs: f32, rhs: f32) -> f32 = ArithmeticOps::mul;
-    fn f64_mul(lhs: f64, rhs: f64) -> f64 = ArithmeticOps::mul;
-    fn f32_div(lhs: f32, rhs: f32) -> f32 = Float::div;
-    fn f64_div(lhs: f64, rhs: f64) -> f64 = Float::div;
+    fn f32_add(lhs: f32, rhs: f32) -> f32 = op!(+);
+    fn f64_add(lhs: f64, rhs: f64) -> f64 = op!(+);
+    fn f32_sub(lhs: f32, rhs: f32) -> f32 = op!(-);
+    fn f64_sub(lhs: f64, rhs: f64) -> f64 = op!(-);
+    fn f32_mul(lhs: f32, rhs: f32) -> f32 = op!(*);
+    fn f64_mul(lhs: f64, rhs: f64) -> f64 = op!(*);
+    fn f32_div(lhs: f32, rhs: f32) -> f32 = op!(/);
+    fn f64_div(lhs: f64, rhs: f64) -> f64 = op!(/);
     fn f32_min(lhs: f32, rhs: f32) -> f32 = Float::min;
     fn f64_min(lhs: f64, rhs: f64) -> f64 = Float::min;
     fn f32_max(lhs: f32, rhs: f32) -> f32 = Float::max;
