@@ -283,11 +283,11 @@ pub trait Float: Sized {
     /// Takes the square root of a number.
     fn sqrt(self) -> Self;
     /// Returns the minimum of the two numbers.
-    fn min(self, rhs: Self) -> Self;
+    fn min(lhs: Self, rhs: Self) -> Self;
     /// Returns the maximum of the two numbers.
-    fn max(self, rhs: Self) -> Self;
+    fn max(lhs: Self, rhs: Self) -> Self;
     /// Sets sign of this value to the sign of other value.
-    fn copysign(self, rhs: Self) -> Self;
+    fn copysign(lhs: Self, rhs: Self) -> Self;
 }
 
 macro_rules! impl_wrap_into {
@@ -581,52 +581,52 @@ macro_rules! impl_float {
                 WasmFloatExt::sqrt(<$repr>::from(self)).into()
             }
             #[inline]
-            fn min(self, other: Self) -> Self {
+            fn min(lhs: Self, rhs: Self) -> Self {
                 // Note: equal to the unstable `f32::minimum` method.
                 //
                 // Once `f32::minimum` is stable we can simply use it here.
-                if self < other {
-                    self
-                } else if other < self {
-                    other
-                } else if self == other {
-                    if <$repr>::is_sign_negative(<$repr>::from(self))
-                        && <$repr>::is_sign_positive(<$repr>::from(other))
+                if lhs < rhs {
+                    lhs
+                } else if rhs < lhs {
+                    rhs
+                } else if lhs == rhs {
+                    if <$repr>::is_sign_negative(<$repr>::from(lhs))
+                        && <$repr>::is_sign_positive(<$repr>::from(rhs))
                     {
-                        self
+                        lhs
                     } else {
-                        other
+                        rhs
                     }
                 } else {
                     // At least one input is NaN. Use `+` to perform NaN propagation and quieting.
-                    self + other
+                    lhs + rhs
                 }
             }
             #[inline]
-            fn max(self, other: Self) -> Self {
+            fn max(lhs: Self, rhs: Self) -> Self {
                 // Note: equal to the unstable `f32::maximum` method.
                 //
                 // Once `f32::maximum` is stable we can simply use it here.
-                if self > other {
-                    self
-                } else if other > self {
-                    other
-                } else if self == other {
-                    if <$repr>::is_sign_positive(<$repr>::from(self))
-                        && <$repr>::is_sign_negative(<$repr>::from(other))
+                if lhs > rhs {
+                    lhs
+                } else if rhs > lhs {
+                    rhs
+                } else if lhs == rhs {
+                    if <$repr>::is_sign_positive(<$repr>::from(lhs))
+                        && <$repr>::is_sign_negative(<$repr>::from(rhs))
                     {
-                        self
+                        lhs
                     } else {
-                        other
+                        rhs
                     }
                 } else {
                     // At least one input is NaN. Use `+` to perform NaN propagation and quieting.
-                    self + other
+                    lhs + rhs
                 }
             }
             #[inline]
-            fn copysign(self, other: Self) -> Self {
-                WasmFloatExt::copysign(<$repr>::from(self), <$repr>::from(other)).into()
+            fn copysign(lhs: Self, rhs: Self) -> Self {
+                WasmFloatExt::copysign(<$repr>::from(lhs), <$repr>::from(rhs)).into()
             }
         }
     };
@@ -790,12 +790,9 @@ mod tests {
     #[test]
     fn copysign_regression_works() {
         // This test has been directly extracted from a WebAssembly Specification assertion.
-        use Float as _;
         assert!(F32::from_bits(0xFFC00000).is_nan());
         assert_eq!(
-            F32::from_bits(0xFFC00000)
-                .copysign(F32::from_bits(0x0000_0000))
-                .to_bits(),
+            Float::copysign(F32::from_bits(0xFFC00000), F32::from_bits(0x0000_0000),).to_bits(),
             F32::from_bits(0x7FC00000).to_bits()
         )
     }
