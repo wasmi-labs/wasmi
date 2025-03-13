@@ -112,8 +112,6 @@ impl_from_typed_value_for! {
     impl From<TypedValue> for u64;
     impl From<TypedValue> for f32;
     impl From<TypedValue> for f64;
-    impl From<TypedValue> for F32;
-    impl From<TypedValue> for F64;
 }
 
 macro_rules! impl_forwarding {
