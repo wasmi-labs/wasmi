@@ -553,32 +553,31 @@ impl_integer!(i64);
 // In no-std cases we instead rely on `libm`.
 // These wrappers handle that delegation.
 macro_rules! impl_float {
-    (type $type:ident as $repr:ty) => {
-        // In this particular instance we want to directly compare floating point numbers.
-        impl Float for $type {
+    ($ty:ty) => {
+        impl Float for $ty {
             #[inline]
             fn abs(self) -> Self {
-                WasmFloatExt::abs(<$repr>::from(self)).into()
+                WasmFloatExt::abs(self)
             }
             #[inline]
             fn floor(self) -> Self {
-                WasmFloatExt::floor(<$repr>::from(self)).into()
+                WasmFloatExt::floor(self)
             }
             #[inline]
             fn ceil(self) -> Self {
-                WasmFloatExt::ceil(<$repr>::from(self)).into()
+                WasmFloatExt::ceil(self)
             }
             #[inline]
             fn trunc(self) -> Self {
-                WasmFloatExt::trunc(<$repr>::from(self)).into()
+                WasmFloatExt::trunc(self)
             }
             #[inline]
             fn nearest(self) -> Self {
-                WasmFloatExt::nearest(<$repr>::from(self)).into()
+                WasmFloatExt::nearest(self)
             }
             #[inline]
             fn sqrt(self) -> Self {
-                WasmFloatExt::sqrt(<$repr>::from(self)).into()
+                WasmFloatExt::sqrt(self)
             }
             #[inline]
             fn min(lhs: Self, rhs: Self) -> Self {
@@ -590,9 +589,7 @@ macro_rules! impl_float {
                 } else if rhs < lhs {
                     rhs
                 } else if lhs == rhs {
-                    if <$repr>::is_sign_negative(<$repr>::from(lhs))
-                        && <$repr>::is_sign_positive(<$repr>::from(rhs))
-                    {
+                    if lhs.is_sign_negative() && rhs.is_sign_positive() {
                         lhs
                     } else {
                         rhs
@@ -612,9 +609,7 @@ macro_rules! impl_float {
                 } else if rhs > lhs {
                     rhs
                 } else if lhs == rhs {
-                    if <$repr>::is_sign_positive(<$repr>::from(lhs))
-                        && <$repr>::is_sign_negative(<$repr>::from(rhs))
-                    {
+                    if lhs.is_sign_positive() && rhs.is_sign_negative() {
                         lhs
                     } else {
                         rhs
@@ -626,15 +621,13 @@ macro_rules! impl_float {
             }
             #[inline]
             fn copysign(lhs: Self, rhs: Self) -> Self {
-                WasmFloatExt::copysign(<$repr>::from(lhs), <$repr>::from(rhs)).into()
+                WasmFloatExt::copysign(lhs, rhs)
             }
         }
     };
 }
-impl_float!( type F32 as f32 );
-impl_float!( type F64 as f64 );
-impl_float!( type f32 as f32 );
-impl_float!( type f64 as f64 );
+impl_float!(f32);
+impl_float!(f64);
 
 /// Low-level Wasm float interface to support `no_std` environments.
 ///
@@ -765,34 +758,26 @@ mod tests {
 
     #[test]
     fn wasm_float_min_regression_works() {
-        assert_eq!(
-            Float::min(F32::from(-0.0), F32::from(0.0)).to_bits(),
-            0x8000_0000,
-        );
-        assert_eq!(
-            Float::min(F32::from(0.0), F32::from(-0.0)).to_bits(),
-            0x8000_0000,
-        );
+        assert_eq!(Float::min(-0.0_f32, 0.0_f32).to_bits(), 0x8000_0000,);
+        assert_eq!(Float::min(0.0_f32, -0.0_f32).to_bits(), 0x8000_0000,);
     }
 
     #[test]
     fn wasm_float_max_regression_works() {
-        assert_eq!(
-            Float::max(F32::from(-0.0), F32::from(0.0)).to_bits(),
-            0x0000_0000,
-        );
-        assert_eq!(
-            Float::max(F32::from(0.0), F32::from(-0.0)).to_bits(),
-            0x0000_0000,
-        );
+        assert_eq!(Float::max(-0.0_f32, 0.0_f32).to_bits(), 0x0000_0000,);
+        assert_eq!(Float::max(0.0_f32, -0.0_f32).to_bits(), 0x0000_0000,);
     }
 
     #[test]
     fn copysign_regression_works() {
         // This test has been directly extracted from a WebAssembly Specification assertion.
-        assert!(F32::from_bits(0xFFC00000).is_nan());
+        assert!(F32::from_bits(0xFFC00000).to_float().is_nan());
         assert_eq!(
-            Float::copysign(F32::from_bits(0xFFC00000), F32::from_bits(0x0000_0000),).to_bits(),
+            Float::copysign(
+                f32::from(F32::from_bits(0xFFC00000)),
+                f32::from(F32::from_bits(0x0000_0000))
+            )
+            .to_bits(),
             F32::from_bits(0x7FC00000).to_bits()
         )
     }
