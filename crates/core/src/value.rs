@@ -1,8 +1,4 @@
-use crate::{
-    hint::unlikely,
-    nan_preserving_float::{F32, F64},
-    TrapCode,
-};
+use crate::{hint::unlikely, TrapCode};
 
 /// Type of a value.
 ///
@@ -172,30 +168,6 @@ macro_rules! impl_little_endian_convert_primitive {
 }
 impl_little_endian_convert_primitive!(u8, u16, u32, u64, i8, i16, i32, i64, f32, f64);
 
-macro_rules! impl_little_endian_convert_float {
-    ( $( struct $float_ty:ident($uint_ty:ty); )* $(,)? ) => {
-        $(
-            impl LittleEndianConvert for $float_ty {
-                type Bytes = <$uint_ty as LittleEndianConvert>::Bytes;
-
-                #[inline]
-                fn into_le_bytes(self) -> Self::Bytes {
-                    <$uint_ty>::into_le_bytes(self.to_bits())
-                }
-
-                #[inline]
-                fn from_le_bytes(bytes: Self::Bytes) -> Self {
-                    Self::from_bits(<$uint_ty>::from_le_bytes(bytes))
-                }
-            }
-        )*
-    };
-}
-impl_little_endian_convert_float!(
-    struct F32(u32);
-    struct F64(u64);
-);
-
 /// Integer value.
 pub trait Integer: Sized + Unsigned {
     /// Returns `true` if `self` is zero.
@@ -299,14 +271,6 @@ macro_rules! impl_wrap_into {
             }
         }
     };
-    ($from:ident, $intermediate:ident, $into:ident) => {
-        impl WrapInto<$into> for $from {
-            #[inline]
-            fn wrap_into(self) -> $into {
-                $into::from(self as $intermediate)
-            }
-        }
-    };
 }
 
 impl_wrap_into!(i32, i8);
@@ -314,18 +278,9 @@ impl_wrap_into!(i32, i16);
 impl_wrap_into!(i64, i8);
 impl_wrap_into!(i64, i16);
 impl_wrap_into!(i64, i32);
-impl_wrap_into!(i64, f32, F32);
-impl_wrap_into!(u64, f32, F32);
 
 impl_wrap_into!(u32, u32);
 impl_wrap_into!(u64, u64);
-
-impl WrapInto<F32> for F64 {
-    #[inline]
-    fn wrap_into(self) -> F32 {
-        (f64::from(self) as f32).into()
-    }
-}
 
 macro_rules! impl_try_truncate_into {
     (@primitive $from: ident, $into: ident, $rmin:literal, $rmax:literal) => {
@@ -358,21 +313,6 @@ macro_rules! impl_try_truncate_into {
             }
         }
     };
-    (@wrapped $from:ident, $intermediate:ident, $into:ident) => {
-        impl TryTruncateInto<$into, TrapCode> for $from {
-            #[inline]
-            fn try_truncate_into(self) -> Result<$into, TrapCode> {
-                $intermediate::from(self).try_truncate_into()
-            }
-        }
-
-        impl TruncateSaturateInto<$into> for $from {
-            #[inline]
-            fn truncate_saturate_into(self) -> $into {
-                $intermediate::from(self).truncate_saturate_into()
-            }
-        }
-    };
 }
 
 impl_try_truncate_into!(@primitive f32, i32, -2147483904.0_f32, 2147483648.0_f32);
@@ -383,14 +323,6 @@ impl_try_truncate_into!(@primitive f32, i64, -9223373136366403584.0_f32,  922337
 impl_try_truncate_into!(@primitive f32, u64,                   -1.0_f32, 18446744073709551616.0_f32);
 impl_try_truncate_into!(@primitive f64, i64, -9223372036854777856.0_f64,  9223372036854775808.0_f64);
 impl_try_truncate_into!(@primitive f64, u64,                   -1.0_f64, 18446744073709551616.0_f64);
-impl_try_truncate_into!(@wrapped F32, f32, i32);
-impl_try_truncate_into!(@wrapped F32, f32, i64);
-impl_try_truncate_into!(@wrapped F64, f64, i32);
-impl_try_truncate_into!(@wrapped F64, f64, i64);
-impl_try_truncate_into!(@wrapped F32, f32, u32);
-impl_try_truncate_into!(@wrapped F32, f32, u64);
-impl_try_truncate_into!(@wrapped F64, f64, u32);
-impl_try_truncate_into!(@wrapped F64, f64, u64);
 
 macro_rules! impl_extend_into {
     ($from:ident, $into:ident) => {
@@ -399,15 +331,6 @@ macro_rules! impl_extend_into {
             #[allow(clippy::cast_lossless)]
             fn extend_into(self) -> $into {
                 self as $into
-            }
-        }
-    };
-    ($from:ident, $intermediate:ident, $into:ident) => {
-        impl ExtendInto<$into> for $from {
-            #[inline]
-            #[allow(clippy::cast_lossless)]
-            fn extend_into(self) -> $into {
-                $into::from(self as $intermediate)
             }
         }
     };
@@ -425,24 +348,9 @@ impl_extend_into!(i32, i64);
 impl_extend_into!(u32, i64);
 impl_extend_into!(u32, u64);
 
-impl_extend_into!(i32, f32, F32);
-impl_extend_into!(i32, f64, F64);
-impl_extend_into!(u32, f32, F32);
-impl_extend_into!(u32, f64, F64);
-impl_extend_into!(i64, f64, F64);
-impl_extend_into!(u64, f64, F64);
-impl_extend_into!(f32, f64, F64);
-
 // Casting to self
 impl_extend_into!(u32, u32);
 impl_extend_into!(u64, u64);
-
-impl ExtendInto<F64> for F32 {
-    #[inline]
-    fn extend_into(self) -> F64 {
-        F64::from(f64::from(f32::from(self)))
-    }
-}
 
 macro_rules! impl_sign_extend_from {
     ( $( impl SignExtendFrom<$from_type:ty> for $for_type:ty; )* ) => {
@@ -553,32 +461,31 @@ impl_integer!(i64);
 // In no-std cases we instead rely on `libm`.
 // These wrappers handle that delegation.
 macro_rules! impl_float {
-    (type $type:ident as $repr:ty) => {
-        // In this particular instance we want to directly compare floating point numbers.
-        impl Float for $type {
+    ($ty:ty) => {
+        impl Float for $ty {
             #[inline]
             fn abs(self) -> Self {
-                WasmFloatExt::abs(<$repr>::from(self)).into()
+                WasmFloatExt::abs(self)
             }
             #[inline]
             fn floor(self) -> Self {
-                WasmFloatExt::floor(<$repr>::from(self)).into()
+                WasmFloatExt::floor(self)
             }
             #[inline]
             fn ceil(self) -> Self {
-                WasmFloatExt::ceil(<$repr>::from(self)).into()
+                WasmFloatExt::ceil(self)
             }
             #[inline]
             fn trunc(self) -> Self {
-                WasmFloatExt::trunc(<$repr>::from(self)).into()
+                WasmFloatExt::trunc(self)
             }
             #[inline]
             fn nearest(self) -> Self {
-                WasmFloatExt::nearest(<$repr>::from(self)).into()
+                WasmFloatExt::nearest(self)
             }
             #[inline]
             fn sqrt(self) -> Self {
-                WasmFloatExt::sqrt(<$repr>::from(self)).into()
+                WasmFloatExt::sqrt(self)
             }
             #[inline]
             fn min(lhs: Self, rhs: Self) -> Self {
@@ -590,9 +497,7 @@ macro_rules! impl_float {
                 } else if rhs < lhs {
                     rhs
                 } else if lhs == rhs {
-                    if <$repr>::is_sign_negative(<$repr>::from(lhs))
-                        && <$repr>::is_sign_positive(<$repr>::from(rhs))
-                    {
+                    if lhs.is_sign_negative() && rhs.is_sign_positive() {
                         lhs
                     } else {
                         rhs
@@ -612,9 +517,7 @@ macro_rules! impl_float {
                 } else if rhs > lhs {
                     rhs
                 } else if lhs == rhs {
-                    if <$repr>::is_sign_positive(<$repr>::from(lhs))
-                        && <$repr>::is_sign_negative(<$repr>::from(rhs))
-                    {
+                    if lhs.is_sign_positive() && rhs.is_sign_negative() {
                         lhs
                     } else {
                         rhs
@@ -626,15 +529,13 @@ macro_rules! impl_float {
             }
             #[inline]
             fn copysign(lhs: Self, rhs: Self) -> Self {
-                WasmFloatExt::copysign(<$repr>::from(lhs), <$repr>::from(rhs)).into()
+                WasmFloatExt::copysign(lhs, rhs)
             }
         }
     };
 }
-impl_float!( type F32 as f32 );
-impl_float!( type F64 as f64 );
-impl_float!( type f32 as f32 );
-impl_float!( type f64 as f64 );
+impl_float!(f32);
+impl_float!(f64);
 
 /// Low-level Wasm float interface to support `no_std` environments.
 ///
@@ -755,7 +656,6 @@ macro_rules! impl_wasm_float {
         }
     };
 }
-
 impl_wasm_float!(f32);
 impl_wasm_float!(f64);
 
@@ -765,35 +665,23 @@ mod tests {
 
     #[test]
     fn wasm_float_min_regression_works() {
-        assert_eq!(
-            Float::min(F32::from(-0.0), F32::from(0.0)).to_bits(),
-            0x8000_0000,
-        );
-        assert_eq!(
-            Float::min(F32::from(0.0), F32::from(-0.0)).to_bits(),
-            0x8000_0000,
-        );
+        assert_eq!(Float::min(-0.0_f32, 0.0_f32).to_bits(), 0x8000_0000);
+        assert_eq!(Float::min(0.0_f32, -0.0_f32).to_bits(), 0x8000_0000);
     }
 
     #[test]
     fn wasm_float_max_regression_works() {
-        assert_eq!(
-            Float::max(F32::from(-0.0), F32::from(0.0)).to_bits(),
-            0x0000_0000,
-        );
-        assert_eq!(
-            Float::max(F32::from(0.0), F32::from(-0.0)).to_bits(),
-            0x0000_0000,
-        );
+        assert_eq!(Float::max(-0.0_f32, 0.0_f32).to_bits(), 0x0000_0000);
+        assert_eq!(Float::max(0.0_f32, -0.0_f32).to_bits(), 0x0000_0000);
     }
 
     #[test]
     fn copysign_regression_works() {
         // This test has been directly extracted from a WebAssembly Specification assertion.
-        assert!(F32::from_bits(0xFFC00000).is_nan());
+        assert!(f32::from_bits(0xFFC00000).is_nan());
         assert_eq!(
-            Float::copysign(F32::from_bits(0xFFC00000), F32::from_bits(0x0000_0000),).to_bits(),
-            F32::from_bits(0x7FC00000).to_bits()
+            Float::copysign(f32::from_bits(0xFFC00000), f32::from_bits(0x0000_0000)).to_bits(),
+            0x7FC00000,
         )
     }
 }

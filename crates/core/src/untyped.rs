@@ -54,7 +54,7 @@ macro_rules! impl_read_as_for_float {
         )*
     };
 }
-impl_read_as_for_float!(f32, f64, F32, F64);
+impl_read_as_for_float!(f32, f64);
 
 impl ReadAs<bool> for UntypedVal {
     fn read_as(&self) -> bool {
@@ -110,7 +110,7 @@ macro_rules! impl_write_as_for_float {
         )*
     };
 }
-impl_write_as_for_float!(f32, f64, F32, F64);
+impl_write_as_for_float!(f32, f64);
 
 impl UntypedVal {
     /// Reads the low 64-bit of the [`UntypedVal`].

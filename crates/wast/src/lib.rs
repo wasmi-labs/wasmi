@@ -388,11 +388,11 @@ impl WastRunner {
             (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
             (Val::I64(result), WastRetCore::I64(expected)) => result == expected,
             (Val::F32(result), WastRetCore::F32(expected)) => match expected {
-                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.is_nan(),
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.to_float().is_nan(),
                 NanPattern::Value(expected) => result.to_bits() == expected.bits,
             },
             (Val::F64(result), WastRetCore::F64(expected)) => match expected {
-                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.is_nan(),
+                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.to_float().is_nan(),
                 NanPattern::Value(expected) => result.to_bits() == expected.bits,
             },
             (

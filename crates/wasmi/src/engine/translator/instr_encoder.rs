@@ -13,7 +13,7 @@ use super::{
     TypedProvider,
 };
 use crate::{
-    core::{UntypedVal, ValType, F32},
+    core::{UntypedVal, ValType},
     engine::{
         translator::{stack::RegisterSpace, ValueStack},
         FuelCosts,
@@ -597,7 +597,7 @@ impl InstrEncoder {
                     Some(value) => Instruction::return_i64imm32(value),
                     None => Instruction::return_reg(stack.alloc_const(*value)?),
                 },
-                ValType::F32 => Instruction::return_imm32(F32::from(*value)),
+                ValType::F32 => Instruction::return_imm32(f32::from(*value)),
                 ValType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
                     Some(value) => Instruction::return_f64imm32(value),
                     None => Instruction::return_reg(stack.alloc_const(*value)?),
@@ -665,7 +665,7 @@ impl InstrEncoder {
                     Some(value) => Instruction::return_nez_i64imm32(condition, value),
                     None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
                 },
-                ValType::F32 => Instruction::return_nez_imm32(condition, F32::from(*value)),
+                ValType::F32 => Instruction::return_nez_imm32(condition, f32::from(*value)),
                 ValType::F64 => match <Const32<f64>>::try_from(f64::from(*value)).ok() {
                     Some(value) => Instruction::return_nez_f64imm32(condition, value),
                     None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
