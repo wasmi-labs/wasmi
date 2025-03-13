@@ -39,6 +39,6 @@ pub use self::{
     nan_preserving_float::{F32, F64},
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
-    untyped::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedError, UntypedVal},
+    untyped::{DecodeUntypedSlice, EncodeUntypedSlice, ReadAs, UntypedError, UntypedVal, WriteAs},
     value::ValType,
 };

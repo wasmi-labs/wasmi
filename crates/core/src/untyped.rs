@@ -39,7 +39,95 @@ pub struct UntypedVal {
     hi64: u64,
 }
 
+/// Implemented by types that can be read (or decoded) as `T`.
+///
+/// Mainly implemented by [`UntypedVal`].
+pub trait ReadAs<T> {
+    /// Reads `self` as value of type `T`.
+    fn read_as(&self) -> T;
+}
+
+macro_rules! impl_read_as_for_int {
+    ( $( $int:ty ),* $(,)? ) => {
+        $(
+            impl ReadAs<$int> for UntypedVal {
+                fn read_as(&self) -> $int {
+                    self.read_lo64() as $int
+                }
+            }
+        )*
+    };
+}
+impl_read_as_for_int!(i8, i16, i32, i64, u8, u16, u32, u64);
+
+macro_rules! impl_read_as_for_float {
+    ( $( $float:ty ),* $(,)? ) => {
+        $(
+            impl ReadAs<$float> for UntypedVal {
+                fn read_as(&self) -> $float {
+                    <$float>::from_bits(self.read_lo64() as _)
+                }
+            }
+        )*
+    };
+}
+impl_read_as_for_float!(f32, f64, F32, F64);
+
+impl ReadAs<bool> for UntypedVal {
+    fn read_as(&self) -> bool {
+        self.read_lo64() != 0
+    }
+}
+
+/// Implemented by types that can be written to (or encoded) as `T`.
+///
+/// Mainly implemented by [`UntypedVal`].
+pub trait WriteAs<T> {
+    /// Writes to `self` as value of type `T`.
+    fn write_as(&mut self, value: T);
+}
+
+macro_rules! impl_write_as_for_int {
+    ( $( $int:ty ),* $(,)? ) => {
+        $(
+            impl WriteAs<$int> for UntypedVal {
+                #[allow(clippy::cast_lossless)]
+                fn write_as(&mut self, value: $int) {
+                    self.write_lo64(value as _)
+                }
+            }
+        )*
+    };
+}
+impl_write_as_for_int!(bool, i8, i16, i32, i64, u8, u16, u32, u64);
+
+macro_rules! impl_write_as_for_float {
+    ( $( $float:ty ),* $(,)? ) => {
+        $(
+            impl WriteAs<$float> for UntypedVal {
+                #[allow(clippy::cast_lossless)]
+                fn write_as(&mut self, value: $float) {
+                    self.write_lo64(<$float>::to_bits(value) as _)
+                }
+            }
+        )*
+    };
+}
+impl_write_as_for_float!(f32, f64, F32, F64);
+
 impl UntypedVal {
+    /// Reads the low 64-bit of the [`UntypedVal`].
+    ///
+    /// In contract to [`UntypedVal::to_bits64`] this ignores the high-bits entirely.
+    const fn read_lo64(&self) -> u64 {
+        self.lo64
+    }
+
+    /// Writes the low 64-bit of the [`UntypedVal`].
+    const fn write_lo64(&mut self, bits: u64) {
+        self.lo64 = bits;
+    }
+
     /// Creates an [`UntypedVal`] from the given lower 64-bit bits.
     ///
     /// This sets the high 64-bits to zero if any.
