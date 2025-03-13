@@ -33,8 +33,10 @@ pub struct UntypedVal {
 }
 
 impl UntypedVal {
-    /// Creates an [`UntypedVal`] from the given `u64` bits.
-    pub const fn from_bits(lo64: u64) -> Self {
+    /// Creates an [`UntypedVal`] from the given lower 64-bit bits.
+    ///
+    /// This sets the high 64-bits to zero if any.
+    pub const fn from_bits64(lo64: u64) -> Self {
         Self { lo64 }
     }
 
@@ -62,7 +64,7 @@ macro_rules! impl_from_untyped_for_float {
         $(
             impl From<UntypedVal> for $float {
                 fn from(untyped: UntypedVal) -> Self {
-                    Self::from_bits(untyped.to_bits() as _)
+                    Self::from_bits(untyped.to_bits64() as _)
                 }
             }
         )*
@@ -82,7 +84,7 @@ macro_rules! impl_from_unsigned_prim {
             impl From<$prim> for UntypedVal {
                 #[allow(clippy::cast_lossless)]
                 fn from(value: $prim) -> Self {
-                    Self { lo64: value as _ }
+                    Self::from_bits64(value as _)
                 }
             }
         )*
@@ -99,7 +101,7 @@ macro_rules! impl_from_signed_prim {
             impl From<$prim> for UntypedVal {
                 #[allow(clippy::cast_lossless)]
                 fn from(value: $prim) -> Self {
-                    Self { lo64: u64::from(value as $base) }
+                    Self::from_bits64(u64::from(value as $base))
                 }
             }
         )*
@@ -118,9 +120,7 @@ macro_rules! impl_from_float {
         $(
             impl From<$float> for UntypedVal {
                 fn from(value: $float) -> Self {
-                    Self {
-                        lo64: u64::from(value.to_bits()),
-                    }
+                    Self::from_bits64(u64::from(value.to_bits()))
                 }
             }
         )*
