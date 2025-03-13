@@ -1,6 +1,6 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::UntypedVal,
+    core::wasm,
     engine::utils::unreachable_unchecked,
     ir::{FixedRegSpan, Instruction, Reg},
 };
@@ -16,10 +16,10 @@ struct Params128 {
 }
 
 /// Function signature for `i64.binop128` handlers.
-type BinOp128Fn = fn(UntypedVal, UntypedVal, UntypedVal, UntypedVal) -> (UntypedVal, UntypedVal);
+type BinOp128Fn = fn(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64);
 
 /// Function signature for `i64.mul_wide_sx` handlers.
-type I64MulWideFn = fn(UntypedVal, UntypedVal) -> (UntypedVal, UntypedVal);
+type I64MulWideFn = fn(lhs: i64, rhs: i64) -> (i64, i64);
 
 impl Executor<'_> {
     /// Fetches the parameters required by the `i64.add128` and `i64.sub128` instructions.
@@ -50,10 +50,10 @@ impl Executor<'_> {
             rhs_lo,
             rhs_hi,
         } = self.fetch_params128();
-        let lhs_lo = self.get_register(lhs_lo);
-        let lhs_hi = self.get_register(lhs_hi);
-        let rhs_lo = self.get_register(rhs_lo);
-        let rhs_hi = self.get_register(rhs_hi);
+        let lhs_lo: i64 = self.get_register_as(lhs_lo);
+        let lhs_hi: i64 = self.get_register_as(lhs_hi);
+        let rhs_lo: i64 = self.get_register_as(rhs_lo);
+        let rhs_hi: i64 = self.get_register_as(rhs_hi);
         let (result_lo, result_hi) = binop(lhs_lo, lhs_hi, rhs_lo, rhs_hi);
         self.set_register(results[0], result_lo);
         self.set_register(results[1], result_hi);
@@ -62,12 +62,12 @@ impl Executor<'_> {
 
     /// Executes an [`Instruction::I64Add128`].
     pub fn execute_i64_add128(&mut self, results: [Reg; 2], lhs_lo: Reg) {
-        self.execute_i64_binop128(results, lhs_lo, UntypedVal::i64_add128)
+        self.execute_i64_binop128(results, lhs_lo, wasm::i64_add128)
     }
 
     /// Executes an [`Instruction::I64Sub128`].
     pub fn execute_i64_sub128(&mut self, results: [Reg; 2], lhs_lo: Reg) {
-        self.execute_i64_binop128(results, lhs_lo, UntypedVal::i64_sub128)
+        self.execute_i64_binop128(results, lhs_lo, wasm::i64_sub128)
     }
 
     /// Executes a generic Wasm `i64.mul_wide_sx` instruction.
@@ -78,8 +78,8 @@ impl Executor<'_> {
         rhs: Reg,
         mul_wide: I64MulWideFn,
     ) {
-        let lhs = self.get_register(lhs);
-        let rhs = self.get_register(rhs);
+        let lhs: i64 = self.get_register_as(lhs);
+        let rhs: i64 = self.get_register_as(rhs);
         let (result_lo, result_hi) = mul_wide(lhs, rhs);
         let results = results.to_array();
         self.set_register(results[0], result_lo);
@@ -89,11 +89,11 @@ impl Executor<'_> {
 
     /// Executes an [`Instruction::I64MulWideS`].
     pub fn execute_i64_mul_wide_s(&mut self, results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) {
-        self.execute_i64_mul_wide_sx(results, lhs, rhs, UntypedVal::i64_mul_wide_s)
+        self.execute_i64_mul_wide_sx(results, lhs, rhs, wasm::i64_mul_wide_s)
     }
 
     /// Executes an [`Instruction::I64MulWideU`].
     pub fn execute_i64_mul_wide_u(&mut self, results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) {
-        self.execute_i64_mul_wide_sx(results, lhs, rhs, UntypedVal::i64_mul_wide_u)
+        self.execute_i64_mul_wide_sx(results, lhs, rhs, wasm::i64_mul_wide_u)
     }
 }
