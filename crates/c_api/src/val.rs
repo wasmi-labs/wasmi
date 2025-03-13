@@ -91,11 +91,15 @@ impl From<Val> for wasm_val_t {
             },
             Val::F32(value) => Self {
                 kind: from_valtype(&ValType::F32),
-                of: wasm_val_union { u32: value.into() },
+                of: wasm_val_union {
+                    u32: value.to_bits(),
+                },
             },
             Val::F64(value) => Self {
                 kind: from_valtype(&ValType::F64),
-                of: wasm_val_union { u64: value.into() },
+                of: wasm_val_union {
+                    u64: value.to_bits(),
+                },
             },
             Val::FuncRef(funcref) => Self {
                 kind: from_valtype(&ValType::FuncRef),
