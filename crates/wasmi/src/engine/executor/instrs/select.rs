@@ -54,7 +54,7 @@ impl<'engine> Executor<'engine> {
         L: Into<UntypedVal>,
         R: Into<UntypedVal>,
     {
-        let condition: bool = self.get_register_as_2(condition);
+        let condition: bool = self.get_register_as(condition);
         let selected = match condition {
             true => lhs(self).into(),
             false => rhs(self).into(),

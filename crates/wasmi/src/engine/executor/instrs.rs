@@ -1368,7 +1368,7 @@ impl Executor<'_> {
     }
 
     /// Returns the [`Reg`] value.
-    fn get_register_as_2<T>(&self, register: Reg) -> T
+    fn get_register_as<T>(&self, register: Reg) -> T
     where
         UntypedVal: ReadAs<T>,
     {
@@ -1480,7 +1480,7 @@ impl Executor<'_> {
     where
         UntypedVal: ReadAs<P> + WriteAs<R>,
     {
-        let value = self.get_register_as_2::<P>(input);
+        let value = self.get_register_as::<P>(input);
         self.set_register_as::<R>(result, op(value));
         self.next_instr();
     }
@@ -1496,7 +1496,7 @@ impl Executor<'_> {
     where
         UntypedVal: ReadAs<P> + WriteAs<R>,
     {
-        let value = self.get_register_as_2::<P>(input);
+        let value = self.get_register_as::<P>(input);
         self.set_register_as::<R>(result, op(value)?);
         self.try_next_instr()
     }
@@ -1512,8 +1512,8 @@ impl Executor<'_> {
     ) where
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<Result>,
     {
-        let lhs = self.get_register_as_2::<Lhs>(lhs);
-        let rhs = self.get_register_as_2::<Rhs>(rhs);
+        let lhs = self.get_register_as::<Lhs>(lhs);
+        let rhs = self.get_register_as::<Rhs>(rhs);
         self.set_register_as::<Result>(result, op(lhs, rhs));
         self.next_instr();
     }
@@ -1530,7 +1530,7 @@ impl Executor<'_> {
         Rhs: From<Const16<Rhs>>,
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as_2::<Lhs>(lhs);
+        let lhs = self.get_register_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
         self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr();
@@ -1549,7 +1549,7 @@ impl Executor<'_> {
         UntypedVal: ReadAs<Rhs> + WriteAs<T>,
     {
         let lhs = Lhs::from(lhs);
-        let rhs = self.get_register_as_2::<Rhs>(rhs);
+        let rhs = self.get_register_as::<Rhs>(rhs);
         self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
@@ -1566,7 +1566,7 @@ impl Executor<'_> {
         Rhs: From<ShiftAmount<Rhs>>,
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as_2::<Lhs>(lhs);
+        let lhs = self.get_register_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
         self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr();
@@ -1584,8 +1584,8 @@ impl Executor<'_> {
     where
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as_2::<Lhs>(lhs);
-        let rhs = self.get_register_as_2::<Rhs>(rhs);
+        let lhs = self.get_register_as::<Lhs>(lhs);
+        let rhs = self.get_register_as::<Rhs>(rhs);
         self.set_register_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
@@ -1603,7 +1603,7 @@ impl Executor<'_> {
         Rhs: From<Const16<Rhs>>,
         UntypedVal: ReadAs<Lhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as_2::<Lhs>(lhs);
+        let lhs = self.get_register_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
         self.set_register_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
@@ -1621,7 +1621,7 @@ impl Executor<'_> {
         NonZeroT: From<Const16<NonZeroT>>,
         UntypedVal: ReadAs<Lhs> + WriteAs<T>,
     {
-        let lhs = self.get_register_as_2::<Lhs>(lhs);
+        let lhs = self.get_register_as::<Lhs>(lhs);
         let rhs = <NonZeroT>::from(rhs);
         self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr()
@@ -1641,7 +1641,7 @@ impl Executor<'_> {
         UntypedVal: ReadAs<Rhs> + WriteAs<T>,
     {
         let lhs = Lhs::from(lhs);
-        let rhs = self.get_register_as_2::<Rhs>(rhs);
+        let rhs = self.get_register_as::<Rhs>(rhs);
         self.set_register_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }

@@ -163,7 +163,7 @@ impl Executor<'_> {
     {
         let (ptr, offset_hi) = self.fetch_ptr_and_offset_hi();
         let memory = self.fetch_optional_memory(2);
-        let address = self.get_register_as_2::<u64>(ptr);
+        let address = self.get_register_as::<u64>(ptr);
         let offset = Offset64::combine(offset_hi, offset_lo);
         self.execute_load_extend::<T>(store, memory, result, address, offset, load_extend)?;
         self.try_next_instr_at(2)
@@ -196,7 +196,7 @@ impl Executor<'_> {
     where
         UntypedVal: WriteAs<T>,
     {
-        let address = self.get_register_as_2::<u64>(ptr);
+        let address = self.get_register_as::<u64>(ptr);
         let offset = Offset64::from(offset);
         self.execute_load_extend_mem0::<T>(result, address, offset, load_extend)?;
         self.try_next_instr()
