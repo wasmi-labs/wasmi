@@ -680,8 +680,8 @@ mod tests {
         // This test has been directly extracted from a WebAssembly Specification assertion.
         assert!(f32::from_bits(0xFFC00000).is_nan());
         assert_eq!(
-            Float::copysign(f32::from_bits(0xFFC00000), f32::from_bits(0x0000_0000)),
-            f32::from_bits(0x7FC00000),
+            Float::copysign(f32::from_bits(0xFFC00000), f32::from_bits(0x0000_0000)).to_bits(),
+            0x7FC00000,
         )
     }
 }
