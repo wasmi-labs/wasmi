@@ -398,15 +398,6 @@ macro_rules! impl_extend_into {
             }
         }
     };
-    ($from:ident, $intermediate:ident, $into:ident) => {
-        impl ExtendInto<$into> for $from {
-            #[inline]
-            #[allow(clippy::cast_lossless)]
-            fn extend_into(self) -> $into {
-                $into::from(self as $intermediate)
-            }
-        }
-    };
 }
 
 impl_extend_into!(i8, i32);
@@ -421,24 +412,9 @@ impl_extend_into!(i32, i64);
 impl_extend_into!(u32, i64);
 impl_extend_into!(u32, u64);
 
-impl_extend_into!(i32, f32, F32);
-impl_extend_into!(i32, f64, F64);
-impl_extend_into!(u32, f32, F32);
-impl_extend_into!(u32, f64, F64);
-impl_extend_into!(i64, f64, F64);
-impl_extend_into!(u64, f64, F64);
-impl_extend_into!(f32, f64, F64);
-
 // Casting to self
 impl_extend_into!(u32, u32);
 impl_extend_into!(u64, u64);
-
-impl ExtendInto<F64> for F32 {
-    #[inline]
-    fn extend_into(self) -> F64 {
-        F64::from(f64::from(f32::from(self)))
-    }
-}
 
 macro_rules! impl_sign_extend_from {
     ( $( impl SignExtendFrom<$from_type:ty> for $for_type:ty; )* ) => {
