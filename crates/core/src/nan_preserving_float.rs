@@ -1,22 +1,3 @@
-macro_rules! impl_binop {
-    ($for:ty, $is:ty, $op:ident, $func_name:ident) => {
-        impl<T: Into<$for>> ::core::ops::$op<T> for $for {
-            type Output = Self;
-
-            #[inline]
-            fn $func_name(self, other: T) -> Self {
-                Self(
-                    ::core::ops::$op::$func_name(
-                        <$is>::from_bits(self.0),
-                        <$is>::from_bits(other.into().0),
-                    )
-                    .to_bits(),
-                )
-            }
-        }
-    };
-}
-
 macro_rules! float {
     (
         $( #[$docs:meta] )*
@@ -34,12 +15,6 @@ macro_rules! float {
         $(#[$docs])*
         #[derive(Copy, Clone)]
         pub struct $for($rep);
-
-        impl_binop!($for, $is, Add, add);
-        impl_binop!($for, $is, Sub, sub);
-        impl_binop!($for, $is, Mul, mul);
-        impl_binop!($for, $is, Div, div);
-        impl_binop!($for, $is, Rem, rem);
 
         impl $for {
             /// Creates a float from its underlying bits.
@@ -65,33 +40,6 @@ macro_rules! float {
             pub fn to_float(self) -> $is {
                 <$is>::from_bits(self.0)
             }
-
-            /// Returns `true` if the float is not a number (NaN).
-            #[inline]
-            pub fn is_nan(self) -> ::core::primitive::bool {
-                self.to_float().is_nan()
-            }
-
-            /// Returns the absolute value of the float.
-            #[must_use]
-            #[inline]
-            pub fn abs(self) -> Self {
-                Self(self.0 & !$sign_bit)
-            }
-
-            /// Returns the minimum float between `self` and `other`.
-            #[must_use]
-            #[inline]
-            pub fn min(self, other: Self) -> Self {
-                Self::from(self.to_float().min(other.to_float()))
-            }
-
-            /// Returns the maximum float between `self` and `other`.
-            #[must_use]
-            #[inline]
-            pub fn max(self, other: Self) -> Self {
-                Self::from(self.to_float().max(other.to_float()))
-            }
         }
 
         impl ::core::convert::From<$is> for $for {
@@ -105,15 +53,6 @@ macro_rules! float {
             #[inline]
             fn from(float: $for) -> $is {
                 float.to_float()
-            }
-        }
-
-        impl ::core::ops::Neg for $for {
-            type Output = Self;
-
-            #[inline]
-            fn neg(self) -> Self {
-                Self(self.0 ^ $sign_bit)
             }
         }
 
@@ -135,7 +74,7 @@ macro_rules! float {
 
         impl ::core::fmt::Debug for $for {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                if self.is_nan() {
+                if self.to_float().is_nan() {
                     return core::write!(f, "nan:0x{:X?}", self.to_bits())
                 }
                 <$is as ::core::fmt::Debug>::fmt(
@@ -147,7 +86,7 @@ macro_rules! float {
 
         impl ::core::fmt::Display for $for {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                if self.is_nan() {
+                if self.to_float().is_nan() {
                     return core::write!(f, "nan:0x{:X?}", self.to_bits())
                 }
                 <$is as ::core::fmt::Display>::fmt(
@@ -167,75 +106,4 @@ float! {
 float! {
     /// A NaN preserving `f64` type.
     struct F64(u64 as f64);
-}
-
-#[cfg(test)]
-mod tests {
-    extern crate rand;
-
-    use self::rand::Rng;
-
-    use super::{F32, F64};
-
-    use core::{
-        fmt::Debug,
-        iter,
-        ops::{Add, Div, Mul, Neg, Sub},
-    };
-
-    fn test_ops<T, F, I>(iter: I)
-    where
-        T: Add<Output = T>
-            + Div<Output = T>
-            + Mul<Output = T>
-            + Sub<Output = T>
-            + Neg<Output = T>
-            + Copy
-            + Debug
-            + PartialEq,
-        F: Into<T>
-            + Add<Output = F>
-            + Div<Output = F>
-            + Mul<Output = F>
-            + Sub<Output = F>
-            + Neg<Output = F>
-            + Copy
-            + Debug,
-        I: IntoIterator<Item = (F, F)>,
-    {
-        for (a, b) in iter {
-            assert_eq!((a + b).into(), a.into() + b.into());
-            assert_eq!((a - b).into(), a.into() - b.into());
-            assert_eq!((a * b).into(), a.into() * b.into());
-            assert_eq!((a / b).into(), a.into() / b.into());
-            assert_eq!((-a).into(), -a.into());
-            assert_eq!((-b).into(), -b.into());
-        }
-    }
-
-    #[test]
-    fn test_ops_f32() {
-        let mut rng = rand::rng();
-        let iter = iter::repeat(()).map(|_| rng.random());
-
-        test_ops::<F32, f32, _>(iter.take(1000));
-    }
-
-    #[test]
-    fn test_ops_f64() {
-        let mut rng = rand::rng();
-        let iter = iter::repeat(()).map(|_| rng.random());
-
-        test_ops::<F64, f64, _>(iter.take(1000));
-    }
-
-    #[test]
-    fn test_neg_nan_f32() {
-        assert_eq!((-F32(0xff80_3210)).0, 0x7f80_3210);
-    }
-
-    #[test]
-    fn test_neg_nan_f64() {
-        assert_eq!((-F64(0xff80_3210_0000_0000)).0, 0x7f80_3210_0000_0000);
-    }
 }
