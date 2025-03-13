@@ -1520,6 +1520,23 @@ impl Executor<'_> {
 
     /// Executes a generic binary [`Instruction`].
     #[inline(always)]
+    fn execute_binary_t<Lhs, Rhs, Result>(
+        &mut self,
+        result: Reg,
+        lhs: Reg,
+        rhs: Reg,
+        op: fn(Lhs, Rhs) -> Result,
+    ) where
+        UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<Result>,
+    {
+        let lhs = self.get_register_as_2::<Lhs>(lhs);
+        let rhs = self.get_register_as_2::<Rhs>(rhs);
+        self.set_register_as::<Result>(result, op(lhs, rhs));
+        self.next_instr();
+    }
+
+    /// Executes a generic binary [`Instruction`].
+    #[inline(always)]
     fn execute_binary_imm16_rhs<T>(
         &mut self,
         result: Reg,
@@ -1533,6 +1550,24 @@ impl Executor<'_> {
         let lhs = self.get_register(lhs);
         let rhs = UntypedVal::from(<T>::from(rhs));
         self.set_register(result, op(lhs, rhs));
+        self.next_instr();
+    }
+
+    /// Executes a generic binary [`Instruction`].
+    #[inline(always)]
+    fn execute_binary_imm16_rhs_t<Lhs, Rhs, T>(
+        &mut self,
+        result: Reg,
+        lhs: Reg,
+        rhs: Const16<Rhs>,
+        op: fn(Lhs, Rhs) -> T,
+    ) where
+        Rhs: From<Const16<Rhs>>,
+        UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
+    {
+        let lhs = self.get_register_as_2::<Lhs>(lhs);
+        let rhs = Rhs::from(rhs);
+        self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -1554,90 +1589,113 @@ impl Executor<'_> {
         self.next_instr();
     }
 
+    /// Executes a generic binary [`Instruction`] with reversed operands.
+    #[inline(always)]
+    fn execute_binary_imm16_lhs_t<Lhs, Rhs, T>(
+        &mut self,
+        result: Reg,
+        lhs: Const16<Lhs>,
+        rhs: Reg,
+        op: fn(Lhs, Rhs) -> T,
+    ) where
+        Lhs: From<Const16<Lhs>>,
+        UntypedVal: ReadAs<Rhs> + WriteAs<T>,
+    {
+        let lhs = Lhs::from(lhs);
+        let rhs = self.get_register_as_2::<Rhs>(rhs);
+        self.set_register_as::<T>(result, op(lhs, rhs));
+        self.next_instr();
+    }
+
     /// Executes a generic shift or rotate [`Instruction`].
     #[inline(always)]
-    fn execute_shift_by<T>(
+    fn execute_shift_by<Lhs, Rhs, T>(
         &mut self,
         result: Reg,
         lhs: Reg,
-        rhs: ShiftAmount<T>,
-        op: fn(UntypedVal, UntypedVal) -> UntypedVal,
+        rhs: ShiftAmount<Rhs>,
+        op: fn(Lhs, Rhs) -> T,
     ) where
-        T: From<ShiftAmount<T>>,
-        UntypedVal: From<T>,
+        Rhs: From<ShiftAmount<Rhs>>,
+        UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register(lhs);
-        let rhs = UntypedVal::from(<T>::from(rhs));
-        self.set_register(result, op(lhs, rhs));
+        let lhs = self.get_register_as_2::<Lhs>(lhs);
+        let rhs = Rhs::from(rhs);
+        self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
     /// Executes a fallible generic binary [`Instruction`].
     #[inline(always)]
-    fn try_execute_binary(
+    fn try_execute_binary<Lhs, Rhs, T>(
         &mut self,
         result: Reg,
         lhs: Reg,
         rhs: Reg,
-        op: fn(UntypedVal, UntypedVal) -> Result<UntypedVal, TrapCode>,
-    ) -> Result<(), Error> {
-        let lhs = self.get_register(lhs);
-        let rhs = self.get_register(rhs);
-        self.set_register(result, op(lhs, rhs)?);
-        self.try_next_instr()
-    }
-
-    /// Executes a fallible generic binary [`Instruction`].
-    #[inline(always)]
-    fn try_execute_divrem_imm16_rhs<NonZeroT>(
-        &mut self,
-        result: Reg,
-        lhs: Reg,
-        rhs: Const16<NonZeroT>,
-        op: fn(UntypedVal, NonZeroT) -> Result<UntypedVal, Error>,
+        op: fn(Lhs, Rhs) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
-        NonZeroT: From<Const16<NonZeroT>>,
+        UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = self.get_register(lhs);
-        let rhs = <NonZeroT>::from(rhs);
-        self.set_register(result, op(lhs, rhs)?);
+        let lhs = self.get_register_as_2::<Lhs>(lhs);
+        let rhs = self.get_register_as_2::<Rhs>(rhs);
+        self.set_register_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
     /// Executes a fallible generic binary [`Instruction`].
     #[inline(always)]
-    fn execute_divrem_imm16_rhs<NonZeroT>(
+    fn try_execute_divrem_imm16_rhs<Lhs, Rhs, T>(
+        &mut self,
+        result: Reg,
+        lhs: Reg,
+        rhs: Const16<Rhs>,
+        op: fn(Lhs, Rhs) -> Result<T, Error>,
+    ) -> Result<(), Error>
+    where
+        Rhs: From<Const16<Rhs>>,
+        UntypedVal: ReadAs<Lhs> + WriteAs<T>,
+    {
+        let lhs = self.get_register_as_2::<Lhs>(lhs);
+        let rhs = Rhs::from(rhs);
+        self.set_register_as::<T>(result, op(lhs, rhs)?);
+        self.try_next_instr()
+    }
+
+    /// Executes a fallible generic binary [`Instruction`].
+    #[inline(always)]
+    fn execute_divrem_imm16_rhs<Lhs, NonZeroT, T>(
         &mut self,
         result: Reg,
         lhs: Reg,
         rhs: Const16<NonZeroT>,
-        op: fn(UntypedVal, NonZeroT) -> UntypedVal,
+        op: fn(Lhs, NonZeroT) -> T,
     ) where
         NonZeroT: From<Const16<NonZeroT>>,
+        UntypedVal: ReadAs<Lhs> + WriteAs<T>,
     {
-        let lhs = self.get_register(lhs);
+        let lhs = self.get_register_as_2::<Lhs>(lhs);
         let rhs = <NonZeroT>::from(rhs);
-        self.set_register(result, op(lhs, rhs));
+        self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr()
     }
 
     /// Executes a fallible generic binary [`Instruction`] with reversed operands.
     #[inline(always)]
-    fn try_execute_binary_imm16_lhs<T>(
+    fn try_execute_binary_imm16_lhs<Lhs, Rhs, T>(
         &mut self,
         result: Reg,
-        lhs: Const16<T>,
+        lhs: Const16<Lhs>,
         rhs: Reg,
-        op: fn(UntypedVal, UntypedVal) -> Result<UntypedVal, TrapCode>,
+        op: fn(Lhs, Rhs) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
-        T: From<Const16<T>>,
-        UntypedVal: From<T>,
+        Lhs: From<Const16<Lhs>>,
+        UntypedVal: ReadAs<Rhs> + WriteAs<T>,
     {
-        let lhs = UntypedVal::from(<T>::from(lhs));
-        let rhs = self.get_register(rhs);
-        self.set_register(result, op(lhs, rhs)?);
+        let lhs = Lhs::from(lhs);
+        let rhs = self.get_register_as_2::<Rhs>(rhs);
+        self.set_register_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
@@ -1740,25 +1798,25 @@ impl Executor<'_> {
 /// Extension method for [`UntypedVal`] required by the [`Executor`].
 trait UntypedValueExt {
     /// Executes a fused `i32.and` + `i32.eqz` instruction.
-    fn i32_and_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal;
+    fn i32_and_eqz(x: Self, y: Self) -> bool;
 
     /// Executes a fused `i32.or` + `i32.eqz` instruction.
-    fn i32_or_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal;
+    fn i32_or_eqz(x: Self, y: Self) -> bool;
 
     /// Executes a fused `i32.xor` + `i32.eqz` instruction.
-    fn i32_xor_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal;
+    fn i32_xor_eqz(x: Self, y: Self) -> bool;
 }
 
-impl UntypedValueExt for UntypedVal {
-    fn i32_and_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal {
-        (i32::from(UntypedVal::i32_and(x, y)) == 0).into()
+impl UntypedValueExt for i32 {
+    fn i32_and_eqz(x: Self, y: Self) -> bool {
+        wasm::i32_and(x, y) == 0
     }
 
-    fn i32_or_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal {
-        (i32::from(UntypedVal::i32_or(x, y)) == 0).into()
+    fn i32_or_eqz(x: Self, y: Self) -> bool {
+        wasm::i32_or(x, y) == 0
     }
 
-    fn i32_xor_eqz(x: UntypedVal, y: UntypedVal) -> UntypedVal {
-        (i32::from(UntypedVal::i32_xor(x, y)) == 0).into()
+    fn i32_xor_eqz(x: Self, y: Self) -> bool {
+        wasm::i32_xor(x, y) == 0
     }
 }
