@@ -1490,16 +1490,30 @@ impl Executor<'_> {
         self.next_instr();
     }
 
+    /// Executes a generic unary [`Instruction`].
+    #[inline(always)]
+    fn execute_unary_t<P, R>(&mut self, result: Reg, input: Reg, op: fn(P) -> R)
+    where
+        UntypedVal: ReadAs<P> + WriteAs<R>,
+    {
+        let value = self.get_register_as_2::<P>(input);
+        self.set_register_as::<R>(result, op(value));
+        self.next_instr();
+    }
+
     /// Executes a fallible generic unary [`Instruction`].
     #[inline(always)]
-    fn try_execute_unary(
+    fn try_execute_unary_t<P, R>(
         &mut self,
         result: Reg,
         input: Reg,
-        op: fn(UntypedVal) -> Result<UntypedVal, TrapCode>,
-    ) -> Result<(), Error> {
-        let value = self.get_register(input);
-        self.set_register(result, op(value)?);
+        op: fn(P) -> Result<R, TrapCode>,
+    ) -> Result<(), Error>
+    where
+        UntypedVal: ReadAs<P> + WriteAs<R>,
+    {
+        let value = self.get_register_as_2::<P>(input);
+        self.set_register_as::<R>(result, op(value)?);
         self.try_next_instr()
     }
 
