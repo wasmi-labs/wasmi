@@ -232,8 +232,6 @@ impl UntypedVal {
     }
 }
 
-impl UntypedVal {}
-
 impl UntypedVal {
     /// Executes a generic `T.store[N]` Wasm operation.
     ///
