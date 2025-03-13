@@ -79,6 +79,20 @@ pub trait WriteAs<T> {
 }
 
 macro_rules! impl_write_as_for_int {
+    ( $( $int:ty as $as:ty ),* $(,)? ) => {
+        $(
+            impl WriteAs<$int> for UntypedVal {
+                #[allow(clippy::cast_lossless)]
+                fn write_as(&mut self, value: $int) {
+                    self.write_lo64(value as $as as _)
+                }
+            }
+        )*
+    };
+}
+impl_write_as_for_int!(i8 as u8, i16 as u16, i32 as u32, i64 as u64);
+
+macro_rules! impl_write_as_for_uint {
     ( $( $int:ty ),* $(,)? ) => {
         $(
             impl WriteAs<$int> for UntypedVal {
@@ -90,7 +104,7 @@ macro_rules! impl_write_as_for_int {
         )*
     };
 }
-impl_write_as_for_int!(bool, i8, i16, i32, i64, u8, u16, u32, u64);
+impl_write_as_for_uint!(bool, u8, u16, u32, u64);
 
 macro_rules! impl_write_as_for_float {
     ( $( $float:ty ),* $(,)? ) => {
