@@ -24,20 +24,23 @@ use core::{
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct UntypedVal {
-    /// This inner value is required to have enough bits to represent
-    /// all fundamental WebAssembly types `i32`, `i64`, `f32` and `f64`.
-    bits: u64,
+    /// The low 64-bits of an [`UntypedVal`].
+    ///
+    /// The low 64-bits are used to encode and decode all types that
+    /// are convertible from and to an [`UntypedVal`] that fit into
+    /// 64-bits such as `i32`, `i64`, `f32` and `f64`.
+    lo64: u64,
 }
 
 impl UntypedVal {
     /// Creates an [`UntypedVal`] from the given `u64` bits.
-    pub const fn from_bits(bits: u64) -> Self {
-        Self { bits }
+    pub const fn from_bits(lo64: u64) -> Self {
+        Self { lo64 }
     }
 
     /// Returns the underlying bits of the [`UntypedVal`].
     pub const fn to_bits(self) -> u64 {
-        self.bits
+        self.lo64
     }
 }
 
@@ -79,7 +82,7 @@ macro_rules! impl_from_unsigned_prim {
             impl From<$prim> for UntypedVal {
                 #[allow(clippy::cast_lossless)]
                 fn from(value: $prim) -> Self {
-                    Self { bits: value as _ }
+                    Self { lo64: value as _ }
                 }
             }
         )*
@@ -96,7 +99,7 @@ macro_rules! impl_from_signed_prim {
             impl From<$prim> for UntypedVal {
                 #[allow(clippy::cast_lossless)]
                 fn from(value: $prim) -> Self {
-                    Self { bits: u64::from(value as $base) }
+                    Self { lo64: u64::from(value as $base) }
                 }
             }
         )*
@@ -116,7 +119,7 @@ macro_rules! impl_from_float {
             impl From<$float> for UntypedVal {
                 fn from(value: $float) -> Self {
                     Self {
-                        bits: u64::from(value.to_bits()),
+                        lo64: u64::from(value.to_bits()),
                     }
                 }
             }
