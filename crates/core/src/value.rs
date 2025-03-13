@@ -354,21 +354,6 @@ macro_rules! impl_try_truncate_into {
             }
         }
     };
-    (@wrapped $from:ident, $intermediate:ident, $into:ident) => {
-        impl TryTruncateInto<$into, TrapCode> for $from {
-            #[inline]
-            fn try_truncate_into(self) -> Result<$into, TrapCode> {
-                $intermediate::from(self).try_truncate_into()
-            }
-        }
-
-        impl TruncateSaturateInto<$into> for $from {
-            #[inline]
-            fn truncate_saturate_into(self) -> $into {
-                $intermediate::from(self).truncate_saturate_into()
-            }
-        }
-    };
 }
 
 impl_try_truncate_into!(@primitive f32, i32, -2147483904.0_f32, 2147483648.0_f32);
@@ -379,14 +364,6 @@ impl_try_truncate_into!(@primitive f32, i64, -9223373136366403584.0_f32,  922337
 impl_try_truncate_into!(@primitive f32, u64,                   -1.0_f32, 18446744073709551616.0_f32);
 impl_try_truncate_into!(@primitive f64, i64, -9223372036854777856.0_f64,  9223372036854775808.0_f64);
 impl_try_truncate_into!(@primitive f64, u64,                   -1.0_f64, 18446744073709551616.0_f64);
-impl_try_truncate_into!(@wrapped F32, f32, i32);
-impl_try_truncate_into!(@wrapped F32, f32, i64);
-impl_try_truncate_into!(@wrapped F64, f64, i32);
-impl_try_truncate_into!(@wrapped F64, f64, i64);
-impl_try_truncate_into!(@wrapped F32, f32, u32);
-impl_try_truncate_into!(@wrapped F32, f32, u64);
-impl_try_truncate_into!(@wrapped F64, f64, u32);
-impl_try_truncate_into!(@wrapped F64, f64, u64);
 
 macro_rules! impl_extend_into {
     ($from:ident, $into:ident) => {
