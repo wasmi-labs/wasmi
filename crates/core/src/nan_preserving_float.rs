@@ -169,34 +169,6 @@ float! {
     struct F64(u64 as f64);
 }
 
-impl From<u32> for F32 {
-    #[inline]
-    fn from(other: u32) -> Self {
-        Self::from_bits(other)
-    }
-}
-
-impl From<F32> for u32 {
-    #[inline]
-    fn from(other: F32) -> Self {
-        other.to_bits()
-    }
-}
-
-impl From<u64> for F64 {
-    #[inline]
-    fn from(other: u64) -> Self {
-        Self::from_bits(other)
-    }
-}
-
-impl From<F64> for u64 {
-    #[inline]
-    fn from(other: F64) -> Self {
-        other.to_bits()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     extern crate rand;
