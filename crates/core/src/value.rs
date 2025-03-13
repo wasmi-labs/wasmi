@@ -295,14 +295,6 @@ macro_rules! impl_wrap_into {
             }
         }
     };
-    ($from:ident, $intermediate:ident, $into:ident) => {
-        impl WrapInto<$into> for $from {
-            #[inline]
-            fn wrap_into(self) -> $into {
-                $into::from(self as $intermediate)
-            }
-        }
-    };
 }
 
 impl_wrap_into!(i32, i8);
@@ -310,18 +302,9 @@ impl_wrap_into!(i32, i16);
 impl_wrap_into!(i64, i8);
 impl_wrap_into!(i64, i16);
 impl_wrap_into!(i64, i32);
-impl_wrap_into!(i64, f32, F32);
-impl_wrap_into!(u64, f32, F32);
 
 impl_wrap_into!(u32, u32);
 impl_wrap_into!(u64, u64);
-
-impl WrapInto<F32> for F64 {
-    #[inline]
-    fn wrap_into(self) -> F32 {
-        (f64::from(self) as f32).into()
-    }
-}
 
 macro_rules! impl_try_truncate_into {
     (@primitive $from: ident, $into: ident, $rmin:literal, $rmax:literal) => {
