@@ -1372,6 +1372,11 @@ impl Executor<'_> {
     where
         UntypedVal: ReadAs<T>,
     {
+        // Safety: - It is the responsibility of the `Executor`
+        //           implementation to keep the `sp` pointer valid
+        //           whenever this method is accessed.
+        //         - This is done by updating the `sp` pointer whenever
+        //           the heap underlying the value stack is changed.
         unsafe { self.sp.read_as::<T>(register) }
     }
 
