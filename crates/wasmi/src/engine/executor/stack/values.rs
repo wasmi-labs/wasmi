@@ -1,6 +1,6 @@
 use super::{err_stack_overflow, StackOffsets};
 use crate::{
-    core::{TrapCode, UntypedVal},
+    core::{ReadAs, TrapCode, UntypedVal, WriteAs},
     engine::code_map::CompiledFuncRef,
     ir::Reg,
 };
@@ -411,6 +411,19 @@ impl FrameRegisters {
         ptr::read(self.register_offset(register))
     }
 
+    /// Returns the [`UntypedVal`] at the given [`Reg`].
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`Reg`] that
+    /// does not access the underlying [`ValueStack`] out of bounds.
+    pub unsafe fn read_as<T>(&self, register: Reg) -> T
+    where
+        UntypedVal: ReadAs<T>,
+    {
+        UntypedVal::read_as(&*self.register_offset(register))
+    }
+
     /// Sets the value of the `register` to `value`.`
     ///
     /// # Safety
@@ -419,6 +432,20 @@ impl FrameRegisters {
     /// does not access the underlying [`ValueStack`] out of bounds.
     pub unsafe fn set(&mut self, register: Reg, value: UntypedVal) {
         ptr::write(self.register_offset(register), value)
+    }
+
+    /// Sets the value of the `register` to `value`.`
+    ///
+    /// # Safety
+    ///
+    /// It is the callers responsibility to provide a [`Reg`] that
+    /// does not access the underlying [`ValueStack`] out of bounds.
+    pub unsafe fn write_as<T>(&mut self, register: Reg, value: T)
+    where
+        UntypedVal: WriteAs<T>,
+    {
+        let val: &mut UntypedVal = &mut *self.register_offset(register);
+        val.write_as(value);
     }
 
     /// Returns the underlying pointer offset by the [`Reg`] index.
