@@ -1,4 +1,4 @@
-use crate::{hint::unlikely, TrapCode, F32, F64};
+use crate::{hint::unlikely, TrapCode};
 
 /// Type of a value.
 ///
@@ -167,30 +167,6 @@ macro_rules! impl_little_endian_convert_primitive {
     };
 }
 impl_little_endian_convert_primitive!(u8, u16, u32, u64, i8, i16, i32, i64, f32, f64);
-
-macro_rules! impl_little_endian_convert_float {
-    ( $( struct $float_ty:ident($uint_ty:ty); )* $(,)? ) => {
-        $(
-            impl LittleEndianConvert for $float_ty {
-                type Bytes = <$uint_ty as LittleEndianConvert>::Bytes;
-
-                #[inline]
-                fn into_le_bytes(self) -> Self::Bytes {
-                    <$uint_ty>::into_le_bytes(self.to_bits())
-                }
-
-                #[inline]
-                fn from_le_bytes(bytes: Self::Bytes) -> Self {
-                    Self::from_bits(<$uint_ty>::from_le_bytes(bytes))
-                }
-            }
-        )*
-    };
-}
-impl_little_endian_convert_float!(
-    struct F32(u32);
-    struct F64(u64);
-);
 
 /// Integer value.
 pub trait Integer: Sized + Unsigned {
