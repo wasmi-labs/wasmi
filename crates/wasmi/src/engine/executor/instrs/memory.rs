@@ -77,7 +77,7 @@ impl Executor<'_> {
         result: Reg,
         delta: Reg,
     ) -> Result<(), Error> {
-        let delta: u64 = self.get_register_as(delta);
+        let delta: u64 = self.get_register_as_2(delta);
         let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
         self.execute_memory_grow_impl(store, result, delta, &mut resource_limiter)
     }
@@ -140,9 +140,9 @@ impl Executor<'_> {
         src: Reg,
         len: Reg,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = self.get_register_as(len);
+        let dst: u64 = self.get_register_as_2(dst);
+        let src: u64 = self.get_register_as_2(src);
+        let len: u64 = self.get_register_as_2(len);
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -155,8 +155,8 @@ impl Executor<'_> {
         len: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let src: u64 = self.get_register_as(src);
-        let len: u64 = self.get_register_as(len);
+        let src: u64 = self.get_register_as_2(src);
+        let len: u64 = self.get_register_as_2(len);
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -168,9 +168,9 @@ impl Executor<'_> {
         src: Const16<u64>,
         len: Reg,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
+        let dst: u64 = self.get_register_as_2(dst);
         let src: u64 = src.into();
-        let len: u64 = self.get_register_as(len);
+        let len: u64 = self.get_register_as_2(len);
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -184,7 +184,7 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
         let src: u64 = src.into();
-        let len: u64 = self.get_register_as(len);
+        let len: u64 = self.get_register_as_2(len);
         self.execute_memory_copy_impl(store, dst, src, len)
     }
 
@@ -196,8 +196,8 @@ impl Executor<'_> {
         src: Reg,
         len: Const16<u64>,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u64 = self.get_register_as(src);
+        let dst: u64 = self.get_register_as_2(dst);
+        let src: u64 = self.get_register_as_2(src);
         let len: u64 = len.into();
         self.execute_memory_copy_impl(store, dst, src, len)
     }
@@ -211,7 +211,7 @@ impl Executor<'_> {
         len: Const16<u64>,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let src: u64 = self.get_register_as(src);
+        let src: u64 = self.get_register_as_2(src);
         let len: u64 = len.into();
         self.execute_memory_copy_impl(store, dst, src, len)
     }
@@ -224,7 +224,7 @@ impl Executor<'_> {
         src: Const16<u64>,
         len: Const16<u64>,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
+        let dst: u64 = self.get_register_as_2(dst);
         let src: u64 = src.into();
         let len: u64 = len.into();
         self.execute_memory_copy_impl(store, dst, src, len)
@@ -322,9 +322,9 @@ impl Executor<'_> {
         value: Reg,
         len: Reg,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let value: u8 = self.get_register_as(value);
-        let len: u64 = self.get_register_as(len);
+        let dst: u64 = self.get_register_as_2(dst);
+        let value: u8 = self.get_register_as_2(value);
+        let len: u64 = self.get_register_as_2(len);
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
@@ -337,8 +337,8 @@ impl Executor<'_> {
         len: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let value: u8 = self.get_register_as(value);
-        let len: u64 = self.get_register_as(len);
+        let value: u8 = self.get_register_as_2(value);
+        let len: u64 = self.get_register_as_2(len);
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
@@ -350,8 +350,8 @@ impl Executor<'_> {
         value: u8,
         len: Reg,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let len: u64 = self.get_register_as(len);
+        let dst: u64 = self.get_register_as_2(dst);
+        let len: u64 = self.get_register_as_2(len);
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
@@ -364,7 +364,7 @@ impl Executor<'_> {
         len: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let len: u64 = self.get_register_as(len);
+        let len: u64 = self.get_register_as_2(len);
         self.execute_memory_fill_impl(store, dst, value, len)
     }
 
@@ -376,8 +376,8 @@ impl Executor<'_> {
         value: Reg,
         len: Const16<u64>,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let value: u8 = self.get_register_as(value);
+        let dst: u64 = self.get_register_as_2(dst);
+        let value: u8 = self.get_register_as_2(value);
         let len: u64 = len.into();
         self.execute_memory_fill_impl(store, dst, value, len)
     }
@@ -391,7 +391,7 @@ impl Executor<'_> {
         len: Const16<u64>,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let value: u8 = self.get_register_as(value);
+        let value: u8 = self.get_register_as_2(value);
         let len: u64 = len.into();
         self.execute_memory_fill_impl(store, dst, value, len)
     }
@@ -404,7 +404,7 @@ impl Executor<'_> {
         value: u8,
         len: Const16<u64>,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
+        let dst: u64 = self.get_register_as_2(dst);
         let len: u64 = len.into();
         self.execute_memory_fill_impl(store, dst, value, len)
     }
@@ -458,9 +458,9 @@ impl Executor<'_> {
         src: Reg,
         len: Reg,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = self.get_register_as(len);
+        let dst: u64 = self.get_register_as_2(dst);
+        let src: u32 = self.get_register_as_2(src);
+        let len: u32 = self.get_register_as_2(len);
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -473,8 +473,8 @@ impl Executor<'_> {
         len: Reg,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let src: u32 = self.get_register_as(src);
-        let len: u32 = self.get_register_as(len);
+        let src: u32 = self.get_register_as_2(src);
+        let len: u32 = self.get_register_as_2(len);
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -486,9 +486,9 @@ impl Executor<'_> {
         src: Const16<u32>,
         len: Reg,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
+        let dst: u64 = self.get_register_as_2(dst);
         let src: u32 = src.into();
-        let len: u32 = self.get_register_as(len);
+        let len: u32 = self.get_register_as_2(len);
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -502,7 +502,7 @@ impl Executor<'_> {
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
         let src: u32 = src.into();
-        let len: u32 = self.get_register_as(len);
+        let len: u32 = self.get_register_as_2(len);
         self.execute_memory_init_impl(store, dst, src, len)
     }
 
@@ -514,8 +514,8 @@ impl Executor<'_> {
         src: Reg,
         len: Const16<u32>,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
-        let src: u32 = self.get_register_as(src);
+        let dst: u64 = self.get_register_as_2(dst);
+        let src: u32 = self.get_register_as_2(src);
         let len: u32 = len.into();
         self.execute_memory_init_impl(store, dst, src, len)
     }
@@ -529,7 +529,7 @@ impl Executor<'_> {
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
-        let src: u32 = self.get_register_as(src);
+        let src: u32 = self.get_register_as_2(src);
         let len: u32 = len.into();
         self.execute_memory_init_impl(store, dst, src, len)
     }
@@ -542,7 +542,7 @@ impl Executor<'_> {
         src: Const16<u32>,
         len: Const16<u32>,
     ) -> Result<(), Error> {
-        let dst: u64 = self.get_register_as(dst);
+        let dst: u64 = self.get_register_as_2(dst);
         let src: u32 = src.into();
         let len: u32 = len.into();
         self.execute_memory_init_impl(store, dst, src, len)

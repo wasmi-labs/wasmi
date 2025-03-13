@@ -1368,14 +1368,6 @@ impl Executor<'_> {
     }
 
     /// Returns the [`Reg`] value.
-    fn get_register_as<T>(&self, register: Reg) -> T
-    where
-        T: From<UntypedVal>,
-    {
-        T::from(self.get_register(register))
-    }
-
-    /// Returns the [`Reg`] value.
     fn get_register_as_2<T>(&self, register: Reg) -> T
     where
         UntypedVal: ReadAs<T>,

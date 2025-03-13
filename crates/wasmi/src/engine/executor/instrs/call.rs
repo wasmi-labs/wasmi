@@ -181,7 +181,7 @@ impl Executor<'_> {
         self.ip.add(1);
         match *self.ip.get() {
             Instruction::CallIndirectParams { index, table } => {
-                let index: u64 = self.get_register_as(index);
+                let index: u64 = self.get_register_as_2(index);
                 (index, table)
             }
             unexpected => {
