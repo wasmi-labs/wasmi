@@ -246,8 +246,6 @@ pub trait Float<T = Self>: ArithmeticOps<T> {
     fn nearest(self) -> T;
     /// Takes the square root of a number.
     fn sqrt(self) -> T;
-    /// Returns the division of the two numbers.
-    fn div(self, other: T) -> T;
     /// Returns the minimum of the two numbers.
     fn min(self, other: T) -> T;
     /// Returns the maximum of the two numbers.
@@ -561,10 +559,6 @@ macro_rules! impl_float {
             #[inline]
             fn sqrt(self) -> Self {
                 WasmFloatExt::sqrt(<$repr>::from(self)).into()
-            }
-            #[inline]
-            fn div(self, other: Self) -> Self {
-                self / other
             }
             #[inline]
             fn min(self, other: Self) -> Self {
