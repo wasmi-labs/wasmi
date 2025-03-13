@@ -410,8 +410,8 @@ impl Executor<'_> {
     /// Executes an [`Instruction::BranchCmpFallback`].
     pub fn execute_branch_cmp_fallback(&mut self, lhs: Reg, rhs: Reg, params: Reg) {
         use Comparator as C;
-        let params = self.get_register(params);
-        let Some(params) = ComparatorAndOffset::from_untyped(params) else {
+        let params: u64 = self.get_register_as(params);
+        let Some(params) = ComparatorAndOffset::from_u64(params) else {
             panic!("encountered invalidaly encoded ComparatorOffsetParam: {params:?}")
         };
         let offset = params.offset;

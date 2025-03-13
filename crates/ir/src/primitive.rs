@@ -335,13 +335,6 @@ impl ComparatorAndOffset {
         Some(Self { cmp, offset })
     }
 
-    /// Creates a new [`ComparatorAndOffset`] from the given [`UntypedVal`].
-    ///
-    /// Returns `None` if the [`UntypedVal`] has an invalid encoding.
-    pub fn from_untyped(value: UntypedVal) -> Option<Self> {
-        Self::from_u64(u64::from(value))
-    }
-
     /// Converts the [`ComparatorAndOffset`] into an `u64` value.
     pub fn as_u64(&self) -> u64 {
         let hi = self.cmp as u64;
