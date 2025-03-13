@@ -57,6 +57,7 @@ prefer-btree-collections = [
     "wasmparser/prefer-btree-collections",
 ]
 wat = ["dep:wat", "std"]
+register128 = ["wasmi_core/value128"]
 
 # Enables extra checks performed during Wasmi bytecode execution.
 #
