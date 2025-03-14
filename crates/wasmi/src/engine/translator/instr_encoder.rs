@@ -86,7 +86,7 @@ impl Instr {
 #[derive(Debug, Default)]
 pub struct InstrEncoder {
     /// Already encoded [`Instruction`] words.
-    instrs: InstrSequence,
+    pub(super) instrs: InstrSequence,
     /// Unresolved and unpinned labels created during function translation.
     labels: LabelRegistry,
     /// The last [`Instruction`] created via [`InstrEncoder::push_instr`].
@@ -160,7 +160,7 @@ impl InstrSequence {
     /// # Panics
     ///
     /// If no [`Instruction`] is associated to the [`Instr`] for this [`InstrSequence`].
-    fn get(&self, instr: Instr) -> &Instruction {
+    pub(super) fn get(&self, instr: Instr) -> &Instruction {
         &self.instrs[instr.into_usize()]
     }
 
@@ -189,6 +189,12 @@ impl InstrSequence {
     /// If `start` is out of bounds for [`InstrSequence`].
     pub fn get_slice_at_mut(&mut self, start: Instr) -> &mut [Instruction] {
         &mut self.instrs[start.into_usize()..]
+    }
+
+    /// Returns a slice over the [`Instruction`]s of the [`InstrSequence`].
+    #[cfg(debug_assertions)]
+    pub fn as_slice(&self) -> &[Instruction] {
+        &self.instrs[..]
     }
 }
 
