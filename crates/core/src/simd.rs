@@ -201,12 +201,20 @@ macro_rules! impl_lanes_for {
                 fn from_v128(value: V128) -> Self {
                     // SAFETY: the types chosen to implement `Split` are always
                     //         of same size as `V128` and have no invalid bit-patterns.
+                    //
+                    // Note: it is important to state that this could be implemented
+                    //       in safe Rust entirely. However, during development it turned
+                    //       out that _not_ using unsafe transmutation confused the
+                    //       optimizer enough that optimizations became very flaky.
+                    //       This was tested across a variety of compiler versions.
                     Self(unsafe { ::core::mem::transmute::<V128, [$ty; $n]>(value) })
                 }
 
                 fn into_v128(self) -> V128 {
                     // SAFETY: the types chosen to implement `Combine` are always
                     //         of same size as `V128` and have no invalid bit-patterns.
+                    //
+                    // Note: see note from `from_v128` method above.
                     unsafe { ::core::mem::transmute::<[$ty; $n], V128>(self.0) }
                 }
 
