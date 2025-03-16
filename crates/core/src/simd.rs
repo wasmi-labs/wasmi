@@ -615,3 +615,24 @@ impl V128 {
         .into_v128()
     }
 }
+
+macro_rules! impl_splat_for {
+    ( $( fn $name:ident(value: $ty:ty) -> Self; )* ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(value: $ty) -> Self {
+                Self::splat(value)
+            }
+        )*
+    };
+}
+impl V128 {
+    impl_splat_for! {
+        fn i64x2_splat(value: i64) -> Self;
+        fn i32x4_splat(value: i32) -> Self;
+        fn i16x8_splat(value: i16) -> Self;
+        fn i8x16_splat(value: i8) -> Self;
+        fn f32x4_splat(value: f32) -> Self;
+        fn f64x2_splat(value: f64) -> Self;
+    }
+}
