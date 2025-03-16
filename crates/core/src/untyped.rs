@@ -13,13 +13,13 @@ pub struct UntypedVal {
     /// The low 64-bits are used to encode and decode all types that
     /// are convertible from and to an [`UntypedVal`] that fit into
     /// 64-bits such as `i32`, `i64`, `f32` and `f64`.
-    lo64: u64,
+    pub(crate) lo64: u64,
     /// The high 64-bits of an [`UntypedVal`].
     ///
     /// This is only used to encode or decode types which do not fit
     /// into the lower 64-bits part such as Wasm's `V128` or `i128`.
     #[cfg(feature = "value128")]
-    hi64: u64,
+    pub(crate) hi64: u64,
 }
 
 /// Implemented by types that can be read (or decoded) as `T`.
