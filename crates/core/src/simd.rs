@@ -42,9 +42,12 @@ impl WriteAs<V128> for UntypedVal {
 #[repr(transparent)]
 pub struct ImmByte(u8);
 
+/// An error that may occur when constructing an out of bounds lane index.
 pub struct OutOfBoundsLaneId;
 
-pub trait IntoLaneIdx {
+/// Helper trait to allow some macro expansion for types that have an associated lane index.
+trait IntoLaneIdx {
+    /// The associated lane index type.
     type LaneIdx;
 }
 
@@ -103,35 +106,81 @@ impl_imm_lane_id! {
     struct ImmLaneIdx32(x 32);
 }
 
+/// Helper trait to make some low-level calls more convenient.
+///
+/// # Note
+///
+/// - This trait and its applications are hidden from outside this module.
+/// - For example `i32` is associated to the `i32x4` lane type.
 trait IntoLanes {
+    /// The `Lanes` type associated to the implementing type.
     type Lanes: Lanes<Item = Self, LaneIdx = Self::LaneIdx>;
+    /// The `LaneIdx` type associated to the implementing type.
     type LaneIdx;
 }
 
+/// Implemented by `Lanes` types.
+///
+/// Possible `Lanes` types include:
+///
+/// - `I64x2`
+/// - `I32x4`
+/// - `I16x8`
+/// - `I8x16`
+/// - `F64x2`
+/// - `F32x4`
 trait Lanes {
+    /// The type used in the lanes. E.g. `i32` for `i32x4`.
     type Item;
+    /// The associated lane index type. E.g. `ImmLaneIdx4` for `i32x4`.
     type LaneIdx;
 
+    /// The number of lanes for `Self`.
     const LANES: usize;
 
+    /// A lane item where all bits are `1`.
     const ALL_ONES: Self::Item;
+
+    /// A lane item where all bits are `0`.
     const ALL_ZEROS: Self::Item;
 
+    /// Converts the [`V128`] to `Self`.
     fn from_v128(value: V128) -> Self;
+
+    /// Converts `self` to a [`V128`] value.
     fn into_v128(self) -> V128;
 
+    /// Creates `Self` by splatting `value`.
     fn splat(value: Self::Item) -> Self;
+
+    /// Extract the item at `lane` from `self`.
     fn extract_lane(self, lane: Self::LaneIdx) -> Self::Item;
+
+    /// Replace the item at `lane` with `item` and return `self` afterwards.
     fn replace_lane(self, lane: Self::LaneIdx, item: Self::Item) -> Self;
+
+    /// Apply `f` for all lane items in `self`.
     fn lanewise_unary(self, f: impl Fn(Self::Item) -> Self::Item) -> Self;
+
+    /// Apply `f` for all pairs of lane items in `self` and `other`.
     fn lanewise_binary(self, other: Self, f: impl Fn(Self::Item, Self::Item) -> Self::Item)
         -> Self;
+
+    /// Apply `f` comparison for all pairs of lane items in `self` and `other`.
+    ///
+    /// Storing [`Self::ALL_ONES`] if `f` evaluates to `true` or [`Self::ALL_ZEROS`] otherwise per item.
     fn lanewise_comparison(self, other: Self, f: impl Fn(Self::Item, Self::Item) -> bool) -> Self;
 }
 
 macro_rules! impl_lanes_for {
-    ( $( struct $name:ident([$ty:ty; $n:literal]); )* ) => {
+    (
         $(
+            $( #[$attr:meta] )*
+            struct $name:ident([$ty:ty; $n:literal]);
+        )*
+    ) => {
+        $(
+            $( #[$attr] )*
             #[derive(Copy, Clone)]
             #[repr(transparent)]
             struct $name([$ty; $n]);
@@ -203,22 +252,37 @@ macro_rules! impl_lanes_for {
     };
 }
 impl_lanes_for! {
+    /// The Wasm `i64x2` vector type consisting of 2 `i64` values.
     struct I64x2([i64; 2]);
+    /// The Wasm `i32x4` vector type consisting of 4 `i32` values.
     struct I32x4([i32; 4]);
+    /// The Wasm `i16x8` vector type consisting of 8 `i16` values.
     struct I16x8([i16; 8]);
+    /// The Wasm `i8x16` vector type consisting of 16 `i8` values.
     struct I8x16([i8; 16]);
+    /// The Wasm `f32x4` vector type consisting of 4 `f32` values.
     struct F32x4([f32; 4]);
+    /// The Wasm `f64x2` vector type consisting of 2 `f64` values.
     struct F64x2([f64; 2]);
 }
 
+/// Trait allowing [`Lanes`] types to be widened.
+///
+/// # Example
+///
+/// - This allows a single `i32x4` value to be widened to a `i64x2`.
+/// - This allows a pair of `i32x4` values to be widened to a `i64x2`.
 trait LanewiseWidening: Lanes {
+    /// The narrow [`Lanes`] type to be widened.
     type Narrow: Lanes;
 
+    /// Widen `value` to `Self` by applying `f` for all pairs of lane items.
     fn lanewise_widening_unary(
         value: Self::Narrow,
         f: impl Fn(<Self::Narrow as Lanes>::Item, <Self::Narrow as Lanes>::Item) -> Self::Item,
     ) -> Self;
 
+    /// Widen `lhs` and `rhs` to `Self` by applying `f` for all pairs of lane items lanewise.
     fn lanewise_widening_binary(
         lhs: Self::Narrow,
         rhs: Self::Narrow,
@@ -338,14 +402,23 @@ impl LanewiseWidening for I16x8 {
     }
 }
 
+/// Trait allowing [`Lanes`] types to be narrowed.
+///
+/// # Example
+///
+/// - This allows a single `i64x2` value to be narrowed into a `i32x4`.
+/// - This allows a pair of `i64x2` values to be narrowed into a `i32x4`.
 trait LanewiseNarrowing: Lanes {
+    /// The wide [`Lanes`] type to be narrowed.
     type Wide: Lanes;
 
+    /// Widen `value` to `Self` by applying `f` for all pairs of lane items.
     fn lanewise_narrowing_unary(
         value: Self::Wide,
         f: impl Fn(<Self::Wide as Lanes>::Item) -> [Self::Item; 2],
     ) -> Self;
 
+    /// Widen `lhs` and `rhs` to `Self` by applying `f` for all pairs of lane items lanewise.
     fn lanewise_narrowing_binary(
         lhs: Self::Wide,
         rhs: Self::Wide,
@@ -452,38 +525,45 @@ impl LanewiseNarrowing for I8x16 {
 }
 
 impl V128 {
+    /// Convenience method to help implement splatting methods.
     fn splat<T: IntoLanes>(value: T) -> Self {
         <<T as IntoLanes>::Lanes>::splat(value).into_v128()
     }
 
+    /// Convenience method to help implement lane extraction methods.
     fn extract_lane<T: IntoLanes>(self, lane: <T as IntoLanes>::LaneIdx) -> T {
         <<T as IntoLanes>::Lanes>::from_v128(self).extract_lane(lane)
     }
 
+    /// Convenience method to help implement lane replacement methods.
     fn replace_lane<T: IntoLanes>(self, lane: <T as IntoLanes>::LaneIdx, item: T) -> Self {
         <<T as IntoLanes>::Lanes>::from_v128(self)
             .replace_lane(lane, item)
             .into_v128()
     }
 
+    /// Convenience method to help implement lanewise unary methods.
     fn lanewise_unary<T: IntoLanes>(v128: Self, f: impl Fn(T) -> T) -> Self {
         <<T as IntoLanes>::Lanes>::from_v128(v128)
             .lanewise_unary(f)
             .into_v128()
     }
 
+    /// Convenience method to help implement lanewise binary methods.
     fn lanewise_binary<T: IntoLanes>(lhs: Self, rhs: Self, f: impl Fn(T, T) -> T) -> Self {
         let lhs = <<T as IntoLanes>::Lanes>::from_v128(lhs);
         let rhs = <<T as IntoLanes>::Lanes>::from_v128(rhs);
         lhs.lanewise_binary(rhs, f).into_v128()
     }
 
+    /// Convenience method to help implement lanewise comparison methods.
     fn lanewise_comparison<T: IntoLanes>(lhs: Self, rhs: Self, f: impl Fn(T, T) -> bool) -> Self {
         let lhs = <<T as IntoLanes>::Lanes>::from_v128(lhs);
         let rhs = <<T as IntoLanes>::Lanes>::from_v128(rhs);
         lhs.lanewise_comparison(rhs, f).into_v128()
     }
 
+    /// Convenience method to help implement lanewise unary widening methods.
     fn lanewise_widening_unary<T: LanewiseWidening>(
         self,
         f: impl Fn(<T::Narrow as Lanes>::Item, <T::Narrow as Lanes>::Item) -> T::Item,
@@ -491,6 +571,7 @@ impl V128 {
         T::lanewise_widening_unary(<T::Narrow as Lanes>::from_v128(self), f).into_v128()
     }
 
+    /// Convenience method to help implement lanewise binary widening methods.
     fn lanewise_widening_binary<T: LanewiseWidening>(
         self,
         rhs: Self,
@@ -504,6 +585,7 @@ impl V128 {
         .into_v128()
     }
 
+    /// Convenience method to help implement lanewise unary narrowing methods.
     fn lanewise_narrowing_unary<T: LanewiseNarrowing>(
         self,
         f: impl Fn(<T::Wide as Lanes>::Item) -> [T::Item; 2],
@@ -511,6 +593,7 @@ impl V128 {
         T::lanewise_narrowing_unary(<T::Wide as Lanes>::from_v128(self), f).into_v128()
     }
 
+    /// Convenience method to help implement lanewise binary narrowing methods.
     fn lanewise_narrowing_binary<T: LanewiseNarrowing>(
         self,
         rhs: Self,
