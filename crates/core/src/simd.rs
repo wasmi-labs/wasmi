@@ -103,12 +103,12 @@ impl_imm_lane_id! {
     struct ImmLaneIdx32(x 32);
 }
 
-trait IntoLane {
-    type Lane: Lane<Item = Self, LaneIdx = Self::LaneIdx>;
+trait IntoLanes {
+    type Lanes: Lanes<Item = Self, LaneIdx = Self::LaneIdx>;
     type LaneIdx;
 }
 
-trait Lane {
+trait Lanes {
     type Item;
     type LaneIdx;
 
@@ -136,12 +136,12 @@ macro_rules! impl_lanes_for {
             #[repr(transparent)]
             struct $name([$ty; $n]);
 
-            impl IntoLane for $ty {
-                type Lane = $name;
+            impl IntoLanes for $ty {
+                type Lanes = $name;
                 type LaneIdx = <[(); $n] as IntoLaneIdx>::LaneIdx;
             }
 
-            impl Lane for $name {
+            impl Lanes for $name {
                 type Item = $ty;
                 type LaneIdx = <[(); $n] as IntoLaneIdx>::LaneIdx;
 
@@ -211,18 +211,18 @@ impl_lanes_for! {
     struct F64x2([f64; 2]);
 }
 
-trait LanewiseWidening: Lane {
-    type Narrow: Lane;
+trait LanewiseWidening: Lanes {
+    type Narrow: Lanes;
 
     fn lanewise_widening_unary(
         value: Self::Narrow,
-        f: impl Fn(<Self::Narrow as Lane>::Item, <Self::Narrow as Lane>::Item) -> Self::Item,
+        f: impl Fn(<Self::Narrow as Lanes>::Item, <Self::Narrow as Lanes>::Item) -> Self::Item,
     ) -> Self;
 
     fn lanewise_widening_binary(
         lhs: Self::Narrow,
         rhs: Self::Narrow,
-        f: impl Fn([<Self::Narrow as Lane>::Item; 2], [<Self::Narrow as Lane>::Item; 2]) -> Self::Item,
+        f: impl Fn([<Self::Narrow as Lanes>::Item; 2], [<Self::Narrow as Lanes>::Item; 2]) -> Self::Item,
     ) -> Self;
 }
 
@@ -231,7 +231,7 @@ impl LanewiseWidening for I64x2 {
 
     fn lanewise_widening_unary(
         value: Self::Narrow,
-        f: impl Fn(<Self::Narrow as Lane>::Item, <Self::Narrow as Lane>::Item) -> Self::Item,
+        f: impl Fn(<Self::Narrow as Lanes>::Item, <Self::Narrow as Lanes>::Item) -> Self::Item,
     ) -> Self {
         let a = value.0;
         #[rustfmt::skip]
@@ -245,7 +245,7 @@ impl LanewiseWidening for I64x2 {
     fn lanewise_widening_binary(
         lhs: Self::Narrow,
         rhs: Self::Narrow,
-        f: impl Fn([<Self::Narrow as Lane>::Item; 2], [<Self::Narrow as Lane>::Item; 2]) -> Self::Item,
+        f: impl Fn([<Self::Narrow as Lanes>::Item; 2], [<Self::Narrow as Lanes>::Item; 2]) -> Self::Item,
     ) -> Self {
         let a = lhs.0;
         let b = rhs.0;
@@ -263,7 +263,7 @@ impl LanewiseWidening for I32x4 {
 
     fn lanewise_widening_unary(
         value: Self::Narrow,
-        f: impl Fn(<Self::Narrow as Lane>::Item, <Self::Narrow as Lane>::Item) -> Self::Item,
+        f: impl Fn(<Self::Narrow as Lanes>::Item, <Self::Narrow as Lanes>::Item) -> Self::Item,
     ) -> Self {
         let a = value.0;
         #[rustfmt::skip]
@@ -279,7 +279,7 @@ impl LanewiseWidening for I32x4 {
     fn lanewise_widening_binary(
         lhs: Self::Narrow,
         rhs: Self::Narrow,
-        f: impl Fn([<Self::Narrow as Lane>::Item; 2], [<Self::Narrow as Lane>::Item; 2]) -> Self::Item,
+        f: impl Fn([<Self::Narrow as Lanes>::Item; 2], [<Self::Narrow as Lanes>::Item; 2]) -> Self::Item,
     ) -> Self {
         let a = lhs.0;
         let b = rhs.0;
@@ -299,7 +299,7 @@ impl LanewiseWidening for I16x8 {
 
     fn lanewise_widening_unary(
         value: Self::Narrow,
-        f: impl Fn(<Self::Narrow as Lane>::Item, <Self::Narrow as Lane>::Item) -> Self::Item,
+        f: impl Fn(<Self::Narrow as Lanes>::Item, <Self::Narrow as Lanes>::Item) -> Self::Item,
     ) -> Self {
         let a = value.0;
         #[rustfmt::skip]
@@ -319,7 +319,7 @@ impl LanewiseWidening for I16x8 {
     fn lanewise_widening_binary(
         lhs: Self::Narrow,
         rhs: Self::Narrow,
-        f: impl Fn([<Self::Narrow as Lane>::Item; 2], [<Self::Narrow as Lane>::Item; 2]) -> Self::Item,
+        f: impl Fn([<Self::Narrow as Lanes>::Item; 2], [<Self::Narrow as Lanes>::Item; 2]) -> Self::Item,
     ) -> Self {
         let a = lhs.0;
         let b = rhs.0;
@@ -338,18 +338,18 @@ impl LanewiseWidening for I16x8 {
     }
 }
 
-trait LanewiseNarrowing: Lane {
-    type Wide: Lane;
+trait LanewiseNarrowing: Lanes {
+    type Wide: Lanes;
 
     fn lanewise_narrowing_unary(
         value: Self::Wide,
-        f: impl Fn(<Self::Wide as Lane>::Item) -> [Self::Item; 2],
+        f: impl Fn(<Self::Wide as Lanes>::Item) -> [Self::Item; 2],
     ) -> Self;
 
     fn lanewise_narrowing_binary(
         lhs: Self::Wide,
         rhs: Self::Wide,
-        f: impl Fn(<Self::Wide as Lane>::Item, <Self::Wide as Lane>::Item) -> [Self::Item; 2],
+        f: impl Fn(<Self::Wide as Lanes>::Item, <Self::Wide as Lanes>::Item) -> [Self::Item; 2],
     ) -> Self;
 }
 
@@ -358,7 +358,7 @@ impl LanewiseNarrowing for I32x4 {
 
     fn lanewise_narrowing_unary(
         value: Self::Wide,
-        f: impl Fn(<Self::Wide as Lane>::Item) -> [Self::Item; 2],
+        f: impl Fn(<Self::Wide as Lanes>::Item) -> [Self::Item; 2],
     ) -> Self {
         let w = value.0;
         let [a0, a1] = f(w[0]);
@@ -369,7 +369,7 @@ impl LanewiseNarrowing for I32x4 {
     fn lanewise_narrowing_binary(
         lhs: Self::Wide,
         rhs: Self::Wide,
-        f: impl Fn(<Self::Wide as Lane>::Item, <Self::Wide as Lane>::Item) -> [Self::Item; 2],
+        f: impl Fn(<Self::Wide as Lanes>::Item, <Self::Wide as Lanes>::Item) -> [Self::Item; 2],
     ) -> Self {
         let lhs = lhs.0;
         let rhs = rhs.0;
@@ -384,7 +384,7 @@ impl LanewiseNarrowing for I16x8 {
 
     fn lanewise_narrowing_unary(
         value: Self::Wide,
-        f: impl Fn(<Self::Wide as Lane>::Item) -> [Self::Item; 2],
+        f: impl Fn(<Self::Wide as Lanes>::Item) -> [Self::Item; 2],
     ) -> Self {
         let w = value.0;
         let [a0, a1] = f(w[0]);
@@ -397,7 +397,7 @@ impl LanewiseNarrowing for I16x8 {
     fn lanewise_narrowing_binary(
         lhs: Self::Wide,
         rhs: Self::Wide,
-        f: impl Fn(<Self::Wide as Lane>::Item, <Self::Wide as Lane>::Item) -> [Self::Item; 2],
+        f: impl Fn(<Self::Wide as Lanes>::Item, <Self::Wide as Lanes>::Item) -> [Self::Item; 2],
     ) -> Self {
         let lhs = lhs.0;
         let rhs = rhs.0;
@@ -414,7 +414,7 @@ impl LanewiseNarrowing for I8x16 {
 
     fn lanewise_narrowing_unary(
         value: Self::Wide,
-        f: impl Fn(<Self::Wide as Lane>::Item) -> [Self::Item; 2],
+        f: impl Fn(<Self::Wide as Lanes>::Item) -> [Self::Item; 2],
     ) -> Self {
         let w = value.0;
         let [a0, a1] = f(w[0]);
@@ -433,7 +433,7 @@ impl LanewiseNarrowing for I8x16 {
     fn lanewise_narrowing_binary(
         lhs: Self::Wide,
         rhs: Self::Wide,
-        f: impl Fn(<Self::Wide as Lane>::Item, <Self::Wide as Lane>::Item) -> [Self::Item; 2],
+        f: impl Fn(<Self::Wide as Lanes>::Item, <Self::Wide as Lanes>::Item) -> [Self::Item; 2],
     ) -> Self {
         let lhs = lhs.0;
         let rhs = rhs.0;
@@ -452,53 +452,53 @@ impl LanewiseNarrowing for I8x16 {
 }
 
 impl V128 {
-    fn splat<T: IntoLane>(value: T) -> Self {
-        <<T as IntoLane>::Lane>::splat(value).into_v128()
+    fn splat<T: IntoLanes>(value: T) -> Self {
+        <<T as IntoLanes>::Lanes>::splat(value).into_v128()
     }
 
-    fn extract_lane<T: IntoLane>(self, lane: <T as IntoLane>::LaneIdx) -> T {
-        <<T as IntoLane>::Lane>::from_v128(self).extract_lane(lane)
+    fn extract_lane<T: IntoLanes>(self, lane: <T as IntoLanes>::LaneIdx) -> T {
+        <<T as IntoLanes>::Lanes>::from_v128(self).extract_lane(lane)
     }
 
-    fn replace_lane<T: IntoLane>(self, lane: <T as IntoLane>::LaneIdx, item: T) -> Self {
-        <<T as IntoLane>::Lane>::from_v128(self)
+    fn replace_lane<T: IntoLanes>(self, lane: <T as IntoLanes>::LaneIdx, item: T) -> Self {
+        <<T as IntoLanes>::Lanes>::from_v128(self)
             .replace_lane(lane, item)
             .into_v128()
     }
 
-    fn lanewise_unary<T: IntoLane>(v128: Self, f: impl Fn(T) -> T) -> Self {
-        <<T as IntoLane>::Lane>::from_v128(v128)
+    fn lanewise_unary<T: IntoLanes>(v128: Self, f: impl Fn(T) -> T) -> Self {
+        <<T as IntoLanes>::Lanes>::from_v128(v128)
             .lanewise_unary(f)
             .into_v128()
     }
 
-    fn lanewise_binary<T: IntoLane>(lhs: Self, rhs: Self, f: impl Fn(T, T) -> T) -> Self {
-        let lhs = <<T as IntoLane>::Lane>::from_v128(lhs);
-        let rhs = <<T as IntoLane>::Lane>::from_v128(rhs);
+    fn lanewise_binary<T: IntoLanes>(lhs: Self, rhs: Self, f: impl Fn(T, T) -> T) -> Self {
+        let lhs = <<T as IntoLanes>::Lanes>::from_v128(lhs);
+        let rhs = <<T as IntoLanes>::Lanes>::from_v128(rhs);
         lhs.lanewise_binary(rhs, f).into_v128()
     }
 
-    fn lanewise_comparison<T: IntoLane>(lhs: Self, rhs: Self, f: impl Fn(T, T) -> bool) -> Self {
-        let lhs = <<T as IntoLane>::Lane>::from_v128(lhs);
-        let rhs = <<T as IntoLane>::Lane>::from_v128(rhs);
+    fn lanewise_comparison<T: IntoLanes>(lhs: Self, rhs: Self, f: impl Fn(T, T) -> bool) -> Self {
+        let lhs = <<T as IntoLanes>::Lanes>::from_v128(lhs);
+        let rhs = <<T as IntoLanes>::Lanes>::from_v128(rhs);
         lhs.lanewise_comparison(rhs, f).into_v128()
     }
 
     fn lanewise_widening_unary<T: LanewiseWidening>(
         self,
-        f: impl Fn(<T::Narrow as Lane>::Item, <T::Narrow as Lane>::Item) -> T::Item,
+        f: impl Fn(<T::Narrow as Lanes>::Item, <T::Narrow as Lanes>::Item) -> T::Item,
     ) -> Self {
-        T::lanewise_widening_unary(<T::Narrow as Lane>::from_v128(self), f).into_v128()
+        T::lanewise_widening_unary(<T::Narrow as Lanes>::from_v128(self), f).into_v128()
     }
 
     fn lanewise_widening_binary<T: LanewiseWidening>(
         self,
         rhs: Self,
-        f: impl Fn([<T::Narrow as Lane>::Item; 2], [<T::Narrow as Lane>::Item; 2]) -> T::Item,
+        f: impl Fn([<T::Narrow as Lanes>::Item; 2], [<T::Narrow as Lanes>::Item; 2]) -> T::Item,
     ) -> Self {
         T::lanewise_widening_binary(
-            <T::Narrow as Lane>::from_v128(self),
-            <T::Narrow as Lane>::from_v128(rhs),
+            <T::Narrow as Lanes>::from_v128(self),
+            <T::Narrow as Lanes>::from_v128(rhs),
             f,
         )
         .into_v128()
@@ -506,19 +506,19 @@ impl V128 {
 
     fn lanewise_narrowing_unary<T: LanewiseNarrowing>(
         self,
-        f: impl Fn(<T::Wide as Lane>::Item) -> [T::Item; 2],
+        f: impl Fn(<T::Wide as Lanes>::Item) -> [T::Item; 2],
     ) -> Self {
-        T::lanewise_narrowing_unary(<T::Wide as Lane>::from_v128(self), f).into_v128()
+        T::lanewise_narrowing_unary(<T::Wide as Lanes>::from_v128(self), f).into_v128()
     }
 
     fn lanewise_narrowing_binary<T: LanewiseNarrowing>(
         self,
         rhs: Self,
-        f: impl Fn(<T::Wide as Lane>::Item, <T::Wide as Lane>::Item) -> [T::Item; 2],
+        f: impl Fn(<T::Wide as Lanes>::Item, <T::Wide as Lanes>::Item) -> [T::Item; 2],
     ) -> Self {
         T::lanewise_narrowing_binary(
-            <T::Wide as Lane>::from_v128(self),
-            <T::Wide as Lane>::from_v128(rhs),
+            <T::Wide as Lanes>::from_v128(self),
+            <T::Wide as Lanes>::from_v128(rhs),
             f,
         )
         .into_v128()
