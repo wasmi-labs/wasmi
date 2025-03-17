@@ -1038,6 +1038,18 @@ impl V128 {
 }
 
 impl V128 {
+    /// Execute a Wasm `i32x4.dot_i16x8_s` instruction.
+    pub fn i32x4_dot_i16x8_s(lhs: Self, rhs: Self) -> Self {
+        fn dot(a: [i16; 2], b: [i16; 2]) -> i32 {
+            let a = a.map(i32::from);
+            let b = b.map(i32::from);
+            let dot0 = a[0].wrapping_mul(b[0]);
+            let dot1 = a[1].wrapping_mul(b[1]);
+            dot0.wrapping_add(dot1)
+        }
+        Self::lanewise_widening_binary(lhs, rhs, dot)
+    }
+
     /// Execute a Wasm `v128.bitselect` instruction.
     pub fn v128_bitselect(v1: Self, v2: Self, c: Self) -> Self {
         Self::v128_or(Self::v128_and(v1, c), Self::v128_andnot(v2, c))
