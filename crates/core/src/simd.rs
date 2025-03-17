@@ -682,8 +682,8 @@ impl V128 {
     }
 
     /// Convenience method to help implement lanewise unary methods.
-    fn lanewise_unary<T: IntoLanes>(v128: Self, f: impl Fn(T) -> T) -> Self {
-        <<T as IntoLanes>::Lanes>::from_v128(v128)
+    fn lanewise_unary<T: IntoLanes>(self, f: impl Fn(T) -> T) -> Self {
+        <<T as IntoLanes>::Lanes>::from_v128(self)
             .lanewise_unary(f)
             .into_v128()
     }
@@ -716,12 +716,12 @@ impl V128 {
 
     /// Convenience method to help implement lanewise binary widening methods.
     fn lanewise_widening_binary<T: IntoLanewiseWidening>(
-        self,
+        lhs: Self,
         rhs: Self,
         f: impl Fn([T; 2], [T; 2]) -> <T as IntoLanewiseWidening>::WideItem,
     ) -> Self {
         <<T as IntoLanewiseWidening>::Wide>::lanewise_widening_binary(
-            <T as IntoLanes>::Lanes::from_v128(self),
+            <T as IntoLanes>::Lanes::from_v128(lhs),
             <T as IntoLanes>::Lanes::from_v128(rhs),
             f,
         )
@@ -738,12 +738,12 @@ impl V128 {
 
     /// Convenience method to help implement lanewise binary narrowing methods.
     fn lanewise_narrowing_binary<T: LanewiseNarrowing>(
-        self,
+        lhs: Self,
         rhs: Self,
         f: impl Fn(<T::Wide as Lanes>::Item, <T::Wide as Lanes>::Item) -> [T::Item; 2],
     ) -> Self {
         T::lanewise_narrowing_binary(
-            <T::Wide as Lanes>::from_v128(self),
+            <T::Wide as Lanes>::from_v128(lhs),
             <T::Wide as Lanes>::from_v128(rhs),
             f,
         )
