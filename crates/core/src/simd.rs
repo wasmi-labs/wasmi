@@ -767,9 +767,9 @@ impl V128 {
         fn f64x2_extract_lane(self, lane: ImmLaneIdx2) -> f64 = identity;
         fn f32x4_extract_lane(self, lane: ImmLaneIdx4) -> f32 = identity;
         fn i8x16_extract_lane_s(self, lane: ImmLaneIdx16) -> i32 = <i8 as Into<_>>::into;
-        fn i8x16_extract_lane_u(self, lane: ImmLaneIdx16) -> i32 = |x: i8| i32::from(x as u8);
+        fn i8x16_extract_lane_u(self, lane: ImmLaneIdx16) -> u32 = <u8 as Into<_>>::into;
         fn i16x8_extract_lane_s(self, lane: ImmLaneIdx8) -> i32 = <i16 as Into<_>>::into;
-        fn i16x8_extract_lane_u(self, lane: ImmLaneIdx8) -> i32 = |x: i16| i32::from(x as u16);
+        fn i16x8_extract_lane_u(self, lane: ImmLaneIdx8) -> u32 = <u16 as Into<_>>::into;
     }
 }
 
