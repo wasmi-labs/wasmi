@@ -1,4 +1,4 @@
-#![allow(dead_code)] // TODO: remove silencing of warnings again
+#![expect(dead_code)] // TODO: remove silencing of warnings again
 
 use crate::{wasm, ReadAs, UntypedVal, WriteAs};
 
