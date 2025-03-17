@@ -1034,3 +1034,10 @@ impl V128 {
         fn i64x2_shr_u(self, rhs: u32) -> Self = u64::wrapping_shr;
     }
 }
+
+impl V128 {
+    /// Execute a Wasm `v128.bitselect` instruction.
+    pub fn v128_bitselect(v1: Self, v2: Self, c: Self) -> Self {
+        Self::v128_or(Self::v128_and(v1, c), Self::v128_andnot(v2, c))
+    }
+}
