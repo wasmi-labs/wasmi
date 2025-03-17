@@ -616,6 +616,11 @@ impl V128 {
     }
 }
 
+/// Concenience identity helper function.
+fn identity<T>(x: T) -> T {
+    x
+}
+
 macro_rules! impl_splat_for {
     ( $( fn $name:ident(value: $ty:ty) -> Self; )* ) => {
         $(
@@ -634,5 +639,31 @@ impl V128 {
         fn i8x16_splat(value: i8) -> Self;
         fn f32x4_splat(value: f32) -> Self;
         fn f64x2_splat(value: f64) -> Self;
+    }
+}
+
+macro_rules! impl_extract_for {
+    ( $( fn $name:ident(self, lane: $lane_ty:ty) -> $ret_ty:ty = $convert:expr; )* ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(self, lane: $lane_ty) -> $ret_ty {
+                ($convert)(self.extract_lane(lane))
+            }
+        )*
+    };
+}
+
+impl V128 {
+    impl_extract_for! {
+        fn i64x2_extract_lane(self, lane: ImmLaneIdx2) -> i64 = identity;
+        fn i32x4_extract_lane(self, lane: ImmLaneIdx4) -> i32 = identity;
+        fn i16x8_extract_lane(self, lane: ImmLaneIdx8) -> i16 = identity;
+        fn i8x16_extract_lane(self, lane: ImmLaneIdx16) -> i8 = identity;
+        fn f64x2_extract_lane(self, lane: ImmLaneIdx2) -> f64 = identity;
+        fn f32x4_extract_lane(self, lane: ImmLaneIdx4) -> f32 = identity;
+        fn i8x16_extract_lane_s(self, lane: ImmLaneIdx16) -> i32 = <i8 as Into<_>>::into;
+        fn i8x16_extract_lane_u(self, lane: ImmLaneIdx16) -> i32 = |x: i8| i32::from(x as u8);
+        fn i16x8_extract_lane_s(self, lane: ImmLaneIdx8) -> i32 = <i16 as Into<_>>::into;
+        fn i16x8_extract_lane_u(self, lane: ImmLaneIdx8) -> i32 = |x: i16| i32::from(x as u16);
     }
 }
