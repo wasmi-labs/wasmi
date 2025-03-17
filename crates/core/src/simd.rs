@@ -858,6 +858,15 @@ impl V128 {
         fn i32x4_mul(lhs: Self, rhs: Self) -> Self = i32::wrapping_mul;
         fn i16x8_mul(lhs: Self, rhs: Self) -> Self = i16::wrapping_mul;
         fn i8x16_mul(lhs: Self, rhs: Self) -> Self = i8::wrapping_mul;
+
+        fn i8x16_add_sat_s(lhs: Self, rhs: Self) -> Self = i8::saturating_add;
+        fn i8x16_add_sat_u(lhs: Self, rhs: Self) -> Self = u8::saturating_add;
+        fn i16x8_add_sat_s(lhs: Self, rhs: Self) -> Self = i16::saturating_add;
+        fn i16x8_add_sat_u(lhs: Self, rhs: Self) -> Self = u16::saturating_add;
+        fn i8x16_sub_sat_s(lhs: Self, rhs: Self) -> Self = i8::saturating_sub;
+        fn i8x16_sub_sat_u(lhs: Self, rhs: Self) -> Self = u8::saturating_sub;
+        fn i16x8_sub_sat_s(lhs: Self, rhs: Self) -> Self = i16::saturating_sub;
+        fn i16x8_sub_sat_u(lhs: Self, rhs: Self) -> Self = u16::saturating_sub;
     }
 
     impl_unary_for! {
