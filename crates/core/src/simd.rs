@@ -874,6 +874,19 @@ impl V128 {
         fn i16x8_sub_sat_u(lhs: Self, rhs: Self) -> Self = u16::saturating_sub;
 
         fn i16x8_q15mulr_sat_s(lhs: Self, rhs: Self) -> Self = i16x8_q15mulr_sat;
+
+        fn i8x16_min_s(lhs: Self, rhs: Self) -> Self = i8::min;
+        fn i8x16_min_u(lhs: Self, rhs: Self) -> Self = u8::min;
+        fn i16x8_min_s(lhs: Self, rhs: Self) -> Self = i16::min;
+        fn i16x8_min_u(lhs: Self, rhs: Self) -> Self = u16::min;
+        fn i32x4_min_s(lhs: Self, rhs: Self) -> Self = i32::min;
+        fn i32x4_min_u(lhs: Self, rhs: Self) -> Self = u32::min;
+        fn i8x16_max_s(lhs: Self, rhs: Self) -> Self = i8::max;
+        fn i8x16_max_u(lhs: Self, rhs: Self) -> Self = u8::max;
+        fn i16x8_max_s(lhs: Self, rhs: Self) -> Self = i16::max;
+        fn i16x8_max_u(lhs: Self, rhs: Self) -> Self = u16::max;
+        fn i32x4_max_s(lhs: Self, rhs: Self) -> Self = i32::max;
+        fn i32x4_max_u(lhs: Self, rhs: Self) -> Self = u32::max;
     }
 
     impl_unary_for! {
