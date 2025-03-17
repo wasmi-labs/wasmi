@@ -1,7 +1,7 @@
 #![expect(dead_code)] // TODO: remove silencing of warnings again
 
 use crate::{wasm, ReadAs, UntypedVal, WriteAs};
-use core::ops::Neg;
+use core::ops::{BitAnd, BitOr, BitXor, Neg, Not};
 
 /// The Wasm `simd` proposal's `v128` type.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -890,6 +890,11 @@ impl V128 {
 
         fn i8x16_avgr_u(lhs: Self, rhs: Self) -> Self = |a: u8, b: u8| (a + b + 1) / 2;
         fn i16x8_avgr_u(lhs: Self, rhs: Self) -> Self = |a: u16, b: u16| (a + b + 1) / 2;
+
+        fn v128_and(lhs: Self, rhs: Self) -> Self = <i64 as BitAnd>::bitand;
+        fn v128_or(lhs: Self, rhs: Self) -> Self = <i64 as BitOr>::bitor;
+        fn v128_xor(lhs: Self, rhs: Self) -> Self = <i64 as BitXor>::bitxor;
+        fn v128_andnot(lhs: Self, rhs: Self) -> Self = |a: i64, b: i64| a & !b;
     }
 
     impl_unary_for! {
@@ -902,6 +907,8 @@ impl V128 {
         fn i16x8_abs(self) -> Self = i16::abs;
         fn i32x4_abs(self) -> Self = i32::abs;
         fn i64x2_abs(self) -> Self = i64::abs;
+
+        fn v128_not(self) -> Self = <i64 as Not>::not;
     }
 }
 
