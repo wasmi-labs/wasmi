@@ -664,3 +664,24 @@ impl V128 {
         fn i16x8_extract_lane_u(self, lane: ImmLaneIdx8) -> i32 = |x: i16| i32::from(x as u16);
     }
 }
+
+macro_rules! impl_replace_for {
+    ( $( fn $name:ident(self, lane: $lane_ty:ty, item: $item_ty:ty) -> Self; )* ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(self, lane: $lane_ty, item: $item_ty) -> Self {
+                self.replace_lane(lane, item)
+            }
+        )*
+    };
+}
+impl V128 {
+    impl_replace_for! {
+        fn i64x2_replace_lane(self, lane: ImmLaneIdx2, item: i64) -> Self;
+        fn i32x4_replace_lane(self, lane: ImmLaneIdx4, item: i32) -> Self;
+        fn i16x8_replace_lane(self, lane: ImmLaneIdx8, item: i16) -> Self;
+        fn i8x16_replace_lane(self, lane: ImmLaneIdx16, item: i8) -> Self;
+        fn f64x2_replace_lane(self, lane: ImmLaneIdx2, item: f64) -> Self;
+        fn f32x4_replace_lane(self, lane: ImmLaneIdx4, item: f32) -> Self;
+    }
+}
