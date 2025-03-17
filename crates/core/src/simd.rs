@@ -998,3 +998,32 @@ impl V128 {
         fn i32x4_extadd_pairwise_i16x8_u(i16) -> i32;
     }
 }
+
+macro_rules! impl_shift_ops {
+    (
+        $( fn $name:ident(self, rhs: u32) -> Self = $lanewise_expr:expr; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(self, rhs: u32) -> Self {
+                self.lanewise_unary(|v| $lanewise_expr(v, rhs))
+            }
+        )*
+    };
+}
+impl V128 {
+    impl_shift_ops! {
+        fn i8x16_shl(self, rhs: u32) -> Self = i8::wrapping_shl;
+        fn i16x8_shl(self, rhs: u32) -> Self = i16::wrapping_shl;
+        fn i32x4_shl(self, rhs: u32) -> Self = i32::wrapping_shl;
+        fn i64x2_shl(self, rhs: u32) -> Self = i64::wrapping_shl;
+        fn i8x16_shr_s(self, rhs: u32) -> Self = i8::wrapping_shr;
+        fn i8x16_shr_u(self, rhs: u32) -> Self = u8::wrapping_shr;
+        fn i16x8_shr_s(self, rhs: u32) -> Self = i16::wrapping_shr;
+        fn i16x8_shr_u(self, rhs: u32) -> Self = u16::wrapping_shr;
+        fn i32x4_shr_s(self, rhs: u32) -> Self = i32::wrapping_shr;
+        fn i32x4_shr_u(self, rhs: u32) -> Self = u32::wrapping_shr;
+        fn i64x2_shr_s(self, rhs: u32) -> Self = i64::wrapping_shr;
+        fn i64x2_shr_u(self, rhs: u32) -> Self = u64::wrapping_shr;
+    }
+}
