@@ -743,5 +743,10 @@ impl V128 {
         fn i32x4_neg(self) -> Self = <i32 as Neg>::neg;
         fn i16x8_neg(self) -> Self = <i16 as Neg>::neg;
         fn i8x16_neg(self) -> Self = <i8 as Neg>::neg;
+
+        fn i8x16_abs(self) -> Self = i8::abs;
+        fn i16x8_abs(self) -> Self = i16::abs;
+        fn i32x4_abs(self) -> Self = i32::abs;
+        fn i64x2_abs(self) -> Self = i64::abs;
     }
 }
