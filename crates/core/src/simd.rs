@@ -940,3 +940,29 @@ impl V128 {
         ),
     }
 }
+
+macro_rules! impl_extadd_pairwise {
+    (
+        $( fn $name:ident($narrow:ty) -> $wide:ty; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(self) -> Self {
+                fn extadd_pairwise(a: $narrow, b: $narrow) -> $wide {
+                    let a = <$wide>::from(a);
+                    let b = <$wide>::from(b);
+                    a.wrapping_add(b)
+                }
+                self.lanewise_widening_unary(extadd_pairwise)
+            }
+        )*
+    };
+}
+impl V128 {
+    impl_extadd_pairwise! {
+        fn i16x8_extadd_pairwise_i8x16_s(i8) -> i16;
+        fn i16x8_extadd_pairwise_i8x16_u(i8) -> i16;
+        fn i32x4_extadd_pairwise_i16x8_s(i16) -> i32;
+        fn i32x4_extadd_pairwise_i16x8_u(i16) -> i32;
+    }
+}
