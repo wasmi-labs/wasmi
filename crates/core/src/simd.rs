@@ -887,6 +887,9 @@ impl V128 {
         fn i16x8_max_u(lhs: Self, rhs: Self) -> Self = u16::max;
         fn i32x4_max_s(lhs: Self, rhs: Self) -> Self = i32::max;
         fn i32x4_max_u(lhs: Self, rhs: Self) -> Self = u32::max;
+
+        fn i8x16_avgr_u(lhs: Self, rhs: Self) -> Self = |a: u8, b: u8| (a + b + 1) / 2;
+        fn i16x8_avgr_u(lhs: Self, rhs: Self) -> Self = |a: u16, b: u16| (a + b + 1) / 2;
     }
 
     impl_unary_for! {
