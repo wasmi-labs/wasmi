@@ -295,6 +295,14 @@ impl_lanes_for! {
     struct F64x2([f64; 2]);
 }
 
+/// Helper trait to help the type inference to do its jobs with fewer type annotations.
+trait IntoLanewiseWidening: IntoLanes {
+    /// The wide lanes type.
+    type Wide: LanewiseWidening<Item = Self::WideItem, Narrow = <Self as IntoLanes>::Lanes>;
+    /// The wide lanes' item type.
+    type WideItem;
+}
+
 /// Trait allowing [`Lanes`] types to be widened.
 ///
 /// # Example
@@ -324,6 +332,11 @@ macro_rules! impl_lanewise_widening_for_i64x2 {
         $( impl LanewiseWidening for $ty:ident<Narrow = $narrow_ty:ty>; )*
     ) => {
         $(
+            impl IntoLanewiseWidening for <$narrow_ty as Lanes>::Item {
+                type Wide = $ty;
+                type WideItem = <$ty as Lanes>::Item;
+            }
+
             impl LanewiseWidening for $ty {
                 type Narrow = $narrow_ty;
 
@@ -374,6 +387,11 @@ macro_rules! impl_lanewise_widening_for_i32x4 {
         $( impl LanewiseWidening for $ty:ident<Narrow = $narrow_ty:ty>; )*
     ) => {
         $(
+            impl IntoLanewiseWidening for <$narrow_ty as Lanes>::Item {
+                type Wide = $ty;
+                type WideItem = <$ty as Lanes>::Item;
+            }
+
             impl LanewiseWidening for $ty {
                 type Narrow = $narrow_ty;
 
@@ -425,6 +443,11 @@ macro_rules! impl_lanewise_widening_for_i16x8 {
         $( impl LanewiseWidening for $ty:ident<Narrow = $narrow_ty:ty>; )*
     ) => {
         $(
+            impl IntoLanewiseWidening for <$narrow_ty as Lanes>::Item {
+                type Wide = $ty;
+                type WideItem = <$ty as Lanes>::Item;
+            }
+
             impl LanewiseWidening for $ty {
                 type Narrow = $narrow_ty;
 
@@ -680,22 +703,26 @@ impl V128 {
     }
 
     /// Convenience method to help implement lanewise unary widening methods.
-    fn lanewise_widening_unary<T: LanewiseWidening>(
+    fn lanewise_widening_unary<T: IntoLanewiseWidening>(
         self,
-        f: impl Fn(<T::Narrow as Lanes>::Item, <T::Narrow as Lanes>::Item) -> T::Item,
+        f: impl Fn(T, T) -> <T as IntoLanewiseWidening>::WideItem,
     ) -> Self {
-        T::lanewise_widening_unary(<T::Narrow as Lanes>::from_v128(self), f).into_v128()
+        <<T as IntoLanewiseWidening>::Wide>::lanewise_widening_unary(
+            <T as IntoLanes>::Lanes::from_v128(self),
+            f,
+        )
+        .into_v128()
     }
 
     /// Convenience method to help implement lanewise binary widening methods.
-    fn lanewise_widening_binary<T: LanewiseWidening>(
+    fn lanewise_widening_binary<T: IntoLanewiseWidening>(
         self,
         rhs: Self,
-        f: impl Fn([<T::Narrow as Lanes>::Item; 2], [<T::Narrow as Lanes>::Item; 2]) -> T::Item,
+        f: impl Fn([T; 2], [T; 2]) -> <T as IntoLanewiseWidening>::WideItem,
     ) -> Self {
-        T::lanewise_widening_binary(
-            <T::Narrow as Lanes>::from_v128(self),
-            <T::Narrow as Lanes>::from_v128(rhs),
+        <<T as IntoLanewiseWidening>::Wide>::lanewise_widening_binary(
+            <T as IntoLanes>::Lanes::from_v128(self),
+            <T as IntoLanes>::Lanes::from_v128(rhs),
             f,
         )
         .into_v128()
