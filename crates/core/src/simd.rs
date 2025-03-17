@@ -1,6 +1,7 @@
 #![expect(dead_code)] // TODO: remove silencing of warnings again
 
 use crate::{wasm, ReadAs, UntypedVal, WriteAs};
+use core::ops::Neg;
 
 /// The Wasm `simd` proposal's `v128` type.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -698,6 +699,17 @@ impl V128 {
     }
 }
 
+macro_rules! impl_unary_for {
+    ( $( fn $name:ident(self) -> Self = $lanewise_expr:expr; )* ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(self) -> Self {
+                Self::lanewise_unary(self, $lanewise_expr)
+            }
+        )*
+    };
+}
+
 macro_rules! impl_binary_for {
     ( $( fn $name:ident(lhs: Self, rhs: Self) -> Self = $lanewise_expr:expr; )* ) => {
         $(
@@ -724,5 +736,12 @@ impl V128 {
         fn i32x4_mul(lhs: Self, rhs: Self) -> Self = i32::wrapping_mul;
         fn i16x8_mul(lhs: Self, rhs: Self) -> Self = i16::wrapping_mul;
         fn i8x16_mul(lhs: Self, rhs: Self) -> Self = i8::wrapping_mul;
+    }
+
+    impl_unary_for! {
+        fn i64x2_neg(self) -> Self = <i64 as Neg>::neg;
+        fn i32x4_neg(self) -> Self = <i32 as Neg>::neg;
+        fn i16x8_neg(self) -> Self = <i16 as Neg>::neg;
+        fn i8x16_neg(self) -> Self = <i8 as Neg>::neg;
     }
 }
