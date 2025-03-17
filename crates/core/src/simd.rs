@@ -7,6 +7,18 @@ use crate::{wasm, ReadAs, UntypedVal, WriteAs};
 #[repr(transparent)]
 pub struct V128([u8; 16]);
 
+impl From<[u8; 16]> for V128 {
+    fn from(bytes: [u8; 16]) -> Self {
+        Self(bytes)
+    }
+}
+
+impl From<i128> for V128 {
+    fn from(value: i128) -> Self {
+        Self(value.to_le_bytes())
+    }
+}
+
 impl From<UntypedVal> for V128 {
     fn from(value: UntypedVal) -> Self {
         let u128 = (u128::from(value.hi64) << 64) | (u128::from(value.lo64));
