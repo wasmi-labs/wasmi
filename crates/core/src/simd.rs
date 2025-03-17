@@ -909,6 +909,8 @@ impl V128 {
         fn i64x2_abs(self) -> Self = i64::abs;
 
         fn v128_not(self) -> Self = <i64 as Not>::not;
+
+        fn i8x16_popcnt(self) -> Self = |v: u8| v.count_ones() as u8;
     }
 }
 
