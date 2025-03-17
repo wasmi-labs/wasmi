@@ -652,7 +652,6 @@ macro_rules! impl_extract_for {
         )*
     };
 }
-
 impl V128 {
     impl_extract_for! {
         fn i64x2_extract_lane(self, lane: ImmLaneIdx2) -> i64 = identity;
