@@ -20,6 +20,13 @@ impl From<i128> for V128 {
     }
 }
 
+impl V128 {
+    /// Creates an `i128` value from the bytes of `self`.
+    pub(crate) fn to_i128(self) -> i128 {
+        i128::from_le_bytes(self.0)
+    }
+}
+
 impl From<UntypedVal> for V128 {
     fn from(value: UntypedVal) -> Self {
         let u128 = (u128::from(value.hi64) << 64) | (u128::from(value.lo64));
@@ -183,6 +190,9 @@ trait Lanes {
     ///
     /// Storing [`Self::ALL_ONES`] if `f` evaluates to `true` or [`Self::ALL_ZEROS`] otherwise per item.
     fn lanewise_comparison(self, other: Self, f: impl Fn(Self::Item, Self::Item) -> bool) -> Self;
+
+    /// Apply `f(i, n, acc)` for all lane items `i` at pos `n` in `self` and return the result.
+    fn lanewise_reduce<T>(self, acc: T, f: impl Fn(u8, Self::Item, T) -> T) -> T;
 }
 
 macro_rules! impl_lanes_for {
@@ -267,6 +277,15 @@ macro_rules! impl_lanes_for {
                         true => Self::ALL_ONES,
                         false => Self::ALL_ZEROS,
                     })
+                }
+
+                fn lanewise_reduce<T>(self, acc: T, f: impl Fn(u8, Self::Item, T) -> T) -> T {
+                    let this = self.0;
+                    let mut acc = acc;
+                    for i in 0..Self::LANES {
+                        acc = f(i as u8, this[i], acc);
+                    }
+                    acc
                 }
             }
         )*
@@ -749,6 +768,16 @@ impl V128 {
         )
         .into_v128()
     }
+
+    /// Convenience method to help implement lanewise reduce methods.
+    fn lanewise_reduce<T: IntoLanes, V>(self, acc: V, f: impl Fn(T, V) -> V) -> V {
+        self.lanewise_reduce_enumerate::<T, V>(acc, |_, v: T, acc: V| f(v, acc))
+    }
+
+    /// Convenience method to help implement lanewise reduce methods with a loop-index.
+    fn lanewise_reduce_enumerate<T: IntoLanes, V>(self, acc: V, f: impl Fn(u8, T, V) -> V) -> V {
+        <<T as IntoLanes>::Lanes>::from_v128(self).lanewise_reduce(acc, f)
+    }
 }
 
 /// Concenience identity helper function.
@@ -1034,6 +1063,50 @@ impl V128 {
         fn i32x4_shr_u(self, rhs: u32) -> Self = u32::wrapping_shr;
         fn i64x2_shr_s(self, rhs: u32) -> Self = i64::wrapping_shr;
         fn i64x2_shr_u(self, rhs: u32) -> Self = u64::wrapping_shr;
+    }
+}
+
+macro_rules! impl_reduce_ops {
+    (
+        $( fn $name:ident(self) -> bool = all_true($item_ty:ty); )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(self) -> bool {
+                self.lanewise_reduce(true, |v: $item_ty, acc| acc & (v != 0))
+            }
+        )*
+    };
+    (
+        $( fn $name:ident(self) -> u32 = bitmask($item_ty:ty); )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(self) -> u32 {
+                self.lanewise_reduce_enumerate(0_i32, |n, v: $item_ty, acc| {
+                    acc | (i32::from(v < 0).wrapping_shl(u32::from(n)))
+                }) as _
+            }
+        )*
+    };
+}
+impl V128 {
+    /// Executes a Wasm `v128.any_true` instruction.
+    pub fn v128_any_true(self) -> bool {
+        self.to_i128() != 0
+    }
+
+    impl_reduce_ops! {
+        fn i8x16_all_true(self) -> bool = all_true(i8);
+        fn i16x8_all_true(self) -> bool = all_true(i16);
+        fn i32x4_all_true(self) -> bool = all_true(i32);
+        fn i64x2_all_true(self) -> bool = all_true(i64);
+    }
+    impl_reduce_ops! {
+        fn i8x16_bitmask(self) -> u32 = bitmask(i8);
+        fn i16x8_bitmask(self) -> u32 = bitmask(i16);
+        fn i32x4_bitmask(self) -> u32 = bitmask(i32);
+        fn i64x2_bitmask(self) -> u32 = bitmask(i64);
     }
 }
 
