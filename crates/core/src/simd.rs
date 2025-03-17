@@ -884,6 +884,7 @@ macro_rules! impl_extmul_ops {
         ),* $(,)?
     ) => {
         $(
+            #[doc = concat!("Executes a Wasm `", stringify!($extmul_low), "` instruction.")]
             pub fn $extmul_low(lhs: Self, rhs: Self) -> Self {
                 fn extmul(a: [$narrow; 2], b: [$narrow; 2]) -> $wide {
                     let a = <$wide>::from(a[0]);
@@ -893,6 +894,7 @@ macro_rules! impl_extmul_ops {
                 Self::lanewise_widening_binary(lhs, rhs, extmul)
             }
 
+            #[doc = concat!("Executes a Wasm `", stringify!($extmul_high), "` instruction.")]
             pub fn $extmul_high(lhs: Self, rhs: Self) -> Self {
                 fn extmul(a: [$narrow; 2], b: [$narrow; 2]) -> $wide {
                     let a = <$wide>::from(a[1]);
