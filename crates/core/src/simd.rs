@@ -872,3 +872,69 @@ impl V128 {
         fn i64x2_abs(self) -> Self = i64::abs;
     }
 }
+
+macro_rules! impl_extmul_ops {
+    (
+        $(
+            (
+                $narrow:ty => $wide:ty;
+                fn $extmul_low:ident;
+                fn $extmul_high:ident;
+            )
+        ),* $(,)?
+    ) => {
+        $(
+            pub fn $extmul_low(lhs: Self, rhs: Self) -> Self {
+                fn extmul(a: [$narrow; 2], b: [$narrow; 2]) -> $wide {
+                    let a = <$wide>::from(a[0]);
+                    let b = <$wide>::from(b[0]);
+                    a.wrapping_mul(b)
+                }
+                Self::lanewise_widening_binary(lhs, rhs, extmul)
+            }
+
+            pub fn $extmul_high(lhs: Self, rhs: Self) -> Self {
+                fn extmul(a: [$narrow; 2], b: [$narrow; 2]) -> $wide {
+                    let a = <$wide>::from(a[1]);
+                    let b = <$wide>::from(b[1]);
+                    a.wrapping_mul(b)
+                }
+                Self::lanewise_widening_binary(lhs, rhs, extmul)
+            }
+        )*
+    };
+}
+impl V128 {
+    impl_extmul_ops! {
+        (
+            i8 => i16;
+            fn i16x8_extmul_low_i8x16_s;
+            fn i16x8_extmul_high_i8x16_s;
+        ),
+        (
+            u8 => u16;
+            fn i16x8_extmul_low_i8x16_u;
+            fn i16x8_extmul_high_i8x16_u;
+        ),
+        (
+            i16 => i32;
+            fn i32x4_extmul_low_i16x8_s;
+            fn i32x4_extmul_high_i16x8_s;
+        ),
+        (
+            u16 => u32;
+            fn i32x4_extmul_low_i16x8_u;
+            fn i32x4_extmul_high_i16x8_u;
+        ),
+        (
+            i32 => i64;
+            fn i64x2_extmul_low_i32x4_s;
+            fn i64x2_extmul_high_i32x4_s;
+        ),
+        (
+            u32 => u64;
+            fn i64x2_extmul_low_i32x4_u;
+            fn i64x2_extmul_high_i32x4_u;
+        ),
+    }
+}
