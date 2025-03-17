@@ -58,7 +58,7 @@ pub struct ImmByte(u8);
 /// An error that may occur when constructing an out of bounds lane index.
 pub struct OutOfBoundsLaneId;
 
-/// Helper trait to allow some macro expansion for types that have an associated lane index.
+/// Helper trait to help the type inference to do its jobs with fewer type annotations.
 trait IntoLaneIdx {
     /// The associated lane index type.
     type LaneIdx;
@@ -119,7 +119,7 @@ impl_imm_lane_id! {
     struct ImmLaneIdx32(x 32);
 }
 
-/// Helper trait to make some low-level calls more convenient.
+/// Helper trait to help the type inference to do its jobs with fewer type annotations.
 ///
 /// # Note
 ///
