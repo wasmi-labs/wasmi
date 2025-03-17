@@ -697,3 +697,32 @@ impl V128 {
         fn f32x4_replace_lane(self, lane: ImmLaneIdx4, item: f32) -> Self;
     }
 }
+
+macro_rules! impl_binary_for {
+    ( $( fn $name:ident(lhs: Self, rhs: Self) -> Self = $lanewise_expr:expr; )* ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(lhs: Self, rhs: Self) -> Self {
+                Self::lanewise_binary(lhs, rhs, $lanewise_expr)
+            }
+        )*
+    };
+}
+impl V128 {
+    impl_binary_for! {
+        fn i64x2_add(lhs: Self, rhs: Self) -> Self = i64::wrapping_add;
+        fn i32x4_add(lhs: Self, rhs: Self) -> Self = i32::wrapping_add;
+        fn i16x8_add(lhs: Self, rhs: Self) -> Self = i16::wrapping_add;
+        fn i8x16_add(lhs: Self, rhs: Self) -> Self = i8::wrapping_add;
+
+        fn i64x2_sub(lhs: Self, rhs: Self) -> Self = i64::wrapping_sub;
+        fn i32x4_sub(lhs: Self, rhs: Self) -> Self = i32::wrapping_sub;
+        fn i16x8_sub(lhs: Self, rhs: Self) -> Self = i16::wrapping_sub;
+        fn i8x16_sub(lhs: Self, rhs: Self) -> Self = i8::wrapping_sub;
+
+        fn i64x2_mul(lhs: Self, rhs: Self) -> Self = i64::wrapping_mul;
+        fn i32x4_mul(lhs: Self, rhs: Self) -> Self = i32::wrapping_mul;
+        fn i16x8_mul(lhs: Self, rhs: Self) -> Self = i16::wrapping_mul;
+        fn i8x16_mul(lhs: Self, rhs: Self) -> Self = i8::wrapping_mul;
+    }
+}
