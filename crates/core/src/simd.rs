@@ -1,6 +1,6 @@
 #![expect(dead_code)] // TODO: remove silencing of warnings again
 
-use crate::{wasm, ReadAs, UntypedVal, WriteAs};
+use crate::{ReadAs, UntypedVal, WriteAs};
 use core::ops::{BitAnd, BitOr, BitXor, Neg, Not};
 
 /// The Wasm `simd` proposal's `v128` type.
@@ -940,6 +940,79 @@ impl V128 {
         fn v128_not(self) -> Self = <i64 as Not>::not;
 
         fn i8x16_popcnt(self) -> Self = |v: u8| v.count_ones() as u8;
+    }
+}
+
+macro_rules! op {
+    ($ty:ty, $op:tt) => {{
+        |lhs: $ty, rhs: $ty| lhs $op rhs
+    }};
+}
+macro_rules! impl_comparison_for {
+    ( $( fn $name:ident(lhs: Self, rhs: Self) -> Self = $lanewise_expr:expr; )* ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(lhs: Self, rhs: Self) -> Self {
+                Self::lanewise_comparison(lhs, rhs, $lanewise_expr)
+            }
+        )*
+    };
+}
+impl V128 {
+    impl_comparison_for! {
+        fn i8x16_eq(lhs: Self, rhs: Self) -> Self = op!(i8, ==);
+        fn i16x8_eq(lhs: Self, rhs: Self) -> Self = op!(i16, ==);
+        fn i32x4_eq(lhs: Self, rhs: Self) -> Self = op!(i32, ==);
+        fn i64x2_eq(lhs: Self, rhs: Self) -> Self = op!(i64, ==);
+        fn f32x4_eq(lhs: Self, rhs: Self) -> Self = op!(f32, ==);
+        fn f64x2_eq(lhs: Self, rhs: Self) -> Self = op!(f64, ==);
+
+        fn i8x16_ne(lhs: Self, rhs: Self) -> Self = op!(i8, !=);
+        fn i16x8_ne(lhs: Self, rhs: Self) -> Self = op!(i16, !=);
+        fn i32x4_ne(lhs: Self, rhs: Self) -> Self = op!(i32, !=);
+        fn i64x2_ne(lhs: Self, rhs: Self) -> Self = op!(i64, !=);
+        fn f32x4_ne(lhs: Self, rhs: Self) -> Self = op!(f32, !=);
+        fn f64x2_ne(lhs: Self, rhs: Self) -> Self = op!(f64, !=);
+
+        fn i8x16_lt_s(lhs: Self, rhs: Self) -> Self = op!(i8, <);
+        fn i8x16_lt_u(lhs: Self, rhs: Self) -> Self = op!(u8, <);
+        fn i16x8_lt_s(lhs: Self, rhs: Self) -> Self = op!(i16, <);
+        fn i16x8_lt_u(lhs: Self, rhs: Self) -> Self = op!(u16, <);
+        fn i32x4_lt_s(lhs: Self, rhs: Self) -> Self = op!(i32, <);
+        fn i32x4_lt_u(lhs: Self, rhs: Self) -> Self = op!(u32, <);
+        fn i64x2_lt_s(lhs: Self, rhs: Self) -> Self = op!(i64, <);
+        fn f32x4_lt(lhs: Self, rhs: Self) -> Self = op!(f32, <);
+        fn f64x2_lt(lhs: Self, rhs: Self) -> Self = op!(f64, <);
+
+        fn i8x16_le_s(lhs: Self, rhs: Self) -> Self = op!(i8, <=);
+        fn i8x16_le_u(lhs: Self, rhs: Self) -> Self = op!(u8, <=);
+        fn i16x8_le_s(lhs: Self, rhs: Self) -> Self = op!(i16, <=);
+        fn i16x8_le_u(lhs: Self, rhs: Self) -> Self = op!(u16, <=);
+        fn i32x4_le_s(lhs: Self, rhs: Self) -> Self = op!(i32, <=);
+        fn i32x4_le_u(lhs: Self, rhs: Self) -> Self = op!(u32, <=);
+        fn i64x2_le_s(lhs: Self, rhs: Self) -> Self = op!(i64, <=);
+        fn f32x4_le(lhs: Self, rhs: Self) -> Self = op!(f32, <=);
+        fn f64x2_le(lhs: Self, rhs: Self) -> Self = op!(f64, <=);
+
+        fn i8x16_gt_s(lhs: Self, rhs: Self) -> Self = op!(i8, >);
+        fn i8x16_gt_u(lhs: Self, rhs: Self) -> Self = op!(u8, >);
+        fn i16x8_gt_s(lhs: Self, rhs: Self) -> Self = op!(i16, >);
+        fn i16x8_gt_u(lhs: Self, rhs: Self) -> Self = op!(u16, >);
+        fn i32x4_gt_s(lhs: Self, rhs: Self) -> Self = op!(i32, >);
+        fn i32x4_gt_u(lhs: Self, rhs: Self) -> Self = op!(u32, >);
+        fn i64x2_gt_s(lhs: Self, rhs: Self) -> Self = op!(i64, >);
+        fn f32x4_gt(lhs: Self, rhs: Self) -> Self = op!(f32, >);
+        fn f64x2_gt(lhs: Self, rhs: Self) -> Self = op!(f64, >);
+
+        fn i8x16_ge_s(lhs: Self, rhs: Self) -> Self = op!(i8, >=);
+        fn i8x16_ge_u(lhs: Self, rhs: Self) -> Self = op!(u8, >=);
+        fn i16x8_ge_s(lhs: Self, rhs: Self) -> Self = op!(i16, >=);
+        fn i16x8_ge_u(lhs: Self, rhs: Self) -> Self = op!(u16, >=);
+        fn i32x4_ge_s(lhs: Self, rhs: Self) -> Self = op!(i32, >=);
+        fn i32x4_ge_u(lhs: Self, rhs: Self) -> Self = op!(u32, >=);
+        fn i64x2_ge_s(lhs: Self, rhs: Self) -> Self = op!(i64, >=);
+        fn f32x4_ge(lhs: Self, rhs: Self) -> Self = op!(f32, >=);
+        fn f64x2_ge(lhs: Self, rhs: Self) -> Self = op!(f64, >=);
     }
 }
 
