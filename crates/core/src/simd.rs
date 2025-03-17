@@ -832,6 +832,11 @@ macro_rules! impl_unary_for {
     };
 }
 
+/// Lanewise operation for the Wasm `q15mulr_sat` SIMD operation.
+fn i16x8_q15mulr_sat(x: i16, y: i16) -> i16 {
+    (x * y + 0x4000) >> 15
+}
+
 macro_rules! impl_binary_for {
     ( $( fn $name:ident(lhs: Self, rhs: Self) -> Self = $lanewise_expr:expr; )* ) => {
         $(
@@ -867,6 +872,8 @@ impl V128 {
         fn i8x16_sub_sat_u(lhs: Self, rhs: Self) -> Self = u8::saturating_sub;
         fn i16x8_sub_sat_s(lhs: Self, rhs: Self) -> Self = i16::saturating_sub;
         fn i16x8_sub_sat_u(lhs: Self, rhs: Self) -> Self = u16::saturating_sub;
+
+        fn i16x8_q15mulr_sat_s(lhs: Self, rhs: Self) -> Self = i16x8_q15mulr_sat;
     }
 
     impl_unary_for! {
