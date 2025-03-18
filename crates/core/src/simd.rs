@@ -3,6 +3,12 @@
 use crate::{ReadAs, UntypedVal, WriteAs};
 use core::ops::{BitAnd, BitOr, BitXor, Neg, Not};
 
+macro_rules! op {
+    ($ty:ty, $op:tt) => {{
+        |lhs: $ty, rhs: $ty| lhs $op rhs
+    }};
+}
+
 /// The Wasm `simd` proposal's `v128` type.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
@@ -958,11 +964,6 @@ impl V128 {
     }
 }
 
-macro_rules! op {
-    ($ty:ty, $op:tt) => {{
-        |lhs: $ty, rhs: $ty| lhs $op rhs
-    }};
-}
 macro_rules! impl_comparison_for {
     ( $( fn $name:ident(lhs: Self, rhs: Self) -> Self = $lanewise_expr:expr; )* ) => {
         $(
