@@ -940,6 +940,21 @@ impl V128 {
         fn v128_not(self) -> Self = <i64 as Not>::not;
 
         fn i8x16_popcnt(self) -> Self = |v: u8| v.count_ones() as u8;
+
+        fn f32x4_neg(self) -> Self = <f32 as Neg>::neg;
+        fn f64x2_neg(self) -> Self = <f64 as Neg>::neg;
+        fn f32x4_abs(self) -> Self = f32::abs;
+        fn f64x2_abs(self) -> Self = f64::abs;
+        fn f32x4_sqrt(self) -> Self = f32::sqrt;
+        fn f64x2_sqrt(self) -> Self = f64::sqrt;
+        fn f32x4_ceil(self) -> Self = f32::ceil;
+        fn f64x2_ceil(self) -> Self = f64::ceil;
+        fn f32x4_floor(self) -> Self = f32::floor;
+        fn f64x2_floor(self) -> Self = f64::floor;
+        fn f32x4_trunc(self) -> Self = f32::trunc;
+        fn f64x2_trunc(self) -> Self = f64::trunc;
+        fn f32x4_nearest(self) -> Self = f32::round_ties_even;
+        fn f64x2_nearest(self) -> Self = f64::round_ties_even;
     }
 }
 
