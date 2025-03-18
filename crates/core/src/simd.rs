@@ -1,6 +1,6 @@
 #![expect(dead_code)] // TODO: remove silencing of warnings again
 
-use crate::{ReadAs, UntypedVal, WriteAs};
+use crate::{wasm, ReadAs, UntypedVal, WriteAs};
 use core::ops::{BitAnd, BitOr, BitXor, Neg, Not};
 
 macro_rules! op {
@@ -930,6 +930,23 @@ impl V128 {
         fn v128_or(lhs: Self, rhs: Self) -> Self = <i64 as BitOr>::bitor;
         fn v128_xor(lhs: Self, rhs: Self) -> Self = <i64 as BitXor>::bitxor;
         fn v128_andnot(lhs: Self, rhs: Self) -> Self = |a: i64, b: i64| a & !b;
+
+        fn f32x4_min(lhs: Self, rhs: Self) -> Self = wasm::f32_min;
+        fn f64x2_min(lhs: Self, rhs: Self) -> Self = wasm::f64_min;
+        fn f32x4_max(lhs: Self, rhs: Self) -> Self = wasm::f32_max;
+        fn f64x2_max(lhs: Self, rhs: Self) -> Self = wasm::f64_max;
+        fn f32x4_pmin(lhs: Self, rhs: Self) -> Self = f32::min;
+        fn f64x2_pmin(lhs: Self, rhs: Self) -> Self = f64::min;
+        fn f32x4_pmax(lhs: Self, rhs: Self) -> Self = f32::max;
+        fn f64x2_pmax(lhs: Self, rhs: Self) -> Self = f64::max;
+        fn f32x4_add(lhs: Self, rhs: Self) -> Self = op!(f32, +);
+        fn f64x2_add(lhs: Self, rhs: Self) -> Self = op!(f64, +);
+        fn f32x4_sub(lhs: Self, rhs: Self) -> Self = op!(f32, -);
+        fn f64x2_sub(lhs: Self, rhs: Self) -> Self = op!(f64, -);
+        fn f32x4_div(lhs: Self, rhs: Self) -> Self = op!(f32, /);
+        fn f64x2_div(lhs: Self, rhs: Self) -> Self = op!(f64, /);
+        fn f32x4_mul(lhs: Self, rhs: Self) -> Self = op!(f32, *);
+        fn f64x2_mul(lhs: Self, rhs: Self) -> Self = op!(f64, *);
     }
 
     impl_unary_for! {
@@ -1216,4 +1233,12 @@ impl V128 {
     pub fn v128_bitselect(v1: Self, v2: Self, c: Self) -> Self {
         Self::v128_or(Self::v128_and(v1, c), Self::v128_andnot(v2, c))
     }
+}
+
+#[test]
+fn it_works() {
+    let v0 = V128::splat(16383_i16);
+    let v1 = V128::splat(16384_i16);
+    let result = V128::i32x4_dot_i16x8_s(v0, v1);
+    assert_eq!(result, V128::splat(536838144_i32));
 }
