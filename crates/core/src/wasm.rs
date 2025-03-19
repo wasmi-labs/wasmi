@@ -1,7 +1,7 @@
 //! Execution helpers for Wasm or Wasmi instructions.
 
 use crate::{
-    memory::{load_extend, load_extend_at, store_wrap, store_wrap_at},
+    memory,
     Float,
     Integer,
     SignExtendFrom,
@@ -283,45 +283,33 @@ impl_untyped_val! {
     fn i64_trunc_sat_f64_u(value: f64) -> u64 = TruncateSaturateInto::truncate_saturate_into;
 }
 
-macro_rules! gen_load_fn {
+macro_rules! gen_load_extend_fn {
     (
-        (fn $load_fn:ident, fn $load_at_fn:ident, $ty:ty); $($rest:tt)*
+        $( (fn $load_fn:ident, fn $load_at_fn:ident, $wrapped:ty => $ty:ty); )*
     ) => {
-        gen_load_fn!(
-            (fn $load_fn, fn $load_at_fn, $ty => $ty);
-        );
-        gen_load_fn!($($rest)*);
-    };
-    (
-        (fn $load_fn:ident, fn $load_at_fn:ident, $wrapped:ty => $ty:ty); $($rest:tt)*
-    ) => {
-        #[doc = concat!("Executes a Wasmi `", stringify!($load_fn), "` instruction.")]
-        ///
-        /// # Errors
-        ///
-        /// - If `ptr + offset` overflows.
-        /// - If `ptr + offset` loads out of bounds from `memory`.
-        pub fn $load_fn(memory: &[u8], ptr: u64, offset: u64) -> Result<$ty, TrapCode> {
-            load_extend::<$ty, $wrapped>(memory, ptr, offset)
-        }
+        $(
+            #[doc = concat!("Executes a Wasmi `", stringify!($load_fn), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` loads out of bounds from `memory`.
+            pub fn $load_fn(memory: &[u8], ptr: u64, offset: u64) -> Result<$ty, TrapCode> {
+                memory::load_extend::<$ty, $wrapped>(memory, ptr, offset)
+            }
 
-        #[doc = concat!("Executes a Wasmi `", stringify!($load_at_fn), "` instruction.")]
-        ///
-        /// # Errors
-        ///
-        /// If `address` loads out of bounds from `memory`.
-        pub fn $load_at_fn(memory: &[u8], address: usize) -> Result<$ty, TrapCode> {
-            load_extend_at::<$ty, $wrapped>(memory, address)
-        }
-
-        gen_load_fn!($($rest)*);
+            #[doc = concat!("Executes a Wasmi `", stringify!($load_at_fn), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// If `address` loads out of bounds from `memory`.
+            pub fn $load_at_fn(memory: &[u8], address: usize) -> Result<$ty, TrapCode> {
+                memory::load_extend_at::<$ty, $wrapped>(memory, address)
+            }
+        )*
     };
-    () => {};
 }
-
-gen_load_fn! {
-    (fn load32, fn load32_at, u32);
-    (fn load64, fn load64_at, u64);
+gen_load_extend_fn! {
     (fn i32_load8_s, fn i32_load8_s_at, i8 => i32);
     (fn i32_load8_u, fn i32_load8_u_at, u8 => i32);
     (fn i32_load16_s, fn i32_load16_s_at, i16 => i32);
@@ -334,50 +322,100 @@ gen_load_fn! {
     (fn i64_load32_u, fn i64_load32_u_at, u32 => i64);
 }
 
-macro_rules! gen_store_fn {
+macro_rules! gen_load_fn {
     (
-        (fn $store_fn:ident, fn $store_at_fn:ident, $ty:ty); $($rest:tt)*
+        $( (fn $load_fn:ident, fn $load_at_fn:ident, $ty:ty); )*
     ) => {
-        gen_store_fn!(
-            (fn $store_fn, fn $store_at_fn, $ty => $ty);
-        );
-        gen_store_fn!($($rest)*);
-    };
-    (
-        (fn $store_fn:ident, fn $store_at_fn:ident, $ty:ty => $wrapped:ty); $($rest:tt)*
-    ) => {
-        #[doc = concat!("Executes a Wasmi `", stringify!($store_fn), "` instruction.")]
-        ///
-        /// # Errors
-        ///
-        /// - If `ptr + offset` overflows.
-        /// - If `ptr + offset` stores out of bounds from `memory`.
-        pub fn $store_fn(memory: &mut [u8], ptr: u64, offset: u64, value: $ty) -> Result<(), TrapCode> {
-            store_wrap::<$ty, $wrapped>(memory, ptr, offset, value)
-        }
+        $(
+            #[doc = concat!("Executes a Wasmi `", stringify!($load_fn), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` loads out of bounds from `memory`.
+            pub fn $load_fn(memory: &[u8], ptr: u64, offset: u64) -> Result<$ty, TrapCode> {
+                memory::load::<$ty>(memory, ptr, offset)
+            }
 
-        #[doc = concat!("Executes a Wasmi `", stringify!($store_at_fn), "` instruction.")]
-        ///
-        /// # Errors
-        ///
-        /// If `address` stores out of bounds from `memory`.
-        pub fn $store_at_fn(memory: &mut [u8], address: usize, value: $ty) -> Result<(), TrapCode> {
-            store_wrap_at::<$ty, $wrapped>(memory, address, value)
-        }
-
-        gen_store_fn!($($rest)*);
+            #[doc = concat!("Executes a Wasmi `", stringify!($load_at_fn), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// If `address` loads out of bounds from `memory`.
+            pub fn $load_at_fn(memory: &[u8], address: usize) -> Result<$ty, TrapCode> {
+                memory::load_at::<$ty>(memory, address)
+            }
+        )*
     };
-    () => {};
+}
+gen_load_fn! {
+    (fn load32, fn load32_at, u32);
+    (fn load64, fn load64_at, u64);
 }
 
-gen_store_fn! {
-    (fn store32, fn store32_at, u32);
-    (fn store64, fn store64_at, u64);
+macro_rules! gen_store_wrap_fn {
+    (
+        $( (fn $store_fn:ident, fn $store_at_fn:ident, $ty:ty => $wrapped:ty); )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasmi `", stringify!($store_fn), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` stores out of bounds from `memory`.
+            pub fn $store_fn(memory: &mut [u8], ptr: u64, offset: u64, value: $ty) -> Result<(), TrapCode> {
+                memory::store_wrap::<$ty, $wrapped>(memory, ptr, offset, value)
+            }
+
+            #[doc = concat!("Executes a Wasmi `", stringify!($store_at_fn), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// If `address` stores out of bounds from `memory`.
+            pub fn $store_at_fn(memory: &mut [u8], address: usize, value: $ty) -> Result<(), TrapCode> {
+                memory::store_wrap_at::<$ty, $wrapped>(memory, address, value)
+            }
+        )*
+    };
+}
+gen_store_wrap_fn! {
     (fn i32_store8, fn i32_store8_at, i32 => i8);
     (fn i32_store16, fn i32_store16_at, i32 => i16);
     (fn i64_store8, fn i64_store8_at, i64 => i8);
     (fn i64_store16, fn i64_store16_at, i64 => i16);
     (fn i64_store32, fn i64_store32_at, i64 => i32);
+}
+
+macro_rules! gen_store_fn {
+    (
+        $( (fn $store_fn:ident, fn $store_at_fn:ident, $ty:ty); )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasmi `", stringify!($store_fn), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` stores out of bounds from `memory`.
+            pub fn $store_fn(memory: &mut [u8], ptr: u64, offset: u64, value: $ty) -> Result<(), TrapCode> {
+                memory::store::<$ty>(memory, ptr, offset, value)
+            }
+
+            #[doc = concat!("Executes a Wasmi `", stringify!($store_at_fn), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// If `address` stores out of bounds from `memory`.
+            pub fn $store_at_fn(memory: &mut [u8], address: usize, value: $ty) -> Result<(), TrapCode> {
+                memory::store_at::<$ty>(memory, address, value)
+            }
+        )*
+    };
+}
+gen_store_fn! {
+    (fn store32, fn store32_at, u32);
+    (fn store64, fn store64_at, u64);
 }
 
 /// Combines the two 64-bit `lo` and `hi` into a single `i128` value.
