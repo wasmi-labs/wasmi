@@ -64,11 +64,6 @@ impl WriteAs<V128> for UntypedVal {
     }
 }
 
-/// A single unconstrained byte (0-255).
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct ImmByte(u8);
-
 /// An error that may occur when constructing an out of bounds lane index.
 pub struct OutOfBoundsLaneId;
 
