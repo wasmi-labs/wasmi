@@ -1,4 +1,4 @@
-use crate::{wasm, ReadAs, UntypedVal, WriteAs};
+use crate::{simd, wasm, ReadAs, UntypedVal, WriteAs};
 use core::{
     array,
     ops::{BitAnd, BitOr, BitXor, Neg, Not},
@@ -714,87 +714,81 @@ fn identity<T>(x: T) -> T {
 }
 
 macro_rules! impl_splat_for {
-    ( $( fn $name:ident(value: $ty:ty) -> Self; )* ) => {
+    ( $( fn $name:ident(value: $ty:ty) -> V128; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(value: $ty) -> Self {
-                Self::splat(value)
+            pub fn $name(value: $ty) -> V128 {
+                V128::splat(value)
             }
         )*
     };
 }
-impl V128 {
-    impl_splat_for! {
-        fn i64x2_splat(value: i64) -> Self;
-        fn i32x4_splat(value: i32) -> Self;
-        fn i16x8_splat(value: i16) -> Self;
-        fn i8x16_splat(value: i8) -> Self;
-        fn f32x4_splat(value: f32) -> Self;
-        fn f64x2_splat(value: f64) -> Self;
-    }
+impl_splat_for! {
+    fn i64x2_splat(value: i64) -> V128;
+    fn i32x4_splat(value: i32) -> V128;
+    fn i16x8_splat(value: i16) -> V128;
+    fn i8x16_splat(value: i8) -> V128;
+    fn f32x4_splat(value: f32) -> V128;
+    fn f64x2_splat(value: f64) -> V128;
 }
 
 macro_rules! impl_extract_for {
-    ( $( fn $name:ident(self, lane: $lane_ty:ty) -> $ret_ty:ty = $convert:expr; )* ) => {
+    ( $( fn $name:ident(v128: V128, lane: $lane_ty:ty) -> $ret_ty:ty = $convert:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(self, lane: $lane_ty) -> $ret_ty {
-                ($convert)(self.extract_lane(lane))
+            pub fn $name(v128: V128, lane: $lane_ty) -> $ret_ty {
+                ($convert)(v128.extract_lane(lane))
             }
         )*
     };
 }
-impl V128 {
-    impl_extract_for! {
-        fn i64x2_extract_lane(self, lane: ImmLaneIdx2) -> i64 = identity;
-        fn i32x4_extract_lane(self, lane: ImmLaneIdx4) -> i32 = identity;
-        fn f64x2_extract_lane(self, lane: ImmLaneIdx2) -> f64 = identity;
-        fn f32x4_extract_lane(self, lane: ImmLaneIdx4) -> f32 = identity;
-        fn i8x16_extract_lane_s(self, lane: ImmLaneIdx16) -> i32 = <i8 as Into<_>>::into;
-        fn i8x16_extract_lane_u(self, lane: ImmLaneIdx16) -> u32 = <u8 as Into<_>>::into;
-        fn i16x8_extract_lane_s(self, lane: ImmLaneIdx8) -> i32 = <i16 as Into<_>>::into;
-        fn i16x8_extract_lane_u(self, lane: ImmLaneIdx8) -> u32 = <u16 as Into<_>>::into;
-    }
+impl_extract_for! {
+    fn i64x2_extract_lane(v128: V128, lane: ImmLaneIdx2) -> i64 = identity;
+    fn i32x4_extract_lane(v128: V128, lane: ImmLaneIdx4) -> i32 = identity;
+    fn f64x2_extract_lane(v128: V128, lane: ImmLaneIdx2) -> f64 = identity;
+    fn f32x4_extract_lane(v128: V128, lane: ImmLaneIdx4) -> f32 = identity;
+    fn i8x16_extract_lane_s(v128: V128, lane: ImmLaneIdx16) -> i32 = <i8 as Into<_>>::into;
+    fn i8x16_extract_lane_u(v128: V128, lane: ImmLaneIdx16) -> u32 = <u8 as Into<_>>::into;
+    fn i16x8_extract_lane_s(v128: V128, lane: ImmLaneIdx8) -> i32 = <i16 as Into<_>>::into;
+    fn i16x8_extract_lane_u(v128: V128, lane: ImmLaneIdx8) -> u32 = <u16 as Into<_>>::into;
 }
 
 macro_rules! impl_replace_for {
-    ( $( fn $name:ident(self, lane: $lane_ty:ty, item: $item_ty:ty) -> Self; )* ) => {
+    ( $( fn $name:ident(v128: V128, lane: $lane_ty:ty, item: $item_ty:ty) -> V128; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(self, lane: $lane_ty, item: $item_ty) -> Self {
-                self.replace_lane(lane, item)
+            pub fn $name(v128: V128, lane: $lane_ty, item: $item_ty) -> V128 {
+                v128.replace_lane(lane, item)
             }
         )*
     };
 }
-impl V128 {
-    impl_replace_for! {
-        fn i64x2_replace_lane(self, lane: ImmLaneIdx2, item: i64) -> Self;
-        fn i32x4_replace_lane(self, lane: ImmLaneIdx4, item: i32) -> Self;
-        fn i16x8_replace_lane(self, lane: ImmLaneIdx8, item: i16) -> Self;
-        fn i8x16_replace_lane(self, lane: ImmLaneIdx16, item: i8) -> Self;
-        fn f64x2_replace_lane(self, lane: ImmLaneIdx2, item: f64) -> Self;
-        fn f32x4_replace_lane(self, lane: ImmLaneIdx4, item: f32) -> Self;
-    }
+impl_replace_for! {
+    fn i64x2_replace_lane(v128: V128, lane: ImmLaneIdx2, item: i64) -> V128;
+    fn i32x4_replace_lane(v128: V128, lane: ImmLaneIdx4, item: i32) -> V128;
+    fn i16x8_replace_lane(v128: V128, lane: ImmLaneIdx8, item: i16) -> V128;
+    fn i8x16_replace_lane(v128: V128, lane: ImmLaneIdx16, item: i8) -> V128;
+    fn f64x2_replace_lane(v128: V128, lane: ImmLaneIdx2, item: f64) -> V128;
+    fn f32x4_replace_lane(v128: V128, lane: ImmLaneIdx4, item: f32) -> V128;
 }
 
 macro_rules! impl_unary_for {
-    ( $( fn $name:ident(self) -> Self = $lanewise_expr:expr; )* ) => {
+    ( $( fn $name:ident(v128: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(self) -> Self {
-                Self::lanewise_unary(self, $lanewise_expr)
+            pub fn $name(v128: V128) -> V128 {
+                V128::lanewise_unary(v128, $lanewise_expr)
             }
         )*
     };
 }
 
 macro_rules! impl_unary_cast_for {
-    ( $( fn $name:ident(self) -> Self = $lanewise_expr:expr; )* ) => {
+    ( $( fn $name:ident(v128: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(self) -> Self {
-                Self::lanewise_unary_cast(self, $lanewise_expr)
+            pub fn $name(v128: V128) -> V128 {
+                V128::lanewise_unary_cast(v128, $lanewise_expr)
             }
         )*
     };
@@ -806,237 +800,229 @@ fn i16x8_q15mulr_sat(x: i16, y: i16) -> i16 {
 }
 
 macro_rules! impl_binary_for {
-    ( $( fn $name:ident(lhs: Self, rhs: Self) -> Self = $lanewise_expr:expr; )* ) => {
+    ( $( fn $name:ident(lhs: V128, rhs: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(lhs: Self, rhs: Self) -> Self {
-                Self::lanewise_binary(lhs, rhs, $lanewise_expr)
+            pub fn $name(lhs: V128, rhs: V128) -> V128 {
+                V128::lanewise_binary(lhs, rhs, $lanewise_expr)
             }
         )*
     };
 }
-impl V128 {
-    impl_binary_for! {
-        fn i64x2_add(lhs: Self, rhs: Self) -> Self = i64::wrapping_add;
-        fn i32x4_add(lhs: Self, rhs: Self) -> Self = i32::wrapping_add;
-        fn i16x8_add(lhs: Self, rhs: Self) -> Self = i16::wrapping_add;
-        fn i8x16_add(lhs: Self, rhs: Self) -> Self = i8::wrapping_add;
+impl_binary_for! {
+    fn i64x2_add(lhs: V128, rhs: V128) -> V128 = i64::wrapping_add;
+    fn i32x4_add(lhs: V128, rhs: V128) -> V128 = i32::wrapping_add;
+    fn i16x8_add(lhs: V128, rhs: V128) -> V128 = i16::wrapping_add;
+    fn i8x16_add(lhs: V128, rhs: V128) -> V128 = i8::wrapping_add;
 
-        fn i64x2_sub(lhs: Self, rhs: Self) -> Self = i64::wrapping_sub;
-        fn i32x4_sub(lhs: Self, rhs: Self) -> Self = i32::wrapping_sub;
-        fn i16x8_sub(lhs: Self, rhs: Self) -> Self = i16::wrapping_sub;
-        fn i8x16_sub(lhs: Self, rhs: Self) -> Self = i8::wrapping_sub;
+    fn i64x2_sub(lhs: V128, rhs: V128) -> V128 = i64::wrapping_sub;
+    fn i32x4_sub(lhs: V128, rhs: V128) -> V128 = i32::wrapping_sub;
+    fn i16x8_sub(lhs: V128, rhs: V128) -> V128 = i16::wrapping_sub;
+    fn i8x16_sub(lhs: V128, rhs: V128) -> V128 = i8::wrapping_sub;
 
-        fn i64x2_mul(lhs: Self, rhs: Self) -> Self = i64::wrapping_mul;
-        fn i32x4_mul(lhs: Self, rhs: Self) -> Self = i32::wrapping_mul;
-        fn i16x8_mul(lhs: Self, rhs: Self) -> Self = i16::wrapping_mul;
-        fn i8x16_mul(lhs: Self, rhs: Self) -> Self = i8::wrapping_mul;
+    fn i64x2_mul(lhs: V128, rhs: V128) -> V128 = i64::wrapping_mul;
+    fn i32x4_mul(lhs: V128, rhs: V128) -> V128 = i32::wrapping_mul;
+    fn i16x8_mul(lhs: V128, rhs: V128) -> V128 = i16::wrapping_mul;
+    fn i8x16_mul(lhs: V128, rhs: V128) -> V128 = i8::wrapping_mul;
 
-        fn i8x16_add_sat_s(lhs: Self, rhs: Self) -> Self = i8::saturating_add;
-        fn i8x16_add_sat_u(lhs: Self, rhs: Self) -> Self = u8::saturating_add;
-        fn i16x8_add_sat_s(lhs: Self, rhs: Self) -> Self = i16::saturating_add;
-        fn i16x8_add_sat_u(lhs: Self, rhs: Self) -> Self = u16::saturating_add;
-        fn i8x16_sub_sat_s(lhs: Self, rhs: Self) -> Self = i8::saturating_sub;
-        fn i8x16_sub_sat_u(lhs: Self, rhs: Self) -> Self = u8::saturating_sub;
-        fn i16x8_sub_sat_s(lhs: Self, rhs: Self) -> Self = i16::saturating_sub;
-        fn i16x8_sub_sat_u(lhs: Self, rhs: Self) -> Self = u16::saturating_sub;
+    fn i8x16_add_sat_s(lhs: V128, rhs: V128) -> V128 = i8::saturating_add;
+    fn i8x16_add_sat_u(lhs: V128, rhs: V128) -> V128 = u8::saturating_add;
+    fn i16x8_add_sat_s(lhs: V128, rhs: V128) -> V128 = i16::saturating_add;
+    fn i16x8_add_sat_u(lhs: V128, rhs: V128) -> V128 = u16::saturating_add;
+    fn i8x16_sub_sat_s(lhs: V128, rhs: V128) -> V128 = i8::saturating_sub;
+    fn i8x16_sub_sat_u(lhs: V128, rhs: V128) -> V128 = u8::saturating_sub;
+    fn i16x8_sub_sat_s(lhs: V128, rhs: V128) -> V128 = i16::saturating_sub;
+    fn i16x8_sub_sat_u(lhs: V128, rhs: V128) -> V128 = u16::saturating_sub;
 
-        fn i16x8_q15mulr_sat_s(lhs: Self, rhs: Self) -> Self = i16x8_q15mulr_sat;
+    fn i16x8_q15mulr_sat_s(lhs: V128, rhs: V128) -> V128 = i16x8_q15mulr_sat;
 
-        fn i8x16_min_s(lhs: Self, rhs: Self) -> Self = i8::min;
-        fn i8x16_min_u(lhs: Self, rhs: Self) -> Self = u8::min;
-        fn i16x8_min_s(lhs: Self, rhs: Self) -> Self = i16::min;
-        fn i16x8_min_u(lhs: Self, rhs: Self) -> Self = u16::min;
-        fn i32x4_min_s(lhs: Self, rhs: Self) -> Self = i32::min;
-        fn i32x4_min_u(lhs: Self, rhs: Self) -> Self = u32::min;
-        fn i8x16_max_s(lhs: Self, rhs: Self) -> Self = i8::max;
-        fn i8x16_max_u(lhs: Self, rhs: Self) -> Self = u8::max;
-        fn i16x8_max_s(lhs: Self, rhs: Self) -> Self = i16::max;
-        fn i16x8_max_u(lhs: Self, rhs: Self) -> Self = u16::max;
-        fn i32x4_max_s(lhs: Self, rhs: Self) -> Self = i32::max;
-        fn i32x4_max_u(lhs: Self, rhs: Self) -> Self = u32::max;
+    fn i8x16_min_s(lhs: V128, rhs: V128) -> V128 = i8::min;
+    fn i8x16_min_u(lhs: V128, rhs: V128) -> V128 = u8::min;
+    fn i16x8_min_s(lhs: V128, rhs: V128) -> V128 = i16::min;
+    fn i16x8_min_u(lhs: V128, rhs: V128) -> V128 = u16::min;
+    fn i32x4_min_s(lhs: V128, rhs: V128) -> V128 = i32::min;
+    fn i32x4_min_u(lhs: V128, rhs: V128) -> V128 = u32::min;
+    fn i8x16_max_s(lhs: V128, rhs: V128) -> V128 = i8::max;
+    fn i8x16_max_u(lhs: V128, rhs: V128) -> V128 = u8::max;
+    fn i16x8_max_s(lhs: V128, rhs: V128) -> V128 = i16::max;
+    fn i16x8_max_u(lhs: V128, rhs: V128) -> V128 = u16::max;
+    fn i32x4_max_s(lhs: V128, rhs: V128) -> V128 = i32::max;
+    fn i32x4_max_u(lhs: V128, rhs: V128) -> V128 = u32::max;
 
-        fn i8x16_avgr_u(lhs: Self, rhs: Self) -> Self = |a: u8, b: u8| (a + b + 1) / 2;
-        fn i16x8_avgr_u(lhs: Self, rhs: Self) -> Self = |a: u16, b: u16| (a + b + 1) / 2;
+    fn i8x16_avgr_u(lhs: V128, rhs: V128) -> V128 = |a: u8, b: u8| (a + b + 1) / 2;
+    fn i16x8_avgr_u(lhs: V128, rhs: V128) -> V128 = |a: u16, b: u16| (a + b + 1) / 2;
 
-        fn v128_and(lhs: Self, rhs: Self) -> Self = <i64 as BitAnd>::bitand;
-        fn v128_or(lhs: Self, rhs: Self) -> Self = <i64 as BitOr>::bitor;
-        fn v128_xor(lhs: Self, rhs: Self) -> Self = <i64 as BitXor>::bitxor;
-        fn v128_andnot(lhs: Self, rhs: Self) -> Self = |a: i64, b: i64| a & !b;
+    fn v128_and(lhs: V128, rhs: V128) -> V128 = <i64 as BitAnd>::bitand;
+    fn v128_or(lhs: V128, rhs: V128) -> V128 = <i64 as BitOr>::bitor;
+    fn v128_xor(lhs: V128, rhs: V128) -> V128 = <i64 as BitXor>::bitxor;
+    fn v128_andnot(lhs: V128, rhs: V128) -> V128 = |a: i64, b: i64| a & !b;
 
-        fn f32x4_min(lhs: Self, rhs: Self) -> Self = wasm::f32_min;
-        fn f64x2_min(lhs: Self, rhs: Self) -> Self = wasm::f64_min;
-        fn f32x4_max(lhs: Self, rhs: Self) -> Self = wasm::f32_max;
-        fn f64x2_max(lhs: Self, rhs: Self) -> Self = wasm::f64_max;
-        fn f32x4_pmin(lhs: Self, rhs: Self) -> Self = f32::min;
-        fn f64x2_pmin(lhs: Self, rhs: Self) -> Self = f64::min;
-        fn f32x4_pmax(lhs: Self, rhs: Self) -> Self = f32::max;
-        fn f64x2_pmax(lhs: Self, rhs: Self) -> Self = f64::max;
-        fn f32x4_add(lhs: Self, rhs: Self) -> Self = op!(f32, +);
-        fn f64x2_add(lhs: Self, rhs: Self) -> Self = op!(f64, +);
-        fn f32x4_sub(lhs: Self, rhs: Self) -> Self = op!(f32, -);
-        fn f64x2_sub(lhs: Self, rhs: Self) -> Self = op!(f64, -);
-        fn f32x4_div(lhs: Self, rhs: Self) -> Self = op!(f32, /);
-        fn f64x2_div(lhs: Self, rhs: Self) -> Self = op!(f64, /);
-        fn f32x4_mul(lhs: Self, rhs: Self) -> Self = op!(f32, *);
-        fn f64x2_mul(lhs: Self, rhs: Self) -> Self = op!(f64, *);
-    }
+    fn f32x4_min(lhs: V128, rhs: V128) -> V128 = wasm::f32_min;
+    fn f64x2_min(lhs: V128, rhs: V128) -> V128 = wasm::f64_min;
+    fn f32x4_max(lhs: V128, rhs: V128) -> V128 = wasm::f32_max;
+    fn f64x2_max(lhs: V128, rhs: V128) -> V128 = wasm::f64_max;
+    fn f32x4_pmin(lhs: V128, rhs: V128) -> V128 = f32::min;
+    fn f64x2_pmin(lhs: V128, rhs: V128) -> V128 = f64::min;
+    fn f32x4_pmax(lhs: V128, rhs: V128) -> V128 = f32::max;
+    fn f64x2_pmax(lhs: V128, rhs: V128) -> V128 = f64::max;
+    fn f32x4_add(lhs: V128, rhs: V128) -> V128 = op!(f32, +);
+    fn f64x2_add(lhs: V128, rhs: V128) -> V128 = op!(f64, +);
+    fn f32x4_sub(lhs: V128, rhs: V128) -> V128 = op!(f32, -);
+    fn f64x2_sub(lhs: V128, rhs: V128) -> V128 = op!(f64, -);
+    fn f32x4_div(lhs: V128, rhs: V128) -> V128 = op!(f32, /);
+    fn f64x2_div(lhs: V128, rhs: V128) -> V128 = op!(f64, /);
+    fn f32x4_mul(lhs: V128, rhs: V128) -> V128 = op!(f32, *);
+    fn f64x2_mul(lhs: V128, rhs: V128) -> V128 = op!(f64, *);
+}
 
-    impl_unary_for! {
-        fn i64x2_neg(self) -> Self = <i64 as Neg>::neg;
-        fn i32x4_neg(self) -> Self = <i32 as Neg>::neg;
-        fn i16x8_neg(self) -> Self = <i16 as Neg>::neg;
-        fn i8x16_neg(self) -> Self = <i8 as Neg>::neg;
+impl_unary_for! {
+    fn i64x2_neg(v128: V128) -> V128 = <i64 as Neg>::neg;
+    fn i32x4_neg(v128: V128) -> V128 = <i32 as Neg>::neg;
+    fn i16x8_neg(v128: V128) -> V128 = <i16 as Neg>::neg;
+    fn i8x16_neg(v128: V128) -> V128 = <i8 as Neg>::neg;
 
-        fn i8x16_abs(self) -> Self = i8::abs;
-        fn i16x8_abs(self) -> Self = i16::abs;
-        fn i32x4_abs(self) -> Self = i32::abs;
-        fn i64x2_abs(self) -> Self = i64::abs;
+    fn i8x16_abs(v128: V128) -> V128 = i8::abs;
+    fn i16x8_abs(v128: V128) -> V128 = i16::abs;
+    fn i32x4_abs(v128: V128) -> V128 = i32::abs;
+    fn i64x2_abs(v128: V128) -> V128 = i64::abs;
 
-        fn v128_not(self) -> Self = <i64 as Not>::not;
+    fn v128_not(v128: V128) -> V128 = <i64 as Not>::not;
 
-        fn i8x16_popcnt(self) -> Self = |v: u8| v.count_ones() as u8;
+    fn i8x16_popcnt(v128: V128) -> V128 = |v: u8| v.count_ones() as u8;
 
-        fn f32x4_neg(self) -> Self = <f32 as Neg>::neg;
-        fn f64x2_neg(self) -> Self = <f64 as Neg>::neg;
-        fn f32x4_abs(self) -> Self = f32::abs;
-        fn f64x2_abs(self) -> Self = f64::abs;
-        fn f32x4_sqrt(self) -> Self = f32::sqrt;
-        fn f64x2_sqrt(self) -> Self = f64::sqrt;
-        fn f32x4_ceil(self) -> Self = f32::ceil;
-        fn f64x2_ceil(self) -> Self = f64::ceil;
-        fn f32x4_floor(self) -> Self = f32::floor;
-        fn f64x2_floor(self) -> Self = f64::floor;
-        fn f32x4_trunc(self) -> Self = f32::trunc;
-        fn f64x2_trunc(self) -> Self = f64::trunc;
-        fn f32x4_nearest(self) -> Self = f32::round_ties_even;
-        fn f64x2_nearest(self) -> Self = f64::round_ties_even;
-    }
+    fn f32x4_neg(v128: V128) -> V128 = <f32 as Neg>::neg;
+    fn f64x2_neg(v128: V128) -> V128 = <f64 as Neg>::neg;
+    fn f32x4_abs(v128: V128) -> V128 = f32::abs;
+    fn f64x2_abs(v128: V128) -> V128 = f64::abs;
+    fn f32x4_sqrt(v128: V128) -> V128 = f32::sqrt;
+    fn f64x2_sqrt(v128: V128) -> V128 = f64::sqrt;
+    fn f32x4_ceil(v128: V128) -> V128 = f32::ceil;
+    fn f64x2_ceil(v128: V128) -> V128 = f64::ceil;
+    fn f32x4_floor(v128: V128) -> V128 = f32::floor;
+    fn f64x2_floor(v128: V128) -> V128 = f64::floor;
+    fn f32x4_trunc(v128: V128) -> V128 = f32::trunc;
+    fn f64x2_trunc(v128: V128) -> V128 = f64::trunc;
+    fn f32x4_nearest(v128: V128) -> V128 = f32::round_ties_even;
+    fn f64x2_nearest(v128: V128) -> V128 = f64::round_ties_even;
+}
 
-    impl_unary_cast_for! {
-        fn f32x4_convert_i32x4_s(self) -> Self = wasm::f32_convert_i32_s;
-        fn f32x4_convert_i32x4_u(self) -> Self = wasm::f32_convert_i32_u;
-        fn i32x4_trunc_sat_f32x4_s(self) -> Self = wasm::i32_trunc_sat_f32_s;
-        fn i32x4_trunc_sat_f32x4_u(self) -> Self = wasm::i32_trunc_sat_f32_u;
-    }
+impl_unary_cast_for! {
+    fn f32x4_convert_i32x4_s(v128: V128) -> V128 = wasm::f32_convert_i32_s;
+    fn f32x4_convert_i32x4_u(v128: V128) -> V128 = wasm::f32_convert_i32_u;
+    fn i32x4_trunc_sat_f32x4_s(v128: V128) -> V128 = wasm::i32_trunc_sat_f32_s;
+    fn i32x4_trunc_sat_f32x4_u(v128: V128) -> V128 = wasm::i32_trunc_sat_f32_u;
 }
 
 macro_rules! impl_comparison_for {
-    ( $( fn $name:ident(lhs: Self, rhs: Self) -> Self = $lanewise_expr:expr; )* ) => {
+    ( $( fn $name:ident(lhs: V128, rhs: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(lhs: Self, rhs: Self) -> Self {
-                Self::lanewise_comparison(lhs, rhs, $lanewise_expr)
+            pub fn $name(lhs: V128, rhs: V128) -> V128 {
+                V128::lanewise_comparison(lhs, rhs, $lanewise_expr)
             }
         )*
     };
 }
-impl V128 {
-    impl_comparison_for! {
-        fn i8x16_eq(lhs: Self, rhs: Self) -> Self = op!(i8, ==);
-        fn i16x8_eq(lhs: Self, rhs: Self) -> Self = op!(i16, ==);
-        fn i32x4_eq(lhs: Self, rhs: Self) -> Self = op!(i32, ==);
-        fn i64x2_eq(lhs: Self, rhs: Self) -> Self = op!(i64, ==);
-        fn f32x4_eq(lhs: Self, rhs: Self) -> Self = op!(f32, ==);
-        fn f64x2_eq(lhs: Self, rhs: Self) -> Self = op!(f64, ==);
+impl_comparison_for! {
+    fn i8x16_eq(lhs: V128, rhs: V128) -> V128 = op!(i8, ==);
+    fn i16x8_eq(lhs: V128, rhs: V128) -> V128 = op!(i16, ==);
+    fn i32x4_eq(lhs: V128, rhs: V128) -> V128 = op!(i32, ==);
+    fn i64x2_eq(lhs: V128, rhs: V128) -> V128 = op!(i64, ==);
+    fn f32x4_eq(lhs: V128, rhs: V128) -> V128 = op!(f32, ==);
+    fn f64x2_eq(lhs: V128, rhs: V128) -> V128 = op!(f64, ==);
 
-        fn i8x16_ne(lhs: Self, rhs: Self) -> Self = op!(i8, !=);
-        fn i16x8_ne(lhs: Self, rhs: Self) -> Self = op!(i16, !=);
-        fn i32x4_ne(lhs: Self, rhs: Self) -> Self = op!(i32, !=);
-        fn i64x2_ne(lhs: Self, rhs: Self) -> Self = op!(i64, !=);
-        fn f32x4_ne(lhs: Self, rhs: Self) -> Self = op!(f32, !=);
-        fn f64x2_ne(lhs: Self, rhs: Self) -> Self = op!(f64, !=);
+    fn i8x16_ne(lhs: V128, rhs: V128) -> V128 = op!(i8, !=);
+    fn i16x8_ne(lhs: V128, rhs: V128) -> V128 = op!(i16, !=);
+    fn i32x4_ne(lhs: V128, rhs: V128) -> V128 = op!(i32, !=);
+    fn i64x2_ne(lhs: V128, rhs: V128) -> V128 = op!(i64, !=);
+    fn f32x4_ne(lhs: V128, rhs: V128) -> V128 = op!(f32, !=);
+    fn f64x2_ne(lhs: V128, rhs: V128) -> V128 = op!(f64, !=);
 
-        fn i8x16_lt_s(lhs: Self, rhs: Self) -> Self = op!(i8, <);
-        fn i8x16_lt_u(lhs: Self, rhs: Self) -> Self = op!(u8, <);
-        fn i16x8_lt_s(lhs: Self, rhs: Self) -> Self = op!(i16, <);
-        fn i16x8_lt_u(lhs: Self, rhs: Self) -> Self = op!(u16, <);
-        fn i32x4_lt_s(lhs: Self, rhs: Self) -> Self = op!(i32, <);
-        fn i32x4_lt_u(lhs: Self, rhs: Self) -> Self = op!(u32, <);
-        fn i64x2_lt_s(lhs: Self, rhs: Self) -> Self = op!(i64, <);
-        fn f32x4_lt(lhs: Self, rhs: Self) -> Self = op!(f32, <);
-        fn f64x2_lt(lhs: Self, rhs: Self) -> Self = op!(f64, <);
+    fn i8x16_lt_s(lhs: V128, rhs: V128) -> V128 = op!(i8, <);
+    fn i8x16_lt_u(lhs: V128, rhs: V128) -> V128 = op!(u8, <);
+    fn i16x8_lt_s(lhs: V128, rhs: V128) -> V128 = op!(i16, <);
+    fn i16x8_lt_u(lhs: V128, rhs: V128) -> V128 = op!(u16, <);
+    fn i32x4_lt_s(lhs: V128, rhs: V128) -> V128 = op!(i32, <);
+    fn i32x4_lt_u(lhs: V128, rhs: V128) -> V128 = op!(u32, <);
+    fn i64x2_lt_s(lhs: V128, rhs: V128) -> V128 = op!(i64, <);
+    fn f32x4_lt(lhs: V128, rhs: V128) -> V128 = op!(f32, <);
+    fn f64x2_lt(lhs: V128, rhs: V128) -> V128 = op!(f64, <);
 
-        fn i8x16_le_s(lhs: Self, rhs: Self) -> Self = op!(i8, <=);
-        fn i8x16_le_u(lhs: Self, rhs: Self) -> Self = op!(u8, <=);
-        fn i16x8_le_s(lhs: Self, rhs: Self) -> Self = op!(i16, <=);
-        fn i16x8_le_u(lhs: Self, rhs: Self) -> Self = op!(u16, <=);
-        fn i32x4_le_s(lhs: Self, rhs: Self) -> Self = op!(i32, <=);
-        fn i32x4_le_u(lhs: Self, rhs: Self) -> Self = op!(u32, <=);
-        fn i64x2_le_s(lhs: Self, rhs: Self) -> Self = op!(i64, <=);
-        fn f32x4_le(lhs: Self, rhs: Self) -> Self = op!(f32, <=);
-        fn f64x2_le(lhs: Self, rhs: Self) -> Self = op!(f64, <=);
+    fn i8x16_le_s(lhs: V128, rhs: V128) -> V128 = op!(i8, <=);
+    fn i8x16_le_u(lhs: V128, rhs: V128) -> V128 = op!(u8, <=);
+    fn i16x8_le_s(lhs: V128, rhs: V128) -> V128 = op!(i16, <=);
+    fn i16x8_le_u(lhs: V128, rhs: V128) -> V128 = op!(u16, <=);
+    fn i32x4_le_s(lhs: V128, rhs: V128) -> V128 = op!(i32, <=);
+    fn i32x4_le_u(lhs: V128, rhs: V128) -> V128 = op!(u32, <=);
+    fn i64x2_le_s(lhs: V128, rhs: V128) -> V128 = op!(i64, <=);
+    fn f32x4_le(lhs: V128, rhs: V128) -> V128 = op!(f32, <=);
+    fn f64x2_le(lhs: V128, rhs: V128) -> V128 = op!(f64, <=);
 
-        fn i8x16_gt_s(lhs: Self, rhs: Self) -> Self = op!(i8, >);
-        fn i8x16_gt_u(lhs: Self, rhs: Self) -> Self = op!(u8, >);
-        fn i16x8_gt_s(lhs: Self, rhs: Self) -> Self = op!(i16, >);
-        fn i16x8_gt_u(lhs: Self, rhs: Self) -> Self = op!(u16, >);
-        fn i32x4_gt_s(lhs: Self, rhs: Self) -> Self = op!(i32, >);
-        fn i32x4_gt_u(lhs: Self, rhs: Self) -> Self = op!(u32, >);
-        fn i64x2_gt_s(lhs: Self, rhs: Self) -> Self = op!(i64, >);
-        fn f32x4_gt(lhs: Self, rhs: Self) -> Self = op!(f32, >);
-        fn f64x2_gt(lhs: Self, rhs: Self) -> Self = op!(f64, >);
+    fn i8x16_gt_s(lhs: V128, rhs: V128) -> V128 = op!(i8, >);
+    fn i8x16_gt_u(lhs: V128, rhs: V128) -> V128 = op!(u8, >);
+    fn i16x8_gt_s(lhs: V128, rhs: V128) -> V128 = op!(i16, >);
+    fn i16x8_gt_u(lhs: V128, rhs: V128) -> V128 = op!(u16, >);
+    fn i32x4_gt_s(lhs: V128, rhs: V128) -> V128 = op!(i32, >);
+    fn i32x4_gt_u(lhs: V128, rhs: V128) -> V128 = op!(u32, >);
+    fn i64x2_gt_s(lhs: V128, rhs: V128) -> V128 = op!(i64, >);
+    fn f32x4_gt(lhs: V128, rhs: V128) -> V128 = op!(f32, >);
+    fn f64x2_gt(lhs: V128, rhs: V128) -> V128 = op!(f64, >);
 
-        fn i8x16_ge_s(lhs: Self, rhs: Self) -> Self = op!(i8, >=);
-        fn i8x16_ge_u(lhs: Self, rhs: Self) -> Self = op!(u8, >=);
-        fn i16x8_ge_s(lhs: Self, rhs: Self) -> Self = op!(i16, >=);
-        fn i16x8_ge_u(lhs: Self, rhs: Self) -> Self = op!(u16, >=);
-        fn i32x4_ge_s(lhs: Self, rhs: Self) -> Self = op!(i32, >=);
-        fn i32x4_ge_u(lhs: Self, rhs: Self) -> Self = op!(u32, >=);
-        fn i64x2_ge_s(lhs: Self, rhs: Self) -> Self = op!(i64, >=);
-        fn f32x4_ge(lhs: Self, rhs: Self) -> Self = op!(f32, >=);
-        fn f64x2_ge(lhs: Self, rhs: Self) -> Self = op!(f64, >=);
-    }
+    fn i8x16_ge_s(lhs: V128, rhs: V128) -> V128 = op!(i8, >=);
+    fn i8x16_ge_u(lhs: V128, rhs: V128) -> V128 = op!(u8, >=);
+    fn i16x8_ge_s(lhs: V128, rhs: V128) -> V128 = op!(i16, >=);
+    fn i16x8_ge_u(lhs: V128, rhs: V128) -> V128 = op!(u16, >=);
+    fn i32x4_ge_s(lhs: V128, rhs: V128) -> V128 = op!(i32, >=);
+    fn i32x4_ge_u(lhs: V128, rhs: V128) -> V128 = op!(u32, >=);
+    fn i64x2_ge_s(lhs: V128, rhs: V128) -> V128 = op!(i64, >=);
+    fn f32x4_ge(lhs: V128, rhs: V128) -> V128 = op!(f32, >=);
+    fn f64x2_ge(lhs: V128, rhs: V128) -> V128 = op!(f64, >=);
 }
 
 macro_rules! impl_widen_low_unary {
     (
-        $( fn $name:ident(self) -> Self = $convert:expr; )*
+        $( fn $name:ident(v128: V128) -> V128 = $convert:expr; )*
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(self) -> Self {
-                self.from_low_unary($convert)
+            pub fn $name(v128: V128) -> V128 {
+                v128.from_low_unary($convert)
             }
         )*
     };
 }
-impl V128 {
-    impl_widen_low_unary! {
-        fn i16x8_extend_low_i8x16_s(self) -> Self = <i8 as Into<i16>>::into;
-        fn i16x8_extend_low_i8x16_u(self) -> Self = <u8 as Into<u16>>::into;
-        fn i32x4_extend_low_i16x8_s(self) -> Self = <i16 as Into<i32>>::into;
-        fn i32x4_extend_low_i16x8_u(self) -> Self = <u16 as Into<u32>>::into;
-        fn i64x2_extend_low_i32x4_s(self) -> Self = <i32 as Into<i64>>::into;
-        fn i64x2_extend_low_i32x4_u(self) -> Self = <u32 as Into<u64>>::into;
+impl_widen_low_unary! {
+    fn i16x8_extend_low_i8x16_s(v128: V128) -> V128 = <i8 as Into<i16>>::into;
+    fn i16x8_extend_low_i8x16_u(v128: V128) -> V128 = <u8 as Into<u16>>::into;
+    fn i32x4_extend_low_i16x8_s(v128: V128) -> V128 = <i16 as Into<i32>>::into;
+    fn i32x4_extend_low_i16x8_u(v128: V128) -> V128 = <u16 as Into<u32>>::into;
+    fn i64x2_extend_low_i32x4_s(v128: V128) -> V128 = <i32 as Into<i64>>::into;
+    fn i64x2_extend_low_i32x4_u(v128: V128) -> V128 = <u32 as Into<u64>>::into;
 
-        fn f64x2_convert_low_i32x4_s(self) -> Self = wasm::f64_convert_i32_s;
-        fn f64x2_convert_low_i32x4_u(self) -> Self = wasm::f64_convert_i32_s;
-        fn f64x2_promote_low_f32x4(self) -> Self = wasm::f64_promote_f32;
-    }
+    fn f64x2_convert_low_i32x4_s(v128: V128) -> V128 = wasm::f64_convert_i32_s;
+    fn f64x2_convert_low_i32x4_u(v128: V128) -> V128 = wasm::f64_convert_i32_s;
+    fn f64x2_promote_low_f32x4(v128: V128) -> V128 = wasm::f64_promote_f32;
 }
 
 macro_rules! impl_widen_high_unary {
     (
-        $( fn $name:ident(self) -> Self = $convert:expr; )*
+        $( fn $name:ident(v128: V128) -> V128 = $convert:expr; )*
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(self) -> Self {
-                self.from_high_unary($convert)
+            pub fn $name(v128: V128) -> V128 {
+                v128.from_high_unary($convert)
             }
         )*
     };
 }
-impl V128 {
-    impl_widen_high_unary! {
-        fn i16x8_extend_high_i8x16_s(self) -> Self = <i8 as Into<i16>>::into;
-        fn i16x8_extend_high_i8x16_u(self) -> Self = <u8 as Into<u16>>::into;
-        fn i32x4_extend_high_i16x8_s(self) -> Self = <i16 as Into<i32>>::into;
-        fn i32x4_extend_high_i16x8_u(self) -> Self = <u16 as Into<u32>>::into;
-        fn i64x2_extend_high_i32x4_s(self) -> Self = <i32 as Into<i64>>::into;
-        fn i64x2_extend_high_i32x4_u(self) -> Self = <u32 as Into<u64>>::into;
-    }
+impl_widen_high_unary! {
+    fn i16x8_extend_high_i8x16_s(v128: V128) -> V128 = <i8 as Into<i16>>::into;
+    fn i16x8_extend_high_i8x16_u(v128: V128) -> V128 = <u8 as Into<u16>>::into;
+    fn i32x4_extend_high_i16x8_s(v128: V128) -> V128 = <i16 as Into<i32>>::into;
+    fn i32x4_extend_high_i16x8_u(v128: V128) -> V128 = <u16 as Into<u32>>::into;
+    fn i64x2_extend_high_i32x4_s(v128: V128) -> V128 = <i32 as Into<i64>>::into;
+    fn i64x2_extend_high_i32x4_u(v128: V128) -> V128 = <u32 as Into<u64>>::into;
 }
 
 macro_rules! impl_extmul_ops {
@@ -1051,225 +1037,211 @@ macro_rules! impl_extmul_ops {
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($extmul_low), "` instruction.")]
-            pub fn $extmul_low(lhs: Self, rhs: Self) -> Self {
+            pub fn $extmul_low(lhs: V128, rhs: V128) -> V128 {
                 fn extmul_low(a: $narrow, b: $narrow) -> $wide {
                     let a = <$wide>::from(a);
                     let b = <$wide>::from(b);
                     a.wrapping_mul(b)
                 }
-                Self::from_low_binary(lhs, rhs, extmul_low)
+                V128::from_low_binary(lhs, rhs, extmul_low)
             }
 
             #[doc = concat!("Executes a Wasm `", stringify!($extmul_high), "` instruction.")]
-            pub fn $extmul_high(lhs: Self, rhs: Self) -> Self {
+            pub fn $extmul_high(lhs: V128, rhs: V128) -> V128 {
                 fn extmul_high(a: $narrow, b: $narrow) -> $wide {
                     let a = <$wide>::from(a);
                     let b = <$wide>::from(b);
                     a.wrapping_mul(b)
                 }
-                Self::from_high_binary(lhs, rhs, extmul_high)
+                V128::from_high_binary(lhs, rhs, extmul_high)
             }
         )*
     };
 }
-impl V128 {
-    impl_extmul_ops! {
-        (
-            i8 => i16;
-            fn i16x8_extmul_low_i8x16_s;
-            fn i16x8_extmul_high_i8x16_s;
-        ),
-        (
-            u8 => u16;
-            fn i16x8_extmul_low_i8x16_u;
-            fn i16x8_extmul_high_i8x16_u;
-        ),
-        (
-            i16 => i32;
-            fn i32x4_extmul_low_i16x8_s;
-            fn i32x4_extmul_high_i16x8_s;
-        ),
-        (
-            u16 => u32;
-            fn i32x4_extmul_low_i16x8_u;
-            fn i32x4_extmul_high_i16x8_u;
-        ),
-        (
-            i32 => i64;
-            fn i64x2_extmul_low_i32x4_s;
-            fn i64x2_extmul_high_i32x4_s;
-        ),
-        (
-            u32 => u64;
-            fn i64x2_extmul_low_i32x4_u;
-            fn i64x2_extmul_high_i32x4_u;
-        ),
-    }
+impl_extmul_ops! {
+    (
+        i8 => i16;
+        fn i16x8_extmul_low_i8x16_s;
+        fn i16x8_extmul_high_i8x16_s;
+    ),
+    (
+        u8 => u16;
+        fn i16x8_extmul_low_i8x16_u;
+        fn i16x8_extmul_high_i8x16_u;
+    ),
+    (
+        i16 => i32;
+        fn i32x4_extmul_low_i16x8_s;
+        fn i32x4_extmul_high_i16x8_s;
+    ),
+    (
+        u16 => u32;
+        fn i32x4_extmul_low_i16x8_u;
+        fn i32x4_extmul_high_i16x8_u;
+    ),
+    (
+        i32 => i64;
+        fn i64x2_extmul_low_i32x4_s;
+        fn i64x2_extmul_high_i32x4_s;
+    ),
+    (
+        u32 => u64;
+        fn i64x2_extmul_low_i32x4_u;
+        fn i64x2_extmul_high_i32x4_u;
+    ),
 }
 
 macro_rules! impl_extadd_pairwise {
     (
-        $( fn $name:ident($narrow:ty) -> $wide:ty; )*
+        $( fn $name:ident(v128: V128) -> V128 = $narrow:ty => $wide:ty; )*
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(self) -> Self {
+            pub fn $name(v128: V128) -> V128 {
                 fn extadd_pairwise(a: $narrow, b: $narrow) -> $wide {
                     let a = <$wide>::from(a);
                     let b = <$wide>::from(b);
                     a.wrapping_add(b)
                 }
-                self.pairwise_unary(extadd_pairwise)
+                v128.pairwise_unary(extadd_pairwise)
             }
         )*
     };
 }
-impl V128 {
-    impl_extadd_pairwise! {
-        fn i16x8_extadd_pairwise_i8x16_s(i8) -> i16;
-        fn i16x8_extadd_pairwise_i8x16_u(i8) -> i16;
-        fn i32x4_extadd_pairwise_i16x8_s(i16) -> i32;
-        fn i32x4_extadd_pairwise_i16x8_u(i16) -> i32;
-    }
+impl_extadd_pairwise! {
+    fn i16x8_extadd_pairwise_i8x16_s(v128: V128) -> V128 = i8 => i16;
+    fn i16x8_extadd_pairwise_i8x16_u(v128: V128) -> V128 = i8 => i16;
+    fn i32x4_extadd_pairwise_i16x8_s(v128: V128) -> V128 = i16 => i32;
+    fn i32x4_extadd_pairwise_i16x8_u(v128: V128) -> V128 = i16 => i32;
 }
 
 macro_rules! impl_shift_ops {
     (
-        $( fn $name:ident(self, rhs: u32) -> Self = $lanewise_expr:expr; )*
+        $( fn $name:ident(v128: V128, rhs: u32) -> V128 = $lanewise_expr:expr; )*
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(self, rhs: u32) -> Self {
-                self.lanewise_unary(|v| $lanewise_expr(v, rhs))
+            pub fn $name(v128: V128, rhs: u32) -> V128 {
+                v128.lanewise_unary(|v| $lanewise_expr(v, rhs))
             }
         )*
     };
 }
-impl V128 {
-    impl_shift_ops! {
-        fn i8x16_shl(self, rhs: u32) -> Self = i8::wrapping_shl;
-        fn i16x8_shl(self, rhs: u32) -> Self = i16::wrapping_shl;
-        fn i32x4_shl(self, rhs: u32) -> Self = i32::wrapping_shl;
-        fn i64x2_shl(self, rhs: u32) -> Self = i64::wrapping_shl;
-        fn i8x16_shr_s(self, rhs: u32) -> Self = i8::wrapping_shr;
-        fn i8x16_shr_u(self, rhs: u32) -> Self = u8::wrapping_shr;
-        fn i16x8_shr_s(self, rhs: u32) -> Self = i16::wrapping_shr;
-        fn i16x8_shr_u(self, rhs: u32) -> Self = u16::wrapping_shr;
-        fn i32x4_shr_s(self, rhs: u32) -> Self = i32::wrapping_shr;
-        fn i32x4_shr_u(self, rhs: u32) -> Self = u32::wrapping_shr;
-        fn i64x2_shr_s(self, rhs: u32) -> Self = i64::wrapping_shr;
-        fn i64x2_shr_u(self, rhs: u32) -> Self = u64::wrapping_shr;
-    }
+impl_shift_ops! {
+    fn i8x16_shl(v128: V128, rhs: u32) -> V128 = i8::wrapping_shl;
+    fn i16x8_shl(v128: V128, rhs: u32) -> V128 = i16::wrapping_shl;
+    fn i32x4_shl(v128: V128, rhs: u32) -> V128 = i32::wrapping_shl;
+    fn i64x2_shl(v128: V128, rhs: u32) -> V128 = i64::wrapping_shl;
+    fn i8x16_shr_s(v128: V128, rhs: u32) -> V128 = i8::wrapping_shr;
+    fn i8x16_shr_u(v128: V128, rhs: u32) -> V128 = u8::wrapping_shr;
+    fn i16x8_shr_s(v128: V128, rhs: u32) -> V128 = i16::wrapping_shr;
+    fn i16x8_shr_u(v128: V128, rhs: u32) -> V128 = u16::wrapping_shr;
+    fn i32x4_shr_s(v128: V128, rhs: u32) -> V128 = i32::wrapping_shr;
+    fn i32x4_shr_u(v128: V128, rhs: u32) -> V128 = u32::wrapping_shr;
+    fn i64x2_shr_s(v128: V128, rhs: u32) -> V128 = i64::wrapping_shr;
+    fn i64x2_shr_u(v128: V128, rhs: u32) -> V128 = u64::wrapping_shr;
 }
 
 macro_rules! impl_narrowing_low_high_ops {
     (
-        $( fn $name:ident(low: Self, high: Self) -> Self = $f:expr; )*
+        $( fn $name:ident(low: V128, high: V128) -> V128 = $f:expr; )*
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(low: Self, high: Self) -> Self {
-                Self::from_low_high(low, high, $f)
+            pub fn $name(low: V128, high: V128) -> V128 {
+                V128::from_low_high(low, high, $f)
             }
         )*
     };
 }
-impl V128 {
-    impl_narrowing_low_high_ops! {
-        fn i8x16_narrow_i16x8_s(low: Self, high: Self) -> Self = |v: i16| v as i8;
-        fn i8x16_narrow_i16x8_u(low: Self, high: Self) -> Self = |v: u16| v as u8;
-        fn i16x8_narrow_i32x4_s(low: Self, high: Self) -> Self = |v: i32| v as i16;
-        fn i16x8_narrow_i32x4_u(low: Self, high: Self) -> Self = |v: u32| v as u16;
-    }
+impl_narrowing_low_high_ops! {
+    fn i8x16_narrow_i16x8_s(low: V128, high: V128) -> V128 = |v: i16| v as i8;
+    fn i8x16_narrow_i16x8_u(low: V128, high: V128) -> V128 = |v: u16| v as u8;
+    fn i16x8_narrow_i32x4_s(low: V128, high: V128) -> V128 = |v: i32| v as i16;
+    fn i16x8_narrow_i32x4_u(low: V128, high: V128) -> V128 = |v: u32| v as u16;
 }
 
 macro_rules! impl_narrowing_low_high_ops {
     (
-        $( fn $name:ident(self) -> Self = (high: $high:expr, f: $f:expr); )*
+        $( fn $name:ident(v128: V128) -> V128 = (high: $high:expr, f: $f:expr); )*
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(low: Self) -> Self {
-                Self::from_low_or(low, $high, $f)
+            pub fn $name(low: V128) -> V128 {
+                V128::from_low_or(low, $high, $f)
             }
         )*
     };
 }
-impl V128 {
-    impl_narrowing_low_high_ops! {
-        fn i32x4_trunc_sat_f64x2_s_zero(self) -> Self = (high: || 0, f: wasm::i32_trunc_sat_f64_s);
-        fn i32x4_trunc_sat_f64x2_u_zero(self) -> Self = (high: || 0, f: wasm::i32_trunc_sat_f64_u);
-        fn f32x4_demote_f64x2_zero(self) -> Self = (high: || 0.0, f: wasm::f32_demote_f64);
-    }
+impl_narrowing_low_high_ops! {
+    fn i32x4_trunc_sat_f64x2_s_zero(v128: V128) -> V128 = (high: || 0, f: wasm::i32_trunc_sat_f64_s);
+    fn i32x4_trunc_sat_f64x2_u_zero(v128: V128) -> V128 = (high: || 0, f: wasm::i32_trunc_sat_f64_u);
+    fn f32x4_demote_f64x2_zero(v128: V128) -> V128 = (high: || 0.0, f: wasm::f32_demote_f64);
 }
 
 macro_rules! impl_reduce_ops {
     (
-        $( fn $name:ident(self) -> bool = all_true($item_ty:ty); )*
+        $( fn $name:ident(v128: V128) -> bool = all_true($item_ty:ty); )*
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(self) -> bool {
-                self.lanewise_reduce(true, |v: $item_ty, acc| acc & (v != 0))
+            pub fn $name(v128: V128) -> bool {
+                v128.lanewise_reduce(true, |v: $item_ty, acc| acc & (v != 0))
             }
         )*
     };
     (
-        $( fn $name:ident(self) -> u32 = bitmask($item_ty:ty); )*
+        $( fn $name:ident(v128: V128) -> u32 = bitmask($item_ty:ty); )*
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(self) -> u32 {
-                self.lanewise_reduce_enumerate(0_i32, |n, v: $item_ty, acc| {
+            pub fn $name(v128: V128) -> u32 {
+                v128.lanewise_reduce_enumerate(0_i32, |n, v: $item_ty, acc| {
                     acc | (i32::from(v < 0).wrapping_shl(u32::from(n)))
                 }) as _
             }
         )*
     };
 }
-impl V128 {
-    /// Executes a Wasm `v128.any_true` instruction.
-    pub fn v128_any_true(self) -> bool {
-        self.to_i128() != 0
-    }
-
-    impl_reduce_ops! {
-        fn i8x16_all_true(self) -> bool = all_true(i8);
-        fn i16x8_all_true(self) -> bool = all_true(i16);
-        fn i32x4_all_true(self) -> bool = all_true(i32);
-        fn i64x2_all_true(self) -> bool = all_true(i64);
-    }
-    impl_reduce_ops! {
-        fn i8x16_bitmask(self) -> u32 = bitmask(i8);
-        fn i16x8_bitmask(self) -> u32 = bitmask(i16);
-        fn i32x4_bitmask(self) -> u32 = bitmask(i32);
-        fn i64x2_bitmask(self) -> u32 = bitmask(i64);
-    }
+impl_reduce_ops! {
+    fn i8x16_all_true(v128: V128) -> bool = all_true(i8);
+    fn i16x8_all_true(v128: V128) -> bool = all_true(i16);
+    fn i32x4_all_true(v128: V128) -> bool = all_true(i32);
+    fn i64x2_all_true(v128: V128) -> bool = all_true(i64);
+}
+impl_reduce_ops! {
+    fn i8x16_bitmask(v128: V128) -> u32 = bitmask(i8);
+    fn i16x8_bitmask(v128: V128) -> u32 = bitmask(i16);
+    fn i32x4_bitmask(v128: V128) -> u32 = bitmask(i32);
+    fn i64x2_bitmask(v128: V128) -> u32 = bitmask(i64);
 }
 
-impl V128 {
-    /// Execute a Wasm `i32x4.dot_i16x8_s` instruction.
-    pub fn i32x4_dot_i16x8_s(lhs: Self, rhs: Self) -> Self {
-        fn dot(a: [i16; 2], b: [i16; 2]) -> i32 {
-            let a = a.map(i32::from);
-            let b = b.map(i32::from);
-            let dot0 = a[0].wrapping_mul(b[0]);
-            let dot1 = a[1].wrapping_mul(b[1]);
-            dot0.wrapping_add(dot1)
-        }
-        Self::pairwise_binary(lhs, rhs, dot)
-    }
+/// Executes a Wasm `v128.any_true` instruction.
+pub fn v128_any_true(v128: V128) -> bool {
+    v128.to_i128() != 0
+}
 
-    /// Execute a Wasm `v128.bitselect` instruction.
-    pub fn v128_bitselect(v1: Self, v2: Self, c: Self) -> Self {
-        Self::v128_or(Self::v128_and(v1, c), Self::v128_andnot(v2, c))
+/// Execute a Wasm `i32x4.dot_i16x8_s` instruction.
+pub fn i32x4_dot_i16x8_s(lhs: V128, rhs: V128) -> V128 {
+    fn dot(a: [i16; 2], b: [i16; 2]) -> i32 {
+        let a = a.map(i32::from);
+        let b = b.map(i32::from);
+        let dot0 = a[0].wrapping_mul(b[0]);
+        let dot1 = a[1].wrapping_mul(b[1]);
+        dot0.wrapping_add(dot1)
     }
+    V128::pairwise_binary(lhs, rhs, dot)
+}
+
+/// Execute a Wasm `v128.bitselect` instruction.
+pub fn v128_bitselect(v1: V128, v2: V128, c: V128) -> V128 {
+    simd::v128_or(simd::v128_and(v1, c), simd::v128_andnot(v2, c))
 }
 
 #[test]
 fn it_works() {
     let v0 = V128::splat(16383_i16);
     let v1 = V128::splat(16384_i16);
-    let result = V128::i32x4_dot_i16x8_s(v0, v1);
+    let result = simd::i32x4_dot_i16x8_s(v0, v1);
     assert_eq!(result, V128::splat(536838144_i32));
 }
