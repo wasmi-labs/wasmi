@@ -26,8 +26,6 @@ impl_wrap_into! {
     impl WrapInto<i8> for i64;
     impl WrapInto<i16> for i64;
     impl WrapInto<i32> for i64;
-    impl WrapInto<u32> for u32;
-    impl WrapInto<u64> for u64;
 }
 
 /// Convert one type to another by extending with leading zeroes.
@@ -63,8 +61,6 @@ impl_extend_into! {
     impl ExtendInto<i64> for i32;
     impl ExtendInto<i64> for u32;
     impl ExtendInto<u64> for u32;
-    impl ExtendInto<u32> for u32;
-    impl ExtendInto<u64> for u64;
 }
 
 /// Allows to efficiently load bytes from `memory` into a buffer.
@@ -158,6 +154,35 @@ fn effective_address(ptr: u64, offset: u64) -> Result<usize, TrapCode> {
     usize::try_from(address).map_err(|_| TrapCode::MemoryOutOfBounds)
 }
 
+/// Executes a generic `T.load` Wasm operation.
+///
+/// # Errors
+///
+/// - If `ptr + offset` overflows.
+/// - If `ptr + offset` loads out of bounds from `memory`.
+pub fn load<T>(memory: &[u8], ptr: u64, offset: u64) -> Result<T, TrapCode>
+where
+    T: LittleEndianConvert,
+{
+    let address = effective_address(ptr, offset)?;
+    load_at::<T>(memory, address)
+}
+
+/// Executes a generic `T.load` Wasm operation.
+///
+/// # Errors
+///
+/// If `address` loads out of bounds from `memory`.
+pub fn load_at<T>(memory: &[u8], address: usize) -> Result<T, TrapCode>
+where
+    T: LittleEndianConvert,
+{
+    let mut buffer = <<T as LittleEndianConvert>::Bytes as Default>::default();
+    buffer.load_into(memory, address)?;
+    let value: T = <T as LittleEndianConvert>::from_le_bytes(buffer);
+    Ok(value)
+}
+
 /// Executes a generic `T.loadN_[s|u]` Wasm operation.
 ///
 /// # Errors
@@ -181,10 +206,35 @@ pub fn load_extend_at<T, U>(memory: &[u8], address: usize) -> Result<T, TrapCode
 where
     U: LittleEndianConvert + ExtendInto<T>,
 {
-    let mut buffer = <<U as LittleEndianConvert>::Bytes as Default>::default();
-    buffer.load_into(memory, address)?;
-    let value: T = <U as LittleEndianConvert>::from_le_bytes(buffer).extend_into();
-    Ok(value)
+    load_at::<U>(memory, address).map(ExtendInto::extend_into)
+}
+
+/// Executes a generic `T.store` Wasm operation.
+///
+/// # Errors
+///
+/// - If `ptr + offset` overflows.
+/// - If `ptr + offset` stores out of bounds from `memory`.
+pub fn store<T>(memory: &mut [u8], ptr: u64, offset: u64, value: T) -> Result<(), TrapCode>
+where
+    T: LittleEndianConvert,
+{
+    let address = effective_address(ptr, offset)?;
+    store_at::<T>(memory, address, value)
+}
+
+/// Executes a generic `T.load` Wasm operation.
+///
+/// # Errors
+///
+/// If `address` loads out of bounds from `memory`.
+pub fn store_at<T>(memory: &mut [u8], address: usize, value: T) -> Result<(), TrapCode>
+where
+    T: LittleEndianConvert,
+{
+    let buffer = <T as LittleEndianConvert>::into_le_bytes(value);
+    buffer.store_from(memory, address)?;
+    Ok(())
 }
 
 /// Executes a generic `T.store[N]` Wasm operation.
@@ -212,8 +262,5 @@ where
     T: WrapInto<U>,
     U: LittleEndianConvert,
 {
-    let wrapped = value.wrap_into();
-    let buffer = <U as LittleEndianConvert>::into_le_bytes(wrapped);
-    buffer.store_from(memory, address)?;
-    Ok(())
+    store_at::<U>(memory, address, value.wrap_into())
 }
