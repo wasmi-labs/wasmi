@@ -1331,6 +1331,65 @@ impl V128 {
     }
 }
 
+macro_rules! impl_extend_ops {
+    (
+        $(
+            (
+                $narrow:ty => $wide:ty;
+                fn $extend_low:ident;
+                fn $extend_high:ident;
+            )
+        ),* $(,)?
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($extend_low), "` instruction.")]
+            pub fn $extend_low(self) -> Self {
+                self.from_low_unary(<$narrow as Into<$wide>>::into)
+            }
+
+            #[doc = concat!("Executes a Wasm `", stringify!($extend_high), "` instruction.")]
+            pub fn $extend_high(self) -> Self {
+                self.from_high_unary(<$narrow as Into<$wide>>::into)
+            }
+        )*
+    };
+}
+
+impl V128 {
+    impl_extend_ops! {
+        (
+            i8 => i16;
+            fn i16x8_extend_low_i8x16_s;
+            fn i16x8_extend_high_i8x16_s;
+        ),
+        (
+            u8 => u16;
+            fn i16x8_extend_low_i8x16_u;
+            fn i16x8_extend_high_i8x16_u;
+        ),
+        (
+            i16 => i32;
+            fn i32x4_extend_low_i16x8_s;
+            fn i32x4_extend_high_i16x8_s;
+        ),
+        (
+            u16 => u32;
+            fn i32x4_extend_low_i16x8_u;
+            fn i32x4_extend_high_i16x8_u;
+        ),
+        (
+            i32 => i64;
+            fn i64x2_extend_low_i32x4_s;
+            fn i64x2_extend_high_i32x4_s;
+        ),
+        (
+            u32 => u64;
+            fn i64x2_extend_low_i32x4_u;
+            fn i64x2_extend_high_i32x4_u;
+        ),
+    }
+}
+
 macro_rules! impl_extadd_pairwise {
     (
         $( fn $name:ident($narrow:ty) -> $wide:ty; )*
