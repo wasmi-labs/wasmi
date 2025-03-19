@@ -65,7 +65,7 @@ impl WriteAs<V128> for UntypedVal {
 }
 
 /// An error that may occur when constructing an out of bounds lane index.
-pub struct OutOfBoundsLaneId;
+pub struct OutOfBoundsLaneIdx;
 
 /// Helper trait to help the type inference to do its jobs with fewer type annotations.
 trait IntoLaneIdx {
@@ -103,11 +103,11 @@ macro_rules! impl_imm_lane_id {
             }
 
             impl TryFrom<u8> for $name {
-                type Error = OutOfBoundsLaneId;
+                type Error = OutOfBoundsLaneIdx;
 
                 fn try_from(lane: u8) -> Result<Self, Self::Error> {
                     if lane > Self::MASK {
-                        return Err(OutOfBoundsLaneId)
+                        return Err(OutOfBoundsLaneIdx)
                     }
                     Ok(Self(lane))
                 }
