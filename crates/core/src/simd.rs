@@ -1276,22 +1276,22 @@ macro_rules! impl_extmul_ops {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($extmul_low), "` instruction.")]
             pub fn $extmul_low(lhs: Self, rhs: Self) -> Self {
-                fn extmul(a: [$narrow; 2], b: [$narrow; 2]) -> $wide {
-                    let a = <$wide>::from(a[0]);
-                    let b = <$wide>::from(b[0]);
+                fn extmul_low(a: $narrow, b: $narrow) -> $wide {
+                    let a = <$wide>::from(a);
+                    let b = <$wide>::from(b);
                     a.wrapping_mul(b)
                 }
-                Self::lanewise_widening_binary(lhs, rhs, extmul)
+                Self::from_low_binary(lhs, rhs, extmul_low)
             }
 
             #[doc = concat!("Executes a Wasm `", stringify!($extmul_high), "` instruction.")]
             pub fn $extmul_high(lhs: Self, rhs: Self) -> Self {
-                fn extmul(a: [$narrow; 2], b: [$narrow; 2]) -> $wide {
-                    let a = <$wide>::from(a[1]);
-                    let b = <$wide>::from(b[1]);
+                fn extmul_high(a: $narrow, b: $narrow) -> $wide {
+                    let a = <$wide>::from(a);
+                    let b = <$wide>::from(b);
                     a.wrapping_mul(b)
                 }
-                Self::lanewise_widening_binary(lhs, rhs, extmul)
+                Self::from_high_binary(lhs, rhs, extmul_high)
             }
         )*
     };
