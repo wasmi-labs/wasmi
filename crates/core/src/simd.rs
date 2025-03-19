@@ -411,6 +411,49 @@ impl_from_narrow_for! {
     impl FromNarrow<F32x4> for F64x2;
 }
 
+/// `Self` can be constructed from the wider lanes.
+///
+/// For example a `i32x4` vector can be constructed from a `i64x2`.
+trait FromWide<WideLanes: Lanes>: Lanes {
+    /// Construct `Self` from the application of `f` to the wide `low` and `high` items.
+    fn from_low_high(
+        low: WideLanes,
+        high: WideLanes,
+        f: impl Fn(WideLanes::Item) -> Self::Item,
+    ) -> Self;
+}
+
+macro_rules! impl_from_wide_for {
+    (
+        $( impl FromWide<$wide_ty:ty> for $narrow_ty:ty; )*
+    ) => {
+        $(
+            impl FromWide<$wide_ty> for $narrow_ty {
+                fn from_low_high(
+                    low: $wide_ty,
+                    high: $wide_ty,
+                    f: impl Fn(<$wide_ty as Lanes>::Item,
+                ) -> Self::Item) -> Self {
+                    let low = low.0;
+                    let high = high.0;
+                    Self(array::from_fn(|i| {
+                        if i < <$wide_ty as Lanes>::LANES {
+                            f(low[i])
+                        } else {
+                            f(high[i - <$wide_ty as Lanes>::LANES])
+                        }
+                    }))
+                }
+            }
+        )*
+    };
+}
+impl_from_wide_for! {
+    impl FromWide<I32x4> for I16x8;
+    impl FromWide<U32x4> for U16x8;
+    impl FromWide<I16x8> for I8x16;
+    impl FromWide<U16x8> for U8x16;
+}
 
 trait ReinterpretAs<T> {
     fn reinterpret_as(self) -> T;
@@ -563,6 +606,23 @@ impl V128 {
         <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_high_binary(
             <<Narrow as IntoLanes>::Lanes>::from_v128(lhs),
             <<Narrow as IntoLanes>::Lanes>::from_v128(rhs),
+            f,
+        )
+        .into_v128()
+    }
+
+    /// Convenience method to help implement narrowing low-high methods.
+    fn from_low_high<Narrow: IntoLanes, Wide: IntoLanes>(
+        lhs: Self,
+        rhs: Self,
+        f: impl Fn(Wide) -> Narrow,
+    ) -> Self
+    where
+        <Narrow as IntoLanes>::Lanes: FromWide<<Wide as IntoLanes>::Lanes>,
+    {
+        <<Narrow as IntoLanes>::Lanes as FromWide<<Wide as IntoLanes>::Lanes>>::from_low_high(
+            <<Wide as IntoLanes>::Lanes>::from_v128(lhs),
+            <<Wide as IntoLanes>::Lanes>::from_v128(rhs),
             f,
         )
         .into_v128()
@@ -1020,6 +1080,27 @@ impl V128 {
         fn i32x4_shr_u(self, rhs: u32) -> Self = u32::wrapping_shr;
         fn i64x2_shr_s(self, rhs: u32) -> Self = i64::wrapping_shr;
         fn i64x2_shr_u(self, rhs: u32) -> Self = u64::wrapping_shr;
+    }
+}
+
+macro_rules! impl_narrowing_low_high_ops {
+    (
+        $( fn $name:ident(low: Self, high: Self) -> Self = $f:expr; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(low: Self, high: Self) -> Self {
+                Self::from_low_high(low, high, $f)
+            }
+        )*
+    };
+}
+impl V128 {
+    impl_narrowing_low_high_ops! {
+        fn i8x16_narrow_i16x8_s(low: Self, high: Self) -> Self = |v: i16| v as i8;
+        fn i8x16_narrow_i16x8_u(low: Self, high: Self) -> Self = |v: u16| v as u8;
+        fn i16x8_narrow_i32x4_s(low: Self, high: Self) -> Self = |v: i32| v as i16;
+        fn i16x8_narrow_i32x4_u(low: Self, high: Self) -> Self = |v: u32| v as u16;
     }
 }
 
