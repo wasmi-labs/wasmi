@@ -1343,7 +1343,7 @@ macro_rules! impl_extadd_pairwise {
                     let b = <$wide>::from(b);
                     a.wrapping_add(b)
                 }
-                self.lanewise_widening_unary(extadd_pairwise)
+                self.pairwise_unary(extadd_pairwise)
             }
         )*
     };
