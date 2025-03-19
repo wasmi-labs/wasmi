@@ -326,7 +326,7 @@ impl_lanes_for! {
 /// For example a `i64x2` vector can be constructed from the two lower lanes of a `i32x4`.
 trait FromNarrow<NarrowLanes: Lanes>: Lanes {
     /// Construct `Self` from the pairwise application of `f` of items in `narrow`.
-    fn from_pairwise(
+    fn from_pairwise_unary(
         narrow: NarrowLanes,
         f: impl Fn(NarrowLanes::Item, NarrowLanes::Item) -> Self::Item,
     ) -> Self;
@@ -356,7 +356,7 @@ macro_rules! impl_from_narrow_for {
     ( $( impl FromNarrow<$narrow_ty:ty> for $self_ty:ty; )* ) => {
         $(
             impl FromNarrow<$narrow_ty> for $self_ty {
-                fn from_pairwise(
+                fn from_pairwise_unary(
                     narrow: $narrow_ty,
                     f: impl Fn(<$narrow_ty as Lanes>::Item, <$narrow_ty as Lanes>::Item) -> Self::Item,
                 ) -> Self {
@@ -546,7 +546,7 @@ impl V128 {
     where
         <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
     {
-        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_pairwise(
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_pairwise_unary(
             <<Narrow as IntoLanes>::Lanes>::from_v128(self),
             f,
         )
