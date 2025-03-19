@@ -7,24 +7,28 @@ pub trait WrapInto<T> {
 }
 
 macro_rules! impl_wrap_into {
-    ($from:ident, $into:ident) => {
-        impl WrapInto<$into> for $from {
-            #[inline]
-            fn wrap_into(self) -> $into {
-                self as $into
+    (
+        $( impl WrapInto<$into:ident> for $from:ident; )*
+    ) => {
+        $(
+            impl WrapInto<$into> for $from {
+                #[inline]
+                fn wrap_into(self) -> $into {
+                    self as $into
+                }
             }
-        }
+        )*
     };
 }
-
-impl_wrap_into!(i32, i8);
-impl_wrap_into!(i32, i16);
-impl_wrap_into!(i64, i8);
-impl_wrap_into!(i64, i16);
-impl_wrap_into!(i64, i32);
-
-impl_wrap_into!(u32, u32);
-impl_wrap_into!(u64, u64);
+impl_wrap_into! {
+    impl WrapInto<i8> for i32;
+    impl WrapInto<i16> for i32;
+    impl WrapInto<i8> for i64;
+    impl WrapInto<i16> for i64;
+    impl WrapInto<i32> for i64;
+    impl WrapInto<u32> for u32;
+    impl WrapInto<u64> for u64;
+}
 
 /// Convert one type to another by extending with leading zeroes.
 pub trait ExtendInto<T> {
@@ -33,32 +37,35 @@ pub trait ExtendInto<T> {
 }
 
 macro_rules! impl_extend_into {
-    ($from:ident, $into:ident) => {
-        impl ExtendInto<$into> for $from {
-            #[inline]
-            #[allow(clippy::cast_lossless)]
-            fn extend_into(self) -> $into {
-                self as $into
+    (
+        $( impl ExtendInto<$into:ident> for $from:ident; )*
+    ) => {
+        $(
+            impl ExtendInto<$into> for $from {
+                #[inline]
+                #[allow(clippy::cast_lossless)]
+                fn extend_into(self) -> $into {
+                    self as $into
+                }
             }
-        }
+        )*
     };
 }
-
-impl_extend_into!(i8, i32);
-impl_extend_into!(u8, i32);
-impl_extend_into!(i16, i32);
-impl_extend_into!(u16, i32);
-impl_extend_into!(i8, i64);
-impl_extend_into!(u8, i64);
-impl_extend_into!(i16, i64);
-impl_extend_into!(u16, i64);
-impl_extend_into!(i32, i64);
-impl_extend_into!(u32, i64);
-impl_extend_into!(u32, u64);
-
-// Casting to self
-impl_extend_into!(u32, u32);
-impl_extend_into!(u64, u64);
+impl_extend_into! {
+    impl ExtendInto<i32> for i8;
+    impl ExtendInto<i32> for u8;
+    impl ExtendInto<i32> for i16;
+    impl ExtendInto<i32> for u16;
+    impl ExtendInto<i64> for i8;
+    impl ExtendInto<i64> for u8;
+    impl ExtendInto<i64> for i16;
+    impl ExtendInto<i64> for u16;
+    impl ExtendInto<i64> for i32;
+    impl ExtendInto<i64> for u32;
+    impl ExtendInto<u64> for u32;
+    impl ExtendInto<u32> for u32;
+    impl ExtendInto<u64> for u64;
+}
 
 /// Allows to efficiently load bytes from `memory` into a buffer.
 pub trait LoadInto {
