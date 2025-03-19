@@ -870,6 +870,10 @@ impl V128 {
         fn i32x4_extend_low_i16x8_u(self) -> Self = <i16 as Into<i32>>::into;
         fn i64x2_extend_low_i32x4_s(self) -> Self = <i32 as Into<i64>>::into;
         fn i64x2_extend_low_i32x4_u(self) -> Self = <i32 as Into<i64>>::into;
+
+        fn f64x2_convert_low_i32x4_s(self) -> Self = wasm::f64_convert_i32_s;
+        fn f64x2_convert_low_i32x4_u(self) -> Self = wasm::f64_convert_i32_s;
+        fn f64x2_promote_low_f32x4(self) -> Self = wasm::f64_promote_f32;
     }
 }
 
