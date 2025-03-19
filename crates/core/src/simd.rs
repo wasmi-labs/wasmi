@@ -1020,70 +1020,56 @@ impl_widen_high_unary! {
     fn i64x2_extend_high_i32x4_u(v128: V128) -> V128 = <u32 as Into<u64>>::into;
 }
 
-macro_rules! impl_extmul_ops {
+macro_rules! extmul {
+    ($narrow:ty => $wide:ty) => {{
+        |a: $narrow, b: $narrow| -> $wide {
+            let a = <$wide as From<$narrow>>::from(a);
+            let b = <$wide as From<$narrow>>::from(b);
+            a.wrapping_mul(b)
+        }
+    }};
+}
+
+macro_rules! impl_ext_binary_low {
     (
-        $(
-            (
-                $narrow:ty => $wide:ty;
-                fn $extmul_low:ident;
-                fn $extmul_high:ident;
-            )
-        ),* $(,)?
+        $( fn $name:ident(lhs: V128, rhs: V128) -> V128 = $f:expr; )*
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($extmul_low), "` instruction.")]
-            pub fn $extmul_low(lhs: V128, rhs: V128) -> V128 {
-                fn extmul_low(a: $narrow, b: $narrow) -> $wide {
-                    let a = <$wide>::from(a);
-                    let b = <$wide>::from(b);
-                    a.wrapping_mul(b)
-                }
-                V128::from_low_binary(lhs, rhs, extmul_low)
-            }
-
-            #[doc = concat!("Executes a Wasm `", stringify!($extmul_high), "` instruction.")]
-            pub fn $extmul_high(lhs: V128, rhs: V128) -> V128 {
-                fn extmul_high(a: $narrow, b: $narrow) -> $wide {
-                    let a = <$wide>::from(a);
-                    let b = <$wide>::from(b);
-                    a.wrapping_mul(b)
-                }
-                V128::from_high_binary(lhs, rhs, extmul_high)
+            pub fn $name(lhs: V128, rhs: V128) -> V128 {
+                V128::from_low_binary(lhs, rhs, $f)
             }
         )*
     };
 }
-impl_extmul_ops! {
+impl_ext_binary_low! {
+    fn i16x8_extmul_low_i8x16_s(lhs: V128, rhs: V128) -> V128 = extmul!( i8 => i16);
+    fn i16x8_extmul_low_i8x16_u(lhs: V128, rhs: V128) -> V128 = extmul!( u8 => u16);
+    fn i32x4_extmul_low_i16x8_s(lhs: V128, rhs: V128) -> V128 = extmul!(i16 => i32);
+    fn i32x4_extmul_low_i16x8_u(lhs: V128, rhs: V128) -> V128 = extmul!(u16 => u32);
+    fn i64x2_extmul_low_i32x4_s(lhs: V128, rhs: V128) -> V128 = extmul!(i32 => i64);
+    fn i64x2_extmul_low_i32x4_u(lhs: V128, rhs: V128) -> V128 = extmul!(u32 => u64);
+}
+
+macro_rules! impl_ext_binary_high {
     (
-        i8 => i16;
-        fn i16x8_extmul_low_i8x16_s;
-        fn i16x8_extmul_high_i8x16_s;
-    ),
-    (
-        u8 => u16;
-        fn i16x8_extmul_low_i8x16_u;
-        fn i16x8_extmul_high_i8x16_u;
-    ),
-    (
-        i16 => i32;
-        fn i32x4_extmul_low_i16x8_s;
-        fn i32x4_extmul_high_i16x8_s;
-    ),
-    (
-        u16 => u32;
-        fn i32x4_extmul_low_i16x8_u;
-        fn i32x4_extmul_high_i16x8_u;
-    ),
-    (
-        i32 => i64;
-        fn i64x2_extmul_low_i32x4_s;
-        fn i64x2_extmul_high_i32x4_s;
-    ),
-    (
-        u32 => u64;
-        fn i64x2_extmul_low_i32x4_u;
-        fn i64x2_extmul_high_i32x4_u;
-    ),
+        $( fn $name:ident(lhs: V128, rhs: V128) -> V128 = $f:expr; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($extmul_low), "` instruction.")]
+            pub fn $name(lhs: V128, rhs: V128) -> V128 {
+                V128::from_high_binary(lhs, rhs, $f)
+            }
+        )*
+    };
+}
+impl_ext_binary_high! {
+    fn i16x8_extmul_high_i8x16_s(lhs: V128, rhs: V128) -> V128 = extmul!( i8 => i16);
+    fn i16x8_extmul_high_i8x16_u(lhs: V128, rhs: V128) -> V128 = extmul!( u8 => u16);
+    fn i32x4_extmul_high_i16x8_s(lhs: V128, rhs: V128) -> V128 = extmul!(i16 => i32);
+    fn i32x4_extmul_high_i16x8_u(lhs: V128, rhs: V128) -> V128 = extmul!(u16 => u32);
+    fn i64x2_extmul_high_i32x4_s(lhs: V128, rhs: V128) -> V128 = extmul!(i32 => i64);
+    fn i64x2_extmul_high_i32x4_u(lhs: V128, rhs: V128) -> V128 = extmul!(u32 => u64);
 }
 
 macro_rules! impl_extadd_pairwise {
