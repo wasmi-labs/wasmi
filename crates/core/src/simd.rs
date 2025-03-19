@@ -1233,7 +1233,7 @@ pub fn i32x4_dot_i16x8_s(lhs: V128, rhs: V128) -> V128 {
     V128::pairwise_binary(lhs, rhs, dot)
 }
 
-/// Execute a Wasm `v128.bitselect` instruction.
+/// Executes a Wasm `v128.bitselect` instruction.
 pub fn v128_bitselect(v1: V128, v2: V128, c: V128) -> V128 {
     simd::v128_or(simd::v128_and(v1, c), simd::v128_andnot(v2, c))
 }
