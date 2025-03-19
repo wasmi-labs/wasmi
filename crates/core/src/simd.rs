@@ -1221,7 +1221,7 @@ pub fn v128_any_true(v128: V128) -> bool {
     v128.to_i128() != 0
 }
 
-/// Execute a Wasm `i32x4.dot_i16x8_s` instruction.
+/// Executes a Wasm `i32x4.dot_i16x8_s` instruction.
 pub fn i32x4_dot_i16x8_s(lhs: V128, rhs: V128) -> V128 {
     fn dot(a: [i16; 2], b: [i16; 2]) -> i32 {
         let a = a.map(i32::from);
