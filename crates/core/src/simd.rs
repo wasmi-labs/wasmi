@@ -1,7 +1,10 @@
 #![expect(dead_code)] // TODO: remove silencing of warnings again
 
 use crate::{wasm, ReadAs, UntypedVal, WriteAs};
-use core::ops::{BitAnd, BitOr, BitXor, Neg, Not};
+use core::{
+    array,
+    ops::{BitAnd, BitOr, BitXor, Neg, Not},
+};
 
 macro_rules! op {
     ($ty:ty, $op:tt) => {{
@@ -318,6 +321,93 @@ impl_lanes_for! {
     struct F32x4([f32; 4]);
     /// The Wasm `f64x2` vector type consisting of 2 `f64` values.
     struct F64x2([f64; 2]);
+}
+
+/// `Self` can be constructed from the narrower lanes.
+///
+/// For example a `i64x2` vector can be constructed from the two lower lanes of a `i32x4`.
+trait FromNarrow<NarrowLanes: Lanes>: Lanes {
+    /// Construct `Self` from the pairwise application of `f` of items in `narrow`.
+    fn from_pairwise(
+        narrow: NarrowLanes,
+        f: impl Fn(NarrowLanes::Item, NarrowLanes::Item) -> Self::Item,
+    ) -> Self;
+
+    /// Construct `Self` from the application of `f` to the lower half lanes of `narrow`.
+    fn from_low_unary(narrow: NarrowLanes, f: impl Fn(NarrowLanes::Item) -> Self::Item) -> Self;
+
+    /// Construct `Self` from the application of `f` to the higher half lanes of `narrow`.
+    fn from_high_unary(narrow: NarrowLanes, f: impl Fn(NarrowLanes::Item) -> Self::Item) -> Self;
+
+    /// Construct `Self` from the binary application of `f` to the lower half lanes of `narrow_lhs` and `narrow_rhs`.
+    fn from_low_binary(
+        narrow_lhs: NarrowLanes,
+        narrow_rhs: NarrowLanes,
+        f: impl Fn(NarrowLanes::Item, NarrowLanes::Item) -> Self::Item,
+    ) -> Self;
+
+    /// Construct `Self` from the binary application of `f` to the higher half lanes of `narrow_lhs` and `narrow_rhs`.
+    fn from_high_binary(
+        narrow_lhs: NarrowLanes,
+        narrow_rhs: NarrowLanes,
+        f: impl Fn(NarrowLanes::Item, NarrowLanes::Item) -> Self::Item,
+    ) -> Self;
+}
+
+macro_rules! impl_from_narrow_from {
+    ( $( impl FromNarrow<$narrow_ty:ty> for $self_ty:ty; )* ) => {
+        $(
+            impl FromNarrow<$narrow_ty> for $self_ty {
+                fn from_pairwise(
+                    narrow: $narrow_ty,
+                    f: impl Fn(<$narrow_ty as Lanes>::Item, <$narrow_ty as Lanes>::Item) -> Self::Item,
+                ) -> Self {
+                    let narrow = narrow.0;
+                    Self(array::from_fn(|i| f(narrow[2 * i], narrow[2 * i + 1])))
+                }
+
+                fn from_low_unary(narrow: $narrow_ty, f: impl Fn(<$narrow_ty as Lanes>::Item) -> Self::Item) -> Self {
+                    Self(array::from_fn(|i| f(narrow.0[i])))
+                }
+
+                fn from_high_unary(narrow: $narrow_ty, f: impl Fn(<$narrow_ty as Lanes>::Item) -> Self::Item) -> Self {
+                    Self(array::from_fn(|i| f(narrow.0[i + Self::LANES])))
+                }
+
+                fn from_low_binary(
+                    narrow_lhs: $narrow_ty,
+                    narrow_rhs: $narrow_ty,
+                    f: impl Fn(<$narrow_ty as Lanes>::Item, <$narrow_ty as Lanes>::Item) -> Self::Item,
+                ) -> Self {
+                    let narrow_lhs = narrow_lhs.0;
+                    let narrow_rhs = narrow_rhs.0;
+                    Self(array::from_fn(|i| f(narrow_lhs[i], narrow_rhs[i])))
+                }
+
+                fn from_high_binary(
+                    narrow_lhs: $narrow_ty,
+                    narrow_rhs: $narrow_ty,
+                    f: impl Fn(<$narrow_ty as Lanes>::Item, <$narrow_ty as Lanes>::Item) -> Self::Item,
+                ) -> Self {
+                    let narrow_lhs = narrow_lhs.0;
+                    let narrow_rhs = narrow_rhs.0;
+                    Self(array::from_fn(|i| {
+                        f(narrow_lhs[i + Self::LANES], narrow_rhs[i + Self::LANES])
+                    }))
+                }
+            }
+        )*
+    };
+}
+impl_from_narrow_from! {
+    impl FromNarrow<I32x4> for I64x2;
+    impl FromNarrow<U32x4> for U64x2;
+    impl FromNarrow<I16x8> for I32x4;
+    impl FromNarrow<U16x8> for U32x4;
+    impl FromNarrow<I8x16> for I16x8;
+    impl FromNarrow<U8x16> for U16x8;
+    impl FromNarrow<F32x4> for I64x2;
+    impl FromNarrow<F32x4> for U64x2;
 }
 
 /// Helper trait to help the type inference to do its jobs with fewer type annotations.
