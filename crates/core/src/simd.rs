@@ -458,6 +458,7 @@ impl V128 {
             .into_v128()
     }
 
+    /// Convenience method to help implement lanewise unary cast methods.
     fn lanewise_unary_cast<T: IntoLanes, U>(self, f: impl Fn(T) -> U) -> Self
     where
         U: ReinterpretAs<T>,
