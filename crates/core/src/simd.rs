@@ -331,6 +331,13 @@ trait FromNarrow<NarrowLanes: Lanes>: Lanes {
         f: impl Fn(NarrowLanes::Item, NarrowLanes::Item) -> Self::Item,
     ) -> Self;
 
+    /// Construct `Self` from the pairwise application of `f` of items in `lhs` and `rhs`.
+    fn from_pairwise_binary(
+        lhs: NarrowLanes,
+        rhs: NarrowLanes,
+        f: impl Fn([NarrowLanes::Item; 2], [NarrowLanes::Item; 2]) -> Self::Item,
+    ) -> Self;
+
     /// Construct `Self` from the application of `f` to the lower half lanes of `narrow`.
     fn from_low_unary(narrow: NarrowLanes, f: impl Fn(NarrowLanes::Item) -> Self::Item) -> Self;
 
@@ -362,6 +369,21 @@ macro_rules! impl_from_narrow_for {
                 ) -> Self {
                     let narrow = narrow.0;
                     Self(array::from_fn(|i| f(narrow[2 * i], narrow[2 * i + 1])))
+                }
+
+                fn from_pairwise_binary(
+                    lhs: $narrow_ty,
+                    rhs: $narrow_ty,
+                    f: impl Fn([<$narrow_ty as Lanes>::Item; 2], [<$narrow_ty as Lanes>::Item; 2]) -> Self::Item,
+                ) -> Self {
+                    let lhs = lhs.0;
+                    let rhs = rhs.0;
+                    Self(array::from_fn(|i| {
+                        f(
+                            [lhs[2 * i], lhs[2 * i + 1]],
+                            [rhs[2 * i], rhs[2 * i + 1]],
+                        )
+                    }))
                 }
 
                 fn from_low_unary(narrow: $narrow_ty, f: impl Fn(<$narrow_ty as Lanes>::Item) -> Self::Item) -> Self {
@@ -548,6 +570,23 @@ impl V128 {
     {
         <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_pairwise_unary(
             <<Narrow as IntoLanes>::Lanes>::from_v128(self),
+            f,
+        )
+        .into_v128()
+    }
+
+    /// Convenience method to help implement pairwise binary methods.
+    fn pairwise_binary<Narrow: IntoLanes, Wide: IntoLanes>(
+        lhs: Self,
+        rhs: Self,
+        f: impl Fn([Narrow; 2], [Narrow; 2]) -> Wide,
+    ) -> Self
+    where
+        <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
+    {
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_pairwise_binary(
+            <<Narrow as IntoLanes>::Lanes>::from_v128(lhs),
+            <<Narrow as IntoLanes>::Lanes>::from_v128(rhs),
             f,
         )
         .into_v128()
@@ -1151,7 +1190,14 @@ impl V128 {
 impl V128 {
     /// Execute a Wasm `i32x4.dot_i16x8_s` instruction.
     pub fn i32x4_dot_i16x8_s(lhs: Self, rhs: Self) -> Self {
-        Self::i32x4_extadd_pairwise_i16x8_s(Self::i16x8_mul(lhs, rhs))
+        fn dot(a: [i16; 2], b: [i16; 2]) -> i32 {
+            let a = a.map(i32::from);
+            let b = b.map(i32::from);
+            let dot0 = a[0].wrapping_mul(b[0]);
+            let dot1 = a[1].wrapping_mul(b[1]);
+            dot0.wrapping_add(dot1)
+        }
+        Self::pairwise_binary(lhs, rhs, dot)
     }
 
     /// Execute a Wasm `v128.bitselect` instruction.
