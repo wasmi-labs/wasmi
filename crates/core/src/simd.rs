@@ -1203,8 +1203,7 @@ impl_reduce_ops! {
     fn i16x8_all_true(v128: V128) -> bool = all_true(i16);
     fn i32x4_all_true(v128: V128) -> bool = all_true(i32);
     fn i64x2_all_true(v128: V128) -> bool = all_true(i64);
-}
-impl_reduce_ops! {
+
     fn i8x16_bitmask(v128: V128) -> u32 = bitmask(i8);
     fn i16x8_bitmask(v128: V128) -> u32 = bitmask(i16);
     fn i32x4_bitmask(v128: V128) -> u32 = bitmask(i32);
