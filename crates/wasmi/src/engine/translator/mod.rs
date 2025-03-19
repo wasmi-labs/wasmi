@@ -3007,8 +3007,8 @@ impl FuncTranslator {
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
                 let (result_lo, result_hi) = const_eval(lhs.into(), rhs.into());
-                self.alloc.stack.push_const(result_hi);
                 self.alloc.stack.push_const(result_lo);
+                self.alloc.stack.push_const(result_hi);
                 return Ok(());
             }
         };
