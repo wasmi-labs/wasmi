@@ -907,6 +907,79 @@ impl V128 {
     fn lanewise_reduce_enumerate<T: IntoLanes, V>(self, acc: V, f: impl Fn(u8, T, V) -> V) -> V {
         <<T as IntoLanes>::Lanes>::from_v128(self).lanewise_reduce(acc, f)
     }
+
+    /// Convenience method to help implement pairwise unary methods.
+    fn pairwise_unary<Narrow: IntoLanes, Wide: IntoLanes>(
+        self,
+        f: impl Fn(Narrow, Narrow) -> Wide,
+    ) -> Self
+    where
+        <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
+    {
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_pairwise(
+            <<Narrow as IntoLanes>::Lanes>::from_v128(self),
+            f,
+        )
+        .into_v128()
+    }
+
+    /// Convenience method to help implement extend-low unary methods.
+    fn from_low_unary<Narrow: IntoLanes, Wide: IntoLanes>(self, f: impl Fn(Narrow) -> Wide) -> Self
+    where
+        <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
+    {
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_low_unary(
+            <<Narrow as IntoLanes>::Lanes>::from_v128(self),
+            f,
+        )
+        .into_v128()
+    }
+
+    /// Convenience method to help implement extend-high unary methods.
+    fn from_high_unary<Narrow: IntoLanes, Wide: IntoLanes>(self, f: impl Fn(Narrow) -> Wide) -> Self
+    where
+        <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
+    {
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_high_unary(
+            <<Narrow as IntoLanes>::Lanes>::from_v128(self),
+            f,
+        )
+        .into_v128()
+    }
+
+    /// Convenience method to help implement extend-low binary methods.
+    fn from_low_binary<Narrow: IntoLanes, Wide: IntoLanes>(
+        lhs: Self,
+        rhs: Self,
+        f: impl Fn(Narrow, Narrow) -> Wide,
+    ) -> Self
+    where
+        <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
+    {
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_low_binary(
+            <<Narrow as IntoLanes>::Lanes>::from_v128(lhs),
+            <<Narrow as IntoLanes>::Lanes>::from_v128(rhs),
+            f,
+        )
+        .into_v128()
+    }
+
+    /// Convenience method to help implement extend-high binary methods.
+    fn from_high_binary<Narrow: IntoLanes, Wide: IntoLanes>(
+        lhs: Self,
+        rhs: Self,
+        f: impl Fn(Narrow, Narrow) -> Wide,
+    ) -> Self
+    where
+        <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
+    {
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_high_binary(
+            <<Narrow as IntoLanes>::Lanes>::from_v128(lhs),
+            <<Narrow as IntoLanes>::Lanes>::from_v128(rhs),
+            f,
+        )
+        .into_v128()
+    }
 }
 
 /// Concenience identity helper function.
