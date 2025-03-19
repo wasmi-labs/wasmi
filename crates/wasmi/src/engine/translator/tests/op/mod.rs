@@ -33,6 +33,7 @@ mod select;
 mod store;
 mod table;
 mod unary;
+mod wide_arithmetic;
 
 use super::{
     bspan,
