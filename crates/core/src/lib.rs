@@ -14,6 +14,7 @@
 mod float;
 pub mod hint;
 mod host_error;
+mod memory;
 mod trap;
 mod typed;
 mod untyped;
@@ -24,16 +25,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-use self::value::{
-    ExtendInto,
-    Float,
-    Integer,
-    LittleEndianConvert,
-    SignExtendFrom,
-    TruncateSaturateInto,
-    TryTruncateInto,
-    WrapInto,
-};
+use self::value::{Float, Integer, SignExtendFrom, TruncateSaturateInto, TryTruncateInto};
 pub use self::{
     float::{F32, F64},
     host_error::HostError,
