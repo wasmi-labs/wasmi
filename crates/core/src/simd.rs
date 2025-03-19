@@ -1,4 +1,4 @@
-use crate::{simd, wasm, ReadAs, UntypedVal, WriteAs};
+use crate::{memory, simd, wasm, ReadAs, TrapCode, UntypedVal, WriteAs};
 use core::{
     array,
     ops::{BitAnd, BitOr, BitXor, Neg, Not},
@@ -1228,6 +1228,116 @@ pub fn i32x4_dot_i16x8_s(lhs: V128, rhs: V128) -> V128 {
 /// Executes a Wasm `v128.bitselect` instruction.
 pub fn v128_bitselect(v1: V128, v2: V128, c: V128) -> V128 {
     simd::v128_or(simd::v128_and(v1, c), simd::v128_andnot(v2, c))
+}
+
+/// Executes a Wasm `v128.store` instruction.
+///
+/// # Errors
+///
+/// - If `ptr + offset` overflows.
+/// - If `ptr + offset` stores out of bounds from `memory`.
+pub fn v128_store(memory: &mut [u8], ptr: u64, offset: u64, value: V128) -> Result<(), TrapCode> {
+    memory::store(memory, ptr, offset, value.to_i128())
+}
+
+/// Executes a Wasm `v128.store` instruction.
+///
+/// # Errors
+///
+/// If `address` stores out of bounds from `memory`.
+pub fn v128_store_at(memory: &mut [u8], address: usize, value: V128) -> Result<(), TrapCode> {
+    memory::store_at(memory, address, value.to_i128())
+}
+
+macro_rules! impl_v128_storeN_lane {
+    (
+        $(
+            fn $name:ident(
+                memory: &mut [u8],
+                ptr: u64,
+                offset: u64,
+                value: V128,
+                imm: $lane_idx:ty $(,)?
+            ) -> Result<(), TrapCode>
+            = $store_ty:ty;
+        )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` stores out of bounds from `memory`.
+            pub fn $name(memory: &mut [u8], ptr: u64, offset: u64, value: V128, imm: $lane_idx) -> Result<(), TrapCode> {
+                memory::store(memory, ptr, offset, value.extract_lane::<$store_ty>(imm))
+            }
+        )*
+    };
+}
+impl_v128_storeN_lane! {
+    fn v128_store8_lane(
+        memory: &mut [u8],
+        ptr: u64,
+        offset: u64,
+        value: V128,
+        imm: ImmLaneIdx16,
+    ) -> Result<(), TrapCode> = u8;
+
+    fn v128_store16_lane(
+        memory: &mut [u8],
+        ptr: u64,
+        offset: u64,
+        value: V128,
+        imm: ImmLaneIdx8,
+    ) -> Result<(), TrapCode> = u16;
+
+    fn v128_store32_lane(
+        memory: &mut [u8],
+        ptr: u64,
+        offset: u64,
+        value: V128,
+        imm: ImmLaneIdx4,
+    ) -> Result<(), TrapCode> = u32;
+
+    fn v128_store64_lane(
+        memory: &mut [u8],
+        ptr: u64,
+        offset: u64,
+        value: V128,
+        imm: ImmLaneIdx2,
+    ) -> Result<(), TrapCode> = u64;
+}
+
+macro_rules! impl_v128_storeN_lane_at {
+    (
+        $( fn $name:ident(memory: &mut [u8], address: usize, value: V128, imm: $lane_idx:ty) -> Result<(), TrapCode> = $store_ty:ty; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// If `address` stores out of bounds from `memory`.
+            pub fn $name(memory: &mut [u8], address: usize, value: V128, imm: $lane_idx) -> Result<(), TrapCode> {
+                memory::store_at(memory, address, value.extract_lane::<$store_ty>(imm))
+            }
+        )*
+    };
+}
+impl_v128_storeN_lane_at! {
+    fn v128_store8_lane_at(
+        memory: &mut [u8], address: usize, value: V128, imm: ImmLaneIdx16
+    ) -> Result<(), TrapCode> = u8;
+    fn v128_store16_lane_at(
+        memory: &mut [u8], address: usize, value: V128, imm: ImmLaneIdx8
+    ) -> Result<(), TrapCode> = u16;
+    fn v128_store32_lane_at(
+        memory: &mut [u8], address: usize, value: V128, imm: ImmLaneIdx4
+    ) -> Result<(), TrapCode> = u32;
+    fn v128_store64_lane_at(
+        memory: &mut [u8], address: usize, value: V128, imm: ImmLaneIdx2
+    ) -> Result<(), TrapCode> = u64;
 }
 
 #[test]
