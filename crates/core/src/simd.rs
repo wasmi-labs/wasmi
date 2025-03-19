@@ -1160,40 +1160,52 @@ impl_narrowing_low_high_ops! {
     fn f32x4_demote_f64x2_zero(v128: V128) -> V128 = (high: || 0.0, f: wasm::f32_demote_f64);
 }
 
-macro_rules! impl_reduce_ops {
+macro_rules! all_true {
+    ($ty:ty) => {{
+        |v: $ty, acc: bool| acc & (v != 0)
+    }};
+}
+macro_rules! impl_all_true_ops {
     (
-        $( fn $name:ident(v128: V128) -> bool = all_true($item_ty:ty); )*
+        $( fn $name:ident(v128: V128) -> bool = $f:expr; )*
     ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
             pub fn $name(v128: V128) -> bool {
-                v128.lanewise_reduce(true, |v: $item_ty, acc| acc & (v != 0))
-            }
-        )*
-    };
-    (
-        $( fn $name:ident(v128: V128) -> u32 = bitmask($item_ty:ty); )*
-    ) => {
-        $(
-            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
-            pub fn $name(v128: V128) -> u32 {
-                v128.lanewise_reduce_enumerate(0_i32, |n, v: $item_ty, acc| {
-                    acc | (i32::from(v < 0).wrapping_shl(u32::from(n)))
-                }) as _
+                v128.lanewise_reduce(true, $f)
             }
         )*
     };
 }
-impl_reduce_ops! {
-    fn i8x16_all_true(v128: V128) -> bool = all_true(i8);
-    fn i16x8_all_true(v128: V128) -> bool = all_true(i16);
-    fn i32x4_all_true(v128: V128) -> bool = all_true(i32);
-    fn i64x2_all_true(v128: V128) -> bool = all_true(i64);
+impl_all_true_ops! {
+    fn i8x16_all_true(v128: V128) -> bool = all_true!(i8);
+    fn i16x8_all_true(v128: V128) -> bool = all_true!(i16);
+    fn i32x4_all_true(v128: V128) -> bool = all_true!(i32);
+    fn i64x2_all_true(v128: V128) -> bool = all_true!(i64);
+}
 
-    fn i8x16_bitmask(v128: V128) -> u32 = bitmask(i8);
-    fn i16x8_bitmask(v128: V128) -> u32 = bitmask(i16);
-    fn i32x4_bitmask(v128: V128) -> u32 = bitmask(i32);
-    fn i64x2_bitmask(v128: V128) -> u32 = bitmask(i64);
+macro_rules! bitmask {
+    ($ty:ty) => {{
+        |n: u8, v: $ty, acc| acc | (i32::from(v < 0).wrapping_shl(u32::from(n)))
+    }};
+}
+macro_rules! impl_bitmask_ops {
+    (
+        $( fn $name:ident(v128: V128) -> u32 = $f:expr; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(v128: V128) -> u32 {
+                v128.lanewise_reduce_enumerate(0_i32, $f) as _
+            }
+        )*
+    };
+}
+impl_bitmask_ops! {
+    fn i8x16_bitmask(v128: V128) -> u32 = bitmask!(i8);
+    fn i16x8_bitmask(v128: V128) -> u32 = bitmask!(i16);
+    fn i32x4_bitmask(v128: V128) -> u32 = bitmask!(i32);
+    fn i64x2_bitmask(v128: V128) -> u32 = bitmask!(i64);
 }
 
 /// Executes a Wasm `v128.any_true` instruction.
