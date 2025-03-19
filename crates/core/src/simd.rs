@@ -352,7 +352,7 @@ trait FromNarrow<NarrowLanes: Lanes>: Lanes {
     ) -> Self;
 }
 
-macro_rules! impl_from_narrow_from {
+macro_rules! impl_from_narrow_for {
     ( $( impl FromNarrow<$narrow_ty:ty> for $self_ty:ty; )* ) => {
         $(
             impl FromNarrow<$narrow_ty> for $self_ty {
@@ -397,7 +397,7 @@ macro_rules! impl_from_narrow_from {
         )*
     };
 }
-impl_from_narrow_from! {
+impl_from_narrow_for! {
     impl FromNarrow<I32x4> for I64x2;
     impl FromNarrow<U32x4> for U64x2;
     impl FromNarrow<I16x8> for I32x4;
