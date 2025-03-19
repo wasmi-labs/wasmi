@@ -688,6 +688,30 @@ impl_lanewise_narrowing_for_i16x8! {
     impl LanewiseNarrowing for U8x16<Wide = U16x8>;
 }
 
+trait ReinterpretAs<T> {
+    fn reinterpret_as(self) -> T;
+}
+
+macro_rules! impl_reinterpret_as_for {
+    ( $ty0:ty, $ty1:ty ) => {
+        impl ReinterpretAs<$ty0> for $ty1 {
+            fn reinterpret_as(self) -> $ty0 {
+                <$ty0>::from_ne_bytes(self.to_ne_bytes())
+            }
+        }
+
+        impl ReinterpretAs<$ty1> for $ty0 {
+            fn reinterpret_as(self) -> $ty1 {
+                <$ty1>::from_ne_bytes(self.to_ne_bytes())
+            }
+        }
+    };
+}
+impl_reinterpret_as_for!(i32, f32);
+impl_reinterpret_as_for!(u32, f32);
+impl_reinterpret_as_for!(i64, f64);
+impl_reinterpret_as_for!(u64, f64);
+
 impl V128 {
     /// Convenience method to help implement splatting methods.
     fn splat<T: IntoLanes>(value: T) -> Self {
@@ -710,6 +734,15 @@ impl V128 {
     fn lanewise_unary<T: IntoLanes>(self, f: impl Fn(T) -> T) -> Self {
         <<T as IntoLanes>::Lanes>::from_v128(self)
             .lanewise_unary(f)
+            .into_v128()
+    }
+
+    fn lanewise_unary_cast<T: IntoLanes, U>(self, f: impl Fn(T) -> U) -> Self
+    where
+        U: ReinterpretAs<T>,
+    {
+        <<T as IntoLanes>::Lanes>::from_v128(self)
+            .lanewise_unary(|v| f(v).reinterpret_as())
             .into_v128()
     }
 
@@ -867,6 +900,17 @@ macro_rules! impl_unary_for {
     };
 }
 
+macro_rules! impl_unary_cast_for {
+    ( $( fn $name:ident(self) -> Self = $lanewise_expr:expr; )* ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(self) -> Self {
+                Self::lanewise_unary_cast(self, $lanewise_expr)
+            }
+        )*
+    };
+}
+
 /// Lanewise operation for the Wasm `q15mulr_sat` SIMD operation.
 fn i16x8_q15mulr_sat(x: i16, y: i16) -> i16 {
     (x * y + 0x4000) >> 15
@@ -978,6 +1022,13 @@ impl V128 {
         fn f64x2_trunc(self) -> Self = f64::trunc;
         fn f32x4_nearest(self) -> Self = f32::round_ties_even;
         fn f64x2_nearest(self) -> Self = f64::round_ties_even;
+    }
+
+    impl_unary_cast_for! {
+        fn f32x4_convert_i32x4_s(self) -> Self = wasm::f32_convert_i32_s;
+        fn f32x4_convert_i32x4_u(self) -> Self = wasm::f32_convert_i32_u;
+        fn i32x4_trunc_sat_f32x4_s(self) -> Self = wasm::i32_trunc_sat_f32_s;
+        fn i32x4_trunc_sat_f32x4_u(self) -> Self = wasm::i32_trunc_sat_f32_u;
     }
 }
 
