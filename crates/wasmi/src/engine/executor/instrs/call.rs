@@ -442,7 +442,8 @@ impl Executor<'_> {
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
-        self.execute_call_imported_impl::<marker::NestedCall0, T>(store, Some(results), &func)?;
+        _ =
+            self.execute_call_imported_impl::<marker::NestedCall0, T>(store, Some(results), &func)?;
         Ok(())
     }
 
@@ -454,7 +455,8 @@ impl Executor<'_> {
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
-        self.execute_call_imported_impl::<marker::NestedCall, T>(store, Some(results), &func)?;
+        _ =
+            self.execute_call_imported_impl::<marker::NestedCall, T>(store, Some(results), &func)?;
         Ok(())
     }
 
@@ -663,7 +665,7 @@ impl Executor<'_> {
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
-        self.execute_call_indirect_impl::<marker::NestedCall0, T>(
+        _ = self.execute_call_indirect_impl::<marker::NestedCall0, T>(
             store,
             Some(results),
             func_type,
@@ -681,7 +683,7 @@ impl Executor<'_> {
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
-        self.execute_call_indirect_impl::<marker::NestedCall0, T>(
+        _ = self.execute_call_indirect_impl::<marker::NestedCall0, T>(
             store,
             Some(results),
             func_type,
@@ -699,7 +701,7 @@ impl Executor<'_> {
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
-        self.execute_call_indirect_impl::<marker::NestedCall, T>(
+        _ = self.execute_call_indirect_impl::<marker::NestedCall, T>(
             store,
             Some(results),
             func_type,
@@ -717,7 +719,7 @@ impl Executor<'_> {
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
-        self.execute_call_indirect_impl::<marker::NestedCall, T>(
+        _ = self.execute_call_indirect_impl::<marker::NestedCall, T>(
             store,
             Some(results),
             func_type,
