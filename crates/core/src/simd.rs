@@ -454,8 +454,8 @@ macro_rules! impl_from_wide_for {
                 fn from_low_high(
                     low: $wide_ty,
                     high: $wide_ty,
-                    f: impl Fn(<$wide_ty as Lanes>::Item,
-                ) -> Self::Item) -> Self {
+                    f: impl Fn(<$wide_ty as Lanes>::Item) -> Self::Item,
+                ) -> Self {
                     let low = low.0;
                     let high = high.0;
                     Self(array::from_fn(|i| {
