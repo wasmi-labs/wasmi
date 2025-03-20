@@ -1444,6 +1444,54 @@ impl_v128_loadN_zero_at_for! {
     fn v128_load64_zero_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = u64;
 }
 
+macro_rules! impl_v128_loadN_splat_for {
+    (
+        $( fn $name:ident(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = $ty:ty; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` loads out of bounds from `memory`.
+            pub fn $name(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
+                memory::load::<$ty>(memory, ptr, offset).map(V128::splat)
+            }
+        )*
+    };
+}
+impl_v128_loadN_splat_for! {
+    fn v128_load8_splat(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = u8;
+    fn v128_load16_splat(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = u16;
+    fn v128_load32_splat(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = u32;
+    fn v128_load64_splat(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = u64;
+}
+
+macro_rules! impl_v128_loadN_splat_at_for {
+    (
+        $( fn $name:ident(memory: &[u8], address: usize) -> Result<V128, TrapCode> = $ty:ty; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` loads out of bounds from `memory`.
+            pub fn $name(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
+                memory::load_at::<u8>(memory, address).map(V128::splat)
+            }
+        )*
+    };
+}
+impl_v128_loadN_splat_at_for! {
+    fn v128_load8_splat_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = u8;
+    fn v128_load16_splat_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = u16;
+    fn v128_load32_splat_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = u32;
+    fn v128_load64_splat_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = u64;
+}
+
 #[test]
 fn it_works() {
     let v0 = V128::splat(16383_i16);
