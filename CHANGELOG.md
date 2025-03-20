@@ -8,6 +8,14 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.42.1`] - 2025-03-20
+
+### Fixed
+
+- Fixed a bug in `i64.mul_wide_{s,u}` instruction constant evaluation. [#1397]
+
+[#1397]: https://github.com/wasmi-labs/wasmi/pull/1397
+
 ## [`0.42.0`] - 2025-03-11
 
 ### Added
