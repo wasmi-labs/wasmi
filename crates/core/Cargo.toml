@@ -21,12 +21,15 @@ downcast-rs = { version = "2.0.1", default-features = false, features = ["sync"]
 default = ["std"]
 # Use `no-default-features` for a `no_std` build.
 std = ["downcast-rs/std"]
-
-# Enable this to use 128-bit untyped values.
+# Enables the Wasm `simd` proposal.
 #
-# This mainly affects the `UntypedVal` type since it acts as Wasmi's register cell type.
-value128 = []
+# This also changes the size of `UntypedVal` from 64-bit to 128-bit
+# which may have significant impact on performance and memory usage.
+simd = []
 
 [package.metadata.cargo-udeps.ignore]
 # cargo-udeps cannot detect that libm is used for no_std targets only.
 normal = ["libm"]
+
+[package.metadata.docs.rs]
+all-features = true

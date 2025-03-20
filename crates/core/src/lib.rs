@@ -21,6 +21,9 @@ mod untyped;
 mod value;
 pub mod wasm;
 
+#[cfg(feature = "simd")]
+pub mod simd;
+
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
