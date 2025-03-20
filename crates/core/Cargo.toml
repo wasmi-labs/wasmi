@@ -32,3 +32,6 @@ simd = ["value128"]
 [package.metadata.cargo-udeps.ignore]
 # cargo-udeps cannot detect that libm is used for no_std targets only.
 normal = ["libm"]
+
+[package.metadata.docs.rs]
+all-features = true
