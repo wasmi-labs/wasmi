@@ -1379,7 +1379,7 @@ impl_v128_storeN_lane_at! {
     ) -> Result<(), TrapCode> = u64;
 }
 
-/// Executes a Wasmi `v128_load` instruction.
+/// Executes a Wasmi `v128.load` instruction.
 ///
 /// # Errors
 ///
@@ -1389,7 +1389,7 @@ pub fn v128_load(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode>
     memory::load::<i128>(memory, ptr, offset).map(V128::from)
 }
 
-/// Executes a Wasmi `v128_load` instruction.
+/// Executes a Wasmi `v128.load` instruction.
 ///
 /// # Errors
 ///
