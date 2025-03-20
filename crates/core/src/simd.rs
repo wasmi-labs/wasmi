@@ -366,33 +366,33 @@ impl_lanes_for! {
 /// For example a `i64x2` vector can be constructed from the two lower lanes of a `i32x4`.
 trait FromNarrow<NarrowLanes: Lanes>: Lanes {
     /// Construct `Self` from the pairwise application of `f` of items in `narrow`.
-    fn from_pairwise_unary(
+    fn pairwise_unary(
         narrow: NarrowLanes,
         f: impl Fn(NarrowLanes::Item, NarrowLanes::Item) -> Self::Item,
     ) -> Self;
 
     /// Construct `Self` from the pairwise application of `f` of items in `lhs` and `rhs`.
-    fn from_pairwise_binary(
+    fn pairwise_binary(
         lhs: NarrowLanes,
         rhs: NarrowLanes,
         f: impl Fn([NarrowLanes::Item; 2], [NarrowLanes::Item; 2]) -> Self::Item,
     ) -> Self;
 
     /// Construct `Self` from the application of `f` to the lower half lanes of `narrow`.
-    fn from_low_unary(narrow: NarrowLanes, f: impl Fn(NarrowLanes::Item) -> Self::Item) -> Self;
+    fn low_unary(narrow: NarrowLanes, f: impl Fn(NarrowLanes::Item) -> Self::Item) -> Self;
 
     /// Construct `Self` from the application of `f` to the higher half lanes of `narrow`.
-    fn from_high_unary(narrow: NarrowLanes, f: impl Fn(NarrowLanes::Item) -> Self::Item) -> Self;
+    fn high_unary(narrow: NarrowLanes, f: impl Fn(NarrowLanes::Item) -> Self::Item) -> Self;
 
     /// Construct `Self` from the binary application of `f` to the lower half lanes of `narrow_lhs` and `narrow_rhs`.
-    fn from_low_binary(
+    fn low_binary(
         narrow_lhs: NarrowLanes,
         narrow_rhs: NarrowLanes,
         f: impl Fn(NarrowLanes::Item, NarrowLanes::Item) -> Self::Item,
     ) -> Self;
 
     /// Construct `Self` from the binary application of `f` to the higher half lanes of `narrow_lhs` and `narrow_rhs`.
-    fn from_high_binary(
+    fn high_binary(
         narrow_lhs: NarrowLanes,
         narrow_rhs: NarrowLanes,
         f: impl Fn(NarrowLanes::Item, NarrowLanes::Item) -> Self::Item,
@@ -403,7 +403,7 @@ macro_rules! impl_from_narrow_for {
     ( $( impl FromNarrow<$narrow_ty:ty> for $self_ty:ty; )* ) => {
         $(
             impl FromNarrow<$narrow_ty> for $self_ty {
-                fn from_pairwise_unary(
+                fn pairwise_unary(
                     narrow: $narrow_ty,
                     f: impl Fn(<$narrow_ty as Lanes>::Item, <$narrow_ty as Lanes>::Item) -> Self::Item,
                 ) -> Self {
@@ -411,7 +411,7 @@ macro_rules! impl_from_narrow_for {
                     Self(array::from_fn(|i| f(narrow[2 * i], narrow[2 * i + 1])))
                 }
 
-                fn from_pairwise_binary(
+                fn pairwise_binary(
                     lhs: $narrow_ty,
                     rhs: $narrow_ty,
                     f: impl Fn([<$narrow_ty as Lanes>::Item; 2], [<$narrow_ty as Lanes>::Item; 2]) -> Self::Item,
@@ -426,15 +426,15 @@ macro_rules! impl_from_narrow_for {
                     }))
                 }
 
-                fn from_low_unary(narrow: $narrow_ty, f: impl Fn(<$narrow_ty as Lanes>::Item) -> Self::Item) -> Self {
+                fn low_unary(narrow: $narrow_ty, f: impl Fn(<$narrow_ty as Lanes>::Item) -> Self::Item) -> Self {
                     Self(array::from_fn(|i| f(narrow.0[i])))
                 }
 
-                fn from_high_unary(narrow: $narrow_ty, f: impl Fn(<$narrow_ty as Lanes>::Item) -> Self::Item) -> Self {
+                fn high_unary(narrow: $narrow_ty, f: impl Fn(<$narrow_ty as Lanes>::Item) -> Self::Item) -> Self {
                     Self(array::from_fn(|i| f(narrow.0[i + Self::LANES])))
                 }
 
-                fn from_low_binary(
+                fn low_binary(
                     narrow_lhs: $narrow_ty,
                     narrow_rhs: $narrow_ty,
                     f: impl Fn(<$narrow_ty as Lanes>::Item, <$narrow_ty as Lanes>::Item) -> Self::Item,
@@ -444,7 +444,7 @@ macro_rules! impl_from_narrow_for {
                     Self(array::from_fn(|i| f(narrow_lhs[i], narrow_rhs[i])))
                 }
 
-                fn from_high_binary(
+                fn high_binary(
                     narrow_lhs: $narrow_ty,
                     narrow_rhs: $narrow_ty,
                     f: impl Fn(<$narrow_ty as Lanes>::Item, <$narrow_ty as Lanes>::Item) -> Self::Item,
@@ -631,7 +631,7 @@ impl V128 {
     where
         <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
     {
-        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_pairwise_unary(
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::pairwise_unary(
             <<Narrow as IntoLanes>::Lanes>::from_v128(self),
             f,
         )
@@ -647,7 +647,7 @@ impl V128 {
     where
         <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
     {
-        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_pairwise_binary(
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::pairwise_binary(
             <<Narrow as IntoLanes>::Lanes>::from_v128(lhs),
             <<Narrow as IntoLanes>::Lanes>::from_v128(rhs),
             f,
@@ -656,11 +656,11 @@ impl V128 {
     }
 
     /// Convenience method to help implement extend-low unary methods.
-    fn from_low_unary<Narrow: IntoLanes, Wide: IntoLanes>(self, f: impl Fn(Narrow) -> Wide) -> Self
+    fn low_unary<Narrow: IntoLanes, Wide: IntoLanes>(self, f: impl Fn(Narrow) -> Wide) -> Self
     where
         <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
     {
-        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_low_unary(
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::low_unary(
             <<Narrow as IntoLanes>::Lanes>::from_v128(self),
             f,
         )
@@ -668,11 +668,11 @@ impl V128 {
     }
 
     /// Convenience method to help implement extend-high unary methods.
-    fn from_high_unary<Narrow: IntoLanes, Wide: IntoLanes>(self, f: impl Fn(Narrow) -> Wide) -> Self
+    fn high_unary<Narrow: IntoLanes, Wide: IntoLanes>(self, f: impl Fn(Narrow) -> Wide) -> Self
     where
         <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
     {
-        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_high_unary(
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::high_unary(
             <<Narrow as IntoLanes>::Lanes>::from_v128(self),
             f,
         )
@@ -688,7 +688,7 @@ impl V128 {
     where
         <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
     {
-        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_low_binary(
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::low_binary(
             <<Narrow as IntoLanes>::Lanes>::from_v128(lhs),
             <<Narrow as IntoLanes>::Lanes>::from_v128(rhs),
             f,
@@ -705,7 +705,7 @@ impl V128 {
     where
         <Wide as IntoLanes>::Lanes: FromNarrow<<Narrow as IntoLanes>::Lanes>,
     {
-        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::from_high_binary(
+        <<Wide as IntoLanes>::Lanes as FromNarrow<<Narrow as IntoLanes>::Lanes>>::high_binary(
             <<Narrow as IntoLanes>::Lanes>::from_v128(lhs),
             <<Narrow as IntoLanes>::Lanes>::from_v128(rhs),
             f,
@@ -731,7 +731,7 @@ impl V128 {
     }
 
     /// Convenience method to help implement narrowing low-or methods.
-    fn from_low_or<Narrow: IntoLanes, Wide: IntoLanes>(
+    fn low_or<Narrow: IntoLanes, Wide: IntoLanes>(
         self,
         high: impl Fn() -> Narrow,
         f: impl Fn(Wide) -> Narrow,
@@ -1036,7 +1036,7 @@ macro_rules! impl_widen_low_unary {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
             pub fn $name(v128: V128) -> V128 {
-                v128.from_low_unary($convert)
+                v128.low_unary($convert)
             }
         )*
     };
@@ -1061,7 +1061,7 @@ macro_rules! impl_widen_high_unary {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
             pub fn $name(v128: V128) -> V128 {
-                v128.from_high_unary($convert)
+                v128.high_unary($convert)
             }
         )*
     };
@@ -1204,7 +1204,7 @@ macro_rules! impl_narrowing_low_high_ops {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
             pub fn $name(low: V128) -> V128 {
-                V128::from_low_or(low, $high, $f)
+                V128::low_or(low, $high, $f)
             }
         )*
     };
