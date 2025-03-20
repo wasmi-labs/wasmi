@@ -1492,6 +1492,60 @@ impl_v128_loadN_splat_at_for! {
     fn v128_load64_splat_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = u64;
 }
 
+macro_rules! impl_v128_loadN_lane_for {
+    (
+        $(
+            fn $name:ident(
+                memory: &[u8],
+                ptr: u64,
+                offset: u64,
+                x: V128,
+                lane: $lane_idx:ty $(,)?
+            ) -> Result<V128, TrapCode> = $ty:ty; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` loads out of bounds from `memory`.
+            pub fn $name(memory: &[u8], ptr: u64, offset: u64, x: V128, lane: $lane_idx) -> Result<V128, TrapCode> {
+                memory::load::<$ty>(memory, ptr, offset).map(|value| x.replace_lane(lane, value))
+            }
+        )*
+    };
+}
+impl_v128_loadN_lane_for! {
+    fn v128_load8_lane(memory: &[u8], ptr: u64, offset: u64, x: V128, lane: ImmLaneIdx16) -> Result<V128, TrapCode> = u8;
+    fn v128_load16_lane(memory: &[u8], ptr: u64, offset: u64, x: V128, lane: ImmLaneIdx8) -> Result<V128, TrapCode> = u16;
+    fn v128_load32_lane(memory: &[u8], ptr: u64, offset: u64, x: V128, lane: ImmLaneIdx4) -> Result<V128, TrapCode> = u32;
+    fn v128_load64_lane(memory: &[u8], ptr: u64, offset: u64, x: V128, lane: ImmLaneIdx2) -> Result<V128, TrapCode> = u64;
+}
+
+macro_rules! impl_v128_loadN_lane_at_for {
+    (
+        $( fn $name:ident(memory: &[u8], address: usize, x: V128, lane: $lane_idx:ty) -> Result<V128, TrapCode> = $ty:ty; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// If `address` loads out of bounds from `memory`.
+            pub fn $name(memory: &[u8], address: usize, x: V128, lane: $lane_idx) -> Result<V128, TrapCode> {
+                memory::load_at::<$ty>(memory, address).map(|value| x.replace_lane(lane, value))
+            }
+        )*
+    };
+}
+impl_v128_loadN_lane_at_for! {
+    fn v128_load8_lane_at(memory: &[u8], address: usize, x: V128, lane: ImmLaneIdx16) -> Result<V128, TrapCode> = u8;
+    fn v128_load16_lane_at(memory: &[u8], address: usize, x: V128, lane: ImmLaneIdx8) -> Result<V128, TrapCode> = u16;
+    fn v128_load32_lane_at(memory: &[u8], address: usize, x: V128, lane: ImmLaneIdx4) -> Result<V128, TrapCode> = u32;
+    fn v128_load64_lane_at(memory: &[u8], address: usize, x: V128, lane: ImmLaneIdx2) -> Result<V128, TrapCode> = u64;
+}
+
 #[test]
 fn it_works() {
     let v0 = V128::splat(16383_i16);
