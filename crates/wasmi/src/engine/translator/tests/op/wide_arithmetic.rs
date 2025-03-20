@@ -1,5 +1,5 @@
 use super::*;
-use crate::core::wasm;
+use crate::core::UntypedVal;
 
 /// A Wasm `wide-arithmetic` wide-mulitplication instruction.
 #[derive(Copy, Clone)]
@@ -21,10 +21,11 @@ impl MulWideOp {
 
     /// Evaluates the inputs for the selected instruction.
     pub fn eval(self, lhs: i64, rhs: i64) -> (i64, i64) {
-        match self {
-            MulWideOp::MulWideS => wasm::i64_mul_wide_s(lhs, rhs),
-            MulWideOp::MulWideU => wasm::i64_mul_wide_u(lhs, rhs),
-        }
+        let (res0, res1) = match self {
+            MulWideOp::MulWideS => UntypedVal::i64_mul_wide_s(lhs.into(), rhs.into()),
+            MulWideOp::MulWideU => UntypedVal::i64_mul_wide_u(lhs.into(), rhs.into()),
+        };
+        (res0.into(), res1.into())
     }
 }
 
