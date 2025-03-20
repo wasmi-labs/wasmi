@@ -812,6 +812,28 @@ impl_replace_for! {
     fn f32x4_replace_lane(v128: V128, lane: ImmLaneIdx4, item: f32) -> V128;
 }
 
+/// Executes a Wasm `i8x16.shuffle` instruction.
+pub fn i8x16_shuffle(a: V128, b: V128, s: [ImmLaneIdx32; 16]) -> V128 {
+    let a = I8x16::from_v128(a).0;
+    let b = I8x16::from_v128(b).0;
+    I8x16(array::from_fn(|i| match usize::from(s[i].get()) {
+        i @ 0..16 => a[i],
+        i => b[i - 16],
+    }))
+    .into_v128()
+}
+
+/// Executes a Wasm `i8x16.swizzle` instruction.
+pub fn i8x16_swizzle(a: V128, s: V128) -> V128 {
+    let a = U8x16::from_v128(a).0;
+    let s = U8x16::from_v128(s).0;
+    U8x16(array::from_fn(|i| match usize::from(s[i]) {
+        i @ 0..16 => a[i],
+        _ => 0,
+    }))
+    .into_v128()
+}
+
 macro_rules! impl_unary_for {
     ( $( fn $name:ident(v128: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
