@@ -5,8 +5,8 @@ use core::fmt::{self, Display};
 ///
 /// Provides a dense and simple interface to all functional Wasm operations.
 #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(not(feature = "value128"), repr(transparent))]
-#[cfg_attr(feature = "value128", repr(C))]
+#[cfg_attr(not(feature = "simd"), repr(transparent))]
+#[cfg_attr(feature = "simd", repr(C))]
 pub struct UntypedVal {
     /// The low 64-bits of an [`UntypedVal`].
     ///
@@ -18,7 +18,7 @@ pub struct UntypedVal {
     ///
     /// This is only used to encode or decode types which do not fit
     /// into the lower 64-bits part such as Wasm's `V128` or `i128`.
-    #[cfg(feature = "value128")]
+    #[cfg(feature = "simd")]
     pub(crate) hi64: u64,
 }
 
@@ -131,7 +131,7 @@ impl UntypedVal {
     pub const fn from_bits64(lo64: u64) -> Self {
         Self {
             lo64,
-            #[cfg(feature = "value128")]
+            #[cfg(feature = "simd")]
             hi64: 0,
         }
     }
