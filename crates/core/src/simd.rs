@@ -839,6 +839,16 @@ fn i16x8_q15mulr_sat(x: i16, y: i16) -> i16 {
     (x * y + 0x4000) >> 15
 }
 
+macro_rules! avgr {
+    ($ty:ty as $wide_ty:ty) => {{
+        |a: $ty, b: $ty| {
+            let a = <$wide_ty as ::core::convert::From<$ty>>::from(a);
+            let b = <$wide_ty as ::core::convert::From<$ty>>::from(b);
+            a.wrapping_add(b).div_ceil(2) as $ty
+        }
+    }};
+}
+
 macro_rules! impl_binary_for {
     ( $( fn $name:ident(lhs: V128, rhs: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
@@ -889,8 +899,8 @@ impl_binary_for! {
     fn i32x4_max_s(lhs: V128, rhs: V128) -> V128 = i32::max;
     fn i32x4_max_u(lhs: V128, rhs: V128) -> V128 = u32::max;
 
-    fn i8x16_avgr_u(lhs: V128, rhs: V128) -> V128 = |a: u8, b: u8| (a + b + 1) / 2;
-    fn i16x8_avgr_u(lhs: V128, rhs: V128) -> V128 = |a: u16, b: u16| (a + b + 1) / 2;
+    fn i8x16_avgr_u(lhs: V128, rhs: V128) -> V128 = avgr!(u8 as u16);
+    fn i16x8_avgr_u(lhs: V128, rhs: V128) -> V128 = avgr!(u16 as u32);
 
     fn v128_and(lhs: V128, rhs: V128) -> V128 = <i64 as BitAnd>::bitand;
     fn v128_or(lhs: V128, rhs: V128) -> V128 = <i64 as BitOr>::bitor;
