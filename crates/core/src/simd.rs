@@ -1,4 +1,4 @@
-use crate::{memory, simd, wasm, ReadAs, TrapCode, UntypedVal, WriteAs};
+use crate::{memory, memory::ExtendInto, simd, wasm, ReadAs, TrapCode, UntypedVal, WriteAs};
 use core::{
     array,
     ops::{BitAnd, BitOr, BitXor, Neg, Not},
@@ -252,6 +252,12 @@ macro_rules! impl_lanes_for {
             impl IntoLanes for $ty {
                 type Lanes = $name;
                 type LaneIdx = <[(); $n] as IntoLaneIdx>::LaneIdx;
+            }
+
+            impl From<[$ty; $n]> for $name {
+                fn from(array: [$ty; $n]) -> Self {
+                    Self(array)
+                }
             }
 
             impl Lanes for $name {
@@ -1542,6 +1548,124 @@ impl_v128_loadN_lane_at_for! {
     fn v128_load16_lane_at(memory: &[u8], address: usize, x: V128, lane: ImmLaneIdx8) -> Result<V128, TrapCode> = u16;
     fn v128_load32_lane_at(memory: &[u8], address: usize, x: V128, lane: ImmLaneIdx4) -> Result<V128, TrapCode> = u32;
     fn v128_load64_lane_at(memory: &[u8], address: usize, x: V128, lane: ImmLaneIdx2) -> Result<V128, TrapCode> = u64;
+}
+
+/// Allows `Self` to be safely and efficiently split into `T`.
+///
+/// Usually `T` is an array of `U` where `U` fits multiple times into `Self`.
+/// An example of this is that `u64` can be split into `[u32; 2]`.
+///
+/// This is a helper trait to implement [`V128::load_nxm`] generically.
+trait SplitInto<T> {
+    type Output;
+    fn split_into(self) -> Self::Output;
+}
+
+macro_rules! impl_split_into_for {
+    ( $( impl SplitInto<$ty:ty> for u64; )* ) => {
+        $(
+            impl SplitInto<$ty> for u64 {
+                type Output = [$ty; core::mem::size_of::<u64>() / core::mem::size_of::<$ty>()];
+
+                fn split_into(self) -> Self::Output {
+                    let bytes = self.to_ne_bytes();
+                    array::from_fn(|i| {
+                        <$ty>::from_ne_bytes(array::from_fn(|j| {
+                            bytes[core::mem::size_of::<$ty>() * i + j]
+                        }))
+                    })
+                }
+            }
+        )*
+    };
+}
+impl_split_into_for! {
+    impl SplitInto<u8> for u64;
+    impl SplitInto<i8> for u64;
+    impl SplitInto<u16> for u64;
+    impl SplitInto<i16> for u64;
+    impl SplitInto<u32> for u64;
+    impl SplitInto<i32> for u64;
+}
+
+/// Allows to extend all items in an array from `T` to `Ext`.
+///
+/// This is a helper trait to implement [`V128::load_nxm`] generically.
+trait ExtendArray<T> {
+    type Output;
+    fn extend_array(self) -> Self::Output;
+}
+
+impl<const N: usize, Ext, T> ExtendArray<Ext> for [T; N]
+where
+    T: ExtendInto<Ext>,
+{
+    type Output = [Ext; N];
+    fn extend_array(self) -> Self::Output {
+        self.map(<T as ExtendInto<Ext>>::extend_into)
+    }
+}
+
+impl V128 {
+    /// Interprets `bits` as array of `Narrow` and distribute the (sign) extended items as [`V128`].
+    fn load_nxm<Narrow, Wide>(bits: u64) -> V128
+    where
+        u64: SplitInto<Narrow, Output: ExtendArray<Wide, Output: Into<<Wide as IntoLanes>::Lanes>>>,
+        Wide: IntoLanes,
+    {
+        bits.split_into().extend_array().into().into_v128()
+    }
+}
+
+macro_rules! impl_v128_load_mxn {
+    (
+        $( fn $name:ident(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = ($n:ty => $w:ty); )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` loads out of bounds from `memory`.
+            pub fn $name(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
+                memory::load::<u64>(memory, ptr, offset).map(V128::load_nxm::<$n, $w>)
+            }
+        )*
+    };
+}
+impl_v128_load_mxn! {
+    fn v128_load8x8_s(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = (i8 => i16);
+    fn v128_load8x8_u(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = (u8 => u16);
+    fn v128_load16x4_s(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = (i16 => i32);
+    fn v128_load16x4_u(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = (u16 => u32);
+    fn v128_load32x2_s(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = (i32 => i64);
+    fn v128_load32x2_u(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = (u32 => u64);
+}
+
+macro_rules! impl_v128_load_mxn_at {
+    (
+        $( fn $name:ident(memory: &[u8], address: usize) -> Result<V128, TrapCode> = ($n:ty => $w:ty); )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// If `address` loads out of bounds from `memory`.
+            pub fn $name(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
+                memory::load_at::<u64>(memory, address).map(V128::load_nxm::<$n, $w>)
+            }
+        )*
+    };
+}
+impl_v128_load_mxn_at! {
+    fn v128_load8x8_s_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = (i8 => i16);
+    fn v128_load8x8_u_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = (u8 => u16);
+    fn v128_load16x4_s_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = (i16 => i32);
+    fn v128_load16x4_u_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = (u16 => u32);
+    fn v128_load32x2_s_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = (i32 => i64);
+    fn v128_load32x2_u_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = (u32 => u64);
 }
 
 #[test]

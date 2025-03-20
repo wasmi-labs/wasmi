@@ -50,17 +50,25 @@ macro_rules! impl_extend_into {
     };
 }
 impl_extend_into! {
-    impl ExtendInto<i32> for i8;
-    impl ExtendInto<i32> for u8;
-    impl ExtendInto<i32> for i16;
-    impl ExtendInto<i32> for u16;
-    impl ExtendInto<i64> for i8;
-    impl ExtendInto<i64> for u8;
-    impl ExtendInto<i64> for i16;
-    impl ExtendInto<i64> for u16;
-    impl ExtendInto<i64> for i32;
-    impl ExtendInto<i64> for u32;
+    // unsigned -> unsigned
+    impl ExtendInto<u16> for u8;
+    impl ExtendInto<u32> for u16;
     impl ExtendInto<u64> for u32;
+
+    // signed -> signed
+    impl ExtendInto<i16> for i8;
+    impl ExtendInto<i32> for i8;
+    impl ExtendInto<i64> for i8;
+    impl ExtendInto<i32> for i16;
+    impl ExtendInto<i64> for i16;
+    impl ExtendInto<i64> for i32;
+
+    // unsigned -> signed
+    impl ExtendInto<i32> for u8;
+    impl ExtendInto<i64> for u8;
+    impl ExtendInto<i32> for u16;
+    impl ExtendInto<i64> for u16;
+    impl ExtendInto<i64> for u32;
 }
 
 /// Allows to efficiently load bytes from `memory` into a buffer.
