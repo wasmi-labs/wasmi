@@ -1398,6 +1398,52 @@ pub fn v128_load_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
     memory::load_at::<i128>(memory, address).map(V128::from)
 }
 
+macro_rules! impl_v128_loadN_zero_for {
+    (
+        $( fn $name:ident(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = $ty:ty; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` loads out of bounds from `memory`.
+            pub fn $name(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
+                let bits = memory::load::<$ty>(memory, ptr, offset)?;
+                Ok(V128::splat::<$ty>(0).replace_lane::<$ty>(<$ty as IntoLaneIdx>::LaneIdx::zero(), bits))
+            }
+        )*
+    };
+}
+impl_v128_loadN_zero_for! {
+    fn v128_load32_zero(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = u32;
+    fn v128_load64_zero(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> = u64;
+}
+
+macro_rules! impl_v128_loadN_zero_at_for {
+    (
+        $( fn $name:ident(memory: &[u8], address: usize) -> Result<V128, TrapCode> = $ty:ty; )*
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            ///
+            /// # Errors
+            ///
+            /// - If `ptr + offset` overflows.
+            /// - If `ptr + offset` loads out of bounds from `memory`.
+            pub fn $name(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
+                let bits = memory::load_at::<$ty>(memory, address)?;
+                Ok(V128::splat::<$ty>(0).replace_lane::<$ty>(<$ty as IntoLaneIdx>::LaneIdx::zero(), bits))
+            }
+        )*
+    };
+}
+impl_v128_loadN_zero_at_for! {
+    fn v128_load32_zero_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = u32;
+    fn v128_load64_zero_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = u64;
+}
+
 #[test]
 fn it_works() {
     let v0 = V128::splat(16383_i16);
