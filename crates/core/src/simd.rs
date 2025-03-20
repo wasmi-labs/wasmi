@@ -73,6 +73,20 @@ trait IntoLaneIdx {
     type LaneIdx;
 }
 
+/// Trait implemented by all lane index types.
+trait LaneIndex: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> {
+    /// Bit mask of available bits in `u8` for the lane index.
+    const MASK: u8;
+
+    /// Returns the lane id as `u8`.
+    ///
+    /// This will never return a `u8` value that is out of bounds for `self`.
+    fn get(self) -> u8;
+
+    /// Returns a 0th index lane id.
+    fn zero() -> Self;
+}
+
 macro_rules! impl_imm_lane_id {
     (
         $(
@@ -90,15 +104,16 @@ macro_rules! impl_imm_lane_id {
                 type LaneIdx = $name;
             }
 
-            impl $name {
+            impl LaneIndex for $name {
                 /// Helper bit mask for construction and getter.
                 const MASK: u8 = (1_u8 << u8::ilog2($n)) - 1;
 
-                /// Returns the lane id as `u8`.
-                ///
-                /// This will never return a `u8` value that is out of bounds for `self`.
-                pub fn get(self) -> u8 {
+                fn get(self) -> u8 {
                     self.0 & Self::MASK
+                }
+
+                fn zero() -> Self {
+                    Self(0)
                 }
             }
 
