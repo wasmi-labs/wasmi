@@ -1340,6 +1340,25 @@ impl_v128_storeN_lane_at! {
     ) -> Result<(), TrapCode> = u64;
 }
 
+/// Executes a Wasmi `v128_load` instruction.
+///
+/// # Errors
+///
+/// - If `ptr + offset` overflows.
+/// - If `ptr + offset` loads out of bounds from `memory`.
+pub fn v128_load(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
+    memory::load::<i128>(memory, ptr, offset).map(V128::from)
+}
+
+/// Executes a Wasmi `v128_load` instruction.
+///
+/// # Errors
+///
+/// If `address` loads out of bounds from `memory`.
+pub fn v128_load_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
+    memory::load_at::<i128>(memory, address).map(V128::from)
+}
+
 #[test]
 fn it_works() {
     let v0 = V128::splat(16383_i16);
