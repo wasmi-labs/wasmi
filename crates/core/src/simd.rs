@@ -87,6 +87,30 @@ trait LaneIndex: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> {
     fn zero() -> Self;
 }
 
+macro_rules! impl_into_lane_idx {
+    (
+        $( impl IntoLaneIdx for $ty:ty = $lane_idx:ty; )*
+    ) => {
+        $(
+            impl IntoLaneIdx for $ty {
+                type LaneIdx = $lane_idx;
+            }
+        )*
+    };
+}
+impl_into_lane_idx! {
+    impl IntoLaneIdx for i8 = ImmLaneIdx16;
+    impl IntoLaneIdx for u8 = ImmLaneIdx16;
+    impl IntoLaneIdx for i16 = ImmLaneIdx8;
+    impl IntoLaneIdx for u16 = ImmLaneIdx8;
+    impl IntoLaneIdx for i32 = ImmLaneIdx4;
+    impl IntoLaneIdx for u32 = ImmLaneIdx4;
+    impl IntoLaneIdx for f32 = ImmLaneIdx4;
+    impl IntoLaneIdx for i64 = ImmLaneIdx2;
+    impl IntoLaneIdx for u64 = ImmLaneIdx2;
+    impl IntoLaneIdx for f64 = ImmLaneIdx2;
+}
+
 macro_rules! impl_imm_lane_id {
     (
         $(
