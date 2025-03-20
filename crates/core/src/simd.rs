@@ -1430,8 +1430,7 @@ macro_rules! impl_v128_loadN_zero_at_for {
             ///
             /// # Errors
             ///
-            /// - If `ptr + offset` overflows.
-            /// - If `ptr + offset` loads out of bounds from `memory`.
+            /// If `address` loads out of bounds from `memory`.
             pub fn $name(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
                 let bits = memory::load_at::<$ty>(memory, address)?;
                 Ok(V128::splat::<$ty>(0).replace_lane::<$ty>(<$ty as IntoLaneIdx>::LaneIdx::zero(), bits))
@@ -1477,8 +1476,7 @@ macro_rules! impl_v128_loadN_splat_at_for {
             ///
             /// # Errors
             ///
-            /// - If `ptr + offset` overflows.
-            /// - If `ptr + offset` loads out of bounds from `memory`.
+            /// If `address` loads out of bounds from `memory`.
             pub fn $name(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
                 memory::load_at::<u8>(memory, address).map(V128::splat)
             }
