@@ -6935,7 +6935,7 @@ macro_rules! for_each_op {
                 @result: Reg,
                 /// Register holding the `input` of the instruction.
                 input: Reg,
-            }
+            },
         }
     };
 }
