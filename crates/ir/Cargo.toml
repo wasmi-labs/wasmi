@@ -26,3 +26,4 @@ default = ["std"]
 std = [
     "wasmi_core/std",
 ]
+simd = ["wasmi_core/simd"]
