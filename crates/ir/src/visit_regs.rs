@@ -138,6 +138,7 @@ macro_rules! impl_host_visitor {
     (
         $(
             $( #[doc = $doc:literal] )*
+            $( #[cfg(feature = $feature_name:literal)] )?
             #[snake_name($snake_name:ident)]
             $name:ident
             $(
@@ -156,6 +157,7 @@ macro_rules! impl_host_visitor {
             fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
                 match self {
                     $(
+                        $( #[cfg(feature = $feature_name)] )?
                         Instruction::$name { $( $( $result_name, )? $( $field_name, )* )? } => {
                             $(
                                 $( Res($result_name).host_visitor(visitor); )?

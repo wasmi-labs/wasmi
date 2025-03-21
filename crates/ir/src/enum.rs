@@ -5,6 +5,7 @@ macro_rules! define_enum {
     (
         $(
             $( #[doc = $doc:literal] )*
+            $( #[cfg(feature = $feature_name:literal)] )?
             #[snake_name($snake_name:ident)]
             $name:ident
             $(
@@ -42,6 +43,7 @@ macro_rules! define_enum {
         pub enum Instruction {
             $(
                 $( #[doc = $doc] )*
+                $( #[cfg(feature = $feature_name)] )?
                 $name
                 $(
                     {
@@ -61,6 +63,7 @@ macro_rules! define_enum {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($name), "`].")]
+                $( #[cfg(feature = $feature_name)] )?
                 pub fn $snake_name(
                     $(
                         $( $result_name: impl Into<$result_ty>, )?
@@ -102,6 +105,7 @@ macro_rules! define_result {
     (
         $(
             $( #[doc = $doc:literal] )*
+            $( #[cfg(feature = $feature_name:literal)] )?
             #[snake_name($snake_name:ident)]
             $name:ident
             $(
@@ -125,6 +129,7 @@ macro_rules! define_result {
             pub fn result(&self) -> Option<$crate::Reg> {
                 match *self {
                     $(
+                        $( #[cfg(feature = $feature_name)] )?
                         Self::$name { $( $( $result_name, )? )* .. } => {
                             IntoReg::into_reg((
                                 $( $( $result_name )? )*
