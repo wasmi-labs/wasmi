@@ -317,29 +317,47 @@ macro_rules! expand_tests_memory64 {
     };
 }
 
+macro_rules! expand_tests_missing_features {
+    ( $mac:ident, $( $args:tt )* ) => {
+        $mac! {
+            $( $args )*
+
+            fn local_mutable_global_disabled("mutable-global-disabled");
+            fn local_saturating_float_to_int_disabled("saturating-float-to-int-disabled");
+            fn local_sign_extension_disabled("sign-extension-disabled");
+        }
+    };
+}
+
 mod blobs {
     expand_tests! {
         include_wasm_blobs,
 
-        let folder = "testsuite";
+        let folder = "spec/testsuite";
     }
 
     expand_tests_mm! {
         include_wasm_blobs,
 
-        let folder = "testsuite";
+        let folder = "spec/testsuite";
     }
 
     expand_tests_cps! {
         include_wasm_blobs,
 
-        let folder = "testsuite";
+        let folder = "spec/testsuite";
     }
 
     expand_tests_memory64! {
         include_wasm_blobs,
 
-        let folder = "wasmi-tests";
+        let folder = "spec/memory64";
+    }
+
+    expand_tests_missing_features! {
+        include_wasm_blobs,
+
+        let folder = "local/missing-features";
     }
 }
 
@@ -424,6 +442,21 @@ mod streaming {
         define_spec_tests,
 
         let config = test_config(false, ParsingMode::Streaming);
+        let runner = process_wast;
+    }
+}
+
+mod missing_features {
+    use super::*;
+
+    expand_tests_missing_features! {
+        define_tests,
+
+        let folder = "local/missing-features";
+        let config = RunnerConfig {
+            config: mvp_config(),
+            parsing_mode: ParsingMode::Streaming,
+        };
         let runner = process_wast;
     }
 }

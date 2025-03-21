@@ -3,7 +3,14 @@
 use wasmi::{AsContextMut, Caller, Engine, Linker, Module, Store};
 
 fn compile_module(engine: &Engine) -> wasmi::Module {
-    let wasm = include_str!("../wat/host_call_compilation.wat");
+    let wasm = r#"
+        (module
+            (import "env" "compile" (func $compile))
+            (func (export "run")
+                (call $compile)
+            )
+        )
+    "#;
     Module::new(engine, wasm).unwrap()
 }
 
