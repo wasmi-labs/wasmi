@@ -6580,6 +6580,17 @@ macro_rules! for_each_op {
                 /// Register holding the `rhs` of the instruction.
                 rhs: Reg,
             },
+
+            /// Wasm `i16x8.q15mulr_sat_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_q15mulr_sat_s)]
+            I16x8Q15MulrSatS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
         }
     };
 }
