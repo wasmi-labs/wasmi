@@ -5917,6 +5917,63 @@ macro_rules! for_each_op {
                 /// The value to be splatted.
                 value: Const32<f64>,
             },
+
+            /// Wasm `i8x16.extract_lane_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_extract_lane_s)]
+            I8x16ExtractLaneS {
+                value: Reg,
+                lane: ImmLaneIdx16,
+            },
+            /// Wasm `i8x16.extract_lane_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_extract_lane_u)]
+            I8x16ExtractLaneU {
+                value: Reg,
+                lane: ImmLaneIdx16,
+            },
+            /// Wasm `i16x8.extract_lane_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extract_lane_s)]
+            I16x8ExtractLaneS {
+                value: Reg,
+                lane: ImmLaneIdx8,
+            },
+            /// Wasm `i16x8.extract_lane_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extract_lane_u)]
+            I16x8ExtractLaneU {
+                value: Reg,
+                lane: ImmLaneIdx8,
+            },
+            /// Wasm `i32x4.extract_lane` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extract_lane)]
+            I32x4ExtractLane {
+                value: Reg,
+                lane: ImmLaneIdx4,
+            },
+            /// Wasm `i64x2.extract_lane` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_extract_lane)]
+            I64x2ExtractLane {
+                value: Reg,
+                lane: ImmLaneIdx2,
+            },
+            /// Wasm `f32x4.extract_lane` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_extract_lane)]
+            F32x4ExtractLane {
+                value: Reg,
+                lane: ImmLaneIdx4,
+            },
+            /// Wasm `f64x2.extract_lane` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_extract_lane)]
+            F64x2ExtractLane {
+                value: Reg,
+                lane: ImmLaneIdx2,
+            },
         }
     };
 }

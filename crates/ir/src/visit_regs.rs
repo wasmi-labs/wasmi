@@ -1,4 +1,11 @@
-use crate::{core::TrapCode, index::*, *};
+use crate::{
+    core::{
+        simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8},
+        TrapCode,
+    },
+    index::*,
+    *,
+};
 
 impl Instruction {
     /// Visit [`Reg`]s of `self` via the `visitor`.
@@ -98,6 +105,10 @@ impl_host_visitor_for!(
     Offset64Lo,
     Offset64Hi,
     Address32,
+    ImmLaneIdx16,
+    ImmLaneIdx2,
+    ImmLaneIdx4,
+    ImmLaneIdx8,
 );
 
 /// Type-wrapper to signal that the wrapped [`Reg`], [`RegSpan`] (etc.) is a result.
