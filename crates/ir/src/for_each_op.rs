@@ -6891,7 +6891,7 @@ macro_rules! for_each_op {
             /// Wasm `v128.and` instruction.
             #[cfg(feature = "simd")]
             #[snake_name(v128_and)]
-            V128and {
+            V128And {
                 @result: Reg,
                 /// Register holding the `lhs` of the instruction.
                 lhs: Reg,
@@ -6901,7 +6901,7 @@ macro_rules! for_each_op {
             /// Wasm `v128.or` instruction.
             #[cfg(feature = "simd")]
             #[snake_name(v128_or)]
-            V128or {
+            V128Or {
                 @result: Reg,
                 /// Register holding the `lhs` of the instruction.
                 lhs: Reg,
@@ -6911,7 +6911,7 @@ macro_rules! for_each_op {
             /// Wasm `v128.xor` instruction.
             #[cfg(feature = "simd")]
             #[snake_name(v128_xor)]
-            V128xor {
+            V128Xor {
                 @result: Reg,
                 /// Register holding the `lhs` of the instruction.
                 lhs: Reg,
@@ -6921,7 +6921,7 @@ macro_rules! for_each_op {
             /// Wasm `v128.andnot` instruction.
             #[cfg(feature = "simd")]
             #[snake_name(v128_andnot)]
-            V128andnot {
+            V128Andnot {
                 @result: Reg,
                 /// Register holding the `lhs` of the instruction.
                 lhs: Reg,
