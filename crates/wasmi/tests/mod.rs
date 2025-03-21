@@ -1,3 +1,3 @@
-//! End-to-end tests for Wasmi.
+//! Integration tests for Wasmi.
 
-mod v1;
+mod integration;
