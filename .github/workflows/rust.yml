@@ -215,7 +215,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
-          toolchain: nightly-2025-03-01
+          toolchain: nightly-2025-03-18
       - name: Cache
         uses: Swatinem/rust-cache@v2
         with:
