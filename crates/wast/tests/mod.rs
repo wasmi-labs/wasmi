@@ -321,25 +321,25 @@ mod blobs {
     expand_tests! {
         include_wasm_blobs,
 
-        let folder = "testsuite";
+        let folder = "spec/testsuite";
     }
 
     expand_tests_mm! {
         include_wasm_blobs,
 
-        let folder = "testsuite";
+        let folder = "spec/testsuite";
     }
 
     expand_tests_cps! {
         include_wasm_blobs,
 
-        let folder = "testsuite";
+        let folder = "spec/testsuite";
     }
 
     expand_tests_memory64! {
         include_wasm_blobs,
 
-        let folder = "wasmi-tests";
+        let folder = "spec/memory64";
     }
 }
 
