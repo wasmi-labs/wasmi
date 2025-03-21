@@ -6733,6 +6733,39 @@ macro_rules! for_each_op {
                 /// Register holding the `rhs` of the instruction.
                 rhs: Reg,
             },
+
+            /// Wasm `i8x16.abs` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_abs)]
+            I8x16Abs {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i16x8.abs` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_abs)]
+            I16x8Abs {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.abs` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_abs)]
+            I32x4Abs {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i64x2.abs` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_abs)]
+            I64x2Abs {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
         }
     };
 }
