@@ -73,6 +73,7 @@ impl_host_visitor_for!(
     i8,
     i16,
     u16,
+    i32,
     u32,
     TrapCode,
     BlockFuel,
