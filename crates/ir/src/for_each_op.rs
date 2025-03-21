@@ -6311,7 +6311,7 @@ macro_rules! for_each_op {
                 lhs: Reg,
                 /// The register storing the `rhs` of the instruction.
                 rhs: Reg,
-            }
+            },
         }
     };
 }
