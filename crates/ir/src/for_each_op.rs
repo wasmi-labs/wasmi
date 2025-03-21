@@ -6936,6 +6936,21 @@ macro_rules! for_each_op {
                 /// Register holding the `input` of the instruction.
                 input: Reg,
             },
+
+            /// Wasm `v128.bitselect` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register`] encoding the `selector`.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_bitselect)]
+            V128Bitselect {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
         }
     };
 }
