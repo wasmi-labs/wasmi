@@ -6499,6 +6499,87 @@ macro_rules! for_each_op {
                 /// Register holding the `input` of the instruction.
                 input: Reg,
             },
+
+            /// Wasm `i8x16.add_sat_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_add_sat_s)]
+            I8x16AddSatS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.add_sat_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_add_sat_u)]
+            I8x16AddSatU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.add_sat_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_add_sat_s)]
+            I16x8AddSatS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.add_sat_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_add_sat_u)]
+            I16x8AddSatU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.sub_sat_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_sub_sat_s)]
+            I8x16SubSatS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.sub_sat_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_sub_sat_u)]
+            I8x16SubSatU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.sub_sat_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_sub_sat_s)]
+            I16x8SubSatS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.sub_sat_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_sub_sat_u)]
+            I16x8SubSatU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
         }
     };
 }
