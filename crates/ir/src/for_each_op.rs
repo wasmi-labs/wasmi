@@ -6165,6 +6165,31 @@ macro_rules! for_each_op {
                 /// The lane of the replaced value.
                 lane: ImmLaneIdx4,
             },
+
+            /// Wasm `i8x16.shuffle` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register`] encoding the `selector` of type [`V128`].
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_shuffle)]
+            I8x16Shuffle {
+                @result: Reg,
+                /// The register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// The register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.swizzle` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_swizzle)]
+            I8x16Swizzle {
+                @result: Reg,
+                /// The register holding the `input` of the instruction.
+                input: Reg,
+                /// The register holding the `selector` of the instruction.
+                selector: Reg,
+            },
         }
     };
 }
