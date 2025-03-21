@@ -6466,6 +6466,39 @@ macro_rules! for_each_op {
                 /// Register holding the `rhs` of the instruction.
                 rhs: Reg,
             },
+
+            /// Wasm `i16x8.extadd_pairwise_i8x16_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extadd_pairwise_i8x16_s)]
+            I16x8ExtaddPairwiseI8x16S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i16x8.extadd_pairwise_i8x16_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extadd_pairwise_i8x16_u)]
+            I16x8ExtaddPairwiseI8x16U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.extadd_pairwise_i16x8_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extadd_pairwise_i16x8_s)]
+            I32x4ExtaddPairwiseI16x8S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.extadd_pairwise_i16x8_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extadd_pairwise_i16x8_u)]
+            I32x4ExtaddPairwiseI16x8U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
         }
     };
 }
