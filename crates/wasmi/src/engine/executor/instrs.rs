@@ -1306,6 +1306,7 @@ impl<'engine> Executor<'engine> {
                 | Instr::RegisterList { .. }
                 | Instr::CallIndirectParams { .. }
                 | Instr::CallIndirectParamsImm16 { .. } => self.invalid_instruction_word()?,
+                unsupported => panic!("encountered unsupported Wasmi instruction: {unsupported:?}"),
             }
         }
     }
