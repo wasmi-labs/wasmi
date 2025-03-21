@@ -6345,6 +6345,127 @@ macro_rules! for_each_op {
                 /// Register holding the `input` of the instruction.
                 input: Reg,
             },
+
+            /// Wasm `i16x8.extmul_low_i8x16_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extmul_low_i8x16_s)]
+            I16x8ExtmulLowI8x16S {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.extmul_high_i8x16_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extmul_high_i8x16_s)]
+            I16x8ExtmulHighI8x16S {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.extmul_low_i8x16_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extmul_low_i8x16_u)]
+            I16x8ExtmulLowI8x16U {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.extmul_high_i8x16_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extmul_high_i8x16_u)]
+            I16x8ExtmulHighI8x16U {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.extmul_low_i16x8_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extmul_low_i16x8_s)]
+            I32x4ExtmulLowI16x8S {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.extmul_high_i16x8_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extmul_high_i16x8_s)]
+            I32x4ExtmulHighI16x8S {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.extmul_low_i16x8_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extmul_low_i16x8_u)]
+            I32x4ExtmulLowI16x8U {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.extmul_high_i16x8_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extmul_high_i16x8_u)]
+            I32x4ExtmulHighI16x8U {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64x2.extmul_low_i32x4_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_extmul_low_i32x4_s)]
+            I64x2ExtmulLowI32x4S {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64x2.extmul_high_i32x4_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_extmul_high_i32x4_s)]
+            I64x2ExtmulHighI32x4S {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64x2.extmul_low_i32x4_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_extmul_low_i32x4_u)]
+            I64x2ExtmulLowI32x4U {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64x2.extmul_high_i32x4_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_extmul_high_i32x4_u)]
+            I64x2ExtmulHighI32x4U {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
         }
     };
 }
