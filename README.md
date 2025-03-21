@@ -58,29 +58,29 @@ Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [
 
 The new Wasmi engine supports a variety of WebAssembly proposals and will support even more of them in the future.
 
-| WebAssembly Proposal | Status | Comment |
-|:--|:--:|:--|
-| [`mutable-global`] | ✅ | ≥ `0.14.0` |
-| [`saturating-float-to-int`] | ✅ | ≥ `0.14.0` |
-| [`sign-extension`] | ✅ | ≥ `0.14.0` |
-| [`multi-value`] | ✅ | ≥ `0.14.0` |
-| [`bulk-memory`] | ✅ | ≥ `0.24.0` [(#628)] |
-| [`reference-types`] | ✅ | ≥ `0.24.0` [(#635)] |
-| [`tail-calls`] | ✅ | ≥ `0.28.0` [(#683)] |
-| [`extended-const`] | ✅ | ≥ `0.29.0` [(#707)] |
-| [`multi-memory`] | ✅ | ≥ `0.37.0` [(#1191)] |
-| [`custom-page-sizes`] | ✅ | ≥ `0.41.0` [(#1197)] |
-| [`memory64`] | ✅ | ≥ `0.41.0` [(#1357)] |
-| [`wide-arithmetic`] | ✅ | ≥ `0.42.0` [(#1369)] |
-| [`simd`] | 📅 | Not yet implemented. [(#1364)] |
-| [`relaxed-simd`] | 📅 | Not yet implemented. Depends on `simd`. |
-| [`function-references`] | 📅 | Not yet implemented. [(#774)] |
-| [`gc`] | 📅 | Not yet implemented. [(#775)] |
-| [`threads`] | 📅 | Not yet implemented. [(#777)] |
-| [`exception-handling`] | 📅 | Not yet implemented. [(#1037)] |
+| | WebAssembly Proposal | |
+|:-:|:--|:--|
+| ✅ | [`mutable-global`] | ≥ `0.14.0` |
+| ✅ | [`saturating-float-to-int`] | ≥ `0.14.0` |
+| ✅ | [`sign-extension`] | ≥ `0.14.0` |
+| ✅ | [`multi-value`] | ≥ `0.14.0` |
+| ✅ | [`bulk-memory`] | [≥ `0.24.0`][(#628)] |
+| ✅ | [`reference-types`] | [≥ `0.24.0`][(#635)] |
+| ✅ | [`tail-calls`] | [≥ `0.28.0`][(#683)] |
+| ✅ | [`extended-const`] | [≥ `0.29.0`][(#707)] |
+| ✅ | [`multi-memory`] | [≥ `0.37.0`][(#1191)] |
+| ✅ | [`custom-page-sizes`] | [≥ `0.41.0`][(#1197)] |
+| ✅ | [`memory64`] | [≥ `0.41.0`][(#1357)] |
+| ✅ | [`wide-arithmetic`] | [≥ `0.42.0`][(#1369)] |
+| 📅 | [`simd`] | [Tracking Issue][(#1364)] |
+| 📅 | [`relaxed-simd`] | Depends on `simd`. |
+| 📅 | [`function-references`] | [Tracking Issue][(#774)] |
+| 📅 | [`gc`] | [Tracking Issue][(#775)] |
+| 📅 | [`threads`] | [Tracking Issue][(#777)] |
+| 📅 | [`exception-handling`] | [Tracking Issue][(#1037)] |
 | | |
-| [WASI] | 👨‍🔬 | Experimental support for WASI (`wasip1`) via the [`wasmi_wasi` crate]. |
-| [C-API] | 👨‍🔬 | Experimental support for the official Wasm C-API via the [`wasmi_c_api_impl` crate]. |
+| 👨‍🔬 | [WASI] | WASI (`wasip1`) support via the [`wasmi_wasi` crate]. |
+| 👨‍🔬 | [C-API] | Official Wasm C-API support via the [`wasmi_c_api_impl` crate]. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
