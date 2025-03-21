@@ -34,7 +34,14 @@ impl wasmi::core::HostError for Error {}
 fn test_instantiate_in_host_call() {
     let engine = Engine::default();
     let mut store = <Store<Data>>::new(&engine, Data::Uninit);
-    let wasm = include_str!("../wat/host_call_instantiation.wat");
+    let wasm = r#"
+        (module
+            (import "env" "instantiate" (func $instantiate))
+            (func (export "run")
+                (call $instantiate)
+            )
+        )
+    "#;
     let module = Module::new(&engine, wasm).unwrap();
     let mut linker = <Linker<Data>>::new(&engine);
     linker
