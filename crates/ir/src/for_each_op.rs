@@ -6887,6 +6887,55 @@ macro_rules! for_each_op {
                 /// Register holding the `rhs` of the instruction.
                 rhs: Reg,
             },
+
+            /// Wasm `v128.and` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_and)]
+            V128and {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `v128.or` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_or)]
+            V128or {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `v128.xor` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_xor)]
+            V128xor {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `v128.andnot` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_andnot)]
+            V128andnot {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `v128.not` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_not)]
+            V128Not {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            }
         }
     };
 }
