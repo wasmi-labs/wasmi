@@ -1,3 +1,5 @@
+#[cfg(all(feature = "simd", doc))]
+use crate::core::simd::V128;
 #[cfg(feature = "simd")]
 use crate::core::simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8};
 use crate::{core::TrapCode, for_each_op, index::*, primitive::Offset64Hi, *};
