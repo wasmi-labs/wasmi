@@ -37,6 +37,7 @@ macro_rules! define_enum {
         /// `#Encoding` section of its documentation if it requires more than a single
         /// instruction for its encoding.
         #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+        #[non_exhaustive]
         #[repr(u16)]
         pub enum Instruction {
             $(
