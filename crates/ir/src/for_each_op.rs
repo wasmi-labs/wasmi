@@ -5998,6 +5998,173 @@ macro_rules! for_each_op {
                 /// The lane to extract the value.
                 lane: ImmLaneIdx2,
             },
+
+            /// Wasm `i8x16.replace_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register`] encoding `value`.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_replace_lane)]
+            I8x16ReplaceLane {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx16,
+            },
+            /// Variant of [`Instruction::I8x16ReplaceLane`] with imediate `value`.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_replace_lane_imm)]
+            I8x16ReplaceLaneImm {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx16,
+                /// The value replacing the `lane` in `input`.
+                value: i8,
+            },
+            /// Wasm `i16x8.replace_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register`] encoding `value`.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_replace_lane)]
+            I16x8ReplaceLane {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx8,
+            },
+            /// Variant of [`Instruction::I16x8ReplaceLane`] with imediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Const32`] encoding the immediate `value` of type `i16`.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_replace_lane_imm)]
+            I16x8ReplaceLaneImm {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx8,
+            },
+            /// Wasm `i32x4.replace_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register`] encoding `value`.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_replace_lane)]
+            I32x4ReplaceLane {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx4,
+            },
+            /// Variant of [`Instruction::I32x4ReplaceLaneImm`] with imediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register`] encoding the immediate `value` of type `i32`.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_replace_lane_imm)]
+            I32x4ReplaceLaneImm {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx4,
+            },
+            /// Wasm `i64x2.replace_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register`] encoding `value`.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_replace_lane)]
+            I64x2ReplaceLane {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx2,
+            },
+            /// Variant of [`Instruction::I64x2ReplaceLane`] with imediate 32-bit `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::I64Const32`] encoding the 32-bit `value`.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_replace_lane_imm32)]
+            I64x2ReplaceLaneImm32 {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx2,
+            },
+            /// Wasm `f32x4.replace_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register`] encoding `value`.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_replace_lane)]
+            F32x4ReplaceLane {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx4,
+            },
+            /// Variant of [`Instruction::F32x4ReplaceLane`] with immediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Const32`] encoding `value` of type `f32`.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_replace_lane_imm)]
+            F32x4ReplaceLaneImm {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx4,
+            },
+            /// Wasm `f64x2.replace_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::Register`] encoding `value`.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_replace_lane)]
+            F64x2ReplaceLane {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx2,
+            },
+            /// Variant of [`Instruction::F64x2ReplaceLane`] with 32-bit immediate `value`.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by [`Instruction::F64Const32`] encoding the 32-bit immediate `value`.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_replace_lane_imm32)]
+            F32x4ReplaceLaneImm32 {
+                @result: Reg,
+                /// The input [`V128`] that gets a value replaced.
+                input: Reg,
+                /// The lane of the replaced value.
+                lane: ImmLaneIdx4,
+            },
         }
     };
 }
