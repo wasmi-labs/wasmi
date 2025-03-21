@@ -6301,6 +6301,17 @@ macro_rules! for_each_op {
                 /// The register storing the `rhs` of the instruction.
                 rhs: Reg,
             },
+
+            /// Wasm `i32x4.dot_i16x8_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_dot_i16x8_s)]
+            I32x4DotI16x8S {
+                @result: Reg,
+                /// The register storing the `lhs` of the instruction.
+                lhs: Reg,
+                /// The register storing the `rhs` of the instruction.
+                rhs: Reg,
+            }
         }
     };
 }
