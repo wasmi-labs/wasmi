@@ -6591,6 +6591,127 @@ macro_rules! for_each_op {
                 /// Register holding the `rhs` of the instruction.
                 rhs: Reg,
             },
+
+            /// Wasm `i8x16.min_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_min_s)]
+            I8x16MinS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.min_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_min_u)]
+            I8x16MinU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.min_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_min_s)]
+            I16x8MinS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.min_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_min_u)]
+            I16x8MinU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.min_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_min_s)]
+            I32x4MinS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.min_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_min_u)]
+            I32x4MinU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.max_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_max_s)]
+            I8x16MaxS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.max_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_max_u)]
+            I8x16MaxU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.max_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_max_s)]
+            I16x8MaxS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.max_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_max_u)]
+            I16x8MaxU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.max_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_max_s)]
+            I32x4MaxS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.max_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_max_u)]
+            I32x4MaxU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
         }
     };
 }
