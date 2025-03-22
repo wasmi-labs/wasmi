@@ -8252,6 +8252,604 @@ macro_rules! for_each_op {
                 /// The 32-bit constant address to store the value.
                 address: Address32,
             },
+
+            /// Wasm `v128.load` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load)]
+            V128Load {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load_at)]
+            V128LoadAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load_offset16)]
+            V128LoadOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load32_zero` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32_zero)]
+            V128Load32Zero {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load32Zero`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32_zero_at)]
+            V128Load32ZeroAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load32Zero`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32_zero_offset16)]
+            V128Load32ZeroOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load64_zero` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load64_zero)]
+            V128Load64Zero {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load64Zero`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load64_zero_at)]
+            V128Load64ZeroAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load64Zero`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load64_zero_offset16)]
+            V128Load64ZeroOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load8_splat` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8_splat)]
+            V128Load8Splat {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load8Splat`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8_splat_at)]
+            V128Load8SplatAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load8Splat`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8_splat_offset16)]
+            V128Load8SplatOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load16_splat` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16_splat)]
+            V128Load16Splat {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load16Splat`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16_splat_at)]
+            V128Load16SplatAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load16Splat`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16_splat_offset16)]
+            V128Load16SplatOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load32_splat` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32_splat)]
+            V128Load32Splat {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load32Splat`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32_splat_at)]
+            V128Load32SplatAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load32Splat`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32_splat_offset16)]
+            V128Load32SplatOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load64_splat` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load64_splat)]
+            V128Load64Splat {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load64Splat`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load64_splat_at)]
+            V128Load64SplatAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load64Splat`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load64_splat_offset16)]
+            V128Load64SplatOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load8x8_s` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8x8_s)]
+            V128Load8x8S {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load8x8S`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8x8_s_at)]
+            V128Load8x8SAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load8x8S`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8x8_s_offset16)]
+            V128Load8x8SOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load8x8_u` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8x8_u)]
+            V128Load8x8U {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load8x8U`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8x8_u_at)]
+            V128Load8x8UAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load8x8U`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8x8_u_offset16)]
+            V128Load8x8UOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load16x4_s` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16x4_s)]
+            V128Load16x4S {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load16x4S`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16x4_s_at)]
+            V128Load16x4SAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load16x4S`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16x4_s_offset16)]
+            V128Load16x4SOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load16x4_u` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16x4_u)]
+            V128Load16x4U {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load16x4U`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16x4_u_at)]
+            V128Load16x4UAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load16x4U`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16x4_u_offset16)]
+            V128Load16x4UOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load32x2_s` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32x2_s)]
+            V128Load32x2S {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load32x2S`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32x2_s_at)]
+            V128Load32x2SAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load32x2S`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32x2_s_offset16)]
+            V128Load32x2SOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
+
+            /// Wasm `v128.load32x2_u` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32x2_u)]
+            V128Load32x2U {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load32x2U`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32x2_u_at)]
+            V128Load32x2UAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+            /// Variant of [`Instruction::V128Load32x2U`] with a 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32x2_u_offset16)]
+            V128Load32x2UOffset16 {
+                @result: Reg,
+                /// Register holding the `ptr` of the instruction.
+                ptr: Reg,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
+            },
         }
     };
 }
