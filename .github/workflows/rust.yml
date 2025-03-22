@@ -46,6 +46,16 @@ jobs:
             --features hash-collections
             --target x86_64-unknown-none
             --verbose
+      - name: Build (no_std + simd)
+        run: >-
+            cargo build
+            --package wasmi
+            --locked
+            --lib
+            --no-default-features
+            --features simd
+            --target x86_64-unknown-none
+            --verbose
       - name: Build (no_std + wasm32)
         run: >-
             cargo build
