@@ -8036,6 +8036,8 @@ macro_rules! for_each_op {
             V128StoreOffset16 {
                 /// The register storing the `pointer` of the store instruction.
                 ptr: Reg,
+                /// The register storing the `value` of the store instruction.
+                value: Reg,
                 /// The 16-bit encoded offset of the `load` instruction.
                 offset: Offset16,
             },
