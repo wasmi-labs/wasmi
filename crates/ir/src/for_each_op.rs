@@ -7910,6 +7910,103 @@ macro_rules! for_each_op {
                 /// Regstier holding the `rhs` of the instruction.
                 rhs: Reg,
             },
+
+            /// Wasm `i16x8.extend_low_i8x16_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extend_low_i8x16_s)]
+            I16x8ExtendLowI8x16S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i16x8.extend_high_i8x16_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extend_high_i8x16_s)]
+            I16x8ExtendHighI8x16S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i16x8.extend_low_i8x16_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extend_low_i8x16_u)]
+            I16x8ExtendLowI8x16U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i16x8.extend_high_i8x16_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_extend_high_i8x16_u)]
+            I16x8ExtendHighI8x16U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.extend_low_i16x8_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extend_low_i16x8_s)]
+            I32x4ExtendLowI16x8S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.extend_high_i16x8_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extend_high_i16x8_s)]
+            I32x4ExtendHighI16x8S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.extend_low_i16x8_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extend_low_i16x8_u)]
+            I32x4ExtendLowI16x8U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.extend_high_i16x8_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_extend_high_i16x8_u)]
+            I32x4ExtendHighI16x8U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i64x2.extend_low_i32x4_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_extend_low_i32x4_s)]
+            I64x2ExtendLowI32x4S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i64x2.extend_high_i32x4_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_extend_high_i32x4_s)]
+            I64x2ExtendHighI32x4S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i64x2.extend_low_i32x4_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_extend_low_i32x4_u)]
+            I64x2ExtendLowI32x4U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i64x2.extend_high_i32x4_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_extend_high_i32x4_u)]
+            I64x2ExtendHighI32x4U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
         }
     };
 }
