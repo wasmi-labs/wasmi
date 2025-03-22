@@ -8007,6 +8007,53 @@ macro_rules! for_each_op {
                 /// Register holding the `input` of the instruction.
                 input: Reg,
             },
+
+            /// Wasm `v128.store` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+            /// - Optional [`Instruction::MemoryIndex`]: encoding memory index used
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store)]
+            V128Store {
+                /// The register storing the `pointer` of the store instruction.
+                ptr: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Store`] with 16-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store_offset16)]
+            V128StoreOffset16 {
+                /// The register storing the `pointer` of the store instruction.
+                ptr: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Store`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
+            ///
+            /// Operates on the default Wasm memory instance if missing.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store_at)]
+            V128StoreAt {
+                /// The value to be stored.
+                value: Reg,
+                /// The constant address to store the value.
+                address: Address32,
+            }
         }
     };
 }
