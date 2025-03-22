@@ -95,6 +95,7 @@ impl_host_visitor_for!(
     Const32<T>,
     Sign<T>,
     ShiftAmount<T>,
+    Offset8,
     Offset16,
     Offset64,
     Offset64Lo,

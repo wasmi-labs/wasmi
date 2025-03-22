@@ -36,6 +36,7 @@ pub use self::{
         Offset64,
         Offset64Hi,
         Offset64Lo,
+        Offset8,
         ShiftAmount,
         Sign,
     },
