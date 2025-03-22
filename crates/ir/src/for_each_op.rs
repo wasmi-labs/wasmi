@@ -7788,6 +7788,87 @@ macro_rules! for_each_op {
                 /// Register holding the `input` of the instruction.
                 input: Reg,
             },
+
+            /// Wasm `f32x4.convert_i32x4_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_convert_i32x4_s)]
+            F32x4ConvertI32x4S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f32x4.convert_i32x4_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_convert_i32x4_u)]
+            F32x4ConvertI32x4U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f64x2.convert_low_i32x4_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_convert_low_i32x4_s)]
+            F64x2ConvertLowI32x4S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f64x2.convert_low_i32x4_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_convert_low_i32x4_u)]
+            F64x2ConvertLowI32x4U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.trunc_sat_f32x4_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_trunc_sat_f32x4_s)]
+            I32x4TruncSatF32x4S {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.trunc_sat_f32x4_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_trunc_sat_f32x4_u)]
+            I32x4TruncSatF32x4U {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.trunc_sat_f64x2_s_zero` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_trunc_sat_f64x2_s_zero)]
+            I32x4TruncSatF64x2SZero {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.trunc_sat_f64x2_u_zero` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_trunc_sat_f64x2_u_zero)]
+            I32x4TruncSatF64x2UZero {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f32x4.demote_f64x2_zero` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_demote_f64x2_zero)]
+            F32x4DemoteF64x2Zero {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f64x2.promote_low_f32x4` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_promote_low_f32x4)]
+            F64x2PromoteLowF32x4 {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
         }
     };
 }
