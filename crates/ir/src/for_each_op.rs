@@ -7869,6 +7869,47 @@ macro_rules! for_each_op {
                 /// Register holding the `input` of the instruction.
                 input: Reg,
             },
+
+            /// Wasm `i8x16.narrow_i16x8_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_narrow_i16x8_s)]
+            I8x16NarrowI16x8S {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Regstier holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.narrow_i16x8_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_narrow_i16x8_u)]
+            I8x16NarrowI16x8U {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Regstier holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.narrow_i32x4_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_narrow_i32x4_s)]
+            I16x8NarrowI32x4S {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Regstier holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.narrow_i32x4_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_narrow_i32x4_u)]
+            I16x8NarrowI32x4U {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Regstier holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
         }
     };
 }
