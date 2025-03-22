@@ -14,6 +14,9 @@ mod utils;
 mod visit;
 mod visit_register;
 
+#[cfg(feature = "simd")]
+mod simd;
+
 #[cfg(test)]
 mod tests;
 

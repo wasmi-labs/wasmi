@@ -100,6 +100,13 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     wasmparser::for_each_visit_operator!(impl_visit_operator);
 
+    #[cfg(feature = "simd")]
+    fn simd_visitor(
+        &mut self,
+    ) -> Option<&mut dyn wasmparser::VisitSimdOperator<'a, Output = Self::Output>> {
+        Some(self)
+    }
+
     fn visit_unreachable(&mut self) -> Self::Output {
         bail_unreachable!(self);
         self.push_base_instr(Instruction::trap(TrapCode::UnreachableCodeReached))?;
