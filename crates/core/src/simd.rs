@@ -966,16 +966,16 @@ impl_unary_for! {
     fn f64x2_neg(v128: V128) -> V128 = <f64 as Neg>::neg;
     fn f32x4_abs(v128: V128) -> V128 = f32::abs;
     fn f64x2_abs(v128: V128) -> V128 = f64::abs;
-    fn f32x4_sqrt(v128: V128) -> V128 = f32::sqrt;
-    fn f64x2_sqrt(v128: V128) -> V128 = f64::sqrt;
-    fn f32x4_ceil(v128: V128) -> V128 = f32::ceil;
-    fn f64x2_ceil(v128: V128) -> V128 = f64::ceil;
-    fn f32x4_floor(v128: V128) -> V128 = f32::floor;
-    fn f64x2_floor(v128: V128) -> V128 = f64::floor;
-    fn f32x4_trunc(v128: V128) -> V128 = f32::trunc;
-    fn f64x2_trunc(v128: V128) -> V128 = f64::trunc;
-    fn f32x4_nearest(v128: V128) -> V128 = f32::round_ties_even;
-    fn f64x2_nearest(v128: V128) -> V128 = f64::round_ties_even;
+    fn f32x4_sqrt(v128: V128) -> V128 = wasm::f32_sqrt;
+    fn f64x2_sqrt(v128: V128) -> V128 = wasm::f64_sqrt;
+    fn f32x4_ceil(v128: V128) -> V128 = wasm::f32_ceil;
+    fn f64x2_ceil(v128: V128) -> V128 = wasm::f64_ceil;
+    fn f32x4_floor(v128: V128) -> V128 = wasm::f32_floor;
+    fn f64x2_floor(v128: V128) -> V128 = wasm::f64_floor;
+    fn f32x4_trunc(v128: V128) -> V128 = wasm::f32_trunc;
+    fn f64x2_trunc(v128: V128) -> V128 = wasm::f64_trunc;
+    fn f32x4_nearest(v128: V128) -> V128 = wasm::f32_nearest;
+    fn f64x2_nearest(v128: V128) -> V128 = wasm::f64_nearest;
 }
 
 impl_unary_cast_for! {
