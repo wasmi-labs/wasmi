@@ -7032,6 +7032,487 @@ macro_rules! for_each_op {
                 /// Register holding the `input` of the instruction.
                 input: Reg,
             },
+
+            /// Wasm `i8x16.eq` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_eq)]
+            I8x16Eq {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.eq` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_eq)]
+            I16x8Eq {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.eq` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_eq)]
+            I32x4Eq {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64x2.eq` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_eq)]
+            I64x2Eq {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f32x4.eq` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_eq)]
+            F32x4Eq {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f64x2.eq` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_eq)]
+            F64x2Eq {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.ne` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_ne)]
+            I8x16Ne {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.ne` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_ne)]
+            I16x8Ne {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.ne` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_ne)]
+            I32x4Ne {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64x2.ne` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_ne)]
+            I64x2Ne {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f32x4.ne` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_ne)]
+            F32x4Ne {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f64x2.ne` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_ne)]
+            F64x2Ne {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.lt_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_lt_s)]
+            I8x16LtS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.lt_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_lt_u)]
+            I8x16LtU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.lt_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_lt_s)]
+            I16x8LtS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.lt_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_lt_u)]
+            I16x8LtU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.lt_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_lt_s)]
+            I32x4LtS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.lt_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_lt_u)]
+            I32x4LtU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64x2.lt_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_lt_s)]
+            I64x2LtS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f32x4.lt` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_lt)]
+            F32x4Lt {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f64x2.lt` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_lt)]
+            F64x2Lt {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.le_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_le_s)]
+            I8x16LeS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.le_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_le_u)]
+            I8x16LeU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.le_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_le_s)]
+            I16x8LeS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.le_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_le_u)]
+            I16x8LeU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.le_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_le_s)]
+            I32x4LeS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.le_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_le_u)]
+            I32x4LeU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64x2.le_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_le_s)]
+            I64x2LeS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f32x4.le` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_le)]
+            F32x4Le {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f64x2.le` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_le)]
+            F64x2Le {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.gt_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_gt_s)]
+            I8x16GtS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.gt_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_gt_u)]
+            I8x16GtU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.gt_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_gt_s)]
+            I16x8GtS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.gt_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_gt_u)]
+            I16x8GtU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.gt_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_gt_s)]
+            I32x4GtS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.gt_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_gt_u)]
+            I32x4GtU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64x2.gt_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_gt_s)]
+            I64x2GtS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f32x4.gt` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_gt)]
+            F32x4Gt {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f64x2.gt` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_gt)]
+            F64x2Gt {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.ge_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_ge_s)]
+            I8x16GeS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i8x16.ge_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_ge_u)]
+            I8x16GeU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.ge_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_ge_s)]
+            I16x8GeS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i16x8.ge_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_ge_u)]
+            I16x8GeU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.ge_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_ge_s)]
+            I32x4GeS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i32x4.ge_u` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_ge_u)]
+            I32x4GeU {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `i64x2.ge_s` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_ge_s)]
+            I64x2GeS {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f32x4.ge` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_ge)]
+            F32x4Ge {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
+            /// Wasm `f64x2.ge` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_ge)]
+            F64x2Ge {
+                @result: Reg,
+                /// Register holding the `lhs` of the instruction.
+                lhs: Reg,
+                /// Register holding the `rhs` of the instruction.
+                rhs: Reg,
+            },
         }
     };
 }
