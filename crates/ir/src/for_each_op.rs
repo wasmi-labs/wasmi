@@ -8056,6 +8056,202 @@ macro_rules! for_each_op {
                 /// The 32-bit constant address to store the value.
                 address: Address32,
             },
+
+            /// Wasm `v128.store8_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+            /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
+            ///
+            /// The `lane_index` is of type [`ImmLaneIdx16`].
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store8_lane)]
+            V128Store8Lane {
+                /// Register storing the `ptr` of the instruction.
+                ptr: Reg,
+                /// The lower 32-bit of the 64-bit store `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Store8Lane`] with an 8-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store8_lane_offset8)]
+            V128Store8LaneOffset8 {
+                /// Register storing the `ptr` of the instruction.
+                ptr: Reg,
+                /// Register storing the `value` of the instruction.
+                value: Reg,
+                /// The 8-bit store `offset`.
+                offset: Offset8,
+                /// The lane of the stored [`V128`] `value`.
+                lane: ImmLaneIdx16,
+            },
+            /// Variant of [`Instruction::V128Store8Lane`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store8_lane_at)]
+            V128Store8LaneAt {
+                /// The value to be stored.
+                value: Reg,
+                /// The 32-bit constant address to store the value.
+                address: Address32,
+            },
+
+            /// Wasm `v128.store16_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+            /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
+            ///
+            /// The `lane_index` is of type [`ImmLaneIdx8`].
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store16_lane)]
+            V128Store16Lane {
+                /// Register storing the `ptr` of the instruction.
+                ptr: Reg,
+                /// The lower 32-bit of the 64-bit store `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Store16Lane`] with an 8-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store16_lane_offset8)]
+            V128Store16LaneOffset8 {
+                /// Register storing the `ptr` of the instruction.
+                ptr: Reg,
+                /// Register storing the `value` of the instruction.
+                value: Reg,
+                /// The 8-bit store `offset`.
+                offset: Offset8,
+                /// The lane of the stored [`V128`] `value`.
+                lane: ImmLaneIdx8,
+            },
+            /// Variant of [`Instruction::V128Store16Lane`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store16_lane_at)]
+            V128Store16LaneAt {
+                /// The value to be stored.
+                value: Reg,
+                /// The 32-bit constant address to store the value.
+                address: Address32,
+            },
+
+            /// Wasm `v128.store32_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+            /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
+            ///
+            /// The `lane_index` is of type [`ImmLaneIdx4`].
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store32_lane)]
+            V128Store32Lane {
+                /// Register storing the `ptr` of the instruction.
+                ptr: Reg,
+                /// The lower 32-bit of the 64-bit store `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Store32Lane`] with an 8-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store32_lane_offset8)]
+            V128Store32LaneOffset8 {
+                /// Register storing the `ptr` of the instruction.
+                ptr: Reg,
+                /// Register storing the `value` of the instruction.
+                value: Reg,
+                /// The 8-bit store `offset`.
+                offset: Offset8,
+                /// The lane of the stored [`V128`] `value`.
+                lane: ImmLaneIdx4,
+            },
+            /// Variant of [`Instruction::V128Store32Lane`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store32_lane_at)]
+            V128Store32LaneAt {
+                /// The value to be stored.
+                value: Reg,
+                /// The 32-bit constant address to store the value.
+                address: Address32,
+            },
+
+            /// Wasm `v128.store64_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+            /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
+            ///
+            /// The `lane_index` is of type [`ImmLaneIdx2`].
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store64_lane)]
+            V128Store64Lane {
+                /// Register storing the `ptr` of the instruction.
+                ptr: Reg,
+                /// The lower 32-bit of the 64-bit store `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Store64Lane`] with an 8-bit offset.
+            ///
+            /// # Note
+            ///
+            /// Operates on the default Wasm memory instance.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store64_lane_offset8)]
+            V128Store64LaneOffset8 {
+                /// Register storing the `ptr` of the instruction.
+                ptr: Reg,
+                /// Register storing the `value` of the instruction.
+                value: Reg,
+                /// The 8-bit store `offset`.
+                offset: Offset8,
+                /// The lane of the stored [`V128`] `value`.
+                lane: ImmLaneIdx2,
+            },
+            /// Variant of [`Instruction::V128Store64Lane`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_store64_lane_at)]
+            V128Store64LaneAt {
+                /// The value to be stored.
+                value: Reg,
+                /// The 32-bit constant address to store the value.
+                address: Address32,
+            },
         }
     };
 }
