@@ -6951,6 +6951,87 @@ macro_rules! for_each_op {
                 /// Register holding the `rhs` of the instruction.
                 rhs: Reg,
             },
+
+            /// Wasm `i8x16.popcnt` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_popcnt)]
+            I8x16Popcnt {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `v128.any_true` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_any_true)]
+            V128AnyTrue {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i8x16.all_true` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_all_true)]
+            I8x16AllTrue {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i16x8.all_true` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_all_true)]
+            I16x8AllTrue {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.all_true` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_all_true)]
+            I32x4AllTrue {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i64x2.all_true` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_all_true)]
+            I64x2AllTrue {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i8x16.bitmask` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i8x16_bitmask)]
+            I8x16Bitmask {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i16x8.bitmask` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i16x8_bitmask)]
+            I16x8Bitmask {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i32x4.bitmask` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i32x4_bitmask)]
+            I32x4Bitmask {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `i64x2.bitmask` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(i64x2_bitmask)]
+            I64x2Bitmask {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
         }
     };
 }
