@@ -55,7 +55,7 @@ prefer-btree-collections = [
     "wasmparser/prefer-btree-collections",
 ]
 wat = ["dep:wat", "std"]
-simd = ["wasmi_core/simd", "wasmi_ir/simd"]
+simd = ["wasmi_core/simd", "wasmi_ir/simd", "wasmparser/simd"]
 
 # Enables extra checks performed during Wasmi bytecode execution.
 #
