@@ -1,3 +1,7 @@
+#[cfg(all(feature = "simd", doc))]
+use crate::core::simd::V128;
+#[cfg(feature = "simd")]
+use crate::core::simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8};
 use crate::{core::TrapCode, for_each_op, index::*, primitive::Offset64Hi, *};
 use ::core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
@@ -5,6 +9,7 @@ macro_rules! define_enum {
     (
         $(
             $( #[doc = $doc:literal] )*
+            $( #[cfg(feature = $feature_name:literal)] )?
             #[snake_name($snake_name:ident)]
             $name:ident
             $(
@@ -37,10 +42,12 @@ macro_rules! define_enum {
         /// `#Encoding` section of its documentation if it requires more than a single
         /// instruction for its encoding.
         #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+        #[non_exhaustive]
         #[repr(u16)]
         pub enum Instruction {
             $(
                 $( #[doc = $doc] )*
+                $( #[cfg(feature = $feature_name)] )?
                 $name
                 $(
                     {
@@ -60,6 +67,7 @@ macro_rules! define_enum {
         impl Instruction {
             $(
                 #[doc = concat!("Creates a new [`Instruction::", stringify!($name), "`].")]
+                $( #[cfg(feature = $feature_name)] )?
                 pub fn $snake_name(
                     $(
                         $( $result_name: impl Into<$result_ty>, )?
@@ -101,6 +109,7 @@ macro_rules! define_result {
     (
         $(
             $( #[doc = $doc:literal] )*
+            $( #[cfg(feature = $feature_name:literal)] )?
             #[snake_name($snake_name:ident)]
             $name:ident
             $(
@@ -124,6 +133,7 @@ macro_rules! define_result {
             pub fn result(&self) -> Option<$crate::Reg> {
                 match *self {
                     $(
+                        $( #[cfg(feature = $feature_name)] )?
                         Self::$name { $( $( $result_name, )? )* .. } => {
                             IntoReg::into_reg((
                                 $( $( $result_name )? )*

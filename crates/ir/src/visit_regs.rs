@@ -1,3 +1,5 @@
+#[cfg(feature = "simd")]
+use crate::core::simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8};
 use crate::{core::TrapCode, index::*, *};
 
 impl Instruction {
@@ -73,6 +75,7 @@ impl_host_visitor_for!(
     i8,
     i16,
     u16,
+    i32,
     u32,
     TrapCode,
     BlockFuel,
@@ -92,12 +95,15 @@ impl_host_visitor_for!(
     Const32<T>,
     Sign<T>,
     ShiftAmount<T>,
+    Offset8,
     Offset16,
     Offset64,
     Offset64Lo,
     Offset64Hi,
     Address32,
 );
+#[cfg(feature = "simd")]
+impl_host_visitor_for!(ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8,);
 
 /// Type-wrapper to signal that the wrapped [`Reg`], [`RegSpan`] (etc.) is a result.
 pub struct Res<T>(T);
@@ -138,6 +144,7 @@ macro_rules! impl_host_visitor {
     (
         $(
             $( #[doc = $doc:literal] )*
+            $( #[cfg(feature = $feature_name:literal)] )?
             #[snake_name($snake_name:ident)]
             $name:ident
             $(
@@ -156,6 +163,7 @@ macro_rules! impl_host_visitor {
             fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
                 match self {
                     $(
+                        $( #[cfg(feature = $feature_name)] )?
                         Instruction::$name { $( $( $result_name, )? $( $field_name, )* )? } => {
                             $(
                                 $( Res($result_name).host_visitor(visitor); )?

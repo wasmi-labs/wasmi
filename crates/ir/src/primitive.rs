@@ -462,6 +462,27 @@ impl From<Offset64> for u64 {
     }
 }
 
+/// An 8-bit encoded load or store address offset.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct Offset8(u8);
+
+impl TryFrom<u64> for Offset8 {
+    type Error = OutOfBoundsConst;
+
+    fn try_from(address: u64) -> Result<Self, Self::Error> {
+        u8::try_from(address)
+            .map(Self)
+            .map_err(|_| OutOfBoundsConst)
+    }
+}
+
+impl From<Offset8> for Offset64 {
+    fn from(offset: Offset8) -> Self {
+        Offset64(u64::from(offset.0))
+    }
+}
+
 /// A 16-bit encoded load or store address offset.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
