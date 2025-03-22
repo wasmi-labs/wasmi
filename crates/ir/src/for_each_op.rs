@@ -7707,6 +7707,87 @@ macro_rules! for_each_op {
                 /// Register holding the `rhs` of the instruction.
                 rhs: Reg,
             },
+
+            /// Wasm `f32x4.sqrt` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_sqrt)]
+            F32x4Sqrt {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f64x2.sqrt` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_sqrt)]
+            F64x2Sqrt {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f32x4.ceil` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_ceil)]
+            F32x4Ceil {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f64x2.ceil` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_ceil)]
+            F64x2Ceil {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f32x4.floor` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_floor)]
+            F32x4Floor {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f64x2.floor` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_floor)]
+            F64x2Floor {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f32x4.trunc` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_trunc)]
+            F32x4Trunc {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f64x2.trunc` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_trunc)]
+            F64x2Trunc {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f32x4.nearest` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f32x4_nearest)]
+            F32x4Nearest {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
+            /// Wasm `f64x2.nearest` instruction.
+            #[cfg(feature = "simd")]
+            #[snake_name(f64x2_nearest)]
+            F64x2Nearest {
+                @result: Reg,
+                /// Register holding the `input` of the instruction.
+                input: Reg,
+            },
         }
     };
 }
