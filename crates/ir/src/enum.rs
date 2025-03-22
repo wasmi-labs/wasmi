@@ -2,7 +2,7 @@
 use crate::core::simd::V128;
 #[cfg(feature = "simd")]
 use crate::core::simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8};
-use crate::{core::TrapCode, for_each_op, index::*, primitive::Offset64Hi, *};
+use crate::{core::TrapCode, index::*, primitive::Offset64Hi, *};
 use ::core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 
 macro_rules! define_enum {

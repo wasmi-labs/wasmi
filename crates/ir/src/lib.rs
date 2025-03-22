@@ -4,9 +4,10 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+#[macro_use]
+mod for_each_op;
 mod r#enum;
 mod error;
-mod for_each_op;
 mod immeditate;
 pub mod index;
 mod primitive;
