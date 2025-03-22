@@ -1,7 +1,7 @@
 use crate::engine::translator::FuncTranslator;
 use wasmparser::{MemArg, VisitSimdOperator};
 
-impl<'a> VisitSimdOperator<'a> for FuncTranslator {
+impl VisitSimdOperator<'_> for FuncTranslator {
     fn visit_v128_load(&mut self, _memarg: MemArg) -> Self::Output {
         todo!()
     }
