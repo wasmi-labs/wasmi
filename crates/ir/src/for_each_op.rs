@@ -5819,7 +5819,6 @@ macro_rules! for_each_op_grouped {
 
             @simd {
                 /// Wasm `i8x16.splat` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_splat)]
                 I8x16Splat {
                     @result: Reg,
@@ -5827,7 +5826,6 @@ macro_rules! for_each_op_grouped {
                     value: Reg,
                 },
                 /// Variant of [`Instruction::I8x16Splat`] with immediate `value` parameter.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_splat_imm)]
                 I8x16SplatImm {
                     @result: Reg,
@@ -5836,7 +5834,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i16x8.splat` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_splat)]
                 I16x8Splat {
                     @result: Reg,
@@ -5844,7 +5841,6 @@ macro_rules! for_each_op_grouped {
                     value: Reg,
                 },
                 /// Variant of [`Instruction::I16x8Splat`] with immediate `value` parameter.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_splat_imm)]
                 I16x8SplatImm {
                     @result: Reg,
@@ -5853,7 +5849,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i32x4.splat` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_splat)]
                 I32x4Splat {
                     @result: Reg,
@@ -5861,7 +5856,6 @@ macro_rules! for_each_op_grouped {
                     value: Reg,
                 },
                 /// Variant of [`Instruction::I32x4Splat`] with immediate `value` parameter.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_splat_imm)]
                 I32x4SplatImm {
                     @result: Reg,
@@ -5870,7 +5864,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i64x2.splat` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_splat)]
                 I64x2Splat {
                     @result: Reg,
@@ -5878,7 +5871,6 @@ macro_rules! for_each_op_grouped {
                     value: Reg,
                 },
                 /// Variant of [`Instruction::I64x2Splat`] with a 32-bit immediate `value` parameter.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_splat_imm)]
                 I64x2SplatImm32 {
                     @result: Reg,
@@ -5887,7 +5879,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `f32x4.splat` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_splat)]
                 F32x4Splat {
                     @result: Reg,
@@ -5895,7 +5886,6 @@ macro_rules! for_each_op_grouped {
                     value: Reg,
                 },
                 /// Variant of [`Instruction::F32x4Splat`] with immediate `value` parameter.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_splat_imm)]
                 F32x4SplatImm {
                     @result: Reg,
@@ -5904,7 +5894,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `f64x2.splat` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_splat)]
                 F64x2Splat {
                     @result: Reg,
@@ -5912,7 +5901,6 @@ macro_rules! for_each_op_grouped {
                     value: Reg,
                 },
                 /// Variant of [`Instruction::F64x2Splat`] with immediate `value` parameter.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_splat_imm)]
                 F64x2SplatImm {
                     @result: Reg,
@@ -5921,7 +5909,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.extract_lane_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_extract_lane_s)]
                 I8x16ExtractLaneS {
                     @result: Reg,
@@ -5931,7 +5918,6 @@ macro_rules! for_each_op_grouped {
                     lane: ImmLaneIdx16,
                 },
                 /// Wasm `i8x16.extract_lane_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_extract_lane_u)]
                 I8x16ExtractLaneU {
                     @result: Reg,
@@ -5941,7 +5927,6 @@ macro_rules! for_each_op_grouped {
                     lane: ImmLaneIdx16,
                 },
                 /// Wasm `i16x8.extract_lane_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extract_lane_s)]
                 I16x8ExtractLaneS {
                     @result: Reg,
@@ -5951,7 +5936,6 @@ macro_rules! for_each_op_grouped {
                     lane: ImmLaneIdx8,
                 },
                 /// Wasm `i16x8.extract_lane_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extract_lane_u)]
                 I16x8ExtractLaneU {
                     @result: Reg,
@@ -5961,7 +5945,6 @@ macro_rules! for_each_op_grouped {
                     lane: ImmLaneIdx8,
                 },
                 /// Wasm `i32x4.extract_lane` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extract_lane)]
                 I32x4ExtractLane {
                     @result: Reg,
@@ -5971,7 +5954,6 @@ macro_rules! for_each_op_grouped {
                     lane: ImmLaneIdx4,
                 },
                 /// Wasm `i64x2.extract_lane` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_extract_lane)]
                 I64x2ExtractLane {
                     @result: Reg,
@@ -5981,7 +5963,6 @@ macro_rules! for_each_op_grouped {
                     lane: ImmLaneIdx2,
                 },
                 /// Wasm `f32x4.extract_lane` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_extract_lane)]
                 F32x4ExtractLane {
                     @result: Reg,
@@ -5991,7 +5972,6 @@ macro_rules! for_each_op_grouped {
                     lane: ImmLaneIdx4,
                 },
                 /// Wasm `f64x2.extract_lane` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_extract_lane)]
                 F64x2ExtractLane {
                     @result: Reg,
@@ -6006,7 +5986,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Register`] encoding `value`.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_replace_lane)]
                 I8x16ReplaceLane {
                     @result: Reg,
@@ -6016,7 +5995,6 @@ macro_rules! for_each_op_grouped {
                     lane: ImmLaneIdx16,
                 },
                 /// Variant of [`Instruction::I8x16ReplaceLane`] with imediate `value`.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_replace_lane_imm)]
                 I8x16ReplaceLaneImm {
                     @result: Reg,
@@ -6032,7 +6010,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Register`] encoding `value`.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_replace_lane)]
                 I16x8ReplaceLane {
                     @result: Reg,
@@ -6046,7 +6023,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Const32`] encoding the immediate `value` of type `i16`.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_replace_lane_imm)]
                 I16x8ReplaceLaneImm {
                     @result: Reg,
@@ -6060,7 +6036,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Register`] encoding `value`.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_replace_lane)]
                 I32x4ReplaceLane {
                     @result: Reg,
@@ -6074,7 +6049,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Register`] encoding the immediate `value` of type `i32`.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_replace_lane_imm)]
                 I32x4ReplaceLaneImm {
                     @result: Reg,
@@ -6088,7 +6062,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Register`] encoding `value`.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_replace_lane)]
                 I64x2ReplaceLane {
                     @result: Reg,
@@ -6102,7 +6075,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::I64Const32`] encoding the 32-bit `value`.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_replace_lane_imm32)]
                 I64x2ReplaceLaneImm32 {
                     @result: Reg,
@@ -6116,7 +6088,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Register`] encoding `value`.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_replace_lane)]
                 F32x4ReplaceLane {
                     @result: Reg,
@@ -6130,7 +6101,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Const32`] encoding `value` of type `f32`.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_replace_lane_imm)]
                 F32x4ReplaceLaneImm {
                     @result: Reg,
@@ -6144,7 +6114,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Register`] encoding `value`.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_replace_lane)]
                 F64x2ReplaceLane {
                     @result: Reg,
@@ -6158,7 +6127,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::F64Const32`] encoding the 32-bit immediate `value`.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_replace_lane_imm32)]
                 F32x4ReplaceLaneImm32 {
                     @result: Reg,
@@ -6173,7 +6141,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Register`] encoding the `selector` of type [`V128`].
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_shuffle)]
                 I8x16Shuffle {
                     @result: Reg,
@@ -6183,7 +6150,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.swizzle` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_swizzle)]
                 I8x16Swizzle {
                     @result: Reg,
@@ -6194,7 +6160,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.add` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_add)]
                 I8x16Add {
                     @result: Reg,
@@ -6204,7 +6169,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.add` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_add)]
                 I16x8Add {
                     @result: Reg,
@@ -6214,7 +6178,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.add` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_add)]
                 I32x4Add {
                     @result: Reg,
@@ -6224,7 +6187,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.add` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_add)]
                 I64x2Add {
                     @result: Reg,
@@ -6234,7 +6196,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.sub` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_sub)]
                 I8x16Sub {
                     @result: Reg,
@@ -6244,7 +6205,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.sub` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_sub)]
                 I16x8Sub {
                     @result: Reg,
@@ -6254,7 +6214,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.sub` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_sub)]
                 I32x4Sub {
                     @result: Reg,
@@ -6264,7 +6223,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.sub` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_sub)]
                 I64x2Sub {
                     @result: Reg,
@@ -6274,7 +6232,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.mul` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_mul)]
                 I16x8Mul {
                     @result: Reg,
@@ -6284,7 +6241,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.mul` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_mul)]
                 I32x4Mul {
                     @result: Reg,
@@ -6294,7 +6250,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.mul` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_mul)]
                 I64x2Mul {
                     @result: Reg,
@@ -6305,7 +6260,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i32x4.dot_i16x8_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_dot_i16x8_s)]
                 I32x4DotI16x8S {
                     @result: Reg,
@@ -6316,7 +6270,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.neg` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_neg)]
                 I8x16Neg {
                     @result: Reg,
@@ -6324,7 +6277,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i16x8.neg` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_neg)]
                 I16x8Neg {
                     @result: Reg,
@@ -6332,7 +6284,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.neg` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_neg)]
                 I32x4Neg {
                     @result: Reg,
@@ -6340,7 +6291,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i64x2.neg` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_neg)]
                 I64x2Neg {
                     @result: Reg,
@@ -6349,7 +6299,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i16x8.extmul_low_i8x16_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extmul_low_i8x16_s)]
                 I16x8ExtmulLowI8x16S {
                     @result: Reg,
@@ -6359,7 +6308,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.extmul_high_i8x16_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extmul_high_i8x16_s)]
                 I16x8ExtmulHighI8x16S {
                     @result: Reg,
@@ -6369,7 +6317,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.extmul_low_i8x16_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extmul_low_i8x16_u)]
                 I16x8ExtmulLowI8x16U {
                     @result: Reg,
@@ -6379,7 +6326,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.extmul_high_i8x16_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extmul_high_i8x16_u)]
                 I16x8ExtmulHighI8x16U {
                     @result: Reg,
@@ -6389,7 +6335,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.extmul_low_i16x8_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extmul_low_i16x8_s)]
                 I32x4ExtmulLowI16x8S {
                     @result: Reg,
@@ -6399,7 +6344,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.extmul_high_i16x8_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extmul_high_i16x8_s)]
                 I32x4ExtmulHighI16x8S {
                     @result: Reg,
@@ -6409,7 +6353,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.extmul_low_i16x8_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extmul_low_i16x8_u)]
                 I32x4ExtmulLowI16x8U {
                     @result: Reg,
@@ -6419,7 +6362,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.extmul_high_i16x8_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extmul_high_i16x8_u)]
                 I32x4ExtmulHighI16x8U {
                     @result: Reg,
@@ -6429,7 +6371,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.extmul_low_i32x4_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_extmul_low_i32x4_s)]
                 I64x2ExtmulLowI32x4S {
                     @result: Reg,
@@ -6439,7 +6380,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.extmul_high_i32x4_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_extmul_high_i32x4_s)]
                 I64x2ExtmulHighI32x4S {
                     @result: Reg,
@@ -6449,7 +6389,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.extmul_low_i32x4_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_extmul_low_i32x4_u)]
                 I64x2ExtmulLowI32x4U {
                     @result: Reg,
@@ -6459,7 +6398,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.extmul_high_i32x4_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_extmul_high_i32x4_u)]
                 I64x2ExtmulHighI32x4U {
                     @result: Reg,
@@ -6470,7 +6408,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i16x8.extadd_pairwise_i8x16_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extadd_pairwise_i8x16_s)]
                 I16x8ExtaddPairwiseI8x16S {
                     @result: Reg,
@@ -6478,7 +6415,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i16x8.extadd_pairwise_i8x16_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extadd_pairwise_i8x16_u)]
                 I16x8ExtaddPairwiseI8x16U {
                     @result: Reg,
@@ -6486,7 +6422,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.extadd_pairwise_i16x8_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extadd_pairwise_i16x8_s)]
                 I32x4ExtaddPairwiseI16x8S {
                     @result: Reg,
@@ -6494,7 +6429,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.extadd_pairwise_i16x8_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extadd_pairwise_i16x8_u)]
                 I32x4ExtaddPairwiseI16x8U {
                     @result: Reg,
@@ -6503,7 +6437,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.add_sat_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_add_sat_s)]
                 I8x16AddSatS {
                     @result: Reg,
@@ -6513,7 +6446,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.add_sat_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_add_sat_u)]
                 I8x16AddSatU {
                     @result: Reg,
@@ -6523,7 +6455,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.add_sat_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_add_sat_s)]
                 I16x8AddSatS {
                     @result: Reg,
@@ -6533,7 +6464,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.add_sat_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_add_sat_u)]
                 I16x8AddSatU {
                     @result: Reg,
@@ -6543,7 +6473,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.sub_sat_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_sub_sat_s)]
                 I8x16SubSatS {
                     @result: Reg,
@@ -6553,7 +6482,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.sub_sat_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_sub_sat_u)]
                 I8x16SubSatU {
                     @result: Reg,
@@ -6563,7 +6491,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.sub_sat_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_sub_sat_s)]
                 I16x8SubSatS {
                     @result: Reg,
@@ -6573,7 +6500,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.sub_sat_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_sub_sat_u)]
                 I16x8SubSatU {
                     @result: Reg,
@@ -6584,7 +6510,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i16x8.q15mulr_sat_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_q15mulr_sat_s)]
                 I16x8Q15MulrSatS {
                     @result: Reg,
@@ -6595,7 +6520,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.min_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_min_s)]
                 I8x16MinS {
                     @result: Reg,
@@ -6605,7 +6529,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.min_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_min_u)]
                 I8x16MinU {
                     @result: Reg,
@@ -6615,7 +6538,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.min_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_min_s)]
                 I16x8MinS {
                     @result: Reg,
@@ -6625,7 +6547,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.min_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_min_u)]
                 I16x8MinU {
                     @result: Reg,
@@ -6635,7 +6556,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.min_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_min_s)]
                 I32x4MinS {
                     @result: Reg,
@@ -6645,7 +6565,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.min_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_min_u)]
                 I32x4MinU {
                     @result: Reg,
@@ -6655,7 +6574,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.max_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_max_s)]
                 I8x16MaxS {
                     @result: Reg,
@@ -6665,7 +6583,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.max_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_max_u)]
                 I8x16MaxU {
                     @result: Reg,
@@ -6675,7 +6592,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.max_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_max_s)]
                 I16x8MaxS {
                     @result: Reg,
@@ -6685,7 +6601,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.max_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_max_u)]
                 I16x8MaxU {
                     @result: Reg,
@@ -6695,7 +6610,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.max_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_max_s)]
                 I32x4MaxS {
                     @result: Reg,
@@ -6705,7 +6619,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.max_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_max_u)]
                 I32x4MaxU {
                     @result: Reg,
@@ -6716,7 +6629,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.avgr_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_avgr_u)]
                 I8x16AvgrU {
                     @result: Reg,
@@ -6726,7 +6638,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.avgr_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_avgr_u)]
                 I16x8AvgrU {
                     @result: Reg,
@@ -6737,7 +6648,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.abs` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_abs)]
                 I8x16Abs {
                     @result: Reg,
@@ -6745,7 +6655,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i16x8.abs` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_abs)]
                 I16x8Abs {
                     @result: Reg,
@@ -6753,7 +6662,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.abs` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_abs)]
                 I32x4Abs {
                     @result: Reg,
@@ -6761,7 +6669,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i64x2.abs` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_abs)]
                 I64x2Abs {
                     @result: Reg,
@@ -6770,7 +6677,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.shl` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_shl)]
                 I8x16Shl {
                     @result: Reg,
@@ -6780,7 +6686,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.shl` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_shl)]
                 I16x8Shl {
                     @result: Reg,
@@ -6790,7 +6695,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.shl` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_shl)]
                 I32x4Shl {
                     @result: Reg,
@@ -6800,7 +6704,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.shl` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_shl)]
                 I64x2Shl {
                     @result: Reg,
@@ -6810,7 +6713,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.shr_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_shr_s)]
                 I8x16ShrS {
                     @result: Reg,
@@ -6820,7 +6722,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.shr_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_shr_u)]
                 I8x16ShrU {
                     @result: Reg,
@@ -6830,7 +6731,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.shr_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_shr_s)]
                 I16x8ShrS {
                     @result: Reg,
@@ -6840,7 +6740,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.shr_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_shr_u)]
                 I16x8ShrU {
                     @result: Reg,
@@ -6850,7 +6749,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.shr_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_shr_s)]
                 I32x4ShrS {
                     @result: Reg,
@@ -6860,7 +6758,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.shr_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_shr_u)]
                 I32x4ShrU {
                     @result: Reg,
@@ -6870,7 +6767,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.shr_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_shr_s)]
                 I64x2ShrS {
                     @result: Reg,
@@ -6880,7 +6776,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.shr_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_shr_u)]
                 I64x2ShrU {
                     @result: Reg,
@@ -6891,7 +6786,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `v128.and` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_and)]
                 V128And {
                     @result: Reg,
@@ -6901,7 +6795,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `v128.or` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_or)]
                 V128Or {
                     @result: Reg,
@@ -6911,7 +6804,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `v128.xor` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_xor)]
                 V128Xor {
                     @result: Reg,
@@ -6921,7 +6813,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `v128.andnot` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_andnot)]
                 V128Andnot {
                     @result: Reg,
@@ -6931,7 +6822,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `v128.not` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_not)]
                 V128Not {
                     @result: Reg,
@@ -6944,7 +6834,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by [`Instruction::Register`] encoding the `selector`.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_bitselect)]
                 V128Bitselect {
                     @result: Reg,
@@ -6955,7 +6844,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.popcnt` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_popcnt)]
                 I8x16Popcnt {
                     @result: Reg,
@@ -6963,7 +6851,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `v128.any_true` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_any_true)]
                 V128AnyTrue {
                     @result: Reg,
@@ -6971,7 +6858,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i8x16.all_true` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_all_true)]
                 I8x16AllTrue {
                     @result: Reg,
@@ -6979,7 +6865,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i16x8.all_true` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_all_true)]
                 I16x8AllTrue {
                     @result: Reg,
@@ -6987,7 +6872,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.all_true` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_all_true)]
                 I32x4AllTrue {
                     @result: Reg,
@@ -6995,7 +6879,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i64x2.all_true` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_all_true)]
                 I64x2AllTrue {
                     @result: Reg,
@@ -7003,7 +6886,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i8x16.bitmask` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_bitmask)]
                 I8x16Bitmask {
                     @result: Reg,
@@ -7011,7 +6893,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i16x8.bitmask` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_bitmask)]
                 I16x8Bitmask {
                     @result: Reg,
@@ -7019,7 +6900,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.bitmask` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_bitmask)]
                 I32x4Bitmask {
                     @result: Reg,
@@ -7027,7 +6907,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i64x2.bitmask` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_bitmask)]
                 I64x2Bitmask {
                     @result: Reg,
@@ -7036,7 +6915,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.eq` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_eq)]
                 I8x16Eq {
                     @result: Reg,
@@ -7046,7 +6924,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.eq` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_eq)]
                 I16x8Eq {
                     @result: Reg,
@@ -7056,7 +6933,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.eq` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_eq)]
                 I32x4Eq {
                     @result: Reg,
@@ -7066,7 +6942,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.eq` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_eq)]
                 I64x2Eq {
                     @result: Reg,
@@ -7076,7 +6951,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.eq` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_eq)]
                 F32x4Eq {
                     @result: Reg,
@@ -7086,7 +6960,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.eq` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_eq)]
                 F64x2Eq {
                     @result: Reg,
@@ -7096,7 +6969,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.ne` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_ne)]
                 I8x16Ne {
                     @result: Reg,
@@ -7106,7 +6978,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.ne` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_ne)]
                 I16x8Ne {
                     @result: Reg,
@@ -7116,7 +6987,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.ne` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_ne)]
                 I32x4Ne {
                     @result: Reg,
@@ -7126,7 +6996,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.ne` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_ne)]
                 I64x2Ne {
                     @result: Reg,
@@ -7136,7 +7005,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.ne` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_ne)]
                 F32x4Ne {
                     @result: Reg,
@@ -7146,7 +7014,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.ne` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_ne)]
                 F64x2Ne {
                     @result: Reg,
@@ -7156,7 +7023,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.lt_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_lt_s)]
                 I8x16LtS {
                     @result: Reg,
@@ -7166,7 +7032,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.lt_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_lt_u)]
                 I8x16LtU {
                     @result: Reg,
@@ -7176,7 +7041,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.lt_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_lt_s)]
                 I16x8LtS {
                     @result: Reg,
@@ -7186,7 +7050,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.lt_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_lt_u)]
                 I16x8LtU {
                     @result: Reg,
@@ -7196,7 +7059,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.lt_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_lt_s)]
                 I32x4LtS {
                     @result: Reg,
@@ -7206,7 +7068,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.lt_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_lt_u)]
                 I32x4LtU {
                     @result: Reg,
@@ -7216,7 +7077,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.lt_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_lt_s)]
                 I64x2LtS {
                     @result: Reg,
@@ -7226,7 +7086,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.lt` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_lt)]
                 F32x4Lt {
                     @result: Reg,
@@ -7236,7 +7095,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.lt` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_lt)]
                 F64x2Lt {
                     @result: Reg,
@@ -7246,7 +7104,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.le_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_le_s)]
                 I8x16LeS {
                     @result: Reg,
@@ -7256,7 +7113,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.le_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_le_u)]
                 I8x16LeU {
                     @result: Reg,
@@ -7266,7 +7122,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.le_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_le_s)]
                 I16x8LeS {
                     @result: Reg,
@@ -7276,7 +7131,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.le_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_le_u)]
                 I16x8LeU {
                     @result: Reg,
@@ -7286,7 +7140,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.le_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_le_s)]
                 I32x4LeS {
                     @result: Reg,
@@ -7296,7 +7149,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.le_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_le_u)]
                 I32x4LeU {
                     @result: Reg,
@@ -7306,7 +7158,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.le_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_le_s)]
                 I64x2LeS {
                     @result: Reg,
@@ -7316,7 +7167,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.le` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_le)]
                 F32x4Le {
                     @result: Reg,
@@ -7326,7 +7176,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.le` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_le)]
                 F64x2Le {
                     @result: Reg,
@@ -7336,7 +7185,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.gt_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_gt_s)]
                 I8x16GtS {
                     @result: Reg,
@@ -7346,7 +7194,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.gt_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_gt_u)]
                 I8x16GtU {
                     @result: Reg,
@@ -7356,7 +7203,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.gt_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_gt_s)]
                 I16x8GtS {
                     @result: Reg,
@@ -7366,7 +7212,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.gt_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_gt_u)]
                 I16x8GtU {
                     @result: Reg,
@@ -7376,7 +7221,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.gt_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_gt_s)]
                 I32x4GtS {
                     @result: Reg,
@@ -7386,7 +7230,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.gt_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_gt_u)]
                 I32x4GtU {
                     @result: Reg,
@@ -7396,7 +7239,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.gt_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_gt_s)]
                 I64x2GtS {
                     @result: Reg,
@@ -7406,7 +7248,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.gt` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_gt)]
                 F32x4Gt {
                     @result: Reg,
@@ -7416,7 +7257,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.gt` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_gt)]
                 F64x2Gt {
                     @result: Reg,
@@ -7426,7 +7266,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.ge_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_ge_s)]
                 I8x16GeS {
                     @result: Reg,
@@ -7436,7 +7275,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.ge_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_ge_u)]
                 I8x16GeU {
                     @result: Reg,
@@ -7446,7 +7284,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.ge_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_ge_s)]
                 I16x8GeS {
                     @result: Reg,
@@ -7456,7 +7293,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.ge_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_ge_u)]
                 I16x8GeU {
                     @result: Reg,
@@ -7466,7 +7302,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.ge_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_ge_s)]
                 I32x4GeS {
                     @result: Reg,
@@ -7476,7 +7311,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i32x4.ge_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_ge_u)]
                 I32x4GeU {
                     @result: Reg,
@@ -7486,7 +7320,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i64x2.ge_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_ge_s)]
                 I64x2GeS {
                     @result: Reg,
@@ -7496,7 +7329,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.ge` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_ge)]
                 F32x4Ge {
                     @result: Reg,
@@ -7506,7 +7338,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.ge` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_ge)]
                 F64x2Ge {
                     @result: Reg,
@@ -7517,7 +7348,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `f32x4.neg` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_neg)]
                 F32x4Neg {
                     @result: Reg,
@@ -7525,7 +7355,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f64x2.neg` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_neg)]
                 F64x2Neg {
                     @result: Reg,
@@ -7533,7 +7362,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f32x4.abs` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_abs)]
                 F32x4Abs {
                     @result: Reg,
@@ -7541,7 +7369,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f64x2.abs` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_abs)]
                 F64x2Abs {
                     @result: Reg,
@@ -7550,7 +7377,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `f32x4.min` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_min)]
                 F32x4Min {
                     @result: Reg,
@@ -7560,7 +7386,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.min` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_min)]
                 F64x2Min {
                     @result: Reg,
@@ -7570,7 +7395,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.max` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_max)]
                 F32x4Max {
                     @result: Reg,
@@ -7580,7 +7404,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.max` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_max)]
                 F64x2Max {
                     @result: Reg,
@@ -7590,7 +7413,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.pmin` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_pmin)]
                 F32x4Pmin {
                     @result: Reg,
@@ -7600,7 +7422,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.pmin` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_pmin)]
                 F64x2Pmin {
                     @result: Reg,
@@ -7610,7 +7431,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.pmax` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_pmax)]
                 F32x4Pmax {
                     @result: Reg,
@@ -7620,7 +7440,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.pmax` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_pmax)]
                 F64x2Pmax {
                     @result: Reg,
@@ -7630,7 +7449,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.add` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_add)]
                 F32x4Add {
                     @result: Reg,
@@ -7640,7 +7458,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.add` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_add)]
                 F64x2Add {
                     @result: Reg,
@@ -7650,7 +7467,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.sub` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_sub)]
                 F32x4Sub {
                     @result: Reg,
@@ -7660,7 +7476,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.sub` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_sub)]
                 F64x2Sub {
                     @result: Reg,
@@ -7670,7 +7485,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.div` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_div)]
                 F32x4Div {
                     @result: Reg,
@@ -7680,7 +7494,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.div` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_div)]
                 F64x2Div {
                     @result: Reg,
@@ -7690,7 +7503,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f32x4.mul` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_mul)]
                 F32x4Mul {
                     @result: Reg,
@@ -7700,7 +7512,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `f64x2.mul` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_mul)]
                 F64x2Mul {
                     @result: Reg,
@@ -7711,7 +7522,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `f32x4.sqrt` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_sqrt)]
                 F32x4Sqrt {
                     @result: Reg,
@@ -7719,7 +7529,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f64x2.sqrt` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_sqrt)]
                 F64x2Sqrt {
                     @result: Reg,
@@ -7727,7 +7536,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f32x4.ceil` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_ceil)]
                 F32x4Ceil {
                     @result: Reg,
@@ -7735,7 +7543,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f64x2.ceil` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_ceil)]
                 F64x2Ceil {
                     @result: Reg,
@@ -7743,7 +7550,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f32x4.floor` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_floor)]
                 F32x4Floor {
                     @result: Reg,
@@ -7751,7 +7557,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f64x2.floor` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_floor)]
                 F64x2Floor {
                     @result: Reg,
@@ -7759,7 +7564,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f32x4.trunc` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_trunc)]
                 F32x4Trunc {
                     @result: Reg,
@@ -7767,7 +7571,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f64x2.trunc` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_trunc)]
                 F64x2Trunc {
                     @result: Reg,
@@ -7775,7 +7578,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f32x4.nearest` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_nearest)]
                 F32x4Nearest {
                     @result: Reg,
@@ -7783,7 +7585,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f64x2.nearest` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_nearest)]
                 F64x2Nearest {
                     @result: Reg,
@@ -7792,7 +7593,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `f32x4.convert_i32x4_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_convert_i32x4_s)]
                 F32x4ConvertI32x4S {
                     @result: Reg,
@@ -7800,7 +7600,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f32x4.convert_i32x4_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_convert_i32x4_u)]
                 F32x4ConvertI32x4U {
                     @result: Reg,
@@ -7808,7 +7607,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f64x2.convert_low_i32x4_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_convert_low_i32x4_s)]
                 F64x2ConvertLowI32x4S {
                     @result: Reg,
@@ -7816,7 +7614,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f64x2.convert_low_i32x4_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_convert_low_i32x4_u)]
                 F64x2ConvertLowI32x4U {
                     @result: Reg,
@@ -7824,7 +7621,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.trunc_sat_f32x4_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_trunc_sat_f32x4_s)]
                 I32x4TruncSatF32x4S {
                     @result: Reg,
@@ -7832,7 +7628,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.trunc_sat_f32x4_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_trunc_sat_f32x4_u)]
                 I32x4TruncSatF32x4U {
                     @result: Reg,
@@ -7840,7 +7635,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.trunc_sat_f64x2_s_zero` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_trunc_sat_f64x2_s_zero)]
                 I32x4TruncSatF64x2SZero {
                     @result: Reg,
@@ -7848,7 +7642,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.trunc_sat_f64x2_u_zero` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_trunc_sat_f64x2_u_zero)]
                 I32x4TruncSatF64x2UZero {
                     @result: Reg,
@@ -7856,7 +7649,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f32x4.demote_f64x2_zero` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f32x4_demote_f64x2_zero)]
                 F32x4DemoteF64x2Zero {
                     @result: Reg,
@@ -7864,7 +7656,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `f64x2.promote_low_f32x4` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(f64x2_promote_low_f32x4)]
                 F64x2PromoteLowF32x4 {
                     @result: Reg,
@@ -7873,7 +7664,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i8x16.narrow_i16x8_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_narrow_i16x8_s)]
                 I8x16NarrowI16x8S {
                     @result: Reg,
@@ -7883,7 +7673,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i8x16.narrow_i16x8_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i8x16_narrow_i16x8_u)]
                 I8x16NarrowI16x8U {
                     @result: Reg,
@@ -7893,7 +7682,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.narrow_i32x4_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_narrow_i32x4_s)]
                 I16x8NarrowI32x4S {
                     @result: Reg,
@@ -7903,7 +7691,6 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
                 /// Wasm `i16x8.narrow_i32x4_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_narrow_i32x4_u)]
                 I16x8NarrowI32x4U {
                     @result: Reg,
@@ -7914,7 +7701,6 @@ macro_rules! for_each_op_grouped {
                 },
 
                 /// Wasm `i16x8.extend_low_i8x16_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extend_low_i8x16_s)]
                 I16x8ExtendLowI8x16S {
                     @result: Reg,
@@ -7922,7 +7708,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i16x8.extend_high_i8x16_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extend_high_i8x16_s)]
                 I16x8ExtendHighI8x16S {
                     @result: Reg,
@@ -7930,7 +7715,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i16x8.extend_low_i8x16_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extend_low_i8x16_u)]
                 I16x8ExtendLowI8x16U {
                     @result: Reg,
@@ -7938,7 +7722,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i16x8.extend_high_i8x16_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i16x8_extend_high_i8x16_u)]
                 I16x8ExtendHighI8x16U {
                     @result: Reg,
@@ -7946,7 +7729,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.extend_low_i16x8_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extend_low_i16x8_s)]
                 I32x4ExtendLowI16x8S {
                     @result: Reg,
@@ -7954,7 +7736,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.extend_high_i16x8_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extend_high_i16x8_s)]
                 I32x4ExtendHighI16x8S {
                     @result: Reg,
@@ -7962,7 +7743,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.extend_low_i16x8_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extend_low_i16x8_u)]
                 I32x4ExtendLowI16x8U {
                     @result: Reg,
@@ -7970,7 +7750,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i32x4.extend_high_i16x8_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i32x4_extend_high_i16x8_u)]
                 I32x4ExtendHighI16x8U {
                     @result: Reg,
@@ -7978,7 +7757,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i64x2.extend_low_i32x4_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_extend_low_i32x4_s)]
                 I64x2ExtendLowI32x4S {
                     @result: Reg,
@@ -7986,7 +7764,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i64x2.extend_high_i32x4_s` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_extend_high_i32x4_s)]
                 I64x2ExtendHighI32x4S {
                     @result: Reg,
@@ -7994,7 +7771,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i64x2.extend_low_i32x4_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_extend_low_i32x4_u)]
                 I64x2ExtendLowI32x4U {
                     @result: Reg,
@@ -8002,7 +7778,6 @@ macro_rules! for_each_op_grouped {
                     input: Reg,
                 },
                 /// Wasm `i64x2.extend_high_i32x4_u` instruction.
-                #[cfg(feature = "simd")]
                 #[snake_name(i64x2_extend_high_i32x4_u)]
                 I64x2ExtendHighI32x4U {
                     @result: Reg,
@@ -8020,7 +7795,6 @@ macro_rules! for_each_op_grouped {
                 /// - Optional [`Instruction::MemoryIndex`]: encoding memory index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store)]
                 V128Store {
                     /// The register storing the `pointer` of the store instruction.
@@ -8033,7 +7807,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store_offset16)]
                 V128StoreOffset16 {
                     /// The register storing the `pointer` of the store instruction.
@@ -8050,7 +7823,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding `memory`.
                 ///
                 /// Operates on the default Wasm memory instance if missing.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store_at)]
                 V128StoreAt {
                     /// The value to be stored.
@@ -8069,7 +7841,6 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx16`].
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store8_lane)]
                 V128Store8Lane {
                     /// Register storing the `ptr` of the instruction.
@@ -8082,7 +7853,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store8_lane_offset8)]
                 V128Store8LaneOffset8 {
                     /// Register storing the `ptr` of the instruction.
@@ -8099,7 +7869,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store8_lane_at)]
                 V128Store8LaneAt {
                     /// The value to be stored.
@@ -8118,7 +7887,6 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx8`].
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store16_lane)]
                 V128Store16Lane {
                     /// Register storing the `ptr` of the instruction.
@@ -8131,7 +7899,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store16_lane_offset8)]
                 V128Store16LaneOffset8 {
                     /// Register storing the `ptr` of the instruction.
@@ -8148,7 +7915,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store16_lane_at)]
                 V128Store16LaneAt {
                     /// The value to be stored.
@@ -8167,7 +7933,6 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx4`].
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store32_lane)]
                 V128Store32Lane {
                     /// Register storing the `ptr` of the instruction.
@@ -8180,7 +7945,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store32_lane_offset8)]
                 V128Store32LaneOffset8 {
                     /// Register storing the `ptr` of the instruction.
@@ -8197,7 +7961,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store32_lane_at)]
                 V128Store32LaneAt {
                     /// The value to be stored.
@@ -8216,7 +7979,6 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx2`].
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store64_lane)]
                 V128Store64Lane {
                     /// Register storing the `ptr` of the instruction.
@@ -8229,7 +7991,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store64_lane_offset8)]
                 V128Store64LaneOffset8 {
                     /// Register storing the `ptr` of the instruction.
@@ -8246,7 +8007,6 @@ macro_rules! for_each_op_grouped {
                 /// # Encoding
                 ///
                 /// Followed by an [`Instruction::Imm16AndImm32`] encoding `lane_index` and `memory_index` respectively.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_store64_lane_at)]
                 V128Store64LaneAt {
                     /// The value to be stored.
@@ -8265,7 +8025,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load)]
                 V128Load {
                     @result: Reg,
@@ -8279,7 +8038,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load_at)]
                 V128LoadAt {
                     @result: Reg,
@@ -8291,7 +8049,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load_offset16)]
                 V128LoadOffset16 {
                     @result: Reg,
@@ -8311,7 +8068,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32_zero)]
                 V128Load32Zero {
                     @result: Reg,
@@ -8325,7 +8081,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32_zero_at)]
                 V128Load32ZeroAt {
                     @result: Reg,
@@ -8337,7 +8092,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32_zero_offset16)]
                 V128Load32ZeroOffset16 {
                     @result: Reg,
@@ -8357,7 +8111,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load64_zero)]
                 V128Load64Zero {
                     @result: Reg,
@@ -8371,7 +8124,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load64_zero_at)]
                 V128Load64ZeroAt {
                     @result: Reg,
@@ -8383,7 +8135,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load64_zero_offset16)]
                 V128Load64ZeroOffset16 {
                     @result: Reg,
@@ -8403,7 +8154,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8_splat)]
                 V128Load8Splat {
                     @result: Reg,
@@ -8417,7 +8167,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8_splat_at)]
                 V128Load8SplatAt {
                     @result: Reg,
@@ -8429,7 +8178,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8_splat_offset16)]
                 V128Load8SplatOffset16 {
                     @result: Reg,
@@ -8449,7 +8197,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16_splat)]
                 V128Load16Splat {
                     @result: Reg,
@@ -8463,7 +8210,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16_splat_at)]
                 V128Load16SplatAt {
                     @result: Reg,
@@ -8475,7 +8221,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16_splat_offset16)]
                 V128Load16SplatOffset16 {
                     @result: Reg,
@@ -8495,7 +8240,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32_splat)]
                 V128Load32Splat {
                     @result: Reg,
@@ -8509,7 +8253,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32_splat_at)]
                 V128Load32SplatAt {
                     @result: Reg,
@@ -8521,7 +8264,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32_splat_offset16)]
                 V128Load32SplatOffset16 {
                     @result: Reg,
@@ -8541,7 +8283,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load64_splat)]
                 V128Load64Splat {
                     @result: Reg,
@@ -8555,7 +8296,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load64_splat_at)]
                 V128Load64SplatAt {
                     @result: Reg,
@@ -8567,7 +8307,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load64_splat_offset16)]
                 V128Load64SplatOffset16 {
                     @result: Reg,
@@ -8587,7 +8326,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8x8_s)]
                 V128Load8x8S {
                     @result: Reg,
@@ -8601,7 +8339,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8x8_s_at)]
                 V128Load8x8SAt {
                     @result: Reg,
@@ -8613,7 +8350,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8x8_s_offset16)]
                 V128Load8x8SOffset16 {
                     @result: Reg,
@@ -8633,7 +8369,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8x8_u)]
                 V128Load8x8U {
                     @result: Reg,
@@ -8647,7 +8382,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8x8_u_at)]
                 V128Load8x8UAt {
                     @result: Reg,
@@ -8659,7 +8393,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8x8_u_offset16)]
                 V128Load8x8UOffset16 {
                     @result: Reg,
@@ -8679,7 +8412,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16x4_s)]
                 V128Load16x4S {
                     @result: Reg,
@@ -8693,7 +8425,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16x4_s_at)]
                 V128Load16x4SAt {
                     @result: Reg,
@@ -8705,7 +8436,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16x4_s_offset16)]
                 V128Load16x4SOffset16 {
                     @result: Reg,
@@ -8725,7 +8455,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16x4_u)]
                 V128Load16x4U {
                     @result: Reg,
@@ -8739,7 +8468,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16x4_u_at)]
                 V128Load16x4UAt {
                     @result: Reg,
@@ -8751,7 +8479,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16x4_u_offset16)]
                 V128Load16x4UOffset16 {
                     @result: Reg,
@@ -8771,7 +8498,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32x2_s)]
                 V128Load32x2S {
                     @result: Reg,
@@ -8785,7 +8511,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32x2_s_at)]
                 V128Load32x2SAt {
                     @result: Reg,
@@ -8797,7 +8522,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32x2_s_offset16)]
                 V128Load32x2SOffset16 {
                     @result: Reg,
@@ -8817,7 +8541,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32x2_u)]
                 V128Load32x2U {
                     @result: Reg,
@@ -8831,7 +8554,6 @@ macro_rules! for_each_op_grouped {
                 /// Optionally followed by an [`Instruction::MemoryIndex`] encoding the `memory_index`.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32x2_u_at)]
                 V128Load32x2UAt {
                     @result: Reg,
@@ -8843,7 +8565,6 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Operates on the default Wasm memory instance.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32x2_u_offset16)]
                 V128Load32x2UOffset16 {
                     @result: Reg,
@@ -8868,7 +8589,6 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx16`].
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8_lane)]
                 V128Load8Lane {
                     @result: Reg,
@@ -8885,7 +8605,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load8_lane_at)]
                 V128Load8LaneAt {
                     @result: Reg,
@@ -8908,7 +8627,6 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx8`].
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16_lane)]
                 V128Load16Lane {
                     @result: Reg,
@@ -8925,7 +8643,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load16_lane_at)]
                 V128Load16LaneAt {
                     @result: Reg,
@@ -8948,7 +8665,6 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx4`].
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32_lane)]
                 V128Load32Lane {
                     @result: Reg,
@@ -8965,7 +8681,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load32_lane_at)]
                 V128Load32LaneAt {
                     @result: Reg,
@@ -8988,7 +8703,6 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx2`].
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load64_lane)]
                 V128Load64Lane {
                     @result: Reg,
@@ -9005,7 +8719,6 @@ macro_rules! for_each_op_grouped {
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
-                #[cfg(feature = "simd")]
                 #[snake_name(v128_load64_lane_at)]
                 V128Load64LaneAt {
                     @result: Reg,
@@ -9074,7 +8787,6 @@ macro_rules! generate_for_each_op {
             @$group:ident {
                 $(
                     $( #[doc = $doc:literal] )*
-                    $( #[cfg(feature = $feature_name:literal)] )?
                     #[snake_name($snake_name:ident)]
                     $name:ident
                     $(
@@ -9102,7 +8814,6 @@ macro_rules! generate_for_each_op {
                         $(
                             // for each instruction in group
                             $( #[doc = $doc] )*
-                            $( #[cfg(feature = $feature_name)] )?
                             #[snake_name($snake_name)]
                             $name
                             $(
