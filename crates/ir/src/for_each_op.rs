@@ -8850,6 +8850,166 @@ macro_rules! for_each_op {
                 /// The 16-bit encoded offset of the `load` instruction.
                 offset: Offset16,
             },
+
+            /// Wasm `v128.load8_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+            /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+            ///
+            /// # Note
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            ///
+            /// The `lane_index` is of type [`ImmLaneIdx16`].
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8_lane)]
+            V128Load8Lane {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load8Lane`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load8_lane_at)]
+            V128Load8LaneAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+
+            /// Wasm `v128.load16_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+            /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+            ///
+            /// # Note
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            ///
+            /// The `lane_index` is of type [`ImmLaneIdx8`].
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16_lane)]
+            V128Load16Lane {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load16Lane`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load16_lane_at)]
+            V128Load16LaneAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+
+            /// Wasm `v128.load32_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+            /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+            ///
+            /// # Note
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            ///
+            /// The `lane_index` is of type [`ImmLaneIdx4`].
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32_lane)]
+            V128Load32Lane {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load32Lane`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load32_lane_at)]
+            V128Load32LaneAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
+
+            /// Wasm `v128.load64_lane` instruction.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+            /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+            /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+            ///
+            /// # Note
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            ///
+            /// The `lane_index` is of type [`ImmLaneIdx2`].
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load64_lane)]
+            V128Load64Lane {
+                @result: Reg,
+                /// The lower 32-bit of the 64-bit load `offset`.
+                offset_lo: Offset64Lo,
+            },
+            /// Variant of [`Instruction::V128Load64Lane`] with 32-bit immediate address.
+            ///
+            /// # Encoding
+            ///
+            /// Followed by
+            ///
+            /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+            /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+            ///
+            /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
+            #[cfg(feature = "simd")]
+            #[snake_name(v128_load64_lane_at)]
+            V128Load64LaneAt {
+                @result: Reg,
+                /// The `ptr+offset` address of the load instruction.
+                address: Address32,
+            },
         }
     };
 }
