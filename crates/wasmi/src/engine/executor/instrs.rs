@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "simd", expect(unused_variables))] // TODO: remove
+
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
@@ -1306,6 +1308,737 @@ impl<'engine> Executor<'engine> {
                 | Instr::RegisterList { .. }
                 | Instr::CallIndirectParams { .. }
                 | Instr::CallIndirectParamsImm16 { .. } => self.invalid_instruction_word()?,
+                #[cfg(feature = "simd")]
+                Instr::I8x16Splat { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16SplatImm { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Splat { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8SplatImm { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4Splat { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4SplatImm { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2Splat { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2SplatImm32 { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Splat { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4SplatImm { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Splat { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2SplatImm { result, value } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16ExtractLaneS {
+                    result,
+                    value,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16ExtractLaneU {
+                    result,
+                    value,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtractLaneS {
+                    result,
+                    value,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtractLaneU {
+                    result,
+                    value,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtractLane {
+                    result,
+                    value,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ExtractLane {
+                    result,
+                    value,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4ExtractLane {
+                    result,
+                    value,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2ExtractLane {
+                    result,
+                    value,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16ReplaceLane {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16ReplaceLaneImm {
+                    result,
+                    input,
+                    lane,
+                    value,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ReplaceLane {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ReplaceLaneImm {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ReplaceLane {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ReplaceLaneImm {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ReplaceLane {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ReplaceLaneImm32 {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4ReplaceLane {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4ReplaceLaneImm {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2ReplaceLane {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4ReplaceLaneImm32 {
+                    result,
+                    input,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Shuffle { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Swizzle {
+                    result,
+                    input,
+                    selector,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Add { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Add { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4Add { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2Add { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Sub { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Sub { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4Sub { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2Sub { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Mul { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4Mul { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2Mul { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4DotI16x8S { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Neg { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Neg { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4Neg { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2Neg { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtmulLowI8x16S { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtmulHighI8x16S { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtmulLowI8x16U { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtmulHighI8x16U { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtmulLowI16x8S { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtmulHighI16x8S { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtmulLowI16x8U { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtmulHighI16x8U { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ExtmulLowI32x4S { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ExtmulHighI32x4S { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ExtmulLowI32x4U { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ExtmulHighI32x4U { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtaddPairwiseI8x16S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtaddPairwiseI8x16U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtaddPairwiseI16x8S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtaddPairwiseI16x8U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16AddSatS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16AddSatU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8AddSatS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8AddSatU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16SubSatS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16SubSatU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8SubSatS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8SubSatU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Q15MulrSatS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16MinS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16MinU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8MinS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8MinU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4MinS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4MinU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16MaxS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16MaxU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8MaxS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8MaxU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4MaxS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4MaxU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16AvgrU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8AvgrU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Abs { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Abs { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4Abs { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2Abs { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Shl { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Shl { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4Shl { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2Shl { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16ShrS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16ShrU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ShrS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ShrU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ShrS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ShrU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ShrS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ShrU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128And { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Or { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Xor { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Andnot { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Not { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Bitselect { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Popcnt { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128AnyTrue { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16AllTrue { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8AllTrue { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4AllTrue { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2AllTrue { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Bitmask { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Bitmask { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4Bitmask { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2Bitmask { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Eq { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Eq { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4Eq { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2Eq { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Eq { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Eq { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16Ne { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8Ne { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4Ne { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2Ne { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Ne { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Ne { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16LtS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16LtU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8LtS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8LtU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4LtS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4LtU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2LtS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Lt { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Lt { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16LeS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16LeU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8LeS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8LeU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4LeS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4LeU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2LeS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Le { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Le { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16GtS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16GtU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8GtS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8GtU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4GtS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4GtU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2GtS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Gt { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Gt { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16GeS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16GeU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8GeS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8GeU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4GeS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4GeU { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2GeS { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Ge { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Ge { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Neg { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Neg { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Abs { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Abs { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Min { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Min { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Max { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Max { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Pmin { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Pmin { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Pmax { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Pmax { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Add { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Add { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Sub { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Sub { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Div { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Div { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Mul { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Mul { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Sqrt { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Sqrt { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Ceil { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Ceil { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Floor { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Floor { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Trunc { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Trunc { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4Nearest { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2Nearest { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4ConvertI32x4S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4ConvertI32x4U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2ConvertLowI32x4S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2ConvertLowI32x4U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4TruncSatF32x4S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4TruncSatF32x4U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4TruncSatF64x2SZero { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4TruncSatF64x2UZero { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F32x4DemoteF64x2Zero { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::F64x2PromoteLowF32x4 { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16NarrowI16x8S { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I8x16NarrowI16x8U { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8NarrowI32x4S { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8NarrowI32x4U { result, lhs, rhs } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtendLowI8x16S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtendHighI8x16S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtendLowI8x16U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ExtendHighI8x16U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtendLowI16x8S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtendHighI16x8S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtendLowI16x8U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ExtendHighI16x8U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ExtendLowI32x4S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ExtendHighI32x4S { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ExtendLowI32x4U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ExtendHighI32x4U { result, input } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store { ptr, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128StoreOffset16 { ptr, value, offset } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128StoreAt { value, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store8Lane { ptr, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store8LaneOffset8 {
+                    ptr,
+                    value,
+                    offset,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store8LaneAt { value, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store16Lane { ptr, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store16LaneOffset8 {
+                    ptr,
+                    value,
+                    offset,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store16LaneAt { value, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store32Lane { ptr, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store32LaneOffset8 {
+                    ptr,
+                    value,
+                    offset,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store32LaneAt { value, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store64Lane { ptr, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store64LaneOffset8 {
+                    ptr,
+                    value,
+                    offset,
+                    lane,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Store64LaneAt { value, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128LoadAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128LoadOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32Zero { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32ZeroAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32ZeroOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load64Zero { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load64ZeroAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load64ZeroOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8Splat { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8SplatAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8SplatOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16Splat { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16SplatAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16SplatOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32Splat { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32SplatAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32SplatOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load64Splat { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load64SplatAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load64SplatOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8x8S { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8x8SAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8x8SOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8x8U { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8x8UAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8x8UOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16x4S { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16x4SAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16x4SOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16x4U { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16x4UAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16x4UOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32x2S { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32x2SAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32x2SOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32x2U { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32x2UAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32x2UOffset16 {
+                    result,
+                    ptr,
+                    offset,
+                } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8Lane { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load8LaneAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16Lane { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load16LaneAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32Lane { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load32LaneAt { result, address } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load64Lane { result, offset_lo } => todo!(),
+                #[cfg(feature = "simd")]
+                Instr::V128Load64LaneAt { result, address } => todo!(),
                 unsupported => panic!("encountered unsupported Wasmi instruction: {unsupported:?}"),
             }
         }
