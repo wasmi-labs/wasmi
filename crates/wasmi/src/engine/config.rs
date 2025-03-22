@@ -184,6 +184,7 @@ impl Config {
         features.set(WasmFeatures::CUSTOM_PAGE_SIZES, false);
         features.set(WasmFeatures::MEMORY64, true);
         features.set(WasmFeatures::WIDE_ARITHMETIC, false);
+        features.set(WasmFeatures::SIMD, cfg!(feature = "simd"));
         features
     }
 
@@ -355,6 +356,17 @@ impl Config {
     /// [`wide-arithmetic`]: https://github.com/WebAssembly/wide-arithmetic
     pub fn wasm_wide_arithmetic(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::WIDE_ARITHMETIC, enable);
+        self
+    }
+
+    /// Enable or disable the [`simd`] Wasm proposal for the [`Config`].
+    ///
+    /// Enabled by default.
+    ///
+    /// [`simd`]: https://github.com/WebAssembly/simd
+    #[cfg(feature = "simd")]
+    pub fn wasm_simd(&mut self, enable: bool) -> &mut Self {
+        self.features.set(WasmFeatures::SIMD, enable);
         self
     }
 
