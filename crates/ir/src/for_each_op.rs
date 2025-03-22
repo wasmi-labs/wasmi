@@ -8036,8 +8036,8 @@ macro_rules! for_each_op {
             V128StoreOffset16 {
                 /// The register storing the `pointer` of the store instruction.
                 ptr: Reg,
-                /// The lower 32-bit of the 64-bit load `offset`.
-                offset_lo: Offset64Lo,
+                /// The 16-bit encoded offset of the `load` instruction.
+                offset: Offset16,
             },
             /// Variant of [`Instruction::V128Store`] with 32-bit immediate address.
             ///
@@ -8051,9 +8051,9 @@ macro_rules! for_each_op {
             V128StoreAt {
                 /// The value to be stored.
                 value: Reg,
-                /// The constant address to store the value.
+                /// The 32-bit constant address to store the value.
                 address: Address32,
-            }
+            },
         }
     };
 }
