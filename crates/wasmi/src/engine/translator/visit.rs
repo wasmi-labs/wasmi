@@ -74,25 +74,11 @@ macro_rules! impl_visit_operator {
     ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         // Wildcard match arm for all the other (yet) unsupported Wasm proposals.
         fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
-            self.unsupported_operator(stringify!($op))
+            self.translate_unsupported_operator(stringify!($op))
         }
         impl_visit_operator!($($rest)*);
     };
     () => {};
-}
-
-impl FuncTranslator {
-    /// Called when translating an unsupported Wasm operator.
-    ///
-    /// # Note
-    ///
-    /// We panic instead of returning an error because unsupported Wasm
-    /// errors should have been filtered out by the validation procedure
-    /// already, therefore encountering an unsupported Wasm operator
-    /// in the function translation procedure can be considered a bug.
-    fn unsupported_operator(&self, name: &str) -> Result<(), Error> {
-        panic!("tried to translate an unsupported Wasm operator: {name}")
-    }
 }
 
 impl<'a> VisitOperator<'a> for FuncTranslator {
