@@ -21,16 +21,16 @@ impl From<[u8; 16]> for V128 {
     }
 }
 
-impl From<i128> for V128 {
-    fn from(value: i128) -> Self {
+impl From<u128> for V128 {
+    fn from(value: u128) -> Self {
         Self(value.to_le_bytes())
     }
 }
 
 impl V128 {
-    /// Creates an `i128` value from the bytes of `self`.
-    pub(crate) fn to_i128(self) -> i128 {
-        i128::from_le_bytes(self.0)
+    /// Returns the `self` as a 128-bit Rust integer.
+    pub fn as_u128(&self) -> u128 {
+        u128::from_ne_bytes(self.0)
     }
 }
 
@@ -1287,7 +1287,7 @@ impl_bitmask_ops! {
 
 /// Executes a Wasm `v128.any_true` instruction.
 pub fn v128_any_true(v128: V128) -> bool {
-    v128.to_i128() != 0
+    v128.as_u128() != 0
 }
 
 /// Executes a Wasm `i32x4.dot_i16x8_s` instruction.
@@ -1314,7 +1314,7 @@ pub fn v128_bitselect(v1: V128, v2: V128, c: V128) -> V128 {
 /// - If `ptr + offset` overflows.
 /// - If `ptr + offset` stores out of bounds from `memory`.
 pub fn v128_store(memory: &mut [u8], ptr: u64, offset: u64, value: V128) -> Result<(), TrapCode> {
-    memory::store(memory, ptr, offset, value.to_i128())
+    memory::store(memory, ptr, offset, value.as_u128())
 }
 
 /// Executes a Wasm `v128.store` instruction.
@@ -1323,7 +1323,7 @@ pub fn v128_store(memory: &mut [u8], ptr: u64, offset: u64, value: V128) -> Resu
 ///
 /// If `address` stores out of bounds from `memory`.
 pub fn v128_store_at(memory: &mut [u8], address: usize, value: V128) -> Result<(), TrapCode> {
-    memory::store_at(memory, address, value.to_i128())
+    memory::store_at(memory, address, value.as_u128())
 }
 
 macro_rules! impl_v128_storeN_lane {
@@ -1424,7 +1424,7 @@ impl_v128_storeN_lane_at! {
 /// - If `ptr + offset` overflows.
 /// - If `ptr + offset` loads out of bounds from `memory`.
 pub fn v128_load(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
-    memory::load::<i128>(memory, ptr, offset).map(V128::from)
+    memory::load::<u128>(memory, ptr, offset).map(V128::from)
 }
 
 /// Executes a Wasmi `v128.load` instruction.
@@ -1433,7 +1433,7 @@ pub fn v128_load(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode>
 ///
 /// If `address` loads out of bounds from `memory`.
 pub fn v128_load_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
-    memory::load_at::<i128>(memory, address).map(V128::from)
+    memory::load_at::<u128>(memory, address).map(V128::from)
 }
 
 macro_rules! impl_v128_loadN_zero_for {
