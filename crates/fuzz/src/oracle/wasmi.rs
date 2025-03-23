@@ -143,6 +143,7 @@ impl From<FuzzValType> for ValType {
             FuzzValType::I64 => Self::I64,
             FuzzValType::F32 => Self::F32,
             FuzzValType::F64 => Self::F64,
+            FuzzValType::V128 => Self::V128,
             FuzzValType::FuncRef => Self::FuncRef,
             FuzzValType::ExternRef => Self::ExternRef,
         }
@@ -156,6 +157,7 @@ impl From<Val> for FuzzVal {
             Val::I64(value) => Self::I64(value),
             Val::F32(value) => Self::F32(value.into()),
             Val::F64(value) => Self::F64(value.into()),
+            Val::V128(value) => Self::V128(value.as_u128()),
             Val::FuncRef(value) => Self::FuncRef {
                 is_null: value.is_null(),
             },
