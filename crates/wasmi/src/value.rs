@@ -23,9 +23,12 @@ impl WithType for UntypedVal {
             ValType::I64 => Val::I64(self.into()),
             ValType::F32 => Val::F32(self.into()),
             ValType::F64 => Val::F64(self.into()),
+            #[cfg(feature = "simd")]
             ValType::V128 => Val::V128(self.into()),
             ValType::FuncRef => Val::FuncRef(self.into()),
             ValType::ExternRef => Val::ExternRef(self.into()),
+            #[cfg(not(feature = "simd"))]
+            unsupported => unimplemented!("encountered unsupported `ValType`: {unsupported:?}"),
         }
     }
 }
@@ -37,9 +40,12 @@ impl From<Val> for UntypedVal {
             Val::I64(value) => value.into(),
             Val::F32(value) => value.into(),
             Val::F64(value) => value.into(),
+            #[cfg(feature = "simd")]
             Val::V128(value) => value.into(),
             Val::FuncRef(value) => value.into(),
             Val::ExternRef(value) => value.into(),
+            #[cfg(not(feature = "simd"))]
+            unsupported => unimplemented!("encountered unsupported `Val`: {unsupported:?}"),
         }
     }
 }
@@ -196,7 +202,6 @@ impl From<ExternRef> for Val {
     }
 }
 
-#[cfg(feature = "simd")]
 impl From<V128> for Val {
     #[inline]
     fn from(value: V128) -> Self {

@@ -88,8 +88,9 @@ where
 }
 
 macro_rules! impl_from_typed_value_for {
-    ( $( impl From<TypedValue> for $ty:ty );* $(;)? ) => {
+    ( $( $( #[$attr:meta] )* impl From<TypedValue> for $ty:ty );* $(;)? ) => {
         $(
+            $( #[$attr] )*
             impl From<TypedVal> for $ty {
                 fn from(typed_value: TypedVal) -> Self {
                     // # Note
@@ -113,6 +114,7 @@ impl_from_typed_value_for! {
     impl From<TypedValue> for u64;
     impl From<TypedValue> for f32;
     impl From<TypedValue> for f64;
+    #[cfg(feature = "simd")]
     impl From<TypedValue> for V128;
 }
 

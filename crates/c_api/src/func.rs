@@ -7,8 +7,11 @@ use crate::{
     wasm_val_vec_t,
 };
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
-use core::{any::Any, ffi::c_void, hint, iter, panic::AssertUnwindSafe, ptr, str};
+use core::{any::Any, ffi::c_void, hint, iter, ptr, str};
 use wasmi::{Error, Extern, Func, FuncRef, Val};
+
+#[cfg(feature = "std")]
+use core::panic::AssertUnwindSafe;
 
 /// A Wasm function.
 ///
