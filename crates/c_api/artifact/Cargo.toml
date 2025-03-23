@@ -28,3 +28,4 @@ wasmi_c_api_impl = { workspace = true }
 [features]
 default = ["std"]
 std = ["wasmi_c_api_impl/std"]
+simd = ["wasmi_c_api_impl/simd"]

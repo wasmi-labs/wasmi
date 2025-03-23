@@ -15,6 +15,9 @@ use wasmi::{
     Val,
 };
 
+#[cfg(feature = "simd")]
+use wasmi::core::simd::V128;
+
 /// A Wasm value.
 ///
 /// Mirrors [`Val`].
@@ -42,6 +45,9 @@ pub union wasm_val_union {
     pub f32: f32,
     /// A Wasm 64-bit float.
     pub f64: f64,
+    /// A Wasm `v128` value.
+    #[cfg(feature = "simd")]
+    pub v128: u128,
     /// A Wasm referenced object.
     pub ref_: *mut wasm_ref_t,
 }
@@ -101,6 +107,13 @@ impl From<Val> for wasm_val_t {
                     u64: value.to_bits(),
                 },
             },
+            #[cfg(feature = "simd")]
+            Val::V128(value) => Self {
+                kind: from_valtype(&ValType::V128),
+                of: wasm_val_union {
+                    v128: value.as_u128(),
+                },
+            },
             Val::FuncRef(funcref) => Self {
                 kind: from_valtype(&ValType::FuncRef),
                 of: wasm_val_union {
@@ -133,6 +146,8 @@ impl wasm_val_t {
             ValType::I64 => Val::from(unsafe { self.of.i64 }),
             ValType::F32 => Val::from(F32::from(unsafe { self.of.f32 })),
             ValType::F64 => Val::from(F64::from(unsafe { self.of.f64 })),
+            #[cfg(feature = "simd")]
+            ValType::V128 => Val::from(V128::from(unsafe { self.of.v128 })),
             ValType::FuncRef => match unsafe { self.of.ref_ }.is_null() {
                 true => Val::FuncRef(FuncRef::null()),
                 false => ref_to_val(unsafe { &*self.of.ref_ }),
