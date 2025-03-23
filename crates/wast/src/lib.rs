@@ -1,7 +1,8 @@
 use anyhow::{bail, Context as _, Result};
+use core::array;
 use std::collections::HashMap;
 use wasmi::{
-    core::{ValType, F32, F64},
+    core::{ValType, F32, F64, V128},
     Config,
     Engine,
     Extern,
@@ -18,7 +19,7 @@ use wasmi::{
     Val,
 };
 use wast::{
-    core::{AbstractHeapType, HeapType, NanPattern, WastArgCore, WastRetCore},
+    core::{AbstractHeapType, HeapType, NanPattern, V128Pattern, WastArgCore, WastRetCore},
     lexer::Lexer,
     parser::ParseBuffer,
     token::Id,
@@ -160,6 +161,10 @@ impl WastRunner {
             WastArgCore::I64(arg) => Val::I64(*arg),
             WastArgCore::F32(arg) => Val::F32(F32::from_bits(arg.bits)),
             WastArgCore::F64(arg) => Val::F64(F64::from_bits(arg.bits)),
+            WastArgCore::V128(arg) => {
+                let v128: V128 = u128::from_le_bytes(arg.to_le_bytes()).into();
+                Val::V128(v128)
+            }
             WastArgCore::RefNull(HeapType::Abstract {
                 ty: AbstractHeapType::Func,
                 ..
@@ -387,14 +392,9 @@ impl WastRunner {
         let is_equal = match (result, expected) {
             (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
             (Val::I64(result), WastRetCore::I64(expected)) => result == expected,
-            (Val::F32(result), WastRetCore::F32(expected)) => match expected {
-                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.to_float().is_nan(),
-                NanPattern::Value(expected) => result.to_bits() == expected.bits,
-            },
-            (Val::F64(result), WastRetCore::F64(expected)) => match expected {
-                NanPattern::CanonicalNan | NanPattern::ArithmeticNan => result.to_float().is_nan(),
-                NanPattern::Value(expected) => result.to_bits() == expected.bits,
-            },
+            (Val::F32(result), WastRetCore::F32(expected)) => f32_matches(result, expected),
+            (Val::F64(result), WastRetCore::F64(expected)) => f64_matches(result, expected),
+            (Val::V128(result), WastRetCore::V128(expected)) => v128_matches(result, expected),
             (
                 Val::FuncRef(funcref),
                 WastRetCore::RefNull(Some(HeapType::Abstract {
@@ -558,4 +558,80 @@ impl WastRunner {
         }
         Ok(())
     }
+}
+
+/// Returns `true` if `actual` matches `expected`.
+fn f32_matches(actual: &F32, expected: &NanPattern<wast::token::F32>) -> bool {
+    match expected {
+        NanPattern::CanonicalNan | NanPattern::ArithmeticNan => actual.to_float().is_nan(),
+        NanPattern::Value(expected) => actual.to_bits() == expected.bits,
+    }
+}
+
+/// Returns `true` if `actual` matches `expected`.
+fn f64_matches(actual: &F64, expected: &NanPattern<wast::token::F64>) -> bool {
+    match expected {
+        NanPattern::CanonicalNan | NanPattern::ArithmeticNan => actual.to_float().is_nan(),
+        NanPattern::Value(expected) => actual.to_bits() == expected.bits,
+    }
+}
+
+/// Returns `true` if `actual` matches `expected`.
+fn v128_matches(actual: &V128, expected: &V128Pattern) -> bool {
+    match expected {
+        V128Pattern::I8x16(expected) => {
+            let actual: [i8; 16] = array::from_fn(|i| extract_lane_as_i8(actual, i));
+            actual == *expected
+        }
+        V128Pattern::I16x8(expected) => {
+            let actual: [i16; 8] = array::from_fn(|i| extract_lane_as_i16(actual, i));
+            actual == *expected
+        }
+        V128Pattern::I32x4(expected) => {
+            let actual: [i32; 4] = array::from_fn(|i| extract_lane_as_i32(actual, i));
+            actual == *expected
+        }
+        V128Pattern::I64x2(expected) => {
+            let actual: [i64; 2] = array::from_fn(|i| extract_lane_as_i64(actual, i));
+            actual == *expected
+        }
+        V128Pattern::F32x4(expected) => {
+            for (i, expected) in expected.iter().enumerate() {
+                let bits = extract_lane_as_i32(actual, i) as u32;
+                if !f32_matches(&F32::from_bits(bits), expected) {
+                    return false;
+                }
+            }
+            true
+        }
+        V128Pattern::F64x2(expected) => {
+            for (i, expected) in expected.iter().enumerate() {
+                let bits = extract_lane_as_i64(actual, i) as u64;
+                if !f64_matches(&F64::from_bits(bits), expected) {
+                    return false;
+                }
+            }
+            true
+        }
+    }
+}
+
+/// Returns the `i8` at `lane` from `v128`.
+fn extract_lane_as_i8(v128: &V128, lane: usize) -> i8 {
+    (v128.as_u128() >> (lane * 8)) as i8
+}
+
+/// Returns the `i16` at `lane` from `v128`.
+fn extract_lane_as_i16(v128: &V128, lane: usize) -> i16 {
+    (v128.as_u128() >> (lane * 16)) as i16
+}
+
+/// Returns the `i32` at `lane` from `v128`.
+fn extract_lane_as_i32(v128: &V128, lane: usize) -> i32 {
+    (v128.as_u128() >> (lane * 32)) as i32
+}
+
+/// Returns the `i64` at `lane` from `v128`.
+fn extract_lane_as_i64(v128: &V128, lane: usize) -> i64 {
+    (v128.as_u128() >> (lane * 64)) as i64
 }
