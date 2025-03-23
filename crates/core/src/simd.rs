@@ -15,12 +15,6 @@ macro_rules! op {
 #[repr(transparent)]
 pub struct V128([u8; 16]);
 
-impl From<[u8; 16]> for V128 {
-    fn from(bytes: [u8; 16]) -> Self {
-        Self(bytes)
-    }
-}
-
 impl From<u128> for V128 {
     fn from(value: u128) -> Self {
         Self(value.to_le_bytes())
