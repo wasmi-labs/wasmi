@@ -15,6 +15,9 @@ pub enum ValType {
     F32,
     /// 64-bit IEEE 754-2008 floating point number.
     F64,
+    /// A 128-bit Wasm `simd` proposal vector.
+    #[cfg(feature = "simd")]
+    V128,
     /// A nullable function reference.
     FuncRef,
     /// A nullable external reference.
@@ -27,6 +30,10 @@ impl ValType {
     /// This is `true` for [`ValType::I32`], [`ValType::I64`],
     /// [`ValType::F32`] and [`ValType::F64`].
     pub fn is_num(&self) -> bool {
+        #[cfg(feature = "simd")]
+        if matches!(self, Self::V128) {
+            return true;
+        }
         matches!(self, Self::I32 | Self::I64 | Self::F32 | Self::F64)
     }
 
