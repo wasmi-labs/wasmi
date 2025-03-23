@@ -1,4 +1,4 @@
-use crate::{wasm, TrapCode, UntypedVal, ValType, F32, F64};
+use crate::{wasm, TrapCode, UntypedVal, ValType, F32, F64, V128};
 
 /// Types that are associated to a static Wasm type.
 pub trait Typed {
@@ -24,6 +24,7 @@ impl_typed_for! {
     f64 => ValType::F64;
     F32 => ValType::F32;
     F64 => ValType::F64;
+    V128 => ValType::V128;
 }
 
 impl From<TypedVal> for UntypedVal {
@@ -112,6 +113,7 @@ impl_from_typed_value_for! {
     impl From<TypedValue> for u64;
     impl From<TypedValue> for f32;
     impl From<TypedValue> for f64;
+    impl From<TypedValue> for V128;
 }
 
 macro_rules! impl_forwarding {

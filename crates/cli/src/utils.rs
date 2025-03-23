@@ -1,9 +1,7 @@
 use crate::display::DisplayValueType;
 use anyhow::{anyhow, bail, Error};
-#[cfg(feature = "simd")]
-use wasmi::core::simd::V128;
 use wasmi::{
-    core::{ValType, F32, F64},
+    core::{ValType, F32, F64, V128},
     FuncType,
     Val,
 };
@@ -58,7 +56,6 @@ pub fn decode_func_args(ty: &FuncType, args: &[String]) -> Result<Box<[Val]>, Er
                     .map(F64::from)
                     .map(Val::from)
                     .map_err(make_err!()),
-                #[cfg(feature = "simd")]
                 ValType::V128 => arg
                     .parse::<u128>()
                     .map(V128::from)

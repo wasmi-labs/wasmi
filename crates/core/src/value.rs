@@ -16,7 +16,6 @@ pub enum ValType {
     /// 64-bit IEEE 754-2008 floating point number.
     F64,
     /// A 128-bit Wasm `simd` proposal vector.
-    #[cfg(feature = "simd")]
     V128,
     /// A nullable function reference.
     FuncRef,
@@ -30,10 +29,6 @@ impl ValType {
     /// This is `true` for [`ValType::I32`], [`ValType::I64`],
     /// [`ValType::F32`] and [`ValType::F64`].
     pub fn is_num(&self) -> bool {
-        #[cfg(feature = "simd")]
-        if matches!(self, Self::V128) {
-            return true;
-        }
         matches!(self, Self::I32 | Self::I64 | Self::F32 | Self::F64)
     }
 
@@ -481,6 +476,24 @@ macro_rules! impl_wasm_float {
             }
         }
     };
+}
+
+/// The Wasm `simd` proposal's `v128` type.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct V128([u8; 16]);
+
+impl From<u128> for V128 {
+    fn from(value: u128) -> Self {
+        Self(value.to_le_bytes())
+    }
+}
+
+impl V128 {
+    /// Returns the `self` as a 128-bit Rust integer.
+    pub fn as_u128(&self) -> u128 {
+        u128::from_ne_bytes(self.0)
+    }
 }
 
 #[cfg(feature = "std")]

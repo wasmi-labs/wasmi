@@ -1,13 +1,11 @@
+//! Defines the entire Wasm `simd` proposal API.
+
 use crate::{
     memory::{self, ExtendInto},
     simd,
     wasm,
-    ReadAs,
     TrapCode,
-    TypedVal,
-    UntypedVal,
-    ValType,
-    WriteAs,
+    V128,
 };
 use core::{
     array,
@@ -18,73 +16,6 @@ macro_rules! op {
     ($ty:ty, $op:tt) => {{
         |lhs: $ty, rhs: $ty| lhs $op rhs
     }};
-}
-
-/// The Wasm `simd` proposal's `v128` type.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct V128([u8; 16]);
-
-impl From<u128> for V128 {
-    fn from(value: u128) -> Self {
-        Self(value.to_le_bytes())
-    }
-}
-
-impl V128 {
-    /// Returns the `self` as a 128-bit Rust integer.
-    pub fn as_u128(&self) -> u128 {
-        u128::from_ne_bytes(self.0)
-    }
-}
-
-impl From<UntypedVal> for V128 {
-    fn from(value: UntypedVal) -> Self {
-        let u128 = (u128::from(value.hi64) << 64) | (u128::from(value.lo64));
-        Self(u128.to_le_bytes())
-    }
-}
-
-impl From<TypedVal> for V128 {
-    fn from(typed_value: TypedVal) -> Self {
-        // # Note
-        //
-        // We only use a `debug_assert` here instead of a proper `assert`
-        // since the whole translation process assumes that Wasm validation
-        // was already performed and thus type checking does not necessarily
-        // need to happen redundantly outside of debug builds.
-        debug_assert!(matches!(typed_value.ty(), ValType::V128));
-        Self::from(UntypedVal::from(typed_value))
-    }
-}
-
-impl From<V128> for TypedVal {
-    fn from(value: V128) -> Self {
-        Self::new(ValType::V128, value.into())
-    }
-}
-
-impl From<V128> for UntypedVal {
-    fn from(value: V128) -> Self {
-        let u128 = u128::from_le_bytes(value.0);
-        let lo64 = u128 as u64;
-        let hi64 = (u128 >> 64) as u64;
-        Self { lo64, hi64 }
-    }
-}
-
-impl ReadAs<V128> for UntypedVal {
-    fn read_as(&self) -> V128 {
-        // Note: we can re-use the `From` impl since both types are of equal size.
-        V128::from(*self)
-    }
-}
-
-impl WriteAs<V128> for UntypedVal {
-    fn write_as(&mut self, value: V128) {
-        // Note: we can re-use the `From` impl since both types are of equal size.
-        *self = UntypedVal::from(value);
-    }
 }
 
 /// An error that may occur when constructing an out of bounds lane index.

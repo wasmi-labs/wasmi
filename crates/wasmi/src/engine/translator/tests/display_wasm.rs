@@ -1,6 +1,7 @@
-#[cfg(feature = "simd")]
-use crate::core::simd::V128;
-use crate::{core::ValType, Val};
+use crate::{
+    core::{ValType, V128},
+    Val,
+};
 use core::{
     fmt,
     fmt::Display,
@@ -69,7 +70,6 @@ macro_rules! impl_display_for_float {
 impl_display_for_float!(f32);
 impl_display_for_float!(f64);
 
-#[cfg(feature = "simd")]
 impl Display for DisplayWasm<V128> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let bytes: [u8; 16] = self.0.as_u128().to_ne_bytes();

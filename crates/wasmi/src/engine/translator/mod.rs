@@ -2385,9 +2385,7 @@ impl FuncTranslator {
             ValType::I32 | ValType::F32 => self.translate_select_32(result, condition, lhs, rhs),
             ValType::I64 => self.translate_select_i64(result, condition, lhs, rhs),
             ValType::F64 => self.translate_select_f64(result, condition, lhs, rhs),
-            #[cfg(feature = "simd")]
-            ValType::V128 => self.translate_select_generic(result, condition, lhs, rhs),
-            ValType::FuncRef | ValType::ExternRef => {
+            ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
                 self.translate_select_generic(result, condition, lhs, rhs)
             }
         }
@@ -2820,12 +2818,7 @@ impl FuncTranslator {
                         Instruction::register(register)
                     }
                 },
-                #[cfg(feature = "simd")]
-                ValType::V128 => {
-                    let register = self.alloc.stack.provider2reg(&value)?;
-                    Instruction::register(register)
-                }
-                ValType::ExternRef | ValType::FuncRef => {
+                ValType::V128 | ValType::ExternRef | ValType::FuncRef => {
                     let register = self.alloc.stack.provider2reg(&value)?;
                     Instruction::register(register)
                 }
