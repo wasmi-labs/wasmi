@@ -944,6 +944,18 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Called when translating an unsupported Wasm operator.
+    ///
+    /// # Note
+    ///
+    /// We panic instead of returning an error because unsupported Wasm
+    /// errors should have been filtered out by the validation procedure
+    /// already, therefore encountering an unsupported Wasm operator
+    /// in the function translation procedure can be considered a bug.
+    pub fn translate_unsupported_operator(&self, name: &str) -> Result<(), Error> {
+        panic!("tried to translate an unsupported Wasm operator: {name}")
+    }
+
     /// Convenience function to copy the parameters when branching to a control frame.
     fn translate_copy_branch_params(&mut self, branch_params: BoundedRegSpan) -> Result<(), Error> {
         if branch_params.is_empty() {
