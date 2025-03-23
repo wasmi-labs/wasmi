@@ -34,6 +34,10 @@ pub enum wasm_valkind_t {
     ///
     /// Wraps [`ValType::F64`].
     WASM_F64 = 3,
+    /// A Wasm `v128` value type.
+    ///
+    /// Wraps [`ValType::V128`].
+    WASM_V128 = 4,
     /// A Wasm external reference type.
     ///
     /// Wraps [`ValType::ExternRef`].
@@ -67,6 +71,7 @@ pub(crate) fn into_valtype(kind: wasm_valkind_t) -> ValType {
         wasm_valkind_t::WASM_I64 => ValType::I64,
         wasm_valkind_t::WASM_F32 => ValType::F32,
         wasm_valkind_t::WASM_F64 => ValType::F64,
+        wasm_valkind_t::WASM_V128 => ValType::V128,
         wasm_valkind_t::WASM_EXTERNREF => ValType::ExternRef,
         wasm_valkind_t::WASM_FUNCREF => ValType::FuncRef,
     }
@@ -79,6 +84,7 @@ pub(crate) fn from_valtype(ty: &ValType) -> wasm_valkind_t {
         ValType::I64 => wasm_valkind_t::WASM_I64,
         ValType::F32 => wasm_valkind_t::WASM_F32,
         ValType::F64 => wasm_valkind_t::WASM_F64,
+        ValType::V128 => wasm_valkind_t::WASM_V128,
         ValType::ExternRef => wasm_valkind_t::WASM_EXTERNREF,
         ValType::FuncRef => wasm_valkind_t::WASM_FUNCREF,
     }

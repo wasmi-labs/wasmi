@@ -1,7 +1,7 @@
 use crate::display::DisplayValueType;
 use anyhow::{anyhow, bail, Error};
 use wasmi::{
-    core::{ValType, F32, F64},
+    core::{ValType, F32, F64, V128},
     FuncType,
     Val,
 };
@@ -54,6 +54,11 @@ pub fn decode_func_args(ty: &FuncType, args: &[String]) -> Result<Box<[Val]>, Er
                 ValType::F64 => arg
                     .parse::<f64>()
                     .map(F64::from)
+                    .map(Val::from)
+                    .map_err(make_err!()),
+                ValType::V128 => arg
+                    .parse::<u128>()
+                    .map(V128::from)
                     .map(Val::from)
                     .map_err(make_err!()),
                 ValType::FuncRef => {

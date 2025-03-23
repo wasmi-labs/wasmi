@@ -1,4 +1,7 @@
-use crate::{core::ValType, Val};
+use crate::{
+    core::{ValType, V128},
+    Val,
+};
 use core::{
     fmt,
     fmt::Display,
@@ -67,6 +70,17 @@ macro_rules! impl_display_for_float {
 impl_display_for_float!(f32);
 impl_display_for_float!(f64);
 
+impl Display for DisplayWasm<V128> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let bytes: [u8; 16] = self.0.as_u128().to_ne_bytes();
+        write!(f, "i8x16")?;
+        for byte in bytes {
+            write!(f, " {byte}")?;
+        }
+        Ok(())
+    }
+}
+
 /// Wasm [`Display`] wrapper for [`ValType`].
 pub struct DisplayValueType(ValType);
 
@@ -83,6 +97,7 @@ impl Display for DisplayValueType {
             ValType::I32 => write!(f, "i32"),
             ValType::F32 => write!(f, "f32"),
             ValType::F64 => write!(f, "f64"),
+            ValType::V128 => write!(f, "v128"),
             ValType::FuncRef => write!(f, "funcref"),
             ValType::ExternRef => write!(f, "externref"),
         }
@@ -105,6 +120,7 @@ impl Display for DisplayValue {
             Val::I32(value) => write!(f, "{value}"),
             Val::F32(value) => write!(f, "{}", DisplayWasm::from(f32::from(value))),
             Val::F64(value) => write!(f, "{}", DisplayWasm::from(f64::from(value))),
+            Val::V128(value) => write!(f, "{}", DisplayWasm::from(value)),
             Val::FuncRef(value) => {
                 if value.is_null() {
                     return write!(f, "null");

@@ -433,8 +433,9 @@ impl InstrEncoder {
                     Some(value) => Instruction::copy_f64imm32(result, value),
                     None => copy_imm(stack, result, value)?,
                 },
-                ValType::FuncRef => copy_imm(stack, result, value)?,
-                ValType::ExternRef => copy_imm(stack, result, value)?,
+                ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
+                    copy_imm(stack, result, value)?
+                }
             },
         };
         self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
@@ -602,7 +603,7 @@ impl InstrEncoder {
                     Some(value) => Instruction::return_f64imm32(value),
                     None => Instruction::return_reg(stack.alloc_const(*value)?),
                 },
-                ValType::FuncRef | ValType::ExternRef => {
+                ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
                     Instruction::return_reg(stack.alloc_const(*value)?)
                 }
             },
@@ -670,7 +671,7 @@ impl InstrEncoder {
                     Some(value) => Instruction::return_nez_f64imm32(condition, value),
                     None => Instruction::return_nez_reg(condition, stack.alloc_const(*value)?),
                 },
-                ValType::FuncRef | ValType::ExternRef => {
+                ValType::V128 | ValType::FuncRef | ValType::ExternRef => {
                     Instruction::return_nez_reg(condition, stack.alloc_const(*value)?)
                 }
             },

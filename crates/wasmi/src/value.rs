@@ -1,5 +1,5 @@
 use crate::{
-    core::{UntypedVal, ValType, F32, F64},
+    core::{UntypedVal, ValType, F32, F64, V128},
     ExternRef,
     Func,
     FuncRef,
@@ -23,8 +23,12 @@ impl WithType for UntypedVal {
             ValType::I64 => Val::I64(self.into()),
             ValType::F32 => Val::F32(self.into()),
             ValType::F64 => Val::F64(self.into()),
+            #[cfg(feature = "simd")]
+            ValType::V128 => Val::V128(self.into()),
             ValType::FuncRef => Val::FuncRef(self.into()),
             ValType::ExternRef => Val::ExternRef(self.into()),
+            #[cfg(not(feature = "simd"))]
+            unsupported => unimplemented!("encountered unsupported `ValType`: {unsupported:?}"),
         }
     }
 }
@@ -36,8 +40,12 @@ impl From<Val> for UntypedVal {
             Val::I64(value) => value.into(),
             Val::F32(value) => value.into(),
             Val::F64(value) => value.into(),
+            #[cfg(feature = "simd")]
+            Val::V128(value) => value.into(),
             Val::FuncRef(value) => value.into(),
             Val::ExternRef(value) => value.into(),
+            #[cfg(not(feature = "simd"))]
+            unsupported => unimplemented!("encountered unsupported `Val`: {unsupported:?}"),
         }
     }
 }
@@ -59,6 +67,8 @@ pub enum Val {
     F32(F32),
     /// Value of 64-bit IEEE 754-2008 floating point number.
     F64(F64),
+    /// 128-bit Wasm `simd` proposal vector.
+    V128(V128),
     /// A nullable [`Func`][`crate::Func`] reference, a.k.a. [`FuncRef`].
     FuncRef(FuncRef),
     /// A nullable external object reference, a.k.a. [`ExternRef`].
@@ -74,6 +84,7 @@ impl Val {
             ValType::I64 => Self::I64(0),
             ValType::F32 => Self::F32(0f32.into()),
             ValType::F64 => Self::F64(0f64.into()),
+            ValType::V128 => Self::V128(V128::from(0_u128)),
             ValType::FuncRef => Self::from(FuncRef::null()),
             ValType::ExternRef => Self::from(ExternRef::null()),
         }
@@ -87,6 +98,7 @@ impl Val {
             Self::I64(_) => ValType::I64,
             Self::F32(_) => ValType::F32,
             Self::F64(_) => ValType::F64,
+            Self::V128(_) => ValType::V128,
             Self::FuncRef(_) => ValType::FuncRef,
             Self::ExternRef(_) => ValType::ExternRef,
         }
@@ -187,5 +199,12 @@ impl From<ExternRef> for Val {
     #[inline]
     fn from(externref: ExternRef) -> Self {
         Self::ExternRef(externref)
+    }
+}
+
+impl From<V128> for Val {
+    #[inline]
+    fn from(value: V128) -> Self {
+        Self::V128(value)
     }
 }

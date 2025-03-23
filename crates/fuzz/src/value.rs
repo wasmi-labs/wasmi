@@ -1,5 +1,5 @@
 use arbitrary::{Arbitrary, Unstructured};
-use wasmi::core::ValType;
+use wasmi::core::{ValType, V128};
 
 /// A Wasm value type supported by the Wasmi fuzzing infrastructure.
 #[derive(Debug, Copy, Clone)]
@@ -12,6 +12,8 @@ pub enum FuzzValType {
     F32,
     /// The Wasm `f64` type.
     F64,
+    /// The Wasm `v128` type.
+    V128,
     /// The Wasm `funcref` type.
     FuncRef,
     /// The Wasm `externref` type.
@@ -25,6 +27,7 @@ impl From<ValType> for FuzzValType {
             ValType::I64 => Self::I64,
             ValType::F32 => Self::F32,
             ValType::F64 => Self::F64,
+            ValType::V128 => Self::V128,
             ValType::FuncRef => Self::FuncRef,
             ValType::ExternRef => Self::ExternRef,
         }
@@ -38,6 +41,7 @@ pub enum FuzzVal {
     I64(i64),
     F32(f32),
     F64(f64),
+    V128(u128),
     FuncRef { is_null: bool },
     ExternRef { is_null: bool },
 }
@@ -66,6 +70,7 @@ impl FuzzVal {
             FuzzValType::I64 => Self::I64(i64::arbitrary(u).unwrap_or_default()),
             FuzzValType::F32 => Self::F32(f32::arbitrary(u).unwrap_or_default()),
             FuzzValType::F64 => Self::F64(f64::arbitrary(u).unwrap_or_default()),
+            FuzzValType::V128 => Self::V128(u128::arbitrary(u).unwrap_or_default()),
             FuzzValType::FuncRef => Self::FuncRef { is_null: true },
             FuzzValType::ExternRef => Self::ExternRef { is_null: true },
         }
@@ -79,6 +84,7 @@ impl From<FuzzVal> for wasmi::Val {
             FuzzVal::I64(value) => Self::I64(value),
             FuzzVal::F32(value) => Self::F32(value.into()),
             FuzzVal::F64(value) => Self::F64(value.into()),
+            FuzzVal::V128(value) => Self::V128(V128::from(value)),
             FuzzVal::FuncRef { is_null } => {
                 assert!(is_null);
                 Self::FuncRef(wasmi::FuncRef::null())

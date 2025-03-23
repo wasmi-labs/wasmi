@@ -130,6 +130,9 @@ impl From<FuzzVal> for Value {
             FuzzVal::I64(value) => Self::I64(value),
             FuzzVal::F32(value) => Self::F32(value.into()),
             FuzzVal::F64(value) => Self::F64(value.into()),
+            FuzzVal::V128(_value) => {
+                unimplemented!("Wasmi (stack) does not support Wasm `simd` proposal")
+            }
             FuzzVal::FuncRef { is_null } => {
                 assert!(is_null);
                 Self::FuncRef(FuncRef::null())

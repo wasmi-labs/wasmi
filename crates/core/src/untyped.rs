@@ -1,3 +1,5 @@
+#[cfg(feature = "simd")]
+use crate::V128;
 use crate::{F32, F64};
 use core::fmt::{self, Display};
 
@@ -56,6 +58,14 @@ macro_rules! impl_read_as_for_float {
 }
 impl_read_as_for_float!(f32, f64);
 
+#[cfg(feature = "simd")]
+impl ReadAs<V128> for UntypedVal {
+    fn read_as(&self) -> V128 {
+        // Note: we can re-use the `From` impl since both types are of equal size.
+        V128::from(*self)
+    }
+}
+
 impl ReadAs<bool> for UntypedVal {
     fn read_as(&self) -> bool {
         self.read_lo64() != 0
@@ -111,6 +121,14 @@ macro_rules! impl_write_as_for_float {
     };
 }
 impl_write_as_for_float!(f32, f64);
+
+#[cfg(feature = "simd")]
+impl WriteAs<V128> for UntypedVal {
+    fn write_as(&mut self, value: V128) {
+        // Note: we can re-use the `From` impl since both types are of equal size.
+        *self = UntypedVal::from(value);
+    }
+}
 
 impl UntypedVal {
     /// Reads the low 64-bit of the [`UntypedVal`].
@@ -169,6 +187,24 @@ macro_rules! impl_from_untyped_for_float {
     };
 }
 impl_from_untyped_for_float!(f32, f64, F32, F64);
+
+#[cfg(feature = "simd")]
+impl From<UntypedVal> for V128 {
+    fn from(value: UntypedVal) -> Self {
+        let u128 = (u128::from(value.hi64) << 64) | (u128::from(value.lo64));
+        Self::from(u128)
+    }
+}
+
+#[cfg(feature = "simd")]
+impl From<V128> for UntypedVal {
+    fn from(value: V128) -> Self {
+        let u128 = value.as_u128();
+        let lo64 = u128 as u64;
+        let hi64 = (u128 >> 64) as u64;
+        Self { lo64, hi64 }
+    }
+}
 
 impl From<UntypedVal> for bool {
     fn from(untyped: UntypedVal) -> Self {

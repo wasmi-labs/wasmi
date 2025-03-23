@@ -3,7 +3,7 @@ use crate::{
     FuzzError,
     FuzzVal,
 };
-use wasmtime::{Config, Engine, Instance, Linker, Module, Store, StoreLimitsBuilder, Val};
+use wasmtime::{Config, Engine, Instance, Linker, Module, Store, StoreLimitsBuilder, Val, V128};
 
 /// Differential fuzzing backend for Wasmtime.
 pub struct WasmtimeOracle {
@@ -124,6 +124,7 @@ impl From<FuzzVal> for Val {
             FuzzVal::I64(value) => Self::I64(value),
             FuzzVal::F32(value) => Self::F32(value.to_bits()),
             FuzzVal::F64(value) => Self::F64(value.to_bits()),
+            FuzzVal::V128(value) => Self::V128(V128::from(value)),
             FuzzVal::FuncRef { is_null } => {
                 assert!(is_null);
                 Self::FuncRef(None)

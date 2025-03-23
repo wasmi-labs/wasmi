@@ -26,6 +26,7 @@ assert_cmd = "2.0.7"
 default = []
 hash-collections = ["wasmi/hash-collections"]
 prefer-btree-collections = ["wasmi/prefer-btree-collections"]
+simd = ["wasmi/simd"]
 
 # We need to put this [profile.release] section due to this bug in Cargo:
 # https://github.com/rust-lang/cargo/issues/8264

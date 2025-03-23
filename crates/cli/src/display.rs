@@ -18,6 +18,7 @@ impl Display for DisplayValueType<'_> {
             ValType::I64 => write!(f, "i64"),
             ValType::F32 => write!(f, "f32"),
             ValType::F64 => write!(f, "f64"),
+            ValType::V128 => write!(f, "v128"),
             ValType::FuncRef => write!(f, "funcref"),
             ValType::ExternRef => write!(f, "externref"),
         }
@@ -40,6 +41,7 @@ impl fmt::Display for DisplayValue<'_> {
             Val::I64(value) => write!(f, "{value}"),
             Val::F32(value) => write!(f, "{value}"),
             Val::F64(value) => write!(f, "{value}"),
+            Val::V128(value) => write!(f, "0x{:032X}", value.as_u128()),
             Val::FuncRef(value) => panic!("cannot display funcref values but found {value:?}"),
             Val::ExternRef(value) => {
                 panic!("cannot display externref values but found {value:?}")

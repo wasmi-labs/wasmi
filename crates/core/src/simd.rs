@@ -1,4 +1,12 @@
-use crate::{memory, memory::ExtendInto, simd, wasm, ReadAs, TrapCode, UntypedVal, WriteAs};
+//! Defines the entire Wasm `simd` proposal API.
+
+use crate::{
+    memory::{self, ExtendInto},
+    simd,
+    wasm,
+    TrapCode,
+    V128,
+};
 use core::{
     array,
     ops::{BitAnd, BitOr, BitXor, Neg, Not},
@@ -8,60 +16,6 @@ macro_rules! op {
     ($ty:ty, $op:tt) => {{
         |lhs: $ty, rhs: $ty| lhs $op rhs
     }};
-}
-
-/// The Wasm `simd` proposal's `v128` type.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct V128([u8; 16]);
-
-impl From<[u8; 16]> for V128 {
-    fn from(bytes: [u8; 16]) -> Self {
-        Self(bytes)
-    }
-}
-
-impl From<i128> for V128 {
-    fn from(value: i128) -> Self {
-        Self(value.to_le_bytes())
-    }
-}
-
-impl V128 {
-    /// Creates an `i128` value from the bytes of `self`.
-    pub(crate) fn to_i128(self) -> i128 {
-        i128::from_le_bytes(self.0)
-    }
-}
-
-impl From<UntypedVal> for V128 {
-    fn from(value: UntypedVal) -> Self {
-        let u128 = (u128::from(value.hi64) << 64) | (u128::from(value.lo64));
-        Self(u128.to_le_bytes())
-    }
-}
-
-impl From<V128> for UntypedVal {
-    fn from(value: V128) -> Self {
-        let u128 = u128::from_le_bytes(value.0);
-        let lo64 = u128 as u64;
-        let hi64 = (u128 >> 64) as u64;
-        Self { lo64, hi64 }
-    }
-}
-
-impl ReadAs<V128> for UntypedVal {
-    fn read_as(&self) -> V128 {
-        // Note: we can re-use the `From` impl since both types are of equal size.
-        V128::from(*self)
-    }
-}
-
-impl WriteAs<V128> for UntypedVal {
-    fn write_as(&mut self, value: V128) {
-        // Note: we can re-use the `From` impl since both types are of equal size.
-        *self = UntypedVal::from(value);
-    }
 }
 
 /// An error that may occur when constructing an out of bounds lane index.
@@ -1287,7 +1241,7 @@ impl_bitmask_ops! {
 
 /// Executes a Wasm `v128.any_true` instruction.
 pub fn v128_any_true(v128: V128) -> bool {
-    v128.to_i128() != 0
+    v128.as_u128() != 0
 }
 
 /// Executes a Wasm `i32x4.dot_i16x8_s` instruction.
@@ -1314,7 +1268,7 @@ pub fn v128_bitselect(v1: V128, v2: V128, c: V128) -> V128 {
 /// - If `ptr + offset` overflows.
 /// - If `ptr + offset` stores out of bounds from `memory`.
 pub fn v128_store(memory: &mut [u8], ptr: u64, offset: u64, value: V128) -> Result<(), TrapCode> {
-    memory::store(memory, ptr, offset, value.to_i128())
+    memory::store(memory, ptr, offset, value.as_u128())
 }
 
 /// Executes a Wasm `v128.store` instruction.
@@ -1323,7 +1277,7 @@ pub fn v128_store(memory: &mut [u8], ptr: u64, offset: u64, value: V128) -> Resu
 ///
 /// If `address` stores out of bounds from `memory`.
 pub fn v128_store_at(memory: &mut [u8], address: usize, value: V128) -> Result<(), TrapCode> {
-    memory::store_at(memory, address, value.to_i128())
+    memory::store_at(memory, address, value.as_u128())
 }
 
 macro_rules! impl_v128_storeN_lane {
@@ -1424,7 +1378,7 @@ impl_v128_storeN_lane_at! {
 /// - If `ptr + offset` overflows.
 /// - If `ptr + offset` loads out of bounds from `memory`.
 pub fn v128_load(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode> {
-    memory::load::<i128>(memory, ptr, offset).map(V128::from)
+    memory::load::<u128>(memory, ptr, offset).map(V128::from)
 }
 
 /// Executes a Wasmi `v128.load` instruction.
@@ -1433,7 +1387,7 @@ pub fn v128_load(memory: &[u8], ptr: u64, offset: u64) -> Result<V128, TrapCode>
 ///
 /// If `address` loads out of bounds from `memory`.
 pub fn v128_load_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
-    memory::load_at::<i128>(memory, address).map(V128::from)
+    memory::load_at::<u128>(memory, address).map(V128::from)
 }
 
 macro_rules! impl_v128_loadN_zero_for {
