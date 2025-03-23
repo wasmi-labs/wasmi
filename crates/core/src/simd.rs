@@ -1,4 +1,14 @@
-use crate::{memory, memory::ExtendInto, simd, wasm, ReadAs, TrapCode, UntypedVal, WriteAs};
+use crate::{
+    memory::{self, ExtendInto},
+    simd,
+    wasm,
+    ReadAs,
+    TrapCode,
+    TypedVal,
+    UntypedVal,
+    ValType,
+    WriteAs,
+};
 use core::{
     array,
     ops::{BitAnd, BitOr, BitXor, Neg, Not},
@@ -32,6 +42,25 @@ impl From<UntypedVal> for V128 {
     fn from(value: UntypedVal) -> Self {
         let u128 = (u128::from(value.hi64) << 64) | (u128::from(value.lo64));
         Self(u128.to_le_bytes())
+    }
+}
+
+impl From<TypedVal> for V128 {
+    fn from(typed_value: TypedVal) -> Self {
+        // # Note
+        //
+        // We only use a `debug_assert` here instead of a proper `assert`
+        // since the whole translation process assumes that Wasm validation
+        // was already performed and thus type checking does not necessarily
+        // need to happen redundantly outside of debug builds.
+        debug_assert!(matches!(typed_value.ty(), ValType::V128));
+        Self::from(UntypedVal::from(typed_value))
+    }
+}
+
+impl From<V128> for TypedVal {
+    fn from(value: V128) -> Self {
+        Self::new(ValType::V128, value.into())
     }
 }
 
