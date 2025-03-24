@@ -8,7 +8,7 @@
 
 use super::FuncIdx;
 use crate::{
-    core::{wasm, UntypedVal, F32, F64},
+    core::{wasm, UntypedVal, F32, F64, V128},
     ExternRef,
     FuncRef,
     Val,
@@ -270,6 +270,9 @@ impl ConstExpr {
                 }
                 wasmparser::Operator::F64Const { value } => {
                     stack.push(Op::constant(F64::from_bits(value.bits())));
+                }
+                wasmparser::Operator::V128Const { value } => {
+                    stack.push(Op::constant(V128::from(value.i128() as u128)));
                 }
                 wasmparser::Operator::GlobalGet { global_index } => {
                     stack.push(Op::global(global_index));
