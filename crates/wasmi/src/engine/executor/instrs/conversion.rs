@@ -4,17 +4,6 @@ use crate::{core::wasm, ir::Reg, Error};
 #[cfg(doc)]
 use crate::ir::Instruction;
 
-macro_rules! impl_conversion_impls {
-    ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
-        $(
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, input: Reg) {
-                self.execute_unary_t(result, input, $op)
-            }
-        )*
-    };
-}
-
 macro_rules! impl_fallible_conversion_impls {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
@@ -27,7 +16,7 @@ macro_rules! impl_fallible_conversion_impls {
 }
 
 impl Executor<'_> {
-    impl_conversion_impls! {
+    impl_unary_executors! {
         (Instruction::I32WrapI64, execute_i32_wrap_i64, wasm::i32_wrap_i64),
 
         (Instruction::I32TruncSatF32S, execute_i32_trunc_sat_f32_s, wasm::i32_trunc_sat_f32_s),
