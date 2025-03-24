@@ -8,7 +8,7 @@
 
 use super::FuncIdx;
 use crate::{
-    core::{wasm, UntypedVal, F32, F64, V128},
+    core::{wasm, UntypedVal, F32, F64},
     ExternRef,
     FuncRef,
     Val,
@@ -17,6 +17,9 @@ use alloc::boxed::Box;
 use core::fmt;
 use smallvec::SmallVec;
 use wasmparser::AbstractHeapType;
+
+#[cfg(feature = "simd")]
+use crate::core::V128;
 
 /// Types that allow evluation given an evaluation context.
 pub trait Eval {
@@ -271,6 +274,7 @@ impl ConstExpr {
                 wasmparser::Operator::F64Const { value } => {
                     stack.push(Op::constant(F64::from_bits(value.bits())));
                 }
+                #[cfg(feature = "simd")]
                 wasmparser::Operator::V128Const { value } => {
                     stack.push(Op::constant(V128::from(value.i128() as u128)));
                 }
