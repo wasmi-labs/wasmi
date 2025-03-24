@@ -2292,7 +2292,7 @@ impl FuncTranslator {
         Ok(Some(instr))
     }
 
-    /// Translates Wasm float `store` instructions to Wasmi bytecode.
+    /// Translates a general Wasm `store` instruction to Wasmi bytecode.
     ///
     /// # Note
     ///
@@ -2303,8 +2303,8 @@ impl FuncTranslator {
     ///
     /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
-    /// - `{f32, f64}.store`
-    fn translate_fstore(
+    /// - `{f32, f64, v128}.store`
+    fn translate_store(
         &mut self,
         memarg: MemArg,
         make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
@@ -2347,7 +2347,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Translates Wasm float `store` instructions to Wasmi bytecode.
+    /// Translates a general Wasm `store` instruction to Wasmi bytecode.
     ///
     /// # Note
     ///

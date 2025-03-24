@@ -899,7 +899,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_fstore(
+        self.translate_store(
             memarg,
             Instruction::store32,
             Instruction::store32_offset16,
@@ -908,7 +908,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_store(&mut self, memarg: wasmparser::MemArg) -> Self::Output {
-        self.translate_fstore(
+        self.translate_store(
             memarg,
             Instruction::store64,
             Instruction::store64_offset16,
