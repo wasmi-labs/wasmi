@@ -1,10 +1,8 @@
-use wasmi_core::simd::ImmLaneIdx32;
-
 use super::Executor;
 use crate::{
     core::{
         simd,
-        simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8},
+        simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx32, ImmLaneIdx4, ImmLaneIdx8},
         UntypedVal,
         WriteAs,
         V128,
