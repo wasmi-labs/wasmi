@@ -197,7 +197,7 @@ macro_rules! expand_tests {
             fn wasm_utf8_invalid_encoding("utf8-invalid-encoding");
             fn wasm_wide_arithmetic("proposals/wide-arithmetic/wide-arithmetic");
 
-            #[ignore] fn wasm_simd_address("simd_address");
+            fn wasm_simd_address("simd_address");
             #[ignore] fn wasm_simd_align("simd_align");
             #[ignore] fn wasm_simd_bit_shift("simd_bit_shift");
             #[ignore] fn wasm_simd_bitwise("simd_bitwise");
@@ -239,7 +239,7 @@ macro_rules! expand_tests {
             #[ignore] fn wasm_simd_i8x16_sat_arith("simd_i8x16_sat_arith");
             #[ignore] fn wasm_simd_int_to_int_extend("simd_int_to_int_extend");
             #[ignore] fn wasm_simd_lane("simd_lane");
-            #[ignore] fn wasm_simd_linking("simd_linking");
+            fn wasm_simd_linking("simd_linking");
             #[ignore] fn wasm_simd_load("simd_load");
             #[ignore] fn wasm_simd_load16_lane("simd_load16_lane");
             #[ignore] fn wasm_simd_load32_lane("simd_load32_lane");
@@ -248,8 +248,8 @@ macro_rules! expand_tests {
             #[ignore] fn wasm_simd_load_extend("simd_load_extend");
             #[ignore] fn wasm_simd_load_splat("simd_load_splat");
             #[ignore] fn wasm_simd_load_zero("simd_load_zero");
-            fn wasm_simd_splat("simd_splat");
-            #[ignore] fn wasm_simd_store("simd_store");
+            #[ignore] fn wasm_simd_splat("simd_splat");
+            fn wasm_simd_store("simd_store");
             #[ignore] fn wasm_simd_store16_lane("simd_store16_lane");
             #[ignore] fn wasm_simd_store32_lane("simd_store32_lane");
             #[ignore] fn wasm_simd_store64_lane("simd_store64_lane");
