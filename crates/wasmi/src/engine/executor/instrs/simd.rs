@@ -24,7 +24,7 @@ impl Executor<'_> {
         match *addr.get() {
             Instruction::Register { reg } => reg,
             unexpected => {
-                // Safety: Wasmi translation guarantees that [`Instruction::Register2`] exists.
+                // Safety: Wasmi translation guarantees that [`Instruction::Register`] exists.
                 unsafe {
                     unreachable_unchecked!(
                         "expected `Instruction::Register` but found {unexpected:?}"
