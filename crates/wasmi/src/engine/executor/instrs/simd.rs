@@ -100,6 +100,24 @@ impl Executor<'_> {
         (Instruction::I16x8SubSatS, execute_i16x8_sub_sat_s, simd::i16x8_sub_sat_s),
         (Instruction::I16x8SubSatU, execute_i16x8_sub_sat_u, simd::i16x8_sub_sat_u),
         (Instruction::I16x8Sub, execute_i16x8_mul, simd::i16x8_mul),
+
+        (Instruction::F32x4Add, execute_f32x4_add, simd::f32x4_add),
+        (Instruction::F32x4Sub, execute_f32x4_sub, simd::f32x4_sub),
+        (Instruction::F32x4Mul, execute_f32x4_mul, simd::f32x4_mul),
+        (Instruction::F32x4Div, execute_f32x4_div, simd::f32x4_div),
+        (Instruction::F32x4Min, execute_f32x4_min, simd::f32x4_min),
+        (Instruction::F32x4Max, execute_f32x4_max, simd::f32x4_max),
+        (Instruction::F32x4Pmin, execute_f32x4_pmin, simd::f32x4_pmin),
+        (Instruction::F32x4Pmax, execute_f32x4_pmax, simd::f32x4_pmax),
+
+        (Instruction::F64x2Add, execute_f64x2_add, simd::f64x2_add),
+        (Instruction::F64x2Sub, execute_f64x2_sub, simd::f64x2_sub),
+        (Instruction::F64x2Mul, execute_f64x2_mul, simd::f64x2_mul),
+        (Instruction::F64x2Div, execute_f64x2_div, simd::f64x2_div),
+        (Instruction::F64x2Min, execute_f64x2_min, simd::f64x2_min),
+        (Instruction::F64x2Max, execute_f64x2_max, simd::f64x2_max),
+        (Instruction::F64x2Pmin, execute_f64x2_pmin, simd::f64x2_pmin),
+        (Instruction::F64x2Pmax, execute_f64x2_pmax, simd::f64x2_pmax),
     }
 }
 

@@ -926,35 +926,35 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f32x4_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_add, simd::f32x4_add)
     }
 
     fn visit_f32x4_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_sub, simd::f32x4_sub)
     }
 
     fn visit_f32x4_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_mul, simd::f32x4_mul)
     }
 
     fn visit_f32x4_div(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_div, simd::f32x4_div)
     }
 
     fn visit_f32x4_min(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_min, simd::f32x4_min)
     }
 
     fn visit_f32x4_max(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_max, simd::f32x4_max)
     }
 
     fn visit_f32x4_pmin(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_pmin, simd::f32x4_pmin)
     }
 
     fn visit_f32x4_pmax(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_pmax, simd::f32x4_pmax)
     }
 
     fn visit_f64x2_ceil(&mut self) -> Self::Output {
@@ -986,35 +986,35 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f64x2_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_add, simd::f64x2_add)
     }
 
     fn visit_f64x2_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_sub, simd::f64x2_sub)
     }
 
     fn visit_f64x2_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_sub, simd::f64x2_sub)
     }
 
     fn visit_f64x2_div(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_div, simd::f64x2_div)
     }
 
     fn visit_f64x2_min(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_min, simd::f64x2_min)
     }
 
     fn visit_f64x2_max(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_max, simd::f64x2_max)
     }
 
     fn visit_f64x2_pmin(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_pmin, simd::f64x2_pmin)
     }
 
     fn visit_f64x2_pmax(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_pmax, simd::f64x2_pmax)
     }
 
     fn visit_i32x4_trunc_sat_f32x4_s(&mut self) -> Self::Output {
