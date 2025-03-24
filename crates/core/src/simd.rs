@@ -830,6 +830,24 @@ macro_rules! avgr {
     }};
 }
 
+/// Wasm SIMD `pmin` (pseudo-min) definition.
+fn pmin<T: PartialOrd>(lhs: T, rhs: T) -> T {
+    if rhs < lhs {
+        rhs
+    } else {
+        lhs
+    }
+}
+
+/// Wasm SIMD `pmax` (pseudo-max) definition.
+fn pmax<T: PartialOrd>(lhs: T, rhs: T) -> T {
+    if lhs < rhs {
+        rhs
+    } else {
+        lhs
+    }
+}
+
 macro_rules! impl_binary_for {
     ( $( fn $name:ident(lhs: V128, rhs: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
@@ -892,10 +910,10 @@ impl_binary_for! {
     fn f64x2_min(lhs: V128, rhs: V128) -> V128 = wasm::f64_min;
     fn f32x4_max(lhs: V128, rhs: V128) -> V128 = wasm::f32_max;
     fn f64x2_max(lhs: V128, rhs: V128) -> V128 = wasm::f64_max;
-    fn f32x4_pmin(lhs: V128, rhs: V128) -> V128 = f32::min;
-    fn f64x2_pmin(lhs: V128, rhs: V128) -> V128 = f64::min;
-    fn f32x4_pmax(lhs: V128, rhs: V128) -> V128 = f32::max;
-    fn f64x2_pmax(lhs: V128, rhs: V128) -> V128 = f64::max;
+    fn f32x4_pmin(lhs: V128, rhs: V128) -> V128 = pmin::<f32>;
+    fn f64x2_pmin(lhs: V128, rhs: V128) -> V128 = pmin::<f64>;
+    fn f32x4_pmax(lhs: V128, rhs: V128) -> V128 = pmax::<f32>;
+    fn f64x2_pmax(lhs: V128, rhs: V128) -> V128 = pmax::<f64>;
     fn f32x4_add(lhs: V128, rhs: V128) -> V128 = op!(f32, +);
     fn f64x2_add(lhs: V128, rhs: V128) -> V128 = op!(f64, +);
     fn f32x4_sub(lhs: V128, rhs: V128) -> V128 = op!(f32, -);
