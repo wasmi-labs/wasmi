@@ -9,18 +9,8 @@ use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 #[cfg(doc)]
 use crate::ir::Instruction;
 
-macro_rules! impl_binary {
-    ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
-        $(
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
-                self.execute_binary_t(result, lhs, rhs, $op)
-            }
-        )*
-    };
-}
 impl Executor<'_> {
-    impl_binary! {
+    impl_binary_executors! {
         (Instruction::I32Add, execute_i32_add, wasm::i32_add),
         (Instruction::I32Sub, execute_i32_sub, wasm::i32_sub),
         (Instruction::I32Mul, execute_i32_mul, wasm::i32_mul),

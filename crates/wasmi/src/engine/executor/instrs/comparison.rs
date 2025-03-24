@@ -7,19 +7,8 @@ use crate::{
 #[cfg(doc)]
 use crate::ir::Instruction;
 
-macro_rules! impl_comparison {
-    ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
-        $(
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
-                self.execute_binary_t(result, lhs, rhs, $op)
-            }
-        )*
-    };
-}
-
 impl Executor<'_> {
-    impl_comparison! {
+    impl_binary_executors! {
         (Instruction::I32Eq, execute_i32_eq, wasm::i32_eq),
         (Instruction::I32Ne, execute_i32_ne, wasm::i32_ne),
         (Instruction::I32LtS, execute_i32_lt_s, wasm::i32_lt_s),
