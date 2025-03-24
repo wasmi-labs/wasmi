@@ -1530,9 +1530,13 @@ impl<'engine> Executor<'engine> {
                     self.execute_i8x16_add_sat_u(result, lhs, rhs)
                 }
                 #[cfg(feature = "simd")]
-                Instr::I16x8AddSatS { result, lhs, rhs } => self.execute_i16x8_add_sat_s(result, lhs, rhs),
+                Instr::I16x8AddSatS { result, lhs, rhs } => {
+                    self.execute_i16x8_add_sat_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8AddSatU { result, lhs, rhs } => self.execute_i16x8_add_sat_u(result, lhs, rhs),
+                Instr::I16x8AddSatU { result, lhs, rhs } => {
+                    self.execute_i16x8_add_sat_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16SubSatS { result, lhs, rhs } => {
                     self.execute_i8x16_sub_sat_s(result, lhs, rhs)
@@ -1542,9 +1546,13 @@ impl<'engine> Executor<'engine> {
                     self.execute_i8x16_sub_sat_u(result, lhs, rhs)
                 }
                 #[cfg(feature = "simd")]
-                Instr::I16x8SubSatS { result, lhs, rhs } => self.execute_i16x8_sub_sat_s(result, lhs, rhs),
+                Instr::I16x8SubSatS { result, lhs, rhs } => {
+                    self.execute_i16x8_sub_sat_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8SubSatU { result, lhs, rhs } => self.execute_i16x8_sub_sat_u(result, lhs, rhs),
+                Instr::I16x8SubSatU { result, lhs, rhs } => {
+                    self.execute_i16x8_sub_sat_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8Q15MulrSatS { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
