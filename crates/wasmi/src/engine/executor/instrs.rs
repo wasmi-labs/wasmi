@@ -27,6 +27,9 @@ use crate::{
 #[cfg(doc)]
 use crate::Instance;
 
+#[macro_use]
+mod utils;
+
 mod binary;
 mod branch;
 mod call;

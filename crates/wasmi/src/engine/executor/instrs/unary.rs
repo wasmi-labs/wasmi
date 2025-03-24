@@ -4,17 +4,6 @@ use crate::{core::wasm, ir::Reg};
 #[cfg(doc)]
 use crate::ir::Instruction;
 
-macro_rules! impl_unary_impls {
-    ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
-        $(
-            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, input: Reg) {
-                self.execute_unary_t(result, input, $op)
-            }
-        )*
-    };
-}
-
 impl Executor<'_> {
     impl_unary_impls! {
         (Instruction::I32Clz, execute_i32_clz, wasm::i32_clz),
