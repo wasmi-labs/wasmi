@@ -907,10 +907,10 @@ impl_binary_for! {
 }
 
 impl_unary_for! {
-    fn i64x2_neg(v128: V128) -> V128 = <i64 as Neg>::neg;
-    fn i32x4_neg(v128: V128) -> V128 = <i32 as Neg>::neg;
-    fn i16x8_neg(v128: V128) -> V128 = <i16 as Neg>::neg;
-    fn i8x16_neg(v128: V128) -> V128 = <i8 as Neg>::neg;
+    fn i64x2_neg(v128: V128) -> V128 = i64::wrapping_neg;
+    fn i32x4_neg(v128: V128) -> V128 = i32::wrapping_neg;
+    fn i16x8_neg(v128: V128) -> V128 = i16::wrapping_neg;
+    fn i8x16_neg(v128: V128) -> V128 = i8::wrapping_neg;
 
     fn i8x16_abs(v128: V128) -> V128 = i8::abs;
     fn i16x8_abs(v128: V128) -> V128 = i16::abs;
