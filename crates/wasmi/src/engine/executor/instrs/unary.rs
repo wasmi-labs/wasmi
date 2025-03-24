@@ -5,7 +5,7 @@ use crate::{core::wasm, ir::Reg};
 use crate::ir::Instruction;
 
 impl Executor<'_> {
-    impl_unary_impls! {
+    impl_unary_executors! {
         (Instruction::I32Clz, execute_i32_clz, wasm::i32_clz),
         (Instruction::I32Ctz, execute_i32_ctz, wasm::i32_ctz),
         (Instruction::I32Popcnt, execute_i32_popcnt, wasm::i32_popcnt),

@@ -5,7 +5,7 @@ use crate::{core::simd, ir::Reg};
 use crate::ir::Instruction;
 
 impl Executor<'_> {
-    impl_unary_impls! {
+    impl_unary_executors! {
         (Instruction::I8x16Splat, execute_i8x16_splat, simd::i8x16_splat),
         (Instruction::I16x8Splat, execute_i16x8_splat, simd::i16x8_splat),
         (Instruction::I32x4Splat, execute_i32x4_splat, simd::i32x4_splat),
