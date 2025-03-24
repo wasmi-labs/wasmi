@@ -1,5 +1,4 @@
 use super::{
-    bail_unreachable,
     control_frame::{
         BlockControlFrame,
         BlockHeight,

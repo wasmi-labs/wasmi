@@ -10,6 +10,7 @@ mod labels;
 mod provider;
 mod relink_result;
 mod stack;
+#[macro_use]
 mod utils;
 mod visit;
 mod visit_register;
@@ -737,24 +738,6 @@ impl WasmTranslator<'_> for FuncTranslator {
         Ok(self.into_allocations())
     }
 }
-
-/// Bail out early in case the current code is unreachable.
-///
-/// # Note
-///
-/// - This should be prepended to most Wasm operator translation procedures.
-/// - If we are in unreachable code most Wasm translation is skipped. Only
-///   certain control flow operators such as `End` are going through the
-///   translation process. In particular the `End` operator may end unreachable
-///   code blocks.
-macro_rules! bail_unreachable {
-    ($this:ident) => {{
-        if !$this.is_reachable() {
-            return Ok(());
-        }
-    }};
-}
-use bail_unreachable;
 
 /// Fuel metering information for a certain translation state.
 #[derive(Debug, Copy, Clone)]
