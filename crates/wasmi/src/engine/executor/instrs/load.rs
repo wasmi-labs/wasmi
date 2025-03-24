@@ -6,6 +6,9 @@ use crate::{
     Error,
 };
 
+#[cfg(feature = "simd")]
+use crate::core::{simd, V128};
+
 #[cfg(doc)]
 use crate::ir::Instruction;
 
@@ -234,6 +237,18 @@ macro_rules! impl_execute_load {
 }
 
 impl Executor<'_> {
+    #[cfg(feature = "simd")]
+    impl_execute_load! {
+        (
+            V128,
+            (Instruction::V128Load, execute_v128_load),
+            (Instruction::V128LoadAt, execute_v128_load_at),
+            (Instruction::V128LoadOffset16, execute_v128_load_offset16),
+            simd::v128_load,
+            simd::v128_load_at,
+        ),
+    }
+
     impl_execute_load! {
         (
             u32,

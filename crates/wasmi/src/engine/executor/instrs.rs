@@ -1838,11 +1838,17 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtendHighI32x4U { result, input } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::V128Store { ptr, offset_lo } => todo!(),
+                Instr::V128Store { ptr, offset_lo } => {
+                    self.execute_v128_store(&mut store.inner, ptr, offset_lo)?
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128StoreOffset16 { ptr, value, offset } => todo!(),
+                Instr::V128StoreOffset16 { ptr, value, offset } => {
+                    self.execute_v128_store_offset16(ptr, offset, value)?
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128StoreAt { value, address } => todo!(),
+                Instr::V128StoreAt { value, address } => {
+                    self.execute_v128_store_at(&mut store.inner, address, value)?
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Store8Lane { ptr, offset_lo } => todo!(),
                 #[cfg(feature = "simd")]
@@ -1888,15 +1894,19 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::V128Store64LaneAt { value, address } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::V128Load { result, offset_lo } => todo!(),
+                Instr::V128Load { result, offset_lo } => {
+                    self.execute_v128_load(&store.inner, result, offset_lo)?
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128LoadAt { result, address } => todo!(),
+                Instr::V128LoadAt { result, address } => {
+                    self.execute_v128_load_at(&store.inner, result, address)?
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128LoadOffset16 {
                     result,
                     ptr,
                     offset,
-                } => todo!(),
+                } => self.execute_v128_load_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load32Zero { result, offset_lo } => todo!(),
                 #[cfg(feature = "simd")]
