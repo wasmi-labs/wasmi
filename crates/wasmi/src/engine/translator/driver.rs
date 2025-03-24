@@ -1,5 +1,5 @@
 use crate::{
-    engine::{code_map::CompiledFuncEntity, WasmTranslatorBase},
+    engine::{code_map::CompiledFuncEntity, WasmTranslator},
     Error,
 };
 use wasmparser::{BinaryReader, FunctionBody};
@@ -16,7 +16,7 @@ pub struct FuncTranslationDriver<'parser, T> {
 
 impl<'parser, T> FuncTranslationDriver<'parser, T>
 where
-    T: WasmTranslatorBase<'parser>,
+    T: WasmTranslator<'parser>,
 {
     /// Creates a new Wasm to Wasmi bytecode function translator.
     pub fn new(

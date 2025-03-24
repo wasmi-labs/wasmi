@@ -27,7 +27,7 @@ pub(crate) use self::{
         FuncTranslatorAllocations,
         LazyFuncTranslator,
         ValidatingFuncTranslator,
-        WasmTranslatorBase,
+        WasmTranslator,
     },
 };
 use self::{

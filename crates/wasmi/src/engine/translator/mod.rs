@@ -192,25 +192,32 @@ pub struct ReusableAllocations<T> {
     pub validation: FuncValidatorAllocations,
 }
 
+/// Convenience trait used to circumvent the need for `#[cfg]` where bounds.
+///
+/// Wasm `simd` is disabled, thus this trait is empty.
 #[cfg(not(feature = "simd"))]
-pub trait WasmTranslator<'parser>: WasmTranslatorBase<'parser> {}
+pub trait VisitSimdOperator<'a> {}
 #[cfg(not(feature = "simd"))]
-impl<'parser, T> WasmTranslator<'parser> for T where T: WasmTranslatorBase<'parser> {}
+impl<'a, T> VisitSimdOperator<'a> for T where T: WasmTranslator<'a> {}
 
+/// Convenience trait used to circumvent the need for `#[cfg]` where bounds.
+///
+/// Wasm `simd` is enabled, thus this trait forwards to [`wasmparser::VisitSimdOperator`].
 #[cfg(feature = "simd")]
-pub trait WasmTranslator<'parser>:
-    WasmTranslatorBase<'parser> + wasmparser::VisitSimdOperator<'parser, Output = Result<(), Error>>
+pub trait VisitSimdOperator<'a>:
+    wasmparser::VisitSimdOperator<'a, Output = Result<(), Error>>
 {
 }
 #[cfg(feature = "simd")]
-impl<'parser, T> WasmTranslator<'parser> for T where
-    T: WasmTranslatorBase<'parser>
-        + wasmparser::VisitSimdOperator<'parser, Output = Result<(), Error>>
+impl<'a, T> VisitSimdOperator<'a> for T where
+    T: WasmTranslator<'a> + wasmparser::VisitSimdOperator<'a, Output = Result<(), Error>>
 {
 }
 
 /// A WebAssembly (Wasm) function translator.
-pub trait WasmTranslatorBase<'parser>: VisitOperator<'parser, Output = Result<(), Error>> {
+pub trait WasmTranslator<'parser>:
+    VisitOperator<'parser, Output = Result<(), Error>> + VisitSimdOperator<'parser>
+{
     /// The reusable allocations required by the [`WasmTranslator`].
     ///
     /// # Note
@@ -307,7 +314,7 @@ impl<T> ValidatingFuncTranslator<T> {
     }
 }
 
-impl<'parser, T> WasmTranslatorBase<'parser> for ValidatingFuncTranslator<T>
+impl<'parser, T> WasmTranslator<'parser> for ValidatingFuncTranslator<T>
 where
     T: WasmTranslator<'parser>,
 {
@@ -556,7 +563,7 @@ impl LazyFuncTranslator {
     }
 }
 
-impl WasmTranslatorBase<'_> for LazyFuncTranslator {
+impl WasmTranslator<'_> for LazyFuncTranslator {
     type Allocations = ();
 
     fn setup(&mut self, bytes: &[u8]) -> Result<bool, Error> {
@@ -672,7 +679,7 @@ pub struct FuncTranslator {
     alloc: FuncTranslatorAllocations,
 }
 
-impl WasmTranslatorBase<'_> for FuncTranslator {
+impl WasmTranslator<'_> for FuncTranslator {
     type Allocations = FuncTranslatorAllocations;
 
     fn setup(&mut self, _bytes: &[u8]) -> Result<bool, Error> {
