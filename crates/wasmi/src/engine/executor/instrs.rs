@@ -1311,27 +1311,15 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::I8x16Splat { result, value } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::I8x16SplatImm { result, value } => todo!(),
-                #[cfg(feature = "simd")]
                 Instr::I16x8Splat { result, value } => todo!(),
-                #[cfg(feature = "simd")]
-                Instr::I16x8SplatImm { result, value } => todo!(),
                 #[cfg(feature = "simd")]
                 Instr::I32x4Splat { result, value } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::I32x4SplatImm { result, value } => todo!(),
-                #[cfg(feature = "simd")]
                 Instr::I64x2Splat { result, value } => todo!(),
-                #[cfg(feature = "simd")]
-                Instr::I64x2SplatImm32 { result, value } => todo!(),
                 #[cfg(feature = "simd")]
                 Instr::F32x4Splat { result, value } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::F32x4SplatImm { result, value } => todo!(),
-                #[cfg(feature = "simd")]
                 Instr::F64x2Splat { result, value } => todo!(),
-                #[cfg(feature = "simd")]
-                Instr::F64x2SplatImm { result, value } => todo!(),
                 #[cfg(feature = "simd")]
                 Instr::I8x16ExtractLaneS {
                     result,

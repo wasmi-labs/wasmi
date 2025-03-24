@@ -5825,14 +5825,6 @@ macro_rules! for_each_op_grouped {
                     /// The value to be splatted.
                     value: Reg,
                 },
-                /// Variant of [`Instruction::I8x16Splat`] with immediate `value` parameter.
-                #[snake_name(i8x16_splat_imm)]
-                I8x16SplatImm {
-                    @result: Reg,
-                    /// The value to be splatted.
-                    value: i8,
-                },
-
                 /// Wasm `i16x8.splat` instruction.
                 #[snake_name(i16x8_splat)]
                 I16x8Splat {
@@ -5840,14 +5832,6 @@ macro_rules! for_each_op_grouped {
                     /// The value to be splatted.
                     value: Reg,
                 },
-                /// Variant of [`Instruction::I16x8Splat`] with immediate `value` parameter.
-                #[snake_name(i16x8_splat_imm)]
-                I16x8SplatImm {
-                    @result: Reg,
-                    /// The value to be splatted.
-                    value: i16,
-                },
-
                 /// Wasm `i32x4.splat` instruction.
                 #[snake_name(i32x4_splat)]
                 I32x4Splat {
@@ -5855,14 +5839,6 @@ macro_rules! for_each_op_grouped {
                     /// The value to be splatted.
                     value: Reg,
                 },
-                /// Variant of [`Instruction::I32x4Splat`] with immediate `value` parameter.
-                #[snake_name(i32x4_splat_imm)]
-                I32x4SplatImm {
-                    @result: Reg,
-                    /// The value to be splatted.
-                    value: i32,
-                },
-
                 /// Wasm `i64x2.splat` instruction.
                 #[snake_name(i64x2_splat)]
                 I64x2Splat {
@@ -5870,14 +5846,6 @@ macro_rules! for_each_op_grouped {
                     /// The value to be splatted.
                     value: Reg,
                 },
-                /// Variant of [`Instruction::I64x2Splat`] with a 32-bit immediate `value` parameter.
-                #[snake_name(i64x2_splat_imm)]
-                I64x2SplatImm32 {
-                    @result: Reg,
-                    /// The value to be splatted.
-                    value: Const32<i64>,
-                },
-
                 /// Wasm `f32x4.splat` instruction.
                 #[snake_name(f32x4_splat)]
                 F32x4Splat {
@@ -5885,27 +5853,12 @@ macro_rules! for_each_op_grouped {
                     /// The value to be splatted.
                     value: Reg,
                 },
-                /// Variant of [`Instruction::F32x4Splat`] with immediate `value` parameter.
-                #[snake_name(f32x4_splat_imm)]
-                F32x4SplatImm {
-                    @result: Reg,
-                    /// The value to be splatted.
-                    value: Const32<f32>,
-                },
-
                 /// Wasm `f64x2.splat` instruction.
                 #[snake_name(f64x2_splat)]
                 F64x2Splat {
                     @result: Reg,
                     /// The value to be splatted.
                     value: Reg,
-                },
-                /// Variant of [`Instruction::F64x2Splat`] with immediate `value` parameter.
-                #[snake_name(f64x2_splat_imm)]
-                F64x2SplatImm {
-                    @result: Reg,
-                    /// The value to be splatted.
-                    value: Const32<f64>,
                 },
 
                 /// Wasm `i8x16.extract_lane_s` instruction.
