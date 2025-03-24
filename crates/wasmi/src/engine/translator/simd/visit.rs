@@ -1,8 +1,15 @@
 use crate::{
-    core::{simd, V128},
-    engine::translator::FuncTranslator,
+    core::{
+        simd::{self, ImmLaneIdx32},
+        V128,
+    },
+    engine::{
+        translator::{provider::Provider, FuncTranslator},
+        FuelCosts,
+    },
     ir::Instruction,
 };
+use core::array;
 use wasmparser::{MemArg, VisitSimdOperator};
 
 macro_rules! impl_visit_simd_operator {
@@ -128,8 +135,34 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         Ok(())
     }
 
-    fn visit_i8x16_shuffle(&mut self, _lanes: [u8; 16]) -> Self::Output {
-        todo!()
+    fn visit_i8x16_shuffle(&mut self, lanes: [u8; 16]) -> Self::Output {
+        let selector: [ImmLaneIdx32; 16] = array::from_fn(|i| {
+            let Ok(lane) = ImmLaneIdx32::try_from(lanes[i]) else {
+                panic!("encountered out of bounds lane at index {i}: {}", lanes[i])
+            };
+            lane
+        });
+        let (lhs, rhs) = self.alloc.stack.pop2();
+        if let (Provider::Const(lhs), Provider::Const(rhs)) = (lhs, rhs) {
+            let result = simd::i8x16_shuffle(lhs.into(), rhs.into(), selector);
+            self.alloc.stack.push_const(result);
+            return Ok(());
+        }
+        let result = self.alloc.stack.push_dynamic()?;
+        let lhs = self.alloc.stack.provider2reg(&lhs)?;
+        let rhs = self.alloc.stack.provider2reg(&rhs)?;
+        let selector = self
+            .alloc
+            .stack
+            .alloc_const(V128::from(u128::from_ne_bytes(lanes)))?;
+        self.push_fueled_instr(
+            Instruction::i8x16_shuffle(result, lhs, rhs),
+            FuelCosts::base,
+        )?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register(selector))?;
+        Ok(())
     }
 
     fn visit_i8x16_extract_lane_s(&mut self, lane: u8) -> Self::Output {

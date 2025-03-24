@@ -1,3 +1,5 @@
+use wasmi_core::simd::ImmLaneIdx32;
+
 use super::Executor;
 use crate::{
     core::{
@@ -7,13 +9,53 @@ use crate::{
         WriteAs,
         V128,
     },
-    ir::Reg,
+    engine::{executor::InstructionPtr, utils::unreachable_unchecked},
+    ir::{Instruction, Reg},
 };
 
 #[cfg(doc)]
 use crate::ir::Instruction;
 
 impl Executor<'_> {
+    /// Fetches a [`Reg`] from an [`Instruction::Register`] instruction parameter.
+    fn fetch_register(&self) -> Reg {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(1);
+        match *addr.get() {
+            Instruction::Register { reg } => reg,
+            unexpected => {
+                // Safety: Wasmi translation guarantees that [`Instruction::Register2`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::Register` but found {unexpected:?}"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Executes an [`Instruction::I8x16Shuffle`] instruction.
+    pub fn execute_i8x16_shuffle(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
+        let selector = self.fetch_register();
+        let lhs = self.get_register_as::<V128>(lhs);
+        let rhs = self.get_register_as::<V128>(rhs);
+        let selector = self
+            .get_register_as::<V128>(selector)
+            .as_u128()
+            .to_ne_bytes()
+            .map(|lane| {
+                match ImmLaneIdx32::try_from(lane) {
+                    Ok(lane) => lane,
+                    Err(error) => {
+                        // Safety: Wasmi translation guarantees that the indices are within bounds.
+                        unsafe { unreachable_unchecked!("unexpected out of bounds index: {lane}") }
+                    }
+                }
+            });
+        let result = simd::i8x16_shuffle(lhs, rhs, selector);
+        self.next_instr_at(2);
+    }
+
     impl_unary_executors! {
         (Instruction::I8x16Splat, execute_i8x16_splat, simd::i8x16_splat),
         (Instruction::I16x8Splat, execute_i16x8_splat, simd::i16x8_splat),

@@ -1448,7 +1448,9 @@ impl<'engine> Executor<'engine> {
                     lane,
                 } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::I8x16Shuffle { result, lhs, rhs } => todo!(),
+                Instr::I8x16Shuffle { result, lhs, rhs } => {
+                    self.execute_i8x16_shuffle(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16Swizzle {
                     result,
