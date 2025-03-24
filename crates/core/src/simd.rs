@@ -1127,9 +1127,9 @@ macro_rules! impl_extadd_pairwise {
 }
 impl_extadd_pairwise! {
     fn i16x8_extadd_pairwise_i8x16_s(v128: V128) -> V128 = i8 => i16;
-    fn i16x8_extadd_pairwise_i8x16_u(v128: V128) -> V128 = i8 => i16;
+    fn i16x8_extadd_pairwise_i8x16_u(v128: V128) -> V128 = u8 => u16;
     fn i32x4_extadd_pairwise_i16x8_s(v128: V128) -> V128 = i16 => i32;
-    fn i32x4_extadd_pairwise_i16x8_u(v128: V128) -> V128 = i16 => i32;
+    fn i32x4_extadd_pairwise_i16x8_u(v128: V128) -> V128 = u16 => u32;
 }
 
 macro_rules! impl_shift_ops {
