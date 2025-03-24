@@ -30,6 +30,9 @@ use crate::Instance;
 #[macro_use]
 mod utils;
 
+#[cfg(feature = "simd")]
+mod simd;
+
 mod binary;
 mod branch;
 mod call;
@@ -1312,17 +1315,17 @@ impl<'engine> Executor<'engine> {
                 | Instr::CallIndirectParams { .. }
                 | Instr::CallIndirectParamsImm16 { .. } => self.invalid_instruction_word()?,
                 #[cfg(feature = "simd")]
-                Instr::I8x16Splat { result, value } => todo!(),
+                Instr::I8x16Splat { result, value } => self.execute_i8x16_splat(result, value),
                 #[cfg(feature = "simd")]
-                Instr::I16x8Splat { result, value } => todo!(),
+                Instr::I16x8Splat { result, value } => self.execute_i16x8_splat(result, value),
                 #[cfg(feature = "simd")]
-                Instr::I32x4Splat { result, value } => todo!(),
+                Instr::I32x4Splat { result, value } => self.execute_i32x4_splat(result, value),
                 #[cfg(feature = "simd")]
-                Instr::I64x2Splat { result, value } => todo!(),
+                Instr::I64x2Splat { result, value } => self.execute_i64x2_splat(result, value),
                 #[cfg(feature = "simd")]
-                Instr::F32x4Splat { result, value } => todo!(),
+                Instr::F32x4Splat { result, value } => self.execute_f32x4_splat(result, value),
                 #[cfg(feature = "simd")]
-                Instr::F64x2Splat { result, value } => todo!(),
+                Instr::F64x2Splat { result, value } => self.execute_f64x2_splat(result, value),
                 #[cfg(feature = "simd")]
                 Instr::I8x16ExtractLaneS {
                     result,
