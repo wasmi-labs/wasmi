@@ -1456,7 +1456,7 @@ impl<'engine> Executor<'engine> {
                     selector,
                 } => self.execute_i8x16_swizzle(result, input, selector),
                 #[cfg(feature = "simd")]
-                Instr::I8x16Add { result, lhs, rhs } => todo!(),
+                Instr::I8x16Add { result, lhs, rhs } => self.execute_i8x16_add(result, lhs, rhs),
                 #[cfg(feature = "simd")]
                 Instr::I16x8Add { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
@@ -1464,7 +1464,7 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::I64x2Add { result, lhs, rhs } => self.execute_i64x2_add(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I8x16Sub { result, lhs, rhs } => todo!(),
+                Instr::I8x16Sub { result, lhs, rhs } => self.execute_i8x16_sub(result, lhs, rhs),
                 #[cfg(feature = "simd")]
                 Instr::I16x8Sub { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
@@ -1520,17 +1520,17 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtaddPairwiseI16x8U { result, input } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::I8x16AddSatS { result, lhs, rhs } => todo!(),
+                Instr::I8x16AddSatS { result, lhs, rhs } => self.execute_i8x16_add_sat_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I8x16AddSatU { result, lhs, rhs } => todo!(),
+                Instr::I8x16AddSatU { result, lhs, rhs } => self.execute_i8x16_add_sat_u(result, lhs, rhs),
                 #[cfg(feature = "simd")]
                 Instr::I16x8AddSatS { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
                 Instr::I16x8AddSatU { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::I8x16SubSatS { result, lhs, rhs } => todo!(),
+                Instr::I8x16SubSatS { result, lhs, rhs } => self.execute_i8x16_sub_sat_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I8x16SubSatU { result, lhs, rhs } => todo!(),
+                Instr::I8x16SubSatU { result, lhs, rhs } => self.execute_i8x16_sub_sat_u(result, lhs, rhs),
                 #[cfg(feature = "simd")]
                 Instr::I16x8SubSatS { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]

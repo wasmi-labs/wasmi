@@ -33,6 +33,13 @@ impl Executor<'_> {
         (Instruction::I64x2Add, execute_i64x2_add, simd::i64x2_add),
         (Instruction::I64x2Sub, execute_i64x2_sub, simd::i64x2_sub),
         (Instruction::I64x2Mul, execute_i64x2_mul, simd::i64x2_mul),
+
+        (Instruction::I8x16Add, execute_i8x16_add, simd::i8x16_add),
+        (Instruction::I8x16AddSatS, execute_i8x16_add_sat_s, simd::i8x16_add_sat_s),
+        (Instruction::I8x16AddSatU, execute_i8x16_add_sat_u, simd::i8x16_add_sat_u),
+        (Instruction::I8x16Sub, execute_i8x16_sub, simd::i8x16_sub),
+        (Instruction::I8x16SubSatS, execute_i8x16_sub_sat_s, simd::i8x16_sub_sat_s),
+        (Instruction::I8x16SubSatU, execute_i8x16_sub_sat_u, simd::i8x16_sub_sat_u),
     }
 }
 
