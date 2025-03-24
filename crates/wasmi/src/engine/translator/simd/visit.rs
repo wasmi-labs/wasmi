@@ -691,15 +691,15 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_add, simd::i32x4_add)
     }
 
     fn visit_i32x4_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_sub, simd::i32x4_sub)
     }
 
     fn visit_i32x4_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_sub, simd::i32x4_sub)
     }
 
     fn visit_i32x4_min_s(&mut self) -> Self::Output {
@@ -783,15 +783,15 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i64x2_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i64x2_add, simd::i64x2_add)
     }
 
     fn visit_i64x2_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i64x2_sub, simd::i64x2_sub)
     }
 
     fn visit_i64x2_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i64x2_mul, simd::i64x2_mul)
     }
 
     fn visit_i64x2_extmul_low_i32x4_s(&mut self) -> Self::Output {

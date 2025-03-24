@@ -13,4 +13,14 @@ impl Executor<'_> {
         (Instruction::F32x4Splat, execute_f32x4_splat, simd::f32x4_splat),
         (Instruction::F64x2Splat, execute_f64x2_splat, simd::f64x2_splat),
     }
+
+    impl_binary_executors! {
+        (Instruction::I32x4Add, execute_i32x4_add, simd::i32x4_add),
+        (Instruction::I32x4Sub, execute_i32x4_sub, simd::i32x4_sub),
+        (Instruction::I32x4Mul, execute_i32x4_mul, simd::i32x4_mul),
+
+        (Instruction::I64x2Add, execute_i64x2_add, simd::i64x2_add),
+        (Instruction::I64x2Sub, execute_i64x2_sub, simd::i64x2_sub),
+        (Instruction::I64x2Mul, execute_i64x2_mul, simd::i64x2_mul),
+    }
 }
