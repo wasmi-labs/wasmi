@@ -141,7 +141,7 @@ impl From<wasmparser::ValType> for WasmiValueType {
             wasmparser::ValType::I64 => Self::from(ValType::I64),
             wasmparser::ValType::F32 => Self::from(ValType::F32),
             wasmparser::ValType::F64 => Self::from(ValType::F64),
-            wasmparser::ValType::V128 => panic!("wasmi does not support the `simd` Wasm proposal"),
+            wasmparser::ValType::V128 => Self::from(ValType::V128),
             wasmparser::ValType::Ref(ref_type) => WasmiValueType::from(ref_type),
         }
     }

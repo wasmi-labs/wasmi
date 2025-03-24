@@ -84,14 +84,14 @@ macro_rules! impl_visit_operator {
 impl<'a> VisitOperator<'a> for FuncTranslator {
     type Output = Result<(), Error>;
 
-    wasmparser::for_each_visit_operator!(impl_visit_operator);
-
     #[cfg(feature = "simd")]
     fn simd_visitor(
         &mut self,
     ) -> Option<&mut dyn wasmparser::VisitSimdOperator<'a, Output = Self::Output>> {
         Some(self)
     }
+
+    wasmparser::for_each_visit_operator!(impl_visit_operator);
 
     fn visit_unreachable(&mut self) -> Self::Output {
         bail_unreachable!(self);
