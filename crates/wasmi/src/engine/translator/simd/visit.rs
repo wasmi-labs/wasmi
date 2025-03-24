@@ -586,11 +586,17 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_extadd_pairwise_i8x16_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i16x8_extadd_pairwise_i8x16_s,
+            simd::i16x8_extadd_pairwise_i8x16_s,
+        )
     }
 
     fn visit_i16x8_extadd_pairwise_i8x16_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i16x8_extadd_pairwise_i8x16_u,
+            simd::i16x8_extadd_pairwise_i8x16_u,
+        )
     }
 
     fn visit_i16x8_abs(&mut self) -> Self::Output {
@@ -714,11 +720,17 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_extadd_pairwise_i16x8_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i32x4_extadd_pairwise_i16x8_s,
+            simd::i32x4_extadd_pairwise_i16x8_s,
+        )
     }
 
     fn visit_i32x4_extadd_pairwise_i16x8_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i32x4_extadd_pairwise_i16x8_u,
+            simd::i32x4_extadd_pairwise_i16x8_u,
+        )
     }
 
     fn visit_i32x4_abs(&mut self) -> Self::Output {

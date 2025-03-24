@@ -1516,13 +1516,21 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtmulHighI32x4U { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::I16x8ExtaddPairwiseI8x16S { result, input } => todo!(),
+                Instr::I16x8ExtaddPairwiseI8x16S { result, input } => {
+                    self.execute_i16x8_extadd_pairwise_i8x16_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8ExtaddPairwiseI8x16U { result, input } => todo!(),
+                Instr::I16x8ExtaddPairwiseI8x16U { result, input } => {
+                    self.execute_i16x8_extadd_pairwise_i8x16_u(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ExtaddPairwiseI16x8S { result, input } => todo!(),
+                Instr::I32x4ExtaddPairwiseI16x8S { result, input } => {
+                    self.execute_i32x4_extadd_pairwise_i16x8_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ExtaddPairwiseI16x8U { result, input } => todo!(),
+                Instr::I32x4ExtaddPairwiseI16x8U { result, input } => {
+                    self.execute_i32x4_extadd_pairwise_i16x8_u(result, input)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16AddSatS { result, lhs, rhs } => {
                     self.execute_i8x16_add_sat_s(result, lhs, rhs)

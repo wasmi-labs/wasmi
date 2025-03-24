@@ -65,6 +65,11 @@ impl Executor<'_> {
         (Instruction::I64x2Splat, execute_i64x2_splat, simd::i64x2_splat),
         (Instruction::F32x4Splat, execute_f32x4_splat, simd::f32x4_splat),
         (Instruction::F64x2Splat, execute_f64x2_splat, simd::f64x2_splat),
+
+        (Instruction::I16x8ExtaddPairwiseI8x16S, execute_i16x8_extadd_pairwise_i8x16_s, simd::i16x8_extadd_pairwise_i8x16_s),
+        (Instruction::I16x8ExtaddPairwiseI8x16U, execute_i16x8_extadd_pairwise_i8x16_u, simd::i16x8_extadd_pairwise_i8x16_u),
+        (Instruction::I32x4ExtaddPairwiseI16x8S, execute_i32x4_extadd_pairwise_i16x8_s, simd::i32x4_extadd_pairwise_i16x8_s),
+        (Instruction::I32x4ExtaddPairwiseI16x8U, execute_i32x4_extadd_pairwise_i16x8_u, simd::i32x4_extadd_pairwise_i16x8_u),
     }
 
     impl_binary_executors! {
