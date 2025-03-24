@@ -24,6 +24,8 @@ impl Executor<'_> {
     }
 
     impl_binary_executors! {
+        (Instruction::I8x16Swizzle, execute_i8x16_swizzle, simd::i8x16_swizzle),
+
         (Instruction::I32x4Add, execute_i32x4_add, simd::i32x4_add),
         (Instruction::I32x4Sub, execute_i32x4_sub, simd::i32x4_sub),
         (Instruction::I32x4Mul, execute_i32x4_mul, simd::i32x4_mul),

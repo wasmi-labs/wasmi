@@ -1454,7 +1454,7 @@ impl<'engine> Executor<'engine> {
                     result,
                     input,
                     selector,
-                } => todo!(),
+                } => self.execute_i8x16_swizzle(result, input, selector),
                 #[cfg(feature = "simd")]
                 Instr::I8x16Add { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]

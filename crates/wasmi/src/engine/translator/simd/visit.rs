@@ -221,7 +221,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_swizzle(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_swizzle, simd::i8x16_swizzle)
     }
 
     fn visit_i8x16_splat(&mut self) -> Self::Output {
