@@ -70,7 +70,7 @@ impl Executor<'_> {
     impl_binary_executors! {
         (Instruction::I8x16Swizzle, execute_i8x16_swizzle, simd::i8x16_swizzle),
 
-        (Instruction::I16x8Q15mulrSatS, execute_i16x8_q15mulr_sat_s, simd::i16x8_q15mulr_sat_s),
+        (Instruction::I16x8Q15MulrSatS, execute_i16x8_q15mulr_sat_s, simd::i16x8_q15mulr_sat_s),
         (Instruction::I32x4DotI16x8S, execute_i32x4_dot_i16x8_s, simd::i32x4_dot_i16x8_s),
 
         (Instruction::I32x4Add, execute_i32x4_add, simd::i32x4_add),
