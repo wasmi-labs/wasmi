@@ -1,4 +1,8 @@
-use crate::engine::translator::FuncTranslator;
+use crate::{
+    core::{simd, V128},
+    engine::translator::FuncTranslator,
+    ir::Instruction,
+};
 use wasmparser::{MemArg, VisitSimdOperator};
 
 macro_rules! impl_visit_simd_operator {
@@ -107,8 +111,11 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         todo!()
     }
 
-    fn visit_v128_const(&mut self, _value: wasmparser::V128) -> Self::Output {
-        todo!()
+    fn visit_v128_const(&mut self, value: wasmparser::V128) -> Self::Output {
+        bail_unreachable!(self);
+        let v128 = V128::from(value.i128() as u128);
+        self.alloc.stack.push_const(v128);
+        Ok(())
     }
 
     fn visit_i8x16_shuffle(&mut self, _lanes: [u8; 16]) -> Self::Output {
@@ -176,27 +183,27 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_splat(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_splat::<i32, i8>(Instruction::i8x16_splat, simd::i8x16_splat)
     }
 
     fn visit_i16x8_splat(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_splat::<i32, i16>(Instruction::i16x8_splat, simd::i16x8_splat)
     }
 
     fn visit_i32x4_splat(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_splat::<i32, i32>(Instruction::i32x4_splat, simd::i32x4_splat)
     }
 
     fn visit_i64x2_splat(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_splat::<i64, i64>(Instruction::i64x2_splat, simd::i64x2_splat)
     }
 
     fn visit_f32x4_splat(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_splat::<f32, f32>(Instruction::f32x4_splat, simd::f32x4_splat)
     }
 
     fn visit_f64x2_splat(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_splat::<f64, f64>(Instruction::f64x2_splat, simd::f64x2_splat)
     }
 
     fn visit_i8x16_eq(&mut self) -> Self::Output {
