@@ -817,7 +817,7 @@ fn i16x8_q15mulr_sat(x: i16, y: i16) -> i16 {
     let x = i32::from(x);
     let y = i32::from(y);
     let q15mulr = (x * y + (1 << 14)) >> 15;
-    q15mulr.max(MIN).min(MAX) as i16
+    q15mulr.clamp(MIN, MAX) as i16
 }
 
 macro_rules! avgr {
