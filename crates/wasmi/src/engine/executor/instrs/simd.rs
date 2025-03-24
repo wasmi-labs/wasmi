@@ -1,6 +1,9 @@
 use super::Executor;
 use crate::{core::simd, ir::Reg};
 
+#[cfg(doc)]
+use crate::ir::Instruction;
+
 impl Executor<'_> {
     impl_unary_impls! {
         (Instruction::I8x16Splat, execute_i8x16_splat, simd::i8x16_splat),
