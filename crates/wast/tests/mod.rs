@@ -61,6 +61,7 @@ fn mvp_config() -> Config {
         .wasm_sign_extension(false)
         .wasm_multi_value(false)
         .wasm_multi_memory(false)
+        .wasm_simd(false)
         .wasm_memory64(false);
     config
 }
@@ -86,6 +87,7 @@ fn test_config(consume_fuel: bool, parsing_mode: ParsingMode) -> RunnerConfig {
         .wasm_tail_call(true)
         .wasm_extended_const(true)
         .wasm_wide_arithmetic(true)
+        .wasm_simd(true)
         .consume_fuel(consume_fuel);
     RunnerConfig {
         config,
