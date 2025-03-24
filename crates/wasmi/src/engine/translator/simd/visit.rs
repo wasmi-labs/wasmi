@@ -23,8 +23,13 @@ macro_rules! impl_visit_simd_operator {
 impl VisitSimdOperator<'_> for FuncTranslator {
     wasmparser::for_each_visit_simd_operator!(impl_visit_simd_operator);
 
-    fn visit_v128_load(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load,
+            Instruction::v128_load_offset16,
+            Instruction::v128_load_at,
+        )
     }
 
     fn visit_v128_load8x8_s(&mut self, _memarg: MemArg) -> Self::Output {
@@ -75,8 +80,13 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         todo!()
     }
 
-    fn visit_v128_store(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_store(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_store(
+            memarg,
+            Instruction::v128_store,
+            Instruction::v128_store_offset16,
+            Instruction::v128_store_at,
+        )
     }
 
     fn visit_v128_load8_lane(&mut self, _memarg: MemArg, _lane: u8) -> Self::Output {
