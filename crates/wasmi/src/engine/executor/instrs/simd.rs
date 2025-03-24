@@ -13,9 +13,6 @@ use crate::{
     ir::{Instruction, Reg},
 };
 
-#[cfg(doc)]
-use crate::ir::Instruction;
-
 impl Executor<'_> {
     /// Fetches a [`Reg`] from an [`Instruction::Register`] instruction parameter.
     fn fetch_register(&self) -> Reg {
