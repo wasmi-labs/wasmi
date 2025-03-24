@@ -207,12 +207,12 @@ macro_rules! expand_tests {
             #[ignore] fn wasm_simd_f32x4("simd_f32x4");
             #[ignore] fn wasm_simd_f32x4_arith("simd_f32x4_arith");
             #[ignore] fn wasm_simd_f32x4_cmp("simd_f32x4_cmp");
-            #[ignore] fn wasm_simd_f32x4_pmin_pmax("simd_f32x4_pmin_pmax");
+            fn wasm_simd_f32x4_pmin_pmax("simd_f32x4_pmin_pmax");
             #[ignore] fn wasm_simd_f32x4_rounding("simd_f32x4_rounding");
             #[ignore] fn wasm_simd_f64x2("simd_f64x2");
             #[ignore] fn wasm_simd_f64x2_arith("simd_f64x2_arith");
             #[ignore] fn wasm_simd_f64x2_cmp("simd_f64x2_cmp");
-            #[ignore] fn wasm_simd_f64x2_pmin_pmax("simd_f64x2_pmin_pmax");
+            fn wasm_simd_f64x2_pmin_pmax("simd_f64x2_pmin_pmax");
             #[ignore] fn wasm_simd_f64x2_rounding("simd_f64x2_rounding");
             fn wasm_simd_i16x8_arith("simd_i16x8_arith");
             #[ignore] fn wasm_simd_i16x8_arith2("simd_i16x8_arith2");
