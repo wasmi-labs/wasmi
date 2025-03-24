@@ -602,7 +602,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_q15mulr_sat_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_q15mulr_sat_s, simd::i16x8_q15mulr_sat_s)
     }
 
     fn visit_i16x8_all_true(&mut self) -> Self::Output {
@@ -794,7 +794,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_dot_i16x8_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_dot_i16x8_s, simd::i32x4_dot_i16x8_s)
     }
 
     fn visit_i32x4_extmul_low_i16x8_s(&mut self) -> Self::Output {

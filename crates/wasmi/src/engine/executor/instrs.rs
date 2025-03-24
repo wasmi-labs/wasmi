@@ -1480,7 +1480,9 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::I64x2Mul { result, lhs, rhs } => self.execute_i64x2_mul(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I32x4DotI16x8S { result, lhs, rhs } => todo!(),
+                Instr::I32x4DotI16x8S { result, lhs, rhs } => {
+                    self.execute_i32x4_dot_i16x8_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16Neg { result, input } => todo!(),
                 #[cfg(feature = "simd")]
@@ -1554,7 +1556,9 @@ impl<'engine> Executor<'engine> {
                     self.execute_i16x8_sub_sat_u(result, lhs, rhs)
                 }
                 #[cfg(feature = "simd")]
-                Instr::I16x8Q15MulrSatS { result, lhs, rhs } => todo!(),
+                Instr::I16x8Q15MulrSatS { result, lhs, rhs } => {
+                    self.execute_i16x8_q15mulr_sat_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16MinS { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
