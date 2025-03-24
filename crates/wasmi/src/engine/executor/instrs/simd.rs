@@ -52,6 +52,13 @@ impl Executor<'_> {
     }
 
     impl_unary_executors! {
+        (Instruction::I8x16Neg, execute_i8x16_neg, simd::i8x16_neg),
+        (Instruction::I16x8Neg, execute_i16x8_neg, simd::i16x8_neg),
+        (Instruction::I16x8Neg, execute_i32x4_neg, simd::i32x4_neg),
+        (Instruction::I16x8Neg, execute_i64x2_neg, simd::i64x2_neg),
+        (Instruction::I16x8Neg, execute_f32x4_neg, simd::f32x4_neg),
+        (Instruction::I16x8Neg, execute_f64x2_neg, simd::f64x2_neg),
+
         (Instruction::I8x16Splat, execute_i8x16_splat, simd::i8x16_splat),
         (Instruction::I16x8Splat, execute_i16x8_splat, simd::i16x8_splat),
         (Instruction::I32x4Splat, execute_i32x4_splat, simd::i32x4_splat),

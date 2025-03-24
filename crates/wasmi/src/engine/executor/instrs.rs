@@ -1484,13 +1484,13 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32x4_dot_i16x8_s(result, lhs, rhs)
                 }
                 #[cfg(feature = "simd")]
-                Instr::I8x16Neg { result, input } => todo!(),
+                Instr::I8x16Neg { result, input } => self.execute_i8x16_neg(result, input),
                 #[cfg(feature = "simd")]
-                Instr::I16x8Neg { result, input } => todo!(),
+                Instr::I16x8Neg { result, input } => self.execute_i16x8_neg(result, input),
                 #[cfg(feature = "simd")]
-                Instr::I32x4Neg { result, input } => todo!(),
+                Instr::I32x4Neg { result, input } => self.execute_i32x4_neg(result, input),
                 #[cfg(feature = "simd")]
-                Instr::I64x2Neg { result, input } => todo!(),
+                Instr::I64x2Neg { result, input } => self.execute_i64x2_neg(result, input),
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtmulLowI8x16S { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
@@ -1748,9 +1748,9 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::F64x2Ge { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::F32x4Neg { result, input } => todo!(),
+                Instr::F32x4Neg { result, input } => self.execute_f32x4_neg(result, input),
                 #[cfg(feature = "simd")]
-                Instr::F64x2Neg { result, input } => todo!(),
+                Instr::F64x2Neg { result, input } => self.execute_f64x2_neg(result, input),
                 #[cfg(feature = "simd")]
                 Instr::F32x4Abs { result, input } => todo!(),
                 #[cfg(feature = "simd")]
