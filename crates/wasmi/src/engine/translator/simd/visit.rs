@@ -786,7 +786,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_mul(&mut self) -> Self::Output {
-        self.translate_simd_binary(Instruction::i32x4_sub, simd::i32x4_sub)
+        self.translate_simd_binary(Instruction::i32x4_mul, simd::i32x4_mul)
     }
 
     fn visit_i32x4_min_s(&mut self) -> Self::Output {
