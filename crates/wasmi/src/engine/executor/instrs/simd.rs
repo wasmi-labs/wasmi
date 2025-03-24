@@ -77,6 +77,14 @@ impl Executor<'_> {
         (Instruction::I8x16Sub, execute_i8x16_sub, simd::i8x16_sub),
         (Instruction::I8x16SubSatS, execute_i8x16_sub_sat_s, simd::i8x16_sub_sat_s),
         (Instruction::I8x16SubSatU, execute_i8x16_sub_sat_u, simd::i8x16_sub_sat_u),
+
+        (Instruction::I16x8Add, execute_i16x8_add, simd::i16x8_add),
+        (Instruction::I16x8AddSatS, execute_i16x8_add_sat_s, simd::i16x8_add_sat_s),
+        (Instruction::I16x8AddSatU, execute_i16x8_add_sat_u, simd::i16x8_add_sat_u),
+        (Instruction::I16x8Sub, execute_i16x8_sub, simd::i16x8_sub),
+        (Instruction::I16x8SubSatS, execute_i16x8_sub_sat_s, simd::i16x8_sub_sat_s),
+        (Instruction::I16x8SubSatU, execute_i16x8_sub_sat_u, simd::i16x8_sub_sat_u),
+        (Instruction::I16x8Sub, execute_i16x8_mul, simd::i16x8_mul),
     }
 }
 

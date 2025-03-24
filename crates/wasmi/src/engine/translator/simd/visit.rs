@@ -650,31 +650,31 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_add(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_add, simd::i16x8_add)
     }
 
     fn visit_i16x8_add_sat_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_add_sat_s, simd::i16x8_add_sat_s)
     }
 
     fn visit_i16x8_add_sat_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_add_sat_u, simd::i16x8_add_sat_u)
     }
 
     fn visit_i16x8_sub(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_sub, simd::i16x8_sub)
     }
 
     fn visit_i16x8_sub_sat_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_sub_sat_s, simd::i16x8_sub_sat_s)
     }
 
     fn visit_i16x8_sub_sat_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_sub_sat_u, simd::i16x8_sub_sat_u)
     }
 
     fn visit_i16x8_mul(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_mul, simd::i16x8_mul)
     }
 
     fn visit_i16x8_min_s(&mut self) -> Self::Output {
