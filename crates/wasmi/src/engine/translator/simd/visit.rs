@@ -148,10 +148,6 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         )
     }
 
-    fn visit_i8x16_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
-    }
-
     fn visit_i16x8_extract_lane_s(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<i16, _>(
             lane,
@@ -168,20 +164,12 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         )
     }
 
-    fn visit_i16x8_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
-    }
-
     fn visit_i32x4_extract_lane(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<i32, _>(
             lane,
             Instruction::i32x4_extract_lane,
             simd::i32x4_extract_lane,
         )
-    }
-
-    fn visit_i32x4_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
     }
 
     fn visit_i64x2_extract_lane(&mut self, lane: u8) -> Self::Output {
@@ -192,10 +180,6 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         )
     }
 
-    fn visit_i64x2_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
-    }
-
     fn visit_f32x4_extract_lane(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<f32, _>(
             lane,
@@ -204,16 +188,32 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         )
     }
 
-    fn visit_f32x4_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
-    }
-
     fn visit_f64x2_extract_lane(&mut self, lane: u8) -> Self::Output {
         self.translate_extract_lane::<f64, _>(
             lane,
             Instruction::f64x2_extract_lane,
             simd::f64x2_extract_lane,
         )
+    }
+
+    fn visit_i8x16_replace_lane(&mut self, _lane: u8) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i16x8_replace_lane(&mut self, _lane: u8) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i32x4_replace_lane(&mut self, _lane: u8) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i64x2_replace_lane(&mut self, _lane: u8) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f32x4_replace_lane(&mut self, _lane: u8) -> Self::Output {
+        todo!()
     }
 
     fn visit_f64x2_replace_lane(&mut self, _lane: u8) -> Self::Output {
