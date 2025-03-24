@@ -1331,49 +1331,49 @@ impl<'engine> Executor<'engine> {
                     result,
                     value,
                     lane,
-                } => todo!(),
+                } => self.i8x16_extract_lane_s(result, value, lane),
                 #[cfg(feature = "simd")]
                 Instr::I8x16ExtractLaneU {
                     result,
                     value,
                     lane,
-                } => todo!(),
+                } => self.i8x16_extract_lane_u(result, value, lane),
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtractLaneS {
                     result,
                     value,
                     lane,
-                } => todo!(),
+                } => self.i16x8_extract_lane_s(result, value, lane),
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtractLaneU {
                     result,
                     value,
                     lane,
-                } => todo!(),
+                } => self.i16x8_extract_lane_u(result, value, lane),
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtractLane {
                     result,
                     value,
                     lane,
-                } => todo!(),
+                } => self.i32x4_extract_lane(result, value, lane),
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtractLane {
                     result,
                     value,
                     lane,
-                } => todo!(),
+                } => self.i64x2_extract_lane(result, value, lane),
                 #[cfg(feature = "simd")]
                 Instr::F32x4ExtractLane {
                     result,
                     value,
                     lane,
-                } => todo!(),
+                } => self.f32x4_extract_lane(result, value, lane),
                 #[cfg(feature = "simd")]
                 Instr::F64x2ExtractLane {
                     result,
                     value,
                     lane,
-                } => todo!(),
+                } => self.f64x2_extract_lane(result, value, lane),
                 #[cfg(feature = "simd")]
                 Instr::I8x16ReplaceLane {
                     result,
