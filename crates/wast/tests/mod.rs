@@ -201,7 +201,7 @@ macro_rules! expand_tests {
             #[ignore] fn wasm_simd_align("simd_align");
             fn wasm_simd_bit_shift("simd_bit_shift");
             fn wasm_simd_bitwise("simd_bitwise");
-            #[ignore] fn wasm_simd_boolean("simd_boolean");
+            fn wasm_simd_boolean("simd_boolean");
             fn wasm_simd_const("simd_const");
             fn wasm_simd_conversions("simd_conversions");
             fn wasm_simd_f32x4("simd_f32x4");
