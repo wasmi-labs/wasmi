@@ -59,6 +59,13 @@ impl Executor<'_> {
         (Instruction::I16x8Neg, execute_f32x4_neg, simd::f32x4_neg),
         (Instruction::I16x8Neg, execute_f64x2_neg, simd::f64x2_neg),
 
+        (Instruction::I8x16Abs, execute_i8x16_abs, simd::i8x16_abs),
+        (Instruction::I16x8Abs, execute_i16x8_abs, simd::i16x8_abs),
+        (Instruction::I16x8Abs, execute_i32x4_abs, simd::i32x4_abs),
+        (Instruction::I16x8Abs, execute_i64x2_abs, simd::i64x2_abs),
+        (Instruction::I16x8Abs, execute_f32x4_abs, simd::f32x4_abs),
+        (Instruction::I16x8Abs, execute_f64x2_abs, simd::f64x2_abs),
+
         (Instruction::I8x16Splat, execute_i8x16_splat, simd::i8x16_splat),
         (Instruction::I16x8Splat, execute_i16x8_splat, simd::i16x8_splat),
         (Instruction::I32x4Splat, execute_i32x4_splat, simd::i32x4_splat),

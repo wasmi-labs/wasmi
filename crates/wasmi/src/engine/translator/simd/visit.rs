@@ -502,7 +502,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_abs(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i8x16_abs, simd::i8x16_abs)
     }
 
     fn visit_i8x16_neg(&mut self) -> Self::Output {
@@ -600,7 +600,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_abs(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i16x8_abs, simd::i16x8_abs)
     }
 
     fn visit_i16x8_neg(&mut self) -> Self::Output {
@@ -746,7 +746,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_abs(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i32x4_abs, simd::i32x4_abs)
     }
 
     fn visit_i32x4_neg(&mut self) -> Self::Output {
@@ -850,7 +850,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i64x2_abs(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i64x2_abs, simd::i64x2_abs)
     }
 
     fn visit_i64x2_neg(&mut self) -> Self::Output {
@@ -950,7 +950,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f32x4_abs(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f32x4_abs, simd::f32x4_abs)
     }
 
     fn visit_f32x4_neg(&mut self) -> Self::Output {
@@ -1010,7 +1010,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f64x2_abs(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f64x2_abs, simd::f64x2_abs)
     }
 
     fn visit_f64x2_neg(&mut self) -> Self::Output {
