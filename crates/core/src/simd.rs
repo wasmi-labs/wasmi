@@ -462,7 +462,7 @@ macro_rules! impl_from_wide_for {
                     Self(array::from_fn(|i| {
                         match i < <$wide_ty as Lanes>::LANES {
                             true => f(low[i]),
-                            false => f(high[i]),
+                            false => f(high[i - <$wide_ty as Lanes>::LANES]),
                         }
                     }))
                 }
@@ -901,10 +901,10 @@ impl_binary_for! {
     fn i8x16_avgr_u(lhs: V128, rhs: V128) -> V128 = avgr!(u8 as u16);
     fn i16x8_avgr_u(lhs: V128, rhs: V128) -> V128 = avgr!(u16 as u32);
 
-    fn v128_and(lhs: V128, rhs: V128) -> V128 = <i64 as BitAnd>::bitand;
-    fn v128_or(lhs: V128, rhs: V128) -> V128 = <i64 as BitOr>::bitor;
-    fn v128_xor(lhs: V128, rhs: V128) -> V128 = <i64 as BitXor>::bitxor;
-    fn v128_andnot(lhs: V128, rhs: V128) -> V128 = |a: i64, b: i64| a & !b;
+    fn v128_and(lhs: V128, rhs: V128) -> V128 = <u64 as BitAnd>::bitand;
+    fn v128_or(lhs: V128, rhs: V128) -> V128 = <u64 as BitOr>::bitor;
+    fn v128_xor(lhs: V128, rhs: V128) -> V128 = <u64 as BitXor>::bitxor;
+    fn v128_andnot(lhs: V128, rhs: V128) -> V128 = |a: u64, b: u64| a & !b;
 
     fn f32x4_min(lhs: V128, rhs: V128) -> V128 = wasm::f32_min;
     fn f64x2_min(lhs: V128, rhs: V128) -> V128 = wasm::f64_min;
@@ -1049,7 +1049,7 @@ impl_widen_low_unary! {
     fn i64x2_extend_low_i32x4_u(v128: V128) -> V128 = <u32 as Into<u64>>::into;
 
     fn f64x2_convert_low_i32x4_s(v128: V128) -> V128 = wasm::f64_convert_i32_s;
-    fn f64x2_convert_low_i32x4_u(v128: V128) -> V128 = wasm::f64_convert_i32_s;
+    fn f64x2_convert_low_i32x4_u(v128: V128) -> V128 = wasm::f64_convert_i32_u;
     fn f64x2_promote_low_f32x4(v128: V128) -> V128 = wasm::f64_promote_f32;
 }
 
@@ -1190,10 +1190,30 @@ macro_rules! impl_narrowing_low_high_ops {
     };
 }
 impl_narrowing_low_high_ops! {
-    fn i8x16_narrow_i16x8_s(low: V128, high: V128) -> V128 = |v: i16| v as i8;
-    fn i8x16_narrow_i16x8_u(low: V128, high: V128) -> V128 = |v: u16| v as u8;
-    fn i16x8_narrow_i32x4_s(low: V128, high: V128) -> V128 = |v: i32| v as i16;
-    fn i16x8_narrow_i32x4_u(low: V128, high: V128) -> V128 = |v: u32| v as u16;
+    fn i8x16_narrow_i16x8_s(low: V128, high: V128) -> V128 = narrow_i16_to_i8;
+    fn i8x16_narrow_i16x8_u(low: V128, high: V128) -> V128 = narrow_u16_to_u8;
+    fn i16x8_narrow_i32x4_s(low: V128, high: V128) -> V128 = narrow_i32_to_i16;
+    fn i16x8_narrow_i32x4_u(low: V128, high: V128) -> V128 = narrow_u32_to_u16;
+}
+
+macro_rules! def_narrow_from_to {
+    (
+        $( fn $name:ident(value: $from:ty $(as $as:ty)? ) -> $to:ty );* $(;)?
+    ) => {
+        $(
+            #[doc = concat!("Narrows `value` from type `", stringify!($from), "` to type `", stringify!($to), "`.")]
+            fn $name(value: $from) -> $to {
+                $( let value: $as = value as $as; )?
+                value.clamp(<$to>::MIN.into(), <$to>::MAX.into()) as $to
+            }
+        )*
+    };
+}
+def_narrow_from_to! {
+    fn narrow_i16_to_i8(value: i16) -> i8;
+    fn narrow_u16_to_u8(value: u16 as i16) -> u8;
+    fn narrow_i32_to_i16(value: i32) -> i16;
+    fn narrow_u32_to_u16(value: u32 as i32) -> u16;
 }
 
 macro_rules! impl_narrowing_low_high_ops {
@@ -1678,9 +1698,25 @@ impl_v128_load_mxn_at! {
 }
 
 #[test]
-fn it_works() {
-    let v0 = V128::splat(16383_i16);
-    let v1 = V128::splat(16384_i16);
-    let result = simd::i32x4_dot_i16x8_s(v0, v1);
-    assert_eq!(result, V128::splat(536838144_i32));
+fn i32x4_dot_i16x8_s_works() {
+    assert_eq!(
+        simd::i32x4_dot_i16x8_s(simd::i16x8_splat(16383_i16), simd::i16x8_splat(16384_i16)),
+        simd::i32x4_splat(536838144_i32)
+    );
+}
+
+#[test]
+fn v128_or_works() {
+    assert_eq!(
+        simd::v128_or(simd::i16x8_splat(0), simd::i16x8_splat(0xffff_u16 as i16),),
+        simd::i16x8_splat(0xffff_u16 as i16),
+    );
+}
+
+#[test]
+fn i8x16_narrow_i16x8_s_works() {
+    assert_eq!(
+        simd::i8x16_narrow_i16x8_s(simd::i16x8_splat(0x80_i16), simd::i16x8_splat(0x80_i16)),
+        simd::i8x16_splat(0x7f),
+    );
 }
