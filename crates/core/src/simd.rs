@@ -1190,10 +1190,30 @@ macro_rules! impl_narrowing_low_high_ops {
     };
 }
 impl_narrowing_low_high_ops! {
-    fn i8x16_narrow_i16x8_s(low: V128, high: V128) -> V128 = |v: i16| v as i8;
-    fn i8x16_narrow_i16x8_u(low: V128, high: V128) -> V128 = |v: u16| v as u8;
-    fn i16x8_narrow_i32x4_s(low: V128, high: V128) -> V128 = |v: i32| v as i16;
-    fn i16x8_narrow_i32x4_u(low: V128, high: V128) -> V128 = |v: u32| v as u16;
+    fn i8x16_narrow_i16x8_s(low: V128, high: V128) -> V128 = narrow_i16_to_i8;
+    fn i8x16_narrow_i16x8_u(low: V128, high: V128) -> V128 = narrow_u16_to_u8;
+    fn i16x8_narrow_i32x4_s(low: V128, high: V128) -> V128 = narrow_i32_to_i16;
+    fn i16x8_narrow_i32x4_u(low: V128, high: V128) -> V128 = narrow_u32_to_u16;
+}
+
+macro_rules! def_narrow_from_to {
+    (
+        $( fn $name:ident(value: $from:ty $(as $as:ty)? ) -> $to:ty );* $(;)?
+    ) => {
+        $(
+            #[doc = concat!("Narrows `value` from type `", stringify!($from), "` to type `", stringify!($to), "`.")]
+            fn $name(value: $from) -> $to {
+                $( let value: $as = value as $as; )?
+                value.clamp(<$to>::MIN.into(), <$to>::MAX.into()) as $to
+            }
+        )*
+    };
+}
+def_narrow_from_to! {
+    fn narrow_i16_to_i8(value: i16) -> i8;
+    fn narrow_u16_to_u8(value: u16 as i16) -> u8;
+    fn narrow_i32_to_i16(value: i32) -> i16;
+    fn narrow_u32_to_u16(value: u32 as i32) -> u16;
 }
 
 macro_rules! impl_narrowing_low_high_ops {
