@@ -8,7 +8,7 @@ use crate::{
         V128,
     },
     engine::{executor::InstructionPtr, utils::unreachable_unchecked},
-    ir::{Instruction, Reg},
+    ir::{Instruction, Reg, ShiftAmount},
 };
 
 impl Executor<'_> {
@@ -218,5 +218,49 @@ impl Executor<'_> {
         (Instruction::F32x4ExtractLane, f32x4_extract_lane, ImmLaneIdx4, simd::f32x4_extract_lane),
         (Instruction::I64x2ExtractLane, i64x2_extract_lane, ImmLaneIdx2, simd::i64x2_extract_lane),
         (Instruction::F64x2ExtractLane, f64x2_extract_lane, ImmLaneIdx2, simd::f64x2_extract_lane),
+    }
+}
+
+impl Executor<'_> {
+    /// Generically execute a SIMD shift operation with immediate shift amount.
+    #[inline(always)]
+    fn execute_simd_shift_by(
+        &mut self,
+        result: Reg,
+        lhs: Reg,
+        rhs: ShiftAmount<u32>,
+        op: fn(V128, u32) -> V128,
+    ) {
+        let lhs = self.get_register_as::<V128>(lhs);
+        let rhs = rhs.into();
+        self.set_register_as::<V128>(result, op(lhs, rhs));
+        self.next_instr();
+    }
+}
+
+macro_rules! impl_simd_shift_executors {
+    ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
+            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: ShiftAmount<u32>) {
+                self.execute_simd_shift_by(result, lhs, rhs, $op)
+            }
+        )*
+    };
+}
+impl Executor<'_> {
+    impl_simd_shift_executors! {
+        (Instruction::I8x16ShlBy, execute_i8x16_shl_by, simd::i8x16_shl),
+        (Instruction::I8x16ShrSBy, execute_i8x16_shr_s_by, simd::i8x16_shr_s),
+        (Instruction::I8x16ShrUBy, execute_i8x16_shr_u_by, simd::i8x16_shr_u),
+        (Instruction::I16x8ShlBy, execute_i16x8_shl_by, simd::i16x8_shl),
+        (Instruction::I16x8ShrSBy, execute_i16x8_shr_s_by, simd::i16x8_shr_s),
+        (Instruction::I16x8ShrUBy, execute_i16x8_shr_u_by, simd::i16x8_shr_u),
+        (Instruction::I32x4ShlBy, execute_i32x4_shl_by, simd::i32x4_shl),
+        (Instruction::I32x4ShrSBy, execute_i32x4_shr_s_by, simd::i32x4_shr_s),
+        (Instruction::I32x4ShrUBy, execute_i32x4_shr_u_by, simd::i32x4_shr_u),
+        (Instruction::I64x2ShlBy, execute_i64x2_shl_by, simd::i64x2_shl),
+        (Instruction::I64x2ShrSBy, execute_i64x2_shr_s_by, simd::i64x2_shr_s),
+        (Instruction::I64x2ShrUBy, execute_i64x2_shr_u_by, simd::i64x2_shr_u),
     }
 }

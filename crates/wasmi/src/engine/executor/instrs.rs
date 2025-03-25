@@ -1634,27 +1634,75 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::I8x16Shl { result, lhs, rhs } => self.execute_i8x16_shl(result, lhs, rhs),
                 #[cfg(feature = "simd")]
+                Instr::I8x16ShlBy { result, lhs, rhs } => {
+                    self.execute_i8x16_shl_by(result, lhs, rhs)
+                }
+                #[cfg(feature = "simd")]
                 Instr::I16x8Shl { result, lhs, rhs } => self.execute_i16x8_shl(result, lhs, rhs),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ShlBy { result, lhs, rhs } => {
+                    self.execute_i16x8_shl_by(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I32x4Shl { result, lhs, rhs } => self.execute_i32x4_shl(result, lhs, rhs),
                 #[cfg(feature = "simd")]
+                Instr::I32x4ShlBy { result, lhs, rhs } => {
+                    self.execute_i32x4_shl_by(result, lhs, rhs)
+                }
+                #[cfg(feature = "simd")]
                 Instr::I64x2Shl { result, lhs, rhs } => self.execute_i64x2_shl(result, lhs, rhs),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ShlBy { result, lhs, rhs } => {
+                    self.execute_i64x2_shl_by(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16ShrS { result, lhs, rhs } => self.execute_i8x16_shr_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
+                Instr::I8x16ShrSBy { result, lhs, rhs } => {
+                    self.execute_i8x16_shr_s_by(result, lhs, rhs)
+                }
+                #[cfg(feature = "simd")]
                 Instr::I8x16ShrU { result, lhs, rhs } => self.execute_i8x16_shr_u(result, lhs, rhs),
+                #[cfg(feature = "simd")]
+                Instr::I8x16ShrUBy { result, lhs, rhs } => {
+                    self.execute_i8x16_shr_u_by(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ShrS { result, lhs, rhs } => self.execute_i16x8_shr_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
+                Instr::I16x8ShrSBy { result, lhs, rhs } => {
+                    self.execute_i16x8_shr_s_by(result, lhs, rhs)
+                }
+                #[cfg(feature = "simd")]
                 Instr::I16x8ShrU { result, lhs, rhs } => self.execute_i16x8_shr_u(result, lhs, rhs),
+                #[cfg(feature = "simd")]
+                Instr::I16x8ShrUBy { result, lhs, rhs } => {
+                    self.execute_i16x8_shr_u_by(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ShrS { result, lhs, rhs } => self.execute_i32x4_shr_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
+                Instr::I32x4ShrSBy { result, lhs, rhs } => {
+                    self.execute_i32x4_shr_s_by(result, lhs, rhs)
+                }
+                #[cfg(feature = "simd")]
                 Instr::I32x4ShrU { result, lhs, rhs } => self.execute_i32x4_shr_u(result, lhs, rhs),
+                #[cfg(feature = "simd")]
+                Instr::I32x4ShrUBy { result, lhs, rhs } => {
+                    self.execute_i32x4_shr_u_by(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ShrS { result, lhs, rhs } => self.execute_i64x2_shr_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
+                Instr::I64x2ShrSBy { result, lhs, rhs } => {
+                    self.execute_i64x2_shr_s_by(result, lhs, rhs)
+                }
+                #[cfg(feature = "simd")]
                 Instr::I64x2ShrU { result, lhs, rhs } => self.execute_i64x2_shr_u(result, lhs, rhs),
+                #[cfg(feature = "simd")]
+                Instr::I64x2ShrUBy { result, lhs, rhs } => {
+                    self.execute_i64x2_shr_u_by(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128And { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
