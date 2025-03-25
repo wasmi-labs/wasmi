@@ -397,9 +397,11 @@ macro_rules! impl_shift_amount {
     };
 }
 impl_shift_amount! {
+    // used by scalar types such as `i32` and `i64`
     (i32, 32, i16, i32),
     (i64, 64, i16, i64),
 
+    // used by SIMD types such as `i8x16`, `i16x8`, `i32x4` and `i64x2`
     (u8 ,  8, u16, u32),
     (u16, 16, u16, u32),
     (u32, 32, u16, u32),
