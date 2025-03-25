@@ -238,7 +238,7 @@ macro_rules! expand_tests {
             fn wasm_simd_i8x16_cmp("simd_i8x16_cmp");
             fn wasm_simd_i8x16_sat_arith("simd_i8x16_sat_arith");
             fn wasm_simd_int_to_int_extend("simd_int_to_int_extend");
-            #[ignore] fn wasm_simd_lane("simd_lane");
+            fn wasm_simd_lane("simd_lane");
             fn wasm_simd_linking("simd_linking");
             fn wasm_simd_load("simd_load");
             #[ignore] fn wasm_simd_load16_lane("simd_load16_lane");
