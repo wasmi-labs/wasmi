@@ -88,7 +88,7 @@ where
 }
 
 macro_rules! impl_from_typed_value_for {
-    ( $( $( #[$attr:meta] )* impl From<TypedValue> for $ty:ty );* $(;)? ) => {
+    ( $( $( #[$attr:meta] )* impl From<TypedVal> for $ty:ty );* $(;)? ) => {
         $(
             $( #[$attr] )*
             impl From<TypedVal> for $ty {
@@ -107,15 +107,15 @@ macro_rules! impl_from_typed_value_for {
     };
 }
 impl_from_typed_value_for! {
-    impl From<TypedValue> for bool;
-    impl From<TypedValue> for i32;
-    impl From<TypedValue> for u32;
-    impl From<TypedValue> for i64;
-    impl From<TypedValue> for u64;
-    impl From<TypedValue> for f32;
-    impl From<TypedValue> for f64;
+    impl From<TypedVal> for bool;
+    impl From<TypedVal> for i32;
+    impl From<TypedVal> for u32;
+    impl From<TypedVal> for i64;
+    impl From<TypedVal> for u64;
+    impl From<TypedVal> for f32;
+    impl From<TypedVal> for f64;
     #[cfg(feature = "simd")]
-    impl From<TypedValue> for V128;
+    impl From<TypedVal> for V128;
 }
 
 macro_rules! impl_forwarding {
