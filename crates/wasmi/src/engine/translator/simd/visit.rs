@@ -640,19 +640,31 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_extend_low_i8x16_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i16x8_extend_low_i8x16_s,
+            simd::i16x8_extend_low_i8x16_s,
+        )
     }
 
     fn visit_i16x8_extend_high_i8x16_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i16x8_extend_high_i8x16_s,
+            simd::i16x8_extend_high_i8x16_s,
+        )
     }
 
     fn visit_i16x8_extend_low_i8x16_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i16x8_extend_low_i8x16_u,
+            simd::i16x8_extend_low_i8x16_u,
+        )
     }
 
     fn visit_i16x8_extend_high_i8x16_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i16x8_extend_high_i8x16_u,
+            simd::i16x8_extend_high_i8x16_u,
+        )
     }
 
     fn visit_i16x8_shl(&mut self) -> Self::Output {
@@ -786,19 +798,31 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_extend_low_i16x8_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i32x4_extend_low_i16x8_s,
+            simd::i32x4_extend_low_i16x8_s,
+        )
     }
 
     fn visit_i32x4_extend_high_i16x8_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i32x4_extend_high_i16x8_s,
+            simd::i32x4_extend_high_i16x8_s,
+        )
     }
 
     fn visit_i32x4_extend_low_i16x8_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i32x4_extend_low_i16x8_u,
+            simd::i32x4_extend_low_i16x8_u,
+        )
     }
 
     fn visit_i32x4_extend_high_i16x8_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i32x4_extend_high_i16x8_u,
+            simd::i32x4_extend_high_i16x8_u,
+        )
     }
 
     fn visit_i32x4_shl(&mut self) -> Self::Output {
@@ -902,19 +926,31 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i64x2_extend_low_i32x4_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i64x2_extend_low_i32x4_s,
+            simd::i64x2_extend_low_i32x4_s,
+        )
     }
 
     fn visit_i64x2_extend_high_i32x4_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i64x2_extend_high_i32x4_s,
+            simd::i64x2_extend_high_i32x4_s,
+        )
     }
 
     fn visit_i64x2_extend_low_i32x4_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i64x2_extend_low_i32x4_u,
+            simd::i64x2_extend_low_i32x4_u,
+        )
     }
 
     fn visit_i64x2_extend_high_i32x4_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i64x2_extend_high_i32x4_u,
+            simd::i64x2_extend_high_i32x4_u,
+        )
     }
 
     fn visit_i64x2_shl(&mut self) -> Self::Output {

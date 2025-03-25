@@ -1920,29 +1920,53 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::I16x8NarrowI32x4U { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::I16x8ExtendLowI8x16S { result, input } => todo!(),
+                Instr::I16x8ExtendLowI8x16S { result, input } => {
+                    self.execute_i16x8_extend_low_i8x16_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8ExtendHighI8x16S { result, input } => todo!(),
+                Instr::I16x8ExtendHighI8x16S { result, input } => {
+                    self.execute_i16x8_extend_high_i8x16_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8ExtendLowI8x16U { result, input } => todo!(),
+                Instr::I16x8ExtendLowI8x16U { result, input } => {
+                    self.execute_i16x8_extend_low_i8x16_u(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8ExtendHighI8x16U { result, input } => todo!(),
+                Instr::I16x8ExtendHighI8x16U { result, input } => {
+                    self.execute_i16x8_extend_high_i8x16_u(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ExtendLowI16x8S { result, input } => todo!(),
+                Instr::I32x4ExtendLowI16x8S { result, input } => {
+                    self.execute_i32x4_extend_low_i16x8_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ExtendHighI16x8S { result, input } => todo!(),
+                Instr::I32x4ExtendHighI16x8S { result, input } => {
+                    self.execute_i32x4_extend_high_i16x8_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ExtendLowI16x8U { result, input } => todo!(),
+                Instr::I32x4ExtendLowI16x8U { result, input } => {
+                    self.execute_i32x4_extend_low_i16x8_u(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ExtendHighI16x8U { result, input } => todo!(),
+                Instr::I32x4ExtendHighI16x8U { result, input } => {
+                    self.execute_i32x4_extend_high_i16x8_u(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2ExtendLowI32x4S { result, input } => todo!(),
+                Instr::I64x2ExtendLowI32x4S { result, input } => {
+                    self.execute_i64x2_extend_low_i32x4_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2ExtendHighI32x4S { result, input } => todo!(),
+                Instr::I64x2ExtendHighI32x4S { result, input } => {
+                    self.execute_i64x2_extend_high_i32x4_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2ExtendLowI32x4U { result, input } => todo!(),
+                Instr::I64x2ExtendLowI32x4U { result, input } => {
+                    self.execute_i64x2_extend_low_i32x4_u(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2ExtendHighI32x4U { result, input } => todo!(),
+                Instr::I64x2ExtendHighI32x4U { result, input } => {
+                    self.execute_i64x2_extend_high_i32x4_u(result, input)
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Store { ptr, offset_lo } => {
                     self.execute_v128_store(&mut store.inner, ptr, offset_lo)?

@@ -91,6 +91,19 @@ impl Executor<'_> {
 
         (Instruction::V128Not, execute_v128_not, simd::v128_not),
         (Instruction::I8x16Popcnt, execute_i8x16_popcnt, simd::i8x16_popcnt),
+
+        (Instruction::i16x8_extend_low_i8x16_s, execute_i16x8_extend_low_i8x16_s, simd::i16x8_extend_low_i8x16_s),
+        (Instruction::i16x8_extend_high_i8x16_s, execute_i16x8_extend_high_i8x16_s, simd::i16x8_extend_high_i8x16_s),
+        (Instruction::i16x8_extend_low_i8x16_u, execute_i16x8_extend_low_i8x16_u, simd::i16x8_extend_low_i8x16_u),
+        (Instruction::i16x8_extend_high_i8x16_u, execute_i16x8_extend_high_i8x16_u, simd::i16x8_extend_high_i8x16_u),
+        (Instruction::i32x4_extend_low_i16x8_s, execute_i32x4_extend_low_i16x8_s, simd::i32x4_extend_low_i16x8_s),
+        (Instruction::i32x4_extend_high_i16x8_s, execute_i32x4_extend_high_i16x8_s, simd::i32x4_extend_high_i16x8_s),
+        (Instruction::i32x4_extend_low_i16x8_u, execute_i32x4_extend_low_i16x8_u, simd::i32x4_extend_low_i16x8_u),
+        (Instruction::i32x4_extend_high_i16x8_u, execute_i32x4_extend_high_i16x8_u, simd::i32x4_extend_high_i16x8_u),
+        (Instruction::i64x2_extend_low_i32x4_s, execute_i64x2_extend_low_i32x4_s, simd::i64x2_extend_low_i32x4_s),
+        (Instruction::i64x2_extend_high_i32x4_s, execute_i64x2_extend_high_i32x4_s, simd::i64x2_extend_high_i32x4_s),
+        (Instruction::i64x2_extend_low_i32x4_u, execute_i64x2_extend_low_i32x4_u, simd::i64x2_extend_low_i32x4_u),
+        (Instruction::i64x2_extend_high_i32x4_u, execute_i64x2_extend_high_i32x4_u, simd::i64x2_extend_high_i32x4_u),
     }
 
     impl_binary_executors! {
