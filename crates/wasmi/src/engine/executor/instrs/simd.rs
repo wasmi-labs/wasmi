@@ -47,7 +47,7 @@ impl Executor<'_> {
                     }
                 }
             });
-        let result = simd::i8x16_shuffle(lhs, rhs, selector);
+        self.set_register_as::<V128>(result, simd::i8x16_shuffle(lhs, rhs, selector));
         self.next_instr_at(2);
     }
 
@@ -57,7 +57,7 @@ impl Executor<'_> {
         let lhs = self.get_register_as::<V128>(lhs);
         let rhs = self.get_register_as::<V128>(rhs);
         let selector = self.get_register_as::<V128>(selector);
-        let result = simd::v128_bitselect(lhs, rhs, selector);
+        self.set_register_as::<V128>(result, simd::v128_bitselect(lhs, rhs, selector));
         self.next_instr_at(2);
     }
 
