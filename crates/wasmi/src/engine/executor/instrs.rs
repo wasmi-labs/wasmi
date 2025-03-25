@@ -1716,7 +1716,7 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::V128Bitselect { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::I8x16Popcnt { result, input } => todo!(),
+                Instr::I8x16Popcnt { result, input } => self.execute_i8x16_popcnt(result, input),
                 #[cfg(feature = "simd")]
                 Instr::V128AnyTrue { result, input } => todo!(),
                 #[cfg(feature = "simd")]

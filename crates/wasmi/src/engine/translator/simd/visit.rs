@@ -510,7 +510,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_popcnt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i8x16_popcnt, simd::i8x16_popcnt)
     }
 
     fn visit_i8x16_all_true(&mut self) -> Self::Output {

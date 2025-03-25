@@ -90,6 +90,7 @@ impl Executor<'_> {
         (Instruction::F64x2Sqrt, execute_f64x2_sqrt, simd::f64x2_sqrt),
 
         (Instruction::V128Not, execute_v128_not, simd::v128_not),
+        (Instruction::I8x16Popcnt, execute_i8x16_popcnt, simd::i8x16_popcnt),
     }
 
     impl_binary_executors! {
