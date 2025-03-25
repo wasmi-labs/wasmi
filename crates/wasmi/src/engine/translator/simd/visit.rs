@@ -498,7 +498,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_any_true(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::v128_any_true, simd::v128_any_true)
     }
 
     fn visit_i8x16_abs(&mut self) -> Self::Output {
@@ -514,11 +514,11 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_all_true(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i8x16_all_true, simd::i8x16_all_true)
     }
 
     fn visit_i8x16_bitmask(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i8x16_bitmask, simd::i8x16_bitmask)
     }
 
     fn visit_i8x16_narrow_i16x8_s(&mut self) -> Self::Output {
@@ -624,11 +624,11 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_all_true(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i16x8_all_true, simd::i16x8_all_true)
     }
 
     fn visit_i16x8_bitmask(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i16x8_bitmask, simd::i16x8_bitmask)
     }
 
     fn visit_i16x8_narrow_i32x4_s(&mut self) -> Self::Output {
@@ -790,11 +790,11 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_all_true(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i32x4_all_true, simd::i32x4_all_true)
     }
 
     fn visit_i32x4_bitmask(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i32x4_bitmask, simd::i32x4_bitmask)
     }
 
     fn visit_i32x4_extend_low_i16x8_s(&mut self) -> Self::Output {
@@ -918,11 +918,11 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i64x2_all_true(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i64x2_all_true, simd::i64x2_all_true)
     }
 
     fn visit_i64x2_bitmask(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::i64x2_bitmask, simd::i64x2_bitmask)
     }
 
     fn visit_i64x2_extend_low_i32x4_s(&mut self) -> Self::Output {

@@ -52,6 +52,16 @@ impl Executor<'_> {
     }
 
     impl_unary_executors! {
+        (Instruction::V128AnyTrue, execute_v128_any_true, simd::v128_any_true),
+        (Instruction::I8x16AllTrue, execute_i8x16_all_true, simd::i8x16_all_true),
+        (Instruction::I8x16Bitmask, execute_i8x16_bitmask, simd::i8x16_bitmask),
+        (Instruction::I16x8AllTrue, execute_i16x8_all_true, simd::i16x8_all_true),
+        (Instruction::I16x8Bitmask, execute_i16x8_bitmask, simd::i16x8_bitmask),
+        (Instruction::I32x4AllTrue, execute_i32x4_all_true, simd::i32x4_all_true),
+        (Instruction::I32x4Bitmask, execute_i32x4_bitmask, simd::i32x4_bitmask),
+        (Instruction::I64x2AllTrue, execute_i64x2_all_true, simd::i64x2_all_true),
+        (Instruction::I64x2Bitmask, execute_i64x2_bitmask, simd::i64x2_bitmask),
+
         (Instruction::I8x16Neg, execute_i8x16_neg, simd::i8x16_neg),
         (Instruction::I16x8Neg, execute_i16x8_neg, simd::i16x8_neg),
         (Instruction::I16x8Neg, execute_i32x4_neg, simd::i32x4_neg),
