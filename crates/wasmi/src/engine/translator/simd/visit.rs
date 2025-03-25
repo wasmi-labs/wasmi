@@ -7,7 +7,7 @@ use crate::{
         translator::{provider::Provider, FuncTranslator},
         FuelCosts,
     },
-    ir::{Instruction, Reg},
+    ir::{Const32, Instruction, Reg},
 };
 use core::array;
 use wasmparser::{MemArg, VisitSimdOperator};
@@ -236,28 +236,102 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         )
     }
 
-    fn visit_i8x16_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_i8x16_replace_lane(&mut self, lane: u8) -> Self::Output {
+        self.translate_replace_lane::<i8>(
+            lane,
+            simd::i8x16_replace_lane,
+            Instruction::i8x16_replace_lane,
+            |_, result, input, lane, value| {
+                Ok((
+                    Instruction::i8x16_replace_lane_imm(result, input, lane, value),
+                    None,
+                ))
+            },
+        )
     }
 
-    fn visit_i16x8_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_i16x8_replace_lane(&mut self, lane: u8) -> Self::Output {
+        self.translate_replace_lane::<i16>(
+            lane,
+            simd::i16x8_replace_lane,
+            Instruction::i16x8_replace_lane,
+            |_, result, input, lane, value| {
+                Ok((
+                    Instruction::i16x8_replace_lane_imm(result, input, lane),
+                    Some(Instruction::const32(i32::from(value))),
+                ))
+            },
+        )
     }
 
-    fn visit_i32x4_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_i32x4_replace_lane(&mut self, lane: u8) -> Self::Output {
+        self.translate_replace_lane::<i32>(
+            lane,
+            simd::i32x4_replace_lane,
+            Instruction::i32x4_replace_lane,
+            |_, result, input, lane, value| {
+                Ok((
+                    Instruction::i32x4_replace_lane_imm(result, input, lane),
+                    Some(Instruction::const32(value)),
+                ))
+            },
+        )
     }
 
-    fn visit_i64x2_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_i64x2_replace_lane(&mut self, lane: u8) -> Self::Output {
+        self.translate_replace_lane::<i64>(
+            lane,
+            simd::i64x2_replace_lane,
+            Instruction::i64x2_replace_lane,
+            |this, result, input, lane, value| match <Const32<i64>>::try_from(value) {
+                Ok(value) => Ok((
+                    Instruction::i64x2_replace_lane_imm32(result, input, lane),
+                    Some(Instruction::i64const32(value)),
+                )),
+                Err(_) => {
+                    let value = this.alloc.stack.alloc_const(value)?;
+                    Ok((
+                        Instruction::i64x2_replace_lane(result, input, lane),
+                        Some(Instruction::register(value)),
+                    ))
+                }
+            },
+        )
     }
 
-    fn visit_f32x4_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_f32x4_replace_lane(&mut self, lane: u8) -> Self::Output {
+        self.translate_replace_lane::<f32>(
+            lane,
+            simd::f32x4_replace_lane,
+            Instruction::f32x4_replace_lane,
+            |_, result, input, lane, value| {
+                Ok((
+                    Instruction::f32x4_replace_lane_imm(result, input, lane),
+                    Some(Instruction::const32(value)),
+                ))
+            },
+        )
     }
 
-    fn visit_f64x2_replace_lane(&mut self, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_f64x2_replace_lane(&mut self, lane: u8) -> Self::Output {
+        self.translate_replace_lane::<f64>(
+            lane,
+            simd::f64x2_replace_lane,
+            Instruction::f64x2_replace_lane,
+            |this, result, input, lane, value| match <Const32<f64>>::try_from(value) {
+                Ok(value) => Ok((
+                    Instruction::f64x2_replace_lane_imm32(result, input, lane),
+                    Some(Instruction::f64const32(value)),
+                )),
+                Err(_) => {
+                    let value = this.alloc.stack.alloc_const(value)?;
+                    Ok((
+                        Instruction::f64x2_replace_lane(result, input, lane),
+                        Some(Instruction::register(value)),
+                    ))
+                }
+            },
+        )
     }
 
     fn visit_i8x16_swizzle(&mut self) -> Self::Output {

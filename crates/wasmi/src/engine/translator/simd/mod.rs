@@ -9,7 +9,7 @@ use crate::{
 };
 
 trait IntoLane {
-    type LaneType;
+    type LaneType: TryFrom<u8>;
 }
 
 macro_rules! impl_into_lane_for {
@@ -68,7 +68,6 @@ impl FuncTranslator {
         const_eval: fn(input: V128, lane: T::LaneType) -> R,
     ) -> Result<(), Error>
     where
-        T::LaneType: TryFrom<u8>,
         R: Into<TypedVal>,
     {
         bail_unreachable!(self);
@@ -135,7 +134,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Generically translate a Wasm shift instruction.
+    /// Generically translate a Wasm SIMD shift instruction.
     fn translate_simd_shift<T>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
@@ -171,6 +170,50 @@ impl FuncTranslator {
             }
         };
         self.push_fueled_instr(instr, FuelCosts::base)?;
+        Ok(())
+    }
+
+    /// Generically translate a Wasm SIMD replace lane instruction.
+    #[allow(clippy::type_complexity)]
+    fn translate_replace_lane<T>(
+        &mut self,
+        lane: u8,
+        const_eval: fn(input: V128, lane: T::LaneType, value: T) -> V128,
+        make_instr: fn(result: Reg, input: Reg, lane: T::LaneType) -> Instruction,
+        make_instr_imm: fn(
+            this: &mut Self,
+            result: Reg,
+            input: Reg,
+            lane: T::LaneType,
+            value: T,
+        ) -> Result<(Instruction, Option<Instruction>), Error>,
+    ) -> Result<(), Error>
+    where
+        T: IntoLane + From<TypedVal>,
+    {
+        bail_unreachable!(self);
+        let Ok(lane) = <T::LaneType>::try_from(lane) else {
+            panic!("encountered out of bounds lane index: {lane}");
+        };
+        let (input, value) = self.alloc.stack.pop2();
+        if let (Provider::Const(x), Provider::Const(item)) = (input, value) {
+            let result = const_eval(x.into(), lane, item.into());
+            self.alloc.stack.push_const(result);
+            return Ok(());
+        }
+        let input = self.alloc.stack.provider2reg(&input)?;
+        let result = self.alloc.stack.push_dynamic()?;
+        let (instr, param) = match value {
+            Provider::Register(value) => (
+                make_instr(result, input, lane),
+                Some(Instruction::register(value)),
+            ),
+            Provider::Const(value) => make_instr_imm(self, result, input, lane, value.into())?,
+        };
+        self.push_fueled_instr(instr, FuelCosts::base)?;
+        if let Some(param) = param {
+            self.alloc.instr_encoder.append_instr(param)?;
+        }
         Ok(())
     }
 }
