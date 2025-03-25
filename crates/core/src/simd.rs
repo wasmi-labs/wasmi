@@ -901,10 +901,10 @@ impl_binary_for! {
     fn i8x16_avgr_u(lhs: V128, rhs: V128) -> V128 = avgr!(u8 as u16);
     fn i16x8_avgr_u(lhs: V128, rhs: V128) -> V128 = avgr!(u16 as u32);
 
-    fn v128_and(lhs: V128, rhs: V128) -> V128 = <i64 as BitAnd>::bitand;
-    fn v128_or(lhs: V128, rhs: V128) -> V128 = <i64 as BitOr>::bitor;
-    fn v128_xor(lhs: V128, rhs: V128) -> V128 = <i64 as BitXor>::bitxor;
-    fn v128_andnot(lhs: V128, rhs: V128) -> V128 = |a: i64, b: i64| a & !b;
+    fn v128_and(lhs: V128, rhs: V128) -> V128 = <u64 as BitAnd>::bitand;
+    fn v128_or(lhs: V128, rhs: V128) -> V128 = <u64 as BitOr>::bitor;
+    fn v128_xor(lhs: V128, rhs: V128) -> V128 = <u64 as BitXor>::bitxor;
+    fn v128_andnot(lhs: V128, rhs: V128) -> V128 = |a: u64, b: u64| a & !b;
 
     fn f32x4_min(lhs: V128, rhs: V128) -> V128 = wasm::f32_min;
     fn f64x2_min(lhs: V128, rhs: V128) -> V128 = wasm::f64_min;
