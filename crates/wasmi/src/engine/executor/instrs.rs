@@ -1932,13 +1932,21 @@ impl<'engine> Executor<'engine> {
                     self.execute_f64x2_promote_low_f32x4(result, input)
                 }
                 #[cfg(feature = "simd")]
-                Instr::I8x16NarrowI16x8S { result, lhs, rhs } => todo!(),
+                Instr::I8x16NarrowI16x8S { result, lhs, rhs } => {
+                    self.execute_i8x16_narrow_i16x8_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I8x16NarrowI16x8U { result, lhs, rhs } => todo!(),
+                Instr::I8x16NarrowI16x8U { result, lhs, rhs } => {
+                    self.execute_i8x16_narrow_i16x8_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8NarrowI32x4S { result, lhs, rhs } => todo!(),
+                Instr::I16x8NarrowI32x4S { result, lhs, rhs } => {
+                    self.execute_i16x8_narrow_i32x4_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8NarrowI32x4U { result, lhs, rhs } => todo!(),
+                Instr::I16x8NarrowI32x4U { result, lhs, rhs } => {
+                    self.execute_i16x8_narrow_i32x4_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtendLowI8x16S { result, input } => {
                     self.execute_i16x8_extend_low_i8x16_s(result, input)

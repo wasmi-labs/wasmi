@@ -219,6 +219,11 @@ impl Executor<'_> {
         (Instruction::F64x2Max, execute_f64x2_max, simd::f64x2_max),
         (Instruction::F64x2Pmin, execute_f64x2_pmin, simd::f64x2_pmin),
         (Instruction::F64x2Pmax, execute_f64x2_pmax, simd::f64x2_pmax),
+
+        (Instruction::I8x16NarrowI16x8S, execute_i8x16_narrow_i16x8_s, simd::i8x16_narrow_i16x8_s),
+        (Instruction::I8x16NarrowI16x8U, execute_i8x16_narrow_i16x8_u, simd::i8x16_narrow_i16x8_u),
+        (Instruction::I16x8NarrowI32x4S, execute_i16x8_narrow_i32x4_s, simd::i16x8_narrow_i32x4_s),
+        (Instruction::I16x8NarrowI32x4U, execute_i16x8_narrow_i32x4_u, simd::i16x8_narrow_i32x4_u),
     }
 }
 
