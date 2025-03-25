@@ -203,7 +203,7 @@ macro_rules! expand_tests {
             fn wasm_simd_bitwise("simd_bitwise");
             #[ignore] fn wasm_simd_boolean("simd_boolean");
             fn wasm_simd_const("simd_const");
-            #[ignore] fn wasm_simd_conversions("simd_conversions");
+            fn wasm_simd_conversions("simd_conversions");
             fn wasm_simd_f32x4("simd_f32x4");
             fn wasm_simd_f32x4_arith("simd_f32x4_arith");
             fn wasm_simd_f32x4_cmp("simd_f32x4_cmp");
