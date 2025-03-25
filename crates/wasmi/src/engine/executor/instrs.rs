@@ -1892,25 +1892,45 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::F64x2Nearest { result, input } => self.execute_f64x2_nearest(result, input),
                 #[cfg(feature = "simd")]
-                Instr::F32x4ConvertI32x4S { result, input } => todo!(),
+                Instr::F32x4ConvertI32x4S { result, input } => {
+                    self.execute_f32x4_convert_i32x4_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::F32x4ConvertI32x4U { result, input } => todo!(),
+                Instr::F32x4ConvertI32x4U { result, input } => {
+                    self.execute_f32x4_convert_i32x4_u(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::F64x2ConvertLowI32x4S { result, input } => todo!(),
+                Instr::F64x2ConvertLowI32x4S { result, input } => {
+                    self.execute_f64x2_convert_low_i32x4_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::F64x2ConvertLowI32x4U { result, input } => todo!(),
+                Instr::F64x2ConvertLowI32x4U { result, input } => {
+                    self.execute_f64x2_convert_low_i32x4_u(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4TruncSatF32x4S { result, input } => todo!(),
+                Instr::I32x4TruncSatF32x4S { result, input } => {
+                    self.execute_i32x4_trunc_sat_f32x4_s(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4TruncSatF32x4U { result, input } => todo!(),
+                Instr::I32x4TruncSatF32x4U { result, input } => {
+                    self.execute_i32x4_trunc_sat_f32x4_u(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4TruncSatF64x2SZero { result, input } => todo!(),
+                Instr::I32x4TruncSatF64x2SZero { result, input } => {
+                    self.execute_i32x4_trunc_sat_f64x2_s_zero(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4TruncSatF64x2UZero { result, input } => todo!(),
+                Instr::I32x4TruncSatF64x2UZero { result, input } => {
+                    self.execute_i32x4_trunc_sat_f64x2_u_zero(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::F32x4DemoteF64x2Zero { result, input } => todo!(),
+                Instr::F32x4DemoteF64x2Zero { result, input } => {
+                    self.execute_f32x4_demote_f64x2_zero(result, input)
+                }
                 #[cfg(feature = "simd")]
-                Instr::F64x2PromoteLowF32x4 { result, input } => todo!(),
+                Instr::F64x2PromoteLowF32x4 { result, input } => {
+                    self.execute_f64x2_promote_low_f32x4(result, input)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16NarrowI16x8S { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]

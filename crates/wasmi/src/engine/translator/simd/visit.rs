@@ -1138,42 +1138,72 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_trunc_sat_f32x4_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i32x4_trunc_sat_f32x4_s,
+            simd::i32x4_trunc_sat_f32x4_s,
+        )
     }
 
     fn visit_i32x4_trunc_sat_f32x4_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i32x4_trunc_sat_f32x4_u,
+            simd::i32x4_trunc_sat_f32x4_u,
+        )
     }
 
     fn visit_f32x4_convert_i32x4_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::f32x4_convert_i32x4_s,
+            simd::f32x4_convert_i32x4_s,
+        )
     }
 
     fn visit_f32x4_convert_i32x4_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::f32x4_convert_i32x4_u,
+            simd::f32x4_convert_i32x4_u,
+        )
     }
 
     fn visit_i32x4_trunc_sat_f64x2_s_zero(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i32x4_trunc_sat_f64x2_s_zero,
+            simd::i32x4_trunc_sat_f64x2_s_zero,
+        )
     }
 
     fn visit_i32x4_trunc_sat_f64x2_u_zero(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::i32x4_trunc_sat_f64x2_u_zero,
+            simd::i32x4_trunc_sat_f64x2_u_zero,
+        )
     }
 
     fn visit_f64x2_convert_low_i32x4_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::f64x2_convert_low_i32x4_s,
+            simd::f64x2_convert_low_i32x4_s,
+        )
     }
 
     fn visit_f64x2_convert_low_i32x4_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::f64x2_convert_low_i32x4_u,
+            simd::f64x2_convert_low_i32x4_u,
+        )
     }
 
     fn visit_f32x4_demote_f64x2_zero(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::f32x4_demote_f64x2_zero,
+            simd::f32x4_demote_f64x2_zero,
+        )
     }
 
     fn visit_f64x2_promote_low_f32x4(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(
+            Instruction::f64x2_promote_low_f32x4,
+            simd::f64x2_promote_low_f32x4,
+        )
     }
 }

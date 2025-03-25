@@ -114,6 +114,17 @@ impl Executor<'_> {
         (Instruction::i64x2_extend_high_i32x4_s, execute_i64x2_extend_high_i32x4_s, simd::i64x2_extend_high_i32x4_s),
         (Instruction::i64x2_extend_low_i32x4_u, execute_i64x2_extend_low_i32x4_u, simd::i64x2_extend_low_i32x4_u),
         (Instruction::i64x2_extend_high_i32x4_u, execute_i64x2_extend_high_i32x4_u, simd::i64x2_extend_high_i32x4_u),
+
+        (Instruction::I32x4TruncSatF32x4S, execute_i32x4_trunc_sat_f32x4_s, simd::i32x4_trunc_sat_f32x4_s),
+        (Instruction::I32x4TruncSatF32x4U, execute_i32x4_trunc_sat_f32x4_u, simd::i32x4_trunc_sat_f32x4_u),
+        (Instruction::F32x4ConvertI32x4S, execute_f32x4_convert_i32x4_s, simd::f32x4_convert_i32x4_s),
+        (Instruction::F32x4ConvertI32x4U, execute_f32x4_convert_i32x4_u, simd::f32x4_convert_i32x4_u),
+        (Instruction::I32x4TruncSatF64x2SZero, execute_i32x4_trunc_sat_f64x2_s_zero, simd::i32x4_trunc_sat_f64x2_s_zero),
+        (Instruction::I32x4TruncSatF64x2UZero, execute_i32x4_trunc_sat_f64x2_u_zero, simd::i32x4_trunc_sat_f64x2_u_zero),
+        (Instruction::F64x2ConvertLowI32x4S, execute_f64x2_convert_low_i32x4_s, simd::f64x2_convert_low_i32x4_s),
+        (Instruction::F64x2ConvertLowI32x4U, execute_f64x2_convert_low_i32x4_u, simd::f64x2_convert_low_i32x4_u),
+        (Instruction::F32x4DemoteF64x2Zero, execute_f32x4_demote_f64x2_zero, simd::f32x4_demote_f64x2_zero),
+        (Instruction::F64x2PromoteLowF32x4, execute_f64x2_promote_low_f32x4, simd::f64x2_promote_low_f32x4),
     }
 
     impl_binary_executors! {
