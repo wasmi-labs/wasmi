@@ -227,8 +227,8 @@ macro_rules! expand_tests {
             fn wasm_simd_i32x4_dot_i16x8("simd_i32x4_dot_i16x8");
             fn wasm_simd_i32x4_extadd_pairwise_i16x8("simd_i32x4_extadd_pairwise_i16x8");
             fn wasm_simd_i32x4_extmul_i16x8("simd_i32x4_extmul_i16x8");
-            #[ignore] fn wasm_simd_i32x4_trunc_sat_f32x4("simd_i32x4_trunc_sat_f32x4");
-            #[ignore] fn wasm_simd_i32x4_trunc_sat_f64x2("simd_i32x4_trunc_sat_f64x2");
+            fn wasm_simd_i32x4_trunc_sat_f32x4("simd_i32x4_trunc_sat_f32x4");
+            fn wasm_simd_i32x4_trunc_sat_f64x2("simd_i32x4_trunc_sat_f64x2");
             fn wasm_simd_i64x2_arith("simd_i64x2_arith");
             fn wasm_simd_i64x2_arith2("simd_i64x2_arith2");
             #[ignore] fn wasm_simd_i64x2_cmp("simd_i64x2_cmp");
