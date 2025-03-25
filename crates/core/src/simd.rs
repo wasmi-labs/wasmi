@@ -1678,9 +1678,17 @@ impl_v128_load_mxn_at! {
 }
 
 #[test]
-fn it_works() {
-    let v0 = V128::splat(16383_i16);
-    let v1 = V128::splat(16384_i16);
-    let result = simd::i32x4_dot_i16x8_s(v0, v1);
-    assert_eq!(result, V128::splat(536838144_i32));
+fn i32x4_dot_i16x8_s_works() {
+    assert_eq!(
+        simd::i32x4_dot_i16x8_s(simd::i16x8_splat(16383_i16), simd::i16x8_splat(16384_i16)),
+        simd::i32x4_splat(536838144_i32)
+    );
+}
+
+#[test]
+fn v128_or_works() {
+    assert_eq!(
+        simd::v128_or(simd::i16x8_splat(0), simd::i16x8_splat(0xffff_u16 as i16),),
+        simd::i16x8_splat(0xffff_u16 as i16),
+    );
 }
