@@ -1030,7 +1030,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f64x2_mul(&mut self) -> Self::Output {
-        self.translate_simd_binary(Instruction::f64x2_sub, simd::f64x2_sub)
+        self.translate_simd_binary(Instruction::f64x2_mul, simd::f64x2_mul)
     }
 
     fn visit_f64x2_div(&mut self) -> Self::Output {
