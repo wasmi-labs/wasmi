@@ -234,7 +234,7 @@ macro_rules! expand_tests {
             #[ignore] fn wasm_simd_i64x2_cmp("simd_i64x2_cmp");
             fn wasm_simd_i64x2_extmul_i32x4("simd_i64x2_extmul_i32x4");
             fn wasm_simd_i8x16_arith("simd_i8x16_arith");
-            #[ignore] fn wasm_simd_i8x16_arith2("simd_i8x16_arith2");
+            fn wasm_simd_i8x16_arith2("simd_i8x16_arith2");
             #[ignore] fn wasm_simd_i8x16_cmp("simd_i8x16_cmp");
             fn wasm_simd_i8x16_sat_arith("simd_i8x16_sat_arith");
             #[ignore] fn wasm_simd_int_to_int_extend("simd_int_to_int_extend");
