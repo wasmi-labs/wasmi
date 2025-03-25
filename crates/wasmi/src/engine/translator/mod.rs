@@ -65,7 +65,6 @@ use crate::{
         Offset64Lo,
         Reg,
         RegSpan,
-        ShiftAmount,
         Sign,
     },
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, TableIdx},
@@ -1812,7 +1811,11 @@ impl FuncTranslator {
     fn translate_shift<T>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_by: fn(result: Reg, lhs: Reg, rhs: ShiftAmount<T>) -> Instruction,
+        make_instr_by: fn(
+            result: Reg,
+            lhs: Reg,
+            rhs: <T as IntoShiftAmount>::Output,
+        ) -> Instruction,
         make_instr_imm16: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,

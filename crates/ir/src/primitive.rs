@@ -356,45 +356,48 @@ pub struct ShiftAmount<T> {
     value: Const16<T>,
 }
 
-/// Integer types that can be used as shift amount in shift or rotate instructions.
-pub trait IntoShiftAmount: Sized {
-    /// Converts `self` into a [`ShiftAmount`] if possible.
-    fn into_shift_amount(self) -> Option<ShiftAmount<Self>>;
-}
-
-macro_rules! impl_shift_amount {
-    ( $( ($ty:ty, $bits:literal) ),* $(,)? ) => {
+macro_rules! impl_from_shift_amount_for {
+    ( $($ty:ty),* $(,)? ) => {
         $(
-            impl IntoShiftAmount for $ty {
-                fn into_shift_amount(self) -> Option<ShiftAmount<Self>> {
-                    <ShiftAmount<$ty>>::new(self)
-                }
-            }
-
-            impl ShiftAmount<$ty> {
-                /// Creates a new [`ShiftAmount`] for the given `value`.
-                ///
-                /// Returns `None` if `value` causes a no-op shift.
-                pub fn new(value: $ty) -> Option<Self> {
-                    let value = (value % $bits) as i16;
-                    if value == 0 {
-                        return None
-                    }
-                    Some(Self { value: Const16::from(value) })
-                }
-            }
-
             impl From<ShiftAmount<$ty>> for $ty {
-                fn from(shamt: ShiftAmount<$ty>) -> Self {
+                fn from(shamt: ShiftAmount<$ty>) -> $ty {
                     shamt.value.into()
                 }
             }
         )*
     };
 }
+impl_from_shift_amount_for!(i32, i64, u32);
+
+/// Integer types that can be used as shift amount in shift or rotate instructions.
+pub trait IntoShiftAmount: Sized {
+    type Output;
+
+    /// Converts `self` into a [`ShiftAmount`] if possible.
+    fn into_shift_amount(self) -> Option<Self::Output>;
+}
+
+macro_rules! impl_shift_amount {
+    ( $( ($ty:ty, $bits:literal, $ty16:ty, $shamt:ty) ),* $(,)? ) => {
+        $(
+            impl IntoShiftAmount for $ty {
+                type Output = ShiftAmount<$shamt>;
+
+                fn into_shift_amount(self) -> Option<Self::Output> {
+                    // <ShiftAmount<$shamt>>::new(self as _)
+                    let value = (self % $bits) as $ty16;
+                    if value == 0 {
+                        return None
+                    }
+                    Some(ShiftAmount { value: Const16::from(value) })
+                }
+            }
+        )*
+    };
+}
 impl_shift_amount! {
-    (i32, 32),
-    (i64, 64),
+    (i32, 32, i16, i32),
+    (i64, 64, i16, i64),
 }
 
 /// A 64-bit offset in Wasmi bytecode.
