@@ -1049,7 +1049,7 @@ impl_widen_low_unary! {
     fn i64x2_extend_low_i32x4_u(v128: V128) -> V128 = <u32 as Into<u64>>::into;
 
     fn f64x2_convert_low_i32x4_s(v128: V128) -> V128 = wasm::f64_convert_i32_s;
-    fn f64x2_convert_low_i32x4_u(v128: V128) -> V128 = wasm::f64_convert_i32_s;
+    fn f64x2_convert_low_i32x4_u(v128: V128) -> V128 = wasm::f64_convert_i32_u;
     fn f64x2_promote_low_f32x4(v128: V128) -> V128 = wasm::f64_promote_f32;
 }
 
