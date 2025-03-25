@@ -462,7 +462,7 @@ macro_rules! impl_from_wide_for {
                     Self(array::from_fn(|i| {
                         match i < <$wide_ty as Lanes>::LANES {
                             true => f(low[i]),
-                            false => f(high[i]),
+                            false => f(high[i - <$wide_ty as Lanes>::LANES]),
                         }
                     }))
                 }
