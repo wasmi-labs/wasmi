@@ -8,7 +8,7 @@ use crate::{
         V128,
     },
     engine::{executor::InstructionPtr, utils::unreachable_unchecked},
-    ir::{Instruction, Reg, ShiftAmount},
+    ir::{AnyConst32, Instruction, Reg, ShiftAmount},
 };
 
 impl Executor<'_> {
@@ -23,6 +23,60 @@ impl Executor<'_> {
                 unsafe {
                     unreachable_unchecked!(
                         "expected `Instruction::Register` but found {unexpected:?}"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Fetches a [`Reg`] from an [`Instruction::Const32`] instruction parameter.
+    fn fetch_const32_as<T>(&self) -> T
+    where
+        T: From<AnyConst32>,
+    {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(1);
+        match *addr.get() {
+            Instruction::Const32 { value } => value.into(),
+            unexpected => {
+                // Safety: Wasmi translation guarantees that [`Instruction::Const32`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::Const32` but found {unexpected:?}"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Fetches a [`Reg`] from an [`Instruction::I64Const32`] instruction parameter.
+    fn fetch_i64const32(&self) -> i64 {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(1);
+        match *addr.get() {
+            Instruction::I64Const32 { value } => value.into(),
+            unexpected => {
+                // Safety: Wasmi translation guarantees that [`Instruction::I64Const32`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::I64Const32` but found {unexpected:?}"
+                    )
+                }
+            }
+        }
+    }
+
+    /// Fetches a [`Reg`] from an [`Instruction::F64Const32`] instruction parameter.
+    fn fetch_f64const32(&self) -> f64 {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(1);
+        match *addr.get() {
+            Instruction::F64Const32 { value } => value.into(),
+            unexpected => {
+                // Safety: Wasmi translation guarantees that [`Instruction::F64Const32`] exists.
+                unsafe {
+                    unreachable_unchecked!(
+                        "expected `Instruction::F64Const32` but found {unexpected:?}"
                     )
                 }
             }
@@ -58,6 +112,91 @@ impl Executor<'_> {
         let rhs = self.get_register_as::<V128>(rhs);
         let selector = self.get_register_as::<V128>(selector);
         self.set_register_as::<V128>(result, simd::v128_bitselect(lhs, rhs, selector));
+        self.next_instr_at(2);
+    }
+}
+
+macro_rules! impl_replace_lane_ops {
+    (
+        $(
+            ($ty:ty, $lane_ty:ty, Instruction::$instr_name:ident, $exec_name:ident, $execute:expr)
+        ),* $(,)?
+    ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($instr_name), "`].")]
+            pub fn $exec_name(&mut self, result: Reg, input: Reg, lane: $lane_ty) {
+                let value = self.fetch_register();
+                let input = self.get_register_as::<V128>(input);
+                let value = self.get_register_as::<$ty>(value);
+                self.set_register_as::<V128>(result, $execute(input, lane, value));
+                self.next_instr_at(2);
+            }
+        )*
+    };
+}
+
+impl Executor<'_> {
+    impl_replace_lane_ops! {
+        (i8, ImmLaneIdx16, Instruction::I8x16ReplaceLane, execute_i8x16_replace_lane, simd::i8x16_replace_lane),
+        (i16, ImmLaneIdx8, Instruction::I16x8ReplaceLane, execute_i16x8_replace_lane, simd::i16x8_replace_lane),
+        (i32, ImmLaneIdx4, Instruction::I32x4ReplaceLane, execute_i32x4_replace_lane, simd::i32x4_replace_lane),
+        (i64, ImmLaneIdx2, Instruction::I64x2ReplaceLane, execute_i64x2_replace_lane, simd::i64x2_replace_lane),
+        (f32, ImmLaneIdx4, Instruction::F32x4ReplaceLane, execute_f32x4_replace_lane, simd::f32x4_replace_lane),
+        (f64, ImmLaneIdx2, Instruction::F64x2ReplaceLane, execute_f64x2_replace_lane, simd::f64x2_replace_lane),
+    }
+
+    /// Executes an [`Instruction::I8x16ReplaceLaneImm`] instruction.
+    pub fn execute_i8x16_replace_lane_imm(
+        &mut self,
+        result: Reg,
+        input: Reg,
+        lane: ImmLaneIdx16,
+        value: i8,
+    ) {
+        self.execute_replace_lane_impl(result, input, lane, value, simd::i8x16_replace_lane)
+    }
+
+    /// Executes an [`Instruction::I16x8ReplaceLaneImm`] instruction.
+    pub fn execute_i16x8_replace_lane_imm(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx8) {
+        let value = self.fetch_const32_as::<i32>() as i16;
+        self.execute_replace_lane_impl(result, input, lane, value, simd::i16x8_replace_lane)
+    }
+
+    /// Executes an [`Instruction::I32x4ReplaceLaneImm`] instruction.
+    pub fn execute_i32x4_replace_lane_imm(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx4) {
+        let value = self.fetch_const32_as::<i32>();
+        self.execute_replace_lane_impl(result, input, lane, value, simd::i32x4_replace_lane)
+    }
+
+    /// Executes an [`Instruction::I64x2ReplaceLaneImm32`] instruction.
+    pub fn execute_i64x2_replace_lane_imm32(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx2) {
+        let value = self.fetch_i64const32();
+        self.execute_replace_lane_impl(result, input, lane, value, simd::i64x2_replace_lane)
+    }
+
+    /// Executes an [`Instruction::F32x4ReplaceLaneImm`] instruction.
+    pub fn execute_f32x4_replace_lane_imm(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx4) {
+        let value = self.fetch_const32_as::<f32>();
+        self.execute_replace_lane_impl(result, input, lane, value, simd::f32x4_replace_lane)
+    }
+
+    /// Executes an [`Instruction::F64x2ReplaceLaneImm32`] instruction.
+    pub fn execute_f64x2_replace_lane_imm32(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx2) {
+        let value = self.fetch_f64const32();
+        self.execute_replace_lane_impl(result, input, lane, value, simd::f64x2_replace_lane)
+    }
+
+    /// Generically execute a SIMD replace lane instruction.
+    fn execute_replace_lane_impl<T, LaneType>(
+        &mut self,
+        result: Reg,
+        input: Reg,
+        lane: LaneType,
+        value: T,
+        eval: fn(V128, LaneType, T) -> V128,
+    ) {
+        let input = self.get_register_as::<V128>(input);
+        self.set_register_as::<V128>(result, eval(input, lane, value));
         self.next_instr_at(2);
     }
 
