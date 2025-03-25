@@ -218,7 +218,7 @@ macro_rules! expand_tests {
             #[ignore] fn wasm_simd_i16x8_arith2("simd_i16x8_arith2");
             #[ignore] fn wasm_simd_i16x8_cmp("simd_i16x8_cmp");
             fn wasm_simd_i16x8_extadd_pairwise_i8x16("simd_i16x8_extadd_pairwise_i8x16");
-            #[ignore] fn wasm_simd_i16x8_extmul_i8x16("simd_i16x8_extmul_i8x16");
+            fn wasm_simd_i16x8_extmul_i8x16("simd_i16x8_extmul_i8x16");
             fn wasm_simd_i16x8_q15mulr_sat_s("simd_i16x8_q15mulr_sat_s");
             fn wasm_simd_i16x8_sat_arith("simd_i16x8_sat_arith");
             fn wasm_simd_i32x4_arith("simd_i32x4_arith");
@@ -226,13 +226,13 @@ macro_rules! expand_tests {
             #[ignore] fn wasm_simd_i32x4_cmp("simd_i32x4_cmp");
             fn wasm_simd_i32x4_dot_i16x8("simd_i32x4_dot_i16x8");
             fn wasm_simd_i32x4_extadd_pairwise_i16x8("simd_i32x4_extadd_pairwise_i16x8");
-            #[ignore] fn wasm_simd_i32x4_extmul_i16x8("simd_i32x4_extmul_i16x8");
+            fn wasm_simd_i32x4_extmul_i16x8("simd_i32x4_extmul_i16x8");
             #[ignore] fn wasm_simd_i32x4_trunc_sat_f32x4("simd_i32x4_trunc_sat_f32x4");
             #[ignore] fn wasm_simd_i32x4_trunc_sat_f64x2("simd_i32x4_trunc_sat_f64x2");
             fn wasm_simd_i64x2_arith("simd_i64x2_arith");
             #[ignore] fn wasm_simd_i64x2_arith2("simd_i64x2_arith2");
             #[ignore] fn wasm_simd_i64x2_cmp("simd_i64x2_cmp");
-            #[ignore] fn wasm_simd_i64x2_extmul_i32x4("simd_i64x2_extmul_i32x4");
+            fn wasm_simd_i64x2_extmul_i32x4("simd_i64x2_extmul_i32x4");
             fn wasm_simd_i8x16_arith("simd_i8x16_arith");
             #[ignore] fn wasm_simd_i8x16_arith2("simd_i8x16_arith2");
             #[ignore] fn wasm_simd_i8x16_cmp("simd_i8x16_cmp");
