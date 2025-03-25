@@ -1696,10 +1696,7 @@ fn v128_or_works() {
 #[test]
 fn i8x16_narrow_i16x8_s_works() {
     assert_eq!(
-        simd::i8x16_narrow_i16x8_s(
-            simd::i16x8_splat(0x80_i16),
-            simd::i16x8_splat(0x80_i16),
-        ),
+        simd::i8x16_narrow_i16x8_s(simd::i16x8_splat(0x80_i16), simd::i16x8_splat(0x80_i16)),
         simd::i8x16_splat(0x7f),
     );
 }
