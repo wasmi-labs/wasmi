@@ -51,7 +51,7 @@ impl Executor<'_> {
         self.next_instr_at(2);
     }
 
-    /// Executes an [`Instruction::V128Biselect`] instruction.
+    /// Executes an [`Instruction::V128Bitselect`] instruction.
     pub fn execute_v128_bitselect(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
         let selector = self.fetch_register();
         let lhs = self.get_register_as::<V128>(lhs);
