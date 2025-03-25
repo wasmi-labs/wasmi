@@ -1492,29 +1492,53 @@ impl<'engine> Executor<'engine> {
                 #[cfg(feature = "simd")]
                 Instr::I64x2Neg { result, input } => self.execute_i64x2_neg(result, input),
                 #[cfg(feature = "simd")]
-                Instr::I16x8ExtmulLowI8x16S { result, lhs, rhs } => todo!(),
+                Instr::I16x8ExtmulLowI8x16S { result, lhs, rhs } => {
+                    self.execute_i16x8_extmul_low_i8x16_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8ExtmulHighI8x16S { result, lhs, rhs } => todo!(),
+                Instr::I16x8ExtmulHighI8x16S { result, lhs, rhs } => {
+                    self.execute_i16x8_extmul_high_i8x16_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8ExtmulLowI8x16U { result, lhs, rhs } => todo!(),
+                Instr::I16x8ExtmulLowI8x16U { result, lhs, rhs } => {
+                    self.execute_i16x8_extmul_low_i8x16_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8ExtmulHighI8x16U { result, lhs, rhs } => todo!(),
+                Instr::I16x8ExtmulHighI8x16U { result, lhs, rhs } => {
+                    self.execute_i16x8_extmul_high_i8x16_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ExtmulLowI16x8S { result, lhs, rhs } => todo!(),
+                Instr::I32x4ExtmulLowI16x8S { result, lhs, rhs } => {
+                    self.execute_i32x4_extmul_low_i16x8_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ExtmulHighI16x8S { result, lhs, rhs } => todo!(),
+                Instr::I32x4ExtmulHighI16x8S { result, lhs, rhs } => {
+                    self.execute_i32x4_extmul_high_i16x8_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ExtmulLowI16x8U { result, lhs, rhs } => todo!(),
+                Instr::I32x4ExtmulLowI16x8U { result, lhs, rhs } => {
+                    self.execute_i32x4_extmul_low_i16x8_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ExtmulHighI16x8U { result, lhs, rhs } => todo!(),
+                Instr::I32x4ExtmulHighI16x8U { result, lhs, rhs } => {
+                    self.execute_i32x4_extmul_high_i16x8_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2ExtmulLowI32x4S { result, lhs, rhs } => todo!(),
+                Instr::I64x2ExtmulLowI32x4S { result, lhs, rhs } => {
+                    self.execute_i64x2_extmul_low_i32x4_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2ExtmulHighI32x4S { result, lhs, rhs } => todo!(),
+                Instr::I64x2ExtmulHighI32x4S { result, lhs, rhs } => {
+                    self.execute_i64x2_extmul_high_i32x4_s(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2ExtmulLowI32x4U { result, lhs, rhs } => todo!(),
+                Instr::I64x2ExtmulLowI32x4U { result, lhs, rhs } => {
+                    self.execute_i64x2_extmul_low_i32x4_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2ExtmulHighI32x4U { result, lhs, rhs } => todo!(),
+                Instr::I64x2ExtmulHighI32x4U { result, lhs, rhs } => {
+                    self.execute_i64x2_extmul_high_i32x4_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtaddPairwiseI8x16S { result, input } => {
                     self.execute_i16x8_extadd_pairwise_i8x16_s(result, input)
