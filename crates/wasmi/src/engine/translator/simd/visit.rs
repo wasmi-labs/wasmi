@@ -566,23 +566,23 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_min_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_min_s, simd::i8x16_min_s)
     }
 
     fn visit_i8x16_min_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_min_u, simd::i8x16_min_u)
     }
 
     fn visit_i8x16_max_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_max_s, simd::i8x16_max_s)
     }
 
     fn visit_i8x16_max_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_max_u, simd::i8x16_max_u)
     }
 
     fn visit_i8x16_avgr_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_avgr_u, simd::i8x16_avgr_u)
     }
 
     fn visit_i16x8_extadd_pairwise_i8x16_s(&mut self) -> Self::Output {
@@ -684,23 +684,23 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_min_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_min_s, simd::i16x8_min_s)
     }
 
     fn visit_i16x8_min_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_min_u, simd::i16x8_min_u)
     }
 
     fn visit_i16x8_max_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_max_s, simd::i16x8_max_s)
     }
 
     fn visit_i16x8_max_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_max_u, simd::i16x8_max_u)
     }
 
     fn visit_i16x8_avgr_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_avgr_u, simd::i16x8_avgr_u)
     }
 
     fn visit_i16x8_extmul_low_i8x16_s(&mut self) -> Self::Output {
@@ -802,19 +802,19 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i32x4_min_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_min_s, simd::i32x4_min_s)
     }
 
     fn visit_i32x4_min_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_min_u, simd::i32x4_min_u)
     }
 
     fn visit_i32x4_max_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_max_s, simd::i32x4_max_s)
     }
 
     fn visit_i32x4_max_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_max_u, simd::i32x4_max_u)
     }
 
     fn visit_i32x4_dot_i16x8_s(&mut self) -> Self::Output {

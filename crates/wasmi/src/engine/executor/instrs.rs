@@ -1592,33 +1592,37 @@ impl<'engine> Executor<'engine> {
                     self.execute_i16x8_q15mulr_sat_s(result, lhs, rhs)
                 }
                 #[cfg(feature = "simd")]
-                Instr::I8x16MinS { result, lhs, rhs } => todo!(),
+                Instr::I8x16MinS { result, lhs, rhs } => self.execute_i8x16_min_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I8x16MinU { result, lhs, rhs } => todo!(),
+                Instr::I8x16MinU { result, lhs, rhs } => self.execute_i8x16_min_u(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I16x8MinS { result, lhs, rhs } => todo!(),
+                Instr::I16x8MinS { result, lhs, rhs } => self.execute_i16x8_min_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I16x8MinU { result, lhs, rhs } => todo!(),
+                Instr::I16x8MinU { result, lhs, rhs } => self.execute_i16x8_min_u(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I32x4MinS { result, lhs, rhs } => todo!(),
+                Instr::I32x4MinS { result, lhs, rhs } => self.execute_i32x4_min_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I32x4MinU { result, lhs, rhs } => todo!(),
+                Instr::I32x4MinU { result, lhs, rhs } => self.execute_i32x4_min_u(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I8x16MaxS { result, lhs, rhs } => todo!(),
+                Instr::I8x16MaxS { result, lhs, rhs } => self.execute_i8x16_max_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I8x16MaxU { result, lhs, rhs } => todo!(),
+                Instr::I8x16MaxU { result, lhs, rhs } => self.execute_i8x16_max_u(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I16x8MaxS { result, lhs, rhs } => todo!(),
+                Instr::I16x8MaxS { result, lhs, rhs } => self.execute_i16x8_max_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I16x8MaxU { result, lhs, rhs } => todo!(),
+                Instr::I16x8MaxU { result, lhs, rhs } => self.execute_i16x8_max_u(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I32x4MaxS { result, lhs, rhs } => todo!(),
+                Instr::I32x4MaxS { result, lhs, rhs } => self.execute_i32x4_max_s(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I32x4MaxU { result, lhs, rhs } => todo!(),
+                Instr::I32x4MaxU { result, lhs, rhs } => self.execute_i32x4_max_u(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::I8x16AvgrU { result, lhs, rhs } => todo!(),
+                Instr::I8x16AvgrU { result, lhs, rhs } => {
+                    self.execute_i8x16_avgr_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8AvgrU { result, lhs, rhs } => todo!(),
+                Instr::I16x8AvgrU { result, lhs, rhs } => {
+                    self.execute_i16x8_avgr_u(result, lhs, rhs)
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16Abs { result, input } => todo!(),
                 #[cfg(feature = "simd")]
