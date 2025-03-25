@@ -199,7 +199,7 @@ macro_rules! expand_tests {
 
             fn wasm_simd_address("simd_address");
             #[ignore] fn wasm_simd_align("simd_align");
-            #[ignore] fn wasm_simd_bit_shift("simd_bit_shift");
+            fn wasm_simd_bit_shift("simd_bit_shift");
             #[ignore] fn wasm_simd_bitwise("simd_bitwise");
             #[ignore] fn wasm_simd_boolean("simd_boolean");
             fn wasm_simd_const("simd_const");
