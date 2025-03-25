@@ -61,6 +61,7 @@ fn mvp_config() -> Config {
         .wasm_sign_extension(false)
         .wasm_multi_value(false)
         .wasm_multi_memory(false)
+        .wasm_simd(false)
         .wasm_memory64(false);
     config
 }
@@ -86,6 +87,7 @@ fn test_config(consume_fuel: bool, parsing_mode: ParsingMode) -> RunnerConfig {
         .wasm_tail_call(true)
         .wasm_extended_const(true)
         .wasm_wide_arithmetic(true)
+        .wasm_simd(true)
         .consume_fuel(consume_fuel);
     RunnerConfig {
         config,
@@ -195,49 +197,49 @@ macro_rules! expand_tests {
             fn wasm_utf8_invalid_encoding("utf8-invalid-encoding");
             fn wasm_wide_arithmetic("proposals/wide-arithmetic/wide-arithmetic");
 
-            #[ignore] fn wasm_simd_address("simd_address");
+            fn wasm_simd_address("simd_address");
             #[ignore] fn wasm_simd_align("simd_align");
-            #[ignore] fn wasm_simd_bit_shift("simd_bit_shift");
+            fn wasm_simd_bit_shift("simd_bit_shift");
             #[ignore] fn wasm_simd_bitwise("simd_bitwise");
             #[ignore] fn wasm_simd_boolean("simd_boolean");
-            #[ignore] fn wasm_simd_const("simd_const");
+            fn wasm_simd_const("simd_const");
             #[ignore] fn wasm_simd_conversions("simd_conversions");
-            #[ignore] fn wasm_simd_f32x4("simd_f32x4");
-            #[ignore] fn wasm_simd_f32x4_arith("simd_f32x4_arith");
+            fn wasm_simd_f32x4("simd_f32x4");
+            fn wasm_simd_f32x4_arith("simd_f32x4_arith");
             #[ignore] fn wasm_simd_f32x4_cmp("simd_f32x4_cmp");
-            #[ignore] fn wasm_simd_f32x4_pmin_pmax("simd_f32x4_pmin_pmax");
-            #[ignore] fn wasm_simd_f32x4_rounding("simd_f32x4_rounding");
-            #[ignore] fn wasm_simd_f64x2("simd_f64x2");
-            #[ignore] fn wasm_simd_f64x2_arith("simd_f64x2_arith");
+            fn wasm_simd_f32x4_pmin_pmax("simd_f32x4_pmin_pmax");
+            fn wasm_simd_f32x4_rounding("simd_f32x4_rounding");
+            fn wasm_simd_f64x2("simd_f64x2");
+            fn wasm_simd_f64x2_arith("simd_f64x2_arith");
             #[ignore] fn wasm_simd_f64x2_cmp("simd_f64x2_cmp");
-            #[ignore] fn wasm_simd_f64x2_pmin_pmax("simd_f64x2_pmin_pmax");
-            #[ignore] fn wasm_simd_f64x2_rounding("simd_f64x2_rounding");
-            #[ignore] fn wasm_simd_i16x8_arith("simd_i16x8_arith");
-            #[ignore] fn wasm_simd_i16x8_arith2("simd_i16x8_arith2");
+            fn wasm_simd_f64x2_pmin_pmax("simd_f64x2_pmin_pmax");
+            fn wasm_simd_f64x2_rounding("simd_f64x2_rounding");
+            fn wasm_simd_i16x8_arith("simd_i16x8_arith");
+            fn wasm_simd_i16x8_arith2("simd_i16x8_arith2");
             #[ignore] fn wasm_simd_i16x8_cmp("simd_i16x8_cmp");
-            #[ignore] fn wasm_simd_i16x8_extadd_pairwise_i8x16("simd_i16x8_extadd_pairwise_i8x16");
-            #[ignore] fn wasm_simd_i16x8_extmul_i8x16("simd_i16x8_extmul_i8x16");
-            #[ignore] fn wasm_simd_i16x8_q15mulr_sat_s("simd_i16x8_q15mulr_sat_s");
-            #[ignore] fn wasm_simd_i16x8_sat_arith("simd_i16x8_sat_arith");
-            #[ignore] fn wasm_simd_i32x4_arith("simd_i32x4_arith");
-            #[ignore] fn wasm_simd_i32x4_arith2("simd_i32x4_arith2");
+            fn wasm_simd_i16x8_extadd_pairwise_i8x16("simd_i16x8_extadd_pairwise_i8x16");
+            fn wasm_simd_i16x8_extmul_i8x16("simd_i16x8_extmul_i8x16");
+            fn wasm_simd_i16x8_q15mulr_sat_s("simd_i16x8_q15mulr_sat_s");
+            fn wasm_simd_i16x8_sat_arith("simd_i16x8_sat_arith");
+            fn wasm_simd_i32x4_arith("simd_i32x4_arith");
+            fn wasm_simd_i32x4_arith2("simd_i32x4_arith2");
             #[ignore] fn wasm_simd_i32x4_cmp("simd_i32x4_cmp");
-            #[ignore] fn wasm_simd_i32x4_dot_i16x8("simd_i32x4_dot_i16x8");
-            #[ignore] fn wasm_simd_i32x4_extadd_pairwise_i16x8("simd_i32x4_extadd_pairwise_i16x8");
-            #[ignore] fn wasm_simd_i32x4_extmul_i16x8("simd_i32x4_extmul_i16x8");
-            #[ignore] fn wasm_simd_i32x4_trunc_sat_f32x4("simd_i32x4_trunc_sat_f32x4");
-            #[ignore] fn wasm_simd_i32x4_trunc_sat_f64x2("simd_i32x4_trunc_sat_f64x2");
-            #[ignore] fn wasm_simd_i64x2_arith("simd_i64x2_arith");
-            #[ignore] fn wasm_simd_i64x2_arith2("simd_i64x2_arith2");
+            fn wasm_simd_i32x4_dot_i16x8("simd_i32x4_dot_i16x8");
+            fn wasm_simd_i32x4_extadd_pairwise_i16x8("simd_i32x4_extadd_pairwise_i16x8");
+            fn wasm_simd_i32x4_extmul_i16x8("simd_i32x4_extmul_i16x8");
+            fn wasm_simd_i32x4_trunc_sat_f32x4("simd_i32x4_trunc_sat_f32x4");
+            fn wasm_simd_i32x4_trunc_sat_f64x2("simd_i32x4_trunc_sat_f64x2");
+            fn wasm_simd_i64x2_arith("simd_i64x2_arith");
+            fn wasm_simd_i64x2_arith2("simd_i64x2_arith2");
             #[ignore] fn wasm_simd_i64x2_cmp("simd_i64x2_cmp");
-            #[ignore] fn wasm_simd_i64x2_extmul_i32x4("simd_i64x2_extmul_i32x4");
-            #[ignore] fn wasm_simd_i8x16_arith("simd_i8x16_arith");
-            #[ignore] fn wasm_simd_i8x16_arith2("simd_i8x16_arith2");
+            fn wasm_simd_i64x2_extmul_i32x4("simd_i64x2_extmul_i32x4");
+            fn wasm_simd_i8x16_arith("simd_i8x16_arith");
+            fn wasm_simd_i8x16_arith2("simd_i8x16_arith2");
             #[ignore] fn wasm_simd_i8x16_cmp("simd_i8x16_cmp");
-            #[ignore] fn wasm_simd_i8x16_sat_arith("simd_i8x16_sat_arith");
-            #[ignore] fn wasm_simd_int_to_int_extend("simd_int_to_int_extend");
+            fn wasm_simd_i8x16_sat_arith("simd_i8x16_sat_arith");
+            fn wasm_simd_int_to_int_extend("simd_int_to_int_extend");
             #[ignore] fn wasm_simd_lane("simd_lane");
-            #[ignore] fn wasm_simd_linking("simd_linking");
+            fn wasm_simd_linking("simd_linking");
             #[ignore] fn wasm_simd_load("simd_load");
             #[ignore] fn wasm_simd_load16_lane("simd_load16_lane");
             #[ignore] fn wasm_simd_load32_lane("simd_load32_lane");
@@ -247,7 +249,7 @@ macro_rules! expand_tests {
             #[ignore] fn wasm_simd_load_splat("simd_load_splat");
             #[ignore] fn wasm_simd_load_zero("simd_load_zero");
             #[ignore] fn wasm_simd_splat("simd_splat");
-            #[ignore] fn wasm_simd_store("simd_store");
+            fn wasm_simd_store("simd_store");
             #[ignore] fn wasm_simd_store16_lane("simd_store16_lane");
             #[ignore] fn wasm_simd_store32_lane("simd_store32_lane");
             #[ignore] fn wasm_simd_store64_lane("simd_store64_lane");

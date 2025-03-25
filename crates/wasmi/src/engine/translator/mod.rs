@@ -10,6 +10,7 @@ mod labels;
 mod provider;
 mod relink_result;
 mod stack;
+#[macro_use]
 mod utils;
 mod visit;
 mod visit_register;
@@ -64,7 +65,6 @@ use crate::{
         Offset64Lo,
         Reg,
         RegSpan,
-        ShiftAmount,
         Sign,
     },
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, TableIdx},
@@ -737,24 +737,6 @@ impl WasmTranslator<'_> for FuncTranslator {
         Ok(self.into_allocations())
     }
 }
-
-/// Bail out early in case the current code is unreachable.
-///
-/// # Note
-///
-/// - This should be prepended to most Wasm operator translation procedures.
-/// - If we are in unreachable code most Wasm translation is skipped. Only
-///   certain control flow operators such as `End` are going through the
-///   translation process. In particular the `End` operator may end unreachable
-///   code blocks.
-macro_rules! bail_unreachable {
-    ($this:ident) => {{
-        if !$this.is_reachable() {
-            return Ok(());
-        }
-    }};
-}
-use bail_unreachable;
 
 /// Fuel metering information for a certain translation state.
 #[derive(Debug, Copy, Clone)]
@@ -1829,13 +1811,17 @@ impl FuncTranslator {
     fn translate_shift<T>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_by: fn(result: Reg, lhs: Reg, rhs: ShiftAmount<T>) -> Instruction,
+        make_instr_by: fn(
+            result: Reg,
+            lhs: Reg,
+            rhs: <T as IntoShiftAmount>::Output,
+        ) -> Instruction,
         make_instr_imm16: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T: WasmInteger + IntoShiftAmount,
+        T: WasmInteger + IntoShiftAmount<Input: From<TypedVal>>,
         Const16<T>: From<i16>,
     {
         bail_unreachable!(self);
@@ -1844,7 +1830,7 @@ impl FuncTranslator {
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
             (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
-                let Some(rhs) = T::from(rhs).into_shift_amount() else {
+                let Some(rhs) = T::into_shift_amount(rhs.into()) else {
                     // Optimization: Shifting or rotating by zero bits is a no-op.
                     self.alloc.stack.push_register(lhs)?;
                     return Ok(());
@@ -2309,7 +2295,7 @@ impl FuncTranslator {
         Ok(Some(instr))
     }
 
-    /// Translates Wasm float `store` instructions to Wasmi bytecode.
+    /// Translates a general Wasm `store` instruction to Wasmi bytecode.
     ///
     /// # Note
     ///
@@ -2320,8 +2306,8 @@ impl FuncTranslator {
     ///
     /// Used for translating the following Wasm operators to Wasmi bytecode:
     ///
-    /// - `{f32, f64}.store`
-    fn translate_fstore(
+    /// - `{f32, f64, v128}.store`
+    fn translate_store(
         &mut self,
         memarg: MemArg,
         make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
@@ -2364,7 +2350,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Translates Wasm float `store` instructions to Wasmi bytecode.
+    /// Translates a general Wasm `store` instruction to Wasmi bytecode.
     ///
     /// # Note
     ///

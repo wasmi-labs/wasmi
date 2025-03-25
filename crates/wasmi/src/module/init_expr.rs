@@ -18,6 +18,9 @@ use core::fmt;
 use smallvec::SmallVec;
 use wasmparser::AbstractHeapType;
 
+#[cfg(feature = "simd")]
+use crate::core::V128;
+
 /// Types that allow evluation given an evaluation context.
 pub trait Eval {
     /// Evaluates `self` given an [`EvalContext`].
@@ -270,6 +273,10 @@ impl ConstExpr {
                 }
                 wasmparser::Operator::F64Const { value } => {
                     stack.push(Op::constant(F64::from_bits(value.bits())));
+                }
+                #[cfg(feature = "simd")]
+                wasmparser::Operator::V128Const { value } => {
+                    stack.push(Op::constant(V128::from(value.i128() as u128)));
                 }
                 wasmparser::Operator::GlobalGet { global_index } => {
                     stack.push(Op::global(global_index));

@@ -812,7 +812,12 @@ macro_rules! impl_unary_cast_for {
 
 /// Lanewise operation for the Wasm `q15mulr_sat` SIMD operation.
 fn i16x8_q15mulr_sat(x: i16, y: i16) -> i16 {
-    (x * y + 0x4000) >> 15
+    const MIN: i32 = i16::MIN as i32;
+    const MAX: i32 = i16::MAX as i32;
+    let x = i32::from(x);
+    let y = i32::from(y);
+    let q15mulr = (x * y + (1 << 14)) >> 15;
+    q15mulr.clamp(MIN, MAX) as i16
 }
 
 macro_rules! avgr {
@@ -823,6 +828,24 @@ macro_rules! avgr {
             a.wrapping_add(b).div_ceil(2) as $ty
         }
     }};
+}
+
+/// Wasm SIMD `pmin` (pseudo-min) definition.
+fn pmin<T: PartialOrd>(lhs: T, rhs: T) -> T {
+    if rhs < lhs {
+        rhs
+    } else {
+        lhs
+    }
+}
+
+/// Wasm SIMD `pmax` (pseudo-max) definition.
+fn pmax<T: PartialOrd>(lhs: T, rhs: T) -> T {
+    if lhs < rhs {
+        rhs
+    } else {
+        lhs
+    }
 }
 
 macro_rules! impl_binary_for {
@@ -887,10 +910,10 @@ impl_binary_for! {
     fn f64x2_min(lhs: V128, rhs: V128) -> V128 = wasm::f64_min;
     fn f32x4_max(lhs: V128, rhs: V128) -> V128 = wasm::f32_max;
     fn f64x2_max(lhs: V128, rhs: V128) -> V128 = wasm::f64_max;
-    fn f32x4_pmin(lhs: V128, rhs: V128) -> V128 = f32::min;
-    fn f64x2_pmin(lhs: V128, rhs: V128) -> V128 = f64::min;
-    fn f32x4_pmax(lhs: V128, rhs: V128) -> V128 = f32::max;
-    fn f64x2_pmax(lhs: V128, rhs: V128) -> V128 = f64::max;
+    fn f32x4_pmin(lhs: V128, rhs: V128) -> V128 = pmin::<f32>;
+    fn f64x2_pmin(lhs: V128, rhs: V128) -> V128 = pmin::<f64>;
+    fn f32x4_pmax(lhs: V128, rhs: V128) -> V128 = pmax::<f32>;
+    fn f64x2_pmax(lhs: V128, rhs: V128) -> V128 = pmax::<f64>;
     fn f32x4_add(lhs: V128, rhs: V128) -> V128 = op!(f32, +);
     fn f64x2_add(lhs: V128, rhs: V128) -> V128 = op!(f64, +);
     fn f32x4_sub(lhs: V128, rhs: V128) -> V128 = op!(f32, -);
@@ -902,15 +925,15 @@ impl_binary_for! {
 }
 
 impl_unary_for! {
-    fn i64x2_neg(v128: V128) -> V128 = <i64 as Neg>::neg;
-    fn i32x4_neg(v128: V128) -> V128 = <i32 as Neg>::neg;
-    fn i16x8_neg(v128: V128) -> V128 = <i16 as Neg>::neg;
-    fn i8x16_neg(v128: V128) -> V128 = <i8 as Neg>::neg;
+    fn i64x2_neg(v128: V128) -> V128 = i64::wrapping_neg;
+    fn i32x4_neg(v128: V128) -> V128 = i32::wrapping_neg;
+    fn i16x8_neg(v128: V128) -> V128 = i16::wrapping_neg;
+    fn i8x16_neg(v128: V128) -> V128 = i8::wrapping_neg;
 
-    fn i8x16_abs(v128: V128) -> V128 = i8::abs;
-    fn i16x8_abs(v128: V128) -> V128 = i16::abs;
-    fn i32x4_abs(v128: V128) -> V128 = i32::abs;
-    fn i64x2_abs(v128: V128) -> V128 = i64::abs;
+    fn i8x16_abs(v128: V128) -> V128 = i8::wrapping_abs;
+    fn i16x8_abs(v128: V128) -> V128 = i16::wrapping_abs;
+    fn i32x4_abs(v128: V128) -> V128 = i32::wrapping_abs;
+    fn i64x2_abs(v128: V128) -> V128 = i64::wrapping_abs;
 
     fn v128_not(v128: V128) -> V128 = <i64 as Not>::not;
 
@@ -1122,9 +1145,9 @@ macro_rules! impl_extadd_pairwise {
 }
 impl_extadd_pairwise! {
     fn i16x8_extadd_pairwise_i8x16_s(v128: V128) -> V128 = i8 => i16;
-    fn i16x8_extadd_pairwise_i8x16_u(v128: V128) -> V128 = i8 => i16;
+    fn i16x8_extadd_pairwise_i8x16_u(v128: V128) -> V128 = u8 => u16;
     fn i32x4_extadd_pairwise_i16x8_s(v128: V128) -> V128 = i16 => i32;
-    fn i32x4_extadd_pairwise_i16x8_u(v128: V128) -> V128 = i16 => i32;
+    fn i32x4_extadd_pairwise_i16x8_u(v128: V128) -> V128 = u16 => u32;
 }
 
 macro_rules! impl_shift_ops {
