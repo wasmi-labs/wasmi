@@ -934,19 +934,19 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f32x4_ceil(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f32x4_ceil, simd::f32x4_ceil)
     }
 
     fn visit_f32x4_floor(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f32x4_floor, simd::f32x4_floor)
     }
 
     fn visit_f32x4_trunc(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f32x4_trunc, simd::f32x4_trunc)
     }
 
     fn visit_f32x4_nearest(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f32x4_nearest, simd::f32x4_nearest)
     }
 
     fn visit_f32x4_abs(&mut self) -> Self::Output {
@@ -958,7 +958,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f32x4_sqrt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f32x4_sqrt, simd::f32x4_sqrt)
     }
 
     fn visit_f32x4_add(&mut self) -> Self::Output {
@@ -994,19 +994,19 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f64x2_ceil(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f64x2_ceil, simd::f64x2_ceil)
     }
 
     fn visit_f64x2_floor(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f64x2_floor, simd::f64x2_floor)
     }
 
     fn visit_f64x2_trunc(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f64x2_trunc, simd::f64x2_trunc)
     }
 
     fn visit_f64x2_nearest(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f64x2_nearest, simd::f64x2_nearest)
     }
 
     fn visit_f64x2_abs(&mut self) -> Self::Output {
@@ -1018,7 +1018,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f64x2_sqrt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::f64x2_sqrt, simd::f64x2_sqrt)
     }
 
     fn visit_f64x2_add(&mut self) -> Self::Output {

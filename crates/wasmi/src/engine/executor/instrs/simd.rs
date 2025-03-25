@@ -77,6 +77,17 @@ impl Executor<'_> {
         (Instruction::I16x8ExtaddPairwiseI8x16U, execute_i16x8_extadd_pairwise_i8x16_u, simd::i16x8_extadd_pairwise_i8x16_u),
         (Instruction::I32x4ExtaddPairwiseI16x8S, execute_i32x4_extadd_pairwise_i16x8_s, simd::i32x4_extadd_pairwise_i16x8_s),
         (Instruction::I32x4ExtaddPairwiseI16x8U, execute_i32x4_extadd_pairwise_i16x8_u, simd::i32x4_extadd_pairwise_i16x8_u),
+
+        (Instruction::F32x4Ceil, execute_f32x4_ceil, simd::f32x4_ceil),
+        (Instruction::F32x4Floor, execute_f32x4_floor, simd::f32x4_floor),
+        (Instruction::F32x4Trunc, execute_f32x4_trunc, simd::f32x4_trunc),
+        (Instruction::F32x4Nearest, execute_f32x4_nearest, simd::f32x4_nearest),
+        (Instruction::F32x4Sqrt, execute_f32x4_sqrt, simd::f32x4_sqrt),
+        (Instruction::F64x2Ceil, execute_f64x2_ceil, simd::f64x2_ceil),
+        (Instruction::F64x2Floor, execute_f64x2_floor, simd::f64x2_floor),
+        (Instruction::F64x2Trunc, execute_f64x2_trunc, simd::f64x2_trunc),
+        (Instruction::F64x2Nearest, execute_f64x2_nearest, simd::f64x2_nearest),
+        (Instruction::F64x2Sqrt, execute_f64x2_sqrt, simd::f64x2_sqrt),
     }
 
     impl_binary_executors! {
