@@ -6081,12 +6081,12 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by [`Instruction::F64Const32`] encoding the 32-bit immediate `value`.
                 #[snake_name(f64x2_replace_lane_imm32)]
-                F32x4ReplaceLaneImm32 {
+                F64x2ReplaceLaneImm32 {
                     @result: Reg,
                     /// The input [`V128`] that gets a value replaced.
                     input: Reg,
                     /// The lane of the replaced value.
-                    lane: ImmLaneIdx4,
+                    lane: ImmLaneIdx2,
                 },
 
                 /// Wasm `i8x16.shuffle` instruction.

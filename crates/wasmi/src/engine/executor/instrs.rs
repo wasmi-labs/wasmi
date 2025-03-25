@@ -1442,7 +1442,7 @@ impl<'engine> Executor<'engine> {
                     lane,
                 } => todo!(),
                 #[cfg(feature = "simd")]
-                Instr::F32x4ReplaceLaneImm32 {
+                Instr::F64x2ReplaceLaneImm32 {
                     result,
                     input,
                     lane,
