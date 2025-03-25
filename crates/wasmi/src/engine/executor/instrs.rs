@@ -1379,74 +1379,74 @@ impl<'engine> Executor<'engine> {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_i8x16_replace_lane(result, input, lane),
                 #[cfg(feature = "simd")]
                 Instr::I8x16ReplaceLaneImm {
                     result,
                     input,
                     lane,
                     value,
-                } => todo!(),
+                } => self.execute_i8x16_replace_lane_imm(result, input, lane, value),
                 #[cfg(feature = "simd")]
                 Instr::I16x8ReplaceLane {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_i16x8_replace_lane(result, input, lane),
                 #[cfg(feature = "simd")]
                 Instr::I16x8ReplaceLaneImm {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_i16x8_replace_lane_imm(result, input, lane),
                 #[cfg(feature = "simd")]
                 Instr::I32x4ReplaceLane {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_i32x4_replace_lane(result, input, lane),
                 #[cfg(feature = "simd")]
                 Instr::I32x4ReplaceLaneImm {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_i32x4_replace_lane_imm(result, input, lane),
                 #[cfg(feature = "simd")]
                 Instr::I64x2ReplaceLane {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_i64x2_replace_lane(result, input, lane),
                 #[cfg(feature = "simd")]
                 Instr::I64x2ReplaceLaneImm32 {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_i64x2_replace_lane_imm32(result, input, lane),
                 #[cfg(feature = "simd")]
                 Instr::F32x4ReplaceLane {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_f32x4_replace_lane(result, input, lane),
                 #[cfg(feature = "simd")]
                 Instr::F32x4ReplaceLaneImm {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_f32x4_replace_lane_imm(result, input, lane),
                 #[cfg(feature = "simd")]
                 Instr::F64x2ReplaceLane {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_f64x2_replace_lane(result, input, lane),
                 #[cfg(feature = "simd")]
-                Instr::F32x4ReplaceLaneImm32 {
+                Instr::F64x2ReplaceLaneImm32 {
                     result,
                     input,
                     lane,
-                } => todo!(),
+                } => self.execute_f64x2_replace_lane_imm32(result, input, lane),
                 #[cfg(feature = "simd")]
                 Instr::I8x16Shuffle { result, lhs, rhs } => {
                     self.execute_i8x16_shuffle(result, lhs, rhs)
