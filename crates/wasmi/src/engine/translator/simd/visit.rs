@@ -7,10 +7,17 @@ use crate::{
         translator::{provider::Provider, FuncTranslator},
         FuelCosts,
     },
-    ir::Instruction,
+    ir::{Instruction, Reg},
 };
 use core::array;
 use wasmparser::{MemArg, VisitSimdOperator};
+
+/// Used to swap operands of binary [`Instruction`] constructor.
+macro_rules! swap_ops {
+    ($fn_name:path) => {
+        |result: Reg, lhs, rhs| -> Instruction { $fn_name(result, rhs, lhs) }
+    };
+}
 
 macro_rules! impl_visit_simd_operator {
     ( @simd $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
@@ -282,195 +289,195 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_eq, simd::i8x16_eq)
     }
 
     fn visit_i8x16_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_ne, simd::i8x16_ne)
     }
 
     fn visit_i8x16_lt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_lt_s, simd::i8x16_lt_s)
     }
 
     fn visit_i8x16_lt_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_lt_u, simd::i8x16_lt_u)
     }
 
     fn visit_i8x16_gt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i8x16_lt_s), simd::i8x16_gt_s)
     }
 
     fn visit_i8x16_gt_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i8x16_lt_u), simd::i8x16_gt_u)
     }
 
     fn visit_i8x16_le_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_le_s, simd::i8x16_le_s)
     }
 
     fn visit_i8x16_le_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i8x16_le_u, simd::i8x16_le_u)
     }
 
     fn visit_i8x16_ge_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i8x16_le_s), simd::i8x16_ge_s)
     }
 
     fn visit_i8x16_ge_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i8x16_le_u), simd::i8x16_ge_u)
     }
 
     fn visit_i16x8_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_eq, simd::i16x8_eq)
     }
 
     fn visit_i16x8_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_ne, simd::i16x8_ne)
     }
 
     fn visit_i16x8_lt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_lt_s, simd::i16x8_lt_s)
     }
 
     fn visit_i16x8_lt_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_lt_u, simd::i16x8_lt_u)
     }
 
     fn visit_i16x8_gt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i16x8_lt_s), simd::i16x8_gt_s)
     }
 
     fn visit_i16x8_gt_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i16x8_lt_u), simd::i16x8_gt_u)
     }
 
     fn visit_i16x8_le_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_le_s, simd::i16x8_le_s)
     }
 
     fn visit_i16x8_le_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i16x8_le_u, simd::i16x8_le_u)
     }
 
     fn visit_i16x8_ge_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i16x8_le_s), simd::i16x8_ge_s)
     }
 
     fn visit_i16x8_ge_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i16x8_le_u), simd::i16x8_ge_u)
     }
 
     fn visit_i32x4_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_eq, simd::i32x4_eq)
     }
 
     fn visit_i32x4_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_ne, simd::i32x4_ne)
     }
 
     fn visit_i32x4_lt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_lt_s, simd::i32x4_lt_s)
     }
 
     fn visit_i32x4_lt_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_lt_u, simd::i32x4_lt_u)
     }
 
     fn visit_i32x4_gt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i32x4_lt_s), simd::i32x4_gt_s)
     }
 
     fn visit_i32x4_gt_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i32x4_lt_u), simd::i32x4_gt_u)
     }
 
     fn visit_i32x4_le_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_le_s, simd::i32x4_le_s)
     }
 
     fn visit_i32x4_le_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i32x4_le_u, simd::i32x4_le_u)
     }
 
     fn visit_i32x4_ge_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i32x4_le_s), simd::i32x4_ge_s)
     }
 
     fn visit_i32x4_ge_u(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i32x4_le_u), simd::i32x4_ge_u)
     }
 
     fn visit_i64x2_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i64x2_eq, simd::i64x2_eq)
     }
 
     fn visit_i64x2_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i64x2_ne, simd::i64x2_ne)
     }
 
     fn visit_i64x2_lt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i64x2_lt_s, simd::i64x2_lt_s)
     }
 
     fn visit_i64x2_gt_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i64x2_lt_s), simd::i64x2_gt_s)
     }
 
     fn visit_i64x2_le_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::i64x2_le_s, simd::i64x2_le_s)
     }
 
     fn visit_i64x2_ge_s(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::i64x2_le_s), simd::i64x2_ge_s)
     }
 
     fn visit_f32x4_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_eq, simd::f32x4_eq)
     }
 
     fn visit_f32x4_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_ne, simd::f32x4_ne)
     }
 
     fn visit_f32x4_lt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_lt, simd::f32x4_lt)
     }
 
     fn visit_f32x4_gt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::f32x4_lt), simd::f32x4_gt)
     }
 
     fn visit_f32x4_le(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f32x4_le, simd::f32x4_le)
     }
 
     fn visit_f32x4_ge(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::f32x4_le), simd::f32x4_ge)
     }
 
     fn visit_f64x2_eq(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_eq, simd::f64x2_eq)
     }
 
     fn visit_f64x2_ne(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_ne, simd::f64x2_ne)
     }
 
     fn visit_f64x2_lt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_lt, simd::f64x2_lt)
     }
 
     fn visit_f64x2_gt(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::f64x2_lt), simd::f64x2_gt)
     }
 
     fn visit_f64x2_le(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::f64x2_le, simd::f64x2_le)
     }
 
     fn visit_f64x2_ge(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(swap_ops!(Instruction::f64x2_le), simd::f64x2_ge)
     }
 
     fn visit_v128_not(&mut self) -> Self::Output {
