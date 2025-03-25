@@ -90,21 +90,26 @@ impl FuncTranslator {
     }
 
     /// Generically translate a Wasm unary instruction.
-    fn translate_simd_unary(
+    fn translate_simd_unary<T>(
         &mut self,
         make_instr: fn(result: Reg, input: Reg) -> Instruction,
-        const_eval: fn(input: V128) -> V128,
-    ) -> Result<(), Error> {
+        const_eval: fn(input: V128) -> T,
+    ) -> Result<(), Error>
+    where
+        T: Into<TypedVal>,
+    {
         bail_unreachable!(self);
         let input = self.alloc.stack.pop();
-        if let Provider::Const(input) = input {
-            // Case: both inputs are immediates so we can const-eval the result.
-            let result = const_eval(input.into());
-            self.alloc.stack.push_const(result);
-            return Ok(());
-        }
+        let input = match input {
+            Provider::Register(input) => input,
+            Provider::Const(input) => {
+                // Case: the input is an immediate so we can const-eval the result.
+                let result = const_eval(input.into());
+                self.alloc.stack.push_const(result);
+                return Ok(());
+            }
+        };
         let result = self.alloc.stack.push_dynamic()?;
-        let input = self.alloc.stack.provider2reg(&input)?;
         self.push_fueled_instr(make_instr(result, input), FuelCosts::base)?;
         Ok(())
     }
