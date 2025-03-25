@@ -74,11 +74,11 @@ fn nonzero_u64(value: u64) -> NonZeroU64 {
 }
 
 /// Helper to create a [`ShiftAmount`].
-fn shamt<T>(value: T) -> <T as IntoShiftAmount>::Output
+fn shamt<T>(value: <T as IntoShiftAmount>::Input) -> <T as IntoShiftAmount>::Output
 where
     T: IntoShiftAmount,
 {
-    value.into_shift_amount().unwrap()
+    T::into_shift_amount(value).unwrap()
 }
 
 /// Creates an [`Instruction::ReturnF64Imm32`] from the given `f64` value.

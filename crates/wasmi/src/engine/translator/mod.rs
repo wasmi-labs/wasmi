@@ -1821,7 +1821,7 @@ impl FuncTranslator {
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T: WasmInteger + IntoShiftAmount,
+        T: WasmInteger + IntoShiftAmount<Input: From<TypedVal>>,
         Const16<T>: From<i16>,
     {
         bail_unreachable!(self);
@@ -1830,7 +1830,7 @@ impl FuncTranslator {
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
             (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
-                let Some(rhs) = T::from(rhs).into_shift_amount() else {
+                let Some(rhs) = T::into_shift_amount(rhs.into()) else {
                     // Optimization: Shifting or rotating by zero bits is a no-op.
                     self.alloc.stack.push_register(lhs)?;
                     return Ok(());

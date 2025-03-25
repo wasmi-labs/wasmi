@@ -372,9 +372,10 @@ impl_from_shift_amount_for!(i32, i64, u32);
 /// Integer types that can be used as shift amount in shift or rotate instructions.
 pub trait IntoShiftAmount: Sized {
     type Output;
+    type Input;
 
     /// Converts `self` into a [`ShiftAmount`] if possible.
-    fn into_shift_amount(self) -> Option<Self::Output>;
+    fn into_shift_amount(input: Self::Input) -> Option<Self::Output>;
 }
 
 macro_rules! impl_shift_amount {
@@ -382,10 +383,10 @@ macro_rules! impl_shift_amount {
         $(
             impl IntoShiftAmount for $ty {
                 type Output = ShiftAmount<$shamt>;
+                type Input = $shamt;
 
-                fn into_shift_amount(self) -> Option<Self::Output> {
-                    // <ShiftAmount<$shamt>>::new(self as _)
-                    let value = (self % $bits) as $ty16;
+                fn into_shift_amount(input: Self::Input) -> Option<Self::Output> {
+                    let value = (input % $bits) as $ty16;
                     if value == 0 {
                         return None
                     }

@@ -142,7 +142,7 @@ impl FuncTranslator {
         const_eval: fn(lhs: V128, rhs: u32) -> V128,
     ) -> Result<(), Error>
     where
-        T: From<TypedVal> + IntoShiftAmount,
+        T: IntoShiftAmount<Input: From<TypedVal>>,
     {
         bail_unreachable!(self);
         let (lhs, rhs) = self.alloc.stack.pop2();
@@ -157,7 +157,7 @@ impl FuncTranslator {
         let instr = match rhs {
             Provider::Register(rhs) => make_instr(result, lhs, rhs),
             Provider::Const(rhs) => {
-                let Some(rhs) = T::from(rhs).into_shift_amount() else {
+                let Some(rhs) = T::into_shift_amount(rhs.into()) else {
                     // Case: the shift operation is a no-op
                     self.alloc.stack.push_register(lhs)?;
                     return Ok(());
