@@ -494,7 +494,28 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_bitselect(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        let (lhs, rhs, selector) = self.alloc.stack.pop3();
+        if let (Provider::Const(lhs), Provider::Const(rhs), Provider::Const(selector)) =
+            (lhs, rhs, selector)
+        {
+            // Case: all inputs are immediates so we can const-eval the result.
+            let result = simd::v128_bitselect(lhs.into(), rhs.into(), selector.into());
+            self.alloc.stack.push_const(result);
+            return Ok(());
+        }
+        let result = self.alloc.stack.push_dynamic()?;
+        let lhs = self.alloc.stack.provider2reg(&lhs)?;
+        let rhs = self.alloc.stack.provider2reg(&rhs)?;
+        let selector = self.alloc.stack.provider2reg(&selector)?;
+        self.push_fueled_instr(
+            Instruction::v128_bitselect(result, lhs, rhs),
+            FuelCosts::base,
+        )?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::register(selector))?;
+        Ok(())
     }
 
     fn visit_v128_any_true(&mut self) -> Self::Output {

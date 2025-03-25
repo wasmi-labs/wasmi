@@ -51,6 +51,16 @@ impl Executor<'_> {
         self.next_instr_at(2);
     }
 
+    /// Executes an [`Instruction::V128Biselect`] instruction.
+    pub fn execute_v128_bitselect(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
+        let selector = self.fetch_register();
+        let lhs = self.get_register_as::<V128>(lhs);
+        let rhs = self.get_register_as::<V128>(rhs);
+        let selector = self.get_register_as::<V128>(selector);
+        let result = simd::v128_bitselect(lhs, rhs, selector);
+        self.next_instr_at(2);
+    }
+
     impl_unary_executors! {
         (Instruction::V128AnyTrue, execute_v128_any_true, simd::v128_any_true),
         (Instruction::I8x16AllTrue, execute_i8x16_all_true, simd::i8x16_all_true),
