@@ -88,6 +88,8 @@ impl Executor<'_> {
         (Instruction::F64x2Trunc, execute_f64x2_trunc, simd::f64x2_trunc),
         (Instruction::F64x2Nearest, execute_f64x2_nearest, simd::f64x2_nearest),
         (Instruction::F64x2Sqrt, execute_f64x2_sqrt, simd::f64x2_sqrt),
+
+        (Instruction::V128Not, execute_v128_not, simd::v128_not),
     }
 
     impl_binary_executors! {
@@ -159,6 +161,11 @@ impl Executor<'_> {
         (Instruction::I16x8SubSatS, execute_i16x8_sub_sat_s, simd::i16x8_sub_sat_s),
         (Instruction::I16x8SubSatU, execute_i16x8_sub_sat_u, simd::i16x8_sub_sat_u),
         (Instruction::I16x8Sub, execute_i16x8_mul, simd::i16x8_mul),
+
+        (Instruction::V128And, execute_v128_and, simd::v128_and),
+        (Instruction::V128Andnot, execute_v128_andnot, simd::v128_andnot),
+        (Instruction::V128Or, execute_v128_or, simd::v128_or),
+        (Instruction::V128Xor, execute_v128_xor, simd::v128_xor),
 
         (Instruction::F32x4Add, execute_f32x4_add, simd::f32x4_add),
         (Instruction::F32x4Sub, execute_f32x4_sub, simd::f32x4_sub),

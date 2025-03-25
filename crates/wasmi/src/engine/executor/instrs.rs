@@ -1704,15 +1704,15 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64x2_shr_u_by(result, lhs, rhs)
                 }
                 #[cfg(feature = "simd")]
-                Instr::V128And { result, lhs, rhs } => todo!(),
+                Instr::V128And { result, lhs, rhs } => self.execute_v128_and(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::V128Or { result, lhs, rhs } => todo!(),
+                Instr::V128Or { result, lhs, rhs } => self.execute_v128_andnot(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::V128Xor { result, lhs, rhs } => todo!(),
+                Instr::V128Xor { result, lhs, rhs } => self.execute_v128_or(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::V128Andnot { result, lhs, rhs } => todo!(),
+                Instr::V128Andnot { result, lhs, rhs } => self.execute_v128_xor(result, lhs, rhs),
                 #[cfg(feature = "simd")]
-                Instr::V128Not { result, input } => todo!(),
+                Instr::V128Not { result, input } => self.execute_v128_not(result, input),
                 #[cfg(feature = "simd")]
                 Instr::V128Bitselect { result, lhs, rhs } => todo!(),
                 #[cfg(feature = "simd")]

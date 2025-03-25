@@ -474,23 +474,23 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_not(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_unary(Instruction::v128_not, simd::v128_not)
     }
 
     fn visit_v128_and(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::v128_and, simd::v128_and)
     }
 
     fn visit_v128_andnot(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::v128_andnot, simd::v128_andnot)
     }
 
     fn visit_v128_or(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::v128_or, simd::v128_or)
     }
 
     fn visit_v128_xor(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_binary(Instruction::v128_xor, simd::v128_xor)
     }
 
     fn visit_v128_bitselect(&mut self) -> Self::Output {
