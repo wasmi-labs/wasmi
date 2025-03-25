@@ -200,7 +200,7 @@ macro_rules! expand_tests {
             fn wasm_simd_address("simd_address");
             #[ignore] fn wasm_simd_align("simd_align");
             fn wasm_simd_bit_shift("simd_bit_shift");
-            #[ignore] fn wasm_simd_bitwise("simd_bitwise");
+            fn wasm_simd_bitwise("simd_bitwise");
             #[ignore] fn wasm_simd_boolean("simd_boolean");
             fn wasm_simd_const("simd_const");
             #[ignore] fn wasm_simd_conversions("simd_conversions");
@@ -240,7 +240,7 @@ macro_rules! expand_tests {
             fn wasm_simd_int_to_int_extend("simd_int_to_int_extend");
             #[ignore] fn wasm_simd_lane("simd_lane");
             fn wasm_simd_linking("simd_linking");
-            #[ignore] fn wasm_simd_load("simd_load");
+            fn wasm_simd_load("simd_load");
             #[ignore] fn wasm_simd_load16_lane("simd_load16_lane");
             #[ignore] fn wasm_simd_load32_lane("simd_load32_lane");
             #[ignore] fn wasm_simd_load64_lane("simd_load64_lane");
