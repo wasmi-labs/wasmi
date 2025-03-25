@@ -398,6 +398,11 @@ macro_rules! impl_shift_amount {
 impl_shift_amount! {
     (i32, 32, i16, i32),
     (i64, 64, i16, i64),
+
+    (u8 ,  8, u16, u32),
+    (u16, 16, u16, u32),
+    (u32, 32, u16, u32),
+    (u64, 64, u16, u32),
 }
 
 /// A 64-bit offset in Wasmi bytecode.

@@ -6638,6 +6638,15 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
+                /// Variants of [`Instruction::I8x16Shl`] with immediate shift amount.
+                #[snake_name(i8x16_shl_by)]
+                I8x16ShlBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
+                },
                 /// Wasm `i16x8.shl` instruction.
                 #[snake_name(i16x8_shl)]
                 I16x8Shl {
@@ -6646,6 +6655,15 @@ macro_rules! for_each_op_grouped {
                     lhs: Reg,
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
+                },
+                /// Variants of [`Instruction::I16x8Shl`] with immediate shift amount.
+                #[snake_name(i16x8_shl_by)]
+                I16x8ShlBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i32x4.shl` instruction.
                 #[snake_name(i32x4_shl)]
@@ -6656,6 +6674,15 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
+                /// Variants of [`Instruction::I32x4Shl`] with immediate shift amount.
+                #[snake_name(i32x4_shl_by)]
+                I32x4ShlBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
+                },
                 /// Wasm `i64x2.shl` instruction.
                 #[snake_name(i64x2_shl)]
                 I64x2Shl {
@@ -6664,6 +6691,15 @@ macro_rules! for_each_op_grouped {
                     lhs: Reg,
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
+                },
+                /// Variants of [`Instruction::I64x2Shl`] with immediate shift amount.
+                #[snake_name(i64x2_shl_by)]
+                I64x2ShlBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i8x16.shr_s` instruction.
                 #[snake_name(i8x16_shr_s)]
@@ -6674,6 +6710,15 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
+                /// Variants of [`Instruction::I8x16ShrS`] with immediate shift amount.
+                #[snake_name(i8x16_shr_s_by)]
+                I8x16ShrSBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
+                },
                 /// Wasm `i8x16.shr_u` instruction.
                 #[snake_name(i8x16_shr_u)]
                 I8x16ShrU {
@@ -6682,6 +6727,15 @@ macro_rules! for_each_op_grouped {
                     lhs: Reg,
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
+                },
+                /// Variants of [`Instruction::I8x16ShrU`] with immediate shift amount.
+                #[snake_name(i8x16_shr_u_by)]
+                I8x16ShrUBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i16x8.shr_s` instruction.
                 #[snake_name(i16x8_shr_s)]
@@ -6692,6 +6746,15 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
+                /// Variants of [`Instruction::I16x8ShrS`] with immediate shift amount.
+                #[snake_name(i16x8_shr_s_by)]
+                I16x8ShrSBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
+                },
                 /// Wasm `i16x8.shr_u` instruction.
                 #[snake_name(i16x8_shr_u)]
                 I16x8ShrU {
@@ -6700,6 +6763,15 @@ macro_rules! for_each_op_grouped {
                     lhs: Reg,
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
+                },
+                /// Variants of [`Instruction::I16x8ShrU`] with immediate shift amount.
+                #[snake_name(i16x8_shr_u_by)]
+                I16x8ShrUBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i32x4.shr_s` instruction.
                 #[snake_name(i32x4_shr_s)]
@@ -6710,6 +6782,15 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
+                /// Variants of [`Instruction::I32x4ShrS`] with immediate shift amount.
+                #[snake_name(i32x4_shr_s_by)]
+                I32x4ShrSBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
+                },
                 /// Wasm `i32x4.shr_u` instruction.
                 #[snake_name(i32x4_shr_u)]
                 I32x4ShrU {
@@ -6718,6 +6799,15 @@ macro_rules! for_each_op_grouped {
                     lhs: Reg,
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
+                },
+                /// Variants of [`Instruction::I32x4ShrU`] with immediate shift amount.
+                #[snake_name(i32x4_shr_u_by)]
+                I32x4ShrUBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
                 },
                 /// Wasm `i64x2.shr_s` instruction.
                 #[snake_name(i64x2_shr_s)]
@@ -6728,6 +6818,15 @@ macro_rules! for_each_op_grouped {
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
                 },
+                /// Variants of [`Instruction::I64x2ShrS`] with immediate shift amount.
+                #[snake_name(i64x2_shr_s_by)]
+                I64x2ShrSBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
+                },
                 /// Wasm `i64x2.shr_u` instruction.
                 #[snake_name(i64x2_shr_u)]
                 I64x2ShrU {
@@ -6736,6 +6835,15 @@ macro_rules! for_each_op_grouped {
                     lhs: Reg,
                     /// Register holding the `rhs` of the instruction.
                     rhs: Reg,
+                },
+                /// Variants of [`Instruction::I64x2ShrU`] with immediate shift amount.
+                #[snake_name(i64x2_shr_u_by)]
+                I64x2ShrUBy {
+                    @result: Reg,
+                    /// Register holding the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The 16-bit encoded shift amount.
+                    rhs: ShiftAmount<u32>,
                 },
 
                 /// Wasm `v128.and` instruction.

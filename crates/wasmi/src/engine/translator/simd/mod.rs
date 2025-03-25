@@ -4,7 +4,7 @@ use super::{utils::Wrap, FuncTranslator};
 use crate::{
     core::{simd, TypedVal, V128},
     engine::{translator::provider::Provider, FuelCosts},
-    ir::{Instruction, Reg},
+    ir::{Instruction, IntoShiftAmount, Reg},
     Error,
 };
 
@@ -127,6 +127,45 @@ impl FuncTranslator {
         let lhs = self.alloc.stack.provider2reg(&lhs)?;
         let rhs = self.alloc.stack.provider2reg(&rhs)?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
+        Ok(())
+    }
+
+    /// Generically translate a Wasm shift instruction.
+    fn translate_simd_shift<T>(
+        &mut self,
+        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr_imm: fn(
+            result: Reg,
+            lhs: Reg,
+            rhs: <T as IntoShiftAmount>::Output,
+        ) -> Instruction,
+        const_eval: fn(lhs: V128, rhs: u32) -> V128,
+    ) -> Result<(), Error>
+    where
+        T: From<TypedVal> + IntoShiftAmount,
+    {
+        bail_unreachable!(self);
+        let (lhs, rhs) = self.alloc.stack.pop2();
+        if let (Provider::Const(lhs), Provider::Const(rhs)) = (lhs, rhs) {
+            // Case: both inputs are immediates so we can const-eval the result.
+            let result = const_eval(lhs.into(), rhs.into());
+            self.alloc.stack.push_const(result);
+            return Ok(());
+        }
+        let lhs = self.alloc.stack.provider2reg(&lhs)?;
+        let result = self.alloc.stack.push_dynamic()?;
+        let instr = match rhs {
+            Provider::Register(rhs) => make_instr(result, lhs, rhs),
+            Provider::Const(rhs) => {
+                let Some(rhs) = T::from(rhs).into_shift_amount() else {
+                    // Case: the shift operation is a no-op
+                    self.alloc.stack.push_register(lhs)?;
+                    return Ok(());
+                };
+                make_instr_imm(result, lhs, rhs)
+            }
+        };
+        self.push_fueled_instr(instr, FuelCosts::base)?;
         Ok(())
     }
 }
