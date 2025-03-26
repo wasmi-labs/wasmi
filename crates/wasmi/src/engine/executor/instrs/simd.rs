@@ -1,14 +1,25 @@
 use super::Executor;
 use crate::{
     core::{
-        simd,
-        simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx32, ImmLaneIdx4, ImmLaneIdx8},
+        simd::{self, ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx32, ImmLaneIdx4, ImmLaneIdx8},
         UntypedVal,
         WriteAs,
         V128,
     },
     engine::{executor::InstructionPtr, utils::unreachable_unchecked},
-    ir::{AnyConst32, Instruction, Reg, ShiftAmount},
+    ir::{
+        index,
+        Address32,
+        AnyConst32,
+        Instruction,
+        Offset64,
+        Offset64Lo,
+        Offset8,
+        Reg,
+        ShiftAmount,
+    },
+    store::StoreInner,
+    Error,
 };
 
 impl Executor<'_> {
@@ -489,5 +500,75 @@ impl Executor<'_> {
         (Instruction::I64x2ShlBy, execute_i64x2_shl_by, simd::i64x2_shl),
         (Instruction::I64x2ShrSBy, execute_i64x2_shr_s_by, simd::i64x2_shr_s),
         (Instruction::I64x2ShrUBy, execute_i64x2_shr_u_by, simd::i64x2_shr_u),
+    }
+}
+
+impl Executor<'_> {
+    /// Returns the optional `memory` parameter for a `load_at` [`Instruction`].
+    ///
+    /// # Note
+    ///
+    /// - Returns the default [`index::Memory`] if the parameter is missing.
+    /// - Bumps `self.ip` if a [`Instruction::MemoryIndex`] parameter was found.
+    #[inline(always)]
+    fn fetch_lane_and_memory<LaneType>(&mut self, delta: usize) -> (LaneType, index::Memory)
+    where
+        LaneType: TryFrom<u8>,
+    {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(delta);
+        match addr.get().filter_lane_and_memory() {
+            Ok(value) => value,
+            Err(instr) => unsafe {
+                unreachable_unchecked!(
+                    "expected an `Instruction::Imm16AndImm32` but found: {instr:?}"
+                )
+            },
+        }
+    }
+
+    pub fn execute_v128_store8_lane(
+        &mut self,
+        store: &mut StoreInner,
+        ptr: Reg,
+        offset_lo: Offset64Lo,
+    ) -> Result<(), Error> {
+        let (value, offset_hi) = self.fetch_value_and_offset_hi();
+        let (lane, memory) = self.fetch_lane_and_memory(2);
+        let offset = Offset64::combine(offset_hi, offset_lo);
+        let ptr = self.get_register_as::<u64>(ptr);
+        let v128 = self.get_register_as::<V128>(value);
+        let memory = self.fetch_memory_bytes_mut(memory, store);
+        simd::v128_store8_lane(memory, ptr, u64::from(offset), v128, lane)?;
+        self.try_next_instr_at(3)
+    }
+
+    pub fn execute_v128_store8_lane_offset8(
+        &mut self,
+        store: &mut StoreInner,
+        ptr: Reg,
+        value: Reg,
+        offset: Offset8,
+        lane: ImmLaneIdx16,
+    ) -> Result<(), Error> {
+        let ptr = self.get_register_as::<u64>(ptr);
+        let offset = u64::from(Offset64::from(offset));
+        let v128 = self.get_register_as::<V128>(value);
+        let memory = self.fetch_default_memory_bytes_mut();
+        simd::v128_store8_lane(memory, ptr, offset, v128, lane)?;
+        self.try_next_instr()
+    }
+
+    pub fn execute_v128_store8_lane_at(
+        &mut self,
+        store: &mut StoreInner,
+        value: Reg,
+        address: Address32,
+    ) -> Result<(), Error> {
+        let (lane, memory) = self.fetch_lane_and_memory(1);
+        let v128 = self.get_register_as::<V128>(value);
+        let memory = self.fetch_memory_bytes_mut(memory, store);
+        simd::v128_store8_lane_at(memory, usize::from(address), v128, lane)?;
+        self.try_next_instr_at(2)
     }
 }

@@ -1976,16 +1976,26 @@ impl<'engine> Executor<'engine> {
                     self.execute_v128_store_at(&mut store.inner, address, value)?
                 }
                 #[cfg(feature = "simd")]
-                Instr::V128Store8Lane { ptr, offset_lo } => todo!(),
+                Instr::V128Store8Lane { ptr, offset_lo } => {
+                    self.execute_v128_store8_lane(&mut store.inner, ptr, offset_lo)?
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Store8LaneOffset8 {
                     ptr,
                     value,
                     offset,
                     lane,
-                } => todo!(),
+                } => self.execute_v128_store8_lane_offset8(
+                    &mut store.inner,
+                    ptr,
+                    value,
+                    offset,
+                    lane,
+                )?,
                 #[cfg(feature = "simd")]
-                Instr::V128Store8LaneAt { value, address } => todo!(),
+                Instr::V128Store8LaneAt { value, address } => {
+                    self.execute_v128_store8_lane_at(&mut store.inner, value, address)?
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Store16Lane { ptr, offset_lo } => todo!(),
                 #[cfg(feature = "simd")]
