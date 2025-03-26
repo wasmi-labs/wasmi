@@ -2242,21 +2242,37 @@ impl<'engine> Executor<'engine> {
                     offset,
                 } => self.execute_v128_load32x2_u_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
-                Instr::V128Load8Lane { result, offset_lo } => todo!(),
+                Instr::V128Load8Lane { result, offset_lo } => {
+                    self.execute_v128_load8_lane(&store.inner, result, offset_lo)?
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128Load8LaneAt { result, address } => todo!(),
+                Instr::V128Load8LaneAt { result, address } => {
+                    self.execute_v128_load8_lane_at(&store.inner, result, address)?
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128Load16Lane { result, offset_lo } => todo!(),
+                Instr::V128Load16Lane { result, offset_lo } => {
+                    self.execute_v128_load16_lane(&store.inner, result, offset_lo)?
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128Load16LaneAt { result, address } => todo!(),
+                Instr::V128Load16LaneAt { result, address } => {
+                    self.execute_v128_load16_lane_at(&store.inner, result, address)?
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128Load32Lane { result, offset_lo } => todo!(),
+                Instr::V128Load32Lane { result, offset_lo } => {
+                    self.execute_v128_load32_lane(&store.inner, result, offset_lo)?
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128Load32LaneAt { result, address } => todo!(),
+                Instr::V128Load32LaneAt { result, address } => {
+                    self.execute_v128_load32_lane_at(&store.inner, result, address)?
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128Load64Lane { result, offset_lo } => todo!(),
+                Instr::V128Load64Lane { result, offset_lo } => {
+                    self.execute_v128_load64_lane(&store.inner, result, offset_lo)?
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128Load64LaneAt { result, address } => todo!(),
+                Instr::V128Load64LaneAt { result, address } => {
+                    self.execute_v128_load64_lane_at(&store.inner, result, address)?
+                }
                 unsupported => panic!("encountered unsupported Wasmi instruction: {unsupported:?}"),
             }
         }
@@ -2643,6 +2659,23 @@ impl Executor<'_> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match addr.get().filter_register_and_offset_hi() {
+            Ok(value) => value,
+            Err(instr) => unsafe {
+                unreachable_unchecked!(
+                    "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
+                )
+            },
+        }
+    }
+
+    /// Fetches the [`Reg`] and [`Offset64Hi`] parameters for a load or store [`Instruction`].
+    unsafe fn fetch_reg_and_lane<LaneType>(&self, delta: usize) -> (Reg, LaneType)
+    where
+        LaneType: TryFrom<u8>,
+    {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(delta);
+        match addr.get().filter_register_and_lane::<LaneType>() {
             Ok(value) => value,
             Err(instr) => unsafe {
                 unreachable_unchecked!(
