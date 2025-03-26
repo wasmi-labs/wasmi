@@ -22,7 +22,7 @@ use crate::{
 use wasmparser::MemArg;
 
 trait IntoLane {
-    type LaneType: TryFrom<u8> + Into<u8>;
+    type LaneType: Copy + TryFrom<u8> + Into<u8>;
 }
 
 macro_rules! impl_into_lane_for {
@@ -295,12 +295,10 @@ impl FuncTranslator {
         let (offset_hi, offset_lo) = Offset64::split(offset);
         let instr = make_instr(ptr, offset_lo);
         let param = Instruction::register_and_offset_hi(v128, offset_hi);
-        let memidx = Instruction::memory_index(memory);
+        let param2 = Instruction::lane_and_memory_index(lane, memory);
         self.push_fueled_instr(instr, FuelCosts::store)?;
         self.append_instr(param)?;
-        if !memory.is_default() {
-            self.append_instr(memidx)?;
-        }
+        self.append_instr(param2)?;
         Ok(())
     }
 
