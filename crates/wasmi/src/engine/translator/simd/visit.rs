@@ -119,20 +119,94 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         todo!()
     }
 
-    fn visit_v128_store8_lane(&mut self, _memarg: MemArg, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_v128_store8_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
+        self.translate_v128_store_lane::<i8>(
+            memarg,
+            lane,
+            Instruction::v128_store8_lane,
+            Instruction::v128_store8_lane_offset8,
+            Instruction::v128_store8_lane_at,
+            |this, memarg, ptr, lane, v128| {
+                let value = simd::i8x16_extract_lane_s(v128, lane);
+                this.translate_v128_store_lane_imm::<i32, i8, i8>(
+                    memarg,
+                    ptr,
+                    value,
+                    Instruction::i32_store8_imm,
+                    Instruction::i32_store8_offset16_imm,
+                    Instruction::i32_store8_at_imm,
+                )
+            },
+        )
     }
 
-    fn visit_v128_store16_lane(&mut self, _memarg: MemArg, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_v128_store16_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
+        self.translate_v128_store_lane::<i16>(
+            memarg,
+            lane,
+            Instruction::v128_store16_lane,
+            Instruction::v128_store16_lane_offset8,
+            Instruction::v128_store16_lane_at,
+            |this, memarg, ptr, lane, v128| {
+                let value = simd::i16x8_extract_lane_s(v128, lane);
+                this.translate_v128_store_lane_imm::<i32, i16, i16>(
+                    memarg,
+                    ptr,
+                    value,
+                    Instruction::i32_store16_imm,
+                    Instruction::i32_store16_offset16_imm,
+                    Instruction::i32_store16_at_imm,
+                )
+            },
+        )
     }
 
-    fn visit_v128_store32_lane(&mut self, _memarg: MemArg, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_v128_store32_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
+        self.translate_v128_store_lane::<i32>(
+            memarg,
+            lane,
+            Instruction::v128_store32_lane,
+            Instruction::v128_store32_lane_offset8,
+            Instruction::v128_store32_lane_at,
+            |this, memarg, ptr, lane, v128| {
+                let value = simd::i32x4_extract_lane(v128, lane);
+                this.translate_istore_wrap_impl::<i32, i32, i16>(
+                    memarg,
+                    ptr,
+                    Provider::Const(value.into()),
+                    Instruction::store32,
+                    Instruction::i32_store_imm16,
+                    Instruction::store32_offset16,
+                    Instruction::i32_store_offset16_imm16,
+                    Instruction::store32_at,
+                    Instruction::i32_store_at_imm16,
+                )
+            },
+        )
     }
 
-    fn visit_v128_store64_lane(&mut self, _memarg: MemArg, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_v128_store64_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
+        self.translate_v128_store_lane::<i64>(
+            memarg,
+            lane,
+            Instruction::v128_store64_lane,
+            Instruction::v128_store64_lane_offset8,
+            Instruction::v128_store64_lane_at,
+            |this, memarg, ptr, lane, v128| {
+                let value = simd::i64x2_extract_lane(v128, lane);
+                this.translate_istore_wrap_impl::<i64, i64, i16>(
+                    memarg,
+                    ptr,
+                    Provider::Const(value.into()),
+                    Instruction::store64,
+                    Instruction::i64_store_imm16,
+                    Instruction::store64_offset16,
+                    Instruction::i64_store_offset16_imm16,
+                    Instruction::store64_at,
+                    Instruction::i64_store_at_imm16,
+                )
+            },
+        )
     }
 
     fn visit_v128_const(&mut self, value: wasmparser::V128) -> Self::Output {

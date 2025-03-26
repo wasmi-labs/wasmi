@@ -263,6 +263,30 @@ impl Instruction {
         }
         Err(self)
     }
+
+    /// Creates a new [`Instruction::Imm16AndImm32`] from the given `lane` and `memory` index.
+    pub fn lane_and_memory_index(value: impl Into<u8>, memory: Memory) -> Self {
+        Self::imm16_and_imm32(u16::from(value.into()), u32::from(memory))
+    }
+
+    /// Returns `Some` lane and [`index::Memory`] if encoded properly.
+    ///
+    /// # Errors
+    ///
+    /// Returns back `self` if it was an incorrect [`Instruction`].
+    /// This allows for a better error message to inform the user.
+    pub fn filter_lane_and_memory<LaneType>(self) -> Result<(LaneType, index::Memory), Self>
+    where
+        LaneType: TryFrom<u8>,
+    {
+        if let Instruction::Imm16AndImm32 { imm16, imm32 } = self {
+            let Ok(lane) = LaneType::try_from(i16::from(imm16) as u16 as u8) else {
+                return Err(self);
+            };
+            return Ok((lane, index::Memory::from(u32::from(imm32))));
+        }
+        Err(self)
+    }
 }
 
 #[test]

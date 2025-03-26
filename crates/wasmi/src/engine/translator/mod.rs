@@ -2149,8 +2149,39 @@ impl FuncTranslator {
         Field: TryFrom<Wrapped> + Into<AnyConst16>,
     {
         bail_unreachable!(self);
-        let (memory, offset) = Self::decode_memarg(memarg);
         let (ptr, value) = self.alloc.stack.pop2();
+        self.translate_istore_wrap_impl::<Src, Wrapped, Field>(
+            memarg,
+            ptr,
+            value,
+            make_instr,
+            make_instr_imm,
+            make_instr_offset16,
+            make_instr_offset16_imm,
+            make_instr_at,
+            make_instr_at_imm,
+        )
+    }
+
+    /// Implementation of [`Self::translate_istore_wrap`] without emulation stack popping.
+    #[allow(clippy::too_many_arguments)]
+    fn translate_istore_wrap_impl<Src, Wrapped, Field>(
+        &mut self,
+        memarg: MemArg,
+        ptr: TypedProvider,
+        value: TypedProvider,
+        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
+    ) -> Result<(), Error>
+    where
+        Src: Copy + Wrap<Wrapped> + From<TypedVal>,
+        Field: TryFrom<Wrapped> + Into<AnyConst16>,
+    {
+        let (memory, offset) = Self::decode_memarg(memarg);
         let (ptr, offset) = match ptr {
             Provider::Register(ptr) => (ptr, offset),
             Provider::Const(ptr) => {

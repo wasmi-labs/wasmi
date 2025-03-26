@@ -31,12 +31,6 @@ type WasmStoreOp<T> =
 type WasmStoreAtOp<T> = fn(memory: &mut [u8], address: usize, value: T) -> Result<(), TrapCode>;
 
 impl Executor<'_> {
-    /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
-    fn fetch_value_and_offset_hi(&self) -> (Reg, Offset64Hi) {
-        // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
-        unsafe { self.fetch_reg_and_offset_hi() }
-    }
-
     /// Returns the immediate `value` and `offset_hi` parameters for a `load` [`Instruction`].
     fn fetch_value_and_offset_imm<T>(&self) -> (T, Offset64Hi)
     where
@@ -54,47 +48,6 @@ impl Executor<'_> {
         }
     }
 
-    /// Fetches the bytes of the default memory at index 0.
-    #[inline]
-    fn fetch_default_memory_bytes_mut(&mut self) -> &mut [u8] {
-        // Safety: the `self.cache.memory` pointer is always synchronized
-        //         conservatively whenever it could have been invalidated.
-        unsafe { self.cache.memory.data_mut() }
-    }
-
-    /// Fetches the bytes of the given `memory`.
-    #[inline]
-    fn fetch_memory_bytes_mut<'exec, 'store, 'bytes>(
-        &'exec mut self,
-        memory: Memory,
-        store: &'store mut StoreInner,
-    ) -> &'bytes mut [u8]
-    where
-        'exec: 'bytes,
-        'store: 'bytes,
-    {
-        match memory.is_default() {
-            true => self.fetch_default_memory_bytes_mut(),
-            false => self.fetch_non_default_memory_bytes_mut(memory, store),
-        }
-    }
-
-    /// Fetches the bytes of the given non-default `memory`.
-    #[cold]
-    #[inline]
-    fn fetch_non_default_memory_bytes_mut<'exec, 'store, 'bytes>(
-        &'exec mut self,
-        memory: Memory,
-        store: &'store mut StoreInner,
-    ) -> &'bytes mut [u8]
-    where
-        'exec: 'bytes,
-        'store: 'bytes,
-    {
-        let memory = self.get_memory(memory);
-        store.resolve_memory_mut(&memory).data_mut()
-    }
-
     /// Executes a generic Wasm `store[N]` operation.
     ///
     /// # Note
@@ -105,7 +58,7 @@ impl Executor<'_> {
     /// - `{i32, i64}.store8`
     /// - `{i32, i64}.store16`
     /// - `i64.store32`
-    fn execute_store_wrap<T>(
+    pub(super) fn execute_store_wrap<T>(
         &mut self,
         store: &mut StoreInner,
         memory: Memory,
