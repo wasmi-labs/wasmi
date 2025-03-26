@@ -245,7 +245,7 @@ macro_rules! expand_tests {
             #[ignore] fn wasm_simd_load32_lane("simd_load32_lane");
             #[ignore] fn wasm_simd_load64_lane("simd_load64_lane");
             #[ignore] fn wasm_simd_load8_lane("simd_load8_lane");
-            #[ignore] fn wasm_simd_load_splat("simd_load_splat");
+            fn wasm_simd_load_splat("simd_load_splat");
             fn wasm_simd_load_extend("simd_load_extend");
             fn wasm_simd_load_zero("simd_load_zero");
             fn wasm_simd_splat("simd_splat");
