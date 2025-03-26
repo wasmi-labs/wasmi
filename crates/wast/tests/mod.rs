@@ -251,8 +251,8 @@ macro_rules! expand_tests {
             fn wasm_simd_splat("simd_splat");
             fn wasm_simd_store("simd_store");
             fn wasm_simd_store16_lane("simd_store16_lane");
-            #[ignore] fn wasm_simd_store32_lane("simd_store32_lane");
-            #[ignore] fn wasm_simd_store64_lane("simd_store64_lane");
+            fn wasm_simd_store32_lane("simd_store32_lane");
+            fn wasm_simd_store64_lane("simd_store64_lane");
             fn wasm_simd_store8_lane("simd_store8_lane");
         }
     };
