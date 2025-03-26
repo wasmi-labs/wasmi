@@ -53,6 +53,7 @@ impl PartialEq for FuzzVal {
             (Self::I64(l), Self::I64(r)) => l == r,
             (Self::F32(l), Self::F32(r)) => l.to_bits() == r.to_bits(),
             (Self::F64(l), Self::F64(r)) => l.to_bits() == r.to_bits(),
+            (Self::V128(l), Self::V128(r)) => l == r,
             (Self::FuncRef { is_null: l }, Self::FuncRef { is_null: r }) => l == r,
             (Self::ExternRef { is_null: l }, Self::ExternRef { is_null: r }) => l == r,
             _ => false,
