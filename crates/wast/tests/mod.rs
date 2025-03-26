@@ -329,7 +329,7 @@ macro_rules! expand_tests_mm {
             fn wasm_multi_memory_memory_trap1("proposals/multi-memory/memory_trap1");
             fn wasm_multi_memory_memory_multi("proposals/multi-memory/memory-multi");
             fn wasm_multi_memory_memory("proposals/multi-memory/memory");
-            #[ignore] fn wasm_multi_memory_simd_memory("proposals/multi-memory/simd_memory-multi");
+            fn wasm_multi_memory_simd_memory("proposals/multi-memory/simd_memory-multi");
             fn wasm_multi_memory_start0("proposals/multi-memory/start0");
             fn wasm_multi_memory_store("proposals/multi-memory/store");
             fn wasm_multi_memory_store0("proposals/multi-memory/store0");
