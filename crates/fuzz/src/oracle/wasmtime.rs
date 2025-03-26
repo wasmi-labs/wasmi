@@ -106,6 +106,7 @@ impl From<Val> for FuzzVal {
             Val::I64(value) => Self::I64(value),
             Val::F32(value) => Self::F32(f32::from_bits(value)),
             Val::F64(value) => Self::F64(f64::from_bits(value)),
+            Val::V128(value) => Self::V128(value.as_u128()),
             Val::FuncRef(value) => Self::FuncRef {
                 is_null: value.is_none(),
             },
