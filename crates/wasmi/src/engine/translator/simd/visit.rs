@@ -120,7 +120,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_store8_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
-        self.translate_v128_store8_lane::<i8>(
+        self.translate_v128_store_lane::<i8>(
             memarg,
             lane,
             Instruction::v128_store8_lane,
@@ -128,7 +128,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             Instruction::v128_store8_lane_at,
             |this, memarg, ptr, lane, v128| {
                 let value = simd::i8x16_extract_lane_s(v128, lane);
-                this.translate_v128_store8_lane_imm::<i32, i8, i8>(
+                this.translate_v128_store_lane_imm::<i32, i8, i8>(
                     memarg,
                     ptr,
                     value,
@@ -141,7 +141,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_store16_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
-        self.translate_v128_store8_lane::<i16>(
+        self.translate_v128_store_lane::<i16>(
             memarg,
             lane,
             Instruction::v128_store16_lane,
@@ -149,7 +149,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             Instruction::v128_store16_lane_at,
             |this, memarg, ptr, lane, v128| {
                 let value = simd::i16x8_extract_lane_s(v128, lane);
-                this.translate_v128_store8_lane_imm::<i32, i16, i16>(
+                this.translate_v128_store_lane_imm::<i32, i16, i16>(
                     memarg,
                     ptr,
                     value,

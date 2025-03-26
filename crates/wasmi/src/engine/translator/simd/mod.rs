@@ -231,7 +231,7 @@ impl FuncTranslator {
     }
 
     #[allow(clippy::type_complexity)]
-    fn translate_v128_store8_lane<T: IntoLane>(
+    fn translate_v128_store_lane<T: IntoLane>(
         &mut self,
         memarg: MemArg,
         lane: u8,
@@ -272,7 +272,7 @@ impl FuncTranslator {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
                 if let Ok(address) = Address32::try_from(address) {
-                    return self.translate_v128_store8_lane_at::<T>(
+                    return self.translate_v128_store_lane_at::<T>(
                         memory,
                         address,
                         v128,
@@ -304,7 +304,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    fn translate_v128_store8_lane_imm<Src, Wrapped, Field>(
+    fn translate_v128_store_lane_imm<Src, Wrapped, Field>(
         &mut self,
         memarg: MemArg,
         ptr: TypedProvider,
@@ -330,7 +330,7 @@ impl FuncTranslator {
         )
     }
 
-    fn translate_v128_store8_lane_at<T: IntoLane>(
+    fn translate_v128_store_lane_at<T: IntoLane>(
         &mut self,
         memory: index::Memory,
         address: Address32,
