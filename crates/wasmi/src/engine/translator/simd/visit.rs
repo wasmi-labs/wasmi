@@ -164,7 +164,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_load8_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
-        self.translate_v128_load8_lane::<i8>(
+        self.translate_v128_load_lane::<i8>(
             memarg,
             lane,
             Instruction::v128_load8_lane,

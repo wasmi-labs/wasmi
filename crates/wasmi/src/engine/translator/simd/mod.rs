@@ -365,7 +365,7 @@ impl FuncTranslator {
         Ok(Some(instr))
     }
 
-    fn translate_v128_load8_lane<T: IntoLane>(
+    fn translate_v128_load_lane<T: IntoLane>(
         &mut self,
         memarg: MemArg,
         lane: u8,
@@ -386,7 +386,7 @@ impl FuncTranslator {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
                 if let Ok(address) = Address32::try_from(address) {
-                    return self.translate_v128_load8_lane_at(
+                    return self.translate_v128_load_lane_at(
                         memory,
                         x,
                         lane,
@@ -409,7 +409,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    fn translate_v128_load8_lane_at<LaneType>(
+    fn translate_v128_load_lane_at<LaneType>(
         &mut self,
         memory: Memory,
         x: Reg,
