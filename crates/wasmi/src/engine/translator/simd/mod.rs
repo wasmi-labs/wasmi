@@ -225,7 +225,7 @@ impl FuncTranslator {
         };
         self.push_fueled_instr(instr, FuelCosts::base)?;
         if let Some(param) = param {
-            self.alloc.instr_encoder.append_instr(param)?;
+            self.append_instr(param)?;
         }
         Ok(())
     }
@@ -297,9 +297,9 @@ impl FuncTranslator {
         let param = Instruction::register_and_offset_hi(v128, offset_hi);
         let memidx = Instruction::memory_index(memory);
         self.push_fueled_instr(instr, FuelCosts::store)?;
-        self.alloc.instr_encoder.append_instr(param)?;
+        self.append_instr(param)?;
         if !memory.is_default() {
-            self.alloc.instr_encoder.append_instr(memidx)?;
+            self.append_instr(memidx)?;
         }
         Ok(())
     }
@@ -339,9 +339,7 @@ impl FuncTranslator {
         make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
-        self.alloc
-            .instr_encoder
-            .append_instr(Instruction::lane_and_memory_index(lane, memory))?;
+        self.append_instr(Instruction::lane_and_memory_index(lane, memory))?;
         Ok(())
     }
 

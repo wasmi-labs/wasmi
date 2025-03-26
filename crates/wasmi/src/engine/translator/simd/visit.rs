@@ -300,9 +300,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             Instruction::i8x16_shuffle(result, lhs, rhs),
             FuelCosts::base,
         )?;
-        self.alloc
-            .instr_encoder
-            .append_instr(Instruction::register(selector))?;
+        self.append_instr(Instruction::register(selector))?;
         Ok(())
     }
 
@@ -727,9 +725,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             Instruction::v128_bitselect(result, lhs, rhs),
             FuelCosts::base,
         )?;
-        self.alloc
-            .instr_encoder
-            .append_instr(Instruction::register(selector))?;
+        self.append_instr(Instruction::register(selector))?;
         Ok(())
     }
 
