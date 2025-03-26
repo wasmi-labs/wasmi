@@ -46,52 +46,112 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         )
     }
 
-    fn visit_v128_load8x8_s(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load8x8_s(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load8x8_s,
+            Instruction::v128_load8x8_s_offset16,
+            Instruction::v128_load8x8_s_at,
+        )
     }
 
-    fn visit_v128_load8x8_u(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load8x8_u(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load8x8_u,
+            Instruction::v128_load8x8_u_offset16,
+            Instruction::v128_load8x8_u_at,
+        )
     }
 
-    fn visit_v128_load16x4_s(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load16x4_s(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load16x4_s,
+            Instruction::v128_load16x4_s_offset16,
+            Instruction::v128_load16x4_s_at,
+        )
     }
 
-    fn visit_v128_load16x4_u(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load16x4_u(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load16x4_u,
+            Instruction::v128_load16x4_u_offset16,
+            Instruction::v128_load16x4_u_at,
+        )
     }
 
-    fn visit_v128_load32x2_s(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load32x2_s(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load32x2_s,
+            Instruction::v128_load32x2_s_offset16,
+            Instruction::v128_load32x2_s_at,
+        )
     }
 
-    fn visit_v128_load32x2_u(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load32x2_u(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load32x2_u,
+            Instruction::v128_load32x2_u_offset16,
+            Instruction::v128_load32x2_u_at,
+        )
     }
 
-    fn visit_v128_load8_splat(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load8_splat(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load8_splat,
+            Instruction::v128_load8_splat_offset16,
+            Instruction::v128_load8_splat_at,
+        )
     }
 
-    fn visit_v128_load16_splat(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load16_splat(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load16_splat,
+            Instruction::v128_load16_splat_offset16,
+            Instruction::v128_load16_splat_at,
+        )
     }
 
-    fn visit_v128_load32_splat(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load32_splat(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load32_splat,
+            Instruction::v128_load32_splat_offset16,
+            Instruction::v128_load32_splat_at,
+        )
     }
 
-    fn visit_v128_load64_splat(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load64_splat(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load64_splat,
+            Instruction::v128_load64_splat_offset16,
+            Instruction::v128_load64_splat_at,
+        )
     }
 
-    fn visit_v128_load32_zero(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load32_zero(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load32_zero,
+            Instruction::v128_load32_zero_offset16,
+            Instruction::v128_load32_zero_at,
+        )
     }
 
-    fn visit_v128_load64_zero(&mut self, _memarg: MemArg) -> Self::Output {
-        todo!()
+    fn visit_v128_load64_zero(&mut self, memarg: MemArg) -> Self::Output {
+        self.translate_load(
+            memarg,
+            Instruction::v128_load64_zero,
+            Instruction::v128_load64_zero_offset16,
+            Instruction::v128_load64_zero_at,
+        )
     }
 
     fn visit_v128_store(&mut self, memarg: MemArg) -> Self::Output {
