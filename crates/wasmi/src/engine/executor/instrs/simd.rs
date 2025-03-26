@@ -2,6 +2,7 @@ use super::Executor;
 use crate::{
     core::{
         simd::{self, ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx32, ImmLaneIdx4, ImmLaneIdx8},
+        TrapCode,
         UntypedVal,
         WriteAs,
         V128,
@@ -526,12 +527,82 @@ impl Executor<'_> {
             },
         }
     }
+}
 
-    pub fn execute_v128_store8_lane(
+macro_rules! impl_execute_v128_store_lane {
+    (
+        $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
+    ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
+            pub fn $exec(
+                &mut self,
+                store: &mut StoreInner,
+                ptr: Reg,
+                offset_lo: Offset64Lo,
+            ) -> Result<(), Error> {
+                self.execute_v128_store_lane::<$lane_ty>(store, ptr, offset_lo, $eval)
+            }
+        )*
+    };
+}
+
+macro_rules! impl_execute_v128_store_lane_offset16 {
+    (
+        $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
+    ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
+            pub fn $exec(
+                &mut self,
+                store: &mut StoreInner,
+                ptr: Reg,
+                value: Reg,
+                offset: Offset8,
+                lane: $lane_ty,
+            ) -> Result<(), Error> {
+                self.execute_v128_store_lane_offset8::<$lane_ty>(store, ptr, value, offset, lane, $eval)
+            }
+        )*
+    };
+}
+
+macro_rules! impl_execute_v128_store_lane_at {
+    (
+        $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
+    ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
+            pub fn $exec(
+                &mut self,
+                store: &mut StoreInner,
+                value: Reg,
+                address: Address32,
+            ) -> Result<(), Error> {
+                self.execute_v128_store_lane_at::<$lane_ty>(store, value, address, $eval)
+            }
+        )*
+    };
+}
+
+type V128StoreLane<LaneType> = fn(
+    memory: &mut [u8],
+    ptr: u64,
+    offset: u64,
+    value: V128,
+    lane: LaneType,
+) -> Result<(), TrapCode>;
+
+type V128StoreLaneAt<LaneType> =
+    fn(memory: &mut [u8], address: usize, value: V128, lane: LaneType) -> Result<(), TrapCode>;
+
+impl Executor<'_> {
+    fn execute_v128_store_lane<LaneType>(
         &mut self,
         store: &mut StoreInner,
         ptr: Reg,
         offset_lo: Offset64Lo,
+        eval: V128StoreLane<LaneType>,
     ) -> Result<(), Error> {
         let (value, offset_hi) = self.fetch_value_and_offset_hi();
         let (lane, memory) = self.fetch_lane_and_memory(2);
@@ -543,32 +614,58 @@ impl Executor<'_> {
         self.try_next_instr_at(3)
     }
 
-    pub fn execute_v128_store8_lane_offset8(
+    impl_execute_v128_store_lane! {
+        (Instruction::V128Store8Lane, ImmLaneIdx16, execute_v128_store8_lane, simd::v128_store8_lane),
+        (Instruction::V128Store16Lane, ImmLaneIdx8, execute_v128_store16_lane, simd::v128_store16_lane),
+        (Instruction::V128Store32Lane, ImmLaneIdx4, execute_v128_store32_lane, simd::v128_store32_lane),
+        (Instruction::V128Store64Lane, ImmLaneIdx2, execute_v128_store64_lane, simd::v128_store64_lane),
+    }
+
+    fn execute_v128_store_lane_offset8<LaneType>(
         &mut self,
         store: &mut StoreInner,
         ptr: Reg,
         value: Reg,
         offset: Offset8,
-        lane: ImmLaneIdx16,
+        lane: LaneType,
+        eval: V128StoreLane<LaneType>,
     ) -> Result<(), Error> {
         let ptr = self.get_register_as::<u64>(ptr);
         let offset = u64::from(Offset64::from(offset));
         let v128 = self.get_register_as::<V128>(value);
         let memory = self.fetch_default_memory_bytes_mut();
-        simd::v128_store8_lane(memory, ptr, offset, v128, lane)?;
+        eval(memory, ptr, offset, v128, lane)?;
         self.try_next_instr()
     }
 
-    pub fn execute_v128_store8_lane_at(
+    impl_execute_v128_store_lane_offset16! {
+        (Instruction::V128Store8LaneOffset8, ImmLaneIdx16, execute_v128_store8_lane_offset8, simd::v128_store8_lane),
+        (Instruction::V128Store16LaneOffset8, ImmLaneIdx8, execute_v128_store16_lane_offset8, simd::v128_store16_lane),
+        (Instruction::V128Store32LaneOffset8, ImmLaneIdx4, execute_v128_store32_lane_offset8, simd::v128_store32_lane),
+        (Instruction::V128Store64LaneOffset8, ImmLaneIdx2, execute_v128_store64_lane_offset8, simd::v128_store64_lane),
+    }
+
+    fn execute_v128_store_lane_at<LaneType>(
         &mut self,
         store: &mut StoreInner,
         value: Reg,
         address: Address32,
-    ) -> Result<(), Error> {
-        let (lane, memory) = self.fetch_lane_and_memory(1);
+        eval: V128StoreLaneAt<LaneType>,
+    ) -> Result<(), Error>
+    where
+        LaneType: TryFrom<u8> + Into<u8>,
+    {
+        let (lane, memory) = self.fetch_lane_and_memory::<LaneType>(1);
         let v128 = self.get_register_as::<V128>(value);
         let memory = self.fetch_memory_bytes_mut(memory, store);
-        simd::v128_store8_lane_at(memory, usize::from(address), v128, lane)?;
+        eval(memory, usize::from(address), v128, lane)?;
         self.try_next_instr_at(2)
+    }
+
+    impl_execute_v128_store_lane_at! {
+        (Instruction::V128Store8LaneAt, ImmLaneIdx16, execute_v128_store8_lane_at, simd::v128_store8_lane_at),
+        (Instruction::V128Store16LaneAt, ImmLaneIdx8, execute_v128_store16_lane_at, simd::v128_store16_lane_at),
+        (Instruction::V128Store32LaneAt, ImmLaneIdx4, execute_v128_store32_lane_at, simd::v128_store32_lane_at),
+        (Instruction::V128Store64LaneAt, ImmLaneIdx2, execute_v128_store64_lane_at, simd::v128_store64_lane_at),
     }
 }
