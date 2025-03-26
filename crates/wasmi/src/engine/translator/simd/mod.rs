@@ -2,7 +2,7 @@ mod visit;
 
 use super::{utils::Wrap, FuncTranslator, Instr, TypedProvider};
 use crate::{
-    core::{simd, simd::ImmLaneIdx16, TrapCode, TypedVal, V128},
+    core::{simd, TrapCode, TypedVal, V128},
     engine::{translator::Provider, FuelCosts},
     ir::{
         index,
@@ -22,7 +22,7 @@ use crate::{
 use wasmparser::MemArg;
 
 trait IntoLane {
-    type LaneType: TryFrom<u8>;
+    type LaneType: TryFrom<u8> + Into<u8>;
 }
 
 macro_rules! impl_into_lane_for {
@@ -230,9 +230,29 @@ impl FuncTranslator {
         Ok(())
     }
 
-    fn translate_v128_store8_lane(&mut self, memarg: MemArg, lane: u8) -> Result<(), Error> {
+    #[allow(clippy::type_complexity)]
+    fn translate_v128_store8_lane<T: IntoLane>(
+        &mut self,
+        memarg: MemArg,
+        lane: u8,
+        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset8: fn(
+            ptr: Reg,
+            value: Reg,
+            offset: Offset8,
+            lane: T::LaneType,
+        ) -> Instruction,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        translate_imm: fn(
+            &mut Self,
+            memarg: MemArg,
+            ptr: TypedProvider,
+            lane: T::LaneType,
+            value: V128,
+        ) -> Result<(), Error>,
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let Ok(lane) = ImmLaneIdx16::try_from(lane) else {
+        let Ok(lane) = <T::LaneType>::try_from(lane) else {
             panic!("encountered out of bounds lane index: {lane}");
         };
         let (ptr, v128) = self.alloc.stack.pop2();
@@ -241,16 +261,7 @@ impl FuncTranslator {
             Provider::Const(v128) => {
                 // Case: with `v128` being an immediate value we can extract its
                 //       lane value and translate as a more efficient non-SIMD operation.
-                let v128 = V128::from(v128);
-                let value = simd::i8x16_extract_lane_s(v128, lane);
-                return self.translate_v128_store8_lane_imm::<i32, i8, i8>(
-                    memarg,
-                    ptr,
-                    value,
-                    Instruction::i32_store8_imm,
-                    Instruction::i32_store8_offset16_imm,
-                    Instruction::i32_store8_at_imm,
-                );
+                return translate_imm(self, memarg, ptr, lane, V128::from(v128));
             }
         };
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -261,12 +272,12 @@ impl FuncTranslator {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
                 if let Ok(address) = Address32::try_from(address) {
-                    return self.translate_v128_store8_lane_at(
+                    return self.translate_v128_store8_lane_at::<T>(
                         memory,
                         address,
                         v128,
                         lane,
-                        Instruction::v128_store8_lane_at,
+                        make_instr_at,
                     );
                 }
                 // Case: we cannot use specialized encoding and thus have to fall back
@@ -276,18 +287,13 @@ impl FuncTranslator {
                 (zero_ptr, u64::from(address))
             }
         };
-        if let Ok(Some(_)) = self.translate_v128_store_lane_mem0(
-            memory,
-            ptr,
-            offset,
-            v128,
-            lane,
-            Instruction::v128_store8_lane_offset8,
-        ) {
+        if let Ok(Some(_)) =
+            self.translate_v128_store_lane_mem0(memory, ptr, offset, v128, lane, make_instr_offset8)
+        {
             return Ok(());
         }
         let (offset_hi, offset_lo) = Offset64::split(offset);
-        let instr = Instruction::v128_store8_lane(ptr, offset_lo);
+        let instr = make_instr(ptr, offset_lo);
         let param = Instruction::register_and_offset_hi(v128, offset_hi);
         let memidx = Instruction::memory_index(memory);
         self.push_fueled_instr(instr, FuelCosts::store)?;
@@ -324,17 +330,14 @@ impl FuncTranslator {
         )
     }
 
-    fn translate_v128_store8_lane_at<LaneType>(
+    fn translate_v128_store8_lane_at<T: IntoLane>(
         &mut self,
         memory: index::Memory,
         address: Address32,
         value: Reg,
-        lane: LaneType,
+        lane: T::LaneType,
         make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
-    ) -> Result<(), Error>
-    where
-        LaneType: Into<u8>,
-    {
+    ) -> Result<(), Error> {
         self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
         self.alloc
             .instr_encoder
