@@ -8480,8 +8480,8 @@ macro_rules! for_each_op_grouped {
                 /// Followed by
                 ///
                 /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
-                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
                 ///
@@ -8518,8 +8518,8 @@ macro_rules! for_each_op_grouped {
                 /// Followed by
                 ///
                 /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
-                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
                 ///
@@ -8556,8 +8556,8 @@ macro_rules! for_each_op_grouped {
                 /// Followed by
                 ///
                 /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
-                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
                 ///
@@ -8594,8 +8594,8 @@ macro_rules! for_each_op_grouped {
                 /// Followed by
                 ///
                 /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
-                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
+                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
                 ///
