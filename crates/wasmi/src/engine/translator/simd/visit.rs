@@ -161,12 +161,30 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         )
     }
 
-    fn visit_v128_store32_lane(&mut self, _memarg: MemArg, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_v128_store32_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
+        self.translate_v128_store_lane::<i32>(
+            memarg,
+            lane,
+            Instruction::v128_store32_lane,
+            Instruction::v128_store32_lane_offset8,
+            Instruction::v128_store32_lane_at,
+            |this, memarg, ptr, lane, v128| {
+                todo!()
+            },
+        )
     }
 
-    fn visit_v128_store64_lane(&mut self, _memarg: MemArg, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_v128_store64_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
+        self.translate_v128_store_lane::<i64>(
+            memarg,
+            lane,
+            Instruction::v128_store64_lane,
+            Instruction::v128_store64_lane_offset8,
+            Instruction::v128_store64_lane_at,
+            |this, memarg, ptr, lane, v128| {
+                todo!()
+            },
+        )
     }
 
     fn visit_v128_const(&mut self, value: wasmparser::V128) -> Self::Output {
