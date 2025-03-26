@@ -297,6 +297,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_shuffle(&mut self, lanes: [u8; 16]) -> Self::Output {
+        bail_unreachable!(self);
         let selector: [ImmLaneIdx32; 16] = array::from_fn(|i| {
             let Ok(lane) = ImmLaneIdx32::try_from(lanes[i]) else {
                 panic!("encountered out of bounds lane at index {i}: {}", lanes[i])
