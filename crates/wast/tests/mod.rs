@@ -198,7 +198,7 @@ macro_rules! expand_tests {
             fn wasm_wide_arithmetic("proposals/wide-arithmetic/wide-arithmetic");
 
             fn wasm_simd_address("simd_address");
-            #[ignore] fn wasm_simd_align("simd_align");
+            fn wasm_simd_align("simd_align");
             fn wasm_simd_bit_shift("simd_bit_shift");
             fn wasm_simd_bitwise("simd_bitwise");
             fn wasm_simd_boolean("simd_boolean");
