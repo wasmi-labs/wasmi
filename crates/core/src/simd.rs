@@ -1519,7 +1519,7 @@ macro_rules! impl_v128_loadN_splat_at_for {
             ///
             /// If `address` loads out of bounds from `memory`.
             pub fn $name(memory: &[u8], address: usize) -> Result<V128, TrapCode> {
-                memory::load_at::<u8>(memory, address).map(V128::splat)
+                memory::load_at::<$ty>(memory, address).map(V128::splat)
             }
         )*
     };
