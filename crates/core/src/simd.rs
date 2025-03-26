@@ -95,6 +95,12 @@ macro_rules! impl_imm_lane_id {
                 }
             }
 
+            impl From<$name> for u8 {
+                fn from(lane: $name) -> u8 {
+                    lane.get()
+                }
+            }
+
             impl TryFrom<u8> for $name {
                 type Error = OutOfBoundsLaneIdx;
 

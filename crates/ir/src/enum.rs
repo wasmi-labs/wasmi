@@ -263,6 +263,11 @@ impl Instruction {
         }
         Err(self)
     }
+
+    /// Creates a new [`Instruction::Imm16AndImm32`] from the given `lane` and `memory` index.
+    pub fn lane_and_memory_index(value: impl Into<u8>, memory: Memory) -> Self {
+        Self::imm16_and_imm32(u16::from(value.into()), u32::from(memory))
+    }
 }
 
 #[test]

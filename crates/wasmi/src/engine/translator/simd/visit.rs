@@ -119,8 +119,8 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         todo!()
     }
 
-    fn visit_v128_store8_lane(&mut self, _memarg: MemArg, _lane: u8) -> Self::Output {
-        todo!()
+    fn visit_v128_store8_lane(&mut self, memarg: MemArg, lane: u8) -> Self::Output {
+        self.translate_v128_store8_lane(memarg, lane)
     }
 
     fn visit_v128_store16_lane(&mut self, _memarg: MemArg, _lane: u8) -> Self::Output {

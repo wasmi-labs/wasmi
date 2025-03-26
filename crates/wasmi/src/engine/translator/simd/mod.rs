@@ -1,12 +1,25 @@
 mod visit;
 
-use super::{utils::Wrap, FuncTranslator};
+use super::{utils::Wrap, FuncTranslator, Instr, TypedProvider};
 use crate::{
-    core::{simd, TypedVal, V128},
-    engine::{translator::provider::Provider, FuelCosts},
-    ir::{Instruction, IntoShiftAmount, Reg},
+    core::{simd, simd::ImmLaneIdx16, TrapCode, TypedVal, V128},
+    engine::{translator::Provider, FuelCosts},
+    ir::{
+        index,
+        index::Memory,
+        Address32,
+        AnyConst16,
+        Instruction,
+        IntoShiftAmount,
+        Offset16,
+        Offset64,
+        Offset64Lo,
+        Offset8,
+        Reg,
+    },
     Error,
 };
+use wasmparser::MemArg;
 
 trait IntoLane {
     type LaneType: TryFrom<u8>;
@@ -215,5 +228,139 @@ impl FuncTranslator {
             self.alloc.instr_encoder.append_instr(param)?;
         }
         Ok(())
+    }
+
+    fn translate_v128_store8_lane(&mut self, memarg: MemArg, lane: u8) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let Ok(lane) = ImmLaneIdx16::try_from(lane) else {
+            panic!("encountered out of bounds lane index: {lane}");
+        };
+        let (ptr, v128) = self.alloc.stack.pop2();
+        let v128 = match v128 {
+            Provider::Register(v128) => v128,
+            Provider::Const(v128) => {
+                // Case: with `v128` being an immediate value we can extract its
+                //       lane value and translate as a more efficient non-SIMD operation.
+                let v128 = V128::from(v128);
+                let value = simd::i8x16_extract_lane_s(v128, lane);
+                return self.translate_v128_store8_lane_imm::<i32, i8, i8>(
+                    memarg,
+                    ptr,
+                    value,
+                    Instruction::i32_store8_imm,
+                    Instruction::i32_store8_offset16_imm,
+                    Instruction::i32_store8_at_imm,
+                );
+            }
+        };
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let (ptr, offset) = match ptr {
+            Provider::Register(ptr) => (ptr, offset),
+            Provider::Const(ptr) => {
+                let Some(address) = self.effective_address(memory, ptr, offset) else {
+                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
+                };
+                if let Ok(address) = Address32::try_from(address) {
+                    return self.translate_v128_store8_lane_at(
+                        memory,
+                        address,
+                        v128,
+                        lane,
+                        Instruction::v128_store8_lane_at,
+                    );
+                }
+                // Case: we cannot use specialized encoding and thus have to fall back
+                //       to the general case where `ptr` is zero and `offset` stores the
+                //       `ptr+offset` address value.
+                let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
+                (zero_ptr, u64::from(address))
+            }
+        };
+        if let Ok(Some(_)) = self.translate_v128_store_lane_mem0(
+            memory,
+            ptr,
+            offset,
+            v128,
+            lane,
+            Instruction::v128_store8_lane_offset8,
+        ) {
+            return Ok(());
+        }
+        let (offset_hi, offset_lo) = Offset64::split(offset);
+        let instr = Instruction::v128_store8_lane(ptr, offset_lo);
+        let param = Instruction::register_and_offset_hi(v128, offset_hi);
+        let memidx = Instruction::memory_index(memory);
+        self.push_fueled_instr(instr, FuelCosts::store)?;
+        self.alloc.instr_encoder.append_instr(param)?;
+        if !memory.is_default() {
+            self.alloc.instr_encoder.append_instr(memidx)?;
+        }
+        Ok(())
+    }
+
+    fn translate_v128_store8_lane_imm<Src, Wrapped, Field>(
+        &mut self,
+        memarg: MemArg,
+        ptr: TypedProvider,
+        src: Src,
+        make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
+        make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
+    ) -> Result<(), Error>
+    where
+        Src: Copy + Wrap<Wrapped> + From<TypedVal> + Into<TypedVal>,
+        Field: TryFrom<Wrapped> + Into<AnyConst16>,
+    {
+        self.translate_istore_wrap_impl::<Src, Wrapped, Field>(
+            memarg,
+            ptr,
+            Provider::Const(src.into()),
+            |_, _| unreachable!(),
+            make_instr_imm,
+            |_, _, _| unreachable!(),
+            make_instr_offset16_imm,
+            |_, _| unreachable!(),
+            make_instr_at_imm,
+        )
+    }
+
+    fn translate_v128_store8_lane_at<LaneType>(
+        &mut self,
+        memory: index::Memory,
+        address: Address32,
+        value: Reg,
+        lane: LaneType,
+        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+    ) -> Result<(), Error>
+    where
+        LaneType: Into<u8>,
+    {
+        self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
+        self.alloc
+            .instr_encoder
+            .append_instr(Instruction::lane_and_memory_index(lane, memory))?;
+        Ok(())
+    }
+
+    fn translate_v128_store_lane_mem0<LaneType>(
+        &mut self,
+        memory: Memory,
+        ptr: Reg,
+        offset: u64,
+        value: Reg,
+        lane: LaneType,
+        make_instr_offset8: fn(Reg, Reg, Offset8, LaneType) -> Instruction,
+    ) -> Result<Option<Instr>, Error> {
+        if !memory.is_default() {
+            return Ok(None);
+        }
+        let Ok(offset8) = Offset8::try_from(offset) else {
+            return Ok(None);
+        };
+        let instr = self.push_fueled_instr(
+            make_instr_offset8(ptr, value, offset8, lane),
+            FuelCosts::store,
+        )?;
+        Ok(Some(instr))
     }
 }
