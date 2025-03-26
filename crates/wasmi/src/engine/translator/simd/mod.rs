@@ -225,7 +225,7 @@ impl FuncTranslator {
         };
         self.push_fueled_instr(instr, FuelCosts::base)?;
         if let Some(param) = param {
-            self.alloc.instr_encoder.append_instr(param)?;
+            self.append_instr(param)?;
         }
         Ok(())
     }
@@ -297,9 +297,9 @@ impl FuncTranslator {
         let param = Instruction::register_and_offset_hi(v128, offset_hi);
         let memidx = Instruction::memory_index(memory);
         self.push_fueled_instr(instr, FuelCosts::store)?;
-        self.alloc.instr_encoder.append_instr(param)?;
+        self.append_instr(param)?;
         if !memory.is_default() {
-            self.alloc.instr_encoder.append_instr(memidx)?;
+            self.append_instr(memidx)?;
         }
         Ok(())
     }
@@ -339,9 +339,7 @@ impl FuncTranslator {
         make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
-        self.alloc
-            .instr_encoder
-            .append_instr(Instruction::lane_and_memory_index(lane, memory))?;
+        self.append_instr(Instruction::lane_and_memory_index(lane, memory))?;
         Ok(())
     }
 
@@ -365,5 +363,71 @@ impl FuncTranslator {
             FuelCosts::store,
         )?;
         Ok(Some(instr))
+    }
+
+    fn translate_v128_load_lane<T: IntoLane>(
+        &mut self,
+        memarg: MemArg,
+        lane: u8,
+        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let (memory, offset) = Self::decode_memarg(memarg);
+        let Ok(lane) = T::LaneType::try_from(lane) else {
+            panic!("encountered out of bounds lane: {lane}");
+        };
+        let (ptr, x) = self.alloc.stack.pop2();
+        let x = self.alloc.stack.provider2reg(&x)?;
+        let (ptr, offset) = match ptr {
+            Provider::Register(ptr) => (ptr, offset),
+            Provider::Const(ptr) => {
+                let Some(address) = self.effective_address(memory, ptr, offset) else {
+                    return self.translate_trap(TrapCode::MemoryOutOfBounds);
+                };
+                if let Ok(address) = Address32::try_from(address) {
+                    return self.translate_v128_load_lane_at(
+                        memory,
+                        x,
+                        lane,
+                        address,
+                        make_instr_at,
+                    );
+                }
+                let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
+                (zero_ptr, u64::from(address))
+            }
+        };
+        let (offset_hi, offset_lo) = Offset64::split(offset);
+        let result = self.alloc.stack.push_dynamic()?;
+        self.push_fueled_instr(make_instr(result, offset_lo), FuelCosts::store)?;
+        self.append_instr(Instruction::register_and_offset_hi(ptr, offset_hi))?;
+        self.append_instr(Instruction::register_and_lane(x, lane))?;
+        if !memory.is_default() {
+            self.append_instr(Instruction::memory_index(memory))?;
+        }
+        Ok(())
+    }
+
+    fn translate_v128_load_lane_at<LaneType>(
+        &mut self,
+        memory: Memory,
+        x: Reg,
+        lane: LaneType,
+        address: Address32,
+        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
+    ) -> Result<(), Error>
+    where
+        LaneType: Into<u8>,
+    {
+        let result = self.alloc.stack.push_dynamic()?;
+        let instr = make_instr_at(result, address);
+        let param = Instruction::register_and_lane(x, lane);
+        self.push_fueled_instr(instr, FuelCosts::base)?;
+        self.append_instr(param)?;
+        if !memory.is_default() {
+            self.append_instr(Instruction::memory_index(memory))?;
+        }
+        Ok(())
     }
 }

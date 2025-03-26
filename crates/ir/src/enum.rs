@@ -243,6 +243,34 @@ impl Instruction {
         Err(self)
     }
 
+    /// Creates a new [`Instruction::RegisterAndImm32`] from the given `reg` and `offset_hi`.
+    pub fn register_and_lane<LaneType>(reg: impl Into<Reg>, lane: LaneType) -> Self
+    where
+        LaneType: Into<u8>,
+    {
+        Self::register_and_imm32(reg, u32::from(lane.into()))
+    }
+
+    /// Returns `Some` [`Reg`] and a `lane` index if encoded properly.
+    ///
+    /// # Errors
+    ///
+    /// Returns back `self` if it was an incorrect [`Instruction`].
+    /// This allows for a better error message to inform the user.
+    pub fn filter_register_and_lane<LaneType>(self) -> Result<(Reg, LaneType), Self>
+    where
+        LaneType: TryFrom<u8>,
+    {
+        if let Instruction::RegisterAndImm32 { reg, imm } = self {
+            let lane_index = u32::from(imm) as u8;
+            let Ok(lane) = LaneType::try_from(lane_index) else {
+                panic!("encountered out of bounds lane index: {}", lane_index)
+            };
+            return Ok((reg, lane));
+        }
+        Err(self)
+    }
+
     /// Creates a new [`Instruction::Imm16AndImm32`] from the given `value` and `offset_hi`.
     pub fn imm16_and_offset_hi(value: impl Into<AnyConst16>, offset_hi: Offset64Hi) -> Self {
         Self::imm16_and_imm32(value, offset_hi.0)

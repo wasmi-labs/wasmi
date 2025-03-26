@@ -933,6 +933,12 @@ impl FuncTranslator {
         self.alloc.instr_encoder.push_instr(instr)
     }
 
+    /// Convenience method for appending an [`Instruction`] parameter.
+    fn append_instr(&mut self, instr: Instruction) -> Result<(), Error> {
+        self.alloc.instr_encoder.append_instr(instr)?;
+        Ok(())
+    }
+
     /// Utility function for pushing a new [`Instruction`] with basic fuel costs.
     ///
     /// # Note

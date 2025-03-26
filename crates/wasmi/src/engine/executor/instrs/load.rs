@@ -25,44 +25,6 @@ impl Executor<'_> {
         unsafe { self.fetch_reg_and_offset_hi() }
     }
 
-    /// Fetches the bytes of the default memory at index 0.
-    fn fetch_default_memory_bytes(&self) -> &[u8] {
-        // Safety: the `self.cache.memory` pointer is always synchronized
-        //         conservatively whenever it could have been invalidated.
-        unsafe { self.cache.memory.data() }
-    }
-
-    /// Fetches the bytes of the given `memory`.
-    fn fetch_memory_bytes<'exec, 'store, 'bytes>(
-        &'exec self,
-        memory: Memory,
-        store: &'store StoreInner,
-    ) -> &'bytes [u8]
-    where
-        'exec: 'bytes,
-        'store: 'bytes,
-    {
-        match memory.is_default() {
-            true => self.fetch_default_memory_bytes(),
-            false => self.fetch_non_default_memory_bytes(memory, store),
-        }
-    }
-
-    /// Fetches the bytes of the given non-default `memory`.
-    #[cold]
-    fn fetch_non_default_memory_bytes<'exec, 'store, 'bytes>(
-        &'exec self,
-        memory: Memory,
-        store: &'store StoreInner,
-    ) -> &'bytes [u8]
-    where
-        'exec: 'bytes,
-        'store: 'bytes,
-    {
-        let memory = self.get_memory(memory);
-        store.resolve_memory(&memory).data()
-    }
-
     /// Executes a generic Wasm `load[N_{s|u}]` operation.
     ///
     /// # Note

@@ -529,6 +529,105 @@ impl Executor<'_> {
     }
 }
 
+type V128LoadLane<LaneType> =
+    fn(memory: &[u8], ptr: u64, offset: u64, x: V128, lane: LaneType) -> Result<V128, TrapCode>;
+
+type V128LoadLaneAt<LaneType> =
+    fn(memory: &[u8], address: usize, x: V128, lane: LaneType) -> Result<V128, TrapCode>;
+
+macro_rules! impl_execute_v128_load_lane {
+    (
+        $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
+    ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
+            pub fn $exec(
+                &mut self,
+                store: &StoreInner,
+                result: Reg,
+                offset_lo: Offset64Lo,
+            ) -> Result<(), Error> {
+                self.execute_v128_load_lane_impl::<$lane_ty>(store, result, offset_lo, $eval)
+            }
+        )*
+    };
+}
+
+macro_rules! impl_execute_v128_load_lane_at {
+    (
+        $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
+    ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
+            pub fn $exec(
+                &mut self,
+                store: &StoreInner,
+                result: Reg,
+                address: Address32,
+            ) -> Result<(), Error> {
+                self.execute_v128_load_lane_at_impl::<$lane_ty>(store, result, address, $eval)
+            }
+        )*
+    };
+}
+
+impl Executor<'_> {
+    fn execute_v128_load_lane_impl<LaneType>(
+        &mut self,
+        store: &StoreInner,
+        result: Reg,
+        offset_lo: Offset64Lo,
+        load: V128LoadLane<LaneType>,
+    ) -> Result<(), Error>
+    where
+        LaneType: TryFrom<u8> + Into<u8> + Copy,
+    {
+        let (ptr, offset_hi) = self.fetch_value_and_offset_hi();
+        let (v128, lane) = self.fetch_value_and_lane::<LaneType>(2);
+        let memory = self.fetch_optional_memory(3);
+        let offset = Offset64::combine(offset_hi, offset_lo);
+        let ptr = self.get_register_as::<u64>(ptr);
+        let v128 = self.get_register_as::<V128>(v128);
+        let memory = self.fetch_memory_bytes(memory, store);
+        let loaded = load(memory, ptr, u64::from(offset), v128, lane)?;
+        self.set_register_as::<V128>(result, loaded);
+        self.try_next_instr_at(3)
+    }
+
+    impl_execute_v128_load_lane! {
+        (Instruction::V128Load8Lane, ImmLaneIdx16, execute_v128_load8_lane, simd::v128_load8_lane),
+        (Instruction::V128Load16Lane, ImmLaneIdx8, execute_v128_load16_lane, simd::v128_load16_lane),
+        (Instruction::V128Load32Lane, ImmLaneIdx4, execute_v128_load32_lane, simd::v128_load32_lane),
+        (Instruction::V128Load64Lane, ImmLaneIdx2, execute_v128_load64_lane, simd::v128_load64_lane),
+    }
+
+    fn execute_v128_load_lane_at_impl<LaneType>(
+        &mut self,
+        store: &StoreInner,
+        result: Reg,
+        address: Address32,
+        load_at: V128LoadLaneAt<LaneType>,
+    ) -> Result<(), Error>
+    where
+        LaneType: TryFrom<u8> + Into<u8> + Copy,
+    {
+        let (v128, lane) = self.fetch_value_and_lane::<LaneType>(1);
+        let memory = self.fetch_optional_memory(2);
+        let v128 = self.get_register_as::<V128>(v128);
+        let memory = self.fetch_memory_bytes(memory, store);
+        let loaded = load_at(memory, usize::from(address), v128, lane)?;
+        self.set_register_as::<V128>(result, loaded);
+        self.try_next_instr_at(2)
+    }
+
+    impl_execute_v128_load_lane_at! {
+        (Instruction::V128Load8LaneAt, ImmLaneIdx16, execute_v128_load8_lane_at, simd::v128_load8_lane_at),
+        (Instruction::V128Load16LaneAt, ImmLaneIdx8, execute_v128_load16_lane_at, simd::v128_load16_lane_at),
+        (Instruction::V128Load32LaneAt, ImmLaneIdx4, execute_v128_load32_lane_at, simd::v128_load32_lane_at),
+        (Instruction::V128Load64LaneAt, ImmLaneIdx2, execute_v128_load64_lane_at, simd::v128_load64_lane_at),
+    }
+}
+
 macro_rules! impl_execute_v128_store_lane {
     (
         $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
