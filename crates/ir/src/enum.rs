@@ -230,6 +230,14 @@ impl Instruction {
         Self::register_and_imm32(reg, offset_hi.0)
     }
 
+    /// Creates a new [`Instruction::RegisterAndImm32`] from the given `reg` and `offset_hi`.
+    pub fn register_and_lane<LaneType>(reg: impl Into<Reg>, lane: LaneType) -> Self
+    where
+        LaneType: Into<u8>,
+    {
+        Self::register_and_imm32(reg, u32::from(lane.into()))
+    }
+
     /// Returns `Some` [`Reg`] and [`Offset64Hi`] if encoded properly.
     ///
     /// # Errors
