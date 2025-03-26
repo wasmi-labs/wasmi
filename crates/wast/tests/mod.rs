@@ -241,10 +241,10 @@ macro_rules! expand_tests {
             fn wasm_simd_lane("simd_lane");
             fn wasm_simd_linking("simd_linking");
             fn wasm_simd_load("simd_load");
-            #[ignore] fn wasm_simd_load16_lane("simd_load16_lane");
-            #[ignore] fn wasm_simd_load32_lane("simd_load32_lane");
-            #[ignore] fn wasm_simd_load64_lane("simd_load64_lane");
-            #[ignore] fn wasm_simd_load8_lane("simd_load8_lane");
+            fn wasm_simd_load16_lane("simd_load16_lane");
+            fn wasm_simd_load32_lane("simd_load32_lane");
+            fn wasm_simd_load64_lane("simd_load64_lane");
+            fn wasm_simd_load8_lane("simd_load8_lane");
             fn wasm_simd_load_splat("simd_load_splat");
             fn wasm_simd_load_extend("simd_load_extend");
             fn wasm_simd_load_zero("simd_load_zero");
