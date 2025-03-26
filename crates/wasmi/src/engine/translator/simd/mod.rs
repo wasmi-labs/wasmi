@@ -2,7 +2,7 @@ mod visit;
 
 use super::{utils::Wrap, FuncTranslator, Instr, TypedProvider};
 use crate::{
-    core::{simd, simd::ImmLaneIdx16, TrapCode, TypedVal, V128},
+    core::{simd, TrapCode, TypedVal, V128},
     engine::{translator::Provider, FuelCosts},
     ir::{
         index,
@@ -365,10 +365,16 @@ impl FuncTranslator {
         Ok(Some(instr))
     }
 
-    fn translate_v128_load8_lane(&mut self, memarg: MemArg, lane: u8) -> Result<(), Error> {
+    fn translate_v128_load8_lane<T: IntoLane>(
+        &mut self,
+        memarg: MemArg,
+        lane: u8,
+        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
+    ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
-        let Ok(lane) = ImmLaneIdx16::try_from(lane) else {
+        let Ok(lane) = T::LaneType::try_from(lane) else {
             panic!("encountered out of bounds lane: {lane}");
         };
         let (ptr, x) = self.alloc.stack.pop2();
@@ -380,7 +386,13 @@ impl FuncTranslator {
                     return self.translate_trap(TrapCode::MemoryOutOfBounds);
                 };
                 if let Ok(address) = Address32::try_from(address) {
-                    return self.translate_v128_load8_lane_at(memory, x, lane, address);
+                    return self.translate_v128_load8_lane_at(
+                        memory,
+                        x,
+                        lane,
+                        address,
+                        make_instr_at,
+                    );
                 }
                 let zero_ptr = self.alloc.stack.alloc_const(0_u64)?;
                 (zero_ptr, u64::from(address))
@@ -388,10 +400,7 @@ impl FuncTranslator {
         };
         let (offset_hi, offset_lo) = Offset64::split(offset);
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(
-            Instruction::v128_load8_lane(result, offset_lo),
-            FuelCosts::store,
-        )?;
+        self.push_fueled_instr(make_instr(result, offset_lo), FuelCosts::store)?;
         self.append_instr(Instruction::register_and_offset_hi(ptr, offset_hi))?;
         self.append_instr(Instruction::register_and_lane(x, lane))?;
         if !memory.is_default() {
@@ -406,12 +415,13 @@ impl FuncTranslator {
         x: Reg,
         lane: LaneType,
         address: Address32,
+        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
         LaneType: Into<u8>,
     {
         let result = self.alloc.stack.push_dynamic()?;
-        let instr = Instruction::v128_load8_lane_at(result, address);
+        let instr = make_instr_at(result, address);
         let param = Instruction::register_and_lane(x, lane);
         self.push_fueled_instr(instr, FuelCosts::base)?;
         self.append_instr(param)?;
