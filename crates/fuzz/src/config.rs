@@ -105,7 +105,7 @@ impl Arbitrary<'_> for FuzzSmithConfig {
             custom_page_sizes_enabled: true,
             bulk_memory_enabled: true,
             reference_types_enabled: false, // TODO: re-enable reference-types for differential fuzzing
-            simd_enabled: false,
+            simd_enabled: true,
             multi_value_enabled: true,
             memory64_enabled: true,
             saturating_float_to_int_enabled: true,
@@ -170,6 +170,13 @@ impl FuzzSmithConfig {
     /// This is required by some supported Wasm runtime oracles.
     pub fn disable_memory64(&mut self) {
         self.inner.memory64_enabled = false;
+    }
+
+    /// Disable the Wasm `simd` proposal.
+    ///
+    /// This is required by some supported Wasm runtime oracles.
+    pub fn disable_simd(&mut self) {
+        self.inner.simd_enabled = false;
     }
 }
 
