@@ -4,6 +4,9 @@ use crate::{
     store::StoreInner,
 };
 
+#[cfg(doc)]
+use crate::ir::Instruction;
+
 macro_rules! impl_unary_executors {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
