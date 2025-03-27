@@ -22,7 +22,7 @@ use crate::{
 use wasmparser::MemArg;
 
 trait IntoLane {
-    type LaneType: TryFrom<u8> + Into<u8>;
+    type LaneType: Copy + TryFrom<u8> + Into<u8>;
 }
 
 macro_rules! impl_into_lane_for {
@@ -170,19 +170,21 @@ impl FuncTranslator {
             return Ok(());
         }
         let lhs = self.alloc.stack.provider2reg(&lhs)?;
-        let result = self.alloc.stack.push_dynamic()?;
-        let instr = match rhs {
-            Provider::Register(rhs) => make_instr(result, lhs, rhs),
+        let rhs = match rhs {
+            Provider::Register(rhs) => rhs,
             Provider::Const(rhs) => {
                 let Some(rhs) = T::into_shift_amount(rhs.into()) else {
                     // Case: the shift operation is a no-op
                     self.alloc.stack.push_register(lhs)?;
                     return Ok(());
                 };
-                make_instr_imm(result, lhs, rhs)
+                let result = self.alloc.stack.push_dynamic()?;
+                self.push_fueled_instr(make_instr_imm(result, lhs, rhs), FuelCosts::base)?;
+                return Ok(());
             }
         };
-        self.push_fueled_instr(instr, FuelCosts::base)?;
+        let result = self.alloc.stack.push_dynamic()?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
         Ok(())
     }
 
@@ -295,12 +297,10 @@ impl FuncTranslator {
         let (offset_hi, offset_lo) = Offset64::split(offset);
         let instr = make_instr(ptr, offset_lo);
         let param = Instruction::register_and_offset_hi(v128, offset_hi);
-        let memidx = Instruction::memory_index(memory);
+        let param2 = Instruction::lane_and_memory_index(lane, memory);
         self.push_fueled_instr(instr, FuelCosts::store)?;
         self.append_instr(param)?;
-        if !memory.is_default() {
-            self.append_instr(memidx)?;
-        }
+        self.append_instr(param2)?;
         Ok(())
     }
 
