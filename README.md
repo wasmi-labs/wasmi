@@ -121,6 +121,16 @@ Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [
 [(#1364)]: https://github.com/wasmi-labs/wasmi/issues/1364
 [(#1369)]: https://github.com/wasmi-labs/wasmi/issues/1369
 
+## Crate Features
+
+| Proposal | Wasmi Crates | Description |
+|:-:|:--|:--|
+| `std` | `wasmi`, `wasmi_core`, `wasmi_ir`, `wasmi_collections` | Enables usage of Rust's standard library. This may have some performance advantages when enabled. Disabling this feature makes Wasmi compile on platforms that do not provide Rust's standard library such as many embedded platforms. |
+| `wat` | `wasmi` | Enables support to parse Wat encoded Wasm modules. |
+| `simd` | `wasmi`, `wasmi_core`, `wasmi_ir`, `wasmi_cli` | Enables support for the Wasm `simd` proposal. Note that this may introduce execution overhead and increased memory consumption for Wasm executions that do not need Wasm `simd` functionality. |
+| `hash-collections` | `wasmi`, `wasmi_collections` | Enables use of hash-map based collections in Wasmi internals. This might yield performance improvements in some use cases. |
+| `prefer-btree-collections` | `wasmi`, `wasmi_collections` | Enforces use of btree-map based collections in Wasmi internals. This may yield performance improvements and memory consumption decreases in some use cases. Also it enables Wasmi to run on platforms that have no random source. |
+
 ## Development
 
 ### Build & Test
