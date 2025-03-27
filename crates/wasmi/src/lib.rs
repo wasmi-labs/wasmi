@@ -58,9 +58,9 @@
 //!     Ok(())
 //! }
 //! ```
-//! 
+//!
 //! # Crate Features
-//! 
+//!
 //! | Feature | Crates | Description |
 //! |:-:|:--|:--|
 //! | `std` | `wasmi`<br>`wasmi_core`<br>`wasmi_ir`<br>`wasmi_collections` | Enables usage of Rust's standard library. This may have some performance advantages when enabled. Disabling this feature makes Wasmi compile on platforms that do not provide Rust's standard library such as many embedded platforms. <br><br> Enabled by default. |
