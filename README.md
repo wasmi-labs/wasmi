@@ -40,8 +40,6 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 
 ## Distinct Features
 
-The following list states some of the distinct features of Wasmi.
-
 - Simple, correct and deterministic execution of WebAssembly.
 - Low-overhead and cross-platform WebAssembly runtime for embedded environments.
 - JIT bomb resisting translation.
@@ -54,33 +52,24 @@ The following list states some of the distinct features of Wasmi.
 
 Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [Wasmi](https://crates.io/crates/wasmi).
 
-## WebAssembly Proposals
+## WebAssembly Features
 
-The new Wasmi engine supports a variety of WebAssembly proposals and will support even more of them in the future.
+| | WebAssembly Proposal | | | | WebAssembly Proposal | |
+|:-:|:--|:--|:-:|:--|:--|:--|
+| ✅ | [`mutable-global`] | ≥ `0.14.0` | | ✅ | [`custom-page-sizes`] | [≥ `0.41.0`][(#1197)] |
+| ✅ | [`saturating-float-to-int`] | ≥ `0.14.0` | | ✅ | [`memory64`] | [≥ `0.41.0`][(#1357)] |
+| ✅ | [`sign-extension`] | ≥ `0.14.0` | | ✅ | [`wide-arithmetic`] | [≥ `0.42.0`][(#1369)] |
+| ✅ | [`multi-value`] | ≥ `0.14.0` | | ✅ | [`simd`] | [≥ `0.43.0`][(#1364)] |
+| ✅ | [`bulk-memory`] | [≥ `0.24.0`][(#628)] | | 📅 | [`relaxed-simd`] | [Tracking Issue][(#1431)] |
+| ✅ | [`reference-types`] | [≥ `0.24.0`][(#635)] | | 📅 | [`function-references`] | [Tracking Issue][(#774)] |
+| ✅ | [`tail-calls`] | [≥ `0.28.0`][(#683)] | | 📅 | [`gc`] | [Tracking Issue][(#775)] |
+| ✅ | [`extended-const`] | [≥ `0.29.0`][(#707)] | | 📅 | [`threads`] | [Tracking Issue][(#777)] |
+| ✅ | [`multi-memory`] | [≥ `0.37.0`][(#1191)] | | 📅 | [`exception-handling`] | [Tracking Issue][(#1037)] |
 
-| | WebAssembly Proposal | |
+| | Embeddings | |
 |:-:|:--|:--|
-| ✅ | [`mutable-global`] | ≥ `0.14.0` |
-| ✅ | [`saturating-float-to-int`] | ≥ `0.14.0` |
-| ✅ | [`sign-extension`] | ≥ `0.14.0` |
-| ✅ | [`multi-value`] | ≥ `0.14.0` |
-| ✅ | [`bulk-memory`] | [≥ `0.24.0`][(#628)] |
-| ✅ | [`reference-types`] | [≥ `0.24.0`][(#635)] |
-| ✅ | [`tail-calls`] | [≥ `0.28.0`][(#683)] |
-| ✅ | [`extended-const`] | [≥ `0.29.0`][(#707)] |
-| ✅ | [`multi-memory`] | [≥ `0.37.0`][(#1191)] |
-| ✅ | [`custom-page-sizes`] | [≥ `0.41.0`][(#1197)] |
-| ✅ | [`memory64`] | [≥ `0.41.0`][(#1357)] |
-| ✅ | [`wide-arithmetic`] | [≥ `0.42.0`][(#1369)] |
-| 📅 | [`simd`] | [Tracking Issue][(#1364)] |
-| 📅 | [`relaxed-simd`] | Depends on `simd`. |
-| 📅 | [`function-references`] | [Tracking Issue][(#774)] |
-| 📅 | [`gc`] | [Tracking Issue][(#775)] |
-| 📅 | [`threads`] | [Tracking Issue][(#777)] |
-| 📅 | [`exception-handling`] | [Tracking Issue][(#1037)] |
-| | |
-| 👨‍🔬 | [WASI] | WASI (`wasip1`) support via the [`wasmi_wasi` crate]. |
-| 👨‍🔬 | [C-API] | Official Wasm C-API support via the [`wasmi_c_api_impl` crate]. |
+| ✅ | [WASI] | WASI (`wasip1`) support via the [`wasmi_wasi` crate]. |
+| ✅ | [C-API] | Official Wasm C-API support via the [`wasmi_c_api_impl` crate]. |
 
 [`mutable-global`]: https://github.com/WebAssembly/mutable-global
 [`saturating-float-to-int`]: https://github.com/WebAssembly/nontrapping-float-to-int-conversions
@@ -124,6 +113,18 @@ The new Wasmi engine supports a variety of WebAssembly proposals and will suppor
 [(#1357)]: https://github.com/wasmi-labs/wasmi/issues/1357
 [(#1364)]: https://github.com/wasmi-labs/wasmi/issues/1364
 [(#1369)]: https://github.com/wasmi-labs/wasmi/issues/1369
+[(#1431)]: https://github.com/wasmi-labs/wasmi/issues/1431
+
+## Crate Features
+
+| Feature | Crates | Description |
+|:-:|:--|:--|
+| `std` | `wasmi`<br>`wasmi_core`<br>`wasmi_ir`<br>`wasmi_collections` | Enables usage of Rust's standard library. This may have some performance advantages when enabled. Disabling this feature makes Wasmi compile on platforms that do not provide Rust's standard library such as many embedded platforms. <br><br> Enabled by default. |
+| `wat` | `wasmi` | Enables support to parse Wat encoded Wasm modules. <br><br> Enabled by default. |
+| `simd` | `wasmi`<br>`wasmi_core`<br>`wasmi_ir`<br>`wasmi_cli` | Enables support for the Wasm `simd` proposal. Note that this may introduce execution overhead and increased memory consumption for Wasm executions that do not need Wasm `simd` functionality. <br><br> Disabled by default. |
+| `hash-collections` | `wasmi`<br>`wasmi_collections` | Enables use of hash-map based collections in Wasmi internals. This might yield performance improvements in some use cases. <br><br> Disabled by default. |
+| `prefer-btree-collections` | `wasmi`<br>`wasmi_collections` | Enforces use of btree-map based collections in Wasmi internals. This may yield performance improvements and memory consumption decreases in some use cases. Also it enables Wasmi to run on platforms that have no random source. <br><br> Disabled by default. |
+| `extra-checks` | `wasmi` | Enables extra runtime checks in the Wasmi executor. Expected execution overhead is ~20%. Enable this if your focus is on safety. Disable this for maximum execution performance. <br><br> Disabled by default. |
 
 ## Development
 

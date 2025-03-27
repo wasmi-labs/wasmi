@@ -27,3 +27,6 @@ std = [
     "wasmi_core/std",
 ]
 simd = ["wasmi_core/simd"]
+
+[package.metadata.docs.rs]
+features = ["std", "simd"]
