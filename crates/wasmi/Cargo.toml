@@ -72,3 +72,6 @@ extra-checks = []
 [[bench]]
 name = "benches"
 harness = false
+
+[package.metadata.docs.rs]
+features = ["std", "wat", "simd"]
