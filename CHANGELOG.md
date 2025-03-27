@@ -8,6 +8,31 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.43.0`] - 2025-03-27
+
+### Added
+
+- Added support for the Wasm `simd` proposal. [#1364]
+  - Users have to opt-in to use this feature by enabling Wasmi's `simd` crate feature.
+  - Note: enabling `simd` may introduce Wasm execution overhead, increase memory consumption
+          increase compiled artifact size and compile times for Wasmi crates. So use `simd`
+          only if your use case needs it.
+
+### Changed
+
+- Wasmi's minimum supported Rust version is now Rust 1.83. [#1405]
+
+### Internal
+
+- Move all Wasm spec tests over to the `wasmi_wast` crate. [#1403]
+  - This solves a cyclic dev-dependency issue between `wasmi` and `wasmi_wast` crates.
+- Updated `wasm-tools` and Wasmtime dependencies. [#1404]
+
+[#1364]: https://github.com/wasmi-labs/wasmi/issues/1364
+[#1403]: https://github.com/wasmi-labs/wasmi/pull/1403
+[#1404]: https://github.com/wasmi-labs/wasmi/pull/1404
+[#1405]: https://github.com/wasmi-labs/wasmi/pull/1405
+
 ## [`0.42.1`] - 2025-03-20
 
 ### Fixed
