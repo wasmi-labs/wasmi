@@ -40,8 +40,6 @@ Wasmi is suitable for safety critical use cases and has been audited several tim
 
 ## Distinct Features
 
-The following list states some of the distinct features of Wasmi.
-
 - Simple, correct and deterministic execution of WebAssembly.
 - Low-overhead and cross-platform WebAssembly runtime for embedded environments.
 - JIT bomb resisting translation.
@@ -55,8 +53,6 @@ The following list states some of the distinct features of Wasmi.
 Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [Wasmi](https://crates.io/crates/wasmi).
 
 ## WebAssembly Proposals
-
-The new Wasmi engine supports a variety of WebAssembly proposals and will support even more of them in the future.
 
 | | WebAssembly Proposal | |
 |:-:|:--|:--|
