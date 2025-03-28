@@ -134,16 +134,7 @@ fn print_execution_start(wasm_file: &Path, func_name: &str, func_args: &[Val]) {
 
 /// Prints the results of the Wasm computation in a human readable form.
 fn print_pretty_results(results: &[Val]) {
-    match results.len() {
-        0 => {}
-        1 => {
-            println!("{}", DisplayValue::from(&results[0]));
-        }
-        _ => {
-            println!(
-                "[{}]",
-                DisplaySequence::new(", ", results.iter().map(DisplayValue::from))
-            );
-        }
+    for result in results {
+        println!("{}", DisplayValue::from(result))
     }
 }
