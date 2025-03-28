@@ -2242,7 +2242,7 @@ impl FuncTranslator {
             },
         };
         self.push_fueled_instr(instr, FuelCosts::store)?;
-        self.alloc.instr_encoder.append_instr(param)?;
+        self.append_instr(param)?;
         if !memory.is_default() {
             self.alloc
                 .instr_encoder
@@ -2540,7 +2540,7 @@ impl FuncTranslator {
             }
         };
         self.push_fueled_instr(instr, FuelCosts::base)?;
-        self.alloc.instr_encoder.append_instr(param)?;
+        self.append_instr(param)?;
         Ok(())
     }
 
@@ -2584,7 +2584,7 @@ impl FuncTranslator {
             ),
         };
         self.push_fueled_instr(instr, FuelCosts::base)?;
-        self.alloc.instr_encoder.append_instr(param)?;
+        self.append_instr(param)?;
         Ok(())
     }
 
@@ -2628,7 +2628,7 @@ impl FuncTranslator {
             ),
         };
         self.push_fueled_instr(instr, FuelCosts::base)?;
-        self.alloc.instr_encoder.append_instr(param)?;
+        self.append_instr(param)?;
         Ok(())
     }
 
@@ -2924,7 +2924,7 @@ impl FuncTranslator {
                 }
             },
         };
-        self.alloc.instr_encoder.append_instr(param_instr)?;
+        self.append_instr(param_instr)?;
         self.translate_br_table_targets_simple(&[value])?;
         self.reachable = false;
         Ok(())
