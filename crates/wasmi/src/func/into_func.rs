@@ -3,7 +3,7 @@ use super::{
     TrampolineEntity,
 };
 use crate::{
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal, ValType, F32, F64, V128},
+    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal, ValType, F32, F64},
     Caller,
     Error,
     ExternRef,
@@ -11,6 +11,9 @@ use crate::{
     FuncType,
 };
 use core::{array, iter::FusedIterator};
+
+#[cfg(feature = "simd")]
+use crate::core::V128;
 
 /// Closures and functions that can be used as host functions.
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
@@ -163,9 +166,11 @@ pub trait WasmTy: From<UntypedVal> + Into<UntypedVal> + Send {
 
 macro_rules! impl_wasm_type {
     ( $(
+        $( #[$attr:meta] )*
         type $rust_type:ty = $wasmi_type:ident );* $(;)?
     ) => {
         $(
+            $( #[$attr] )*
             impl WasmTy for $rust_type {
                 #[inline]
                 fn ty() -> ValType {
@@ -184,6 +189,7 @@ impl_wasm_type! {
     type F64 = F64;
     type f32 = F32;
     type f64 = F64;
+    #[cfg(feature = "simd")]
     type V128 = V128;
     type FuncRef = FuncRef;
     type ExternRef = ExternRef;
