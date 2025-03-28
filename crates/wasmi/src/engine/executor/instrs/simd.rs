@@ -23,6 +23,9 @@ use crate::{
     Error,
 };
 
+#[cfg(doc)]
+use crate::ir::Offset64Hi;
+
 impl Executor<'_> {
     /// Fetches a [`Reg`] from an [`Instruction::Register`] instruction parameter.
     fn fetch_register(&self) -> Reg {
