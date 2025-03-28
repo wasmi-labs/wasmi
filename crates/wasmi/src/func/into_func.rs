@@ -3,7 +3,7 @@ use super::{
     TrampolineEntity,
 };
 use crate::{
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal, ValType, F32, F64},
+    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal, ValType, F32, F64, V128},
     Caller,
     Error,
     ExternRef,
@@ -162,7 +162,9 @@ pub trait WasmTy: From<UntypedVal> + Into<UntypedVal> + Send {
 }
 
 macro_rules! impl_wasm_type {
-    ( $( type $rust_type:ty = $wasmi_type:ident );* $(;)? ) => {
+    ( $(
+        type $rust_type:ty = $wasmi_type:ident );* $(;)?
+    ) => {
         $(
             impl WasmTy for $rust_type {
                 #[inline]
@@ -182,6 +184,7 @@ impl_wasm_type! {
     type F64 = F64;
     type f32 = F32;
     type f64 = F64;
+    type V128 = V128;
     type FuncRef = FuncRef;
     type ExternRef = ExternRef;
 }
