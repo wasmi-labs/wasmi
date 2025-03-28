@@ -12,6 +12,9 @@ use crate::{
 };
 use core::{array, iter::FusedIterator};
 
+#[cfg(feature = "simd")]
+use crate::core::V128;
+
 /// Closures and functions that can be used as host functions.
 pub trait IntoFunc<T, Params, Results>: Send + Sync + 'static {
     /// The parameters of the host function.
@@ -162,8 +165,12 @@ pub trait WasmTy: From<UntypedVal> + Into<UntypedVal> + Send {
 }
 
 macro_rules! impl_wasm_type {
-    ( $( type $rust_type:ty = $wasmi_type:ident );* $(;)? ) => {
+    ( $(
+        $( #[$attr:meta] )*
+        type $rust_type:ty = $wasmi_type:ident );* $(;)?
+    ) => {
         $(
+            $( #[$attr] )*
             impl WasmTy for $rust_type {
                 #[inline]
                 fn ty() -> ValType {
@@ -182,6 +189,8 @@ impl_wasm_type! {
     type F64 = F64;
     type f32 = F32;
     type f64 = F64;
+    #[cfg(feature = "simd")]
+    type V128 = V128;
     type FuncRef = FuncRef;
     type ExternRef = ExternRef;
 }
