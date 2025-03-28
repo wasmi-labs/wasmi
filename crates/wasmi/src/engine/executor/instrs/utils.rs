@@ -36,15 +36,6 @@ impl Executor<'_> {
         unsafe { self.fetch_reg_and_offset_hi() }
     }
 
-    /// Returns the register `value` and `lane` parameters for a `load` [`Instruction`].
-    pub fn fetch_value_and_lane<LaneType>(&self, delta: usize) -> (Reg, LaneType)
-    where
-        LaneType: TryFrom<u8>,
-    {
-        // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
-        unsafe { self.fetch_reg_and_lane::<LaneType>(delta) }
-    }
-
     /// Fetches the bytes of the default memory at index 0.
     pub fn fetch_default_memory_bytes(&self) -> &[u8] {
         // Safety: the `self.cache.memory` pointer is always synchronized

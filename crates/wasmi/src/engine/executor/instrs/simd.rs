@@ -23,6 +23,9 @@ use crate::{
     Error,
 };
 
+#[cfg(doc)]
+use crate::ir::Offset64Hi;
+
 impl Executor<'_> {
     /// Fetches a [`Reg`] from an [`Instruction::Register`] instruction parameter.
     fn fetch_register(&self) -> Reg {
@@ -39,6 +42,32 @@ impl Executor<'_> {
                 }
             }
         }
+    }
+
+    /// Fetches the [`Reg`] and [`Offset64Hi`] parameters for a load or store [`Instruction`].
+    unsafe fn fetch_reg_and_lane<LaneType>(&self, delta: usize) -> (Reg, LaneType)
+    where
+        LaneType: TryFrom<u8>,
+    {
+        let mut addr: InstructionPtr = self.ip;
+        addr.add(delta);
+        match addr.get().filter_register_and_lane::<LaneType>() {
+            Ok(value) => value,
+            Err(instr) => unsafe {
+                unreachable_unchecked!(
+                    "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
+                )
+            },
+        }
+    }
+
+    /// Returns the register `value` and `lane` parameters for a `load` [`Instruction`].
+    pub fn fetch_value_and_lane<LaneType>(&self, delta: usize) -> (Reg, LaneType)
+    where
+        LaneType: TryFrom<u8>,
+    {
+        // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
+        unsafe { self.fetch_reg_and_lane::<LaneType>(delta) }
     }
 
     /// Fetches a [`Reg`] from an [`Instruction::Const32`] instruction parameter.
