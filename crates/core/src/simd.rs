@@ -28,7 +28,7 @@ trait IntoLaneIdx {
 }
 
 /// Trait implemented by all lane index types.
-trait LaneIndex: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> {
+trait LaneIndex: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> + Into<u8> {
     /// Bit mask of available bits in `u8` for the lane index.
     const MASK: u8;
 
