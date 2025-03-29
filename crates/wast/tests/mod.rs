@@ -257,12 +257,12 @@ macro_rules! expand_tests {
             fn wasm_simd_store8_lane("simd_store8_lane");
 
             // Wasm `relaxed-simd` tests
-            #[ignore] fn wasm_relaxed_simd_relaxed_madd_nmadd("proposals/relaxed-simd/relaxed_madd_nmadd");
             fn wasm_relaxed_simd_i16x8_relaxed_q15mulr_s("proposals/relaxed-simd/i16x8_relaxed_q15mulr_s");
             fn wasm_relaxed_simd_i32x4_relaxed_trunc("proposals/relaxed-simd/i32x4_relaxed_trunc");
             fn wasm_relaxed_simd_i8x16_relaxed_swizzle("proposals/relaxed-simd/i8x16_relaxed_swizzle");
             fn wasm_relaxed_simd_relaxed_dot_product("proposals/relaxed-simd/relaxed_dot_product");
             fn wasm_relaxed_simd_relaxed_laneselect("proposals/relaxed-simd/relaxed_laneselect");
+            fn wasm_relaxed_simd_relaxed_madd_nmadd("proposals/relaxed-simd/relaxed_madd_nmadd");
             fn wasm_relaxed_simd_relaxed_min_max("proposals/relaxed-simd/relaxed_min_max");
         }
     };
