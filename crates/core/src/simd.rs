@@ -21,7 +21,7 @@ macro_rules! op {
 /// An error that may occur when constructing an out of bounds lane index.
 pub struct OutOfBoundsLaneIdx;
 
-/// Helper trait to help the type inference to do its jobs with fewer type annotations.
+/// Helper trait used to infer the [`ImmLaneIdx`] from a given primitive.
 pub trait IntoLaneIdx {
     /// The associated lane index type.
     type LaneIdx: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> + Into<u8>;
