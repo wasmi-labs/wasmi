@@ -171,6 +171,9 @@ pub trait Float: Sized {
     fn max(lhs: Self, rhs: Self) -> Self;
     /// Sets sign of this value to the sign of other value.
     fn copysign(lhs: Self, rhs: Self) -> Self;
+    /// Fused multiply-add with a single rounding error.
+    #[cfg(feature = "simd")]
+    fn mul_add(a: Self, b: Self, c: Self) -> Self;
 }
 
 macro_rules! impl_try_truncate_into {
@@ -394,6 +397,11 @@ macro_rules! impl_float {
             fn copysign(lhs: Self, rhs: Self) -> Self {
                 WasmFloatExt::copysign(lhs, rhs)
             }
+            #[inline]
+            #[cfg(feature = "simd")]
+            fn mul_add(a: Self, b: Self, c: Self) -> Self {
+                WasmFloatExt::mul_add(a, b, c)
+            }
         }
     };
 }
@@ -423,6 +431,9 @@ trait WasmFloatExt {
     fn nearest(self) -> Self;
     /// Equivalent to the Wasm `{f32,f64}.copysign` instructions.
     fn copysign(self, other: Self) -> Self;
+    /// Fused multiply-add with just 1 rounding error.
+    #[cfg(feature = "simd")]
+    fn mul_add(self, a: Self, b: Self) -> Self;
 }
 
 #[cfg(not(feature = "std"))]
@@ -473,6 +484,12 @@ macro_rules! impl_wasm_float {
             #[inline]
             fn copysign(self, other: Self) -> Self {
                 <libm::Libm<Self>>::copysign(self, other)
+            }
+
+            #[inline]
+            #[cfg(feature = "simd")]
+            fn mul_add(self, a: Self, b: Self) -> Self {
+                <libm::Libm<Self>>::fma(self)
             }
         }
     };
@@ -533,6 +550,12 @@ macro_rules! impl_wasm_float {
             #[inline]
             fn copysign(self, other: Self) -> Self {
                 self.copysign(other)
+            }
+
+            #[inline]
+            #[cfg(feature = "simd")]
+            fn mul_add(self, a: Self, b: Self) -> Self {
+                self.mul_add(a, b)
             }
         }
     };
