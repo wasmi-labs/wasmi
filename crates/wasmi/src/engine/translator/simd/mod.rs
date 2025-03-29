@@ -121,6 +121,29 @@ impl FuncTranslator {
         Ok(())
     }
 
+    /// Generically translate a Wasm ternary instruction.
+    fn translate_simd_ternary(
+        &mut self,
+        make_instr: fn(result: Reg, a: Reg, b: Reg) -> Instruction,
+        const_eval: fn(lhas: V128, b: V128, c: V128) -> V128,
+    ) -> Result<(), Error> {
+        bail_unreachable!(self);
+        let (a, b, c) = self.alloc.stack.pop3();
+        if let (Provider::Const(lhs), Provider::Const(rhs), Provider::Const(c)) = (a, b, c) {
+            // Case: all inputs are immediates so we can const-eval the result.
+            let result = const_eval(lhs.into(), rhs.into(), c.into());
+            self.alloc.stack.push_const(result);
+            return Ok(());
+        }
+        let result = self.alloc.stack.push_dynamic()?;
+        let lhs = self.alloc.stack.provider2reg(&a)?;
+        let rhs = self.alloc.stack.provider2reg(&b)?;
+        let selector = self.alloc.stack.provider2reg(&c)?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
+        self.append_instr(Instruction::register(selector))?;
+        Ok(())
+    }
+
     /// Generically translate a Wasm SIMD shift instruction.
     fn translate_simd_shift<T>(
         &mut self,
