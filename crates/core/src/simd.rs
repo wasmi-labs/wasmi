@@ -27,15 +27,6 @@ pub trait IntoLaneIdx {
     type LaneIdx: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> + Into<u8>;
 }
 
-/// Trait implemented by all lane index types.
-trait LaneIndex: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> + Into<u8> {
-    /// Bit mask of available bits in `u8` for the lane index.
-    const MASK: u8;
-
-    /// Returns a 0th index lane id.
-    fn zero() -> Self;
-}
-
 macro_rules! impl_into_lane_idx {
     (
         $( impl IntoLaneIdx for $ty:ty = $lane_idx:ty; )*
@@ -48,81 +39,60 @@ macro_rules! impl_into_lane_idx {
     };
 }
 impl_into_lane_idx! {
-    impl IntoLaneIdx for i8 = ImmLaneIdx16;
-    impl IntoLaneIdx for u8 = ImmLaneIdx16;
-    impl IntoLaneIdx for i16 = ImmLaneIdx8;
-    impl IntoLaneIdx for u16 = ImmLaneIdx8;
-    impl IntoLaneIdx for i32 = ImmLaneIdx4;
-    impl IntoLaneIdx for u32 = ImmLaneIdx4;
-    impl IntoLaneIdx for f32 = ImmLaneIdx4;
-    impl IntoLaneIdx for i64 = ImmLaneIdx2;
-    impl IntoLaneIdx for u64 = ImmLaneIdx2;
-    impl IntoLaneIdx for f64 = ImmLaneIdx2;
+    impl IntoLaneIdx for i8 = ImmLaneIdx<16>;
+    impl IntoLaneIdx for u8 = ImmLaneIdx<16>;
+    impl IntoLaneIdx for i16 = ImmLaneIdx<8>;
+    impl IntoLaneIdx for u16 = ImmLaneIdx<8>;
+    impl IntoLaneIdx for i32 = ImmLaneIdx<4>;
+    impl IntoLaneIdx for u32 = ImmLaneIdx<4>;
+    impl IntoLaneIdx for f32 = ImmLaneIdx<4>;
+    impl IntoLaneIdx for i64 = ImmLaneIdx<2>;
+    impl IntoLaneIdx for u64 = ImmLaneIdx<2>;
+    impl IntoLaneIdx for f64 = ImmLaneIdx<2>;
 }
 
-/// A helper type used to convert to a lane index type via `IntoLaneIdx`.
-#[derive(Debug, Copy, Clone)]
-struct ImmLaneIdx<const N: u8>;
+/// A byte with values in the range 0–N identifying a lane.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct ImmLaneIdx<const N: u8>(u8);
 
-macro_rules! impl_imm_lane_id {
-    (
-        $(
-            $( #[$attr:meta] )*
-            struct $name:ident(x $n:literal);
-        )*
-    ) => {
-        $(
-            $( #[$attr] )*
-            #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-            #[repr(transparent)]
-            pub struct $name(u8);
+impl<const N: u8> ImmLaneIdx<N> {
+    /// Helper bit mask for construction and getter.
+    const MASK: u8 = (1_u8 << u8::ilog2(N)) - 1;
 
-            impl IntoLaneIdx for ImmLaneIdx<$n> {
-                type LaneIdx = $name;
-            }
-
-            impl LaneIndex for $name {
-                /// Helper bit mask for construction and getter.
-                const MASK: u8 = (1_u8 << u8::ilog2($n)) - 1;
-
-                fn zero() -> Self {
-                    Self(0)
-                }
-            }
-
-            impl From<$name> for u8 {
-                fn from(lane: $name) -> u8 {
-                    lane.0 & <$name as LaneIndex>::MASK
-                }
-            }
-
-            impl TryFrom<u8> for $name {
-                type Error = OutOfBoundsLaneIdx;
-
-                fn try_from(lane: u8) -> Result<Self, Self::Error> {
-                    if lane > Self::MASK {
-                        return Err(OutOfBoundsLaneIdx)
-                    }
-                    Ok(Self(lane))
-                }
-            }
-        )*
-    };
-}
-impl_imm_lane_id! {
-    /// A byte with values in the range 0–1 identifying a lane.
-    struct ImmLaneIdx2(x 2);
-    /// A byte with values in the range 0–3 identifying a lane.
-    struct ImmLaneIdx4(x 4);
-    /// A byte with values in the range 0–7 identifying a lane.
-    struct ImmLaneIdx8(x 8);
-    /// A byte with values in the range 0–15 identifying a lane.
-    struct ImmLaneIdx16(x 16);
-    /// A byte with values in the range 0–31 identifying a lane.
-    struct ImmLaneIdx32(x 32);
+    fn zero() -> Self {
+        Self(0)
+    }
 }
 
-/// Helper trait to help the type inference to do its jobs with fewer type annotations.
+impl<const N: u8> From<ImmLaneIdx<N>> for u8 {
+    fn from(lane: ImmLaneIdx<N>) -> u8 {
+        lane.0 & <ImmLaneIdx<N>>::MASK
+    }
+}
+
+impl<const N: u8> TryFrom<u8> for ImmLaneIdx<N> {
+    type Error = OutOfBoundsLaneIdx;
+
+    fn try_from(lane: u8) -> Result<Self, Self::Error> {
+        if lane > Self::MASK {
+            return Err(OutOfBoundsLaneIdx)
+        }
+        Ok(Self(lane))
+    }
+}
+
+/// A byte with values in the range 0–1 identifying a lane.
+pub type ImmLaneIdx2 = ImmLaneIdx<2>;
+/// A byte with values in the range 0–3 identifying a lane.
+pub type ImmLaneIdx4 = ImmLaneIdx<4>;
+/// A byte with values in the range 0–7 identifying a lane.
+pub type ImmLaneIdx8 = ImmLaneIdx<8>;
+/// A byte with values in the range 0–15 identifying a lane.
+pub type ImmLaneIdx16 = ImmLaneIdx<16>;
+/// A byte with values in the range 0–31 identifying a lane.
+pub type ImmLaneIdx32 = ImmLaneIdx<32>;
+
+/// Internal helper trait to help the type inference to do its jobs with fewer type annotations.
 ///
 /// # Note
 ///
@@ -135,7 +105,7 @@ trait IntoLanes {
     type LaneIdx;
 }
 
-/// Implemented by `Lanes` types.
+/// Internal helper trait implemented by `Lanes` types.
 ///
 /// Possible `Lanes` types include:
 ///
@@ -206,7 +176,7 @@ macro_rules! impl_lanes_for {
 
             impl IntoLanes for $ty {
                 type Lanes = $name;
-                type LaneIdx = <ImmLaneIdx<$n> as IntoLaneIdx>::LaneIdx;
+                type LaneIdx = ImmLaneIdx<$n>;
             }
 
             impl From<[$ty; $n]> for $name {
@@ -217,7 +187,7 @@ macro_rules! impl_lanes_for {
 
             impl Lanes for $name {
                 type Item = $ty;
-                type LaneIdx = <ImmLaneIdx<$n> as IntoLaneIdx>::LaneIdx;
+                type LaneIdx = ImmLaneIdx<$n>;
 
                 const LANES: usize = $n;
                 const ALL_ONES: Self::Item = <$ty>::from_le_bytes([0xFF_u8; 16 / $n]);
