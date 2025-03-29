@@ -24,7 +24,7 @@ pub struct OutOfBoundsLaneIdx;
 /// Helper trait used to infer the [`ImmLaneIdx`] from a given primitive.
 pub trait IntoLaneIdx {
     /// The associated lane index type.
-    type LaneIdx: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> + Into<u8>;
+    type LaneIdx: Sized + Copy + TryFrom<u8, Error = OutOfBoundsLaneIdx> + Into<u8>;
 }
 
 macro_rules! impl_into_lane_idx {
