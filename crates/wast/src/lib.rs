@@ -382,7 +382,6 @@ impl WastRunner {
 
     /// Asserts that `result` match the `expected` value.
     fn assert_result(&self, result: &Val, expected: &WastRet) -> Result<()> {
-        #[allow(unreachable_patterns)] // TODO: remove once `wast v220` is used
         let expected = match expected {
             WastRet::Core(arg) => arg,
             _ => {
