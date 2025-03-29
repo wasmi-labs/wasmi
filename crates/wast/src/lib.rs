@@ -391,14 +391,10 @@ impl WastRunner {
     /// Asserts that `result` match the `expected` value.
     fn assert_result_core(&self, result: &Val, expected: &WastRetCore) -> Result<()> {
         let is_equal = match (result, expected) {
-            (result, WastRetCore::Either(expected_values)) => {
-                expected_values
-                    .iter()
-                    .map(|expected| {
-                        self.assert_result_core(result, expected)
-                    })
-                    .any(|result| result.is_ok())
-            },
+            (result, WastRetCore::Either(expected_values)) => expected_values
+                .iter()
+                .map(|expected| self.assert_result_core(result, expected))
+                .any(|result| result.is_ok()),
             (Val::I32(result), WastRetCore::I32(expected)) => result == expected,
             (Val::I64(result), WastRetCore::I64(expected)) => result == expected,
             (Val::F32(result), WastRetCore::F32(expected)) => f32_matches(result, expected),
