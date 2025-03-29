@@ -163,6 +163,19 @@ impl Executor<'_> {
         self.set_register_as::<V128>(result, simd::v128_bitselect(lhs, rhs, selector));
         self.next_instr_at(2);
     }
+
+    /// Executes an [`Instruction::I32x4DotI8x16I7x16AddS`] instruction.
+    pub fn execute_i32x4_relaxed_dot_i8x16_i7x16_add_s(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
+        let c = self.fetch_register();
+        let lhs = self.get_register_as::<V128>(lhs);
+        let rhs = self.get_register_as::<V128>(rhs);
+        let c = self.get_register_as::<V128>(c);
+        self.set_register_as::<V128>(
+            result,
+            simd::i32x4_relaxed_dot_i8x16_i7x16_add_s(lhs, rhs, c),
+        );
+        self.next_instr_at(2);
+    }
 }
 
 macro_rules! impl_replace_lane_ops {
@@ -330,6 +343,7 @@ impl Executor<'_> {
 
         (Instruction::I16x8Q15MulrSatS, execute_i16x8_q15mulr_sat_s, simd::i16x8_q15mulr_sat_s),
         (Instruction::I32x4DotI16x8S, execute_i32x4_dot_i16x8_s, simd::i32x4_dot_i16x8_s),
+        (Instruction::I16x8RelaxedDotI8x16I7x16S, execute_i16x8_relaxed_dot_i8x16_i7x16_s, simd::i16x8_relaxed_dot_i8x16_i7x16_s),
 
         (Instruction::I16x8ExtmulLowI8x16S, execute_i16x8_extmul_low_i8x16_s, simd::i16x8_extmul_low_i8x16_s),
         (Instruction::I16x8ExtmulHighI8x16S, execute_i16x8_extmul_high_i8x16_s, simd::i16x8_extmul_high_i8x16_s),

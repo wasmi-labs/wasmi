@@ -1270,6 +1270,25 @@ pub fn i32x4_dot_i16x8_s(lhs: V128, rhs: V128) -> V128 {
     V128::pairwise_binary(lhs, rhs, dot)
 }
 
+/// Executes a Wasm `i16x8.relaxed_dot_i8x16_i7x16_s` instruction.
+pub fn i16x8_relaxed_dot_i8x16_i7x16_s(lhs: V128, rhs: V128) -> V128 {
+    fn dot(a: [i8; 2], b: [i8; 2]) -> i16 {
+        let a = a.map(i16::from);
+        let b = b.map(i16::from);
+        let dot0 = a[0].wrapping_mul(b[0]);
+        let dot1 = a[1].wrapping_mul(b[1]);
+        dot0.wrapping_add(dot1)
+    }
+    V128::pairwise_binary(lhs, rhs, dot)
+}
+
+/// Executes a Wasm `i32x4.relaxed_dot_i8x16_i7x16_add_s` instruction.
+pub fn i32x4_relaxed_dot_i8x16_i7x16_add_s(lhs: V128, rhs: V128, c: V128) -> V128 {
+    let dot = i16x8_relaxed_dot_i8x16_i7x16_s(lhs, rhs);
+    let ext = i32x4_extadd_pairwise_i16x8_s(dot);
+    i32x4_add(ext, c)
+}
+
 /// Executes a Wasm `v128.bitselect` instruction.
 pub fn v128_bitselect(v1: V128, v2: V128, c: V128) -> V128 {
     simd::v128_or(simd::v128_and(v1, c), simd::v128_andnot(v2, c))

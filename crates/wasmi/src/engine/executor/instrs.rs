@@ -2273,6 +2273,14 @@ impl<'engine> Executor<'engine> {
                 Instr::V128Load64LaneAt { result, address } => {
                     self.execute_v128_load64_lane_at(&store.inner, result, address)?
                 }
+                #[cfg(feature = "simd")]
+                Instr::I16x8RelaxedDotI8x16I7x16S { result, lhs, rhs } => {
+                    self.execute_i16x8_relaxed_dot_i8x16_i7x16_s(result, lhs, rhs)
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4RelaxedDotI8x16I7x16AddS { result, lhs, rhs } => {
+                    self.execute_i32x4_relaxed_dot_i8x16_i7x16_add_s(result, lhs, rhs)
+                }
                 unsupported => panic!("encountered unsupported Wasmi instruction: {unsupported:?}"),
             }
         }

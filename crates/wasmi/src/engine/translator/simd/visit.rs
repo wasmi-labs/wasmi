@@ -1528,10 +1528,31 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i16x8_relaxed_dot_i8x16_i7x16_s(&mut self) -> Self::Output {
-        self.visit_i16x8_q15mulr_sat_s()
+        self.translate_simd_binary(
+            Instruction::i16x8_relaxed_dot_i8x16_i7x16_s,
+            simd::i16x8_relaxed_dot_i8x16_i7x16_s,
+        )
     }
 
     fn visit_i32x4_relaxed_dot_i8x16_i7x16_add_s(&mut self) -> Self::Output {
-        todo!()
+        bail_unreachable!(self);
+        let (lhs, rhs, c) = self.alloc.stack.pop3();
+        if let (Provider::Const(lhs), Provider::Const(rhs), Provider::Const(c)) = (lhs, rhs, c) {
+            // Case: all inputs are immediates so we can const-eval the result.
+            let result =
+                simd::i32x4_relaxed_dot_i8x16_i7x16_add_s(lhs.into(), rhs.into(), c.into());
+            self.alloc.stack.push_const(result);
+            return Ok(());
+        }
+        let result = self.alloc.stack.push_dynamic()?;
+        let lhs = self.alloc.stack.provider2reg(&lhs)?;
+        let rhs = self.alloc.stack.provider2reg(&rhs)?;
+        let selector = self.alloc.stack.provider2reg(&c)?;
+        self.push_fueled_instr(
+            Instruction::i32x4_relaxed_dot_i8x16_i7x16_add_s(result, lhs, rhs),
+            FuelCosts::base,
+        )?;
+        self.append_instr(Instruction::register(selector))?;
+        Ok(())
     }
 }

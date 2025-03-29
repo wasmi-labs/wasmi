@@ -6221,6 +6221,28 @@ macro_rules! for_each_op_grouped {
                     /// The register storing the `rhs` of the instruction.
                     rhs: Reg,
                 },
+                /// Wasm `i32x4.relaxed_dot_i8x16_i7x8_s` instruction.
+                #[snake_name(i16x8_relaxed_dot_i8x16_i7x16_s)]
+                I16x8RelaxedDotI8x16I7x16S {
+                    @result: Reg,
+                    /// The register storing the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The register storing the `rhs` of the instruction.
+                    rhs: Reg,
+                },
+                /// Wasm `i32x4.relaxed_dot_i8x16_i7x16_add_s` instruction.
+                ///
+                /// # Encoding
+                ///
+                /// Followed by an [`Instruction::Register`] encoding `c`.
+                #[snake_name(i32x4_relaxed_dot_i8x16_i7x16_add_s)]
+                I32x4RelaxedDotI8x16I7x16AddS {
+                    @result: Reg,
+                    /// The register storing the `lhs` of the instruction.
+                    lhs: Reg,
+                    /// The register storing the `rhs` of the instruction.
+                    rhs: Reg,
+                },
 
                 /// Wasm `i8x16.neg` instruction.
                 #[snake_name(i8x16_neg)]
