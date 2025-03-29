@@ -60,7 +60,7 @@ Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [
 | ✅ | [`saturating-float-to-int`] | ≥ `0.14.0` | | ✅ | [`memory64`] | [≥ `0.41.0`][(#1357)] |
 | ✅ | [`sign-extension`] | ≥ `0.14.0` | | ✅ | [`wide-arithmetic`] | [≥ `0.42.0`][(#1369)] |
 | ✅ | [`multi-value`] | ≥ `0.14.0` | | ✅ | [`simd`] | [≥ `0.43.0`][(#1364)] |
-| ✅ | [`bulk-memory`] | [≥ `0.24.0`][(#628)] | | 📅 | [`relaxed-simd`] | [Tracking Issue][(#1431)] |
+| ✅ | [`bulk-memory`] | [≥ `0.24.0`][(#628)] | | ✅ | [`relaxed-simd`] | [≥ `0.44.0`][(#1443)] |
 | ✅ | [`reference-types`] | [≥ `0.24.0`][(#635)] | | 📅 | [`function-references`] | [Tracking Issue][(#774)] |
 | ✅ | [`tail-calls`] | [≥ `0.28.0`][(#683)] | | 📅 | [`gc`] | [Tracking Issue][(#775)] |
 | ✅ | [`extended-const`] | [≥ `0.29.0`][(#707)] | | 📅 | [`threads`] | [Tracking Issue][(#777)] |
@@ -113,7 +113,7 @@ Refer to the [Wasmi usage guide](./docs/usage.md) to learn how properly to use [
 [(#1357)]: https://github.com/wasmi-labs/wasmi/issues/1357
 [(#1364)]: https://github.com/wasmi-labs/wasmi/issues/1364
 [(#1369)]: https://github.com/wasmi-labs/wasmi/issues/1369
-[(#1431)]: https://github.com/wasmi-labs/wasmi/issues/1431
+[(#1443)]: https://github.com/wasmi-labs/wasmi/pull/1443
 
 ## Crate Features
 
