@@ -489,7 +489,7 @@ macro_rules! impl_wasm_float {
             #[inline]
             #[cfg(feature = "simd")]
             fn mul_add(self, a: Self, b: Self) -> Self {
-                <libm::Libm<Self>>::fma(self)
+                <libm::Libm<Self>>::fma(self, a, b)
             }
         }
     };
