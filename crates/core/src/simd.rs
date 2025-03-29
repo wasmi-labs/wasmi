@@ -1298,6 +1298,10 @@ pub fn i32x4_dot_i16x8_s(lhs: V128, rhs: V128) -> V128 {
 }
 
 /// Executes a Wasm `i16x8.relaxed_dot_i8x16_i7x16_s` instruction.
+/// 
+/// # Note
+/// 
+/// This is part of the `relaxed-simd` Wasm proposal.
 pub fn i16x8_relaxed_dot_i8x16_i7x16_s(lhs: V128, rhs: V128) -> V128 {
     fn dot(a: [i8; 2], b: [i8; 2]) -> i16 {
         let a = a.map(i16::from);
@@ -1310,6 +1314,10 @@ pub fn i16x8_relaxed_dot_i8x16_i7x16_s(lhs: V128, rhs: V128) -> V128 {
 }
 
 /// Executes a Wasm `i32x4.relaxed_dot_i8x16_i7x16_add_s` instruction.
+/// 
+/// # Note
+/// 
+/// This is part of the `relaxed-simd` Wasm proposal.
 pub fn i32x4_relaxed_dot_i8x16_i7x16_add_s(lhs: V128, rhs: V128, c: V128) -> V128 {
     let dot = i16x8_relaxed_dot_i8x16_i7x16_s(lhs, rhs);
     let ext = i32x4_extadd_pairwise_i16x8_s(dot);
@@ -1333,6 +1341,10 @@ macro_rules! impl_ternary_for {
     ( $( fn $name:ident(a: V128, b: V128, c: V128) -> V128 = $lanewise_expr:expr; )* ) => {
         $(
             #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[doc = ""]
+            #[doc = "# Note"]
+            #[doc = ""]
+            #[doc = "This is part of the `relaxed-simd` Wasm proposal."]
             pub fn $name(a: V128, b: V128, c: V128) -> V128 {
                 V128::lanewise_ternary(a, b, c, $lanewise_expr)
             }
