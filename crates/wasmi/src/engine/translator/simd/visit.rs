@@ -1456,23 +1456,23 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_relaxed_swizzle(&mut self) -> Self::Output {
-        todo!()
+        self.visit_i8x16_swizzle()
     }
 
     fn visit_i32x4_relaxed_trunc_f32x4_s(&mut self) -> Self::Output {
-        todo!()
+        self.visit_i32x4_trunc_sat_f32x4_s()
     }
 
     fn visit_i32x4_relaxed_trunc_f32x4_u(&mut self) -> Self::Output {
-        todo!()
+        self.visit_i32x4_trunc_sat_f32x4_u()
     }
 
     fn visit_i32x4_relaxed_trunc_f64x2_s_zero(&mut self) -> Self::Output {
-        todo!()
+        self.visit_i32x4_trunc_sat_f64x2_s_zero()
     }
 
     fn visit_i32x4_relaxed_trunc_f64x2_u_zero(&mut self) -> Self::Output {
-        todo!()
+        self.visit_i32x4_trunc_sat_f64x2_u_zero()
     }
 
     fn visit_f32x4_relaxed_madd(&mut self) -> Self::Output {
@@ -1492,43 +1492,43 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_i8x16_relaxed_laneselect(&mut self) -> Self::Output {
-        todo!()
+        self.visit_v128_bitselect()
     }
 
     fn visit_i16x8_relaxed_laneselect(&mut self) -> Self::Output {
-        todo!()
+        self.visit_v128_bitselect()
     }
 
     fn visit_i32x4_relaxed_laneselect(&mut self) -> Self::Output {
-        todo!()
+        self.visit_v128_bitselect()
     }
 
     fn visit_i64x2_relaxed_laneselect(&mut self) -> Self::Output {
-        todo!()
+        self.visit_v128_bitselect()
     }
 
     fn visit_f32x4_relaxed_min(&mut self) -> Self::Output {
-        todo!()
+        self.visit_f32x4_min()
     }
 
     fn visit_f32x4_relaxed_max(&mut self) -> Self::Output {
-        todo!()
+        self.visit_f32x4_max()
     }
 
     fn visit_f64x2_relaxed_min(&mut self) -> Self::Output {
-        todo!()
+        self.visit_f64x2_min()
     }
 
     fn visit_f64x2_relaxed_max(&mut self) -> Self::Output {
-        todo!()
+        self.visit_f64x2_max()
     }
 
     fn visit_i16x8_relaxed_q15mulr_s(&mut self) -> Self::Output {
-        todo!()
+        self.visit_i16x8_q15mulr_sat_s()
     }
 
     fn visit_i16x8_relaxed_dot_i8x16_i7x16_s(&mut self) -> Self::Output {
-        todo!()
+        self.visit_i16x8_q15mulr_sat_s()
     }
 
     fn visit_i32x4_relaxed_dot_i8x16_i7x16_add_s(&mut self) -> Self::Output {
