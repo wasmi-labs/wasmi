@@ -164,7 +164,7 @@ impl Executor<'_> {
         self.next_instr_at(2);
     }
 
-    /// Executes an [`Instruction::I32x4DotI8x16I7x16AddS`] instruction.
+    /// Executes an [`Instruction::I32x4RelaxedDotI8x16I7x16AddS`] instruction.
     pub fn execute_i32x4_relaxed_dot_i8x16_i7x16_add_s(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
         let c = self.fetch_register();
         let lhs = self.get_register_as::<V128>(lhs);
