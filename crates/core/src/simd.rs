@@ -60,6 +60,10 @@ impl_into_lane_idx! {
     impl IntoLaneIdx for f64 = ImmLaneIdx2;
 }
 
+/// A helper type used to convert to a lane index type via `IntoLaneIdx`.
+#[derive(Debug, Copy, Clone)]
+struct ImmLaneIdx<const N: u8>;
+
 macro_rules! impl_imm_lane_id {
     (
         $(
@@ -73,7 +77,7 @@ macro_rules! impl_imm_lane_id {
             #[repr(transparent)]
             pub struct $name(u8);
 
-            impl IntoLaneIdx for [(); $n] {
+            impl IntoLaneIdx for ImmLaneIdx<$n> {
                 type LaneIdx = $name;
             }
 
@@ -202,7 +206,7 @@ macro_rules! impl_lanes_for {
 
             impl IntoLanes for $ty {
                 type Lanes = $name;
-                type LaneIdx = <[(); $n] as IntoLaneIdx>::LaneIdx;
+                type LaneIdx = <ImmLaneIdx<$n> as IntoLaneIdx>::LaneIdx;
             }
 
             impl From<[$ty; $n]> for $name {
@@ -213,7 +217,7 @@ macro_rules! impl_lanes_for {
 
             impl Lanes for $name {
                 type Item = $ty;
-                type LaneIdx = <[(); $n] as IntoLaneIdx>::LaneIdx;
+                type LaneIdx = <ImmLaneIdx<$n> as IntoLaneIdx>::LaneIdx;
 
                 const LANES: usize = $n;
                 const ALL_ONES: Self::Item = <$ty>::from_le_bytes([0xFF_u8; 16 / $n]);
