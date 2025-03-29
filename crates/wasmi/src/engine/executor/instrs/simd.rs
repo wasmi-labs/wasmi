@@ -153,28 +153,32 @@ impl Executor<'_> {
         self.set_register_as::<V128>(result, simd::i8x16_shuffle(lhs, rhs, selector));
         self.next_instr_at(2);
     }
+}
 
-    /// Executes an [`Instruction::V128Bitselect`] instruction.
-    pub fn execute_v128_bitselect(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
-        let selector = self.fetch_register();
-        let lhs = self.get_register_as::<V128>(lhs);
-        let rhs = self.get_register_as::<V128>(rhs);
-        let selector = self.get_register_as::<V128>(selector);
-        self.set_register_as::<V128>(result, simd::v128_bitselect(lhs, rhs, selector));
-        self.next_instr_at(2);
-    }
+macro_rules! impl_ternary_simd_executors {
+    ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr $(,)?) ),* $(,)? ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
+            pub fn $fn_name(&mut self, result: Reg, a: Reg, b: Reg) {
+                let c = self.fetch_register();
+                let a = self.get_register_as::<V128>(a);
+                let b = self.get_register_as::<V128>(b);
+                let c = self.get_register_as::<V128>(c);
+                self.set_register_as::<V128>(result, $op(a, b, c));
+                self.next_instr_at(2);
+            }
+        )*
+    };
+}
 
-    /// Executes an [`Instruction::I32x4RelaxedDotI8x16I7x16AddS`] instruction.
-    pub fn execute_i32x4_relaxed_dot_i8x16_i7x16_add_s(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
-        let c = self.fetch_register();
-        let lhs = self.get_register_as::<V128>(lhs);
-        let rhs = self.get_register_as::<V128>(rhs);
-        let c = self.get_register_as::<V128>(c);
-        self.set_register_as::<V128>(
-            result,
-            simd::i32x4_relaxed_dot_i8x16_i7x16_add_s(lhs, rhs, c),
-        );
-        self.next_instr_at(2);
+impl Executor<'_> {
+    impl_ternary_simd_executors! {
+        (Instruction::V128Bitselect, execute_v128_bitselect, simd::v128_bitselect),
+        (
+            Instruction::I32x4RelaxedDotI8x16I7x16AddS,
+            execute_i32x4_relaxed_dot_i8x16_i7x16_add_s,
+            simd::i32x4_relaxed_dot_i8x16_i7x16_add_s,
+        ),
     }
 }
 
