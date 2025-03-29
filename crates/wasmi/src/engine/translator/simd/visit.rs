@@ -19,24 +19,7 @@ macro_rules! swap_ops {
     };
 }
 
-macro_rules! impl_visit_simd_operator {
-    ( @simd $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
-        // We skip Wasm `simd` proposal operators since we implement them manually.
-        impl_visit_simd_operator!($($rest)*);
-    };
-    ( @relaxed_simd $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
-        // Wasm `relaxed-simd` proposal operators are unimplemented for now.
-        fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
-            self.translate_unsupported_operator(stringify!($op))
-        }
-        impl_visit_simd_operator!($($rest)*);
-    };
-    () => {};
-}
-
 impl VisitSimdOperator<'_> for FuncTranslator {
-    wasmparser::for_each_visit_simd_operator!(impl_visit_simd_operator);
-
     fn visit_v128_load(&mut self, memarg: MemArg) -> Self::Output {
         self.translate_load(
             memarg,
@@ -1470,5 +1453,85 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             Instruction::f64x2_promote_low_f32x4,
             simd::f64x2_promote_low_f32x4,
         )
+    }
+
+    fn visit_i8x16_relaxed_swizzle(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i32x4_relaxed_trunc_f32x4_s(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i32x4_relaxed_trunc_f32x4_u(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i32x4_relaxed_trunc_f64x2_s_zero(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i32x4_relaxed_trunc_f64x2_u_zero(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f32x4_relaxed_madd(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f32x4_relaxed_nmadd(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f64x2_relaxed_madd(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f64x2_relaxed_nmadd(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i8x16_relaxed_laneselect(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i16x8_relaxed_laneselect(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i32x4_relaxed_laneselect(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i64x2_relaxed_laneselect(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f32x4_relaxed_min(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f32x4_relaxed_max(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f64x2_relaxed_min(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_f64x2_relaxed_max(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i16x8_relaxed_q15mulr_s(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i16x8_relaxed_dot_i8x16_i7x16_s(&mut self) -> Self::Output {
+        todo!()
+    }
+
+    fn visit_i32x4_relaxed_dot_i8x16_i7x16_add_s(&mut self) -> Self::Output {
+        todo!()
     }
 }

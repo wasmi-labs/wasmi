@@ -441,24 +441,13 @@ where
 
 #[cfg(feature = "simd")]
 macro_rules! impl_visit_simd_operator {
-    ( @simd $($rest:tt)* ) => {
-        impl_visit_simd_operator!(@@supported $($rest)*);
-    };
-    ( @@supported $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
+    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
         fn $visit(&mut self $($(,$arg: $argty)*)?) -> Self::Output {
             let offset = self.current_pos();
             self.validate_then_translate(
                 move |validator| validator.simd_visitor(offset).$visit($($($arg),*)?),
                 move |translator| translator.$visit($($($arg),*)?),
             )
-        }
-        impl_visit_simd_operator!($($rest)*);
-    };
-    ( @$proposal:ident $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $ann:tt $($rest:tt)* ) => {
-        // Wildcard match arm for all the other (yet) unsupported Wasm proposals.
-        fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
-            let offset = self.current_pos();
-            self.validator.simd_visitor(offset).$visit($($($arg),*)?).map_err(::core::convert::Into::into)
         }
         impl_visit_simd_operator!($($rest)*);
     };
