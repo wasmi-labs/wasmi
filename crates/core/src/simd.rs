@@ -1751,6 +1751,48 @@ impl_v128_load_mxn_at! {
     fn v128_load32x2_u_at(memory: &[u8], address: usize) -> Result<V128, TrapCode> = (u32 => u64);
 }
 
+macro_rules! impl_forwarding_relaxed_ops {
+    (
+        $(
+            fn $name:ident(
+                $( $param_name:ident: $param_ty:ty ),* $(,)?
+            ) -> $ret_ty:ty
+            = $forward_fn:expr
+        );* $(;)?
+    ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            #[doc = ""]
+            #[doc = "# Note"]
+            #[doc = ""]
+            #[doc = "This is part of the `relaxed-simd` Wasm proposal."]
+            pub fn $name( $( $param_name: $param_ty ),* ) -> $ret_ty {
+                $forward_fn( $( $param_name ),* )
+            }
+        )*
+    };
+}
+impl_forwarding_relaxed_ops! {
+    fn i8x16_relaxed_swizzle(a: V128, s: V128) -> V128 = i8x16_swizzle;
+
+    fn i8x16_relaxed_laneselect(a: V128, b: V128, c: V128) -> V128 = v128_bitselect;
+    fn i16x8_relaxed_laneselect(a: V128, b: V128, c: V128) -> V128 = v128_bitselect;
+    fn i32x4_relaxed_laneselect(a: V128, b: V128, c: V128) -> V128 = v128_bitselect;
+    fn i64x2_relaxed_laneselect(a: V128, b: V128, c: V128) -> V128 = v128_bitselect;
+
+    fn f32x4_relaxed_min(lhs: V128, rhs: V128) -> V128 = f32x4_min;
+    fn f32x4_relaxed_max(lhs: V128, rhs: V128) -> V128 = f32x4_max;
+    fn f64x2_relaxed_min(lhs: V128, rhs: V128) -> V128 = f64x2_min;
+    fn f64x2_relaxed_max(lhs: V128, rhs: V128) -> V128 = f64x2_max;
+
+    fn i16x8_relaxed_q15mulr_s(a: V128, b: V128) -> V128 = i16x8_q15mulr_sat_s;
+
+    fn i32x4_relaxed_trunc_f32x4_s(input: V128) -> V128 = i32x4_trunc_sat_f32x4_s;
+    fn i32x4_relaxed_trunc_f32x4_u(input: V128) -> V128 = i32x4_trunc_sat_f32x4_u;
+    fn i32x4_relaxed_trunc_f64x2_s_zero(input: V128) -> V128 = i32x4_trunc_sat_f64x2_s_zero;
+    fn i32x4_relaxed_trunc_f64x2_u_zero(input: V128) -> V128 = i32x4_trunc_sat_f64x2_u_zero;
+}
+
 #[test]
 fn i32x4_dot_i16x8_s_works() {
     assert_eq!(
