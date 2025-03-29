@@ -39,6 +39,7 @@ impl DifferentialOracleMeta for WasmtimeOracle {
         config.cranelift_regalloc_algorithm(wasmtime::RegallocAlgorithm::SinglePass);
         config.wasm_custom_page_sizes(true);
         config.wasm_wide_arithmetic(true);
+        config.relaxed_simd_deterministic(true);
         let engine = Engine::new(&config).unwrap();
         let linker = Linker::new(&engine);
         let limiter = StoreLimitsBuilder::new()
