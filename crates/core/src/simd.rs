@@ -32,11 +32,6 @@ trait LaneIndex: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> + Into<u8> {
     /// Bit mask of available bits in `u8` for the lane index.
     const MASK: u8;
 
-    /// Returns the lane id as `u8`.
-    ///
-    /// This will never return a `u8` value that is out of bounds for `self`.
-    fn get(self) -> u8;
-
     /// Returns a 0th index lane id.
     fn zero() -> Self;
 }
@@ -86,10 +81,6 @@ macro_rules! impl_imm_lane_id {
                 /// Helper bit mask for construction and getter.
                 const MASK: u8 = (1_u8 << u8::ilog2($n)) - 1;
 
-                fn get(self) -> u8 {
-                    self.0 & Self::MASK
-                }
-
                 fn zero() -> Self {
                     Self(0)
                 }
@@ -97,7 +88,7 @@ macro_rules! impl_imm_lane_id {
 
             impl From<$name> for u8 {
                 fn from(lane: $name) -> u8 {
-                    lane.get()
+                    lane.0 & <$name as LaneIndex>::MASK
                 }
             }
 
@@ -253,12 +244,12 @@ macro_rules! impl_lanes_for {
                 }
 
                 fn extract_lane(self, lane: Self::LaneIdx) -> Self::Item {
-                    self.0[lane.get() as usize]
+                    self.0[u8::from(lane) as usize]
                 }
 
                 fn replace_lane(self, lane: Self::LaneIdx, item: Self::Item) -> Self {
                     let mut this = self;
-                    this.0[lane.get() as usize] = item;
+                    this.0[u8::from(lane) as usize] = item;
                     this
                 }
 
@@ -776,7 +767,7 @@ impl_replace_for! {
 pub fn i8x16_shuffle(a: V128, b: V128, s: [ImmLaneIdx32; 16]) -> V128 {
     let a = I8x16::from_v128(a).0;
     let b = I8x16::from_v128(b).0;
-    I8x16(array::from_fn(|i| match usize::from(s[i].get()) {
+    I8x16(array::from_fn(|i| match usize::from(u8::from(s[i])) {
         i @ 0..16 => a[i],
         i => b[i - 16],
     }))
