@@ -8,6 +8,18 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.43.1`] - 2025-03-29
+
+### Fixed
+
+- Add missing `WasmTy` implementation for `V128` [#1437]
+  - This prevented using `V128` parameters and results in the `TypedFunc` API.
+  - Note that it was still possible to use `V128` with the `Func::call` API.
+- Fixed a bug executing `i8x16.replace_lane` with immediate parameter. [#1444]
+
+[#1437]: https://github.com/wasmi-labs/wasmi/pull/1437
+[#1444]: https://github.com/wasmi-labs/wasmi/pull/1444
+
 ## [`0.43.0`] - 2025-03-27
 
 ### Added
