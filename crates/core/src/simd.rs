@@ -24,7 +24,7 @@ pub struct OutOfBoundsLaneIdx;
 /// Helper trait to help the type inference to do its jobs with fewer type annotations.
 trait IntoLaneIdx {
     /// The associated lane index type.
-    type LaneIdx;
+    type LaneIdx: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> + Into<u8>;
 }
 
 /// Trait implemented by all lane index types.
