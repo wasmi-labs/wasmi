@@ -179,6 +179,10 @@ impl Executor<'_> {
             execute_i32x4_relaxed_dot_i8x16_i7x16_add_s,
             simd::i32x4_relaxed_dot_i8x16_i7x16_add_s,
         ),
+        (Instruction::F32x4RelaxedMadd, execute_f32x4_relaxed_madd, simd::f32x4_relaxed_madd),
+        (Instruction::F32x4RelaxedNmadd, execute_f32x4_relaxed_nmadd, simd::f32x4_relaxed_nmadd),
+        (Instruction::F64x2RelaxedMadd, execute_f64x2_relaxed_madd, simd::f64x2_relaxed_madd),
+        (Instruction::F64x2RelaxedNmadd, execute_f64x2_relaxed_nmadd, simd::f64x2_relaxed_nmadd),
     }
 }
 

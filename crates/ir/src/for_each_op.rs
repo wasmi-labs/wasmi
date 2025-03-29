@@ -6244,6 +6244,59 @@ macro_rules! for_each_op_grouped {
                     rhs: Reg,
                 },
 
+                /// Wasm `f32x4.relaxed_madd` instruction.
+                ///
+                /// # Encoding
+                ///
+                /// Followed by an [`Instruction::Register`] encoding `c`.
+                #[snake_name(f32x4_relaxed_madd)]
+                F32x4RelaxedMadd {
+                    @result: Reg,
+                    /// The register storing the `a` of the instruction.
+                    a: Reg,
+                    /// The register storing the `b` of the instruction.
+                    b: Reg,
+                },
+                /// Wasm `f32x4.relaxed_nmadd` instruction.
+                ///
+                /// # Encoding
+                ///
+                /// Followed by an [`Instruction::Register`] encoding `c`.
+                #[snake_name(f32x4_relaxed_nmadd)]
+                F32x4RelaxedNmadd {
+                    @result: Reg,
+                    /// The register storing the `a` of the instruction.
+                    a: Reg,
+                    /// The register storing the `b` of the instruction.
+                    b: Reg,
+                },
+                /// Wasm `f64x2.relaxed_madd` instruction.
+                ///
+                /// # Encoding
+                ///
+                /// Followed by an [`Instruction::Register`] encoding `c`.
+                #[snake_name(f64x2_relaxed_madd)]
+                F64x2RelaxedMadd {
+                    @result: Reg,
+                    /// The register storing the `a` of the instruction.
+                    a: Reg,
+                    /// The register storing the `b` of the instruction.
+                    b: Reg,
+                },
+                /// Wasm `f64x2.relaxed_nmadd` instruction.
+                ///
+                /// # Encoding
+                ///
+                /// Followed by an [`Instruction::Register`] encoding `c`.
+                #[snake_name(f64x2_relaxed_nmadd)]
+                F64x2RelaxedNmadd {
+                    @result: Reg,
+                    /// The register storing the `a` of the instruction.
+                    a: Reg,
+                    /// The register storing the `b` of the instruction.
+                    b: Reg,
+                },
+
                 /// Wasm `i8x16.neg` instruction.
                 #[snake_name(i8x16_neg)]
                 I8x16Neg {

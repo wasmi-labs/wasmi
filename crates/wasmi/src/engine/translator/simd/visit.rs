@@ -1457,19 +1457,19 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_f32x4_relaxed_madd(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_ternary(Instruction::f32x4_relaxed_madd, simd::f32x4_relaxed_madd)
     }
 
     fn visit_f32x4_relaxed_nmadd(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_ternary(Instruction::f32x4_relaxed_nmadd, simd::f32x4_relaxed_nmadd)
     }
 
     fn visit_f64x2_relaxed_madd(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_ternary(Instruction::f64x2_relaxed_madd, simd::f64x2_relaxed_madd)
     }
 
     fn visit_f64x2_relaxed_nmadd(&mut self) -> Self::Output {
-        todo!()
+        self.translate_simd_ternary(Instruction::f64x2_relaxed_nmadd, simd::f64x2_relaxed_nmadd)
     }
 
     fn visit_i8x16_relaxed_laneselect(&mut self) -> Self::Output {

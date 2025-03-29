@@ -2281,6 +2281,22 @@ impl<'engine> Executor<'engine> {
                 Instr::I32x4RelaxedDotI8x16I7x16AddS { result, lhs, rhs } => {
                     self.execute_i32x4_relaxed_dot_i8x16_i7x16_add_s(result, lhs, rhs)
                 }
+                #[cfg(feature = "simd")]
+                Instr::F32x4RelaxedMadd { result, a, b } => {
+                    self.execute_f32x4_relaxed_madd(result, a, b)
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4RelaxedNmadd { result, a, b } => {
+                    self.execute_f32x4_relaxed_nmadd(result, a, b)
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2RelaxedMadd { result, a, b } => {
+                    self.execute_f64x2_relaxed_madd(result, a, b)
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2RelaxedNmadd { result, a, b } => {
+                    self.execute_f64x2_relaxed_nmadd(result, a, b)
+                }
                 unsupported => panic!("encountered unsupported Wasmi instruction: {unsupported:?}"),
             }
         }
