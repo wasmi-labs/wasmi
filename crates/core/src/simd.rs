@@ -1340,10 +1340,10 @@ macro_rules! impl_ternary_for {
     };
 }
 impl_ternary_for! {
-    fn f32x4_madd(a: V128, b: V128, c: V128) -> V128 = <f32 as Float>::mul_add;
-    fn f32x4_nmadd(a: V128, b: V128, c: V128) -> V128 = neg_mul_add::<f32>;
-    fn f64x2_madd(a: V128, b: V128, c: V128) -> V128 = <f64 as Float>::mul_add;
-    fn f64x2_nmadd(a: V128, b: V128, c: V128) -> V128 = neg_mul_add::<f64>;
+    fn f32x4_relaxed_madd(a: V128, b: V128, c: V128) -> V128 = <f32 as Float>::mul_add;
+    fn f32x4_relaxed_nmadd(a: V128, b: V128, c: V128) -> V128 = neg_mul_add::<f32>;
+    fn f64x2_relaxed_madd(a: V128, b: V128, c: V128) -> V128 = <f64 as Float>::mul_add;
+    fn f64x2_relaxed_nmadd(a: V128, b: V128, c: V128) -> V128 = neg_mul_add::<f64>;
 }
 
 /// Executes a Wasm `v128.store` instruction.
