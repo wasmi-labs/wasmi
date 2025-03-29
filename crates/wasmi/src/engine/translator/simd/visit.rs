@@ -19,24 +19,7 @@ macro_rules! swap_ops {
     };
 }
 
-macro_rules! impl_visit_simd_operator {
-    ( @simd $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
-        // We skip Wasm `simd` proposal operators since we implement them manually.
-        impl_visit_simd_operator!($($rest)*);
-    };
-    ( @relaxed_simd $op:ident $({ $($arg:ident: $argty:ty),* })? => $visit:ident $_ann:tt $($rest:tt)* ) => {
-        // Wasm `relaxed-simd` proposal operators are unimplemented for now.
-        fn $visit(&mut self $($(, $arg: $argty)*)?) -> Self::Output {
-            self.translate_unsupported_operator(stringify!($op))
-        }
-        impl_visit_simd_operator!($($rest)*);
-    };
-    () => {};
-}
-
 impl VisitSimdOperator<'_> for FuncTranslator {
-    wasmparser::for_each_visit_simd_operator!(impl_visit_simd_operator);
-
     fn visit_v128_load(&mut self, memarg: MemArg) -> Self::Output {
         self.translate_load(
             memarg,
@@ -728,26 +711,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
     }
 
     fn visit_v128_bitselect(&mut self) -> Self::Output {
-        bail_unreachable!(self);
-        let (lhs, rhs, selector) = self.alloc.stack.pop3();
-        if let (Provider::Const(lhs), Provider::Const(rhs), Provider::Const(selector)) =
-            (lhs, rhs, selector)
-        {
-            // Case: all inputs are immediates so we can const-eval the result.
-            let result = simd::v128_bitselect(lhs.into(), rhs.into(), selector.into());
-            self.alloc.stack.push_const(result);
-            return Ok(());
-        }
-        let result = self.alloc.stack.push_dynamic()?;
-        let lhs = self.alloc.stack.provider2reg(&lhs)?;
-        let rhs = self.alloc.stack.provider2reg(&rhs)?;
-        let selector = self.alloc.stack.provider2reg(&selector)?;
-        self.push_fueled_instr(
-            Instruction::v128_bitselect(result, lhs, rhs),
-            FuelCosts::base,
-        )?;
-        self.append_instr(Instruction::register(selector))?;
-        Ok(())
+        self.translate_simd_ternary(Instruction::v128_bitselect, simd::v128_bitselect)
     }
 
     fn visit_v128_any_true(&mut self) -> Self::Output {
@@ -1469,6 +1433,92 @@ impl VisitSimdOperator<'_> for FuncTranslator {
         self.translate_simd_unary(
             Instruction::f64x2_promote_low_f32x4,
             simd::f64x2_promote_low_f32x4,
+        )
+    }
+
+    fn visit_i8x16_relaxed_swizzle(&mut self) -> Self::Output {
+        self.visit_i8x16_swizzle()
+    }
+
+    fn visit_i32x4_relaxed_trunc_f32x4_s(&mut self) -> Self::Output {
+        self.visit_i32x4_trunc_sat_f32x4_s()
+    }
+
+    fn visit_i32x4_relaxed_trunc_f32x4_u(&mut self) -> Self::Output {
+        self.visit_i32x4_trunc_sat_f32x4_u()
+    }
+
+    fn visit_i32x4_relaxed_trunc_f64x2_s_zero(&mut self) -> Self::Output {
+        self.visit_i32x4_trunc_sat_f64x2_s_zero()
+    }
+
+    fn visit_i32x4_relaxed_trunc_f64x2_u_zero(&mut self) -> Self::Output {
+        self.visit_i32x4_trunc_sat_f64x2_u_zero()
+    }
+
+    fn visit_f32x4_relaxed_madd(&mut self) -> Self::Output {
+        self.translate_simd_ternary(Instruction::f32x4_relaxed_madd, simd::f32x4_relaxed_madd)
+    }
+
+    fn visit_f32x4_relaxed_nmadd(&mut self) -> Self::Output {
+        self.translate_simd_ternary(Instruction::f32x4_relaxed_nmadd, simd::f32x4_relaxed_nmadd)
+    }
+
+    fn visit_f64x2_relaxed_madd(&mut self) -> Self::Output {
+        self.translate_simd_ternary(Instruction::f64x2_relaxed_madd, simd::f64x2_relaxed_madd)
+    }
+
+    fn visit_f64x2_relaxed_nmadd(&mut self) -> Self::Output {
+        self.translate_simd_ternary(Instruction::f64x2_relaxed_nmadd, simd::f64x2_relaxed_nmadd)
+    }
+
+    fn visit_i8x16_relaxed_laneselect(&mut self) -> Self::Output {
+        self.visit_v128_bitselect()
+    }
+
+    fn visit_i16x8_relaxed_laneselect(&mut self) -> Self::Output {
+        self.visit_v128_bitselect()
+    }
+
+    fn visit_i32x4_relaxed_laneselect(&mut self) -> Self::Output {
+        self.visit_v128_bitselect()
+    }
+
+    fn visit_i64x2_relaxed_laneselect(&mut self) -> Self::Output {
+        self.visit_v128_bitselect()
+    }
+
+    fn visit_f32x4_relaxed_min(&mut self) -> Self::Output {
+        self.visit_f32x4_min()
+    }
+
+    fn visit_f32x4_relaxed_max(&mut self) -> Self::Output {
+        self.visit_f32x4_max()
+    }
+
+    fn visit_f64x2_relaxed_min(&mut self) -> Self::Output {
+        self.visit_f64x2_min()
+    }
+
+    fn visit_f64x2_relaxed_max(&mut self) -> Self::Output {
+        self.visit_f64x2_max()
+    }
+
+    fn visit_i16x8_relaxed_q15mulr_s(&mut self) -> Self::Output {
+        self.visit_i16x8_q15mulr_sat_s()
+    }
+
+    fn visit_i16x8_relaxed_dot_i8x16_i7x16_s(&mut self) -> Self::Output {
+        self.translate_simd_binary(
+            Instruction::i16x8_relaxed_dot_i8x16_i7x16_s,
+            simd::i16x8_relaxed_dot_i8x16_i7x16_s,
+        )
+    }
+
+    fn visit_i32x4_relaxed_dot_i8x16_i7x16_add_s(&mut self) -> Self::Output {
+        self.translate_simd_ternary(
+            Instruction::i32x4_relaxed_dot_i8x16_i7x16_add_s,
+            simd::i32x4_relaxed_dot_i8x16_i7x16_add_s,
         )
     }
 }

@@ -3,6 +3,7 @@
 use crate::{
     memory::{self, ExtendInto},
     simd,
+    value::Float,
     wasm,
     TrapCode,
     V128,
@@ -152,6 +153,14 @@ trait Lanes {
     fn lanewise_binary(self, other: Self, f: impl Fn(Self::Item, Self::Item) -> Self::Item)
         -> Self;
 
+    /// Apply `f` for all triplets of lane items in `self` and `other`.
+    fn lanewise_ternary(
+        self,
+        b: Self,
+        c: Self,
+        f: impl Fn(Self::Item, Self::Item, Self::Item) -> Self::Item,
+    ) -> Self;
+
     /// Apply `f` comparison for all pairs of lane items in `self` and `other`.
     ///
     /// Storing [`Self::ALL_ONES`] if `f` evaluates to `true` or [`Self::ALL_ZEROS`] otherwise per item.
@@ -242,6 +251,16 @@ macro_rules! impl_lanes_for {
                         lhs[i] = f(lhs[i], rhs[i]);
                     }
                     Self(lhs)
+                }
+
+                fn lanewise_ternary(self, b: Self, c: Self, f: impl Fn(Self::Item, Self::Item, Self::Item) -> Self::Item) -> Self {
+                    let mut a = self.0;
+                    let b = b.0;
+                    let c = c.0;
+                    for i in 0..Self::LANES {
+                        a[i] = f(a[i], b[i], c[i]);
+                    }
+                    Self(a)
                 }
 
                 fn lanewise_comparison(self, other: Self, f: impl Fn(Self::Item, Self::Item) -> bool) -> Self {
@@ -529,6 +548,14 @@ impl V128 {
         let lhs = <<T as IntoLanes>::Lanes>::from_v128(lhs);
         let rhs = <<T as IntoLanes>::Lanes>::from_v128(rhs);
         lhs.lanewise_binary(rhs, f).into_v128()
+    }
+
+    /// Convenience method to help implement lanewise ternary methods.
+    fn lanewise_ternary<T: IntoLanes>(a: Self, b: Self, c: Self, f: impl Fn(T, T, T) -> T) -> Self {
+        let a = <<T as IntoLanes>::Lanes>::from_v128(a);
+        let b = <<T as IntoLanes>::Lanes>::from_v128(b);
+        let c = <<T as IntoLanes>::Lanes>::from_v128(c);
+        a.lanewise_ternary(b, c, f).into_v128()
     }
 
     /// Convenience method to help implement lanewise comparison methods.
@@ -1270,9 +1297,53 @@ pub fn i32x4_dot_i16x8_s(lhs: V128, rhs: V128) -> V128 {
     V128::pairwise_binary(lhs, rhs, dot)
 }
 
+/// Executes a Wasm `i16x8.relaxed_dot_i8x16_i7x16_s` instruction.
+pub fn i16x8_relaxed_dot_i8x16_i7x16_s(lhs: V128, rhs: V128) -> V128 {
+    fn dot(a: [i8; 2], b: [i8; 2]) -> i16 {
+        let a = a.map(i16::from);
+        let b = b.map(i16::from);
+        let dot0 = a[0].wrapping_mul(b[0]);
+        let dot1 = a[1].wrapping_mul(b[1]);
+        dot0.wrapping_add(dot1)
+    }
+    V128::pairwise_binary(lhs, rhs, dot)
+}
+
+/// Executes a Wasm `i32x4.relaxed_dot_i8x16_i7x16_add_s` instruction.
+pub fn i32x4_relaxed_dot_i8x16_i7x16_add_s(lhs: V128, rhs: V128, c: V128) -> V128 {
+    let dot = i16x8_relaxed_dot_i8x16_i7x16_s(lhs, rhs);
+    let ext = i32x4_extadd_pairwise_i16x8_s(dot);
+    i32x4_add(ext, c)
+}
+
 /// Executes a Wasm `v128.bitselect` instruction.
 pub fn v128_bitselect(v1: V128, v2: V128, c: V128) -> V128 {
     simd::v128_or(simd::v128_and(v1, c), simd::v128_andnot(v2, c))
+}
+
+/// Computes the negative `mul_add`: `-(a * b) + c`
+fn neg_mul_add<T>(a: T, b: T, c: T) -> T
+where
+    T: Float + Neg<Output = T>,
+{
+    <T as Float>::mul_add(a.neg(), b, c)
+}
+
+macro_rules! impl_ternary_for {
+    ( $( fn $name:ident(a: V128, b: V128, c: V128) -> V128 = $lanewise_expr:expr; )* ) => {
+        $(
+            #[doc = concat!("Executes a Wasm `", stringify!($name), "` instruction.")]
+            pub fn $name(a: V128, b: V128, c: V128) -> V128 {
+                V128::lanewise_ternary(a, b, c, $lanewise_expr)
+            }
+        )*
+    };
+}
+impl_ternary_for! {
+    fn f32x4_relaxed_madd(a: V128, b: V128, c: V128) -> V128 = <f32 as Float>::mul_add;
+    fn f32x4_relaxed_nmadd(a: V128, b: V128, c: V128) -> V128 = neg_mul_add::<f32>;
+    fn f64x2_relaxed_madd(a: V128, b: V128, c: V128) -> V128 = <f64 as Float>::mul_add;
+    fn f64x2_relaxed_nmadd(a: V128, b: V128, c: V128) -> V128 = neg_mul_add::<f64>;
 }
 
 /// Executes a Wasm `v128.store` instruction.

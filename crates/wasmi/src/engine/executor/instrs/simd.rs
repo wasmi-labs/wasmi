@@ -153,15 +153,36 @@ impl Executor<'_> {
         self.set_register_as::<V128>(result, simd::i8x16_shuffle(lhs, rhs, selector));
         self.next_instr_at(2);
     }
+}
 
-    /// Executes an [`Instruction::V128Bitselect`] instruction.
-    pub fn execute_v128_bitselect(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
-        let selector = self.fetch_register();
-        let lhs = self.get_register_as::<V128>(lhs);
-        let rhs = self.get_register_as::<V128>(rhs);
-        let selector = self.get_register_as::<V128>(selector);
-        self.set_register_as::<V128>(result, simd::v128_bitselect(lhs, rhs, selector));
-        self.next_instr_at(2);
+macro_rules! impl_ternary_simd_executors {
+    ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr $(,)?) ),* $(,)? ) => {
+        $(
+            #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
+            pub fn $fn_name(&mut self, result: Reg, a: Reg, b: Reg) {
+                let c = self.fetch_register();
+                let a = self.get_register_as::<V128>(a);
+                let b = self.get_register_as::<V128>(b);
+                let c = self.get_register_as::<V128>(c);
+                self.set_register_as::<V128>(result, $op(a, b, c));
+                self.next_instr_at(2);
+            }
+        )*
+    };
+}
+
+impl Executor<'_> {
+    impl_ternary_simd_executors! {
+        (Instruction::V128Bitselect, execute_v128_bitselect, simd::v128_bitselect),
+        (
+            Instruction::I32x4RelaxedDotI8x16I7x16AddS,
+            execute_i32x4_relaxed_dot_i8x16_i7x16_add_s,
+            simd::i32x4_relaxed_dot_i8x16_i7x16_add_s,
+        ),
+        (Instruction::F32x4RelaxedMadd, execute_f32x4_relaxed_madd, simd::f32x4_relaxed_madd),
+        (Instruction::F32x4RelaxedNmadd, execute_f32x4_relaxed_nmadd, simd::f32x4_relaxed_nmadd),
+        (Instruction::F64x2RelaxedMadd, execute_f64x2_relaxed_madd, simd::f64x2_relaxed_madd),
+        (Instruction::F64x2RelaxedNmadd, execute_f64x2_relaxed_nmadd, simd::f64x2_relaxed_nmadd),
     }
 }
 
@@ -330,6 +351,7 @@ impl Executor<'_> {
 
         (Instruction::I16x8Q15MulrSatS, execute_i16x8_q15mulr_sat_s, simd::i16x8_q15mulr_sat_s),
         (Instruction::I32x4DotI16x8S, execute_i32x4_dot_i16x8_s, simd::i32x4_dot_i16x8_s),
+        (Instruction::I16x8RelaxedDotI8x16I7x16S, execute_i16x8_relaxed_dot_i8x16_i7x16_s, simd::i16x8_relaxed_dot_i8x16_i7x16_s),
 
         (Instruction::I16x8ExtmulLowI8x16S, execute_i16x8_extmul_low_i8x16_s, simd::i16x8_extmul_low_i8x16_s),
         (Instruction::I16x8ExtmulHighI8x16S, execute_i16x8_extmul_high_i8x16_s, simd::i16x8_extmul_high_i8x16_s),

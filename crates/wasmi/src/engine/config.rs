@@ -185,6 +185,7 @@ impl Config {
         features.set(WasmFeatures::MEMORY64, true);
         features.set(WasmFeatures::WIDE_ARITHMETIC, false);
         features.set(WasmFeatures::SIMD, cfg!(feature = "simd"));
+        features.set(WasmFeatures::RELAXED_SIMD, cfg!(feature = "simd"));
         features
     }
 
@@ -367,6 +368,17 @@ impl Config {
     #[cfg(feature = "simd")]
     pub fn wasm_simd(&mut self, enable: bool) -> &mut Self {
         self.features.set(WasmFeatures::SIMD, enable);
+        self
+    }
+
+    /// Enable or disable the [`relaxed-simd`] Wasm proposal for the [`Config`].
+    ///
+    /// Enabled by default.
+    ///
+    /// [`relaxed-simd`]: https://github.com/WebAssembly/relaxed-simd
+    #[cfg(feature = "simd")]
+    pub fn wasm_relaxed_simd(&mut self, enable: bool) -> &mut Self {
+        self.features.set(WasmFeatures::RELAXED_SIMD, enable);
         self
     }
 
