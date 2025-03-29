@@ -22,7 +22,7 @@ macro_rules! op {
 pub struct OutOfBoundsLaneIdx;
 
 /// Helper trait to help the type inference to do its jobs with fewer type annotations.
-trait IntoLaneIdx {
+pub trait IntoLaneIdx {
     /// The associated lane index type.
     type LaneIdx: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> + Into<u8>;
 }
