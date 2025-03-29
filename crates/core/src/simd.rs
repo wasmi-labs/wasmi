@@ -75,7 +75,7 @@ impl<const N: u8> TryFrom<u8> for ImmLaneIdx<N> {
 
     fn try_from(lane: u8) -> Result<Self, Self::Error> {
         if lane > Self::MASK {
-            return Err(OutOfBoundsLaneIdx)
+            return Err(OutOfBoundsLaneIdx);
         }
         Ok(Self(lane))
     }
