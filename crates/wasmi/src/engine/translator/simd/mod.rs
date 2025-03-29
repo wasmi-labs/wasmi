@@ -2,7 +2,7 @@ mod visit;
 
 use super::{utils::Wrap, FuncTranslator, Instr, TypedProvider};
 use crate::{
-    core::{simd, TrapCode, TypedVal, V128},
+    core::{simd::IntoLaneIdx, TrapCode, TypedVal, V128},
     engine::{translator::Provider, FuelCosts},
     ir::{
         index,
@@ -20,32 +20,6 @@ use crate::{
     Error,
 };
 use wasmparser::MemArg;
-
-trait IntoLane {
-    type LaneType: Copy + TryFrom<u8> + Into<u8>;
-}
-
-macro_rules! impl_into_lane_for {
-    ( $( ($ty:ty => $lane_ty:ty) ),* $(,)? ) => {
-        $(
-            impl IntoLane for $ty {
-                type LaneType = $lane_ty;
-            }
-        )*
-    };
-}
-impl_into_lane_for! {
-    (i8 => simd::ImmLaneIdx16),
-    (u8 => simd::ImmLaneIdx16),
-    (i16 => simd::ImmLaneIdx8),
-    (u16 => simd::ImmLaneIdx8),
-    (i32 => simd::ImmLaneIdx4),
-    (u32 => simd::ImmLaneIdx4),
-    (f32 => simd::ImmLaneIdx4),
-    (i64 => simd::ImmLaneIdx2),
-    (u64 => simd::ImmLaneIdx2),
-    (f64 => simd::ImmLaneIdx2),
-}
 
 impl FuncTranslator {
     /// Generically translate any of the Wasm `simd` splat instructions.
@@ -74,17 +48,17 @@ impl FuncTranslator {
     }
 
     /// Generically translate any of the Wasm `simd` extract lane instructions.
-    fn translate_extract_lane<T: IntoLane, R>(
+    fn translate_extract_lane<T: IntoLaneIdx, R>(
         &mut self,
         lane: u8,
-        make_instr: fn(result: Reg, input: Reg, lane: T::LaneType) -> Instruction,
-        const_eval: fn(input: V128, lane: T::LaneType) -> R,
+        make_instr: fn(result: Reg, input: Reg, lane: T::LaneIdx) -> Instruction,
+        const_eval: fn(input: V128, lane: T::LaneIdx) -> R,
     ) -> Result<(), Error>
     where
         R: Into<TypedVal>,
     {
         bail_unreachable!(self);
-        let Ok(lane) = <T::LaneType>::try_from(lane) else {
+        let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane index: {lane}")
         };
         let input = self.alloc.stack.pop();
@@ -193,21 +167,21 @@ impl FuncTranslator {
     fn translate_replace_lane<T>(
         &mut self,
         lane: u8,
-        const_eval: fn(input: V128, lane: T::LaneType, value: T) -> V128,
-        make_instr: fn(result: Reg, input: Reg, lane: T::LaneType) -> Instruction,
+        const_eval: fn(input: V128, lane: T::LaneIdx, value: T) -> V128,
+        make_instr: fn(result: Reg, input: Reg, lane: T::LaneIdx) -> Instruction,
         make_instr_imm: fn(
             this: &mut Self,
             result: Reg,
             input: Reg,
-            lane: T::LaneType,
+            lane: T::LaneIdx,
             value: T,
         ) -> Result<(Instruction, Option<Instruction>), Error>,
     ) -> Result<(), Error>
     where
-        T: IntoLane + From<TypedVal>,
+        T: IntoLaneIdx + From<TypedVal>,
     {
         bail_unreachable!(self);
-        let Ok(lane) = <T::LaneType>::try_from(lane) else {
+        let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane index: {lane}");
         };
         let (input, value) = self.alloc.stack.pop2();
@@ -233,7 +207,7 @@ impl FuncTranslator {
     }
 
     #[allow(clippy::type_complexity)]
-    fn translate_v128_store_lane<T: IntoLane>(
+    fn translate_v128_store_lane<T: IntoLaneIdx>(
         &mut self,
         memarg: MemArg,
         lane: u8,
@@ -242,19 +216,19 @@ impl FuncTranslator {
             ptr: Reg,
             value: Reg,
             offset: Offset8,
-            lane: T::LaneType,
+            lane: T::LaneIdx,
         ) -> Instruction,
         make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
         translate_imm: fn(
             &mut Self,
             memarg: MemArg,
             ptr: TypedProvider,
-            lane: T::LaneType,
+            lane: T::LaneIdx,
             value: V128,
         ) -> Result<(), Error>,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
-        let Ok(lane) = <T::LaneType>::try_from(lane) else {
+        let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane index: {lane}");
         };
         let (ptr, v128) = self.alloc.stack.pop2();
@@ -330,12 +304,12 @@ impl FuncTranslator {
         )
     }
 
-    fn translate_v128_store_lane_at<T: IntoLane>(
+    fn translate_v128_store_lane_at<T: IntoLaneIdx>(
         &mut self,
         memory: index::Memory,
         address: Address32,
         value: Reg,
-        lane: T::LaneType,
+        lane: T::LaneIdx,
         make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
@@ -365,7 +339,7 @@ impl FuncTranslator {
         Ok(Some(instr))
     }
 
-    fn translate_v128_load_lane<T: IntoLane>(
+    fn translate_v128_load_lane<T: IntoLaneIdx>(
         &mut self,
         memarg: MemArg,
         lane: u8,
@@ -374,7 +348,7 @@ impl FuncTranslator {
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
-        let Ok(lane) = T::LaneType::try_from(lane) else {
+        let Ok(lane) = <T::LaneIdx>::try_from(lane) else {
             panic!("encountered out of bounds lane: {lane}");
         };
         let (ptr, x) = self.alloc.stack.pop2();

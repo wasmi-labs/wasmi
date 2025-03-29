@@ -1,7 +1,15 @@
 use super::Executor;
 use crate::{
     core::{
-        simd::{self, ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx32, ImmLaneIdx4, ImmLaneIdx8},
+        simd::{
+            self,
+            ImmLaneIdx16,
+            ImmLaneIdx2,
+            ImmLaneIdx32,
+            ImmLaneIdx4,
+            ImmLaneIdx8,
+            IntoLaneIdx,
+        },
         TrapCode,
         UntypedVal,
         WriteAs,
@@ -160,12 +168,12 @@ impl Executor<'_> {
 macro_rules! impl_replace_lane_ops {
     (
         $(
-            ($ty:ty, $lane_ty:ty, Instruction::$instr_name:ident, $exec_name:ident, $execute:expr)
+            ($ty:ty, Instruction::$instr_name:ident, $exec_name:ident, $execute:expr)
         ),* $(,)?
     ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($instr_name), "`].")]
-            pub fn $exec_name(&mut self, result: Reg, input: Reg, lane: $lane_ty) {
+            pub fn $exec_name(&mut self, result: Reg, input: Reg, lane: <$ty as IntoLaneIdx>::LaneIdx) {
                 let value = self.fetch_register();
                 let input = self.get_register_as::<V128>(input);
                 let value = self.get_register_as::<$ty>(value);
@@ -178,12 +186,12 @@ macro_rules! impl_replace_lane_ops {
 
 impl Executor<'_> {
     impl_replace_lane_ops! {
-        (i8, ImmLaneIdx16, Instruction::I8x16ReplaceLane, execute_i8x16_replace_lane, simd::i8x16_replace_lane),
-        (i16, ImmLaneIdx8, Instruction::I16x8ReplaceLane, execute_i16x8_replace_lane, simd::i16x8_replace_lane),
-        (i32, ImmLaneIdx4, Instruction::I32x4ReplaceLane, execute_i32x4_replace_lane, simd::i32x4_replace_lane),
-        (i64, ImmLaneIdx2, Instruction::I64x2ReplaceLane, execute_i64x2_replace_lane, simd::i64x2_replace_lane),
-        (f32, ImmLaneIdx4, Instruction::F32x4ReplaceLane, execute_f32x4_replace_lane, simd::f32x4_replace_lane),
-        (f64, ImmLaneIdx2, Instruction::F64x2ReplaceLane, execute_f64x2_replace_lane, simd::f64x2_replace_lane),
+        (i8, Instruction::I8x16ReplaceLane, execute_i8x16_replace_lane, simd::i8x16_replace_lane),
+        (i16, Instruction::I16x8ReplaceLane, execute_i16x8_replace_lane, simd::i16x8_replace_lane),
+        (i32, Instruction::I32x4ReplaceLane, execute_i32x4_replace_lane, simd::i32x4_replace_lane),
+        (i64, Instruction::I64x2ReplaceLane, execute_i64x2_replace_lane, simd::i64x2_replace_lane),
+        (f32, Instruction::F32x4ReplaceLane, execute_f32x4_replace_lane, simd::f32x4_replace_lane),
+        (f64, Instruction::F64x2ReplaceLane, execute_f64x2_replace_lane, simd::f64x2_replace_lane),
     }
 
     /// Executes an [`Instruction::I8x16ReplaceLaneImm`] instruction.
@@ -467,10 +475,12 @@ impl Executor<'_> {
 }
 
 macro_rules! impl_extract_lane_executors {
-    ( $( (Instruction::$var_name:ident, $fn_name:ident, $lane_ty:ty, $op:expr) ),* $(,)? ) => {
+    (
+        $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)?
+    ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, input: Reg, lane: $lane_ty) {
+            pub fn $fn_name(&mut self, result: Reg, input: Reg, lane: <$ty as IntoLaneIdx>::LaneIdx) {
                 self.execute_extract_lane(result, input, lane, $op)
             }
         )*
@@ -478,14 +488,14 @@ macro_rules! impl_extract_lane_executors {
 }
 impl Executor<'_> {
     impl_extract_lane_executors! {
-        (Instruction::I8x16ExtractLaneS, i8x16_extract_lane_s, ImmLaneIdx16, simd::i8x16_extract_lane_s),
-        (Instruction::I8x16ExtractLaneU, i8x16_extract_lane_u, ImmLaneIdx16, simd::i8x16_extract_lane_u),
-        (Instruction::I16x8ExtractLaneS, i16x8_extract_lane_s, ImmLaneIdx8, simd::i16x8_extract_lane_s),
-        (Instruction::I16x8ExtractLaneU, i16x8_extract_lane_u, ImmLaneIdx8, simd::i16x8_extract_lane_u),
-        (Instruction::I32x4ExtractLane, i32x4_extract_lane, ImmLaneIdx4, simd::i32x4_extract_lane),
-        (Instruction::F32x4ExtractLane, f32x4_extract_lane, ImmLaneIdx4, simd::f32x4_extract_lane),
-        (Instruction::I64x2ExtractLane, i64x2_extract_lane, ImmLaneIdx2, simd::i64x2_extract_lane),
-        (Instruction::F64x2ExtractLane, f64x2_extract_lane, ImmLaneIdx2, simd::f64x2_extract_lane),
+        (i8, Instruction::I8x16ExtractLaneS, i8x16_extract_lane_s, simd::i8x16_extract_lane_s),
+        (u8, Instruction::I8x16ExtractLaneU, i8x16_extract_lane_u, simd::i8x16_extract_lane_u),
+        (i16, Instruction::I16x8ExtractLaneS, i16x8_extract_lane_s, simd::i16x8_extract_lane_s),
+        (u16, Instruction::I16x8ExtractLaneU, i16x8_extract_lane_u, simd::i16x8_extract_lane_u),
+        (i32, Instruction::I32x4ExtractLane, i32x4_extract_lane, simd::i32x4_extract_lane),
+        (u32, Instruction::F32x4ExtractLane, f32x4_extract_lane, simd::f32x4_extract_lane),
+        (i64, Instruction::I64x2ExtractLane, i64x2_extract_lane, simd::i64x2_extract_lane),
+        (u64, Instruction::F64x2ExtractLane, f64x2_extract_lane, simd::f64x2_extract_lane),
     }
 }
 
@@ -566,7 +576,7 @@ type V128LoadLaneAt<LaneType> =
 
 macro_rules! impl_execute_v128_load_lane {
     (
-        $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
+        $( ($ty:ty, Instruction::$op:ident, $exec:ident, $eval:expr) ),* $(,)?
     ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
@@ -576,7 +586,7 @@ macro_rules! impl_execute_v128_load_lane {
                 result: Reg,
                 offset_lo: Offset64Lo,
             ) -> Result<(), Error> {
-                self.execute_v128_load_lane_impl::<$lane_ty>(store, result, offset_lo, $eval)
+                self.execute_v128_load_lane_impl::<<$ty as IntoLaneIdx>::LaneIdx>(store, result, offset_lo, $eval)
             }
         )*
     };
@@ -584,7 +594,7 @@ macro_rules! impl_execute_v128_load_lane {
 
 macro_rules! impl_execute_v128_load_lane_at {
     (
-        $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
+        $( ($ty:ty, Instruction::$op:ident, $exec:ident, $eval:expr) ),* $(,)?
     ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
@@ -594,7 +604,7 @@ macro_rules! impl_execute_v128_load_lane_at {
                 result: Reg,
                 address: Address32,
             ) -> Result<(), Error> {
-                self.execute_v128_load_lane_at_impl::<$lane_ty>(store, result, address, $eval)
+                self.execute_v128_load_lane_at_impl::<<$ty as IntoLaneIdx>::LaneIdx>(store, result, address, $eval)
             }
         )*
     };
@@ -624,10 +634,10 @@ impl Executor<'_> {
     }
 
     impl_execute_v128_load_lane! {
-        (Instruction::V128Load8Lane, ImmLaneIdx16, execute_v128_load8_lane, simd::v128_load8_lane),
-        (Instruction::V128Load16Lane, ImmLaneIdx8, execute_v128_load16_lane, simd::v128_load16_lane),
-        (Instruction::V128Load32Lane, ImmLaneIdx4, execute_v128_load32_lane, simd::v128_load32_lane),
-        (Instruction::V128Load64Lane, ImmLaneIdx2, execute_v128_load64_lane, simd::v128_load64_lane),
+        (u8, Instruction::V128Load8Lane, execute_v128_load8_lane, simd::v128_load8_lane),
+        (u16, Instruction::V128Load16Lane, execute_v128_load16_lane, simd::v128_load16_lane),
+        (u32, Instruction::V128Load32Lane, execute_v128_load32_lane, simd::v128_load32_lane),
+        (u64, Instruction::V128Load64Lane, execute_v128_load64_lane, simd::v128_load64_lane),
     }
 
     fn execute_v128_load_lane_at_impl<LaneType>(
@@ -650,16 +660,16 @@ impl Executor<'_> {
     }
 
     impl_execute_v128_load_lane_at! {
-        (Instruction::V128Load8LaneAt, ImmLaneIdx16, execute_v128_load8_lane_at, simd::v128_load8_lane_at),
-        (Instruction::V128Load16LaneAt, ImmLaneIdx8, execute_v128_load16_lane_at, simd::v128_load16_lane_at),
-        (Instruction::V128Load32LaneAt, ImmLaneIdx4, execute_v128_load32_lane_at, simd::v128_load32_lane_at),
-        (Instruction::V128Load64LaneAt, ImmLaneIdx2, execute_v128_load64_lane_at, simd::v128_load64_lane_at),
+        (u8, Instruction::V128Load8LaneAt, execute_v128_load8_lane_at, simd::v128_load8_lane_at),
+        (u16, Instruction::V128Load16LaneAt, execute_v128_load16_lane_at, simd::v128_load16_lane_at),
+        (u32, Instruction::V128Load32LaneAt, execute_v128_load32_lane_at, simd::v128_load32_lane_at),
+        (u64, Instruction::V128Load64LaneAt, execute_v128_load64_lane_at, simd::v128_load64_lane_at),
     }
 }
 
 macro_rules! impl_execute_v128_store_lane {
     (
-        $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
+        $( ($ty:ty, Instruction::$op:ident, $exec:ident, $eval:expr) ),* $(,)?
     ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
@@ -669,7 +679,7 @@ macro_rules! impl_execute_v128_store_lane {
                 ptr: Reg,
                 offset_lo: Offset64Lo,
             ) -> Result<(), Error> {
-                self.execute_v128_store_lane::<$lane_ty>(store, ptr, offset_lo, $eval)
+                self.execute_v128_store_lane::<<$ty as IntoLaneIdx>::LaneIdx>(store, ptr, offset_lo, $eval)
             }
         )*
     };
@@ -677,7 +687,7 @@ macro_rules! impl_execute_v128_store_lane {
 
 macro_rules! impl_execute_v128_store_lane_offset16 {
     (
-        $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
+        $( ($ty:ty, Instruction::$op:ident, $exec:ident, $eval:expr) ),* $(,)?
     ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
@@ -687,9 +697,9 @@ macro_rules! impl_execute_v128_store_lane_offset16 {
                 ptr: Reg,
                 value: Reg,
                 offset: Offset8,
-                lane: $lane_ty,
+                lane: <$ty as IntoLaneIdx>::LaneIdx,
             ) -> Result<(), Error> {
-                self.execute_v128_store_lane_offset8::<$lane_ty>(store, ptr, value, offset, lane, $eval)
+                self.execute_v128_store_lane_offset8::<<$ty as IntoLaneIdx>::LaneIdx>(store, ptr, value, offset, lane, $eval)
             }
         )*
     };
@@ -697,7 +707,7 @@ macro_rules! impl_execute_v128_store_lane_offset16 {
 
 macro_rules! impl_execute_v128_store_lane_at {
     (
-        $( (Instruction::$op:ident, $lane_ty:ty, $exec:ident, $eval:expr) ),* $(,)?
+        $( ($ty:ty, Instruction::$op:ident, $exec:ident, $eval:expr) ),* $(,)?
     ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
@@ -707,7 +717,7 @@ macro_rules! impl_execute_v128_store_lane_at {
                 value: Reg,
                 address: Address32,
             ) -> Result<(), Error> {
-                self.execute_v128_store_lane_at::<$lane_ty>(store, value, address, $eval)
+                self.execute_v128_store_lane_at::<<$ty as IntoLaneIdx>::LaneIdx>(store, value, address, $eval)
             }
         )*
     };
@@ -743,10 +753,10 @@ impl Executor<'_> {
     }
 
     impl_execute_v128_store_lane! {
-        (Instruction::V128Store8Lane, ImmLaneIdx16, execute_v128_store8_lane, simd::v128_store8_lane),
-        (Instruction::V128Store16Lane, ImmLaneIdx8, execute_v128_store16_lane, simd::v128_store16_lane),
-        (Instruction::V128Store32Lane, ImmLaneIdx4, execute_v128_store32_lane, simd::v128_store32_lane),
-        (Instruction::V128Store64Lane, ImmLaneIdx2, execute_v128_store64_lane, simd::v128_store64_lane),
+        (u8, Instruction::V128Store8Lane, execute_v128_store8_lane, simd::v128_store8_lane),
+        (u16, Instruction::V128Store16Lane, execute_v128_store16_lane, simd::v128_store16_lane),
+        (u32, Instruction::V128Store32Lane, execute_v128_store32_lane, simd::v128_store32_lane),
+        (u64, Instruction::V128Store64Lane, execute_v128_store64_lane, simd::v128_store64_lane),
     }
 
     fn execute_v128_store_lane_offset8<LaneType>(
@@ -767,10 +777,10 @@ impl Executor<'_> {
     }
 
     impl_execute_v128_store_lane_offset16! {
-        (Instruction::V128Store8LaneOffset8, ImmLaneIdx16, execute_v128_store8_lane_offset8, simd::v128_store8_lane),
-        (Instruction::V128Store16LaneOffset8, ImmLaneIdx8, execute_v128_store16_lane_offset8, simd::v128_store16_lane),
-        (Instruction::V128Store32LaneOffset8, ImmLaneIdx4, execute_v128_store32_lane_offset8, simd::v128_store32_lane),
-        (Instruction::V128Store64LaneOffset8, ImmLaneIdx2, execute_v128_store64_lane_offset8, simd::v128_store64_lane),
+        (u8, Instruction::V128Store8LaneOffset8, execute_v128_store8_lane_offset8, simd::v128_store8_lane),
+        (u16, Instruction::V128Store16LaneOffset8, execute_v128_store16_lane_offset8, simd::v128_store16_lane),
+        (u32, Instruction::V128Store32LaneOffset8, execute_v128_store32_lane_offset8, simd::v128_store32_lane),
+        (u64, Instruction::V128Store64LaneOffset8, execute_v128_store64_lane_offset8, simd::v128_store64_lane),
     }
 
     fn execute_v128_store_lane_at<LaneType>(
@@ -791,9 +801,9 @@ impl Executor<'_> {
     }
 
     impl_execute_v128_store_lane_at! {
-        (Instruction::V128Store8LaneAt, ImmLaneIdx16, execute_v128_store8_lane_at, simd::v128_store8_lane_at),
-        (Instruction::V128Store16LaneAt, ImmLaneIdx8, execute_v128_store16_lane_at, simd::v128_store16_lane_at),
-        (Instruction::V128Store32LaneAt, ImmLaneIdx4, execute_v128_store32_lane_at, simd::v128_store32_lane_at),
-        (Instruction::V128Store64LaneAt, ImmLaneIdx2, execute_v128_store64_lane_at, simd::v128_store64_lane_at),
+        (u8, Instruction::V128Store8LaneAt, execute_v128_store8_lane_at, simd::v128_store8_lane_at),
+        (u16, Instruction::V128Store16LaneAt, execute_v128_store16_lane_at, simd::v128_store16_lane_at),
+        (u32, Instruction::V128Store32LaneAt, execute_v128_store32_lane_at, simd::v128_store32_lane_at),
+        (u64, Instruction::V128Store64LaneAt, execute_v128_store64_lane_at, simd::v128_store64_lane_at),
     }
 }

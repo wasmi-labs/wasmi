@@ -21,24 +21,10 @@ macro_rules! op {
 /// An error that may occur when constructing an out of bounds lane index.
 pub struct OutOfBoundsLaneIdx;
 
-/// Helper trait to help the type inference to do its jobs with fewer type annotations.
-trait IntoLaneIdx {
+/// Helper trait used to infer the [`ImmLaneIdx`] from a given primitive.
+pub trait IntoLaneIdx {
     /// The associated lane index type.
-    type LaneIdx;
-}
-
-/// Trait implemented by all lane index types.
-trait LaneIndex: Sized + TryFrom<u8, Error = OutOfBoundsLaneIdx> {
-    /// Bit mask of available bits in `u8` for the lane index.
-    const MASK: u8;
-
-    /// Returns the lane id as `u8`.
-    ///
-    /// This will never return a `u8` value that is out of bounds for `self`.
-    fn get(self) -> u8;
-
-    /// Returns a 0th index lane id.
-    fn zero() -> Self;
+    type LaneIdx: Sized + Copy + TryFrom<u8, Error = OutOfBoundsLaneIdx> + Into<u8>;
 }
 
 macro_rules! impl_into_lane_idx {
@@ -53,81 +39,60 @@ macro_rules! impl_into_lane_idx {
     };
 }
 impl_into_lane_idx! {
-    impl IntoLaneIdx for i8 = ImmLaneIdx16;
-    impl IntoLaneIdx for u8 = ImmLaneIdx16;
-    impl IntoLaneIdx for i16 = ImmLaneIdx8;
-    impl IntoLaneIdx for u16 = ImmLaneIdx8;
-    impl IntoLaneIdx for i32 = ImmLaneIdx4;
-    impl IntoLaneIdx for u32 = ImmLaneIdx4;
-    impl IntoLaneIdx for f32 = ImmLaneIdx4;
-    impl IntoLaneIdx for i64 = ImmLaneIdx2;
-    impl IntoLaneIdx for u64 = ImmLaneIdx2;
-    impl IntoLaneIdx for f64 = ImmLaneIdx2;
+    impl IntoLaneIdx for i8 = ImmLaneIdx<16>;
+    impl IntoLaneIdx for u8 = ImmLaneIdx<16>;
+    impl IntoLaneIdx for i16 = ImmLaneIdx<8>;
+    impl IntoLaneIdx for u16 = ImmLaneIdx<8>;
+    impl IntoLaneIdx for i32 = ImmLaneIdx<4>;
+    impl IntoLaneIdx for u32 = ImmLaneIdx<4>;
+    impl IntoLaneIdx for f32 = ImmLaneIdx<4>;
+    impl IntoLaneIdx for i64 = ImmLaneIdx<2>;
+    impl IntoLaneIdx for u64 = ImmLaneIdx<2>;
+    impl IntoLaneIdx for f64 = ImmLaneIdx<2>;
 }
 
-macro_rules! impl_imm_lane_id {
-    (
-        $(
-            $( #[$attr:meta] )*
-            struct $name:ident(x $n:literal);
-        )*
-    ) => {
-        $(
-            $( #[$attr] )*
-            #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-            #[repr(transparent)]
-            pub struct $name(u8);
+/// A byte with values in the range 0–N identifying a lane.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct ImmLaneIdx<const N: u8>(u8);
 
-            impl IntoLaneIdx for [(); $n] {
-                type LaneIdx = $name;
-            }
+impl<const N: u8> ImmLaneIdx<N> {
+    /// Helper bit mask for construction and getter.
+    const MASK: u8 = (1_u8 << u8::ilog2(N)) - 1;
 
-            impl LaneIndex for $name {
-                /// Helper bit mask for construction and getter.
-                const MASK: u8 = (1_u8 << u8::ilog2($n)) - 1;
-
-                fn get(self) -> u8 {
-                    self.0 & Self::MASK
-                }
-
-                fn zero() -> Self {
-                    Self(0)
-                }
-            }
-
-            impl From<$name> for u8 {
-                fn from(lane: $name) -> u8 {
-                    lane.get()
-                }
-            }
-
-            impl TryFrom<u8> for $name {
-                type Error = OutOfBoundsLaneIdx;
-
-                fn try_from(lane: u8) -> Result<Self, Self::Error> {
-                    if lane > Self::MASK {
-                        return Err(OutOfBoundsLaneIdx)
-                    }
-                    Ok(Self(lane))
-                }
-            }
-        )*
-    };
-}
-impl_imm_lane_id! {
-    /// A byte with values in the range 0–1 identifying a lane.
-    struct ImmLaneIdx2(x 2);
-    /// A byte with values in the range 0–3 identifying a lane.
-    struct ImmLaneIdx4(x 4);
-    /// A byte with values in the range 0–7 identifying a lane.
-    struct ImmLaneIdx8(x 8);
-    /// A byte with values in the range 0–15 identifying a lane.
-    struct ImmLaneIdx16(x 16);
-    /// A byte with values in the range 0–31 identifying a lane.
-    struct ImmLaneIdx32(x 32);
+    fn zero() -> Self {
+        Self(0)
+    }
 }
 
-/// Helper trait to help the type inference to do its jobs with fewer type annotations.
+impl<const N: u8> From<ImmLaneIdx<N>> for u8 {
+    fn from(lane: ImmLaneIdx<N>) -> u8 {
+        lane.0 & <ImmLaneIdx<N>>::MASK
+    }
+}
+
+impl<const N: u8> TryFrom<u8> for ImmLaneIdx<N> {
+    type Error = OutOfBoundsLaneIdx;
+
+    fn try_from(lane: u8) -> Result<Self, Self::Error> {
+        if lane > Self::MASK {
+            return Err(OutOfBoundsLaneIdx);
+        }
+        Ok(Self(lane))
+    }
+}
+
+/// A byte with values in the range 0–1 identifying a lane.
+pub type ImmLaneIdx2 = ImmLaneIdx<2>;
+/// A byte with values in the range 0–3 identifying a lane.
+pub type ImmLaneIdx4 = ImmLaneIdx<4>;
+/// A byte with values in the range 0–7 identifying a lane.
+pub type ImmLaneIdx8 = ImmLaneIdx<8>;
+/// A byte with values in the range 0–15 identifying a lane.
+pub type ImmLaneIdx16 = ImmLaneIdx<16>;
+/// A byte with values in the range 0–31 identifying a lane.
+pub type ImmLaneIdx32 = ImmLaneIdx<32>;
+
+/// Internal helper trait to help the type inference to do its jobs with fewer type annotations.
 ///
 /// # Note
 ///
@@ -140,7 +105,7 @@ trait IntoLanes {
     type LaneIdx;
 }
 
-/// Implemented by `Lanes` types.
+/// Internal helper trait implemented by `Lanes` types.
 ///
 /// Possible `Lanes` types include:
 ///
@@ -211,7 +176,7 @@ macro_rules! impl_lanes_for {
 
             impl IntoLanes for $ty {
                 type Lanes = $name;
-                type LaneIdx = <[(); $n] as IntoLaneIdx>::LaneIdx;
+                type LaneIdx = ImmLaneIdx<$n>;
             }
 
             impl From<[$ty; $n]> for $name {
@@ -222,7 +187,7 @@ macro_rules! impl_lanes_for {
 
             impl Lanes for $name {
                 type Item = $ty;
-                type LaneIdx = <[(); $n] as IntoLaneIdx>::LaneIdx;
+                type LaneIdx = ImmLaneIdx<$n>;
 
                 const LANES: usize = $n;
                 const ALL_ONES: Self::Item = <$ty>::from_le_bytes([0xFF_u8; 16 / $n]);
@@ -253,12 +218,12 @@ macro_rules! impl_lanes_for {
                 }
 
                 fn extract_lane(self, lane: Self::LaneIdx) -> Self::Item {
-                    self.0[lane.get() as usize]
+                    self.0[u8::from(lane) as usize]
                 }
 
                 fn replace_lane(self, lane: Self::LaneIdx, item: Self::Item) -> Self {
                     let mut this = self;
-                    this.0[lane.get() as usize] = item;
+                    this.0[u8::from(lane) as usize] = item;
                     this
                 }
 
@@ -776,7 +741,7 @@ impl_replace_for! {
 pub fn i8x16_shuffle(a: V128, b: V128, s: [ImmLaneIdx32; 16]) -> V128 {
     let a = I8x16::from_v128(a).0;
     let b = I8x16::from_v128(b).0;
-    I8x16(array::from_fn(|i| match usize::from(s[i].get()) {
+    I8x16(array::from_fn(|i| match usize::from(u8::from(s[i])) {
         i @ 0..16 => a[i],
         i => b[i - 16],
     }))
