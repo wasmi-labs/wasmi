@@ -197,6 +197,7 @@ macro_rules! expand_tests {
             fn wasm_utf8_invalid_encoding("utf8-invalid-encoding");
             fn wasm_wide_arithmetic("proposals/wide-arithmetic/wide-arithmetic");
 
+            // Wasm `simd` tests
             fn wasm_simd_address("simd_address");
             fn wasm_simd_align("simd_align");
             fn wasm_simd_bit_shift("simd_bit_shift");
@@ -254,6 +255,15 @@ macro_rules! expand_tests {
             fn wasm_simd_store32_lane("simd_store32_lane");
             fn wasm_simd_store64_lane("simd_store64_lane");
             fn wasm_simd_store8_lane("simd_store8_lane");
+
+            // Wasm `relaxed-simd` tests
+            #[ignore] fn wasm_relaxed_simd_i16x8_relaxed_q15mulr_s("proposals/relaxed-simd/i16x8_relaxed_q15mulr_s");
+            #[ignore] fn wasm_relaxed_simd_i32x4_relaxed_trunc("proposals/relaxed-simd/i32x4_relaxed_trunc");
+            #[ignore] fn wasm_relaxed_simd_i8x16_relaxed_swizzle("proposals/relaxed-simd/i8x16_relaxed_swizzle");
+            #[ignore] fn wasm_relaxed_simd_relaxed_dot_product("proposals/relaxed-simd/relaxed_dot_product");
+            #[ignore] fn wasm_relaxed_simd_relaxed_laneselect("proposals/relaxed-simd/relaxed_laneselect");
+            #[ignore] fn wasm_relaxed_simd_relaxed_madd_nmadd("proposals/relaxed-simd/relaxed_madd_nmadd");
+            #[ignore] fn wasm_relaxed_simd_relaxed_min_max("proposals/relaxed-simd/relaxed_min_max");
         }
     };
 }
