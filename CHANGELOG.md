@@ -8,6 +8,24 @@ Additionally we have an `Internal` section for changes that are of interest to d
 
 Dates in this file are formattes as `YYYY-MM-DD`.
 
+## [`0.44.0`] - 2025-03-29
+
+### Added
+
+- Add support for the Wasm `relaxed-simd` proposal. [#1443]
+  - All `relaxed-simd` operators behave deterministically on all platforms supported by Wasmi.
+  - Users have to enable the `simd` crate feature in order to use `relaxed-simd` capabilities.
+  - Note that enabling the `simd` crate feature may regress Wasm execution and memory consumption
+    performance.
+
+### Changed
+
+- Wasmi's CLI now prints multiple results on a new line each. [#1438]
+  - With this change Wasmi's CLI and Wasmtime's CLI have the same behavior.
+
+[#1438]: https://github.com/wasmi-labs/wasmi/pull/1438
+[#1443]: https://github.com/wasmi-labs/wasmi/pull/1443
+
 ## [`0.43.1`] - 2025-03-29
 
 ### Fixed
