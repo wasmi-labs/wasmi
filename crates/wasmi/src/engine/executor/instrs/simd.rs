@@ -223,37 +223,37 @@ impl Executor<'_> {
         lane: ImmLaneIdx16,
         value: i8,
     ) {
-        self.execute_replace_lane_impl(result, input, lane, value, simd::i8x16_replace_lane)
+        self.execute_replace_lane_impl(result, input, lane, value, 1, simd::i8x16_replace_lane)
     }
 
     /// Executes an [`Instruction::I16x8ReplaceLaneImm`] instruction.
     pub fn execute_i16x8_replace_lane_imm(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx8) {
         let value = self.fetch_const32_as::<i32>() as i16;
-        self.execute_replace_lane_impl(result, input, lane, value, simd::i16x8_replace_lane)
+        self.execute_replace_lane_impl(result, input, lane, value, 2, simd::i16x8_replace_lane)
     }
 
     /// Executes an [`Instruction::I32x4ReplaceLaneImm`] instruction.
     pub fn execute_i32x4_replace_lane_imm(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx4) {
         let value = self.fetch_const32_as::<i32>();
-        self.execute_replace_lane_impl(result, input, lane, value, simd::i32x4_replace_lane)
+        self.execute_replace_lane_impl(result, input, lane, value, 2, simd::i32x4_replace_lane)
     }
 
     /// Executes an [`Instruction::I64x2ReplaceLaneImm32`] instruction.
     pub fn execute_i64x2_replace_lane_imm32(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx2) {
         let value = self.fetch_i64const32();
-        self.execute_replace_lane_impl(result, input, lane, value, simd::i64x2_replace_lane)
+        self.execute_replace_lane_impl(result, input, lane, value, 2, simd::i64x2_replace_lane)
     }
 
     /// Executes an [`Instruction::F32x4ReplaceLaneImm`] instruction.
     pub fn execute_f32x4_replace_lane_imm(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx4) {
         let value = self.fetch_const32_as::<f32>();
-        self.execute_replace_lane_impl(result, input, lane, value, simd::f32x4_replace_lane)
+        self.execute_replace_lane_impl(result, input, lane, value, 2, simd::f32x4_replace_lane)
     }
 
     /// Executes an [`Instruction::F64x2ReplaceLaneImm32`] instruction.
     pub fn execute_f64x2_replace_lane_imm32(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx2) {
         let value = self.fetch_f64const32();
-        self.execute_replace_lane_impl(result, input, lane, value, simd::f64x2_replace_lane)
+        self.execute_replace_lane_impl(result, input, lane, value, 2, simd::f64x2_replace_lane)
     }
 
     /// Generically execute a SIMD replace lane instruction.
@@ -263,11 +263,12 @@ impl Executor<'_> {
         input: Reg,
         lane: LaneType,
         value: T,
+        delta: usize,
         eval: fn(V128, LaneType, T) -> V128,
     ) {
         let input = self.get_register_as::<V128>(input);
         self.set_register_as::<V128>(result, eval(input, lane, value));
-        self.next_instr_at(2);
+        self.next_instr_at(delta);
     }
 
     impl_unary_executors! {
