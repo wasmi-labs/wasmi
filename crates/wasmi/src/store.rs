@@ -3,9 +3,9 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
     core::TrapCode,
-    engine::{DedupFuncType, FuelCosts, FuncInOut},
+    engine::{DedupFuncType, FuelCosts},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
-    func::{HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
+    func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
     memory::{DataSegment, MemoryError},
     module::InstantiationError,
     table::TableError,

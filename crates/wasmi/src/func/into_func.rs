@@ -1,5 +1,5 @@
 use super::{
-    super::engine::{FuncFinished, FuncInOut, FuncResults},
+    func_inout::{FuncFinished, FuncInOut, FuncResults},
     TrampolineEntity,
 };
 use crate::{
