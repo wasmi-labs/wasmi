@@ -130,12 +130,10 @@ impl<T> Debug for CallHookWrapper<T> {
 /// works for [`Store`].
 #[allow(clippy::type_complexity)]
 #[derive(Clone)]
-struct RestorePrunedWrapper(
-    Arc<dyn Fn(&mut PrunedStore) -> Result<&mut dyn TypedStore, Error> + Send + Sync>,
-);
+struct RestorePrunedWrapper(Arc<dyn Send + Sync + Fn(&mut PrunedStore) -> &mut dyn TypedStore>);
 impl RestorePrunedWrapper {
     /// Restores the [`PrunedStore`] and returns a reference to it via [`TypedStore`].
-    fn restore<'a>(&self, pruned: &'a mut PrunedStore) -> Result<&'a mut dyn TypedStore, Error> {
+    fn restore<'a>(&self, pruned: &'a mut PrunedStore) -> &'a mut dyn TypedStore {
         (self.0)(pruned)
     }
 }
@@ -168,6 +166,8 @@ pub trait TypedStore {
         params_results: FuncInOut,
         call_hooks: CallHooks,
     ) -> Result<(), Error>;
+
+    fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef);
 }
 
 impl<T> TypedStore for Store<T> {
@@ -186,6 +186,10 @@ impl<T> TypedStore for Store<T> {
             <Store<T>>::invoke_call_hook(self, CallHook::ReturningFromHost)?;
         }
         Ok(())
+    }
+
+    fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef) {
+        <Store<T>>::store_inner_and_resource_limiter_ref(self)
     }
 }
 
@@ -243,12 +247,12 @@ impl<T> Store<T> {
 
 impl PrunedStore {
     // Note: we do _not_ want to take `&self` here as this type implements `Deref`.
-    fn inner(&self) -> &StoreInner {
+    pub fn inner(&self) -> &StoreInner {
         &self.pruned.inner
     }
 
     // Note: we do _not_ want to take `&mut self` here as this type implements `DerefMut`.
-    fn inner_mut(&mut self) -> &mut StoreInner {
+    pub fn inner_mut(&mut self) -> &mut StoreInner {
         &mut self.pruned.inner
     }
 
@@ -267,8 +271,18 @@ impl PrunedStore {
         self.pruned
             .restore_pruned
             .clone()
-            .restore(self)?
+            .restore(self)
             .call_host_func(func, instance, params_results, call_hooks)
+    }
+
+    pub fn store_inner_and_resource_limiter_ref(
+        &mut self,
+    ) -> (&mut StoreInner, ResourceLimiterRef) {
+        self.pruned
+            .restore_pruned
+            .clone()
+            .restore(self)
+            .store_inner_and_resource_limiter_ref()
     }
 
     pub fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
@@ -1101,17 +1115,15 @@ impl<T: 'static> Store<T> {
                 call_hook: None,
             },
             id: TypeId::of::<T>(),
-            restore_pruned: RestorePrunedWrapper(Arc::new(
-                |pruned| -> Result<&mut dyn TypedStore, Error> {
-                    let Ok(store) = PrunedStore::restore::<T>(pruned) else {
-                        panic!(
-                            "failed to convert PrunedStore back into Store<{}>",
-                            core::any::type_name::<T>()
-                        );
-                    };
-                    Ok(store)
-                },
-            )),
+            restore_pruned: RestorePrunedWrapper(Arc::new(|pruned| -> &mut dyn TypedStore {
+                let Ok(store) = PrunedStore::restore::<T>(pruned) else {
+                    panic!(
+                        "failed to convert `PrunedStore` back into `Store<{}>`",
+                        core::any::type_name::<T>()
+                    );
+                };
+                store
+            })),
         }
     }
 }
