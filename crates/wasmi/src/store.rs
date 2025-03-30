@@ -116,7 +116,41 @@ impl<T> Debug for ResourceLimiterQuery<T> {
 struct CallHookWrapper<T>(Box<dyn FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync>);
 impl<T> Debug for CallHookWrapper<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "CallHook(...)")
+        write!(f, "CallHook<{}>", core::any::type_name::<T>())
+    }
+}
+
+/// A wrapper used to call host functions via a [`PrunedStore`].
+///
+/// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
+/// works for [`Store`].
+#[warn(clippy::type_complexity)]
+struct CallHostFuncWrapper(
+    Box<
+        dyn Fn(
+                /*pruned*/ PrunedStore,
+                /*func*/ &HostFuncEntity,
+                /*instance*/ Option<&Instance>,
+                /*params_results*/ FuncInOut,
+            ) -> Result<(), Error>
+            + Send
+            + Sync,
+    >,
+);
+impl CallHostFuncWrapper {
+    fn call_host_func(
+        &self,
+        pruned: PrunedStore,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+    ) -> Result<(), Error> {
+        (self.0)(pruned, func, instance, params_results)
+    }
+}
+impl Debug for CallHostFuncWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "CallHostFuncWrapper")
     }
 }
 
@@ -137,6 +171,8 @@ pub struct Store<T> {
     /// This is used in [`PrunedStore::restore`] to check if the
     /// restored `T` matches the original `T` of the `store`.
     id: TypeId,
+    /// Used to call host functions via [`PrunedStore`].
+    call_host_func: CallHostFuncWrapper,
 }
 
 /// A [`Store`] with a pruned `T`.
@@ -1036,6 +1072,17 @@ impl<T: 'static> Store<T> {
                 call_hook: None,
             },
             id: TypeId::of::<T>(),
+            call_host_func: CallHostFuncWrapper(Box::new(
+                |pruned, host_func, instance, params_results| -> Result<(), Error> {
+                    let Ok(store) = pruned.restore::<T>() else {
+                        panic!(
+                            "failed to convert PrunedStore back into Store<{}>",
+                            core::any::type_name::<T>()
+                        );
+                    };
+                    store.call_host_func(host_func, instance, params_results)
+                },
+            )),
         }
     }
 }
