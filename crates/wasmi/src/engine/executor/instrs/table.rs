@@ -10,10 +10,9 @@ use crate::{
         Instruction,
         Reg,
     },
-    store::{ResourceLimiterRef, StoreInner},
+    store::{PrunedStore, ResourceLimiterRef, StoreInner},
     table::TableEntity,
     Error,
-    Store,
 };
 
 impl Executor<'_> {
@@ -483,9 +482,9 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableGrow`].
-    pub fn execute_table_grow<T>(
+    pub fn execute_table_grow(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         result: Reg,
         delta: Reg,
         value: Reg,
@@ -496,9 +495,9 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableGrowImm`].
-    pub fn execute_table_grow_imm<T>(
+    pub fn execute_table_grow_imm(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         result: Reg,
         delta: Const16<u64>,
         value: Reg,
