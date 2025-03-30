@@ -225,6 +225,20 @@ impl<'a> PrunedStore<'a> {
         // that the data associated to it can safely be extended to this lifetime.
         unsafe { mem::transmute::<&'b mut StoreInner, &'a mut StoreInner>(&mut this.pruned.inner) }
     }
+
+    /// Calls a host `func` at `instance` with `params_results` buffer.
+    ///
+    /// # Errors
+    ///
+    /// If the host function returns an error.
+    pub fn call_host_func(
+        &mut self,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+    ) -> Result<(), Error> {
+        self.pruned.call_host_func(func, instance, params_results)
+    }
 }
 
 impl<'a> PrunedStore<'a> {
