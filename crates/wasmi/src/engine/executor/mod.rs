@@ -9,6 +9,7 @@ use crate::{
     engine::{CallParams, CallResults, EngineInner, ResumableCallBase, ResumableInvocation},
     func::HostFuncEntity,
     ir::{Reg, RegSpan},
+    store::CallHooks,
     CallHook,
     Error,
     Func,
@@ -296,7 +297,13 @@ impl<'engine> EngineExecutor<'engine> {
         store: &mut Store<T>,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        dispatch_host_func(store, &mut self.stack.values, host_func, None)?;
+        dispatch_host_func(
+            store,
+            &mut self.stack.values,
+            host_func,
+            None,
+            CallHooks::Ignore,
+        )?;
         Ok(())
     }
 

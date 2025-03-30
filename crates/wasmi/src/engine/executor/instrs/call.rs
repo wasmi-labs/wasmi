@@ -10,8 +10,7 @@ use crate::{
     },
     func::{FuncEntity, HostFuncEntity},
     ir::{index, Instruction, Reg, RegSpan},
-    store::StoreInner,
-    CallHook,
+    store::{CallHooks, StoreInner},
     Error,
     Func,
     FuncRef,
@@ -32,6 +31,7 @@ pub fn dispatch_host_func<T>(
     value_stack: &mut ValueStack,
     host_func: HostFuncEntity,
     instance: Option<&Instance>,
+    call_hooks: CallHooks,
 ) -> Result<(u16, u16), Error> {
     let len_params = host_func.len_params();
     let len_results = host_func.len_results();
@@ -42,8 +42,9 @@ pub fn dispatch_host_func<T>(
         usize::from(len_params),
         usize::from(len_results),
     );
-    store
-        .call_host_func(&host_func, instance, params_results)
+    let pruned = store.prune();
+    pruned
+        .call_host_func(&host_func, instance, params_results, call_hooks)
         .inspect_err(|_error| {
             // Note: We drop the values that have been temporarily added to
             //       the stack to act as parameter and result buffer for the
@@ -482,12 +483,7 @@ impl Executor<'_> {
             }
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
-
-                store.invoke_call_hook(CallHook::CallingHost)?;
-                let control = self.execute_host_func::<C, T>(store, results, func, host_func)?;
-                store.invoke_call_hook(CallHook::ReturningFromHost)?;
-
-                Ok(control)
+                self.execute_host_func::<C, T>(store, results, func, host_func)
             }
         }
     }
@@ -605,7 +601,13 @@ impl Executor<'_> {
         host_func: HostFuncEntity,
         instance: &Instance,
     ) -> Result<(u16, u16), Error> {
-        dispatch_host_func(store, &mut self.stack.values, host_func, Some(instance))
+        dispatch_host_func(
+            store,
+            &mut self.stack.values,
+            host_func,
+            Some(instance),
+            CallHooks::Call,
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
