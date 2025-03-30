@@ -145,6 +145,17 @@ pub struct TypedStoreInner<T> {
     call_hook: Option<CallHookWrapper<T>>,
 }
 
+#[test]
+fn equal_size() {
+    // Note: `TypedStore<T>` must be of the same size for all `T` so that
+    //       `PrunedStore` works and is a safe abstraction.
+    use core::mem::size_of;
+    assert_eq!(
+        size_of::<TypedStoreInner<()>>(),
+        size_of::<TypedStoreInner<[i64; 8]>>(),
+    );
+}
+
 /// The inner store that owns all data not associated to the host state.
 #[derive(Debug)]
 pub struct StoreInner {
