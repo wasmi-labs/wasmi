@@ -209,25 +209,21 @@ impl<'a, T> From<&'a mut Store<T>> for PrunedStore<'a> {
 
 impl<'a> PrunedStore<'a> {
     // Note: we do _not_ want to take `&self` here as this type implements `Deref`.
-    #[allow(clippy::needless_arbitrary_self_type)]
-    fn inner<'b>(self: &'b Self) -> &'a StoreInner {
+    fn inner<'b>(this: &'b Self) -> &'a StoreInner {
         // Safety: we are extending the lifetime 'b to lifetime 'a.
         //
         // This is safe since `PrunedStore<'a>` is bound to lifetime 'a and thus we know
         // that the data associated to it can safely be extended to this lifetime.
-        unsafe { mem::transmute::<&'b StoreInner, &'a StoreInner>(&self.pruned.inner) }
+        unsafe { mem::transmute::<&'b StoreInner, &'a StoreInner>(&this.pruned.inner) }
     }
-}
 
-impl<'a> PrunedStore<'a> {
     // Note: we do _not_ want to take `&mut self` here as this type implements `DerefMut`.
-    #[allow(clippy::needless_arbitrary_self_type)]
-    fn inner_mut<'b>(self: &'b mut Self) -> &'a mut StoreInner {
+    fn inner_mut<'b>(this: &'b mut Self) -> &'a mut StoreInner {
         // Safety: we are extending the lifetime 'b to lifetime 'a.
         //
         // This is safe since `PrunedStore<'a>` is bound to lifetime 'a and thus we know
         // that the data associated to it can safely be extended to this lifetime.
-        unsafe { mem::transmute::<&'b mut StoreInner, &'a mut StoreInner>(&mut self.pruned.inner) }
+        unsafe { mem::transmute::<&'b mut StoreInner, &'a mut StoreInner>(&mut this.pruned.inner) }
     }
 }
 
