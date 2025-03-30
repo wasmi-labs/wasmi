@@ -331,17 +331,17 @@ fn pruned_store_deref() {
     let mut store = Store::new(&engine, ());
     let fuel_amount = 100;
     store.set_fuel(fuel_amount).unwrap();
-    let mut pruned = store.prune();
+    let pruned = store.prune();
     assert_eq!(
-        PrunedStore::inner(&pruned).fuel.get_fuel().unwrap(),
+        PrunedStore::inner(pruned).fuel.get_fuel().unwrap(),
         fuel_amount
     );
-    PrunedStore::inner_mut(&mut pruned)
+    PrunedStore::inner_mut(pruned)
         .fuel
         .set_fuel(fuel_amount * 2)
         .unwrap();
     assert_eq!(
-        PrunedStore::inner(&pruned).fuel.get_fuel().unwrap(),
+        PrunedStore::inner(pruned).fuel.get_fuel().unwrap(),
         fuel_amount * 2
     );
 }

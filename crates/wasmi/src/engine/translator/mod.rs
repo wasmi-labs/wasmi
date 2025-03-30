@@ -631,7 +631,7 @@ impl<'a> VisitOperator<'a> for LazyFuncTranslator {
 }
 
 #[cfg(feature = "simd")]
-impl<'a> wasmparser::VisitSimdOperator<'a> for LazyFuncTranslator {
+impl wasmparser::VisitSimdOperator<'_> for LazyFuncTranslator {
     wasmparser::for_each_visit_simd_operator!(impl_visit_operator);
 }
 
