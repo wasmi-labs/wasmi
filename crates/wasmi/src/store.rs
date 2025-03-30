@@ -128,7 +128,7 @@ impl<T> Debug for CallHookWrapper<T> {
 ///
 /// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
 /// works for [`Store`].
-#[warn(clippy::type_complexity)]
+#[allow(clippy::type_complexity)]
 struct CallHostFuncWrapper(
     Box<
         dyn Fn(
