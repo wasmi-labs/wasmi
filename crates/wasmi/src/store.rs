@@ -1,3 +1,5 @@
+#![expect(dead_code)] // TODO: remove
+
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
     core::TrapCode,
@@ -35,7 +37,9 @@ use crate::{
 };
 use alloc::boxed::Box;
 use core::{
+    any::TypeId,
     fmt::{self, Debug},
+    mem,
     sync::atomic::{AtomicU32, Ordering},
 };
 
@@ -128,6 +132,140 @@ pub struct Store<T> {
     pub(crate) inner: StoreInner,
     /// The inner parts of the [`Store`] that are generic over a host provided `T`.
     typed: TypedStoreInner<T>,
+}
+
+/// A [`Store`] with a pruned `T`.
+#[derive(Debug)]
+pub struct PrunedStore<'a> {
+    /// The underlying [`Store`] with pruned type signature.
+    store: &'a mut Store<Pruned>,
+    /// The [`TypeId`] of the pruned `T` of the `store`.
+    ///
+    /// This is used in [`PrunedStore::restore`] to check if the
+    /// restored `T` matches the original `T` of the `store`.
+    id: TypeId,
+}
+
+/// Placeholder type of `T` for a pruned `Store<T>`.
+#[derive(Debug)]
+pub struct Pruned;
+
+impl<'a, T: 'static> From<&'a mut Store<T>> for PrunedStore<'a> {
+    fn from(store: &'a mut Store<T>) -> Self {
+        Self {
+            store: {
+                // Safety: the generic `Store<T>` has its `T` pruned here.
+                //
+                // - This is safe because we are operating on a `&mut Store<T>` thus it is just
+                //   a reference and since `Store<T>` and `Store<Pruned>` have the same size and API.
+                // - We make sure in `PrunedStore` to never access the typed parts of the original
+                //   `Store<T>` and check in the restoration process the type-ID of the target `T`.
+                // - `Store<T>` has the same size and alignment for all `T`.
+                unsafe { mem::transmute::<&'a mut Store<T>, &'a mut Store<Pruned>>(store) }
+            },
+            id: TypeId::of::<T>(),
+        }
+    }
+}
+
+impl<'a> PrunedStore<'a> {
+    // Note: we do _not_ want to take `&self` here as this type implements `Deref`.
+    #[allow(clippy::needless_arbitrary_self_type)]
+    fn inner<'b>(self: &'b Self) -> &'a StoreInner {
+        // Safety: we are extending the lifetime 'b to lifetime 'a.
+        //
+        // This is safe since `PrunedStore<'a>` is bound to lifetime 'a and thus we know
+        // that the data associated to it can safely be extended to this lifetime.
+        unsafe { mem::transmute::<&'b StoreInner, &'a StoreInner>(&self.store.inner) }
+    }
+}
+
+impl<'a> PrunedStore<'a> {
+    // Note: we do _not_ want to take `&mut self` here as this type implements `DerefMut`.
+    #[allow(clippy::needless_arbitrary_self_type)]
+    fn inner_mut<'b>(self: &'b mut Self) -> &'a mut StoreInner {
+        // Safety: we are extending the lifetime 'b to lifetime 'a.
+        //
+        // This is safe since `PrunedStore<'a>` is bound to lifetime 'a and thus we know
+        // that the data associated to it can safely be extended to this lifetime.
+        unsafe { mem::transmute::<&'b mut StoreInner, &'a mut StoreInner>(&mut self.store.inner) }
+    }
+}
+
+impl<'a> PrunedStore<'a> {
+    pub fn restore<T: 'static>(self) -> Result<&'a mut Store<T>, PrunedStoreError> {
+        if TypeId::of::<T>() != self.id {
+            return Err(PrunedStoreError);
+        }
+        let store = {
+            // Safety: we restore the original `Store<T>` from the pruned `Store<Pruned>`.
+            //
+            // This is safe because we have already checked above that the `TypedId` of `T`
+            // matches the `id` of the original `Store<T>` and thus the `T`'s are identical.
+            //
+            // Furthermore, we are only operating on `&mut` pointers and not values.
+            // Finally, `Store<T>` has the same size and alignment for all `T`.
+            unsafe { mem::transmute::<&'a mut Store<Pruned>, &'a mut Store<T>>(self.store) }
+        };
+        Ok(store)
+    }
+}
+
+/// Returned when [`PrunedStore::restore`] failed.
+#[derive(Debug)]
+pub struct PrunedStoreError;
+
+impl<'a> core::ops::Deref for PrunedStore<'a> {
+    type Target = StoreInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.store.inner
+    }
+}
+
+impl<'a> core::ops::DerefMut for PrunedStore<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.store.inner
+    }
+}
+
+#[test]
+fn pruning_works() {
+    let engine = Engine::default();
+    let mut store = Store::new(&engine, ());
+    let pruned = PrunedStore::from(&mut store);
+    assert!(pruned.restore::<()>().is_ok());
+}
+
+#[test]
+fn pruning_errors() {
+    let engine = Engine::default();
+    let mut store = Store::new(&engine, ());
+    let pruned = PrunedStore::from(&mut store);
+    assert!(pruned.restore::<i32>().is_err());
+}
+
+#[test]
+fn pruned_store_deref() {
+    let mut config = Config::default();
+    config.consume_fuel(true);
+    let engine = Engine::new(&config);
+    let mut store = Store::new(&engine, ());
+    let fuel_amount = 100;
+    store.set_fuel(fuel_amount).unwrap();
+    let mut pruned = PrunedStore::from(&mut store);
+    assert_eq!(
+        PrunedStore::inner(&pruned).fuel.get_fuel().unwrap(),
+        fuel_amount
+    );
+    PrunedStore::inner_mut(&mut pruned)
+        .fuel
+        .set_fuel(fuel_amount * 2)
+        .unwrap();
+    assert_eq!(
+        PrunedStore::inner(&pruned).fuel.get_fuel().unwrap(),
+        fuel_amount * 2
+    );
 }
 
 /// The inner parts of the [`Store`] which are generic over a host provided `T`.
