@@ -42,9 +42,8 @@ pub fn dispatch_host_func<T>(
         usize::from(len_params),
         usize::from(len_results),
     );
-    let trampoline = store.resolve_trampoline(host_func.trampoline()).clone();
-    trampoline
-        .call(store, instance, params_results)
+    store
+        .call_host_func(&host_func, instance, params_results)
         .inspect_err(|_error| {
             // Note: We drop the values that have been temporarily added to
             //       the stack to act as parameter and result buffer for the

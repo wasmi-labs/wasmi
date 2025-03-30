@@ -3,9 +3,9 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
     core::TrapCode,
-    engine::{DedupFuncType, FuelCosts},
+    engine::{DedupFuncType, FuelCosts, FuncParams},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
-    func::{Trampoline, TrampolineEntity, TrampolineIdx},
+    func::{HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
     memory::{DataSegment, MemoryError},
     module::InstantiationError,
     table::TableError,
@@ -1171,13 +1171,29 @@ impl<T> Store<T> {
         (self.inner.resolve_memory_mut(memory), &mut self.typed.data)
     }
 
+    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    ///
+    /// # Errors
+    ///
+    /// If the called host function returned an error.
+    pub(super) fn call_host_func(
+        &mut self,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncParams,
+    ) -> Result<(), Error> {
+        let trampoline = self.resolve_trampoline(func.trampoline()).clone();
+        trampoline.call(self, instance, params_results)?;
+        Ok(())
+    }
+
     /// Returns a shared reference to the associated entity of the host function trampoline.
     ///
     /// # Panics
     ///
     /// - If the [`Trampoline`] does not originate from this [`Store`].
     /// - If the [`Trampoline`] cannot be resolved to its entity.
-    pub(super) fn resolve_trampoline(&self, func: &Trampoline) -> &TrampolineEntity<T> {
+    fn resolve_trampoline(&self, func: &Trampoline) -> &TrampolineEntity<T> {
         let entity_index = self.inner.unwrap_stored(func.as_inner());
         self.typed
             .trampolines
