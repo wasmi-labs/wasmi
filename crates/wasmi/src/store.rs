@@ -135,14 +135,14 @@ pub struct Store<T> {
 pub struct TypedStoreInner<T> {
     /// Stored host function trampolines.
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
-    /// User provided host data owned by the [`Store`].
-    data: Box<T>,
     /// User provided hook to retrieve a [`ResourceLimiter`].
     limiter: Option<ResourceLimiterQuery<T>>,
     /// User provided callback called when a host calls a WebAssembly function
     /// or a WebAssembly function calls a host function, or these functions
     /// return.
     call_hook: Option<CallHookWrapper<T>>,
+    /// User provided host data owned by the [`Store`].
+    data: Box<T>,
 }
 
 #[test]
