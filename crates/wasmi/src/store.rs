@@ -243,7 +243,7 @@ impl<'a, T> From<&'a mut Store<T>> for &'a mut PrunedStore {
 impl<T> Store<T> {
     /// Prune the [`Store`] from `T` returning a [`PrunedStore`].
     #[inline]
-    pub fn prune(&mut self) -> &mut PrunedStore {
+    pub(crate) fn prune(&mut self) -> &mut PrunedStore {
         self.into()
     }
 }
