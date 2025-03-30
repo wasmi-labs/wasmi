@@ -131,6 +131,7 @@ impl<T> Debug for CallHookWrapper<T> {
 struct RestorePrunedWrapper(Arc<dyn Send + Sync + Fn(&mut PrunedStore) -> &mut dyn TypedStore>);
 impl RestorePrunedWrapper {
     /// Restores the [`PrunedStore`] and returns a reference to it via [`TypedStore`].
+    #[inline]
     fn restore<'a>(&self, pruned: &'a mut PrunedStore) -> &'a mut dyn TypedStore {
         (self.0)(pruned)
     }
@@ -186,6 +187,7 @@ impl<T> TypedStore for Store<T> {
         Ok(())
     }
 
+    #[inline]
     fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef) {
         <Store<T>>::store_inner_and_resource_limiter_ref(self)
     }
@@ -225,6 +227,7 @@ pub struct PrunedStore {
 pub struct Pruned;
 
 impl<'a, T> From<&'a mut Store<T>> for &'a mut PrunedStore {
+    #[inline]
     fn from(store: &'a mut Store<T>) -> Self {
         // Safety: the generic `Store<T>` has its `T` pruned here.
         //
@@ -238,6 +241,8 @@ impl<'a, T> From<&'a mut Store<T>> for &'a mut PrunedStore {
 }
 
 impl<T> Store<T> {
+    /// Prune the [`Store`] from `T` returning a [`PrunedStore`].
+    #[inline]
     pub fn prune(&mut self) -> &mut PrunedStore {
         self.into()
     }
