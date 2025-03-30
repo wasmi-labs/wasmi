@@ -287,8 +287,8 @@ impl PrunedStore {
             .store_inner_and_resource_limiter_ref()
     }
 
-    pub fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
         if TypeId::of::<T>() != self.pruned.id {
+    fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
             return Err(PrunedStoreError);
         }
         let store = {
