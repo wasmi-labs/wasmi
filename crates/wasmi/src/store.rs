@@ -1,4 +1,4 @@
-#![expect(dead_code)] // TODO: remove
+#![allow(dead_code)] // TODO: remove
 
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
