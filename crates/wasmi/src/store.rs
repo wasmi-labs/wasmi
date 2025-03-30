@@ -124,38 +124,62 @@ impl<T> Debug for CallHookWrapper<T> {
     }
 }
 
-/// A wrapper used to call host functions via a [`PrunedStore`].
+/// A wrapper used to restore a [`PrunedStore`].
 ///
 /// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
 /// works for [`Store`].
 #[allow(clippy::type_complexity)]
 #[derive(Clone)]
-struct CallHostFuncWrapper(
-    Arc<
-        dyn Fn(
-                /*pruned*/ &mut PrunedStore,
-                /*func*/ &HostFuncEntity,
-                /*instance*/ Option<&Instance>,
-                /*params_results*/ FuncInOut,
-            ) -> Result<(), Error>
-            + Send
-            + Sync,
-    >,
+struct RestorePrunedWrapper(
+    Arc<dyn Fn(&mut PrunedStore) -> Result<&mut dyn TypedStore, Error> + Send + Sync>,
 );
-impl CallHostFuncWrapper {
+impl RestorePrunedWrapper {
+    /// Restores the [`PrunedStore`] and returns a reference to it via [`TypedStore`].
+    fn restore<'a>(&self, pruned: &'a mut PrunedStore) -> Result<&'a mut dyn TypedStore, Error> {
+        (self.0)(pruned)
+    }
+}
+impl Debug for RestorePrunedWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "RestorePrunedWrapper")
+    }
+}
+
+/// Methods available from [`PrunedStore`] that have been restored dynamically.
+pub trait TypedStore {
+    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    ///
+    /// # Errors
+    ///
+    /// If the called host function returned an error.
     fn call_host_func(
-        &self,
-        pruned: &mut PrunedStore,
+        &mut self,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+    ) -> Result<(), Error>;
+
+    /// Executes the callback set by [`Store::call_hook`] if any has been set.
+    ///
+    /// # Note
+    ///
+    /// - Returns the value returned by the call hook.
+    /// - Returns `Ok(())` if no call hook exists.
+    fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error>;
+}
+
+impl<T> TypedStore for Store<T> {
+    fn call_host_func(
+        &mut self,
         func: &HostFuncEntity,
         instance: Option<&Instance>,
         params_results: FuncInOut,
     ) -> Result<(), Error> {
-        (self.0)(pruned, func, instance, params_results)
+        <Store<T>>::call_host_func(self, func, instance, params_results)
     }
-}
-impl Debug for CallHostFuncWrapper {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "CallHostFuncWrapper")
+
+    fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error> {
+        <Store<T>>::invoke_call_hook(self, call_type)
     }
 }
 
@@ -177,7 +201,7 @@ pub struct Store<T> {
     /// restored `T` matches the original `T` of the `store`.
     id: TypeId,
     /// Used to call host functions via [`PrunedStore`].
-    call_host_func: CallHostFuncWrapper,
+    restore_pruned: RestorePrunedWrapper,
 }
 
 /// A [`Store`] with a pruned `T`.
@@ -233,10 +257,11 @@ impl PrunedStore {
         instance: Option<&Instance>,
         params_results: FuncInOut,
     ) -> Result<(), Error> {
-        self.pruned
-            .call_host_func
+        let restored = self.pruned
+            .restore_pruned
             .clone()
-            .call_host_func(self, func, instance, params_results)
+            .restore(self)?;
+        restored.call_host_func(func, instance, params_results)
     }
 
     pub fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
@@ -1069,15 +1094,15 @@ impl<T: 'static> Store<T> {
                 call_hook: None,
             },
             id: TypeId::of::<T>(),
-            call_host_func: CallHostFuncWrapper(Arc::new(
-                |pruned, host_func, instance, params_results| -> Result<(), Error> {
+            restore_pruned: RestorePrunedWrapper(Arc::new(
+                |pruned| -> Result<&mut dyn TypedStore, Error> {
                     let Ok(store) = PrunedStore::restore::<T>(pruned) else {
                         panic!(
                             "failed to convert PrunedStore back into Store<{}>",
                             core::any::type_name::<T>()
                         );
                     };
-                    store.call_host_func(host_func, instance, params_results)
+                    Ok(store)
                 },
             )),
         }
