@@ -3,7 +3,7 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
     core::TrapCode,
-    engine::{DedupFuncType, FuelCosts, FuncParams},
+    engine::{DedupFuncType, FuelCosts, FuncInOut},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
     memory::{DataSegment, MemoryError},
@@ -1180,7 +1180,7 @@ impl<T> Store<T> {
         &mut self,
         func: &HostFuncEntity,
         instance: Option<&Instance>,
-        params_results: FuncParams,
+        params_results: FuncInOut,
     ) -> Result<(), Error> {
         let trampoline = self.resolve_trampoline(func.trampoline()).clone();
         trampoline.call(self, instance, params_results)?;
