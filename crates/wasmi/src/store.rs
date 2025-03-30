@@ -127,12 +127,12 @@ pub struct Store<T> {
     /// it is used directly by the engine's executor.
     pub(crate) inner: StoreInner,
     /// The inner parts of the [`Store`] that are generic over a host provided `T`.
-    typed: TypedStore<T>,
+    typed: TypedStoreInner<T>,
 }
 
 /// The inner parts of the [`Store`] which are generic over a host provided `T`.
 #[derive(Debug)]
-pub struct TypedStore<T> {
+pub struct TypedStoreInner<T> {
     /// Stored host function trampolines.
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
@@ -874,7 +874,7 @@ where
         let engine = Engine::default();
         Self {
             inner: StoreInner::new(&engine),
-            typed: TypedStore {
+            typed: TypedStoreInner {
                 trampolines: Arena::new(),
                 data: Box::new(T::default()),
                 limiter: None,
@@ -889,7 +889,7 @@ impl<T> Store<T> {
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {
             inner: StoreInner::new(engine),
-            typed: TypedStore {
+            typed: TypedStoreInner {
                 trampolines: Arena::new(),
                 data: Box::new(data),
                 limiter: None,
