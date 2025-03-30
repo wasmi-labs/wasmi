@@ -288,6 +288,7 @@ impl PrunedStore {
     }
 
         if TypeId::of::<T>() != self.pruned.id {
+    #[inline]
     fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
             return Err(PrunedStoreError);
         }
