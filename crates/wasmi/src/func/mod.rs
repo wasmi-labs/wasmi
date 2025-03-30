@@ -1,21 +1,24 @@
 mod caller;
 mod error;
+mod func_inout;
 mod func_type;
 mod funcref;
 mod into_func;
 mod typed_func;
 
+use self::func_inout::FuncFinished;
 pub(crate) use self::typed_func::CallResultsTuple;
 pub use self::{
     caller::Caller,
     error::FuncError,
+    func_inout::FuncInOut,
     func_type::FuncType,
     funcref::FuncRef,
     into_func::{IntoFunc, WasmRet, WasmTy, WasmTyList},
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
-    engine::{DedupFuncType, EngineFunc, FuncFinished, FuncInOut},
+    engine::{DedupFuncType, EngineFunc},
     AsContext,
     AsContextMut,
     Instance,
