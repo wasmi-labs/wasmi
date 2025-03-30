@@ -1,7 +1,7 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
     core::TrapCode,
-    engine::{DedupFuncType, FuelCosts},
+    engine::{DedupFuncType, FuelCosts, FuncInOut},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{Trampoline, TrampolineEntity, TrampolineIdx},
     memory::{DataSegment, MemoryError},

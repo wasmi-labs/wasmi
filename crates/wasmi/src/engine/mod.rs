@@ -4,7 +4,7 @@ mod block_type;
 mod code_map;
 mod config;
 mod executor;
-mod func_args;
+mod func_inout;
 mod func_types;
 mod limits;
 mod resumable;
@@ -19,7 +19,7 @@ pub(crate) use self::{
     block_type::BlockType,
     config::FuelCosts,
     executor::Stack,
-    func_args::{FuncFinished, FuncParams, FuncResults},
+    func_inout::{FuncFinished, FuncInOut, FuncResults},
     func_types::DedupFuncType,
     translator::{
         FuncTranslationDriver,

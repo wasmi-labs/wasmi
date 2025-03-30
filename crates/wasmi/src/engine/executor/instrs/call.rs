@@ -6,7 +6,7 @@ use crate::{
         executor::stack::{CallFrame, FrameParams, ValueStack},
         utils::unreachable_unchecked,
         EngineFunc,
-        FuncParams,
+        FuncInOut,
     },
     func::{FuncEntity, HostFuncEntity},
     ir::{index, Instruction, Reg, RegSpan},
@@ -37,7 +37,7 @@ pub fn dispatch_host_func<T>(
     let len_results = host_func.len_results();
     let max_inout = len_params.max(len_results);
     let values = value_stack.as_slice_mut();
-    let params_results = FuncParams::new(
+    let params_results = FuncInOut::new(
         values.split_at_mut(values.len() - usize::from(max_inout)).1,
         usize::from(len_params),
         usize::from(len_results),

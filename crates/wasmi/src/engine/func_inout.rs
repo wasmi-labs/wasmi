@@ -7,9 +7,9 @@ use crate::{
 };
 use core::cmp;
 
-/// Used to decode host function parameters.
+/// Used to encode and decode host function parameters and results.
 #[derive(Debug)]
-pub struct FuncParams<'a> {
+pub struct FuncInOut<'a> {
     /// Slice holding the raw (encoded but untyped) parameters
     /// of the host function invocation before the call and the
     /// results of the host function invocation after the call.
@@ -74,7 +74,7 @@ impl<'a> FuncResults<'a> {
 #[derive(Debug)]
 pub struct FuncFinished {}
 
-impl<'a> FuncParams<'a> {
+impl<'a> FuncInOut<'a> {
     /// Create new [`FuncParams`].
     ///
     /// # Panics
