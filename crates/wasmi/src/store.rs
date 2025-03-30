@@ -136,7 +136,7 @@ pub struct TypedStore<T> {
     /// Stored host function trampolines.
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
-    data: T,
+    data: Box<T>,
     /// User provided hook to retrieve a [`ResourceLimiter`].
     limiter: Option<ResourceLimiterQuery<T>>,
     /// User provided callback called when a host calls a WebAssembly function
@@ -876,7 +876,7 @@ where
             inner: StoreInner::new(&engine),
             typed: TypedStore {
                 trampolines: Arena::new(),
-                data: T::default(),
+                data: Box::new(T::default()),
                 limiter: None,
                 call_hook: None,
             },
@@ -891,7 +891,7 @@ impl<T> Store<T> {
             inner: StoreInner::new(engine),
             typed: TypedStore {
                 trampolines: Arena::new(),
-                data,
+                data: Box::new(data),
                 limiter: None,
                 call_hook: None,
             },
@@ -915,7 +915,7 @@ impl<T> Store<T> {
 
     /// Consumes `self` and returns its user provided data.
     pub fn into_data(self) -> T {
-        self.typed.data
+        *self.typed.data
     }
 
     /// Installs a function into the [`Store`] that will be called with the user
