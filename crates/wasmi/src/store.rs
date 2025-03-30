@@ -138,12 +138,12 @@ pub struct Store<T> {
 #[derive(Debug)]
 pub struct PrunedStore<'a> {
     /// The underlying [`Store`] with pruned type signature.
-    store: &'a mut Store<Pruned>,
     /// The [`TypeId`] of the pruned `T` of the `store`.
     ///
     /// This is used in [`PrunedStore::restore`] to check if the
     /// restored `T` matches the original `T` of the `store`.
     id: TypeId,
+    pruned: &'a mut Store<Pruned>,
 }
 
 /// Placeholder type of `T` for a pruned `Store<T>`.
@@ -153,7 +153,7 @@ pub struct Pruned;
 impl<'a, T: 'static> From<&'a mut Store<T>> for PrunedStore<'a> {
     fn from(store: &'a mut Store<T>) -> Self {
         Self {
-            store: {
+            pruned: {
                 // Safety: the generic `Store<T>` has its `T` pruned here.
                 //
                 // - This is safe because we are operating on a `&mut Store<T>` thus it is just
@@ -176,7 +176,7 @@ impl<'a> PrunedStore<'a> {
         //
         // This is safe since `PrunedStore<'a>` is bound to lifetime 'a and thus we know
         // that the data associated to it can safely be extended to this lifetime.
-        unsafe { mem::transmute::<&'b StoreInner, &'a StoreInner>(&self.store.inner) }
+        unsafe { mem::transmute::<&'b StoreInner, &'a StoreInner>(&self.pruned.inner) }
     }
 }
 
@@ -188,7 +188,7 @@ impl<'a> PrunedStore<'a> {
         //
         // This is safe since `PrunedStore<'a>` is bound to lifetime 'a and thus we know
         // that the data associated to it can safely be extended to this lifetime.
-        unsafe { mem::transmute::<&'b mut StoreInner, &'a mut StoreInner>(&mut self.store.inner) }
+        unsafe { mem::transmute::<&'b mut StoreInner, &'a mut StoreInner>(&mut self.pruned.inner) }
     }
 }
 
@@ -205,7 +205,7 @@ impl<'a> PrunedStore<'a> {
             //
             // Furthermore, we are only operating on `&mut` pointers and not values.
             // Finally, `Store<T>` has the same size and alignment for all `T`.
-            unsafe { mem::transmute::<&'a mut Store<Pruned>, &'a mut Store<T>>(self.store) }
+            unsafe { mem::transmute::<&'a mut Store<Pruned>, &'a mut Store<T>>(self.pruned) }
         };
         Ok(store)
     }
@@ -219,13 +219,13 @@ impl<'a> core::ops::Deref for PrunedStore<'a> {
     type Target = StoreInner;
 
     fn deref(&self) -> &Self::Target {
-        &self.store.inner
+        &self.pruned.inner
     }
 }
 
 impl<'a> core::ops::DerefMut for PrunedStore<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.store.inner
+        &mut self.pruned.inner
     }
 }
 
