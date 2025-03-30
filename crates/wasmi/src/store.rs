@@ -2,7 +2,7 @@
 
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
-    core::TrapCode,
+    core::{hint::unlikely, TrapCode},
     engine::{DedupFuncType, FuelCosts},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
@@ -287,9 +287,9 @@ impl PrunedStore {
             .store_inner_and_resource_limiter_ref()
     }
 
-        if TypeId::of::<T>() != self.pruned.id {
     #[inline]
     fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
+        if unlikely(TypeId::of::<T>() != self.pruned.id) {
             return Err(PrunedStoreError);
         }
         let store = {
