@@ -103,7 +103,11 @@ impl<'a> ResourceLimiterRef<'a> {
 struct ResourceLimiterQuery<T>(Box<dyn FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync>);
 impl<T> Debug for ResourceLimiterQuery<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ResourceLimiterQuery<{}>(...)", core::any::type_name::<T>())
+        write!(
+            f,
+            "ResourceLimiterQuery<{}>(...)",
+            core::any::type_name::<T>()
+        )
     }
 }
 
