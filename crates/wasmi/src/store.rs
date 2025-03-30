@@ -132,17 +132,17 @@ pub struct Store<T> {
     pub(crate) inner: StoreInner,
     /// The inner parts of the [`Store`] that are generic over a host provided `T`.
     typed: TypedStoreInner<T>,
+    /// The [`TypeId`] of the `T` of the `store`.
+    ///
+    /// This is used in [`PrunedStore::restore`] to check if the
+    /// restored `T` matches the original `T` of the `store`.
+    id: TypeId,
 }
 
 /// A [`Store`] with a pruned `T`.
 #[derive(Debug)]
 pub struct PrunedStore<'a> {
     /// The underlying [`Store`] with pruned type signature.
-    /// The [`TypeId`] of the pruned `T` of the `store`.
-    ///
-    /// This is used in [`PrunedStore::restore`] to check if the
-    /// restored `T` matches the original `T` of the `store`.
-    id: TypeId,
     pruned: &'a mut Store<Pruned>,
 }
 
@@ -150,7 +150,7 @@ pub struct PrunedStore<'a> {
 #[derive(Debug)]
 pub struct Pruned;
 
-impl<'a, T: 'static> From<&'a mut Store<T>> for PrunedStore<'a> {
+impl<'a, T> From<&'a mut Store<T>> for PrunedStore<'a> {
     fn from(store: &'a mut Store<T>) -> Self {
         Self {
             pruned: {
@@ -163,7 +163,6 @@ impl<'a, T: 'static> From<&'a mut Store<T>> for PrunedStore<'a> {
                 // - `Store<T>` has the same size and alignment for all `T`.
                 unsafe { mem::transmute::<&'a mut Store<T>, &'a mut Store<Pruned>>(store) }
             },
-            id: TypeId::of::<T>(),
         }
     }
 }
@@ -194,7 +193,7 @@ impl<'a> PrunedStore<'a> {
 
 impl<'a> PrunedStore<'a> {
     pub fn restore<T: 'static>(self) -> Result<&'a mut Store<T>, PrunedStoreError> {
-        if TypeId::of::<T>() != self.id {
+        if TypeId::of::<T>() != self.pruned.id {
             return Err(PrunedStoreError);
         }
         let store = {
@@ -1017,23 +1016,15 @@ impl StoreInner {
 
 impl<T> Default for Store<T>
 where
-    T: Default,
+    T: Default + 'static,
 {
     fn default() -> Self {
         let engine = Engine::default();
-        Self {
-            inner: StoreInner::new(&engine),
-            typed: TypedStoreInner {
-                trampolines: Arena::new(),
-                data: Box::new(T::default()),
-                limiter: None,
-                call_hook: None,
-            },
-        }
+        Self::new(&engine, T::default())
     }
 }
 
-impl<T> Store<T> {
+impl<T: 'static> Store<T> {
     /// Creates a new store.
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {
@@ -1044,9 +1035,12 @@ impl<T> Store<T> {
                 limiter: None,
                 call_hook: None,
             },
+            id: TypeId::of::<T>(),
         }
     }
+}
 
+impl<T> Store<T> {
     /// Returns the [`Engine`] that this store is associated with.
     pub fn engine(&self) -> &Engine {
         self.inner.engine()

@@ -33,7 +33,7 @@ impl Default for ExecutionTest<()> {
 
 impl<T> ExecutionTest<T>
 where
-    T: Default + PartialEq + Eq,
+    T: Default + PartialEq + Eq + 'static,
 {
     /// Creates a new [`ExecutionTest`] with default initialized data.
     pub fn new() -> Self {
