@@ -228,8 +228,8 @@ impl<'a> PrunedStore<'a> {
 }
 
 impl<'a> PrunedStore<'a> {
-    pub fn restore<T: 'static>(self) -> Result<&'a mut Store<T>, PrunedStoreError> {
-        if TypeId::of::<T>() != self.pruned.id {
+    pub fn restore<T: 'static>(this: Self) -> Result<&'a mut Store<T>, PrunedStoreError> {
+        if TypeId::of::<T>() != this.pruned.id {
             return Err(PrunedStoreError);
         }
         let store = {
@@ -240,7 +240,7 @@ impl<'a> PrunedStore<'a> {
             //
             // Furthermore, we are only operating on `&mut` pointers and not values.
             // Finally, `Store<T>` has the same size and alignment for all `T`.
-            unsafe { mem::transmute::<&'a mut Store<Pruned>, &'a mut Store<T>>(self.pruned) }
+            unsafe { mem::transmute::<&'a mut Store<Pruned>, &'a mut Store<T>>(this.pruned) }
         };
         Ok(store)
     }
@@ -269,7 +269,7 @@ fn pruning_works() {
     let engine = Engine::default();
     let mut store = Store::new(&engine, ());
     let pruned = PrunedStore::from(&mut store);
-    assert!(pruned.restore::<()>().is_ok());
+    assert!(PrunedStore::restore::<()>(pruned).is_ok());
 }
 
 #[test]
@@ -277,7 +277,7 @@ fn pruning_errors() {
     let engine = Engine::default();
     let mut store = Store::new(&engine, ());
     let pruned = PrunedStore::from(&mut store);
-    assert!(pruned.restore::<i32>().is_err());
+    assert!(PrunedStore::restore::<i32>(pruned).is_err());
 }
 
 #[test]
@@ -1074,7 +1074,7 @@ impl<T: 'static> Store<T> {
             id: TypeId::of::<T>(),
             call_host_func: CallHostFuncWrapper(Box::new(
                 |pruned, host_func, instance, params_results| -> Result<(), Error> {
-                    let Ok(store) = pruned.restore::<T>() else {
+                    let Ok(store) = PrunedStore::restore::<T>(pruned) else {
                         panic!(
                             "failed to convert PrunedStore back into Store<{}>",
                             core::any::type_name::<T>()
