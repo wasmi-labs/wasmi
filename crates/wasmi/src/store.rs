@@ -35,7 +35,7 @@ use crate::{
     TableEntity,
     TableIdx,
 };
-use alloc::boxed::Box;
+use alloc::{boxed::Box, sync::Arc};
 use core::{
     any::TypeId,
     fmt::{self, Debug},
@@ -129,10 +129,11 @@ impl<T> Debug for CallHookWrapper<T> {
 /// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
 /// works for [`Store`].
 #[allow(clippy::type_complexity)]
+#[derive(Clone)]
 struct CallHostFuncWrapper(
-    Box<
+    Arc<
         dyn Fn(
-                /*pruned*/ PrunedStore,
+                /*pruned*/ &mut PrunedStore,
                 /*func*/ &HostFuncEntity,
                 /*instance*/ Option<&Instance>,
                 /*params_results*/ FuncInOut,
@@ -144,7 +145,7 @@ struct CallHostFuncWrapper(
 impl CallHostFuncWrapper {
     fn call_host_func(
         &self,
-        pruned: PrunedStore,
+        pruned: &mut PrunedStore,
         func: &HostFuncEntity,
         instance: Option<&Instance>,
         params_results: FuncInOut,
@@ -181,49 +182,44 @@ pub struct Store<T> {
 
 /// A [`Store`] with a pruned `T`.
 #[derive(Debug)]
-pub struct PrunedStore<'a> {
+#[repr(transparent)]
+pub struct PrunedStore {
     /// The underlying [`Store`] with pruned type signature.
-    pruned: &'a mut Store<Pruned>,
+    pruned: Store<Pruned>,
 }
 
 /// Placeholder type of `T` for a pruned `Store<T>`.
 #[derive(Debug)]
 pub struct Pruned;
 
-impl<'a, T> From<&'a mut Store<T>> for PrunedStore<'a> {
+impl<'a, T> From<&'a mut Store<T>> for &'a mut PrunedStore {
     fn from(store: &'a mut Store<T>) -> Self {
-        Self {
-            pruned: {
-                // Safety: the generic `Store<T>` has its `T` pruned here.
-                //
-                // - This is safe because we are operating on a `&mut Store<T>` thus it is just
-                //   a reference and since `Store<T>` and `Store<Pruned>` have the same size and API.
-                // - We make sure in `PrunedStore` to never access the typed parts of the original
-                //   `Store<T>` and check in the restoration process the type-ID of the target `T`.
-                // - `Store<T>` has the same size and alignment for all `T`.
-                unsafe { mem::transmute::<&'a mut Store<T>, &'a mut Store<Pruned>>(store) }
-            },
-        }
+        // Safety: the generic `Store<T>` has its `T` pruned here.
+        //
+        // - This is safe because we are operating on a `&mut Store<T>` thus it is just
+        //   a reference and since `Store<T>` and `Store<Pruned>` have the same size and API.
+        // - We make sure in `PrunedStore` to never access the typed parts of the original
+        //   `Store<T>` and check in the restoration process the type-ID of the target `T`.
+        // - `Store<T>` has the same size and alignment for all `T`.
+        unsafe { mem::transmute::<&'a mut Store<T>, &'a mut PrunedStore>(store) }
     }
 }
 
-impl<'a> PrunedStore<'a> {
+impl<T> Store<T> {
+    pub fn prune(&mut self) -> &mut PrunedStore {
+        self.into()
+    }
+}
+
+impl PrunedStore {
     // Note: we do _not_ want to take `&self` here as this type implements `Deref`.
-    fn inner<'b>(this: &'b Self) -> &'a StoreInner {
-        // Safety: we are extending the lifetime 'b to lifetime 'a.
-        //
-        // This is safe since `PrunedStore<'a>` is bound to lifetime 'a and thus we know
-        // that the data associated to it can safely be extended to this lifetime.
-        unsafe { mem::transmute::<&'b StoreInner, &'a StoreInner>(&this.pruned.inner) }
+    fn inner(&self) -> &StoreInner {
+        &self.pruned.inner
     }
 
     // Note: we do _not_ want to take `&mut self` here as this type implements `DerefMut`.
-    fn inner_mut<'b>(this: &'b mut Self) -> &'a mut StoreInner {
-        // Safety: we are extending the lifetime 'b to lifetime 'a.
-        //
-        // This is safe since `PrunedStore<'a>` is bound to lifetime 'a and thus we know
-        // that the data associated to it can safely be extended to this lifetime.
-        unsafe { mem::transmute::<&'b mut StoreInner, &'a mut StoreInner>(&mut this.pruned.inner) }
+    fn inner_mut(&mut self) -> &mut StoreInner {
+        &mut self.pruned.inner
     }
 
     /// Calls a host `func` at `instance` with `params_results` buffer.
@@ -237,13 +233,14 @@ impl<'a> PrunedStore<'a> {
         instance: Option<&Instance>,
         params_results: FuncInOut,
     ) -> Result<(), Error> {
-        self.pruned.call_host_func(func, instance, params_results)
+        self.pruned
+            .call_host_func
+            .clone()
+            .call_host_func(self, func, instance, params_results)
     }
-}
 
-impl<'a> PrunedStore<'a> {
-    pub fn restore<T: 'static>(this: Self) -> Result<&'a mut Store<T>, PrunedStoreError> {
-        if TypeId::of::<T>() != this.pruned.id {
+    pub fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
+        if TypeId::of::<T>() != self.pruned.id {
             return Err(PrunedStoreError);
         }
         let store = {
@@ -254,7 +251,7 @@ impl<'a> PrunedStore<'a> {
             //
             // Furthermore, we are only operating on `&mut` pointers and not values.
             // Finally, `Store<T>` has the same size and alignment for all `T`.
-            unsafe { mem::transmute::<&'a mut Store<Pruned>, &'a mut Store<T>>(this.pruned) }
+            unsafe { mem::transmute::<&mut PrunedStore, &mut Store<T>>(self) }
         };
         Ok(store)
     }
@@ -264,34 +261,20 @@ impl<'a> PrunedStore<'a> {
 #[derive(Debug)]
 pub struct PrunedStoreError;
 
-impl<'a> core::ops::Deref for PrunedStore<'a> {
-    type Target = StoreInner;
-
-    fn deref(&self) -> &Self::Target {
-        &self.pruned.inner
-    }
-}
-
-impl<'a> core::ops::DerefMut for PrunedStore<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.pruned.inner
-    }
-}
-
 #[test]
 fn pruning_works() {
     let engine = Engine::default();
     let mut store = Store::new(&engine, ());
-    let pruned = PrunedStore::from(&mut store);
-    assert!(PrunedStore::restore::<()>(pruned).is_ok());
+    let pruned = store.prune();
+    assert!(pruned.restore::<()>().is_ok());
 }
 
 #[test]
 fn pruning_errors() {
     let engine = Engine::default();
     let mut store = Store::new(&engine, ());
-    let pruned = PrunedStore::from(&mut store);
-    assert!(PrunedStore::restore::<i32>(pruned).is_err());
+    let pruned = store.prune();
+    assert!(pruned.restore::<i32>().is_err());
 }
 
 #[test]
@@ -302,7 +285,7 @@ fn pruned_store_deref() {
     let mut store = Store::new(&engine, ());
     let fuel_amount = 100;
     store.set_fuel(fuel_amount).unwrap();
-    let mut pruned = PrunedStore::from(&mut store);
+    let mut pruned = store.prune();
     assert_eq!(
         PrunedStore::inner(&pruned).fuel.get_fuel().unwrap(),
         fuel_amount
@@ -1086,7 +1069,7 @@ impl<T: 'static> Store<T> {
                 call_hook: None,
             },
             id: TypeId::of::<T>(),
-            call_host_func: CallHostFuncWrapper(Box::new(
+            call_host_func: CallHostFuncWrapper(Arc::new(
                 |pruned, host_func, instance, params_results| -> Result<(), Error> {
                     let Ok(store) = PrunedStore::restore::<T>(pruned) else {
                         panic!(
