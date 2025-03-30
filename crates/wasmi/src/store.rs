@@ -145,6 +145,15 @@ impl Debug for RestorePrunedWrapper {
     }
 }
 
+/// The call hook behavior when calling a host function.
+#[derive(Debug, Copy, Clone)]
+pub enum CallHooks {
+    /// Invoke the host call hooks.
+    Call,
+    /// Ignore the host call hooks.
+    Ignore,
+}
+
 /// Methods available from [`PrunedStore`] that have been restored dynamically.
 pub trait TypedStore {
     /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
@@ -157,15 +166,8 @@ pub trait TypedStore {
         func: &HostFuncEntity,
         instance: Option<&Instance>,
         params_results: FuncInOut,
+        call_hooks: CallHooks,
     ) -> Result<(), Error>;
-
-    /// Executes the callback set by [`Store::call_hook`] if any has been set.
-    ///
-    /// # Note
-    ///
-    /// - Returns the value returned by the call hook.
-    /// - Returns `Ok(())` if no call hook exists.
-    fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error>;
 }
 
 impl<T> TypedStore for Store<T> {
@@ -174,12 +176,16 @@ impl<T> TypedStore for Store<T> {
         func: &HostFuncEntity,
         instance: Option<&Instance>,
         params_results: FuncInOut,
+        call_hooks: CallHooks,
     ) -> Result<(), Error> {
-        <Store<T>>::call_host_func(self, func, instance, params_results)
-    }
-
-    fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error> {
-        <Store<T>>::invoke_call_hook(self, call_type)
+        if matches!(call_hooks, CallHooks::Call) {
+            <Store<T>>::invoke_call_hook(self, CallHook::CallingHost)?;
+        }
+        <Store<T>>::call_host_func(self, func, instance, params_results)?;
+        if matches!(call_hooks, CallHooks::Call) {
+            <Store<T>>::invoke_call_hook(self, CallHook::ReturningFromHost)?;
+        }
+        Ok(())
     }
 }
 
@@ -256,12 +262,13 @@ impl PrunedStore {
         func: &HostFuncEntity,
         instance: Option<&Instance>,
         params_results: FuncInOut,
+        call_hooks: CallHooks,
     ) -> Result<(), Error> {
-        let restored = self.pruned
+        self.pruned
             .restore_pruned
             .clone()
-            .restore(self)?;
-        restored.call_host_func(func, instance, params_results)
+            .restore(self)?
+            .call_host_func(func, instance, params_results, call_hooks)
     }
 
     pub fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
