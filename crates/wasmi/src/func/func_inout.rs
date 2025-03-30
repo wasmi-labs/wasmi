@@ -67,7 +67,7 @@ impl<'a> FuncResults<'a> {
 /// Used to guarantee by the type system that this API has been used correctly.
 ///
 /// Ensures at compile time that host functions always call
-/// [`FuncParams::decode_params`] or [`FuncParams::decode_params_into_slice`]
+/// [`FuncInOut::decode_params`] or [`FuncInOut::decode_params_into_slice`]
 /// followed by
 /// [`FuncResults::encode_results`] or [`FuncResults::encode_results_from_slice`]
 /// at the end of their execution.
@@ -75,7 +75,7 @@ impl<'a> FuncResults<'a> {
 pub struct FuncFinished {}
 
 impl<'a> FuncInOut<'a> {
-    /// Create new [`FuncParams`].
+    /// Create new [`FuncInOut`].
     ///
     /// # Panics
     ///
