@@ -246,12 +246,14 @@ impl<T> Store<T> {
 }
 
 impl PrunedStore {
-    // Note: we do _not_ want to take `&self` here as this type implements `Deref`.
+    /// Returns a shared reference to the underlying [`StoreInner`].
+    #[inline]
     pub fn inner(&self) -> &StoreInner {
         &self.pruned.inner
     }
 
-    // Note: we do _not_ want to take `&mut self` here as this type implements `DerefMut`.
+    /// Returns an exclusive reference to the underlying [`StoreInner`].
+    #[inline]
     pub fn inner_mut(&mut self) -> &mut StoreInner {
         &mut self.pruned.inner
     }
