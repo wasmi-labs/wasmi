@@ -126,6 +126,13 @@ pub struct Store<T> {
     /// This is re-exported to the rest of the crate since
     /// it is used directly by the engine's executor.
     pub(crate) inner: StoreInner,
+    /// The inner parts of the [`Store`] that are generic over a host provided `T`.
+    typed: TypedStore<T>,
+}
+
+/// The inner parts of the [`Store`] which are generic over a host provided `T`.
+#[derive(Debug)]
+pub struct TypedStore<T> {
     /// Stored host function trampolines.
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
     /// User provided host data owned by the [`Store`].
@@ -867,10 +874,12 @@ where
         let engine = Engine::default();
         Self {
             inner: StoreInner::new(&engine),
-            trampolines: Arena::new(),
-            data: T::default(),
-            limiter: None,
-            call_hook: None,
+            typed: TypedStore {
+                trampolines: Arena::new(),
+                data: T::default(),
+                limiter: None,
+                call_hook: None,
+            },
         }
     }
 }
@@ -880,10 +889,12 @@ impl<T> Store<T> {
     pub fn new(engine: &Engine, data: T) -> Self {
         Self {
             inner: StoreInner::new(engine),
-            trampolines: Arena::new(),
-            data,
-            limiter: None,
-            call_hook: None,
+            typed: TypedStore {
+                trampolines: Arena::new(),
+                data,
+                limiter: None,
+                call_hook: None,
+            },
         }
     }
 
@@ -894,17 +905,17 @@ impl<T> Store<T> {
 
     /// Returns a shared reference to the user provided data owned by this [`Store`].
     pub fn data(&self) -> &T {
-        &self.data
+        &self.typed.data
     }
 
     /// Returns an exclusive reference to the user provided data owned by this [`Store`].
     pub fn data_mut(&mut self) -> &mut T {
-        &mut self.data
+        &mut self.typed.data
     }
 
     /// Consumes `self` and returns its user provided data.
     pub fn into_data(self) -> T {
-        self.data
+        self.typed.data
     }
 
     /// Installs a function into the [`Store`] that will be called with the user
@@ -914,7 +925,7 @@ impl<T> Store<T> {
         &mut self,
         limiter: impl FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync + 'static,
     ) {
-        self.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
+        self.typed.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
     }
 
     pub(crate) fn check_new_instances_limit(
@@ -959,8 +970,8 @@ impl<T> Store<T> {
     pub(crate) fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
-        let resource_limiter = ResourceLimiterRef(match &mut self.limiter {
-            Some(q) => Some(q.0(&mut self.data)),
+        let resource_limiter = ResourceLimiterRef(match &mut self.typed.limiter {
+            Some(q) => Some(q.0(&mut self.typed.data)),
             None => None,
         });
         (&mut self.inner, resource_limiter)
@@ -994,7 +1005,7 @@ impl<T> Store<T> {
 
     /// Allocates a new [`TrampolineEntity`] and returns a [`Trampoline`] reference to it.
     pub(super) fn alloc_trampoline(&mut self, func: TrampolineEntity<T>) -> Trampoline {
-        let idx = self.trampolines.alloc(func);
+        let idx = self.typed.trampolines.alloc(func);
         Trampoline::from_inner(self.inner.wrap_stored(idx))
     }
 
@@ -1014,7 +1025,7 @@ impl<T> Store<T> {
         &mut self,
         memory: &Memory,
     ) -> (&mut MemoryEntity, &mut T) {
-        (self.inner.resolve_memory_mut(memory), &mut self.data)
+        (self.inner.resolve_memory_mut(memory), &mut self.typed.data)
     }
 
     /// Returns a shared reference to the associated entity of the host function trampoline.
@@ -1025,7 +1036,8 @@ impl<T> Store<T> {
     /// - If the [`Trampoline`] cannot be resolved to its entity.
     pub(super) fn resolve_trampoline(&self, func: &Trampoline) -> &TrampolineEntity<T> {
         let entity_index = self.inner.unwrap_stored(func.as_inner());
-        self.trampolines
+        self.typed
+            .trampolines
             .get(entity_index)
             .unwrap_or_else(|| panic!("failed to resolve stored host function: {entity_index:?}"))
     }
@@ -1047,7 +1059,7 @@ impl<T> Store<T> {
         &mut self,
         hook: impl FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync + 'static,
     ) {
-        self.call_hook = Some(CallHookWrapper(Box::new(hook)));
+        self.typed.call_hook = Some(CallHookWrapper(Box::new(hook)));
     }
 
     /// Executes the callback set by [`Store::call_hook`] if any has been set.
@@ -1058,9 +1070,11 @@ impl<T> Store<T> {
     /// - Returns `Ok(())` if no call hook exists.
     #[inline]
     pub(crate) fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error> {
-        match self.call_hook.as_mut() {
+        match self.typed.call_hook.as_mut() {
             None => Ok(()),
-            Some(call_hook) => Self::invoke_call_hook_impl(&mut self.data, call_type, call_hook),
+            Some(call_hook) => {
+                Self::invoke_call_hook_impl(&mut self.typed.data, call_type, call_hook)
+            }
         }
     }
 
