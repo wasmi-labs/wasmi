@@ -2346,7 +2346,7 @@ impl Executor<'_> {
         //           whenever this method is accessed.
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
-        unsafe { self.sp.read_as(register) }
+        unsafe { self.sp.read_as::<T>(register) }
     }
 
     /// Sets the [`Reg`] value to `value`.
@@ -2369,7 +2369,7 @@ impl Executor<'_> {
         //           whenever this method is accessed.
         //         - This is done by updating the `sp` pointer whenever
         //           the heap underlying the value stack is changed.
-        unsafe { self.sp.write_as(register, value) };
+        unsafe { self.sp.write_as::<T>(register, value) };
     }
 
     /// Shifts the instruction pointer to the next instruction.
@@ -2506,7 +2506,7 @@ impl Executor<'_> {
     {
         let lhs = self.get_register_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
-        self.set_register_as(result, op(lhs, rhs));
+        self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2524,7 +2524,7 @@ impl Executor<'_> {
     {
         let lhs = Lhs::from(lhs);
         let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as(result, op(lhs, rhs));
+        self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2542,7 +2542,7 @@ impl Executor<'_> {
     {
         let lhs = self.get_register_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
-        self.set_register_as(result, op(lhs, rhs));
+        self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr();
     }
 
@@ -2560,7 +2560,7 @@ impl Executor<'_> {
     {
         let lhs = self.get_register_as::<Lhs>(lhs);
         let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as(result, op(lhs, rhs)?);
+        self.set_register_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
@@ -2579,7 +2579,7 @@ impl Executor<'_> {
     {
         let lhs = self.get_register_as::<Lhs>(lhs);
         let rhs = Rhs::from(rhs);
-        self.set_register_as(result, op(lhs, rhs)?);
+        self.set_register_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
@@ -2597,7 +2597,7 @@ impl Executor<'_> {
     {
         let lhs = self.get_register_as::<Lhs>(lhs);
         let rhs = <NonZeroT>::from(rhs);
-        self.set_register_as(result, op(lhs, rhs));
+        self.set_register_as::<T>(result, op(lhs, rhs));
         self.next_instr()
     }
 
@@ -2616,7 +2616,7 @@ impl Executor<'_> {
     {
         let lhs = Lhs::from(lhs);
         let rhs = self.get_register_as::<Rhs>(rhs);
-        self.set_register_as(result, op(lhs, rhs)?);
+        self.set_register_as::<T>(result, op(lhs, rhs)?);
         self.try_next_instr()
     }
 
