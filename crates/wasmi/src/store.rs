@@ -35,7 +35,7 @@ use crate::{
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{
-    any::TypeId,
+    any::{type_name, TypeId},
     fmt::{self, Debug},
     mem,
     sync::atomic::{AtomicU32, Ordering},
@@ -101,11 +101,7 @@ impl<'a> ResourceLimiterRef<'a> {
 struct ResourceLimiterQuery<T>(Box<dyn FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync>);
 impl<T> Debug for ResourceLimiterQuery<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "ResourceLimiterQuery<{}>(...)",
-            core::any::type_name::<T>()
-        )
+        write!(f, "ResourceLimiterQuery<{}>(...)", type_name::<T>())
     }
 }
 
@@ -118,7 +114,7 @@ impl<T> Debug for ResourceLimiterQuery<T> {
 struct CallHookWrapper<T>(Box<dyn FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync>);
 impl<T> Debug for CallHookWrapper<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "CallHook<{}>", core::any::type_name::<T>())
+        write!(f, "CallHook<{}>", type_name::<T>())
     }
 }
 
@@ -1165,6 +1161,22 @@ impl<T> Store<T> {
         self.typed.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
     }
 
+    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    ///
+    /// # Errors
+    ///
+    /// If the called host function returned an error.
+    pub(super) fn call_host_func(
+        &mut self,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+    ) -> Result<(), Error> {
+        let trampoline = self.resolve_trampoline(func.trampoline()).clone();
+        trampoline.call(self, instance, params_results)?;
+        Ok(())
+    }
+
     pub(crate) fn check_new_instances_limit(
         &mut self,
         num_new_instances: usize,
@@ -1263,22 +1275,6 @@ impl<T> Store<T> {
         memory: &Memory,
     ) -> (&mut MemoryEntity, &mut T) {
         (self.inner.resolve_memory_mut(memory), &mut self.typed.data)
-    }
-
-    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
-    ///
-    /// # Errors
-    ///
-    /// If the called host function returned an error.
-    pub(super) fn call_host_func(
-        &mut self,
-        func: &HostFuncEntity,
-        instance: Option<&Instance>,
-        params_results: FuncInOut,
-    ) -> Result<(), Error> {
-        let trampoline = self.resolve_trampoline(func.trampoline()).clone();
-        trampoline.call(self, instance, params_results)?;
-        Ok(())
     }
 
     /// Returns a shared reference to the associated entity of the host function trampoline.
