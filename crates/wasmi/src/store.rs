@@ -887,6 +887,18 @@ impl<T> Store<T> {
         }
     }
 
+    /// Returns a shared reference to the [`StoreInner`].
+    #[inline]
+    pub(crate) fn inner(&self) -> &StoreInner {
+        &self.inner
+    }
+
+    /// Returns an exclusive reference to the [`StoreInner`].
+    #[inline]
+    pub(crate) fn inner_mut(&mut self) -> &mut StoreInner {
+        &mut self.inner
+    }
+
     /// Returns the [`Engine`] that this store is associated with.
     pub fn engine(&self) -> &Engine {
         self.inner.engine()
