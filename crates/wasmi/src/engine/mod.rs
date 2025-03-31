@@ -4,7 +4,6 @@ mod block_type;
 mod code_map;
 mod config;
 mod executor;
-mod func_args;
 mod func_types;
 mod limits;
 mod resumable;
@@ -19,7 +18,6 @@ pub(crate) use self::{
     block_type::BlockType,
     config::FuelCosts,
     executor::Stack,
-    func_args::{FuncFinished, FuncParams, FuncResults},
     func_types::DedupFuncType,
     translator::{
         FuncTranslationDriver,
@@ -46,6 +44,7 @@ pub use self::{
 };
 use crate::{
     collections::arena::{ArenaIndex, GuardedEntity},
+    func::FuncInOut,
     module::{FuncIdx, ModuleHeader},
     Error,
     Func,

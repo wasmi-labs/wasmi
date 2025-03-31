@@ -7,9 +7,9 @@ use crate::{
 };
 use core::cmp;
 
-/// Used to decode host function parameters.
+/// Used to encode and decode host function parameters and results.
 #[derive(Debug)]
-pub struct FuncParams<'a> {
+pub struct FuncInOut<'a> {
     /// Slice holding the raw (encoded but untyped) parameters
     /// of the host function invocation before the call and the
     /// results of the host function invocation after the call.
@@ -67,21 +67,21 @@ impl<'a> FuncResults<'a> {
 /// Used to guarantee by the type system that this API has been used correctly.
 ///
 /// Ensures at compile time that host functions always call
-/// [`FuncParams::decode_params`] or [`FuncParams::decode_params_into_slice`]
+/// [`FuncInOut::decode_params`] or [`FuncInOut::decode_params_into_slice`]
 /// followed by
 /// [`FuncResults::encode_results`] or [`FuncResults::encode_results_from_slice`]
 /// at the end of their execution.
 #[derive(Debug)]
 pub struct FuncFinished {}
 
-impl<'a> FuncParams<'a> {
-    /// Create new [`FuncParams`].
+impl<'a> FuncInOut<'a> {
+    /// Create new [`FuncInOut`].
     ///
     /// # Panics
     ///
     /// If the length of hte `params_results` slice does not match the maximum
     /// of the `len_params` and `Len_results`.
-    pub(super) fn new(
+    pub fn new(
         params_results: &'a mut [UntypedVal],
         len_params: usize,
         len_results: usize,

@@ -1,5 +1,5 @@
 use super::{
-    super::engine::{FuncFinished, FuncParams, FuncResults},
+    func_inout::{FuncFinished, FuncInOut, FuncResults},
     TrampolineEntity,
 };
 use crate::{
@@ -77,7 +77,7 @@ macro_rules! impl_into_func {
                     <Self::Results as WasmTyList>::types(),
                 );
                 let trampoline = TrampolineEntity::new(
-                    move |caller: Caller<T>, params_results: FuncParams| -> Result<FuncFinished, Error> {
+                    move |caller: Caller<T>, params_results: FuncInOut| -> Result<FuncFinished, Error> {
                         let (($($tuple,)*), func_results): (Self::Params, FuncResults) = params_results.decode_params();
                         let results: Self::Results =
                             (self)(caller, $($tuple),*).into_fallible()?;

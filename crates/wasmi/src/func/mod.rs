@@ -1,21 +1,24 @@
 mod caller;
 mod error;
+mod func_inout;
 mod func_type;
 mod funcref;
 mod into_func;
 mod typed_func;
 
+use self::func_inout::FuncFinished;
 pub(crate) use self::typed_func::CallResultsTuple;
 pub use self::{
     caller::Caller,
     error::FuncError,
+    func_inout::FuncInOut,
     func_type::FuncType,
     funcref::FuncRef,
     into_func::{IntoFunc, WasmRet, WasmTy, WasmTyList},
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
 use super::{
-    engine::{DedupFuncType, EngineFunc, FuncFinished, FuncParams},
+    engine::{DedupFuncType, EngineFunc},
     AsContext,
     AsContextMut,
     Instance,
@@ -264,7 +267,7 @@ impl<T> HostFuncTrampolineEntity<T> {
 }
 
 type TrampolineFn<T> =
-    dyn Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Error> + Send + Sync + 'static;
+    dyn Fn(Caller<T>, FuncInOut) -> Result<FuncFinished, Error> + Send + Sync + 'static;
 
 pub struct TrampolineEntity<T> {
     closure: Arc<TrampolineFn<T>>,
@@ -280,7 +283,7 @@ impl<T> TrampolineEntity<T> {
     /// Creates a new [`TrampolineEntity`] from the given host function.
     pub fn new<F>(trampoline: F) -> Self
     where
-        F: Fn(Caller<T>, FuncParams) -> Result<FuncFinished, Error> + Send + Sync + 'static,
+        F: Fn(Caller<T>, FuncInOut) -> Result<FuncFinished, Error> + Send + Sync + 'static,
     {
         Self {
             closure: Arc::new(trampoline),
@@ -294,7 +297,7 @@ impl<T> TrampolineEntity<T> {
         &self,
         mut ctx: impl AsContextMut<Data = T>,
         instance: Option<&Instance>,
-        params: FuncParams,
+        params: FuncInOut,
     ) -> Result<FuncFinished, Error> {
         let caller = <Caller<T>>::new(&mut ctx, instance);
         (self.closure)(caller, params)
