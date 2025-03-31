@@ -1,5 +1,3 @@
-#![cfg_attr(feature = "simd", expect(unused_variables))] // TODO: remove
-
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
