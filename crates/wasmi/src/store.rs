@@ -3,7 +3,7 @@ use crate::{
     core::TrapCode,
     engine::{DedupFuncType, FuelCosts},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
-    func::{Trampoline, TrampolineEntity, TrampolineIdx},
+    func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
     memory::{DataSegment, MemoryError},
     module::InstantiationError,
     table::TableError,
@@ -927,6 +927,22 @@ impl<T> Store<T> {
         limiter: impl FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync + 'static,
     ) {
         self.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
+    }
+
+    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    ///
+    /// # Errors
+    ///
+    /// If the called host function returned an error.
+    pub(super) fn call_host_func(
+        &mut self,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+    ) -> Result<(), Error> {
+        let trampoline = self.resolve_trampoline(func.trampoline()).clone();
+        trampoline.call(self, instance, params_results)?;
+        Ok(())
     }
 
     pub(crate) fn check_new_instances_limit(
