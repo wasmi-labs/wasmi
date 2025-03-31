@@ -473,12 +473,12 @@ impl Executor<'_> {
                 let func_body = func.func_body();
                 let results = results.unwrap_or_else(|| self.caller_results());
                 self.prepare_compiled_func_call::<C>(
-                    &mut store.inner,
+                    store.inner_mut(),
                     results,
                     func_body,
                     Some(instance),
                 )?;
-                self.cache.update(&mut store.inner, &instance);
+                self.cache.update(store.inner_mut(), &instance);
                 Ok(ControlFlow::Continue(()))
             }
             FuncEntity::Host(host_func) => {
@@ -538,7 +538,7 @@ impl Executor<'_> {
                 true => error,
                 false => ResumableHostError::new(error, *func, results).into(),
             })?;
-        self.cache.update(&mut store.inner, &instance);
+        self.cache.update(store.inner_mut(), &instance);
         let results = results.iter(len_results);
         match <C as CallContext>::KIND {
             CallKind::Nested => {
@@ -584,7 +584,7 @@ impl Executor<'_> {
                 self.stack.values.truncate(caller.frame_offset());
                 let new_instance = popped_instance.and_then(|_| self.stack.calls.instance());
                 if let Some(new_instance) = new_instance {
-                    self.cache.update(&mut store.inner, new_instance);
+                    self.cache.update(store.inner_mut(), new_instance);
                 }
                 if let Some(caller) = self.stack.calls.peek() {
                     Self::init_call_frame_impl(
