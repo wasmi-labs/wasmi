@@ -144,7 +144,7 @@ impl Executor<'_> {
             .map(|lane| {
                 match ImmLaneIdx32::try_from(lane) {
                     Ok(lane) => lane,
-                    Err(error) => {
+                    Err(_) => {
                         // Safety: Wasmi translation guarantees that the indices are within bounds.
                         unsafe { unreachable_unchecked!("unexpected out of bounds index: {lane}") }
                     }
