@@ -1,5 +1,3 @@
-#![cfg_attr(feature = "simd", expect(unused_variables))] // TODO: remove
-
 pub use self::call::{dispatch_host_func, ResumableHostError};
 use super::{cache::CachedInstance, InstructionPtr, Stack};
 use crate::{
@@ -1985,13 +1983,7 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store8_lane_offset8(
-                    &mut store.inner,
-                    ptr,
-                    value,
-                    offset,
-                    lane,
-                )?,
+                } => self.execute_v128_store8_lane_offset8(ptr, value, offset, lane)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Store8LaneAt { value, address } => {
                     self.execute_v128_store8_lane_at(&mut store.inner, value, address)?
@@ -2006,13 +1998,7 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store16_lane_offset8(
-                    &mut store.inner,
-                    ptr,
-                    value,
-                    offset,
-                    lane,
-                )?,
+                } => self.execute_v128_store16_lane_offset8(ptr, value, offset, lane)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Store16LaneAt { value, address } => {
                     self.execute_v128_store16_lane_at(&mut store.inner, value, address)?
@@ -2027,13 +2013,7 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store32_lane_offset8(
-                    &mut store.inner,
-                    ptr,
-                    value,
-                    offset,
-                    lane,
-                )?,
+                } => self.execute_v128_store32_lane_offset8(ptr, value, offset, lane)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Store32LaneAt { value, address } => {
                     self.execute_v128_store32_lane_at(&mut store.inner, value, address)?
@@ -2048,13 +2028,7 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store64_lane_offset8(
-                    &mut store.inner,
-                    ptr,
-                    value,
-                    offset,
-                    lane,
-                )?,
+                } => self.execute_v128_store64_lane_offset8(ptr, value, offset, lane)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Store64LaneAt { value, address } => {
                     self.execute_v128_store64_lane_at(&mut store.inner, value, address)?

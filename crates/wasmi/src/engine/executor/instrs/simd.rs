@@ -144,7 +144,7 @@ impl Executor<'_> {
             .map(|lane| {
                 match ImmLaneIdx32::try_from(lane) {
                     Ok(lane) => lane,
-                    Err(error) => {
+                    Err(_) => {
                         // Safety: Wasmi translation guarantees that the indices are within bounds.
                         unsafe { unreachable_unchecked!("unexpected out of bounds index: {lane}") }
                     }
@@ -702,7 +702,7 @@ macro_rules! impl_execute_v128_store_lane {
                 ptr: Reg,
                 offset_lo: Offset64Lo,
             ) -> Result<(), Error> {
-                self.execute_v128_store_lane::<<$ty as IntoLaneIdx>::LaneIdx>(store, ptr, offset_lo, $eval)
+                self.execute_v128_store_lane::<$ty>(store, ptr, offset_lo, $eval)
             }
         )*
     };
@@ -716,13 +716,12 @@ macro_rules! impl_execute_v128_store_lane_offset16 {
             #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
             pub fn $exec(
                 &mut self,
-                store: &mut StoreInner,
                 ptr: Reg,
                 value: Reg,
                 offset: Offset8,
                 lane: <$ty as IntoLaneIdx>::LaneIdx,
             ) -> Result<(), Error> {
-                self.execute_v128_store_lane_offset8::<<$ty as IntoLaneIdx>::LaneIdx>(store, ptr, value, offset, lane, $eval)
+                self.execute_v128_store_lane_offset8::<$ty>(ptr, value, offset, lane, $eval)
             }
         )*
     };
@@ -740,7 +739,7 @@ macro_rules! impl_execute_v128_store_lane_at {
                 value: Reg,
                 address: Address32,
             ) -> Result<(), Error> {
-                self.execute_v128_store_lane_at::<<$ty as IntoLaneIdx>::LaneIdx>(store, value, address, $eval)
+                self.execute_v128_store_lane_at::<$ty>(store, value, address, $eval)
             }
         )*
     };
@@ -758,12 +757,12 @@ type V128StoreLaneAt<LaneType> =
     fn(memory: &mut [u8], address: usize, value: V128, lane: LaneType) -> Result<(), TrapCode>;
 
 impl Executor<'_> {
-    fn execute_v128_store_lane<LaneType>(
+    fn execute_v128_store_lane<T: IntoLaneIdx>(
         &mut self,
         store: &mut StoreInner,
         ptr: Reg,
         offset_lo: Offset64Lo,
-        eval: V128StoreLane<LaneType>,
+        eval: V128StoreLane<T::LaneIdx>,
     ) -> Result<(), Error> {
         let (value, offset_hi) = self.fetch_value_and_offset_hi();
         let (lane, memory) = self.fetch_lane_and_memory(2);
@@ -771,7 +770,7 @@ impl Executor<'_> {
         let ptr = self.get_register_as::<u64>(ptr);
         let v128 = self.get_register_as::<V128>(value);
         let memory = self.fetch_memory_bytes_mut(memory, store);
-        simd::v128_store8_lane(memory, ptr, u64::from(offset), v128, lane)?;
+        eval(memory, ptr, u64::from(offset), v128, lane)?;
         self.try_next_instr_at(3)
     }
 
@@ -782,14 +781,13 @@ impl Executor<'_> {
         (u64, Instruction::V128Store64Lane, execute_v128_store64_lane, simd::v128_store64_lane),
     }
 
-    fn execute_v128_store_lane_offset8<LaneType>(
+    fn execute_v128_store_lane_offset8<T: IntoLaneIdx>(
         &mut self,
-        store: &mut StoreInner,
         ptr: Reg,
         value: Reg,
         offset: Offset8,
-        lane: LaneType,
-        eval: V128StoreLane<LaneType>,
+        lane: T::LaneIdx,
+        eval: V128StoreLane<T::LaneIdx>,
     ) -> Result<(), Error> {
         let ptr = self.get_register_as::<u64>(ptr);
         let offset = u64::from(Offset64::from(offset));
@@ -806,17 +804,17 @@ impl Executor<'_> {
         (u64, Instruction::V128Store64LaneOffset8, execute_v128_store64_lane_offset8, simd::v128_store64_lane),
     }
 
-    fn execute_v128_store_lane_at<LaneType>(
+    fn execute_v128_store_lane_at<T: IntoLaneIdx>(
         &mut self,
         store: &mut StoreInner,
         value: Reg,
         address: Address32,
-        eval: V128StoreLaneAt<LaneType>,
+        eval: V128StoreLaneAt<T::LaneIdx>,
     ) -> Result<(), Error>
     where
-        LaneType: TryFrom<u8> + Into<u8>,
+        T::LaneIdx: TryFrom<u8> + Into<u8>,
     {
-        let (lane, memory) = self.fetch_lane_and_memory::<LaneType>(1);
+        let (lane, memory) = self.fetch_lane_and_memory::<T::LaneIdx>(1);
         let v128 = self.get_register_as::<V128>(value);
         let memory = self.fetch_memory_bytes_mut(memory, store);
         eval(memory, usize::from(address), v128, lane)?;
