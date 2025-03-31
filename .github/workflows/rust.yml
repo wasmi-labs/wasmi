@@ -86,6 +86,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
+          components: rust-src
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
       - name: Show Rust Toolchain
