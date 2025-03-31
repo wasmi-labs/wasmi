@@ -211,8 +211,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
-      - name: Set up Rust cache
-        uses: Swatinem/rust-cache@v2
       - name: Install cargo-udeps
         run: |
           # Note: We use `|| true` because cargo install returns an error
