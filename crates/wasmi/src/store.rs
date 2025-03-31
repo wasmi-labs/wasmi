@@ -1121,7 +1121,7 @@ impl<T: 'static> Store<T> {
                 let Ok(store) = PrunedStore::restore::<T>(pruned) else {
                     panic!(
                         "failed to convert `PrunedStore` back into `Store<{}>`",
-                        core::any::type_name::<T>()
+                        type_name::<T>(),
                     );
                 };
                 store
