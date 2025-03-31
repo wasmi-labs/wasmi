@@ -3,7 +3,7 @@ use crate::{
     core::TrapCode,
     engine::{DedupFuncType, FuelCosts},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
-    func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
+    func::{Trampoline, TrampolineEntity, TrampolineIdx},
     memory::{DataSegment, MemoryError},
     module::InstantiationError,
     table::TableError,
