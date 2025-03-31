@@ -35,6 +35,7 @@ use crate::{
 };
 use alloc::boxed::Box;
 use core::{
+    any::type_name,
     fmt::{self, Debug},
     sync::atomic::{AtomicU32, Ordering},
 };
@@ -99,7 +100,7 @@ impl<'a> ResourceLimiterRef<'a> {
 struct ResourceLimiterQuery<T>(Box<dyn FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync>);
 impl<T> Debug for ResourceLimiterQuery<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ResourceLimiterQuery(...)")
+        write!(f, "ResourceLimiterQuery<{}>(...)", type_name::<T>())
     }
 }
 
@@ -112,7 +113,7 @@ impl<T> Debug for ResourceLimiterQuery<T> {
 struct CallHookWrapper<T>(Box<dyn FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync>);
 impl<T> Debug for CallHookWrapper<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "CallHook(...)")
+        write!(f, "CallHook<{}>", type_name::<T>())
     }
 }
 
