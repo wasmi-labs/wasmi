@@ -11,6 +11,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
+  RUST_NIGHTLY_VERSION: nightly-2025-03-18
+
 jobs:
   check:
     name: Build
@@ -79,7 +83,9 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
       - name: Show Rust Toolchain
@@ -143,8 +149,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
           components: rustfmt
       - name: Foramtting
         run: cargo fmt --all -- --check
@@ -201,7 +208,9 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
       - name: Install cargo-udeps
@@ -224,8 +233,7 @@ jobs:
           submodules: true
       - uses: dtolnay/rust-toolchain@master
         with:
-          # Pin nightly so that it does not invalidate GitHub Actions cache too frequently.
-          toolchain: nightly-2025-03-18
+          toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -269,8 +277,9 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
           components: miri
           targets: x86_64-unknown-linux-gnu
       - name: Set up Rust cache
@@ -294,8 +303,9 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
           components: miri
           targets: x86_64-unknown-linux-gnu
       - name: Set up Rust cache
@@ -320,8 +330,9 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           submodules: true
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
           components: clippy
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
@@ -350,7 +361,9 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_NIGHTLY_VERSION }}
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
       - name: Generate code coverage
