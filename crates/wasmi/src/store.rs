@@ -1052,7 +1052,7 @@ impl<T> Store<T> {
     ///
     /// - If the [`Trampoline`] does not originate from this [`Store`].
     /// - If the [`Trampoline`] cannot be resolved to its entity.
-    pub(super) fn resolve_trampoline(&self, func: &Trampoline) -> &TrampolineEntity<T> {
+    fn resolve_trampoline(&self, func: &Trampoline) -> &TrampolineEntity<T> {
         let entity_index = self.inner.unwrap_stored(func.as_inner());
         self.trampolines
             .get(entity_index)
