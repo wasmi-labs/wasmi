@@ -1,8 +1,5 @@
 use super::Executor;
-use crate::{
-    ir::{index::Memory, Offset64Hi, Reg},
-    store::StoreInner,
-};
+use crate::ir::{index::Memory, Offset64Hi, Reg};
 
 #[cfg(doc)]
 use crate::ir::Instruction;
@@ -44,18 +41,14 @@ impl Executor<'_> {
     }
 
     /// Fetches the bytes of the given `memory`.
-    pub fn fetch_memory_bytes<'exec, 'store, 'bytes>(
-        &'exec self,
-        memory: Memory,
-        store: &'store StoreInner,
-    ) -> &'bytes [u8]
+    pub fn fetch_memory_bytes<'exec, 'store, 'bytes>(&'exec self, memory: Memory) -> &'bytes [u8]
     where
         'exec: 'bytes,
         'store: 'bytes,
     {
         match memory.is_default() {
             true => self.fetch_default_memory_bytes(),
-            false => self.fetch_non_default_memory_bytes(memory, store),
+            false => self.fetch_non_default_memory_bytes(memory),
         }
     }
 
@@ -64,14 +57,13 @@ impl Executor<'_> {
     pub fn fetch_non_default_memory_bytes<'exec, 'store, 'bytes>(
         &'exec self,
         memory: Memory,
-        store: &'store StoreInner,
     ) -> &'bytes [u8]
     where
         'exec: 'bytes,
         'store: 'bytes,
     {
         let memory = self.get_memory(memory);
-        store.resolve_memory(&memory).data()
+        self.store.inner().resolve_memory(&memory).data()
     }
 
     /// Fetches the bytes of the default memory at index 0.
@@ -87,7 +79,6 @@ impl Executor<'_> {
     pub fn fetch_memory_bytes_mut<'exec, 'store, 'bytes>(
         &'exec mut self,
         memory: Memory,
-        store: &'store mut StoreInner,
     ) -> &'bytes mut [u8]
     where
         'exec: 'bytes,
@@ -95,7 +86,7 @@ impl Executor<'_> {
     {
         match memory.is_default() {
             true => self.fetch_default_memory_bytes_mut(),
-            false => self.fetch_non_default_memory_bytes_mut(memory, store),
+            false => self.fetch_non_default_memory_bytes_mut(memory),
         }
     }
 
@@ -105,13 +96,15 @@ impl Executor<'_> {
     pub fn fetch_non_default_memory_bytes_mut<'exec, 'store, 'bytes>(
         &'exec mut self,
         memory: Memory,
-        store: &'store mut StoreInner,
     ) -> &'bytes mut [u8]
     where
         'exec: 'bytes,
         'store: 'bytes,
     {
         let memory = self.get_memory(memory);
-        store.resolve_memory_mut(&memory).data_mut()
+        self.store
+            .inner_mut()
+            .resolve_memory_mut(&memory)
+            .data_mut()
     }
 }

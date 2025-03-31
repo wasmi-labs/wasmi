@@ -13,7 +13,7 @@ use crate::{
     },
     ir::{index, BlockFuel, Const16, Instruction, Offset64Hi, Reg, ShiftAmount},
     memory::DataSegment,
-    store::{PrunedStore, StoreInner},
+    store::PrunedStore,
     table::ElementSegment,
     Error,
     Func,
@@ -72,7 +72,7 @@ pub fn execute_instrs<'engine>(
 ) -> Result<(), Error> {
     let instance = stack.calls.instance_expect();
     let cache = CachedInstance::new(store.inner_mut(), instance);
-    Executor::new(stack, code_map, cache).execute(store)
+    Executor::new(stack, code_map, cache, store).execute()
 }
 
 /// An execution context for executing a Wasmi function frame.
@@ -90,6 +90,8 @@ struct Executor<'engine> {
     ///
     /// [`Engine`]: crate::Engine
     code_map: &'engine CodeMap,
+    /// Used to access store related data.
+    store: &'engine mut PrunedStore,
 }
 
 impl<'engine> Executor<'engine> {
@@ -99,6 +101,7 @@ impl<'engine> Executor<'engine> {
         stack: &'engine mut Stack,
         code_map: &'engine CodeMap,
         cache: CachedInstance,
+        store: &'engine mut PrunedStore,
     ) -> Self {
         let frame = stack
             .calls
@@ -115,97 +118,68 @@ impl<'engine> Executor<'engine> {
             cache,
             stack,
             code_map,
+            store,
         }
     }
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute(mut self, store: &mut PrunedStore) -> Result<(), Error> {
+    fn execute(mut self) -> Result<(), Error> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
                 Instr::Trap { trap_code } => self.execute_trap(trap_code)?,
-                Instr::ConsumeFuel { block_fuel } => {
-                    self.execute_consume_fuel(store.inner_mut(), block_fuel)?
-                }
+                Instr::ConsumeFuel { block_fuel } => self.execute_consume_fuel(block_fuel)?,
                 Instr::Return => {
-                    forward_return!(self.execute_return(store.inner_mut()))
+                    forward_return!(self.execute_return())
                 }
                 Instr::ReturnReg { value } => {
-                    forward_return!(self.execute_return_reg(store.inner_mut(), value))
+                    forward_return!(self.execute_return_reg(value))
                 }
                 Instr::ReturnReg2 { values } => {
-                    forward_return!(self.execute_return_reg2(store.inner_mut(), values))
+                    forward_return!(self.execute_return_reg2(values))
                 }
                 Instr::ReturnReg3 { values } => {
-                    forward_return!(self.execute_return_reg3(store.inner_mut(), values))
+                    forward_return!(self.execute_return_reg3(values))
                 }
                 Instr::ReturnImm32 { value } => {
-                    forward_return!(self.execute_return_imm32(store.inner_mut(), value))
+                    forward_return!(self.execute_return_imm32(value))
                 }
                 Instr::ReturnI64Imm32 { value } => {
-                    forward_return!(self.execute_return_i64imm32(store.inner_mut(), value))
+                    forward_return!(self.execute_return_i64imm32(value))
                 }
                 Instr::ReturnF64Imm32 { value } => {
-                    forward_return!(self.execute_return_f64imm32(store.inner_mut(), value))
+                    forward_return!(self.execute_return_f64imm32(value))
                 }
                 Instr::ReturnSpan { values } => {
-                    forward_return!(self.execute_return_span(store.inner_mut(), values))
+                    forward_return!(self.execute_return_span(values))
                 }
                 Instr::ReturnMany { values } => {
-                    forward_return!(self.execute_return_many(store.inner_mut(), values))
+                    forward_return!(self.execute_return_many(values))
                 }
                 Instr::ReturnNez { condition } => {
-                    forward_return!(self.execute_return_nez(store.inner_mut(), condition))
+                    forward_return!(self.execute_return_nez(condition))
                 }
                 Instr::ReturnNezReg { condition, value } => {
-                    forward_return!(self.execute_return_nez_reg(
-                        store.inner_mut(),
-                        condition,
-                        value
-                    ))
+                    forward_return!(self.execute_return_nez_reg(condition, value))
                 }
                 Instr::ReturnNezReg2 { condition, values } => {
-                    forward_return!(self.execute_return_nez_reg2(
-                        store.inner_mut(),
-                        condition,
-                        values
-                    ))
+                    forward_return!(self.execute_return_nez_reg2(condition, values))
                 }
                 Instr::ReturnNezImm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_imm32(
-                        store.inner_mut(),
-                        condition,
-                        value
-                    ))
+                    forward_return!(self.execute_return_nez_imm32(condition, value))
                 }
                 Instr::ReturnNezI64Imm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_i64imm32(
-                        store.inner_mut(),
-                        condition,
-                        value
-                    ))
+                    forward_return!(self.execute_return_nez_i64imm32(condition, value))
                 }
                 Instr::ReturnNezF64Imm32 { condition, value } => {
-                    forward_return!(self.execute_return_nez_f64imm32(
-                        store.inner_mut(),
-                        condition,
-                        value
-                    ))
+                    forward_return!(self.execute_return_nez_f64imm32(condition, value))
                 }
                 Instr::ReturnNezSpan { condition, values } => {
-                    forward_return!(self.execute_return_nez_span(
-                        store.inner_mut(),
-                        condition,
-                        values
-                    ))
+                    forward_return!(self.execute_return_nez_span(condition, values))
                 }
                 Instr::ReturnNezMany { condition, values } => {
-                    forward_return!(self.execute_return_nez_many(
-                        store.inner_mut(),
-                        condition,
-                        values
-                    ))
+                    forward_return!(self.execute_return_nez_many(condition, values))
                 }
                 Instr::Branch { offset } => self.execute_branch(offset),
                 Instr::BranchTable0 { index, len_targets } => {
@@ -405,54 +379,52 @@ impl<'engine> Executor<'engine> {
                     self.execute_copy_many_non_overlapping(results, values)
                 }
                 Instr::ReturnCallInternal0 { func } => {
-                    self.execute_return_call_internal_0(store.inner_mut(), EngineFunc::from(func))?
+                    self.execute_return_call_internal_0(EngineFunc::from(func))?
                 }
                 Instr::ReturnCallInternal { func } => {
-                    self.execute_return_call_internal(store.inner_mut(), EngineFunc::from(func))?
+                    self.execute_return_call_internal(EngineFunc::from(func))?
                 }
                 Instr::ReturnCallImported0 { func } => {
-                    forward_return!(self.execute_return_call_imported_0(store, func)?)
+                    forward_return!(self.execute_return_call_imported_0(func)?)
                 }
                 Instr::ReturnCallImported { func } => {
-                    forward_return!(self.execute_return_call_imported(store, func)?)
+                    forward_return!(self.execute_return_call_imported(func)?)
                 }
                 Instr::ReturnCallIndirect0 { func_type } => {
-                    forward_return!(self.execute_return_call_indirect_0(store, func_type)?)
+                    forward_return!(self.execute_return_call_indirect_0(func_type)?)
                 }
                 Instr::ReturnCallIndirect0Imm16 { func_type } => {
-                    forward_return!(self.execute_return_call_indirect_0_imm16(store, func_type)?)
+                    forward_return!(self.execute_return_call_indirect_0_imm16(func_type)?)
                 }
                 Instr::ReturnCallIndirect { func_type } => {
-                    forward_return!(self.execute_return_call_indirect(store, func_type)?)
+                    forward_return!(self.execute_return_call_indirect(func_type)?)
                 }
                 Instr::ReturnCallIndirectImm16 { func_type } => {
-                    forward_return!(self.execute_return_call_indirect_imm16(store, func_type)?)
+                    forward_return!(self.execute_return_call_indirect_imm16(func_type)?)
                 }
-                Instr::CallInternal0 { results, func } => self.execute_call_internal_0(
-                    store.inner_mut(),
-                    results,
-                    EngineFunc::from(func),
-                )?,
+                Instr::CallInternal0 { results, func } => {
+                    self.execute_call_internal_0(results, EngineFunc::from(func))?
+                }
                 Instr::CallInternal { results, func } => {
-                    self.execute_call_internal(store.inner_mut(), results, EngineFunc::from(func))?
+                    self.execute_call_internal(results, EngineFunc::from(func))?
                 }
                 Instr::CallImported0 { results, func } => {
-                    self.execute_call_imported_0(store, results, func)?
+                    self.execute_call_imported_0(results, func)?
                 }
                 Instr::CallImported { results, func } => {
-                    self.execute_call_imported(store, results, func)?
+                    self.execute_call_imported(results, func)?
                 }
                 Instr::CallIndirect0 { results, func_type } => {
-                    self.execute_call_indirect_0(store, results, func_type)?
+                    self.execute_call_indirect_0(results, func_type)?
                 }
                 Instr::CallIndirect0Imm16 { results, func_type } => {
-                    self.execute_call_indirect_0_imm16(store, results, func_type)?
+                    self.execute_call_indirect_0_imm16(results, func_type)?
                 }
                 Instr::CallIndirect { results, func_type } => {
-                    self.execute_call_indirect(store, results, func_type)?
+                    self.execute_call_indirect(results, func_type)?
                 }
                 Instr::CallIndirectImm16 { results, func_type } => {
-                    self.execute_call_indirect_imm16(store, results, func_type)?
+                    self.execute_call_indirect_imm16(results, func_type)?
                 }
                 Instr::Select { result, lhs } => self.execute_select(result, lhs),
                 Instr::SelectImm32Rhs { result, lhs } => self.execute_select_imm32_rhs(result, lhs),
@@ -473,45 +445,33 @@ impl<'engine> Executor<'engine> {
                 }
                 Instr::SelectF64Imm32 { result, lhs } => self.execute_select_f64imm32(result, lhs),
                 Instr::RefFunc { result, func } => self.execute_ref_func(result, func),
-                Instr::GlobalGet { result, global } => {
-                    self.execute_global_get(store.inner(), result, global)
-                }
-                Instr::GlobalSet { global, input } => {
-                    self.execute_global_set(store.inner_mut(), global, input)
-                }
+                Instr::GlobalGet { result, global } => self.execute_global_get(result, global),
+                Instr::GlobalSet { global, input } => self.execute_global_set(global, input),
                 Instr::GlobalSetI32Imm16 { global, input } => {
-                    self.execute_global_set_i32imm16(store.inner_mut(), global, input)
+                    self.execute_global_set_i32imm16(global, input)
                 }
                 Instr::GlobalSetI64Imm16 { global, input } => {
-                    self.execute_global_set_i64imm16(store.inner_mut(), global, input)
+                    self.execute_global_set_i64imm16(global, input)
                 }
-                Instr::Load32 { result, offset_lo } => {
-                    self.execute_load32(store.inner(), result, offset_lo)?
-                }
-                Instr::Load32At { result, address } => {
-                    self.execute_load32_at(store.inner(), result, address)?
-                }
+                Instr::Load32 { result, offset_lo } => self.execute_load32(result, offset_lo)?,
+                Instr::Load32At { result, address } => self.execute_load32_at(result, address)?,
                 Instr::Load32Offset16 {
                     result,
                     ptr,
                     offset,
                 } => self.execute_load32_offset16(result, ptr, offset)?,
-                Instr::Load64 { result, offset_lo } => {
-                    self.execute_load64(store.inner(), result, offset_lo)?
-                }
-                Instr::Load64At { result, address } => {
-                    self.execute_load64_at(store.inner(), result, address)?
-                }
+                Instr::Load64 { result, offset_lo } => self.execute_load64(result, offset_lo)?,
+                Instr::Load64At { result, address } => self.execute_load64_at(result, address)?,
                 Instr::Load64Offset16 {
                     result,
                     ptr,
                     offset,
                 } => self.execute_load64_offset16(result, ptr, offset)?,
                 Instr::I32Load8s { result, offset_lo } => {
-                    self.execute_i32_load8_s(store.inner(), result, offset_lo)?
+                    self.execute_i32_load8_s(result, offset_lo)?
                 }
                 Instr::I32Load8sAt { result, address } => {
-                    self.execute_i32_load8_s_at(store.inner(), result, address)?
+                    self.execute_i32_load8_s_at(result, address)?
                 }
                 Instr::I32Load8sOffset16 {
                     result,
@@ -519,10 +479,10 @@ impl<'engine> Executor<'engine> {
                     offset,
                 } => self.execute_i32_load8_s_offset16(result, ptr, offset)?,
                 Instr::I32Load8u { result, offset_lo } => {
-                    self.execute_i32_load8_u(store.inner(), result, offset_lo)?
+                    self.execute_i32_load8_u(result, offset_lo)?
                 }
                 Instr::I32Load8uAt { result, address } => {
-                    self.execute_i32_load8_u_at(store.inner(), result, address)?
+                    self.execute_i32_load8_u_at(result, address)?
                 }
                 Instr::I32Load8uOffset16 {
                     result,
@@ -530,10 +490,10 @@ impl<'engine> Executor<'engine> {
                     offset,
                 } => self.execute_i32_load8_u_offset16(result, ptr, offset)?,
                 Instr::I32Load16s { result, offset_lo } => {
-                    self.execute_i32_load16_s(store.inner(), result, offset_lo)?
+                    self.execute_i32_load16_s(result, offset_lo)?
                 }
                 Instr::I32Load16sAt { result, address } => {
-                    self.execute_i32_load16_s_at(store.inner(), result, address)?
+                    self.execute_i32_load16_s_at(result, address)?
                 }
                 Instr::I32Load16sOffset16 {
                     result,
@@ -541,10 +501,10 @@ impl<'engine> Executor<'engine> {
                     offset,
                 } => self.execute_i32_load16_s_offset16(result, ptr, offset)?,
                 Instr::I32Load16u { result, offset_lo } => {
-                    self.execute_i32_load16_u(store.inner(), result, offset_lo)?
+                    self.execute_i32_load16_u(result, offset_lo)?
                 }
                 Instr::I32Load16uAt { result, address } => {
-                    self.execute_i32_load16_u_at(store.inner(), result, address)?
+                    self.execute_i32_load16_u_at(result, address)?
                 }
                 Instr::I32Load16uOffset16 {
                     result,
@@ -552,10 +512,10 @@ impl<'engine> Executor<'engine> {
                     offset,
                 } => self.execute_i32_load16_u_offset16(result, ptr, offset)?,
                 Instr::I64Load8s { result, offset_lo } => {
-                    self.execute_i64_load8_s(store.inner(), result, offset_lo)?
+                    self.execute_i64_load8_s(result, offset_lo)?
                 }
                 Instr::I64Load8sAt { result, address } => {
-                    self.execute_i64_load8_s_at(store.inner(), result, address)?
+                    self.execute_i64_load8_s_at(result, address)?
                 }
                 Instr::I64Load8sOffset16 {
                     result,
@@ -563,10 +523,10 @@ impl<'engine> Executor<'engine> {
                     offset,
                 } => self.execute_i64_load8_s_offset16(result, ptr, offset)?,
                 Instr::I64Load8u { result, offset_lo } => {
-                    self.execute_i64_load8_u(store.inner(), result, offset_lo)?
+                    self.execute_i64_load8_u(result, offset_lo)?
                 }
                 Instr::I64Load8uAt { result, address } => {
-                    self.execute_i64_load8_u_at(store.inner(), result, address)?
+                    self.execute_i64_load8_u_at(result, address)?
                 }
                 Instr::I64Load8uOffset16 {
                     result,
@@ -574,10 +534,10 @@ impl<'engine> Executor<'engine> {
                     offset,
                 } => self.execute_i64_load8_u_offset16(result, ptr, offset)?,
                 Instr::I64Load16s { result, offset_lo } => {
-                    self.execute_i64_load16_s(store.inner(), result, offset_lo)?
+                    self.execute_i64_load16_s(result, offset_lo)?
                 }
                 Instr::I64Load16sAt { result, address } => {
-                    self.execute_i64_load16_s_at(store.inner(), result, address)?
+                    self.execute_i64_load16_s_at(result, address)?
                 }
                 Instr::I64Load16sOffset16 {
                     result,
@@ -585,10 +545,10 @@ impl<'engine> Executor<'engine> {
                     offset,
                 } => self.execute_i64_load16_s_offset16(result, ptr, offset)?,
                 Instr::I64Load16u { result, offset_lo } => {
-                    self.execute_i64_load16_u(store.inner(), result, offset_lo)?
+                    self.execute_i64_load16_u(result, offset_lo)?
                 }
                 Instr::I64Load16uAt { result, address } => {
-                    self.execute_i64_load16_u_at(store.inner(), result, address)?
+                    self.execute_i64_load16_u_at(result, address)?
                 }
                 Instr::I64Load16uOffset16 {
                     result,
@@ -596,10 +556,10 @@ impl<'engine> Executor<'engine> {
                     offset,
                 } => self.execute_i64_load16_u_offset16(result, ptr, offset)?,
                 Instr::I64Load32s { result, offset_lo } => {
-                    self.execute_i64_load32_s(store.inner(), result, offset_lo)?
+                    self.execute_i64_load32_s(result, offset_lo)?
                 }
                 Instr::I64Load32sAt { result, address } => {
-                    self.execute_i64_load32_s_at(store.inner(), result, address)?
+                    self.execute_i64_load32_s_at(result, address)?
                 }
                 Instr::I64Load32sOffset16 {
                     result,
@@ -607,48 +567,38 @@ impl<'engine> Executor<'engine> {
                     offset,
                 } => self.execute_i64_load32_s_offset16(result, ptr, offset)?,
                 Instr::I64Load32u { result, offset_lo } => {
-                    self.execute_i64_load32_u(store.inner(), result, offset_lo)?
+                    self.execute_i64_load32_u(result, offset_lo)?
                 }
                 Instr::I64Load32uAt { result, address } => {
-                    self.execute_i64_load32_u_at(store.inner(), result, address)?
+                    self.execute_i64_load32_u_at(result, address)?
                 }
                 Instr::I64Load32uOffset16 {
                     result,
                     ptr,
                     offset,
                 } => self.execute_i64_load32_u_offset16(result, ptr, offset)?,
-                Instr::Store32 { ptr, offset_lo } => {
-                    self.execute_store32(store.inner_mut(), ptr, offset_lo)?
-                }
+                Instr::Store32 { ptr, offset_lo } => self.execute_store32(ptr, offset_lo)?,
                 Instr::Store32Offset16 { ptr, offset, value } => {
                     self.execute_store32_offset16(ptr, offset, value)?
                 }
-                Instr::Store32At { address, value } => {
-                    self.execute_store32_at(store.inner_mut(), address, value)?
-                }
-                Instr::Store64 { ptr, offset_lo } => {
-                    self.execute_store64(store.inner_mut(), ptr, offset_lo)?
-                }
+                Instr::Store32At { address, value } => self.execute_store32_at(address, value)?,
+                Instr::Store64 { ptr, offset_lo } => self.execute_store64(ptr, offset_lo)?,
                 Instr::Store64Offset16 { ptr, offset, value } => {
                     self.execute_store64_offset16(ptr, offset, value)?
                 }
-                Instr::Store64At { address, value } => {
-                    self.execute_store64_at(store.inner_mut(), address, value)?
-                }
+                Instr::Store64At { address, value } => self.execute_store64_at(address, value)?,
                 Instr::I32StoreImm16 { ptr, offset_lo } => {
-                    self.execute_i32_store_imm16(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i32_store_imm16(ptr, offset_lo)?
                 }
                 Instr::I32StoreOffset16Imm16 { ptr, offset, value } => {
                     self.execute_i32_store_offset16_imm16(ptr, offset, value)?
                 }
                 Instr::I32StoreAtImm16 { address, value } => {
-                    self.execute_i32_store_at_imm16(store.inner_mut(), address, value)?
+                    self.execute_i32_store_at_imm16(address, value)?
                 }
-                Instr::I32Store8 { ptr, offset_lo } => {
-                    self.execute_i32_store8(store.inner_mut(), ptr, offset_lo)?
-                }
+                Instr::I32Store8 { ptr, offset_lo } => self.execute_i32_store8(ptr, offset_lo)?,
                 Instr::I32Store8Imm { ptr, offset_lo } => {
-                    self.execute_i32_store8_imm(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i32_store8_imm(ptr, offset_lo)?
                 }
                 Instr::I32Store8Offset16 { ptr, offset, value } => {
                     self.execute_i32_store8_offset16(ptr, offset, value)?
@@ -657,16 +607,14 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32_store8_offset16_imm(ptr, offset, value)?
                 }
                 Instr::I32Store8At { address, value } => {
-                    self.execute_i32_store8_at(store.inner_mut(), address, value)?
+                    self.execute_i32_store8_at(address, value)?
                 }
                 Instr::I32Store8AtImm { address, value } => {
-                    self.execute_i32_store8_at_imm(store.inner_mut(), address, value)?
+                    self.execute_i32_store8_at_imm(address, value)?
                 }
-                Instr::I32Store16 { ptr, offset_lo } => {
-                    self.execute_i32_store16(store.inner_mut(), ptr, offset_lo)?
-                }
+                Instr::I32Store16 { ptr, offset_lo } => self.execute_i32_store16(ptr, offset_lo)?,
                 Instr::I32Store16Imm { ptr, offset_lo } => {
-                    self.execute_i32_store16_imm(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i32_store16_imm(ptr, offset_lo)?
                 }
                 Instr::I32Store16Offset16 { ptr, offset, value } => {
                     self.execute_i32_store16_offset16(ptr, offset, value)?
@@ -675,25 +623,23 @@ impl<'engine> Executor<'engine> {
                     self.execute_i32_store16_offset16_imm(ptr, offset, value)?
                 }
                 Instr::I32Store16At { address, value } => {
-                    self.execute_i32_store16_at(store.inner_mut(), address, value)?
+                    self.execute_i32_store16_at(address, value)?
                 }
                 Instr::I32Store16AtImm { address, value } => {
-                    self.execute_i32_store16_at_imm(store.inner_mut(), address, value)?
+                    self.execute_i32_store16_at_imm(address, value)?
                 }
                 Instr::I64StoreImm16 { ptr, offset_lo } => {
-                    self.execute_i64_store_imm16(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store_imm16(ptr, offset_lo)?
                 }
                 Instr::I64StoreOffset16Imm16 { ptr, offset, value } => {
                     self.execute_i64_store_offset16_imm16(ptr, offset, value)?
                 }
                 Instr::I64StoreAtImm16 { address, value } => {
-                    self.execute_i64_store_at_imm16(store.inner_mut(), address, value)?
+                    self.execute_i64_store_at_imm16(address, value)?
                 }
-                Instr::I64Store8 { ptr, offset_lo } => {
-                    self.execute_i64_store8(store.inner_mut(), ptr, offset_lo)?
-                }
+                Instr::I64Store8 { ptr, offset_lo } => self.execute_i64_store8(ptr, offset_lo)?,
                 Instr::I64Store8Imm { ptr, offset_lo } => {
-                    self.execute_i64_store8_imm(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store8_imm(ptr, offset_lo)?
                 }
                 Instr::I64Store8Offset16 { ptr, offset, value } => {
                     self.execute_i64_store8_offset16(ptr, offset, value)?
@@ -702,16 +648,14 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_store8_offset16_imm(ptr, offset, value)?
                 }
                 Instr::I64Store8At { address, value } => {
-                    self.execute_i64_store8_at(store.inner_mut(), address, value)?
+                    self.execute_i64_store8_at(address, value)?
                 }
                 Instr::I64Store8AtImm { address, value } => {
-                    self.execute_i64_store8_at_imm(store.inner_mut(), address, value)?
+                    self.execute_i64_store8_at_imm(address, value)?
                 }
-                Instr::I64Store16 { ptr, offset_lo } => {
-                    self.execute_i64_store16(store.inner_mut(), ptr, offset_lo)?
-                }
+                Instr::I64Store16 { ptr, offset_lo } => self.execute_i64_store16(ptr, offset_lo)?,
                 Instr::I64Store16Imm { ptr, offset_lo } => {
-                    self.execute_i64_store16_imm(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store16_imm(ptr, offset_lo)?
                 }
                 Instr::I64Store16Offset16 { ptr, offset, value } => {
                     self.execute_i64_store16_offset16(ptr, offset, value)?
@@ -720,16 +664,14 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_store16_offset16_imm(ptr, offset, value)?
                 }
                 Instr::I64Store16At { address, value } => {
-                    self.execute_i64_store16_at(store.inner_mut(), address, value)?
+                    self.execute_i64_store16_at(address, value)?
                 }
                 Instr::I64Store16AtImm { address, value } => {
-                    self.execute_i64_store16_at_imm(store.inner_mut(), address, value)?
+                    self.execute_i64_store16_at_imm(address, value)?
                 }
-                Instr::I64Store32 { ptr, offset_lo } => {
-                    self.execute_i64_store32(store.inner_mut(), ptr, offset_lo)?
-                }
+                Instr::I64Store32 { ptr, offset_lo } => self.execute_i64_store32(ptr, offset_lo)?,
                 Instr::I64Store32Imm16 { ptr, offset_lo } => {
-                    self.execute_i64_store32_imm16(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store32_imm16(ptr, offset_lo)?
                 }
                 Instr::I64Store32Offset16 { ptr, offset, value } => {
                     self.execute_i64_store32_offset16(ptr, offset, value)?
@@ -738,10 +680,10 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64_store32_offset16_imm16(ptr, offset, value)?
                 }
                 Instr::I64Store32At { address, value } => {
-                    self.execute_i64_store32_at(store.inner_mut(), address, value)?
+                    self.execute_i64_store32_at(address, value)?
                 }
                 Instr::I64Store32AtImm16 { address, value } => {
-                    self.execute_i64_store32_at_imm16(store.inner_mut(), address, value)?
+                    self.execute_i64_store32_at_imm16(address, value)?
                 }
                 Instr::I32Eq { result, lhs, rhs } => self.execute_i32_eq(result, lhs, rhs),
                 Instr::I32EqImm16 { result, lhs, rhs } => {
@@ -1131,173 +1073,151 @@ impl<'engine> Executor<'engine> {
                 Instr::F64ConvertI64U { result, input } => {
                     self.execute_f64_convert_i64_u(result, input)
                 }
-                Instr::TableGet { result, index } => {
-                    self.execute_table_get(store.inner(), result, index)?
-                }
+                Instr::TableGet { result, index } => self.execute_table_get(result, index)?,
                 Instr::TableGetImm { result, index } => {
-                    self.execute_table_get_imm(store.inner(), result, index)?
+                    self.execute_table_get_imm(result, index)?
                 }
-                Instr::TableSize { result, table } => {
-                    self.execute_table_size(store.inner(), result, table)
-                }
-                Instr::TableSet { index, value } => {
-                    self.execute_table_set(store.inner_mut(), index, value)?
-                }
-                Instr::TableSetAt { index, value } => {
-                    self.execute_table_set_at(store.inner_mut(), index, value)?
-                }
-                Instr::TableCopy { dst, src, len } => {
-                    self.execute_table_copy(store.inner_mut(), dst, src, len)?
-                }
+                Instr::TableSize { result, table } => self.execute_table_size(result, table),
+                Instr::TableSet { index, value } => self.execute_table_set(index, value)?,
+                Instr::TableSetAt { index, value } => self.execute_table_set_at(index, value)?,
+                Instr::TableCopy { dst, src, len } => self.execute_table_copy(dst, src, len)?,
                 Instr::TableCopyTo { dst, src, len } => {
-                    self.execute_table_copy_to(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_to(dst, src, len)?
                 }
                 Instr::TableCopyFrom { dst, src, len } => {
-                    self.execute_table_copy_from(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_from(dst, src, len)?
                 }
                 Instr::TableCopyFromTo { dst, src, len } => {
-                    self.execute_table_copy_from_to(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_from_to(dst, src, len)?
                 }
                 Instr::TableCopyExact { dst, src, len } => {
-                    self.execute_table_copy_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_exact(dst, src, len)?
                 }
                 Instr::TableCopyToExact { dst, src, len } => {
-                    self.execute_table_copy_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_to_exact(dst, src, len)?
                 }
                 Instr::TableCopyFromExact { dst, src, len } => {
-                    self.execute_table_copy_from_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_from_exact(dst, src, len)?
                 }
                 Instr::TableCopyFromToExact { dst, src, len } => {
-                    self.execute_table_copy_from_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_from_to_exact(dst, src, len)?
                 }
-                Instr::TableInit { dst, src, len } => {
-                    self.execute_table_init(store.inner_mut(), dst, src, len)?
-                }
+                Instr::TableInit { dst, src, len } => self.execute_table_init(dst, src, len)?,
                 Instr::TableInitTo { dst, src, len } => {
-                    self.execute_table_init_to(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_to(dst, src, len)?
                 }
                 Instr::TableInitFrom { dst, src, len } => {
-                    self.execute_table_init_from(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_from(dst, src, len)?
                 }
                 Instr::TableInitFromTo { dst, src, len } => {
-                    self.execute_table_init_from_to(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_from_to(dst, src, len)?
                 }
                 Instr::TableInitExact { dst, src, len } => {
-                    self.execute_table_init_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_exact(dst, src, len)?
                 }
                 Instr::TableInitToExact { dst, src, len } => {
-                    self.execute_table_init_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_to_exact(dst, src, len)?
                 }
                 Instr::TableInitFromExact { dst, src, len } => {
-                    self.execute_table_init_from_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_from_exact(dst, src, len)?
                 }
                 Instr::TableInitFromToExact { dst, src, len } => {
-                    self.execute_table_init_from_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_from_to_exact(dst, src, len)?
                 }
-                Instr::TableFill { dst, len, value } => {
-                    self.execute_table_fill(store.inner_mut(), dst, len, value)?
-                }
+                Instr::TableFill { dst, len, value } => self.execute_table_fill(dst, len, value)?,
                 Instr::TableFillAt { dst, len, value } => {
-                    self.execute_table_fill_at(store.inner_mut(), dst, len, value)?
+                    self.execute_table_fill_at(dst, len, value)?
                 }
                 Instr::TableFillExact { dst, len, value } => {
-                    self.execute_table_fill_exact(store.inner_mut(), dst, len, value)?
+                    self.execute_table_fill_exact(dst, len, value)?
                 }
                 Instr::TableFillAtExact { dst, len, value } => {
-                    self.execute_table_fill_at_exact(store.inner_mut(), dst, len, value)?
+                    self.execute_table_fill_at_exact(dst, len, value)?
                 }
                 Instr::TableGrow {
                     result,
                     delta,
                     value,
-                } => self.execute_table_grow(store, result, delta, value)?,
+                } => self.execute_table_grow(result, delta, value)?,
                 Instr::TableGrowImm {
                     result,
                     delta,
                     value,
-                } => self.execute_table_grow_imm(store, result, delta, value)?,
-                Instr::ElemDrop { index } => self.execute_element_drop(store.inner_mut(), index),
-                Instr::DataDrop { index } => self.execute_data_drop(store.inner_mut(), index),
-                Instr::MemorySize { result, memory } => {
-                    self.execute_memory_size(store.inner(), result, memory)
-                }
-                Instr::MemoryGrow { result, delta } => {
-                    self.execute_memory_grow(store, result, delta)?
-                }
+                } => self.execute_table_grow_imm(result, delta, value)?,
+                Instr::ElemDrop { index } => self.execute_element_drop(index),
+                Instr::DataDrop { index } => self.execute_data_drop(index),
+                Instr::MemorySize { result, memory } => self.execute_memory_size(result, memory),
+                Instr::MemoryGrow { result, delta } => self.execute_memory_grow(result, delta)?,
                 Instr::MemoryGrowBy { result, delta } => {
-                    self.execute_memory_grow_by(store, result, delta)?
+                    self.execute_memory_grow_by(result, delta)?
                 }
-                Instr::MemoryCopy { dst, src, len } => {
-                    self.execute_memory_copy(store.inner_mut(), dst, src, len)?
-                }
+                Instr::MemoryCopy { dst, src, len } => self.execute_memory_copy(dst, src, len)?,
                 Instr::MemoryCopyTo { dst, src, len } => {
-                    self.execute_memory_copy_to(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_to(dst, src, len)?
                 }
                 Instr::MemoryCopyFrom { dst, src, len } => {
-                    self.execute_memory_copy_from(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_from(dst, src, len)?
                 }
                 Instr::MemoryCopyFromTo { dst, src, len } => {
-                    self.execute_memory_copy_from_to(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_from_to(dst, src, len)?
                 }
                 Instr::MemoryCopyExact { dst, src, len } => {
-                    self.execute_memory_copy_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_exact(dst, src, len)?
                 }
                 Instr::MemoryCopyToExact { dst, src, len } => {
-                    self.execute_memory_copy_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_to_exact(dst, src, len)?
                 }
                 Instr::MemoryCopyFromExact { dst, src, len } => {
-                    self.execute_memory_copy_from_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_from_exact(dst, src, len)?
                 }
                 Instr::MemoryCopyFromToExact { dst, src, len } => {
-                    self.execute_memory_copy_from_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_from_to_exact(dst, src, len)?
                 }
                 Instr::MemoryFill { dst, value, len } => {
-                    self.execute_memory_fill(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill(dst, value, len)?
                 }
                 Instr::MemoryFillAt { dst, value, len } => {
-                    self.execute_memory_fill_at(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_at(dst, value, len)?
                 }
                 Instr::MemoryFillImm { dst, value, len } => {
-                    self.execute_memory_fill_imm(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_imm(dst, value, len)?
                 }
                 Instr::MemoryFillExact { dst, value, len } => {
-                    self.execute_memory_fill_exact(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_exact(dst, value, len)?
                 }
                 Instr::MemoryFillAtImm { dst, value, len } => {
-                    self.execute_memory_fill_at_imm(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_at_imm(dst, value, len)?
                 }
                 Instr::MemoryFillAtExact { dst, value, len } => {
-                    self.execute_memory_fill_at_exact(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_at_exact(dst, value, len)?
                 }
                 Instr::MemoryFillImmExact { dst, value, len } => {
-                    self.execute_memory_fill_imm_exact(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_imm_exact(dst, value, len)?
                 }
                 Instr::MemoryFillAtImmExact { dst, value, len } => {
-                    self.execute_memory_fill_at_imm_exact(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_at_imm_exact(dst, value, len)?
                 }
-                Instr::MemoryInit { dst, src, len } => {
-                    self.execute_memory_init(store.inner_mut(), dst, src, len)?
-                }
+                Instr::MemoryInit { dst, src, len } => self.execute_memory_init(dst, src, len)?,
                 Instr::MemoryInitTo { dst, src, len } => {
-                    self.execute_memory_init_to(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_to(dst, src, len)?
                 }
                 Instr::MemoryInitFrom { dst, src, len } => {
-                    self.execute_memory_init_from(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_from(dst, src, len)?
                 }
                 Instr::MemoryInitFromTo { dst, src, len } => {
-                    self.execute_memory_init_from_to(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_from_to(dst, src, len)?
                 }
                 Instr::MemoryInitExact { dst, src, len } => {
-                    self.execute_memory_init_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_exact(dst, src, len)?
                 }
                 Instr::MemoryInitToExact { dst, src, len } => {
-                    self.execute_memory_init_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_to_exact(dst, src, len)?
                 }
                 Instr::MemoryInitFromExact { dst, src, len } => {
-                    self.execute_memory_init_from_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_from_exact(dst, src, len)?
                 }
                 Instr::MemoryInitFromToExact { dst, src, len } => {
-                    self.execute_memory_init_from_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_from_to_exact(dst, src, len)?
                 }
                 Instr::TableIndex { .. }
                 | Instr::MemoryIndex { .. }
@@ -1967,20 +1887,18 @@ impl<'engine> Executor<'engine> {
                     self.execute_i64x2_extend_high_i32x4_u(result, input)
                 }
                 #[cfg(feature = "simd")]
-                Instr::V128Store { ptr, offset_lo } => {
-                    self.execute_v128_store(store.inner_mut(), ptr, offset_lo)?
-                }
+                Instr::V128Store { ptr, offset_lo } => self.execute_v128_store(ptr, offset_lo)?,
                 #[cfg(feature = "simd")]
                 Instr::V128StoreOffset16 { ptr, value, offset } => {
                     self.execute_v128_store_offset16(ptr, offset, value)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128StoreAt { value, address } => {
-                    self.execute_v128_store_at(store.inner_mut(), address, value)?
+                    self.execute_v128_store_at(address, value)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store8Lane { ptr, offset_lo } => {
-                    self.execute_v128_store8_lane(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_v128_store8_lane(ptr, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store8LaneOffset8 {
@@ -1988,20 +1906,14 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store8_lane_offset8(
-                    store.inner_mut(),
-                    ptr,
-                    value,
-                    offset,
-                    lane,
-                )?,
+                } => self.execute_v128_store8_lane_offset8(ptr, value, offset, lane)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Store8LaneAt { value, address } => {
-                    self.execute_v128_store8_lane_at(store.inner_mut(), value, address)?
+                    self.execute_v128_store8_lane_at(value, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store16Lane { ptr, offset_lo } => {
-                    self.execute_v128_store16_lane(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_v128_store16_lane(ptr, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store16LaneOffset8 {
@@ -2009,20 +1921,14 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store16_lane_offset8(
-                    store.inner_mut(),
-                    ptr,
-                    value,
-                    offset,
-                    lane,
-                )?,
+                } => self.execute_v128_store16_lane_offset8(ptr, value, offset, lane)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Store16LaneAt { value, address } => {
-                    self.execute_v128_store16_lane_at(store.inner_mut(), value, address)?
+                    self.execute_v128_store16_lane_at(value, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store32Lane { ptr, offset_lo } => {
-                    self.execute_v128_store32_lane(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_v128_store32_lane(ptr, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store32LaneOffset8 {
@@ -2030,20 +1936,14 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store32_lane_offset8(
-                    store.inner_mut(),
-                    ptr,
-                    value,
-                    offset,
-                    lane,
-                )?,
+                } => self.execute_v128_store32_lane_offset8(ptr, value, offset, lane)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Store32LaneAt { value, address } => {
-                    self.execute_v128_store32_lane_at(store.inner_mut(), value, address)?
+                    self.execute_v128_store32_lane_at(value, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store64Lane { ptr, offset_lo } => {
-                    self.execute_v128_store64_lane(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_v128_store64_lane(ptr, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store64LaneOffset8 {
@@ -2051,24 +1951,18 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store64_lane_offset8(
-                    store.inner_mut(),
-                    ptr,
-                    value,
-                    offset,
-                    lane,
-                )?,
+                } => self.execute_v128_store64_lane_offset8(ptr, value, offset, lane)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Store64LaneAt { value, address } => {
-                    self.execute_v128_store64_lane_at(store.inner_mut(), value, address)?
+                    self.execute_v128_store64_lane_at(value, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load { result, offset_lo } => {
-                    self.execute_v128_load(store.inner(), result, offset_lo)?
+                    self.execute_v128_load(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128LoadAt { result, address } => {
-                    self.execute_v128_load_at(store.inner(), result, address)?
+                    self.execute_v128_load_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128LoadOffset16 {
@@ -2078,11 +1972,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load32Zero { result, offset_lo } => {
-                    self.execute_v128_load32_zero(store.inner(), result, offset_lo)?
+                    self.execute_v128_load32_zero(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32ZeroAt { result, address } => {
-                    self.execute_v128_load32_zero_at(store.inner(), result, address)?
+                    self.execute_v128_load32_zero_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32ZeroOffset16 {
@@ -2092,11 +1986,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load32_zero_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load64Zero { result, offset_lo } => {
-                    self.execute_v128_load64_zero(store.inner(), result, offset_lo)?
+                    self.execute_v128_load64_zero(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64ZeroAt { result, address } => {
-                    self.execute_v128_load64_zero_at(store.inner(), result, address)?
+                    self.execute_v128_load64_zero_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64ZeroOffset16 {
@@ -2106,11 +2000,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load64_zero_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load8Splat { result, offset_lo } => {
-                    self.execute_v128_load8_splat(store.inner(), result, offset_lo)?
+                    self.execute_v128_load8_splat(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8SplatAt { result, address } => {
-                    self.execute_v128_load8_splat_at(store.inner(), result, address)?
+                    self.execute_v128_load8_splat_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8SplatOffset16 {
@@ -2120,11 +2014,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load8_splat_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load16Splat { result, offset_lo } => {
-                    self.execute_v128_load16_splat(store.inner(), result, offset_lo)?
+                    self.execute_v128_load16_splat(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16SplatAt { result, address } => {
-                    self.execute_v128_load16_splat_at(store.inner(), result, address)?
+                    self.execute_v128_load16_splat_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16SplatOffset16 {
@@ -2134,11 +2028,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load16_splat_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load32Splat { result, offset_lo } => {
-                    self.execute_v128_load32_splat(store.inner(), result, offset_lo)?
+                    self.execute_v128_load32_splat(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32SplatAt { result, address } => {
-                    self.execute_v128_load32_splat_at(store.inner(), result, address)?
+                    self.execute_v128_load32_splat_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32SplatOffset16 {
@@ -2148,11 +2042,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load32_splat_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load64Splat { result, offset_lo } => {
-                    self.execute_v128_load64_splat(store.inner(), result, offset_lo)?
+                    self.execute_v128_load64_splat(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64SplatAt { result, address } => {
-                    self.execute_v128_load64_splat_at(store.inner(), result, address)?
+                    self.execute_v128_load64_splat_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64SplatOffset16 {
@@ -2162,11 +2056,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load64_splat_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8S { result, offset_lo } => {
-                    self.execute_v128_load8x8_s(store.inner(), result, offset_lo)?
+                    self.execute_v128_load8x8_s(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8SAt { result, address } => {
-                    self.execute_v128_load8x8_s_at(store.inner(), result, address)?
+                    self.execute_v128_load8x8_s_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8SOffset16 {
@@ -2176,11 +2070,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load8x8_s_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8U { result, offset_lo } => {
-                    self.execute_v128_load8x8_u(store.inner(), result, offset_lo)?
+                    self.execute_v128_load8x8_u(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8UAt { result, address } => {
-                    self.execute_v128_load8x8_u_at(store.inner(), result, address)?
+                    self.execute_v128_load8x8_u_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8UOffset16 {
@@ -2190,11 +2084,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load8x8_u_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4S { result, offset_lo } => {
-                    self.execute_v128_load16x4_s(store.inner(), result, offset_lo)?
+                    self.execute_v128_load16x4_s(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4SAt { result, address } => {
-                    self.execute_v128_load16x4_s_at(store.inner(), result, address)?
+                    self.execute_v128_load16x4_s_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4SOffset16 {
@@ -2204,11 +2098,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load16x4_s_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4U { result, offset_lo } => {
-                    self.execute_v128_load16x4_u(store.inner(), result, offset_lo)?
+                    self.execute_v128_load16x4_u(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4UAt { result, address } => {
-                    self.execute_v128_load16x4_u_at(store.inner(), result, address)?
+                    self.execute_v128_load16x4_u_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4UOffset16 {
@@ -2218,11 +2112,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load16x4_u_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2S { result, offset_lo } => {
-                    self.execute_v128_load32x2_s(store.inner(), result, offset_lo)?
+                    self.execute_v128_load32x2_s(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2SAt { result, address } => {
-                    self.execute_v128_load32x2_s_at(store.inner(), result, address)?
+                    self.execute_v128_load32x2_s_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2SOffset16 {
@@ -2232,11 +2126,11 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load32x2_s_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2U { result, offset_lo } => {
-                    self.execute_v128_load32x2_u(store.inner(), result, offset_lo)?
+                    self.execute_v128_load32x2_u(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2UAt { result, address } => {
-                    self.execute_v128_load32x2_u_at(store.inner(), result, address)?
+                    self.execute_v128_load32x2_u_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2UOffset16 {
@@ -2246,35 +2140,35 @@ impl<'engine> Executor<'engine> {
                 } => self.execute_v128_load32x2_u_offset16(result, ptr, offset)?,
                 #[cfg(feature = "simd")]
                 Instr::V128Load8Lane { result, offset_lo } => {
-                    self.execute_v128_load8_lane(store.inner(), result, offset_lo)?
+                    self.execute_v128_load8_lane(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8LaneAt { result, address } => {
-                    self.execute_v128_load8_lane_at(store.inner(), result, address)?
+                    self.execute_v128_load8_lane_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16Lane { result, offset_lo } => {
-                    self.execute_v128_load16_lane(store.inner(), result, offset_lo)?
+                    self.execute_v128_load16_lane(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16LaneAt { result, address } => {
-                    self.execute_v128_load16_lane_at(store.inner(), result, address)?
+                    self.execute_v128_load16_lane_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32Lane { result, offset_lo } => {
-                    self.execute_v128_load32_lane(store.inner(), result, offset_lo)?
+                    self.execute_v128_load32_lane(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32LaneAt { result, address } => {
-                    self.execute_v128_load32_lane_at(store.inner(), result, address)?
+                    self.execute_v128_load32_lane_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64Lane { result, offset_lo } => {
-                    self.execute_v128_load64_lane(store.inner(), result, offset_lo)?
+                    self.execute_v128_load64_lane(result, offset_lo)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64LaneAt { result, address } => {
-                    self.execute_v128_load64_lane_at(store.inner(), result, address)?
+                    self.execute_v128_load64_lane_at(result, address)?
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8RelaxedDotI8x16I7x16S { result, lhs, rhs } => {
@@ -2719,15 +2613,12 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ConsumeFuel`].
-    fn execute_consume_fuel(
-        &mut self,
-        store: &mut StoreInner,
-        block_fuel: BlockFuel,
-    ) -> Result<(), Error> {
+    fn execute_consume_fuel(&mut self, block_fuel: BlockFuel) -> Result<(), Error> {
         // We do not have to check if fuel metering is enabled since
         // [`Instruction::ConsumeFuel`] are only generated if fuel metering
         // is enabled to begin with.
-        store
+        self.store
+            .inner_mut()
             .fuel_mut()
             .consume_fuel_unchecked(block_fuel.to_u64())?;
         self.try_next_instr()

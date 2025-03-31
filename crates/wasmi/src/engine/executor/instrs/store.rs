@@ -13,7 +13,6 @@ use crate::{
         Offset64Lo,
         Reg,
     },
-    store::StoreInner,
     Error,
 };
 
@@ -60,7 +59,6 @@ impl Executor<'_> {
     /// - `i64.store32`
     pub(super) fn execute_store_wrap<T>(
         &mut self,
-        store: &mut StoreInner,
         memory: Memory,
         address: u64,
         offset: Offset64,
@@ -70,7 +68,7 @@ impl Executor<'_> {
     where
         UntypedVal: ReadAs<T>,
     {
-        let memory = self.fetch_memory_bytes_mut(memory, store);
+        let memory = self.fetch_memory_bytes_mut(memory);
         store_wrap(memory, address, u64::from(offset), value)?;
         Ok(())
     }
@@ -87,13 +85,12 @@ impl Executor<'_> {
     /// - `i64.store32`
     fn execute_store_wrap_at<T>(
         &mut self,
-        store: &mut StoreInner,
         memory: Memory,
         address: Address32,
         value: T,
         store_wrap_at: WasmStoreAtOp<T>,
     ) -> Result<(), Error> {
-        let memory = self.fetch_memory_bytes_mut(memory, store);
+        let memory = self.fetch_memory_bytes_mut(memory);
         store_wrap_at(memory, usize::from(address), value)?;
         Ok(())
     }
@@ -125,7 +122,6 @@ impl Executor<'_> {
 
     fn execute_store<T>(
         &mut self,
-        store: &mut StoreInner,
         ptr: Reg,
         offset_lo: Offset64Lo,
         store_op: WasmStoreOp<T>,
@@ -138,13 +134,12 @@ impl Executor<'_> {
         let offset = Offset64::combine(offset_hi, offset_lo);
         let ptr = self.get_register_as::<u64>(ptr);
         let value = self.get_register_as::<T>(value);
-        self.execute_store_wrap::<T>(store, memory, ptr, offset, value, store_op)?;
+        self.execute_store_wrap::<T>(memory, ptr, offset, value, store_op)?;
         self.try_next_instr_at(2)
     }
 
     fn execute_store_imm<T>(
         &mut self,
-        store: &mut StoreInner,
         ptr: Reg,
         offset_lo: Offset64Lo,
         offset_hi: Offset64Hi,
@@ -157,7 +152,7 @@ impl Executor<'_> {
         let memory = self.fetch_optional_memory(2);
         let offset = Offset64::combine(offset_hi, offset_lo);
         let ptr = self.get_register_as::<u64>(ptr);
-        self.execute_store_wrap::<T>(store, memory, ptr, offset, value, store_op)?;
+        self.execute_store_wrap::<T>(memory, ptr, offset, value, store_op)?;
         self.try_next_instr_at(2)
     }
 
@@ -194,7 +189,6 @@ impl Executor<'_> {
 
     fn execute_store_at<T>(
         &mut self,
-        store: &mut StoreInner,
         address: Address32,
         value: Reg,
         store_at_op: WasmStoreAtOp<T>,
@@ -204,7 +198,6 @@ impl Executor<'_> {
     {
         let memory = self.fetch_optional_memory(1);
         self.execute_store_wrap_at::<T>(
-            store,
             memory,
             address,
             self.get_register_as::<T>(value),
@@ -215,7 +208,6 @@ impl Executor<'_> {
 
     fn execute_store_at_imm16<T>(
         &mut self,
-        store: &mut StoreInner,
         address: Address32,
         value: T,
         store_at_op: WasmStoreAtOp<T>,
@@ -224,7 +216,7 @@ impl Executor<'_> {
         UntypedVal: ReadAs<T>,
     {
         let memory = self.fetch_optional_memory(1);
-        self.execute_store_wrap_at::<T>(store, memory, address, value, store_at_op)?;
+        self.execute_store_wrap_at::<T>(memory, address, value, store_at_op)?;
         self.try_next_instr()
     }
 }
@@ -244,9 +236,9 @@ macro_rules! impl_execute_istore {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_imm), "`].")]
             #[allow(clippy::cast_lossless)]
-            pub fn $fn_store_imm(&mut self, store: &mut StoreInner, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
+            pub fn $fn_store_imm(&mut self, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
                 let (value, offset_hi) = self.fetch_value_and_offset_imm::<$to_ty>();
-                self.execute_store_imm::<$ty>(store, ptr, offset_lo, offset_hi, value as $ty, $store_fn)
+                self.execute_store_imm::<$ty>(ptr, offset_lo, offset_hi, value as $ty, $store_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16_imm16), "`].")]
@@ -264,12 +256,11 @@ macro_rules! impl_execute_istore {
             #[allow(clippy::cast_lossless)]
             pub fn $fn_store_at_imm16(
                 &mut self,
-                store: &mut StoreInner,
                 address: Address32,
                 value: $from_ty,
             ) -> Result<(), Error> {
                 #[allow(clippy::cast_lossless)]
-                self.execute_store_at_imm16::<$ty>(store, address, <$to_ty>::from(value) as _, $store_at_fn)
+                self.execute_store_at_imm16::<$ty>(address, <$to_ty>::from(value) as _, $store_at_fn)
             }
         )*
     };
@@ -326,8 +317,8 @@ macro_rules! impl_execute_istore_trunc {
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
-            pub fn $fn_store(&mut self, store: &mut StoreInner, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
-                self.execute_store::<$ty>(store, ptr, offset_lo, $store_fn)
+            pub fn $fn_store(&mut self, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
+                self.execute_store::<$ty>(ptr, offset_lo, $store_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
@@ -341,8 +332,8 @@ macro_rules! impl_execute_istore_trunc {
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
-            pub fn $fn_store_at(&mut self, store: &mut StoreInner, address: Address32, value: Reg) -> Result<(), Error> {
-                self.execute_store_at::<$ty>(store, address, value, $store_at_fn)
+            pub fn $fn_store_at(&mut self, address: Address32, value: Reg) -> Result<(), Error> {
+                self.execute_store_at::<$ty>(address, value, $store_at_fn)
             }
         )*
     };
@@ -425,8 +416,8 @@ macro_rules! impl_execute_store {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store), "`].")]
-            pub fn $fn_store(&mut self, store: &mut StoreInner, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
-                self.execute_store::<$ty>(store, ptr, offset_lo, $store_fn)
+            pub fn $fn_store(&mut self, ptr: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
+                self.execute_store::<$ty>(ptr, offset_lo, $store_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_off16), "`].")]
@@ -440,8 +431,8 @@ macro_rules! impl_execute_store {
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_store_at), "`].")]
-            pub fn $fn_store_at(&mut self, store: &mut StoreInner, address: Address32, value: Reg) -> Result<(), Error> {
-                self.execute_store_at::<$ty>(store, address, value, $store_at_fn)
+            pub fn $fn_store_at(&mut self, address: Address32, value: Reg) -> Result<(), Error> {
+                self.execute_store_at::<$ty>(address, value, $store_at_fn)
             }
         )*
     }

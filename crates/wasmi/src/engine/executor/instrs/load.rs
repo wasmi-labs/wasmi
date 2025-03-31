@@ -2,7 +2,6 @@ use super::Executor;
 use crate::{
     core::{wasm, TrapCode, UntypedVal, WriteAs},
     ir::{index::Memory, Address32, Offset16, Offset64, Offset64Hi, Offset64Lo, Reg},
-    store::StoreInner,
     Error,
 };
 
@@ -40,7 +39,6 @@ impl Executor<'_> {
     /// - `i64.load32_u`
     fn execute_load_extend<T>(
         &mut self,
-        store: &StoreInner,
         memory: Memory,
         result: Reg,
         address: u64,
@@ -50,7 +48,7 @@ impl Executor<'_> {
     where
         UntypedVal: WriteAs<T>,
     {
-        let memory = self.fetch_memory_bytes(memory, store);
+        let memory = self.fetch_memory_bytes(memory);
         let loaded_value = load_extend(memory, address, u64::from(offset))?;
         self.set_register_as::<T>(result, loaded_value);
         Ok(())
@@ -71,7 +69,6 @@ impl Executor<'_> {
     /// - `i64.load32_u`
     fn execute_load_extend_at<T>(
         &mut self,
-        store: &StoreInner,
         memory: Memory,
         result: Reg,
         address: Address32,
@@ -80,7 +77,7 @@ impl Executor<'_> {
     where
         UntypedVal: WriteAs<T>,
     {
-        let memory = self.fetch_memory_bytes(memory, store);
+        let memory = self.fetch_memory_bytes(memory);
         let loaded_value = load_extend_at(memory, usize::from(address))?;
         self.set_register_as::<T>(result, loaded_value);
         Ok(())
@@ -118,7 +115,6 @@ impl Executor<'_> {
     /// Executes a generic `load` [`Instruction`].
     fn execute_load_impl<T>(
         &mut self,
-        store: &StoreInner,
         result: Reg,
         offset_lo: Offset64Lo,
         load_extend: WasmLoadOp<T>,
@@ -130,14 +126,13 @@ impl Executor<'_> {
         let memory = self.fetch_optional_memory(2);
         let address = self.get_register_as::<u64>(ptr);
         let offset = Offset64::combine(offset_hi, offset_lo);
-        self.execute_load_extend::<T>(store, memory, result, address, offset, load_extend)?;
+        self.execute_load_extend::<T>(memory, result, address, offset, load_extend)?;
         self.try_next_instr_at(2)
     }
 
     /// Executes a generic `load_at` [`Instruction`].
     fn execute_load_at_impl<T>(
         &mut self,
-        store: &StoreInner,
         result: Reg,
         address: Address32,
         load_extend_at: WasmLoadAtOp<T>,
@@ -146,7 +141,7 @@ impl Executor<'_> {
         UntypedVal: WriteAs<T>,
     {
         let memory = self.fetch_optional_memory(1);
-        self.execute_load_extend_at::<T>(store, memory, result, address, load_extend_at)?;
+        self.execute_load_extend_at::<T>(memory, result, address, load_extend_at)?;
         self.try_next_instr()
     }
 
@@ -181,13 +176,13 @@ macro_rules! impl_execute_load {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load), "`].")]
-            pub fn $fn_load(&mut self, store: &StoreInner, result: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
-                self.execute_load_impl(store, result, offset_lo, $load_fn)
+            pub fn $fn_load(&mut self, result: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
+                self.execute_load_impl(result, offset_lo, $load_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
-            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: Address32) -> Result<(), Error> {
-                self.execute_load_at_impl(store, result, address, $load_at_fn)
+            pub fn $fn_load_at(&mut self, result: Reg, address: Address32) -> Result<(), Error> {
+                self.execute_load_at_impl(result, address, $load_at_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]
