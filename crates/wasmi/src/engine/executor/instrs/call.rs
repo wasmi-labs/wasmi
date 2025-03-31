@@ -739,7 +739,7 @@ impl Executor<'_> {
     ) -> Result<ControlFlow, Error> {
         let table = self.get_table(table);
         let funcref = store
-            .inner
+            .inner()
             .resolve_table(&table)
             .get_untyped(index)
             .map(FuncRef::from)
