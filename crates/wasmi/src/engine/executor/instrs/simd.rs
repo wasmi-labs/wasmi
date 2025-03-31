@@ -771,7 +771,7 @@ impl Executor<'_> {
         let ptr = self.get_register_as::<u64>(ptr);
         let v128 = self.get_register_as::<V128>(value);
         let memory = self.fetch_memory_bytes_mut(memory, store);
-        simd::v128_store8_lane(memory, ptr, u64::from(offset), v128, lane)?;
+        eval(memory, ptr, u64::from(offset), v128, lane)?;
         self.try_next_instr_at(3)
     }
 
