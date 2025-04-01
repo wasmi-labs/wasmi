@@ -269,21 +269,23 @@ impl PrunedStore {
         params_results: FuncInOut,
         call_hooks: CallHooks,
     ) -> Result<(), Error> {
-        self.pruned
-            .restore_pruned
-            .clone()
-            .restore(self)
+        self.typed_store()
             .call_host_func(func, instance, params_results, call_hooks)
     }
 
     pub fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
+        self.typed_store()
+            .store_inner_and_resource_limiter_ref()
+    }
+
+    /// Returns the associated [`TypedStore`] of `self`.
+    fn typed_store(&mut self) -> &mut dyn TypedStore {
         self.pruned
             .restore_pruned
             .clone()
             .restore(self)
-            .store_inner_and_resource_limiter_ref()
     }
 
     #[inline]
