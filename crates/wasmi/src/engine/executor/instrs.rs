@@ -121,1184 +121,1901 @@ impl<'engine> Executor<'engine> {
     #[inline(always)]
     fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
         use Instruction as Instr;
-        loop {
+        'next: loop {
             match *self.ip.get() {
-                Instr::Trap { trap_code } => self.execute_trap(trap_code)?,
+                Instr::Trap { trap_code } => {
+                    self.execute_trap(trap_code)?;
+                    continue 'next;
+                }
                 Instr::ConsumeFuel { block_fuel } => {
-                    self.execute_consume_fuel(store.inner_mut(), block_fuel)?
+                    self.execute_consume_fuel(store.inner_mut(), block_fuel)?;
+                    continue 'next;
                 }
                 Instr::Return => {
-                    forward_return!(self.execute_return(store.inner_mut()))
+                    forward_return!(self.execute_return(store.inner_mut()));
+                    continue 'next;
                 }
                 Instr::ReturnReg { value } => {
-                    forward_return!(self.execute_return_reg(store.inner_mut(), value))
+                    forward_return!(self.execute_return_reg(store.inner_mut(), value));
+                    continue 'next;
                 }
                 Instr::ReturnReg2 { values } => {
-                    forward_return!(self.execute_return_reg2(store.inner_mut(), values))
+                    forward_return!(self.execute_return_reg2(store.inner_mut(), values));
+                    continue 'next;
                 }
                 Instr::ReturnReg3 { values } => {
-                    forward_return!(self.execute_return_reg3(store.inner_mut(), values))
+                    forward_return!(self.execute_return_reg3(store.inner_mut(), values));
+                    continue 'next;
                 }
                 Instr::ReturnImm32 { value } => {
-                    forward_return!(self.execute_return_imm32(store.inner_mut(), value))
+                    forward_return!(self.execute_return_imm32(store.inner_mut(), value));
+                    continue 'next;
                 }
                 Instr::ReturnI64Imm32 { value } => {
-                    forward_return!(self.execute_return_i64imm32(store.inner_mut(), value))
+                    forward_return!(self.execute_return_i64imm32(store.inner_mut(), value));
+                    continue 'next;
                 }
                 Instr::ReturnF64Imm32 { value } => {
-                    forward_return!(self.execute_return_f64imm32(store.inner_mut(), value))
+                    forward_return!(self.execute_return_f64imm32(store.inner_mut(), value));
+                    continue 'next;
                 }
                 Instr::ReturnSpan { values } => {
-                    forward_return!(self.execute_return_span(store.inner_mut(), values))
+                    forward_return!(self.execute_return_span(store.inner_mut(), values));
+                    continue 'next;
                 }
                 Instr::ReturnMany { values } => {
-                    forward_return!(self.execute_return_many(store.inner_mut(), values))
+                    forward_return!(self.execute_return_many(store.inner_mut(), values));
+                    continue 'next;
                 }
                 Instr::ReturnNez { condition } => {
-                    forward_return!(self.execute_return_nez(store.inner_mut(), condition))
+                    forward_return!(self.execute_return_nez(store.inner_mut(), condition));
+                    continue 'next;
                 }
                 Instr::ReturnNezReg { condition, value } => {
                     forward_return!(self.execute_return_nez_reg(
                         store.inner_mut(),
                         condition,
                         value
-                    ))
+                    ));
+                    continue 'next;
                 }
                 Instr::ReturnNezReg2 { condition, values } => {
                     forward_return!(self.execute_return_nez_reg2(
                         store.inner_mut(),
                         condition,
                         values
-                    ))
+                    ));
+                    continue 'next;
                 }
                 Instr::ReturnNezImm32 { condition, value } => {
                     forward_return!(self.execute_return_nez_imm32(
                         store.inner_mut(),
                         condition,
                         value
-                    ))
+                    ));
+                    continue 'next;
                 }
                 Instr::ReturnNezI64Imm32 { condition, value } => {
                     forward_return!(self.execute_return_nez_i64imm32(
                         store.inner_mut(),
                         condition,
                         value
-                    ))
+                    ));
+                    continue 'next;
                 }
                 Instr::ReturnNezF64Imm32 { condition, value } => {
                     forward_return!(self.execute_return_nez_f64imm32(
                         store.inner_mut(),
                         condition,
                         value
-                    ))
+                    ));
+                    continue 'next;
                 }
                 Instr::ReturnNezSpan { condition, values } => {
                     forward_return!(self.execute_return_nez_span(
                         store.inner_mut(),
                         condition,
                         values
-                    ))
+                    ));
+                    continue 'next;
                 }
                 Instr::ReturnNezMany { condition, values } => {
                     forward_return!(self.execute_return_nez_many(
                         store.inner_mut(),
                         condition,
                         values
-                    ))
+                    ));
+                    continue 'next;
                 }
-                Instr::Branch { offset } => self.execute_branch(offset),
+                Instr::Branch { offset } => {
+                    self.execute_branch(offset);
+                    continue 'next;
+                }
                 Instr::BranchTable0 { index, len_targets } => {
-                    self.execute_branch_table_0(index, len_targets)
+                    self.execute_branch_table_0(index, len_targets);
+                    continue 'next;
                 }
                 Instr::BranchTable1 { index, len_targets } => {
-                    self.execute_branch_table_1(index, len_targets)
+                    self.execute_branch_table_1(index, len_targets);
+                    continue 'next;
                 }
                 Instr::BranchTable2 { index, len_targets } => {
-                    self.execute_branch_table_2(index, len_targets)
+                    self.execute_branch_table_2(index, len_targets);
+                    continue 'next;
                 }
                 Instr::BranchTable3 { index, len_targets } => {
-                    self.execute_branch_table_3(index, len_targets)
+                    self.execute_branch_table_3(index, len_targets);
+                    continue 'next;
                 }
                 Instr::BranchTableSpan { index, len_targets } => {
-                    self.execute_branch_table_span(index, len_targets)
+                    self.execute_branch_table_span(index, len_targets);
+                    continue 'next;
                 }
                 Instr::BranchTableMany { index, len_targets } => {
-                    self.execute_branch_table_many(index, len_targets)
+                    self.execute_branch_table_many(index, len_targets);
+                    continue 'next;
                 }
                 Instr::BranchCmpFallback { lhs, rhs, params } => {
-                    self.execute_branch_cmp_fallback(lhs, rhs, params)
+                    self.execute_branch_cmp_fallback(lhs, rhs, params);
+                    continue 'next;
                 }
                 Instr::BranchI32And { lhs, rhs, offset } => {
-                    self.execute_branch_i32_and(lhs, rhs, offset)
+                    self.execute_branch_i32_and(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32AndImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_and_imm16(lhs, rhs, offset)
+                    self.execute_branch_i32_and_imm16(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32Or { lhs, rhs, offset } => {
-                    self.execute_branch_i32_or(lhs, rhs, offset)
+                    self.execute_branch_i32_or(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32OrImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_or_imm16(lhs, rhs, offset)
+                    self.execute_branch_i32_or_imm16(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32Xor { lhs, rhs, offset } => {
-                    self.execute_branch_i32_xor(lhs, rhs, offset)
+                    self.execute_branch_i32_xor(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32XorImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_xor_imm16(lhs, rhs, offset)
+                    self.execute_branch_i32_xor_imm16(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32AndEqz { lhs, rhs, offset } => {
-                    self.execute_branch_i32_and_eqz(lhs, rhs, offset)
+                    self.execute_branch_i32_and_eqz(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32AndEqzImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_and_eqz_imm16(lhs, rhs, offset)
+                    self.execute_branch_i32_and_eqz_imm16(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32OrEqz { lhs, rhs, offset } => {
-                    self.execute_branch_i32_or_eqz(lhs, rhs, offset)
+                    self.execute_branch_i32_or_eqz(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32OrEqzImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_or_eqz_imm16(lhs, rhs, offset)
+                    self.execute_branch_i32_or_eqz_imm16(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32XorEqz { lhs, rhs, offset } => {
-                    self.execute_branch_i32_xor_eqz(lhs, rhs, offset)
+                    self.execute_branch_i32_xor_eqz(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32XorEqzImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_xor_eqz_imm16(lhs, rhs, offset)
+                    self.execute_branch_i32_xor_eqz_imm16(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32Eq { lhs, rhs, offset } => {
-                    self.execute_branch_i32_eq(lhs, rhs, offset)
+                    self.execute_branch_i32_eq(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32EqImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_eq_imm16(lhs, rhs, offset)
+                    self.execute_branch_i32_eq_imm16(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32Ne { lhs, rhs, offset } => {
-                    self.execute_branch_i32_ne(lhs, rhs, offset)
+                    self.execute_branch_i32_ne(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32NeImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i32_ne_imm16(lhs, rhs, offset)
+                    self.execute_branch_i32_ne_imm16(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LtS { lhs, rhs, offset } => {
-                    self.execute_branch_i32_lt_s(lhs, rhs, offset)
+                    self.execute_branch_i32_lt_s(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LtSImm16Lhs { lhs, rhs, offset } => {
-                    self.execute_branch_i32_lt_s_imm16_lhs(lhs, rhs, offset)
+                    self.execute_branch_i32_lt_s_imm16_lhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LtSImm16Rhs { lhs, rhs, offset } => {
-                    self.execute_branch_i32_lt_s_imm16_rhs(lhs, rhs, offset)
+                    self.execute_branch_i32_lt_s_imm16_rhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LtU { lhs, rhs, offset } => {
-                    self.execute_branch_i32_lt_u(lhs, rhs, offset)
+                    self.execute_branch_i32_lt_u(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LtUImm16Lhs { lhs, rhs, offset } => {
-                    self.execute_branch_i32_lt_u_imm16_lhs(lhs, rhs, offset)
+                    self.execute_branch_i32_lt_u_imm16_lhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LtUImm16Rhs { lhs, rhs, offset } => {
-                    self.execute_branch_i32_lt_u_imm16_rhs(lhs, rhs, offset)
+                    self.execute_branch_i32_lt_u_imm16_rhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LeS { lhs, rhs, offset } => {
-                    self.execute_branch_i32_le_s(lhs, rhs, offset)
+                    self.execute_branch_i32_le_s(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LeSImm16Lhs { lhs, rhs, offset } => {
-                    self.execute_branch_i32_le_s_imm16_lhs(lhs, rhs, offset)
+                    self.execute_branch_i32_le_s_imm16_lhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LeSImm16Rhs { lhs, rhs, offset } => {
-                    self.execute_branch_i32_le_s_imm16_rhs(lhs, rhs, offset)
+                    self.execute_branch_i32_le_s_imm16_rhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LeU { lhs, rhs, offset } => {
-                    self.execute_branch_i32_le_u(lhs, rhs, offset)
+                    self.execute_branch_i32_le_u(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LeUImm16Lhs { lhs, rhs, offset } => {
-                    self.execute_branch_i32_le_u_imm16_lhs(lhs, rhs, offset)
+                    self.execute_branch_i32_le_u_imm16_lhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI32LeUImm16Rhs { lhs, rhs, offset } => {
-                    self.execute_branch_i32_le_u_imm16_rhs(lhs, rhs, offset)
+                    self.execute_branch_i32_le_u_imm16_rhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64Eq { lhs, rhs, offset } => {
-                    self.execute_branch_i64_eq(lhs, rhs, offset)
+                    self.execute_branch_i64_eq(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64EqImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i64_eq_imm16(lhs, rhs, offset)
+                    self.execute_branch_i64_eq_imm16(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64Ne { lhs, rhs, offset } => {
-                    self.execute_branch_i64_ne(lhs, rhs, offset)
+                    self.execute_branch_i64_ne(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64NeImm16 { lhs, rhs, offset } => {
-                    self.execute_branch_i64_ne_imm16(lhs, rhs, offset)
+                    self.execute_branch_i64_ne_imm16(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LtS { lhs, rhs, offset } => {
-                    self.execute_branch_i64_lt_s(lhs, rhs, offset)
+                    self.execute_branch_i64_lt_s(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LtSImm16Lhs { lhs, rhs, offset } => {
-                    self.execute_branch_i64_lt_s_imm16_lhs(lhs, rhs, offset)
+                    self.execute_branch_i64_lt_s_imm16_lhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LtSImm16Rhs { lhs, rhs, offset } => {
-                    self.execute_branch_i64_lt_s_imm16_rhs(lhs, rhs, offset)
+                    self.execute_branch_i64_lt_s_imm16_rhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LtU { lhs, rhs, offset } => {
-                    self.execute_branch_i64_lt_u(lhs, rhs, offset)
+                    self.execute_branch_i64_lt_u(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LtUImm16Lhs { lhs, rhs, offset } => {
-                    self.execute_branch_i64_lt_u_imm16_lhs(lhs, rhs, offset)
+                    self.execute_branch_i64_lt_u_imm16_lhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LtUImm16Rhs { lhs, rhs, offset } => {
-                    self.execute_branch_i64_lt_u_imm16_rhs(lhs, rhs, offset)
+                    self.execute_branch_i64_lt_u_imm16_rhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LeS { lhs, rhs, offset } => {
-                    self.execute_branch_i64_le_s(lhs, rhs, offset)
+                    self.execute_branch_i64_le_s(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LeSImm16Lhs { lhs, rhs, offset } => {
-                    self.execute_branch_i64_le_s_imm16_lhs(lhs, rhs, offset)
+                    self.execute_branch_i64_le_s_imm16_lhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LeSImm16Rhs { lhs, rhs, offset } => {
-                    self.execute_branch_i64_le_s_imm16_rhs(lhs, rhs, offset)
+                    self.execute_branch_i64_le_s_imm16_rhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LeU { lhs, rhs, offset } => {
-                    self.execute_branch_i64_le_u(lhs, rhs, offset)
+                    self.execute_branch_i64_le_u(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LeUImm16Lhs { lhs, rhs, offset } => {
-                    self.execute_branch_i64_le_u_imm16_lhs(lhs, rhs, offset)
+                    self.execute_branch_i64_le_u_imm16_lhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchI64LeUImm16Rhs { lhs, rhs, offset } => {
-                    self.execute_branch_i64_le_u_imm16_rhs(lhs, rhs, offset)
+                    self.execute_branch_i64_le_u_imm16_rhs(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchF32Eq { lhs, rhs, offset } => {
-                    self.execute_branch_f32_eq(lhs, rhs, offset)
+                    self.execute_branch_f32_eq(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchF32Ne { lhs, rhs, offset } => {
-                    self.execute_branch_f32_ne(lhs, rhs, offset)
+                    self.execute_branch_f32_ne(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchF32Lt { lhs, rhs, offset } => {
-                    self.execute_branch_f32_lt(lhs, rhs, offset)
+                    self.execute_branch_f32_lt(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchF32Le { lhs, rhs, offset } => {
-                    self.execute_branch_f32_le(lhs, rhs, offset)
+                    self.execute_branch_f32_le(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchF64Eq { lhs, rhs, offset } => {
-                    self.execute_branch_f64_eq(lhs, rhs, offset)
+                    self.execute_branch_f64_eq(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchF64Ne { lhs, rhs, offset } => {
-                    self.execute_branch_f64_ne(lhs, rhs, offset)
+                    self.execute_branch_f64_ne(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchF64Lt { lhs, rhs, offset } => {
-                    self.execute_branch_f64_lt(lhs, rhs, offset)
+                    self.execute_branch_f64_lt(lhs, rhs, offset);
+                    continue 'next;
                 }
                 Instr::BranchF64Le { lhs, rhs, offset } => {
-                    self.execute_branch_f64_le(lhs, rhs, offset)
+                    self.execute_branch_f64_le(lhs, rhs, offset);
+                    continue 'next;
                 }
-                Instr::Copy { result, value } => self.execute_copy(result, value),
-                Instr::Copy2 { results, values } => self.execute_copy_2(results, values),
-                Instr::CopyImm32 { result, value } => self.execute_copy_imm32(result, value),
-                Instr::CopyI64Imm32 { result, value } => self.execute_copy_i64imm32(result, value),
-                Instr::CopyF64Imm32 { result, value } => self.execute_copy_f64imm32(result, value),
+                Instr::Copy { result, value } => {
+                    self.execute_copy(result, value);
+                    continue 'next;
+                }
+                Instr::Copy2 { results, values } => {
+                    self.execute_copy_2(results, values);
+                    continue 'next;
+                }
+                Instr::CopyImm32 { result, value } => {
+                    self.execute_copy_imm32(result, value);
+                    continue 'next;
+                }
+                Instr::CopyI64Imm32 { result, value } => {
+                    self.execute_copy_i64imm32(result, value);
+                    continue 'next;
+                }
+                Instr::CopyF64Imm32 { result, value } => {
+                    self.execute_copy_f64imm32(result, value);
+                    continue 'next;
+                }
                 Instr::CopySpan {
                     results,
                     values,
                     len,
-                } => self.execute_copy_span(results, values, len),
+                } => {
+                    self.execute_copy_span(results, values, len);
+                    continue 'next;
+                }
                 Instr::CopySpanNonOverlapping {
                     results,
                     values,
                     len,
-                } => self.execute_copy_span_non_overlapping(results, values, len),
-                Instr::CopyMany { results, values } => self.execute_copy_many(results, values),
+                } => {
+                    self.execute_copy_span_non_overlapping(results, values, len);
+                    continue 'next;
+                }
+                Instr::CopyMany { results, values } => {
+                    self.execute_copy_many(results, values);
+                    continue 'next;
+                }
                 Instr::CopyManyNonOverlapping { results, values } => {
-                    self.execute_copy_many_non_overlapping(results, values)
+                    self.execute_copy_many_non_overlapping(results, values);
+                    continue 'next;
                 }
                 Instr::ReturnCallInternal0 { func } => {
-                    self.execute_return_call_internal_0(store.inner_mut(), EngineFunc::from(func))?
+                    self.execute_return_call_internal_0(store.inner_mut(), EngineFunc::from(func))?;
+                    continue 'next;
                 }
                 Instr::ReturnCallInternal { func } => {
-                    self.execute_return_call_internal(store.inner_mut(), EngineFunc::from(func))?
+                    self.execute_return_call_internal(store.inner_mut(), EngineFunc::from(func))?;
+                    continue 'next;
                 }
                 Instr::ReturnCallImported0 { func } => {
-                    forward_return!(self.execute_return_call_imported_0::<T>(store, func)?)
+                    forward_return!(self.execute_return_call_imported_0::<T>(store, func)?);
+                    continue 'next;
                 }
                 Instr::ReturnCallImported { func } => {
-                    forward_return!(self.execute_return_call_imported::<T>(store, func)?)
+                    forward_return!(self.execute_return_call_imported::<T>(store, func)?);
+                    continue 'next;
                 }
                 Instr::ReturnCallIndirect0 { func_type } => {
-                    forward_return!(self.execute_return_call_indirect_0::<T>(store, func_type)?)
+                    forward_return!(self.execute_return_call_indirect_0::<T>(store, func_type)?);
+                    continue 'next;
                 }
                 Instr::ReturnCallIndirect0Imm16 { func_type } => {
                     forward_return!(
                         self.execute_return_call_indirect_0_imm16::<T>(store, func_type)?
-                    )
+                    );
+                    continue 'next;
                 }
                 Instr::ReturnCallIndirect { func_type } => {
-                    forward_return!(self.execute_return_call_indirect::<T>(store, func_type)?)
+                    forward_return!(self.execute_return_call_indirect::<T>(store, func_type)?);
+                    continue 'next;
                 }
                 Instr::ReturnCallIndirectImm16 { func_type } => {
-                    forward_return!(self.execute_return_call_indirect_imm16::<T>(store, func_type)?)
+                    forward_return!(self.execute_return_call_indirect_imm16::<T>(store, func_type)?);
+                    continue 'next;
                 }
-                Instr::CallInternal0 { results, func } => self.execute_call_internal_0(
-                    store.inner_mut(),
-                    results,
-                    EngineFunc::from(func),
-                )?,
+                Instr::CallInternal0 { results, func } => {
+                    self.execute_call_internal_0(
+                        store.inner_mut(),
+                        results,
+                        EngineFunc::from(func),
+                    )?;
+                    continue 'next;
+                }
                 Instr::CallInternal { results, func } => {
-                    self.execute_call_internal(store.inner_mut(), results, EngineFunc::from(func))?
+                    self.execute_call_internal(store.inner_mut(), results, EngineFunc::from(func))?;
+                    continue 'next;
                 }
                 Instr::CallImported0 { results, func } => {
-                    self.execute_call_imported_0::<T>(store, results, func)?
+                    self.execute_call_imported_0::<T>(store, results, func)?;
+                    continue 'next;
                 }
                 Instr::CallImported { results, func } => {
-                    self.execute_call_imported::<T>(store, results, func)?
+                    self.execute_call_imported::<T>(store, results, func)?;
+                    continue 'next;
                 }
                 Instr::CallIndirect0 { results, func_type } => {
-                    self.execute_call_indirect_0::<T>(store, results, func_type)?
+                    self.execute_call_indirect_0::<T>(store, results, func_type)?;
+                    continue 'next;
                 }
                 Instr::CallIndirect0Imm16 { results, func_type } => {
-                    self.execute_call_indirect_0_imm16::<T>(store, results, func_type)?
+                    self.execute_call_indirect_0_imm16::<T>(store, results, func_type)?;
+                    continue 'next;
                 }
                 Instr::CallIndirect { results, func_type } => {
-                    self.execute_call_indirect::<T>(store, results, func_type)?
+                    self.execute_call_indirect::<T>(store, results, func_type)?;
+                    continue 'next;
                 }
                 Instr::CallIndirectImm16 { results, func_type } => {
-                    self.execute_call_indirect_imm16::<T>(store, results, func_type)?
+                    self.execute_call_indirect_imm16::<T>(store, results, func_type)?;
+                    continue 'next;
                 }
-                Instr::Select { result, lhs } => self.execute_select(result, lhs),
-                Instr::SelectImm32Rhs { result, lhs } => self.execute_select_imm32_rhs(result, lhs),
-                Instr::SelectImm32Lhs { result, lhs } => self.execute_select_imm32_lhs(result, lhs),
-                Instr::SelectImm32 { result, lhs } => self.execute_select_imm32(result, lhs),
+                Instr::Select { result, lhs } => {
+                    self.execute_select(result, lhs);
+                    continue 'next;
+                }
+                Instr::SelectImm32Rhs { result, lhs } => {
+                    self.execute_select_imm32_rhs(result, lhs);
+                    continue 'next;
+                }
+                Instr::SelectImm32Lhs { result, lhs } => {
+                    self.execute_select_imm32_lhs(result, lhs);
+                    continue 'next;
+                }
+                Instr::SelectImm32 { result, lhs } => {
+                    self.execute_select_imm32(result, lhs);
+                    continue 'next;
+                }
                 Instr::SelectI64Imm32Rhs { result, lhs } => {
-                    self.execute_select_i64imm32_rhs(result, lhs)
+                    self.execute_select_i64imm32_rhs(result, lhs);
+                    continue 'next;
                 }
                 Instr::SelectI64Imm32Lhs { result, lhs } => {
-                    self.execute_select_i64imm32_lhs(result, lhs)
+                    self.execute_select_i64imm32_lhs(result, lhs);
+                    continue 'next;
                 }
-                Instr::SelectI64Imm32 { result, lhs } => self.execute_select_i64imm32(result, lhs),
+                Instr::SelectI64Imm32 { result, lhs } => {
+                    self.execute_select_i64imm32(result, lhs);
+                    continue 'next;
+                }
                 Instr::SelectF64Imm32Rhs { result, lhs } => {
-                    self.execute_select_f64imm32_rhs(result, lhs)
+                    self.execute_select_f64imm32_rhs(result, lhs);
+                    continue 'next;
                 }
                 Instr::SelectF64Imm32Lhs { result, lhs } => {
-                    self.execute_select_f64imm32_lhs(result, lhs)
+                    self.execute_select_f64imm32_lhs(result, lhs);
+                    continue 'next;
                 }
-                Instr::SelectF64Imm32 { result, lhs } => self.execute_select_f64imm32(result, lhs),
-                Instr::RefFunc { result, func } => self.execute_ref_func(result, func),
+                Instr::SelectF64Imm32 { result, lhs } => {
+                    self.execute_select_f64imm32(result, lhs);
+                    continue 'next;
+                }
+                Instr::RefFunc { result, func } => {
+                    self.execute_ref_func(result, func);
+                    continue 'next;
+                }
                 Instr::GlobalGet { result, global } => {
-                    self.execute_global_get(store.inner(), result, global)
+                    self.execute_global_get(store.inner(), result, global);
+                    continue 'next;
                 }
                 Instr::GlobalSet { global, input } => {
-                    self.execute_global_set(store.inner_mut(), global, input)
+                    self.execute_global_set(store.inner_mut(), global, input);
+                    continue 'next;
                 }
                 Instr::GlobalSetI32Imm16 { global, input } => {
-                    self.execute_global_set_i32imm16(store.inner_mut(), global, input)
+                    self.execute_global_set_i32imm16(store.inner_mut(), global, input);
+                    continue 'next;
                 }
                 Instr::GlobalSetI64Imm16 { global, input } => {
-                    self.execute_global_set_i64imm16(store.inner_mut(), global, input)
+                    self.execute_global_set_i64imm16(store.inner_mut(), global, input);
+                    continue 'next;
                 }
                 Instr::Load32 { result, offset_lo } => {
-                    self.execute_load32(store.inner(), result, offset_lo)?
+                    self.execute_load32(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::Load32At { result, address } => {
-                    self.execute_load32_at(store.inner(), result, address)?
+                    self.execute_load32_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::Load32Offset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_load32_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_load32_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::Load64 { result, offset_lo } => {
-                    self.execute_load64(store.inner(), result, offset_lo)?
+                    self.execute_load64(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::Load64At { result, address } => {
-                    self.execute_load64_at(store.inner(), result, address)?
+                    self.execute_load64_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::Load64Offset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_load64_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_load64_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::I32Load8s { result, offset_lo } => {
-                    self.execute_i32_load8_s(store.inner(), result, offset_lo)?
+                    self.execute_i32_load8_s(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I32Load8sAt { result, address } => {
-                    self.execute_i32_load8_s_at(store.inner(), result, address)?
+                    self.execute_i32_load8_s_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::I32Load8sOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i32_load8_s_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_i32_load8_s_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::I32Load8u { result, offset_lo } => {
-                    self.execute_i32_load8_u(store.inner(), result, offset_lo)?
+                    self.execute_i32_load8_u(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I32Load8uAt { result, address } => {
-                    self.execute_i32_load8_u_at(store.inner(), result, address)?
+                    self.execute_i32_load8_u_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::I32Load8uOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i32_load8_u_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_i32_load8_u_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::I32Load16s { result, offset_lo } => {
-                    self.execute_i32_load16_s(store.inner(), result, offset_lo)?
+                    self.execute_i32_load16_s(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I32Load16sAt { result, address } => {
-                    self.execute_i32_load16_s_at(store.inner(), result, address)?
+                    self.execute_i32_load16_s_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::I32Load16sOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i32_load16_s_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_i32_load16_s_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::I32Load16u { result, offset_lo } => {
-                    self.execute_i32_load16_u(store.inner(), result, offset_lo)?
+                    self.execute_i32_load16_u(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I32Load16uAt { result, address } => {
-                    self.execute_i32_load16_u_at(store.inner(), result, address)?
+                    self.execute_i32_load16_u_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::I32Load16uOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i32_load16_u_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_i32_load16_u_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::I64Load8s { result, offset_lo } => {
-                    self.execute_i64_load8_s(store.inner(), result, offset_lo)?
+                    self.execute_i64_load8_s(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Load8sAt { result, address } => {
-                    self.execute_i64_load8_s_at(store.inner(), result, address)?
+                    self.execute_i64_load8_s_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::I64Load8sOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i64_load8_s_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_i64_load8_s_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::I64Load8u { result, offset_lo } => {
-                    self.execute_i64_load8_u(store.inner(), result, offset_lo)?
+                    self.execute_i64_load8_u(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Load8uAt { result, address } => {
-                    self.execute_i64_load8_u_at(store.inner(), result, address)?
+                    self.execute_i64_load8_u_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::I64Load8uOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i64_load8_u_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_i64_load8_u_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::I64Load16s { result, offset_lo } => {
-                    self.execute_i64_load16_s(store.inner(), result, offset_lo)?
+                    self.execute_i64_load16_s(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Load16sAt { result, address } => {
-                    self.execute_i64_load16_s_at(store.inner(), result, address)?
+                    self.execute_i64_load16_s_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::I64Load16sOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i64_load16_s_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_i64_load16_s_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::I64Load16u { result, offset_lo } => {
-                    self.execute_i64_load16_u(store.inner(), result, offset_lo)?
+                    self.execute_i64_load16_u(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Load16uAt { result, address } => {
-                    self.execute_i64_load16_u_at(store.inner(), result, address)?
+                    self.execute_i64_load16_u_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::I64Load16uOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i64_load16_u_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_i64_load16_u_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::I64Load32s { result, offset_lo } => {
-                    self.execute_i64_load32_s(store.inner(), result, offset_lo)?
+                    self.execute_i64_load32_s(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Load32sAt { result, address } => {
-                    self.execute_i64_load32_s_at(store.inner(), result, address)?
+                    self.execute_i64_load32_s_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::I64Load32sOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i64_load32_s_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_i64_load32_s_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::I64Load32u { result, offset_lo } => {
-                    self.execute_i64_load32_u(store.inner(), result, offset_lo)?
+                    self.execute_i64_load32_u(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Load32uAt { result, address } => {
-                    self.execute_i64_load32_u_at(store.inner(), result, address)?
+                    self.execute_i64_load32_u_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 Instr::I64Load32uOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_i64_load32_u_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_i64_load32_u_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 Instr::Store32 { ptr, offset_lo } => {
-                    self.execute_store32(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_store32(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::Store32Offset16 { ptr, offset, value } => {
-                    self.execute_store32_offset16(ptr, offset, value)?
+                    self.execute_store32_offset16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::Store32At { address, value } => {
-                    self.execute_store32_at(store.inner_mut(), address, value)?
+                    self.execute_store32_at(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::Store64 { ptr, offset_lo } => {
-                    self.execute_store64(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_store64(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::Store64Offset16 { ptr, offset, value } => {
-                    self.execute_store64_offset16(ptr, offset, value)?
+                    self.execute_store64_offset16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::Store64At { address, value } => {
-                    self.execute_store64_at(store.inner_mut(), address, value)?
+                    self.execute_store64_at(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I32StoreImm16 { ptr, offset_lo } => {
-                    self.execute_i32_store_imm16(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i32_store_imm16(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I32StoreOffset16Imm16 { ptr, offset, value } => {
-                    self.execute_i32_store_offset16_imm16(ptr, offset, value)?
+                    self.execute_i32_store_offset16_imm16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I32StoreAtImm16 { address, value } => {
-                    self.execute_i32_store_at_imm16(store.inner_mut(), address, value)?
+                    self.execute_i32_store_at_imm16(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I32Store8 { ptr, offset_lo } => {
-                    self.execute_i32_store8(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i32_store8(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I32Store8Imm { ptr, offset_lo } => {
-                    self.execute_i32_store8_imm(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i32_store8_imm(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I32Store8Offset16 { ptr, offset, value } => {
-                    self.execute_i32_store8_offset16(ptr, offset, value)?
+                    self.execute_i32_store8_offset16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I32Store8Offset16Imm { ptr, offset, value } => {
-                    self.execute_i32_store8_offset16_imm(ptr, offset, value)?
+                    self.execute_i32_store8_offset16_imm(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I32Store8At { address, value } => {
-                    self.execute_i32_store8_at(store.inner_mut(), address, value)?
+                    self.execute_i32_store8_at(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I32Store8AtImm { address, value } => {
-                    self.execute_i32_store8_at_imm(store.inner_mut(), address, value)?
+                    self.execute_i32_store8_at_imm(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I32Store16 { ptr, offset_lo } => {
-                    self.execute_i32_store16(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i32_store16(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I32Store16Imm { ptr, offset_lo } => {
-                    self.execute_i32_store16_imm(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i32_store16_imm(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I32Store16Offset16 { ptr, offset, value } => {
-                    self.execute_i32_store16_offset16(ptr, offset, value)?
+                    self.execute_i32_store16_offset16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I32Store16Offset16Imm { ptr, offset, value } => {
-                    self.execute_i32_store16_offset16_imm(ptr, offset, value)?
+                    self.execute_i32_store16_offset16_imm(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I32Store16At { address, value } => {
-                    self.execute_i32_store16_at(store.inner_mut(), address, value)?
+                    self.execute_i32_store16_at(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I32Store16AtImm { address, value } => {
-                    self.execute_i32_store16_at_imm(store.inner_mut(), address, value)?
+                    self.execute_i32_store16_at_imm(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I64StoreImm16 { ptr, offset_lo } => {
-                    self.execute_i64_store_imm16(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store_imm16(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64StoreOffset16Imm16 { ptr, offset, value } => {
-                    self.execute_i64_store_offset16_imm16(ptr, offset, value)?
+                    self.execute_i64_store_offset16_imm16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I64StoreAtImm16 { address, value } => {
-                    self.execute_i64_store_at_imm16(store.inner_mut(), address, value)?
+                    self.execute_i64_store_at_imm16(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store8 { ptr, offset_lo } => {
-                    self.execute_i64_store8(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store8(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Store8Imm { ptr, offset_lo } => {
-                    self.execute_i64_store8_imm(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store8_imm(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Store8Offset16 { ptr, offset, value } => {
-                    self.execute_i64_store8_offset16(ptr, offset, value)?
+                    self.execute_i64_store8_offset16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store8Offset16Imm { ptr, offset, value } => {
-                    self.execute_i64_store8_offset16_imm(ptr, offset, value)?
+                    self.execute_i64_store8_offset16_imm(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store8At { address, value } => {
-                    self.execute_i64_store8_at(store.inner_mut(), address, value)?
+                    self.execute_i64_store8_at(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store8AtImm { address, value } => {
-                    self.execute_i64_store8_at_imm(store.inner_mut(), address, value)?
+                    self.execute_i64_store8_at_imm(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store16 { ptr, offset_lo } => {
-                    self.execute_i64_store16(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store16(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Store16Imm { ptr, offset_lo } => {
-                    self.execute_i64_store16_imm(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store16_imm(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Store16Offset16 { ptr, offset, value } => {
-                    self.execute_i64_store16_offset16(ptr, offset, value)?
+                    self.execute_i64_store16_offset16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store16Offset16Imm { ptr, offset, value } => {
-                    self.execute_i64_store16_offset16_imm(ptr, offset, value)?
+                    self.execute_i64_store16_offset16_imm(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store16At { address, value } => {
-                    self.execute_i64_store16_at(store.inner_mut(), address, value)?
+                    self.execute_i64_store16_at(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store16AtImm { address, value } => {
-                    self.execute_i64_store16_at_imm(store.inner_mut(), address, value)?
+                    self.execute_i64_store16_at_imm(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store32 { ptr, offset_lo } => {
-                    self.execute_i64_store32(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store32(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Store32Imm16 { ptr, offset_lo } => {
-                    self.execute_i64_store32_imm16(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_i64_store32_imm16(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 Instr::I64Store32Offset16 { ptr, offset, value } => {
-                    self.execute_i64_store32_offset16(ptr, offset, value)?
+                    self.execute_i64_store32_offset16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store32Offset16Imm16 { ptr, offset, value } => {
-                    self.execute_i64_store32_offset16_imm16(ptr, offset, value)?
+                    self.execute_i64_store32_offset16_imm16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store32At { address, value } => {
-                    self.execute_i64_store32_at(store.inner_mut(), address, value)?
+                    self.execute_i64_store32_at(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 Instr::I64Store32AtImm16 { address, value } => {
-                    self.execute_i64_store32_at_imm16(store.inner_mut(), address, value)?
+                    self.execute_i64_store32_at_imm16(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
-                Instr::I32Eq { result, lhs, rhs } => self.execute_i32_eq(result, lhs, rhs),
+                Instr::I32Eq { result, lhs, rhs } => {
+                    self.execute_i32_eq(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32EqImm16 { result, lhs, rhs } => {
-                    self.execute_i32_eq_imm16(result, lhs, rhs)
+                    self.execute_i32_eq_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32Ne { result, lhs, rhs } => self.execute_i32_ne(result, lhs, rhs),
+                Instr::I32Ne { result, lhs, rhs } => {
+                    self.execute_i32_ne(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32NeImm16 { result, lhs, rhs } => {
-                    self.execute_i32_ne_imm16(result, lhs, rhs)
+                    self.execute_i32_ne_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32LtS { result, lhs, rhs } => self.execute_i32_lt_s(result, lhs, rhs),
+                Instr::I32LtS { result, lhs, rhs } => {
+                    self.execute_i32_lt_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32LtSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i32_lt_s_imm16_lhs(result, lhs, rhs)
+                    self.execute_i32_lt_s_imm16_lhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32LtSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_lt_s_imm16_rhs(result, lhs, rhs)
+                    self.execute_i32_lt_s_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32LtU { result, lhs, rhs } => self.execute_i32_lt_u(result, lhs, rhs),
+                Instr::I32LtU { result, lhs, rhs } => {
+                    self.execute_i32_lt_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32LtUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i32_lt_u_imm16_lhs(result, lhs, rhs)
+                    self.execute_i32_lt_u_imm16_lhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32LtUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_lt_u_imm16_rhs(result, lhs, rhs)
+                    self.execute_i32_lt_u_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32LeS { result, lhs, rhs } => self.execute_i32_le_s(result, lhs, rhs),
+                Instr::I32LeS { result, lhs, rhs } => {
+                    self.execute_i32_le_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32LeSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i32_le_s_imm16_lhs(result, lhs, rhs)
+                    self.execute_i32_le_s_imm16_lhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32LeSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_le_s_imm16_rhs(result, lhs, rhs)
+                    self.execute_i32_le_s_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32LeU { result, lhs, rhs } => self.execute_i32_le_u(result, lhs, rhs),
+                Instr::I32LeU { result, lhs, rhs } => {
+                    self.execute_i32_le_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32LeUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i32_le_u_imm16_lhs(result, lhs, rhs)
+                    self.execute_i32_le_u_imm16_lhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32LeUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_le_u_imm16_rhs(result, lhs, rhs)
+                    self.execute_i32_le_u_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Eq { result, lhs, rhs } => self.execute_i64_eq(result, lhs, rhs),
+                Instr::I64Eq { result, lhs, rhs } => {
+                    self.execute_i64_eq(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64EqImm16 { result, lhs, rhs } => {
-                    self.execute_i64_eq_imm16(result, lhs, rhs)
+                    self.execute_i64_eq_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Ne { result, lhs, rhs } => self.execute_i64_ne(result, lhs, rhs),
+                Instr::I64Ne { result, lhs, rhs } => {
+                    self.execute_i64_ne(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64NeImm16 { result, lhs, rhs } => {
-                    self.execute_i64_ne_imm16(result, lhs, rhs)
+                    self.execute_i64_ne_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64LtS { result, lhs, rhs } => self.execute_i64_lt_s(result, lhs, rhs),
+                Instr::I64LtS { result, lhs, rhs } => {
+                    self.execute_i64_lt_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64LtSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i64_lt_s_imm16_lhs(result, lhs, rhs)
+                    self.execute_i64_lt_s_imm16_lhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I64LtSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_lt_s_imm16_rhs(result, lhs, rhs)
+                    self.execute_i64_lt_s_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64LtU { result, lhs, rhs } => self.execute_i64_lt_u(result, lhs, rhs),
+                Instr::I64LtU { result, lhs, rhs } => {
+                    self.execute_i64_lt_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64LtUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i64_lt_u_imm16_lhs(result, lhs, rhs)
+                    self.execute_i64_lt_u_imm16_lhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I64LtUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_lt_u_imm16_rhs(result, lhs, rhs)
+                    self.execute_i64_lt_u_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64LeS { result, lhs, rhs } => self.execute_i64_le_s(result, lhs, rhs),
+                Instr::I64LeS { result, lhs, rhs } => {
+                    self.execute_i64_le_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64LeSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i64_le_s_imm16_lhs(result, lhs, rhs)
+                    self.execute_i64_le_s_imm16_lhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I64LeSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_le_s_imm16_rhs(result, lhs, rhs)
+                    self.execute_i64_le_s_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64LeU { result, lhs, rhs } => self.execute_i64_le_u(result, lhs, rhs),
+                Instr::I64LeU { result, lhs, rhs } => {
+                    self.execute_i64_le_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64LeUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i64_le_u_imm16_lhs(result, lhs, rhs)
+                    self.execute_i64_le_u_imm16_lhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I64LeUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_le_u_imm16_rhs(result, lhs, rhs)
+                    self.execute_i64_le_u_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::F32Eq { result, lhs, rhs } => self.execute_f32_eq(result, lhs, rhs),
-                Instr::F32Ne { result, lhs, rhs } => self.execute_f32_ne(result, lhs, rhs),
-                Instr::F32Lt { result, lhs, rhs } => self.execute_f32_lt(result, lhs, rhs),
-                Instr::F32Le { result, lhs, rhs } => self.execute_f32_le(result, lhs, rhs),
-                Instr::F64Eq { result, lhs, rhs } => self.execute_f64_eq(result, lhs, rhs),
-                Instr::F64Ne { result, lhs, rhs } => self.execute_f64_ne(result, lhs, rhs),
-                Instr::F64Lt { result, lhs, rhs } => self.execute_f64_lt(result, lhs, rhs),
-                Instr::F64Le { result, lhs, rhs } => self.execute_f64_le(result, lhs, rhs),
-                Instr::I32Clz { result, input } => self.execute_i32_clz(result, input),
-                Instr::I32Ctz { result, input } => self.execute_i32_ctz(result, input),
-                Instr::I32Popcnt { result, input } => self.execute_i32_popcnt(result, input),
-                Instr::I32Add { result, lhs, rhs } => self.execute_i32_add(result, lhs, rhs),
+                Instr::F32Eq { result, lhs, rhs } => {
+                    self.execute_f32_eq(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F32Ne { result, lhs, rhs } => {
+                    self.execute_f32_ne(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F32Lt { result, lhs, rhs } => {
+                    self.execute_f32_lt(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F32Le { result, lhs, rhs } => {
+                    self.execute_f32_le(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F64Eq { result, lhs, rhs } => {
+                    self.execute_f64_eq(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F64Ne { result, lhs, rhs } => {
+                    self.execute_f64_ne(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F64Lt { result, lhs, rhs } => {
+                    self.execute_f64_lt(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F64Le { result, lhs, rhs } => {
+                    self.execute_f64_le(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::I32Clz { result, input } => {
+                    self.execute_i32_clz(result, input);
+                    continue 'next;
+                }
+                Instr::I32Ctz { result, input } => {
+                    self.execute_i32_ctz(result, input);
+                    continue 'next;
+                }
+                Instr::I32Popcnt { result, input } => {
+                    self.execute_i32_popcnt(result, input);
+                    continue 'next;
+                }
+                Instr::I32Add { result, lhs, rhs } => {
+                    self.execute_i32_add(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32AddImm16 { result, lhs, rhs } => {
-                    self.execute_i32_add_imm16(result, lhs, rhs)
+                    self.execute_i32_add_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32Sub { result, lhs, rhs } => self.execute_i32_sub(result, lhs, rhs),
+                Instr::I32Sub { result, lhs, rhs } => {
+                    self.execute_i32_sub(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32SubImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i32_sub_imm16_lhs(result, lhs, rhs)
+                    self.execute_i32_sub_imm16_lhs(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32Mul { result, lhs, rhs } => self.execute_i32_mul(result, lhs, rhs),
+                Instr::I32Mul { result, lhs, rhs } => {
+                    self.execute_i32_mul(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32MulImm16 { result, lhs, rhs } => {
-                    self.execute_i32_mul_imm16(result, lhs, rhs)
+                    self.execute_i32_mul_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32DivS { result, lhs, rhs } => self.execute_i32_div_s(result, lhs, rhs)?,
+                Instr::I32DivS { result, lhs, rhs } => {
+                    self.execute_i32_div_s(result, lhs, rhs)?;
+                    continue 'next;
+                }
                 Instr::I32DivSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_div_s_imm16_rhs(result, lhs, rhs)?
+                    self.execute_i32_div_s_imm16_rhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
                 Instr::I32DivSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i32_div_s_imm16_lhs(result, lhs, rhs)?
+                    self.execute_i32_div_s_imm16_lhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
-                Instr::I32DivU { result, lhs, rhs } => self.execute_i32_div_u(result, lhs, rhs)?,
+                Instr::I32DivU { result, lhs, rhs } => {
+                    self.execute_i32_div_u(result, lhs, rhs)?;
+                    continue 'next;
+                }
                 Instr::I32DivUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_div_u_imm16_rhs(result, lhs, rhs)
+                    self.execute_i32_div_u_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32DivUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i32_div_u_imm16_lhs(result, lhs, rhs)?
+                    self.execute_i32_div_u_imm16_lhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
-                Instr::I32RemS { result, lhs, rhs } => self.execute_i32_rem_s(result, lhs, rhs)?,
+                Instr::I32RemS { result, lhs, rhs } => {
+                    self.execute_i32_rem_s(result, lhs, rhs)?;
+                    continue 'next;
+                }
                 Instr::I32RemSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_rem_s_imm16_rhs(result, lhs, rhs)?
+                    self.execute_i32_rem_s_imm16_rhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
                 Instr::I32RemSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i32_rem_s_imm16_lhs(result, lhs, rhs)?
+                    self.execute_i32_rem_s_imm16_lhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
-                Instr::I32RemU { result, lhs, rhs } => self.execute_i32_rem_u(result, lhs, rhs)?,
+                Instr::I32RemU { result, lhs, rhs } => {
+                    self.execute_i32_rem_u(result, lhs, rhs)?;
+                    continue 'next;
+                }
                 Instr::I32RemUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i32_rem_u_imm16_rhs(result, lhs, rhs)
+                    self.execute_i32_rem_u_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32RemUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i32_rem_u_imm16_lhs(result, lhs, rhs)?
+                    self.execute_i32_rem_u_imm16_lhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
-                Instr::I32And { result, lhs, rhs } => self.execute_i32_and(result, lhs, rhs),
-                Instr::I32AndEqz { result, lhs, rhs } => self.execute_i32_and_eqz(result, lhs, rhs),
+                Instr::I32And { result, lhs, rhs } => {
+                    self.execute_i32_and(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::I32AndEqz { result, lhs, rhs } => {
+                    self.execute_i32_and_eqz(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32AndEqzImm16 { result, lhs, rhs } => {
-                    self.execute_i32_and_eqz_imm16(result, lhs, rhs)
+                    self.execute_i32_and_eqz_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32AndImm16 { result, lhs, rhs } => {
-                    self.execute_i32_and_imm16(result, lhs, rhs)
+                    self.execute_i32_and_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32Or { result, lhs, rhs } => self.execute_i32_or(result, lhs, rhs),
-                Instr::I32OrEqz { result, lhs, rhs } => self.execute_i32_or_eqz(result, lhs, rhs),
+                Instr::I32Or { result, lhs, rhs } => {
+                    self.execute_i32_or(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::I32OrEqz { result, lhs, rhs } => {
+                    self.execute_i32_or_eqz(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32OrEqzImm16 { result, lhs, rhs } => {
-                    self.execute_i32_or_eqz_imm16(result, lhs, rhs)
+                    self.execute_i32_or_eqz_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32OrImm16 { result, lhs, rhs } => {
-                    self.execute_i32_or_imm16(result, lhs, rhs)
+                    self.execute_i32_or_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32Xor { result, lhs, rhs } => self.execute_i32_xor(result, lhs, rhs),
-                Instr::I32XorEqz { result, lhs, rhs } => self.execute_i32_xor_eqz(result, lhs, rhs),
+                Instr::I32Xor { result, lhs, rhs } => {
+                    self.execute_i32_xor(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::I32XorEqz { result, lhs, rhs } => {
+                    self.execute_i32_xor_eqz(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32XorEqzImm16 { result, lhs, rhs } => {
-                    self.execute_i32_xor_eqz_imm16(result, lhs, rhs)
+                    self.execute_i32_xor_eqz_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32XorImm16 { result, lhs, rhs } => {
-                    self.execute_i32_xor_imm16(result, lhs, rhs)
+                    self.execute_i32_xor_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32Shl { result, lhs, rhs } => self.execute_i32_shl(result, lhs, rhs),
-                Instr::I32ShlBy { result, lhs, rhs } => self.execute_i32_shl_by(result, lhs, rhs),
+                Instr::I32Shl { result, lhs, rhs } => {
+                    self.execute_i32_shl(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::I32ShlBy { result, lhs, rhs } => {
+                    self.execute_i32_shl_by(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32ShlImm16 { result, lhs, rhs } => {
-                    self.execute_i32_shl_imm16(result, lhs, rhs)
+                    self.execute_i32_shl_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32ShrU { result, lhs, rhs } => self.execute_i32_shr_u(result, lhs, rhs),
+                Instr::I32ShrU { result, lhs, rhs } => {
+                    self.execute_i32_shr_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32ShrUBy { result, lhs, rhs } => {
-                    self.execute_i32_shr_u_by(result, lhs, rhs)
+                    self.execute_i32_shr_u_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32ShrUImm16 { result, lhs, rhs } => {
-                    self.execute_i32_shr_u_imm16(result, lhs, rhs)
+                    self.execute_i32_shr_u_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32ShrS { result, lhs, rhs } => self.execute_i32_shr_s(result, lhs, rhs),
+                Instr::I32ShrS { result, lhs, rhs } => {
+                    self.execute_i32_shr_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32ShrSBy { result, lhs, rhs } => {
-                    self.execute_i32_shr_s_by(result, lhs, rhs)
+                    self.execute_i32_shr_s_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32ShrSImm16 { result, lhs, rhs } => {
-                    self.execute_i32_shr_s_imm16(result, lhs, rhs)
+                    self.execute_i32_shr_s_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32Rotl { result, lhs, rhs } => self.execute_i32_rotl(result, lhs, rhs),
-                Instr::I32RotlBy { result, lhs, rhs } => self.execute_i32_rotl_by(result, lhs, rhs),
+                Instr::I32Rotl { result, lhs, rhs } => {
+                    self.execute_i32_rotl(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::I32RotlBy { result, lhs, rhs } => {
+                    self.execute_i32_rotl_by(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32RotlImm16 { result, lhs, rhs } => {
-                    self.execute_i32_rotl_imm16(result, lhs, rhs)
+                    self.execute_i32_rotl_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32Rotr { result, lhs, rhs } => self.execute_i32_rotr(result, lhs, rhs),
-                Instr::I32RotrBy { result, lhs, rhs } => self.execute_i32_rotr_by(result, lhs, rhs),
+                Instr::I32Rotr { result, lhs, rhs } => {
+                    self.execute_i32_rotr(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::I32RotrBy { result, lhs, rhs } => {
+                    self.execute_i32_rotr_by(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I32RotrImm16 { result, lhs, rhs } => {
-                    self.execute_i32_rotr_imm16(result, lhs, rhs)
+                    self.execute_i32_rotr_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Clz { result, input } => self.execute_i64_clz(result, input),
-                Instr::I64Ctz { result, input } => self.execute_i64_ctz(result, input),
-                Instr::I64Popcnt { result, input } => self.execute_i64_popcnt(result, input),
-                Instr::I64Add { result, lhs, rhs } => self.execute_i64_add(result, lhs, rhs),
+                Instr::I64Clz { result, input } => {
+                    self.execute_i64_clz(result, input);
+                    continue 'next;
+                }
+                Instr::I64Ctz { result, input } => {
+                    self.execute_i64_ctz(result, input);
+                    continue 'next;
+                }
+                Instr::I64Popcnt { result, input } => {
+                    self.execute_i64_popcnt(result, input);
+                    continue 'next;
+                }
+                Instr::I64Add { result, lhs, rhs } => {
+                    self.execute_i64_add(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64AddImm16 { result, lhs, rhs } => {
-                    self.execute_i64_add_imm16(result, lhs, rhs)
+                    self.execute_i64_add_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Sub { result, lhs, rhs } => self.execute_i64_sub(result, lhs, rhs),
+                Instr::I64Sub { result, lhs, rhs } => {
+                    self.execute_i64_sub(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64SubImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i64_sub_imm16_lhs(result, lhs, rhs)
+                    self.execute_i64_sub_imm16_lhs(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Mul { result, lhs, rhs } => self.execute_i64_mul(result, lhs, rhs),
+                Instr::I64Mul { result, lhs, rhs } => {
+                    self.execute_i64_mul(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64MulImm16 { result, lhs, rhs } => {
-                    self.execute_i64_mul_imm16(result, lhs, rhs)
+                    self.execute_i64_mul_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64DivS { result, lhs, rhs } => self.execute_i64_div_s(result, lhs, rhs)?,
+                Instr::I64DivS { result, lhs, rhs } => {
+                    self.execute_i64_div_s(result, lhs, rhs)?;
+                    continue 'next;
+                }
                 Instr::I64DivSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_div_s_imm16_rhs(result, lhs, rhs)?
+                    self.execute_i64_div_s_imm16_rhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
                 Instr::I64DivSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i64_div_s_imm16_lhs(result, lhs, rhs)?
+                    self.execute_i64_div_s_imm16_lhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
-                Instr::I64DivU { result, lhs, rhs } => self.execute_i64_div_u(result, lhs, rhs)?,
+                Instr::I64DivU { result, lhs, rhs } => {
+                    self.execute_i64_div_u(result, lhs, rhs)?;
+                    continue 'next;
+                }
                 Instr::I64DivUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_div_u_imm16_rhs(result, lhs, rhs)
+                    self.execute_i64_div_u_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I64DivUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i64_div_u_imm16_lhs(result, lhs, rhs)?
+                    self.execute_i64_div_u_imm16_lhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
-                Instr::I64RemS { result, lhs, rhs } => self.execute_i64_rem_s(result, lhs, rhs)?,
+                Instr::I64RemS { result, lhs, rhs } => {
+                    self.execute_i64_rem_s(result, lhs, rhs)?;
+                    continue 'next;
+                }
                 Instr::I64RemSImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_rem_s_imm16_rhs(result, lhs, rhs)?
+                    self.execute_i64_rem_s_imm16_rhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
                 Instr::I64RemSImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i64_rem_s_imm16_lhs(result, lhs, rhs)?
+                    self.execute_i64_rem_s_imm16_lhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
-                Instr::I64RemU { result, lhs, rhs } => self.execute_i64_rem_u(result, lhs, rhs)?,
+                Instr::I64RemU { result, lhs, rhs } => {
+                    self.execute_i64_rem_u(result, lhs, rhs)?;
+                    continue 'next;
+                }
                 Instr::I64RemUImm16Rhs { result, lhs, rhs } => {
-                    self.execute_i64_rem_u_imm16_rhs(result, lhs, rhs)
+                    self.execute_i64_rem_u_imm16_rhs(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I64RemUImm16Lhs { result, lhs, rhs } => {
-                    self.execute_i64_rem_u_imm16_lhs(result, lhs, rhs)?
+                    self.execute_i64_rem_u_imm16_lhs(result, lhs, rhs)?;
+                    continue 'next;
                 }
-                Instr::I64And { result, lhs, rhs } => self.execute_i64_and(result, lhs, rhs),
+                Instr::I64And { result, lhs, rhs } => {
+                    self.execute_i64_and(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64AndImm16 { result, lhs, rhs } => {
-                    self.execute_i64_and_imm16(result, lhs, rhs)
+                    self.execute_i64_and_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Or { result, lhs, rhs } => self.execute_i64_or(result, lhs, rhs),
+                Instr::I64Or { result, lhs, rhs } => {
+                    self.execute_i64_or(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64OrImm16 { result, lhs, rhs } => {
-                    self.execute_i64_or_imm16(result, lhs, rhs)
+                    self.execute_i64_or_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Xor { result, lhs, rhs } => self.execute_i64_xor(result, lhs, rhs),
+                Instr::I64Xor { result, lhs, rhs } => {
+                    self.execute_i64_xor(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64XorImm16 { result, lhs, rhs } => {
-                    self.execute_i64_xor_imm16(result, lhs, rhs)
+                    self.execute_i64_xor_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Shl { result, lhs, rhs } => self.execute_i64_shl(result, lhs, rhs),
-                Instr::I64ShlBy { result, lhs, rhs } => self.execute_i64_shl_by(result, lhs, rhs),
+                Instr::I64Shl { result, lhs, rhs } => {
+                    self.execute_i64_shl(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::I64ShlBy { result, lhs, rhs } => {
+                    self.execute_i64_shl_by(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64ShlImm16 { result, lhs, rhs } => {
-                    self.execute_i64_shl_imm16(result, lhs, rhs)
+                    self.execute_i64_shl_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64ShrU { result, lhs, rhs } => self.execute_i64_shr_u(result, lhs, rhs),
+                Instr::I64ShrU { result, lhs, rhs } => {
+                    self.execute_i64_shr_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64ShrUBy { result, lhs, rhs } => {
-                    self.execute_i64_shr_u_by(result, lhs, rhs)
+                    self.execute_i64_shr_u_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I64ShrUImm16 { result, lhs, rhs } => {
-                    self.execute_i64_shr_u_imm16(result, lhs, rhs)
+                    self.execute_i64_shr_u_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64ShrS { result, lhs, rhs } => self.execute_i64_shr_s(result, lhs, rhs),
+                Instr::I64ShrS { result, lhs, rhs } => {
+                    self.execute_i64_shr_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64ShrSBy { result, lhs, rhs } => {
-                    self.execute_i64_shr_s_by(result, lhs, rhs)
+                    self.execute_i64_shr_s_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I64ShrSImm16 { result, lhs, rhs } => {
-                    self.execute_i64_shr_s_imm16(result, lhs, rhs)
+                    self.execute_i64_shr_s_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Rotl { result, lhs, rhs } => self.execute_i64_rotl(result, lhs, rhs),
-                Instr::I64RotlBy { result, lhs, rhs } => self.execute_i64_rotl_by(result, lhs, rhs),
+                Instr::I64Rotl { result, lhs, rhs } => {
+                    self.execute_i64_rotl(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::I64RotlBy { result, lhs, rhs } => {
+                    self.execute_i64_rotl_by(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64RotlImm16 { result, lhs, rhs } => {
-                    self.execute_i64_rotl_imm16(result, lhs, rhs)
+                    self.execute_i64_rotl_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Rotr { result, lhs, rhs } => self.execute_i64_rotr(result, lhs, rhs),
-                Instr::I64RotrBy { result, lhs, rhs } => self.execute_i64_rotr_by(result, lhs, rhs),
+                Instr::I64Rotr { result, lhs, rhs } => {
+                    self.execute_i64_rotr(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::I64RotrBy { result, lhs, rhs } => {
+                    self.execute_i64_rotr_by(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::I64RotrImm16 { result, lhs, rhs } => {
-                    self.execute_i64_rotr_imm16(result, lhs, rhs)
+                    self.execute_i64_rotr_imm16(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I64Add128 { results, lhs_lo } => self.execute_i64_add128(results, lhs_lo),
-                Instr::I64Sub128 { results, lhs_lo } => self.execute_i64_sub128(results, lhs_lo),
+                Instr::I64Add128 { results, lhs_lo } => {
+                    self.execute_i64_add128(results, lhs_lo);
+                    continue 'next;
+                }
+                Instr::I64Sub128 { results, lhs_lo } => {
+                    self.execute_i64_sub128(results, lhs_lo);
+                    continue 'next;
+                }
                 Instr::I64MulWideS { results, lhs, rhs } => {
-                    self.execute_i64_mul_wide_s(results, lhs, rhs)
+                    self.execute_i64_mul_wide_s(results, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I64MulWideU { results, lhs, rhs } => {
-                    self.execute_i64_mul_wide_u(results, lhs, rhs)
+                    self.execute_i64_mul_wide_u(results, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::I32WrapI64 { result, input } => self.execute_i32_wrap_i64(result, input),
-                Instr::I32Extend8S { result, input } => self.execute_i32_extend8_s(result, input),
-                Instr::I32Extend16S { result, input } => self.execute_i32_extend16_s(result, input),
-                Instr::I64Extend8S { result, input } => self.execute_i64_extend8_s(result, input),
-                Instr::I64Extend16S { result, input } => self.execute_i64_extend16_s(result, input),
-                Instr::I64Extend32S { result, input } => self.execute_i64_extend32_s(result, input),
-                Instr::F32Abs { result, input } => self.execute_f32_abs(result, input),
-                Instr::F32Neg { result, input } => self.execute_f32_neg(result, input),
-                Instr::F32Ceil { result, input } => self.execute_f32_ceil(result, input),
-                Instr::F32Floor { result, input } => self.execute_f32_floor(result, input),
-                Instr::F32Trunc { result, input } => self.execute_f32_trunc(result, input),
-                Instr::F32Nearest { result, input } => self.execute_f32_nearest(result, input),
-                Instr::F32Sqrt { result, input } => self.execute_f32_sqrt(result, input),
-                Instr::F32Add { result, lhs, rhs } => self.execute_f32_add(result, lhs, rhs),
-                Instr::F32Sub { result, lhs, rhs } => self.execute_f32_sub(result, lhs, rhs),
-                Instr::F32Mul { result, lhs, rhs } => self.execute_f32_mul(result, lhs, rhs),
-                Instr::F32Div { result, lhs, rhs } => self.execute_f32_div(result, lhs, rhs),
-                Instr::F32Min { result, lhs, rhs } => self.execute_f32_min(result, lhs, rhs),
-                Instr::F32Max { result, lhs, rhs } => self.execute_f32_max(result, lhs, rhs),
+                Instr::I32WrapI64 { result, input } => {
+                    self.execute_i32_wrap_i64(result, input);
+                    continue 'next;
+                }
+                Instr::I32Extend8S { result, input } => {
+                    self.execute_i32_extend8_s(result, input);
+                    continue 'next;
+                }
+                Instr::I32Extend16S { result, input } => {
+                    self.execute_i32_extend16_s(result, input);
+                    continue 'next;
+                }
+                Instr::I64Extend8S { result, input } => {
+                    self.execute_i64_extend8_s(result, input);
+                    continue 'next;
+                }
+                Instr::I64Extend16S { result, input } => {
+                    self.execute_i64_extend16_s(result, input);
+                    continue 'next;
+                }
+                Instr::I64Extend32S { result, input } => {
+                    self.execute_i64_extend32_s(result, input);
+                    continue 'next;
+                }
+                Instr::F32Abs { result, input } => {
+                    self.execute_f32_abs(result, input);
+                    continue 'next;
+                }
+                Instr::F32Neg { result, input } => {
+                    self.execute_f32_neg(result, input);
+                    continue 'next;
+                }
+                Instr::F32Ceil { result, input } => {
+                    self.execute_f32_ceil(result, input);
+                    continue 'next;
+                }
+                Instr::F32Floor { result, input } => {
+                    self.execute_f32_floor(result, input);
+                    continue 'next;
+                }
+                Instr::F32Trunc { result, input } => {
+                    self.execute_f32_trunc(result, input);
+                    continue 'next;
+                }
+                Instr::F32Nearest { result, input } => {
+                    self.execute_f32_nearest(result, input);
+                    continue 'next;
+                }
+                Instr::F32Sqrt { result, input } => {
+                    self.execute_f32_sqrt(result, input);
+                    continue 'next;
+                }
+                Instr::F32Add { result, lhs, rhs } => {
+                    self.execute_f32_add(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F32Sub { result, lhs, rhs } => {
+                    self.execute_f32_sub(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F32Mul { result, lhs, rhs } => {
+                    self.execute_f32_mul(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F32Div { result, lhs, rhs } => {
+                    self.execute_f32_div(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F32Min { result, lhs, rhs } => {
+                    self.execute_f32_min(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F32Max { result, lhs, rhs } => {
+                    self.execute_f32_max(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::F32Copysign { result, lhs, rhs } => {
-                    self.execute_f32_copysign(result, lhs, rhs)
+                    self.execute_f32_copysign(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::F32CopysignImm { result, lhs, rhs } => {
-                    self.execute_f32_copysign_imm(result, lhs, rhs)
+                    self.execute_f32_copysign_imm(result, lhs, rhs);
+                    continue 'next;
                 }
-                Instr::F64Abs { result, input } => self.execute_f64_abs(result, input),
-                Instr::F64Neg { result, input } => self.execute_f64_neg(result, input),
-                Instr::F64Ceil { result, input } => self.execute_f64_ceil(result, input),
-                Instr::F64Floor { result, input } => self.execute_f64_floor(result, input),
-                Instr::F64Trunc { result, input } => self.execute_f64_trunc(result, input),
-                Instr::F64Nearest { result, input } => self.execute_f64_nearest(result, input),
-                Instr::F64Sqrt { result, input } => self.execute_f64_sqrt(result, input),
-                Instr::F64Add { result, lhs, rhs } => self.execute_f64_add(result, lhs, rhs),
-                Instr::F64Sub { result, lhs, rhs } => self.execute_f64_sub(result, lhs, rhs),
-                Instr::F64Mul { result, lhs, rhs } => self.execute_f64_mul(result, lhs, rhs),
-                Instr::F64Div { result, lhs, rhs } => self.execute_f64_div(result, lhs, rhs),
-                Instr::F64Min { result, lhs, rhs } => self.execute_f64_min(result, lhs, rhs),
-                Instr::F64Max { result, lhs, rhs } => self.execute_f64_max(result, lhs, rhs),
+                Instr::F64Abs { result, input } => {
+                    self.execute_f64_abs(result, input);
+                    continue 'next;
+                }
+                Instr::F64Neg { result, input } => {
+                    self.execute_f64_neg(result, input);
+                    continue 'next;
+                }
+                Instr::F64Ceil { result, input } => {
+                    self.execute_f64_ceil(result, input);
+                    continue 'next;
+                }
+                Instr::F64Floor { result, input } => {
+                    self.execute_f64_floor(result, input);
+                    continue 'next;
+                }
+                Instr::F64Trunc { result, input } => {
+                    self.execute_f64_trunc(result, input);
+                    continue 'next;
+                }
+                Instr::F64Nearest { result, input } => {
+                    self.execute_f64_nearest(result, input);
+                    continue 'next;
+                }
+                Instr::F64Sqrt { result, input } => {
+                    self.execute_f64_sqrt(result, input);
+                    continue 'next;
+                }
+                Instr::F64Add { result, lhs, rhs } => {
+                    self.execute_f64_add(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F64Sub { result, lhs, rhs } => {
+                    self.execute_f64_sub(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F64Mul { result, lhs, rhs } => {
+                    self.execute_f64_mul(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F64Div { result, lhs, rhs } => {
+                    self.execute_f64_div(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F64Min { result, lhs, rhs } => {
+                    self.execute_f64_min(result, lhs, rhs);
+                    continue 'next;
+                }
+                Instr::F64Max { result, lhs, rhs } => {
+                    self.execute_f64_max(result, lhs, rhs);
+                    continue 'next;
+                }
                 Instr::F64Copysign { result, lhs, rhs } => {
-                    self.execute_f64_copysign(result, lhs, rhs)
+                    self.execute_f64_copysign(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::F64CopysignImm { result, lhs, rhs } => {
-                    self.execute_f64_copysign_imm(result, lhs, rhs)
+                    self.execute_f64_copysign_imm(result, lhs, rhs);
+                    continue 'next;
                 }
                 Instr::I32TruncF32S { result, input } => {
-                    self.execute_i32_trunc_f32_s(result, input)?
+                    self.execute_i32_trunc_f32_s(result, input)?;
+                    continue 'next;
                 }
                 Instr::I32TruncF32U { result, input } => {
-                    self.execute_i32_trunc_f32_u(result, input)?
+                    self.execute_i32_trunc_f32_u(result, input)?;
+                    continue 'next;
                 }
                 Instr::I32TruncF64S { result, input } => {
-                    self.execute_i32_trunc_f64_s(result, input)?
+                    self.execute_i32_trunc_f64_s(result, input)?;
+                    continue 'next;
                 }
                 Instr::I32TruncF64U { result, input } => {
-                    self.execute_i32_trunc_f64_u(result, input)?
+                    self.execute_i32_trunc_f64_u(result, input)?;
+                    continue 'next;
                 }
                 Instr::I64TruncF32S { result, input } => {
-                    self.execute_i64_trunc_f32_s(result, input)?
+                    self.execute_i64_trunc_f32_s(result, input)?;
+                    continue 'next;
                 }
                 Instr::I64TruncF32U { result, input } => {
-                    self.execute_i64_trunc_f32_u(result, input)?
+                    self.execute_i64_trunc_f32_u(result, input)?;
+                    continue 'next;
                 }
                 Instr::I64TruncF64S { result, input } => {
-                    self.execute_i64_trunc_f64_s(result, input)?
+                    self.execute_i64_trunc_f64_s(result, input)?;
+                    continue 'next;
                 }
                 Instr::I64TruncF64U { result, input } => {
-                    self.execute_i64_trunc_f64_u(result, input)?
+                    self.execute_i64_trunc_f64_u(result, input)?;
+                    continue 'next;
                 }
                 Instr::I32TruncSatF32S { result, input } => {
-                    self.execute_i32_trunc_sat_f32_s(result, input)
+                    self.execute_i32_trunc_sat_f32_s(result, input);
+                    continue 'next;
                 }
                 Instr::I32TruncSatF32U { result, input } => {
-                    self.execute_i32_trunc_sat_f32_u(result, input)
+                    self.execute_i32_trunc_sat_f32_u(result, input);
+                    continue 'next;
                 }
                 Instr::I32TruncSatF64S { result, input } => {
-                    self.execute_i32_trunc_sat_f64_s(result, input)
+                    self.execute_i32_trunc_sat_f64_s(result, input);
+                    continue 'next;
                 }
                 Instr::I32TruncSatF64U { result, input } => {
-                    self.execute_i32_trunc_sat_f64_u(result, input)
+                    self.execute_i32_trunc_sat_f64_u(result, input);
+                    continue 'next;
                 }
                 Instr::I64TruncSatF32S { result, input } => {
-                    self.execute_i64_trunc_sat_f32_s(result, input)
+                    self.execute_i64_trunc_sat_f32_s(result, input);
+                    continue 'next;
                 }
                 Instr::I64TruncSatF32U { result, input } => {
-                    self.execute_i64_trunc_sat_f32_u(result, input)
+                    self.execute_i64_trunc_sat_f32_u(result, input);
+                    continue 'next;
                 }
                 Instr::I64TruncSatF64S { result, input } => {
-                    self.execute_i64_trunc_sat_f64_s(result, input)
+                    self.execute_i64_trunc_sat_f64_s(result, input);
+                    continue 'next;
                 }
                 Instr::I64TruncSatF64U { result, input } => {
-                    self.execute_i64_trunc_sat_f64_u(result, input)
+                    self.execute_i64_trunc_sat_f64_u(result, input);
+                    continue 'next;
                 }
-                Instr::F32DemoteF64 { result, input } => self.execute_f32_demote_f64(result, input),
+                Instr::F32DemoteF64 { result, input } => {
+                    self.execute_f32_demote_f64(result, input);
+                    continue 'next;
+                }
                 Instr::F64PromoteF32 { result, input } => {
-                    self.execute_f64_promote_f32(result, input)
+                    self.execute_f64_promote_f32(result, input);
+                    continue 'next;
                 }
                 Instr::F32ConvertI32S { result, input } => {
-                    self.execute_f32_convert_i32_s(result, input)
+                    self.execute_f32_convert_i32_s(result, input);
+                    continue 'next;
                 }
                 Instr::F32ConvertI32U { result, input } => {
-                    self.execute_f32_convert_i32_u(result, input)
+                    self.execute_f32_convert_i32_u(result, input);
+                    continue 'next;
                 }
                 Instr::F32ConvertI64S { result, input } => {
-                    self.execute_f32_convert_i64_s(result, input)
+                    self.execute_f32_convert_i64_s(result, input);
+                    continue 'next;
                 }
                 Instr::F32ConvertI64U { result, input } => {
-                    self.execute_f32_convert_i64_u(result, input)
+                    self.execute_f32_convert_i64_u(result, input);
+                    continue 'next;
                 }
                 Instr::F64ConvertI32S { result, input } => {
-                    self.execute_f64_convert_i32_s(result, input)
+                    self.execute_f64_convert_i32_s(result, input);
+                    continue 'next;
                 }
                 Instr::F64ConvertI32U { result, input } => {
-                    self.execute_f64_convert_i32_u(result, input)
+                    self.execute_f64_convert_i32_u(result, input);
+                    continue 'next;
                 }
                 Instr::F64ConvertI64S { result, input } => {
-                    self.execute_f64_convert_i64_s(result, input)
+                    self.execute_f64_convert_i64_s(result, input);
+                    continue 'next;
                 }
                 Instr::F64ConvertI64U { result, input } => {
-                    self.execute_f64_convert_i64_u(result, input)
+                    self.execute_f64_convert_i64_u(result, input);
+                    continue 'next;
                 }
                 Instr::TableGet { result, index } => {
-                    self.execute_table_get(store.inner(), result, index)?
+                    self.execute_table_get(store.inner(), result, index)?;
+                    continue 'next;
                 }
                 Instr::TableGetImm { result, index } => {
-                    self.execute_table_get_imm(store.inner(), result, index)?
+                    self.execute_table_get_imm(store.inner(), result, index)?;
+                    continue 'next;
                 }
                 Instr::TableSize { result, table } => {
-                    self.execute_table_size(store.inner(), result, table)
+                    self.execute_table_size(store.inner(), result, table);
+                    continue 'next;
                 }
                 Instr::TableSet { index, value } => {
-                    self.execute_table_set(store.inner_mut(), index, value)?
+                    self.execute_table_set(store.inner_mut(), index, value)?;
+                    continue 'next;
                 }
                 Instr::TableSetAt { index, value } => {
-                    self.execute_table_set_at(store.inner_mut(), index, value)?
+                    self.execute_table_set_at(store.inner_mut(), index, value)?;
+                    continue 'next;
                 }
                 Instr::TableCopy { dst, src, len } => {
-                    self.execute_table_copy(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableCopyTo { dst, src, len } => {
-                    self.execute_table_copy_to(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_to(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableCopyFrom { dst, src, len } => {
-                    self.execute_table_copy_from(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_from(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableCopyFromTo { dst, src, len } => {
-                    self.execute_table_copy_from_to(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_from_to(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableCopyExact { dst, src, len } => {
-                    self.execute_table_copy_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableCopyToExact { dst, src, len } => {
-                    self.execute_table_copy_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_to_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableCopyFromExact { dst, src, len } => {
-                    self.execute_table_copy_from_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_from_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableCopyFromToExact { dst, src, len } => {
-                    self.execute_table_copy_from_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_copy_from_to_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableInit { dst, src, len } => {
-                    self.execute_table_init(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableInitTo { dst, src, len } => {
-                    self.execute_table_init_to(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_to(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableInitFrom { dst, src, len } => {
-                    self.execute_table_init_from(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_from(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableInitFromTo { dst, src, len } => {
-                    self.execute_table_init_from_to(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_from_to(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableInitExact { dst, src, len } => {
-                    self.execute_table_init_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableInitToExact { dst, src, len } => {
-                    self.execute_table_init_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_to_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableInitFromExact { dst, src, len } => {
-                    self.execute_table_init_from_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_from_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableInitFromToExact { dst, src, len } => {
-                    self.execute_table_init_from_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_table_init_from_to_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableFill { dst, len, value } => {
-                    self.execute_table_fill(store.inner_mut(), dst, len, value)?
+                    self.execute_table_fill(store.inner_mut(), dst, len, value)?;
+                    continue 'next;
                 }
                 Instr::TableFillAt { dst, len, value } => {
-                    self.execute_table_fill_at(store.inner_mut(), dst, len, value)?
+                    self.execute_table_fill_at(store.inner_mut(), dst, len, value)?;
+                    continue 'next;
                 }
                 Instr::TableFillExact { dst, len, value } => {
-                    self.execute_table_fill_exact(store.inner_mut(), dst, len, value)?
+                    self.execute_table_fill_exact(store.inner_mut(), dst, len, value)?;
+                    continue 'next;
                 }
                 Instr::TableFillAtExact { dst, len, value } => {
-                    self.execute_table_fill_at_exact(store.inner_mut(), dst, len, value)?
+                    self.execute_table_fill_at_exact(store.inner_mut(), dst, len, value)?;
+                    continue 'next;
                 }
                 Instr::TableGrow {
                     result,
                     delta,
                     value,
-                } => self.execute_table_grow(store, result, delta, value)?,
+                } => {
+                    self.execute_table_grow(store, result, delta, value)?;
+                    continue 'next;
+                }
                 Instr::TableGrowImm {
                     result,
                     delta,
                     value,
-                } => self.execute_table_grow_imm(store, result, delta, value)?,
-                Instr::ElemDrop { index } => self.execute_element_drop(store.inner_mut(), index),
-                Instr::DataDrop { index } => self.execute_data_drop(store.inner_mut(), index),
+                } => {
+                    self.execute_table_grow_imm(store, result, delta, value)?;
+                    continue 'next;
+                }
+                Instr::ElemDrop { index } => {
+                    self.execute_element_drop(store.inner_mut(), index);
+                    continue 'next;
+                }
+                Instr::DataDrop { index } => {
+                    self.execute_data_drop(store.inner_mut(), index);
+                    continue 'next;
+                }
                 Instr::MemorySize { result, memory } => {
-                    self.execute_memory_size(store.inner(), result, memory)
+                    self.execute_memory_size(store.inner(), result, memory);
+                    continue 'next;
                 }
                 Instr::MemoryGrow { result, delta } => {
-                    self.execute_memory_grow(store, result, delta)?
+                    self.execute_memory_grow(store, result, delta)?;
+                    continue 'next;
                 }
                 Instr::MemoryGrowBy { result, delta } => {
-                    self.execute_memory_grow_by(store, result, delta)?
+                    self.execute_memory_grow_by(store, result, delta)?;
+                    continue 'next;
                 }
                 Instr::MemoryCopy { dst, src, len } => {
-                    self.execute_memory_copy(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryCopyTo { dst, src, len } => {
-                    self.execute_memory_copy_to(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_to(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryCopyFrom { dst, src, len } => {
-                    self.execute_memory_copy_from(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_from(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryCopyFromTo { dst, src, len } => {
-                    self.execute_memory_copy_from_to(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_from_to(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryCopyExact { dst, src, len } => {
-                    self.execute_memory_copy_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryCopyToExact { dst, src, len } => {
-                    self.execute_memory_copy_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_to_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryCopyFromExact { dst, src, len } => {
-                    self.execute_memory_copy_from_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_from_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryCopyFromToExact { dst, src, len } => {
-                    self.execute_memory_copy_from_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_copy_from_to_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryFill { dst, value, len } => {
-                    self.execute_memory_fill(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill(store.inner_mut(), dst, value, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryFillAt { dst, value, len } => {
-                    self.execute_memory_fill_at(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_at(store.inner_mut(), dst, value, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryFillImm { dst, value, len } => {
-                    self.execute_memory_fill_imm(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_imm(store.inner_mut(), dst, value, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryFillExact { dst, value, len } => {
-                    self.execute_memory_fill_exact(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_exact(store.inner_mut(), dst, value, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryFillAtImm { dst, value, len } => {
-                    self.execute_memory_fill_at_imm(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_at_imm(store.inner_mut(), dst, value, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryFillAtExact { dst, value, len } => {
-                    self.execute_memory_fill_at_exact(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_at_exact(store.inner_mut(), dst, value, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryFillImmExact { dst, value, len } => {
-                    self.execute_memory_fill_imm_exact(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_imm_exact(store.inner_mut(), dst, value, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryFillAtImmExact { dst, value, len } => {
-                    self.execute_memory_fill_at_imm_exact(store.inner_mut(), dst, value, len)?
+                    self.execute_memory_fill_at_imm_exact(store.inner_mut(), dst, value, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryInit { dst, src, len } => {
-                    self.execute_memory_init(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryInitTo { dst, src, len } => {
-                    self.execute_memory_init_to(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_to(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryInitFrom { dst, src, len } => {
-                    self.execute_memory_init_from(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_from(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryInitFromTo { dst, src, len } => {
-                    self.execute_memory_init_from_to(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_from_to(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryInitExact { dst, src, len } => {
-                    self.execute_memory_init_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryInitToExact { dst, src, len } => {
-                    self.execute_memory_init_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_to_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryInitFromExact { dst, src, len } => {
-                    self.execute_memory_init_from_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_from_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::MemoryInitFromToExact { dst, src, len } => {
-                    self.execute_memory_init_from_to_exact(store.inner_mut(), dst, src, len)?
+                    self.execute_memory_init_from_to_exact(store.inner_mut(), dst, src, len)?;
+                    continue 'next;
                 }
                 Instr::TableIndex { .. }
                 | Instr::MemoryIndex { .. }
@@ -1317,308 +2034,500 @@ impl<'engine> Executor<'engine> {
                 | Instr::RegisterSpan { .. }
                 | Instr::RegisterList { .. }
                 | Instr::CallIndirectParams { .. }
-                | Instr::CallIndirectParamsImm16 { .. } => self.invalid_instruction_word()?,
+                | Instr::CallIndirectParamsImm16 { .. } => {
+                    self.invalid_instruction_word()?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I8x16Splat { result, value } => self.execute_i8x16_splat(result, value),
+                Instr::I8x16Splat { result, value } => {
+                    self.execute_i8x16_splat(result, value);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8Splat { result, value } => self.execute_i16x8_splat(result, value),
+                Instr::I16x8Splat { result, value } => {
+                    self.execute_i16x8_splat(result, value);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4Splat { result, value } => self.execute_i32x4_splat(result, value),
+                Instr::I32x4Splat { result, value } => {
+                    self.execute_i32x4_splat(result, value);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2Splat { result, value } => self.execute_i64x2_splat(result, value),
+                Instr::I64x2Splat { result, value } => {
+                    self.execute_i64x2_splat(result, value);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::F32x4Splat { result, value } => self.execute_f32x4_splat(result, value),
+                Instr::F32x4Splat { result, value } => {
+                    self.execute_f32x4_splat(result, value);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::F64x2Splat { result, value } => self.execute_f64x2_splat(result, value),
+                Instr::F64x2Splat { result, value } => {
+                    self.execute_f64x2_splat(result, value);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16ExtractLaneS {
                     result,
                     value,
                     lane,
-                } => self.i8x16_extract_lane_s(result, value, lane),
+                } => {
+                    self.i8x16_extract_lane_s(result, value, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16ExtractLaneU {
                     result,
                     value,
                     lane,
-                } => self.i8x16_extract_lane_u(result, value, lane),
+                } => {
+                    self.i8x16_extract_lane_u(result, value, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtractLaneS {
                     result,
                     value,
                     lane,
-                } => self.i16x8_extract_lane_s(result, value, lane),
+                } => {
+                    self.i16x8_extract_lane_s(result, value, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtractLaneU {
                     result,
                     value,
                     lane,
-                } => self.i16x8_extract_lane_u(result, value, lane),
+                } => {
+                    self.i16x8_extract_lane_u(result, value, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtractLane {
                     result,
                     value,
                     lane,
-                } => self.i32x4_extract_lane(result, value, lane),
+                } => {
+                    self.i32x4_extract_lane(result, value, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtractLane {
                     result,
                     value,
                     lane,
-                } => self.i64x2_extract_lane(result, value, lane),
+                } => {
+                    self.i64x2_extract_lane(result, value, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::F32x4ExtractLane {
                     result,
                     value,
                     lane,
-                } => self.f32x4_extract_lane(result, value, lane),
+                } => {
+                    self.f32x4_extract_lane(result, value, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::F64x2ExtractLane {
                     result,
                     value,
                     lane,
-                } => self.f64x2_extract_lane(result, value, lane),
+                } => {
+                    self.f64x2_extract_lane(result, value, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16ReplaceLane {
                     result,
                     input,
                     lane,
-                } => self.execute_i8x16_replace_lane(result, input, lane),
+                } => {
+                    self.execute_i8x16_replace_lane(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16ReplaceLaneImm {
                     result,
                     input,
                     lane,
                     value,
-                } => self.execute_i8x16_replace_lane_imm(result, input, lane, value),
+                } => {
+                    self.execute_i8x16_replace_lane_imm(result, input, lane, value);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ReplaceLane {
                     result,
                     input,
                     lane,
-                } => self.execute_i16x8_replace_lane(result, input, lane),
+                } => {
+                    self.execute_i16x8_replace_lane(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ReplaceLaneImm {
                     result,
                     input,
                     lane,
-                } => self.execute_i16x8_replace_lane_imm(result, input, lane),
+                } => {
+                    self.execute_i16x8_replace_lane_imm(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ReplaceLane {
                     result,
                     input,
                     lane,
-                } => self.execute_i32x4_replace_lane(result, input, lane),
+                } => {
+                    self.execute_i32x4_replace_lane(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ReplaceLaneImm {
                     result,
                     input,
                     lane,
-                } => self.execute_i32x4_replace_lane_imm(result, input, lane),
+                } => {
+                    self.execute_i32x4_replace_lane_imm(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ReplaceLane {
                     result,
                     input,
                     lane,
-                } => self.execute_i64x2_replace_lane(result, input, lane),
+                } => {
+                    self.execute_i64x2_replace_lane(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ReplaceLaneImm32 {
                     result,
                     input,
                     lane,
-                } => self.execute_i64x2_replace_lane_imm32(result, input, lane),
+                } => {
+                    self.execute_i64x2_replace_lane_imm32(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::F32x4ReplaceLane {
                     result,
                     input,
                     lane,
-                } => self.execute_f32x4_replace_lane(result, input, lane),
+                } => {
+                    self.execute_f32x4_replace_lane(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::F32x4ReplaceLaneImm {
                     result,
                     input,
                     lane,
-                } => self.execute_f32x4_replace_lane_imm(result, input, lane),
+                } => {
+                    self.execute_f32x4_replace_lane_imm(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::F64x2ReplaceLane {
                     result,
                     input,
                     lane,
-                } => self.execute_f64x2_replace_lane(result, input, lane),
+                } => {
+                    self.execute_f64x2_replace_lane(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::F64x2ReplaceLaneImm32 {
                     result,
                     input,
                     lane,
-                } => self.execute_f64x2_replace_lane_imm32(result, input, lane),
+                } => {
+                    self.execute_f64x2_replace_lane_imm32(result, input, lane);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16Shuffle { result, lhs, rhs } => {
-                    self.execute_i8x16_shuffle(result, lhs, rhs)
+                    self.execute_i8x16_shuffle(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I8x16Swizzle {
                     result,
                     input,
                     selector,
-                } => self.execute_i8x16_swizzle(result, input, selector),
-                #[cfg(feature = "simd")]
-                Instr::I8x16Add { result, lhs, rhs } => self.execute_i8x16_add(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I16x8Add { result, lhs, rhs } => self.execute_i16x8_add(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I32x4Add { result, lhs, rhs } => self.execute_i32x4_add(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I64x2Add { result, lhs, rhs } => self.execute_i64x2_add(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I8x16Sub { result, lhs, rhs } => self.execute_i8x16_sub(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I16x8Sub { result, lhs, rhs } => self.execute_i16x8_sub(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I32x4Sub { result, lhs, rhs } => self.execute_i32x4_sub(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I64x2Sub { result, lhs, rhs } => self.execute_i64x2_sub(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I16x8Mul { result, lhs, rhs } => self.execute_i16x8_mul(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I32x4Mul { result, lhs, rhs } => self.execute_i32x4_mul(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I64x2Mul { result, lhs, rhs } => self.execute_i64x2_mul(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I32x4DotI16x8S { result, lhs, rhs } => {
-                    self.execute_i32x4_dot_i16x8_s(result, lhs, rhs)
+                } => {
+                    self.execute_i8x16_swizzle(result, input, selector);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I8x16Neg { result, input } => self.execute_i8x16_neg(result, input),
+                Instr::I8x16Add { result, lhs, rhs } => {
+                    self.execute_i8x16_add(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8Neg { result, input } => self.execute_i16x8_neg(result, input),
+                Instr::I16x8Add { result, lhs, rhs } => {
+                    self.execute_i16x8_add(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4Neg { result, input } => self.execute_i32x4_neg(result, input),
+                Instr::I32x4Add { result, lhs, rhs } => {
+                    self.execute_i32x4_add(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2Neg { result, input } => self.execute_i64x2_neg(result, input),
+                Instr::I64x2Add { result, lhs, rhs } => {
+                    self.execute_i64x2_add(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I8x16Sub { result, lhs, rhs } => {
+                    self.execute_i8x16_sub(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8Sub { result, lhs, rhs } => {
+                    self.execute_i16x8_sub(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4Sub { result, lhs, rhs } => {
+                    self.execute_i32x4_sub(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I64x2Sub { result, lhs, rhs } => {
+                    self.execute_i64x2_sub(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8Mul { result, lhs, rhs } => {
+                    self.execute_i16x8_mul(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4Mul { result, lhs, rhs } => {
+                    self.execute_i32x4_mul(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I64x2Mul { result, lhs, rhs } => {
+                    self.execute_i64x2_mul(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4DotI16x8S { result, lhs, rhs } => {
+                    self.execute_i32x4_dot_i16x8_s(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I8x16Neg { result, input } => {
+                    self.execute_i8x16_neg(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8Neg { result, input } => {
+                    self.execute_i16x8_neg(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4Neg { result, input } => {
+                    self.execute_i32x4_neg(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I64x2Neg { result, input } => {
+                    self.execute_i64x2_neg(result, input);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtmulLowI8x16S { result, lhs, rhs } => {
-                    self.execute_i16x8_extmul_low_i8x16_s(result, lhs, rhs)
+                    self.execute_i16x8_extmul_low_i8x16_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtmulHighI8x16S { result, lhs, rhs } => {
-                    self.execute_i16x8_extmul_high_i8x16_s(result, lhs, rhs)
+                    self.execute_i16x8_extmul_high_i8x16_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtmulLowI8x16U { result, lhs, rhs } => {
-                    self.execute_i16x8_extmul_low_i8x16_u(result, lhs, rhs)
+                    self.execute_i16x8_extmul_low_i8x16_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtmulHighI8x16U { result, lhs, rhs } => {
-                    self.execute_i16x8_extmul_high_i8x16_u(result, lhs, rhs)
+                    self.execute_i16x8_extmul_high_i8x16_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtmulLowI16x8S { result, lhs, rhs } => {
-                    self.execute_i32x4_extmul_low_i16x8_s(result, lhs, rhs)
+                    self.execute_i32x4_extmul_low_i16x8_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtmulHighI16x8S { result, lhs, rhs } => {
-                    self.execute_i32x4_extmul_high_i16x8_s(result, lhs, rhs)
+                    self.execute_i32x4_extmul_high_i16x8_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtmulLowI16x8U { result, lhs, rhs } => {
-                    self.execute_i32x4_extmul_low_i16x8_u(result, lhs, rhs)
+                    self.execute_i32x4_extmul_low_i16x8_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtmulHighI16x8U { result, lhs, rhs } => {
-                    self.execute_i32x4_extmul_high_i16x8_u(result, lhs, rhs)
+                    self.execute_i32x4_extmul_high_i16x8_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtmulLowI32x4S { result, lhs, rhs } => {
-                    self.execute_i64x2_extmul_low_i32x4_s(result, lhs, rhs)
+                    self.execute_i64x2_extmul_low_i32x4_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtmulHighI32x4S { result, lhs, rhs } => {
-                    self.execute_i64x2_extmul_high_i32x4_s(result, lhs, rhs)
+                    self.execute_i64x2_extmul_high_i32x4_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtmulLowI32x4U { result, lhs, rhs } => {
-                    self.execute_i64x2_extmul_low_i32x4_u(result, lhs, rhs)
+                    self.execute_i64x2_extmul_low_i32x4_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtmulHighI32x4U { result, lhs, rhs } => {
-                    self.execute_i64x2_extmul_high_i32x4_u(result, lhs, rhs)
+                    self.execute_i64x2_extmul_high_i32x4_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtaddPairwiseI8x16S { result, input } => {
-                    self.execute_i16x8_extadd_pairwise_i8x16_s(result, input)
+                    self.execute_i16x8_extadd_pairwise_i8x16_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtaddPairwiseI8x16U { result, input } => {
-                    self.execute_i16x8_extadd_pairwise_i8x16_u(result, input)
+                    self.execute_i16x8_extadd_pairwise_i8x16_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtaddPairwiseI16x8S { result, input } => {
-                    self.execute_i32x4_extadd_pairwise_i16x8_s(result, input)
+                    self.execute_i32x4_extadd_pairwise_i16x8_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtaddPairwiseI16x8U { result, input } => {
-                    self.execute_i32x4_extadd_pairwise_i16x8_u(result, input)
+                    self.execute_i32x4_extadd_pairwise_i16x8_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I8x16AddSatS { result, lhs, rhs } => {
-                    self.execute_i8x16_add_sat_s(result, lhs, rhs)
+                    self.execute_i8x16_add_sat_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I8x16AddSatU { result, lhs, rhs } => {
-                    self.execute_i8x16_add_sat_u(result, lhs, rhs)
+                    self.execute_i8x16_add_sat_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8AddSatS { result, lhs, rhs } => {
-                    self.execute_i16x8_add_sat_s(result, lhs, rhs)
+                    self.execute_i16x8_add_sat_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8AddSatU { result, lhs, rhs } => {
-                    self.execute_i16x8_add_sat_u(result, lhs, rhs)
+                    self.execute_i16x8_add_sat_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I8x16SubSatS { result, lhs, rhs } => {
-                    self.execute_i8x16_sub_sat_s(result, lhs, rhs)
+                    self.execute_i8x16_sub_sat_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I8x16SubSatU { result, lhs, rhs } => {
-                    self.execute_i8x16_sub_sat_u(result, lhs, rhs)
+                    self.execute_i8x16_sub_sat_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8SubSatS { result, lhs, rhs } => {
-                    self.execute_i16x8_sub_sat_s(result, lhs, rhs)
+                    self.execute_i16x8_sub_sat_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8SubSatU { result, lhs, rhs } => {
-                    self.execute_i16x8_sub_sat_u(result, lhs, rhs)
+                    self.execute_i16x8_sub_sat_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8Q15MulrSatS { result, lhs, rhs } => {
-                    self.execute_i16x8_q15mulr_sat_s(result, lhs, rhs)
+                    self.execute_i16x8_q15mulr_sat_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I8x16MinS { result, lhs, rhs } => self.execute_i8x16_min_s(result, lhs, rhs),
+                Instr::I8x16MinS { result, lhs, rhs } => {
+                    self.execute_i8x16_min_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I8x16MinU { result, lhs, rhs } => self.execute_i8x16_min_u(result, lhs, rhs),
+                Instr::I8x16MinU { result, lhs, rhs } => {
+                    self.execute_i8x16_min_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8MinS { result, lhs, rhs } => self.execute_i16x8_min_s(result, lhs, rhs),
+                Instr::I16x8MinS { result, lhs, rhs } => {
+                    self.execute_i16x8_min_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8MinU { result, lhs, rhs } => self.execute_i16x8_min_u(result, lhs, rhs),
+                Instr::I16x8MinU { result, lhs, rhs } => {
+                    self.execute_i16x8_min_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4MinS { result, lhs, rhs } => self.execute_i32x4_min_s(result, lhs, rhs),
+                Instr::I32x4MinS { result, lhs, rhs } => {
+                    self.execute_i32x4_min_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4MinU { result, lhs, rhs } => self.execute_i32x4_min_u(result, lhs, rhs),
+                Instr::I32x4MinU { result, lhs, rhs } => {
+                    self.execute_i32x4_min_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I8x16MaxS { result, lhs, rhs } => self.execute_i8x16_max_s(result, lhs, rhs),
+                Instr::I8x16MaxS { result, lhs, rhs } => {
+                    self.execute_i8x16_max_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I8x16MaxU { result, lhs, rhs } => self.execute_i8x16_max_u(result, lhs, rhs),
+                Instr::I8x16MaxU { result, lhs, rhs } => {
+                    self.execute_i8x16_max_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8MaxS { result, lhs, rhs } => self.execute_i16x8_max_s(result, lhs, rhs),
+                Instr::I16x8MaxS { result, lhs, rhs } => {
+                    self.execute_i16x8_max_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8MaxU { result, lhs, rhs } => self.execute_i16x8_max_u(result, lhs, rhs),
+                Instr::I16x8MaxU { result, lhs, rhs } => {
+                    self.execute_i16x8_max_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4MaxS { result, lhs, rhs } => self.execute_i32x4_max_s(result, lhs, rhs),
+                Instr::I32x4MaxS { result, lhs, rhs } => {
+                    self.execute_i32x4_max_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4MaxU { result, lhs, rhs } => self.execute_i32x4_max_u(result, lhs, rhs),
+                Instr::I32x4MaxU { result, lhs, rhs } => {
+                    self.execute_i32x4_max_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16AvgrU { result, lhs, rhs } => {
                     self.execute_i8x16_avgr_u(result, lhs, rhs)
@@ -1628,360 +2537,674 @@ impl<'engine> Executor<'engine> {
                     self.execute_i16x8_avgr_u(result, lhs, rhs)
                 }
                 #[cfg(feature = "simd")]
-                Instr::I8x16Abs { result, input } => self.execute_i8x16_abs(result, input),
+                Instr::I8x16Abs { result, input } => {
+                    self.execute_i8x16_abs(result, input);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I16x8Abs { result, input } => self.execute_i16x8_abs(result, input),
+                Instr::I16x8Abs { result, input } => {
+                    self.execute_i16x8_abs(result, input);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I32x4Abs { result, input } => self.execute_i32x4_abs(result, input),
+                Instr::I32x4Abs { result, input } => {
+                    self.execute_i32x4_abs(result, input);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I64x2Abs { result, input } => self.execute_i64x2_abs(result, input),
+                Instr::I64x2Abs { result, input } => {
+                    self.execute_i64x2_abs(result, input);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::I8x16Shl { result, lhs, rhs } => self.execute_i8x16_shl(result, lhs, rhs),
+                Instr::I8x16Shl { result, lhs, rhs } => {
+                    self.execute_i8x16_shl(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16ShlBy { result, lhs, rhs } => {
-                    self.execute_i8x16_shl_by(result, lhs, rhs)
+                    self.execute_i8x16_shl_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I16x8Shl { result, lhs, rhs } => self.execute_i16x8_shl(result, lhs, rhs),
+                Instr::I16x8Shl { result, lhs, rhs } => {
+                    self.execute_i16x8_shl(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ShlBy { result, lhs, rhs } => {
-                    self.execute_i16x8_shl_by(result, lhs, rhs)
+                    self.execute_i16x8_shl_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I32x4Shl { result, lhs, rhs } => self.execute_i32x4_shl(result, lhs, rhs),
+                Instr::I32x4Shl { result, lhs, rhs } => {
+                    self.execute_i32x4_shl(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ShlBy { result, lhs, rhs } => {
-                    self.execute_i32x4_shl_by(result, lhs, rhs)
+                    self.execute_i32x4_shl_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I64x2Shl { result, lhs, rhs } => self.execute_i64x2_shl(result, lhs, rhs),
+                Instr::I64x2Shl { result, lhs, rhs } => {
+                    self.execute_i64x2_shl(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ShlBy { result, lhs, rhs } => {
-                    self.execute_i64x2_shl_by(result, lhs, rhs)
+                    self.execute_i64x2_shl_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I8x16ShrS { result, lhs, rhs } => self.execute_i8x16_shr_s(result, lhs, rhs),
+                Instr::I8x16ShrS { result, lhs, rhs } => {
+                    self.execute_i8x16_shr_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16ShrSBy { result, lhs, rhs } => {
-                    self.execute_i8x16_shr_s_by(result, lhs, rhs)
+                    self.execute_i8x16_shr_s_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I8x16ShrU { result, lhs, rhs } => self.execute_i8x16_shr_u(result, lhs, rhs),
+                Instr::I8x16ShrU { result, lhs, rhs } => {
+                    self.execute_i8x16_shr_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I8x16ShrUBy { result, lhs, rhs } => {
-                    self.execute_i8x16_shr_u_by(result, lhs, rhs)
+                    self.execute_i8x16_shr_u_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I16x8ShrS { result, lhs, rhs } => self.execute_i16x8_shr_s(result, lhs, rhs),
+                Instr::I16x8ShrS { result, lhs, rhs } => {
+                    self.execute_i16x8_shr_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ShrSBy { result, lhs, rhs } => {
-                    self.execute_i16x8_shr_s_by(result, lhs, rhs)
+                    self.execute_i16x8_shr_s_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I16x8ShrU { result, lhs, rhs } => self.execute_i16x8_shr_u(result, lhs, rhs),
+                Instr::I16x8ShrU { result, lhs, rhs } => {
+                    self.execute_i16x8_shr_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ShrUBy { result, lhs, rhs } => {
-                    self.execute_i16x8_shr_u_by(result, lhs, rhs)
+                    self.execute_i16x8_shr_u_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ShrS { result, lhs, rhs } => self.execute_i32x4_shr_s(result, lhs, rhs),
+                Instr::I32x4ShrS { result, lhs, rhs } => {
+                    self.execute_i32x4_shr_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ShrSBy { result, lhs, rhs } => {
-                    self.execute_i32x4_shr_s_by(result, lhs, rhs)
+                    self.execute_i32x4_shr_s_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I32x4ShrU { result, lhs, rhs } => self.execute_i32x4_shr_u(result, lhs, rhs),
+                Instr::I32x4ShrU { result, lhs, rhs } => {
+                    self.execute_i32x4_shr_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ShrUBy { result, lhs, rhs } => {
-                    self.execute_i32x4_shr_u_by(result, lhs, rhs)
+                    self.execute_i32x4_shr_u_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I64x2ShrS { result, lhs, rhs } => self.execute_i64x2_shr_s(result, lhs, rhs),
+                Instr::I64x2ShrS { result, lhs, rhs } => {
+                    self.execute_i64x2_shr_s(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ShrSBy { result, lhs, rhs } => {
-                    self.execute_i64x2_shr_s_by(result, lhs, rhs)
+                    self.execute_i64x2_shr_s_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I64x2ShrU { result, lhs, rhs } => self.execute_i64x2_shr_u(result, lhs, rhs),
+                Instr::I64x2ShrU { result, lhs, rhs } => {
+                    self.execute_i64x2_shr_u(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ShrUBy { result, lhs, rhs } => {
-                    self.execute_i64x2_shr_u_by(result, lhs, rhs)
+                    self.execute_i64x2_shr_u_by(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::V128And { result, lhs, rhs } => self.execute_v128_and(result, lhs, rhs),
+                Instr::V128And { result, lhs, rhs } => {
+                    self.execute_v128_and(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128Or { result, lhs, rhs } => self.execute_v128_or(result, lhs, rhs),
+                Instr::V128Or { result, lhs, rhs } => {
+                    self.execute_v128_or(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
-                Instr::V128Xor { result, lhs, rhs } => self.execute_v128_xor(result, lhs, rhs),
+                Instr::V128Xor { result, lhs, rhs } => {
+                    self.execute_v128_xor(result, lhs, rhs);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Andnot { result, lhs, rhs } => {
-                    self.execute_v128_andnot(result, lhs, rhs)
+                    self.execute_v128_andnot(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::V128Not { result, input } => self.execute_v128_not(result, input),
+                Instr::V128Not { result, input } => {
+                    self.execute_v128_not(result, input);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Bitselect { result, lhs, rhs } => {
-                    self.execute_v128_bitselect(result, lhs, rhs)
+                    self.execute_v128_bitselect(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
-                Instr::I8x16Popcnt { result, input } => self.execute_i8x16_popcnt(result, input),
-                #[cfg(feature = "simd")]
-                Instr::V128AnyTrue { result, input } => self.execute_v128_any_true(result, input),
-                #[cfg(feature = "simd")]
-                Instr::I8x16AllTrue { result, input } => self.execute_i8x16_all_true(result, input),
-                #[cfg(feature = "simd")]
-                Instr::I16x8AllTrue { result, input } => self.execute_i16x8_all_true(result, input),
-                #[cfg(feature = "simd")]
-                Instr::I32x4AllTrue { result, input } => self.execute_i32x4_all_true(result, input),
-                #[cfg(feature = "simd")]
-                Instr::I64x2AllTrue { result, input } => self.execute_i64x2_all_true(result, input),
-                #[cfg(feature = "simd")]
-                Instr::I8x16Bitmask { result, input } => self.execute_i8x16_bitmask(result, input),
-                #[cfg(feature = "simd")]
-                Instr::I16x8Bitmask { result, input } => self.execute_i16x8_bitmask(result, input),
-                #[cfg(feature = "simd")]
-                Instr::I32x4Bitmask { result, input } => self.execute_i32x4_bitmask(result, input),
-                #[cfg(feature = "simd")]
-                Instr::I64x2Bitmask { result, input } => self.execute_i64x2_bitmask(result, input),
-                #[cfg(feature = "simd")]
-                Instr::I8x16Eq { result, lhs, rhs } => self.execute_i8x16_eq(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I16x8Eq { result, lhs, rhs } => self.execute_i16x8_eq(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I32x4Eq { result, lhs, rhs } => self.execute_i32x4_eq(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I64x2Eq { result, lhs, rhs } => self.execute_i64x2_eq(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Eq { result, lhs, rhs } => self.execute_f32x4_eq(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Eq { result, lhs, rhs } => self.execute_f64x2_eq(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I8x16Ne { result, lhs, rhs } => self.execute_i8x16_ne(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I16x8Ne { result, lhs, rhs } => self.execute_i16x8_ne(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I32x4Ne { result, lhs, rhs } => self.execute_i32x4_ne(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I64x2Ne { result, lhs, rhs } => self.execute_i64x2_ne(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Ne { result, lhs, rhs } => self.execute_f32x4_ne(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Ne { result, lhs, rhs } => self.execute_f64x2_ne(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I8x16LtS { result, lhs, rhs } => self.execute_i8x16_lt_s(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I8x16LtU { result, lhs, rhs } => self.execute_i8x16_lt_u(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I16x8LtS { result, lhs, rhs } => self.execute_i16x8_lt_s(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I16x8LtU { result, lhs, rhs } => self.execute_i16x8_lt_u(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I32x4LtS { result, lhs, rhs } => self.execute_i32x4_lt_s(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I32x4LtU { result, lhs, rhs } => self.execute_i32x4_lt_u(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I64x2LtS { result, lhs, rhs } => self.execute_i64x2_lt_s(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Lt { result, lhs, rhs } => self.execute_f32x4_lt(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Lt { result, lhs, rhs } => self.execute_f64x2_lt(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I8x16LeS { result, lhs, rhs } => self.execute_i8x16_le_s(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I8x16LeU { result, lhs, rhs } => self.execute_i8x16_le_u(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I16x8LeS { result, lhs, rhs } => self.execute_i16x8_le_s(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I16x8LeU { result, lhs, rhs } => self.execute_i16x8_le_u(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I32x4LeS { result, lhs, rhs } => self.execute_i32x4_le_s(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I32x4LeU { result, lhs, rhs } => self.execute_i32x4_le_u(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::I64x2LeS { result, lhs, rhs } => self.execute_i64x2_le_s(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Le { result, lhs, rhs } => self.execute_f32x4_le(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Le { result, lhs, rhs } => self.execute_f64x2_le(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Neg { result, input } => self.execute_f32x4_neg(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Neg { result, input } => self.execute_f64x2_neg(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Abs { result, input } => self.execute_f32x4_abs(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Abs { result, input } => self.execute_f64x2_abs(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Min { result, lhs, rhs } => self.execute_f32x4_min(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Min { result, lhs, rhs } => self.execute_f64x2_min(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Max { result, lhs, rhs } => self.execute_f32x4_max(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Max { result, lhs, rhs } => self.execute_f64x2_max(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Pmin { result, lhs, rhs } => self.execute_f32x4_pmin(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Pmin { result, lhs, rhs } => self.execute_f64x2_pmin(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Pmax { result, lhs, rhs } => self.execute_f32x4_pmax(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Pmax { result, lhs, rhs } => self.execute_f64x2_pmax(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Add { result, lhs, rhs } => self.execute_f32x4_add(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Add { result, lhs, rhs } => self.execute_f64x2_add(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Sub { result, lhs, rhs } => self.execute_f32x4_sub(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Sub { result, lhs, rhs } => self.execute_f64x2_sub(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Div { result, lhs, rhs } => self.execute_f32x4_div(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Div { result, lhs, rhs } => self.execute_f64x2_div(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Mul { result, lhs, rhs } => self.execute_f32x4_mul(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Mul { result, lhs, rhs } => self.execute_f64x2_mul(result, lhs, rhs),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Sqrt { result, input } => self.execute_f32x4_sqrt(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Sqrt { result, input } => self.execute_f64x2_sqrt(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Ceil { result, input } => self.execute_f32x4_ceil(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Ceil { result, input } => self.execute_f64x2_ceil(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Floor { result, input } => self.execute_f32x4_floor(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Floor { result, input } => self.execute_f64x2_floor(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Trunc { result, input } => self.execute_f32x4_trunc(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Trunc { result, input } => self.execute_f64x2_trunc(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F32x4Nearest { result, input } => self.execute_f32x4_nearest(result, input),
-                #[cfg(feature = "simd")]
-                Instr::F64x2Nearest { result, input } => self.execute_f64x2_nearest(result, input),
+                Instr::I8x16Popcnt { result, input } => {
+                    self.execute_i8x16_popcnt(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::V128AnyTrue { result, input } => {
+                    self.execute_v128_any_true(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I8x16AllTrue { result, input } => {
+                    self.execute_i8x16_all_true(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8AllTrue { result, input } => {
+                    self.execute_i16x8_all_true(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4AllTrue { result, input } => {
+                    self.execute_i32x4_all_true(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I64x2AllTrue { result, input } => {
+                    self.execute_i64x2_all_true(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I8x16Bitmask { result, input } => {
+                    self.execute_i8x16_bitmask(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8Bitmask { result, input } => {
+                    self.execute_i16x8_bitmask(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4Bitmask { result, input } => {
+                    self.execute_i32x4_bitmask(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I64x2Bitmask { result, input } => {
+                    self.execute_i64x2_bitmask(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I8x16Eq { result, lhs, rhs } => {
+                    self.execute_i8x16_eq(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8Eq { result, lhs, rhs } => {
+                    self.execute_i16x8_eq(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4Eq { result, lhs, rhs } => {
+                    self.execute_i32x4_eq(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I64x2Eq { result, lhs, rhs } => {
+                    self.execute_i64x2_eq(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Eq { result, lhs, rhs } => {
+                    self.execute_f32x4_eq(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Eq { result, lhs, rhs } => {
+                    self.execute_f64x2_eq(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I8x16Ne { result, lhs, rhs } => {
+                    self.execute_i8x16_ne(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8Ne { result, lhs, rhs } => {
+                    self.execute_i16x8_ne(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4Ne { result, lhs, rhs } => {
+                    self.execute_i32x4_ne(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I64x2Ne { result, lhs, rhs } => {
+                    self.execute_i64x2_ne(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Ne { result, lhs, rhs } => {
+                    self.execute_f32x4_ne(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Ne { result, lhs, rhs } => {
+                    self.execute_f64x2_ne(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I8x16LtS { result, lhs, rhs } => {
+                    self.execute_i8x16_lt_s(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I8x16LtU { result, lhs, rhs } => {
+                    self.execute_i8x16_lt_u(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8LtS { result, lhs, rhs } => {
+                    self.execute_i16x8_lt_s(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8LtU { result, lhs, rhs } => {
+                    self.execute_i16x8_lt_u(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4LtS { result, lhs, rhs } => {
+                    self.execute_i32x4_lt_s(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4LtU { result, lhs, rhs } => {
+                    self.execute_i32x4_lt_u(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I64x2LtS { result, lhs, rhs } => {
+                    self.execute_i64x2_lt_s(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Lt { result, lhs, rhs } => {
+                    self.execute_f32x4_lt(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Lt { result, lhs, rhs } => {
+                    self.execute_f64x2_lt(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I8x16LeS { result, lhs, rhs } => {
+                    self.execute_i8x16_le_s(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I8x16LeU { result, lhs, rhs } => {
+                    self.execute_i8x16_le_u(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8LeS { result, lhs, rhs } => {
+                    self.execute_i16x8_le_s(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I16x8LeU { result, lhs, rhs } => {
+                    self.execute_i16x8_le_u(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4LeS { result, lhs, rhs } => {
+                    self.execute_i32x4_le_s(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I32x4LeU { result, lhs, rhs } => {
+                    self.execute_i32x4_le_u(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::I64x2LeS { result, lhs, rhs } => {
+                    self.execute_i64x2_le_s(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Le { result, lhs, rhs } => {
+                    self.execute_f32x4_le(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Le { result, lhs, rhs } => {
+                    self.execute_f64x2_le(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Neg { result, input } => {
+                    self.execute_f32x4_neg(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Neg { result, input } => {
+                    self.execute_f64x2_neg(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Abs { result, input } => {
+                    self.execute_f32x4_abs(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Abs { result, input } => {
+                    self.execute_f64x2_abs(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Min { result, lhs, rhs } => {
+                    self.execute_f32x4_min(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Min { result, lhs, rhs } => {
+                    self.execute_f64x2_min(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Max { result, lhs, rhs } => {
+                    self.execute_f32x4_max(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Max { result, lhs, rhs } => {
+                    self.execute_f64x2_max(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Pmin { result, lhs, rhs } => {
+                    self.execute_f32x4_pmin(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Pmin { result, lhs, rhs } => {
+                    self.execute_f64x2_pmin(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Pmax { result, lhs, rhs } => {
+                    self.execute_f32x4_pmax(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Pmax { result, lhs, rhs } => {
+                    self.execute_f64x2_pmax(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Add { result, lhs, rhs } => {
+                    self.execute_f32x4_add(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Add { result, lhs, rhs } => {
+                    self.execute_f64x2_add(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Sub { result, lhs, rhs } => {
+                    self.execute_f32x4_sub(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Sub { result, lhs, rhs } => {
+                    self.execute_f64x2_sub(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Div { result, lhs, rhs } => {
+                    self.execute_f32x4_div(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Div { result, lhs, rhs } => {
+                    self.execute_f64x2_div(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Mul { result, lhs, rhs } => {
+                    self.execute_f32x4_mul(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Mul { result, lhs, rhs } => {
+                    self.execute_f64x2_mul(result, lhs, rhs);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Sqrt { result, input } => {
+                    self.execute_f32x4_sqrt(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Sqrt { result, input } => {
+                    self.execute_f64x2_sqrt(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Ceil { result, input } => {
+                    self.execute_f32x4_ceil(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Ceil { result, input } => {
+                    self.execute_f64x2_ceil(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Floor { result, input } => {
+                    self.execute_f32x4_floor(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Floor { result, input } => {
+                    self.execute_f64x2_floor(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Trunc { result, input } => {
+                    self.execute_f32x4_trunc(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Trunc { result, input } => {
+                    self.execute_f64x2_trunc(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F32x4Nearest { result, input } => {
+                    self.execute_f32x4_nearest(result, input);
+                    continue 'next;
+                }
+                #[cfg(feature = "simd")]
+                Instr::F64x2Nearest { result, input } => {
+                    self.execute_f64x2_nearest(result, input);
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::F32x4ConvertI32x4S { result, input } => {
-                    self.execute_f32x4_convert_i32x4_s(result, input)
+                    self.execute_f32x4_convert_i32x4_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::F32x4ConvertI32x4U { result, input } => {
-                    self.execute_f32x4_convert_i32x4_u(result, input)
+                    self.execute_f32x4_convert_i32x4_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::F64x2ConvertLowI32x4S { result, input } => {
-                    self.execute_f64x2_convert_low_i32x4_s(result, input)
+                    self.execute_f64x2_convert_low_i32x4_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::F64x2ConvertLowI32x4U { result, input } => {
-                    self.execute_f64x2_convert_low_i32x4_u(result, input)
+                    self.execute_f64x2_convert_low_i32x4_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4TruncSatF32x4S { result, input } => {
-                    self.execute_i32x4_trunc_sat_f32x4_s(result, input)
+                    self.execute_i32x4_trunc_sat_f32x4_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4TruncSatF32x4U { result, input } => {
-                    self.execute_i32x4_trunc_sat_f32x4_u(result, input)
+                    self.execute_i32x4_trunc_sat_f32x4_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4TruncSatF64x2SZero { result, input } => {
-                    self.execute_i32x4_trunc_sat_f64x2_s_zero(result, input)
+                    self.execute_i32x4_trunc_sat_f64x2_s_zero(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4TruncSatF64x2UZero { result, input } => {
-                    self.execute_i32x4_trunc_sat_f64x2_u_zero(result, input)
+                    self.execute_i32x4_trunc_sat_f64x2_u_zero(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::F32x4DemoteF64x2Zero { result, input } => {
-                    self.execute_f32x4_demote_f64x2_zero(result, input)
+                    self.execute_f32x4_demote_f64x2_zero(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::F64x2PromoteLowF32x4 { result, input } => {
-                    self.execute_f64x2_promote_low_f32x4(result, input)
+                    self.execute_f64x2_promote_low_f32x4(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I8x16NarrowI16x8S { result, lhs, rhs } => {
-                    self.execute_i8x16_narrow_i16x8_s(result, lhs, rhs)
+                    self.execute_i8x16_narrow_i16x8_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I8x16NarrowI16x8U { result, lhs, rhs } => {
-                    self.execute_i8x16_narrow_i16x8_u(result, lhs, rhs)
+                    self.execute_i8x16_narrow_i16x8_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8NarrowI32x4S { result, lhs, rhs } => {
-                    self.execute_i16x8_narrow_i32x4_s(result, lhs, rhs)
+                    self.execute_i16x8_narrow_i32x4_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8NarrowI32x4U { result, lhs, rhs } => {
-                    self.execute_i16x8_narrow_i32x4_u(result, lhs, rhs)
+                    self.execute_i16x8_narrow_i32x4_u(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtendLowI8x16S { result, input } => {
-                    self.execute_i16x8_extend_low_i8x16_s(result, input)
+                    self.execute_i16x8_extend_low_i8x16_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtendHighI8x16S { result, input } => {
-                    self.execute_i16x8_extend_high_i8x16_s(result, input)
+                    self.execute_i16x8_extend_high_i8x16_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtendLowI8x16U { result, input } => {
-                    self.execute_i16x8_extend_low_i8x16_u(result, input)
+                    self.execute_i16x8_extend_low_i8x16_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8ExtendHighI8x16U { result, input } => {
-                    self.execute_i16x8_extend_high_i8x16_u(result, input)
+                    self.execute_i16x8_extend_high_i8x16_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtendLowI16x8S { result, input } => {
-                    self.execute_i32x4_extend_low_i16x8_s(result, input)
+                    self.execute_i32x4_extend_low_i16x8_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtendHighI16x8S { result, input } => {
-                    self.execute_i32x4_extend_high_i16x8_s(result, input)
+                    self.execute_i32x4_extend_high_i16x8_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtendLowI16x8U { result, input } => {
-                    self.execute_i32x4_extend_low_i16x8_u(result, input)
+                    self.execute_i32x4_extend_low_i16x8_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4ExtendHighI16x8U { result, input } => {
-                    self.execute_i32x4_extend_high_i16x8_u(result, input)
+                    self.execute_i32x4_extend_high_i16x8_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtendLowI32x4S { result, input } => {
-                    self.execute_i64x2_extend_low_i32x4_s(result, input)
+                    self.execute_i64x2_extend_low_i32x4_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtendHighI32x4S { result, input } => {
-                    self.execute_i64x2_extend_high_i32x4_s(result, input)
+                    self.execute_i64x2_extend_high_i32x4_s(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtendLowI32x4U { result, input } => {
-                    self.execute_i64x2_extend_low_i32x4_u(result, input)
+                    self.execute_i64x2_extend_low_i32x4_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I64x2ExtendHighI32x4U { result, input } => {
-                    self.execute_i64x2_extend_high_i32x4_u(result, input)
+                    self.execute_i64x2_extend_high_i32x4_u(result, input);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store { ptr, offset_lo } => {
-                    self.execute_v128_store(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_v128_store(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128StoreOffset16 { ptr, value, offset } => {
-                    self.execute_v128_store_offset16(ptr, offset, value)?
+                    self.execute_v128_store_offset16(ptr, offset, value)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128StoreAt { value, address } => {
-                    self.execute_v128_store_at(store.inner_mut(), address, value)?
+                    self.execute_v128_store_at(store.inner_mut(), address, value)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store8Lane { ptr, offset_lo } => {
-                    self.execute_v128_store8_lane(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_v128_store8_lane(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store8LaneOffset8 {
@@ -1989,14 +3212,19 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store8_lane_offset8(ptr, value, offset, lane)?,
+                } => {
+                    self.execute_v128_store8_lane_offset8(ptr, value, offset, lane)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Store8LaneAt { value, address } => {
-                    self.execute_v128_store8_lane_at(store.inner_mut(), value, address)?
+                    self.execute_v128_store8_lane_at(store.inner_mut(), value, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store16Lane { ptr, offset_lo } => {
-                    self.execute_v128_store16_lane(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_v128_store16_lane(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store16LaneOffset8 {
@@ -2004,14 +3232,19 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store16_lane_offset8(ptr, value, offset, lane)?,
+                } => {
+                    self.execute_v128_store16_lane_offset8(ptr, value, offset, lane)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Store16LaneAt { value, address } => {
-                    self.execute_v128_store16_lane_at(store.inner_mut(), value, address)?
+                    self.execute_v128_store16_lane_at(store.inner_mut(), value, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store32Lane { ptr, offset_lo } => {
-                    self.execute_v128_store32_lane(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_v128_store32_lane(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store32LaneOffset8 {
@@ -2019,14 +3252,19 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store32_lane_offset8(ptr, value, offset, lane)?,
+                } => {
+                    self.execute_v128_store32_lane_offset8(ptr, value, offset, lane)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Store32LaneAt { value, address } => {
-                    self.execute_v128_store32_lane_at(store.inner_mut(), value, address)?
+                    self.execute_v128_store32_lane_at(store.inner_mut(), value, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store64Lane { ptr, offset_lo } => {
-                    self.execute_v128_store64_lane(store.inner_mut(), ptr, offset_lo)?
+                    self.execute_v128_store64_lane(store.inner_mut(), ptr, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Store64LaneOffset8 {
@@ -2034,248 +3272,331 @@ impl<'engine> Executor<'engine> {
                     value,
                     offset,
                     lane,
-                } => self.execute_v128_store64_lane_offset8(ptr, value, offset, lane)?,
+                } => {
+                    self.execute_v128_store64_lane_offset8(ptr, value, offset, lane)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Store64LaneAt { value, address } => {
-                    self.execute_v128_store64_lane_at(store.inner_mut(), value, address)?
+                    self.execute_v128_store64_lane_at(store.inner_mut(), value, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load { result, offset_lo } => {
-                    self.execute_v128_load(store.inner(), result, offset_lo)?
+                    self.execute_v128_load(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128LoadAt { result, address } => {
-                    self.execute_v128_load_at(store.inner(), result, address)?
+                    self.execute_v128_load_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128LoadOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32Zero { result, offset_lo } => {
-                    self.execute_v128_load32_zero(store.inner(), result, offset_lo)?
+                    self.execute_v128_load32_zero(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32ZeroAt { result, address } => {
-                    self.execute_v128_load32_zero_at(store.inner(), result, address)?
+                    self.execute_v128_load32_zero_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32ZeroOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load32_zero_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load32_zero_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64Zero { result, offset_lo } => {
-                    self.execute_v128_load64_zero(store.inner(), result, offset_lo)?
+                    self.execute_v128_load64_zero(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64ZeroAt { result, address } => {
-                    self.execute_v128_load64_zero_at(store.inner(), result, address)?
+                    self.execute_v128_load64_zero_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64ZeroOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load64_zero_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load64_zero_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8Splat { result, offset_lo } => {
-                    self.execute_v128_load8_splat(store.inner(), result, offset_lo)?
+                    self.execute_v128_load8_splat(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8SplatAt { result, address } => {
-                    self.execute_v128_load8_splat_at(store.inner(), result, address)?
+                    self.execute_v128_load8_splat_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8SplatOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load8_splat_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load8_splat_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16Splat { result, offset_lo } => {
-                    self.execute_v128_load16_splat(store.inner(), result, offset_lo)?
+                    self.execute_v128_load16_splat(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16SplatAt { result, address } => {
-                    self.execute_v128_load16_splat_at(store.inner(), result, address)?
+                    self.execute_v128_load16_splat_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16SplatOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load16_splat_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load16_splat_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32Splat { result, offset_lo } => {
-                    self.execute_v128_load32_splat(store.inner(), result, offset_lo)?
+                    self.execute_v128_load32_splat(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32SplatAt { result, address } => {
-                    self.execute_v128_load32_splat_at(store.inner(), result, address)?
+                    self.execute_v128_load32_splat_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32SplatOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load32_splat_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load32_splat_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64Splat { result, offset_lo } => {
-                    self.execute_v128_load64_splat(store.inner(), result, offset_lo)?
+                    self.execute_v128_load64_splat(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64SplatAt { result, address } => {
-                    self.execute_v128_load64_splat_at(store.inner(), result, address)?
+                    self.execute_v128_load64_splat_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64SplatOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load64_splat_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load64_splat_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8S { result, offset_lo } => {
-                    self.execute_v128_load8x8_s(store.inner(), result, offset_lo)?
+                    self.execute_v128_load8x8_s(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8SAt { result, address } => {
-                    self.execute_v128_load8x8_s_at(store.inner(), result, address)?
+                    self.execute_v128_load8x8_s_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8SOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load8x8_s_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load8x8_s_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8U { result, offset_lo } => {
-                    self.execute_v128_load8x8_u(store.inner(), result, offset_lo)?
+                    self.execute_v128_load8x8_u(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8UAt { result, address } => {
-                    self.execute_v128_load8x8_u_at(store.inner(), result, address)?
+                    self.execute_v128_load8x8_u_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8x8UOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load8x8_u_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load8x8_u_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4S { result, offset_lo } => {
-                    self.execute_v128_load16x4_s(store.inner(), result, offset_lo)?
+                    self.execute_v128_load16x4_s(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4SAt { result, address } => {
-                    self.execute_v128_load16x4_s_at(store.inner(), result, address)?
+                    self.execute_v128_load16x4_s_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4SOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load16x4_s_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load16x4_s_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4U { result, offset_lo } => {
-                    self.execute_v128_load16x4_u(store.inner(), result, offset_lo)?
+                    self.execute_v128_load16x4_u(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4UAt { result, address } => {
-                    self.execute_v128_load16x4_u_at(store.inner(), result, address)?
+                    self.execute_v128_load16x4_u_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16x4UOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load16x4_u_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load16x4_u_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2S { result, offset_lo } => {
-                    self.execute_v128_load32x2_s(store.inner(), result, offset_lo)?
+                    self.execute_v128_load32x2_s(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2SAt { result, address } => {
-                    self.execute_v128_load32x2_s_at(store.inner(), result, address)?
+                    self.execute_v128_load32x2_s_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2SOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load32x2_s_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load32x2_s_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2U { result, offset_lo } => {
-                    self.execute_v128_load32x2_u(store.inner(), result, offset_lo)?
+                    self.execute_v128_load32x2_u(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2UAt { result, address } => {
-                    self.execute_v128_load32x2_u_at(store.inner(), result, address)?
+                    self.execute_v128_load32x2_u_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32x2UOffset16 {
                     result,
                     ptr,
                     offset,
-                } => self.execute_v128_load32x2_u_offset16(result, ptr, offset)?,
+                } => {
+                    self.execute_v128_load32x2_u_offset16(result, ptr, offset)?;
+                    continue 'next;
+                }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8Lane { result, offset_lo } => {
-                    self.execute_v128_load8_lane(store.inner(), result, offset_lo)?
+                    self.execute_v128_load8_lane(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load8LaneAt { result, address } => {
-                    self.execute_v128_load8_lane_at(store.inner(), result, address)?
+                    self.execute_v128_load8_lane_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16Lane { result, offset_lo } => {
-                    self.execute_v128_load16_lane(store.inner(), result, offset_lo)?
+                    self.execute_v128_load16_lane(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load16LaneAt { result, address } => {
-                    self.execute_v128_load16_lane_at(store.inner(), result, address)?
+                    self.execute_v128_load16_lane_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32Lane { result, offset_lo } => {
-                    self.execute_v128_load32_lane(store.inner(), result, offset_lo)?
+                    self.execute_v128_load32_lane(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load32LaneAt { result, address } => {
-                    self.execute_v128_load32_lane_at(store.inner(), result, address)?
+                    self.execute_v128_load32_lane_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64Lane { result, offset_lo } => {
-                    self.execute_v128_load64_lane(store.inner(), result, offset_lo)?
+                    self.execute_v128_load64_lane(store.inner(), result, offset_lo)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::V128Load64LaneAt { result, address } => {
-                    self.execute_v128_load64_lane_at(store.inner(), result, address)?
+                    self.execute_v128_load64_lane_at(store.inner(), result, address)?;
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I16x8RelaxedDotI8x16I7x16S { result, lhs, rhs } => {
-                    self.execute_i16x8_relaxed_dot_i8x16_i7x16_s(result, lhs, rhs)
+                    self.execute_i16x8_relaxed_dot_i8x16_i7x16_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::I32x4RelaxedDotI8x16I7x16AddS { result, lhs, rhs } => {
-                    self.execute_i32x4_relaxed_dot_i8x16_i7x16_add_s(result, lhs, rhs)
+                    self.execute_i32x4_relaxed_dot_i8x16_i7x16_add_s(result, lhs, rhs);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::F32x4RelaxedMadd { result, a, b } => {
-                    self.execute_f32x4_relaxed_madd(result, a, b)
+                    self.execute_f32x4_relaxed_madd(result, a, b);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::F32x4RelaxedNmadd { result, a, b } => {
-                    self.execute_f32x4_relaxed_nmadd(result, a, b)
+                    self.execute_f32x4_relaxed_nmadd(result, a, b);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::F64x2RelaxedMadd { result, a, b } => {
-                    self.execute_f64x2_relaxed_madd(result, a, b)
+                    self.execute_f64x2_relaxed_madd(result, a, b);
+                    continue 'next;
                 }
                 #[cfg(feature = "simd")]
                 Instr::F64x2RelaxedNmadd { result, a, b } => {
-                    self.execute_f64x2_relaxed_nmadd(result, a, b)
+                    self.execute_f64x2_relaxed_nmadd(result, a, b);
+                    continue 'next;
                 }
                 unsupported => panic!("encountered unsupported Wasmi instruction: {unsupported:?}"),
             }
