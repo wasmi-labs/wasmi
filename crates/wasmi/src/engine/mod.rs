@@ -283,7 +283,7 @@ impl Engine {
     /// # Errors
     ///
     /// - If `params` are overflowing or underflowing the expected amount of parameters.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - If the given `results` do not match the length of the expected results of `func`.
     /// - When encountering a Wasm or host trap during the execution of `func`.
     ///
     /// [`TypedFunc`]: [`crate::TypedFunc`]
@@ -318,7 +318,7 @@ impl Engine {
     /// # Errors
     ///
     /// - If `params` are overflowing or underflowing the expected amount of parameters.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - If the given `results` do not match the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
     /// - When `func` is a host function that traps.
     ///
@@ -355,7 +355,7 @@ impl Engine {
     /// # Errors
     ///
     /// - If `params` are overflowing or underflowing the expected amount of parameters.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - If the given `results` do not match the length of the expected results of `func`.
     /// - When encountering a Wasm trap during the execution of `func`.
     /// - When `func` is a host function that traps.
     ///
