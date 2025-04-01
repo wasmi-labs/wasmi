@@ -34,7 +34,7 @@ fn default_test_setup(wasm: &[u8]) -> (Store<()>, Func) {
     (store, func)
 }
 
-/// Asserts the the call was successful.
+/// Asserts the call was successful.
 ///
 /// # Note
 ///
