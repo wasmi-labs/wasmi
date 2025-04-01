@@ -206,7 +206,7 @@ pub struct Store<T> {
     /// This is used in [`PrunedStore::restore`] to check if the
     /// restored `T` matches the original `T` of the `store`.
     id: TypeId,
-    /// Used to call host functions via [`PrunedStore`].
+    /// Used to restore a [`PrunedStore`] to a [`Store<T>`].
     restore_pruned: RestorePrunedWrapper,
 }
 
