@@ -162,6 +162,7 @@ pub trait TypedStore {
         call_hooks: CallHooks,
     ) -> Result<(), Error>;
 
+    /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
     fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef);
 }
 
@@ -273,6 +274,7 @@ impl PrunedStore {
             .call_host_func(func, instance, params_results, call_hooks)
     }
 
+    /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
     pub fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
@@ -288,6 +290,11 @@ impl PrunedStore {
             .restore(self)
     }
 
+    /// Restores `self` to a proper [`Store<T>`] if possible.
+    /// 
+    /// # Errors
+    /// 
+    /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
     #[inline]
     fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
         if unlikely(TypeId::of::<T>() != self.pruned.id) {
