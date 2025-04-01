@@ -278,22 +278,18 @@ impl PrunedStore {
     pub fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
-        self.typed_store()
-            .store_inner_and_resource_limiter_ref()
+        self.typed_store().store_inner_and_resource_limiter_ref()
     }
 
     /// Returns the associated [`TypedStore`] of `self`.
     fn typed_store(&mut self) -> &mut dyn TypedStore {
-        self.pruned
-            .restore_pruned
-            .clone()
-            .restore(self)
+        self.pruned.restore_pruned.clone().restore(self)
     }
 
     /// Restores `self` to a proper [`Store<T>`] if possible.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
     #[inline]
     fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
