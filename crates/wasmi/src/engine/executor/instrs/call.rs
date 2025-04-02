@@ -152,6 +152,7 @@ impl Executor<'_> {
     /// # Note
     ///
     /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
+    #[inline(always)]
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
         // other parts of the code more fragile with respect to instruction ordering.
@@ -223,6 +224,7 @@ impl Executor<'_> {
     }
 
     /// Creates a [`CallFrame`] for calling the [`EngineFunc`].
+    #[inline(always)]
     fn dispatch_compiled_func<C: CallContext>(
         &mut self,
         results: RegSpan,
@@ -304,6 +306,7 @@ impl Executor<'_> {
     }
 
     /// Prepares a [`EngineFunc`] call with optional call parameters.
+    #[inline(always)]
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
@@ -341,6 +344,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal0`].
+    #[inline(always)]
     pub fn execute_return_call_internal_0(
         &mut self,
         store: &mut StoreInner,
@@ -350,6 +354,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`].
+    #[inline(always)]
     pub fn execute_return_call_internal(
         &mut self,
         store: &mut StoreInner,
@@ -359,6 +364,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`] or [`Instruction::ReturnCallInternal0`].
+    #[inline(always)]
     fn execute_return_call_internal_impl<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
@@ -376,6 +382,7 @@ impl Executor<'_> {
     /// tail call instructions for which the top-most [`CallFrame`] is the caller.
     ///
     /// [`CallStack`]: crate::engine::executor::stack::CallStack
+    #[inline(always)]
     fn caller_results(&self) -> RegSpan {
         self.stack
             .calls
@@ -385,6 +392,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallInternal0`].
+    #[inline(always)]
     pub fn execute_call_internal_0(
         &mut self,
         store: &mut StoreInner,
@@ -395,6 +403,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallInternal`].
+    #[inline(always)]
     pub fn execute_call_internal(
         &mut self,
         store: &mut StoreInner,
@@ -405,6 +414,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
+    // #[inline(never)]
     pub fn execute_return_call_imported_0(
         &mut self,
         store: &mut PrunedStore,
@@ -414,6 +424,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
+    // #[inline(never)]
     pub fn execute_return_call_imported(
         &mut self,
         store: &mut PrunedStore,
@@ -433,6 +444,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallImported0`].
+    // #[inline(never)]
     pub fn execute_call_imported_0(
         &mut self,
         store: &mut PrunedStore,
@@ -445,6 +457,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallImported`].
+    // #[inline(never)]
     pub fn execute_call_imported(
         &mut self,
         store: &mut PrunedStore,
@@ -607,6 +620,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
+    // #[inline(never)]
     pub fn execute_return_call_indirect_0(
         &mut self,
         store: &mut PrunedStore,
@@ -617,6 +631,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
+    // #[inline(never)]
     pub fn execute_return_call_indirect_0_imm16(
         &mut self,
         store: &mut PrunedStore,
@@ -627,6 +642,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
+    // #[inline(never)]
     pub fn execute_return_call_indirect(
         &mut self,
         store: &mut PrunedStore,
@@ -637,6 +653,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
+    // #[inline(never)]
     pub fn execute_return_call_indirect_imm16(
         &mut self,
         store: &mut PrunedStore,
@@ -647,6 +664,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
+    // #[inline(never)]
     pub fn execute_call_indirect_0(
         &mut self,
         store: &mut PrunedStore,
@@ -665,6 +683,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
+    // #[inline(never)]
     pub fn execute_call_indirect_0_imm16(
         &mut self,
         store: &mut PrunedStore,
@@ -683,6 +702,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect`].
+    // #[inline(never)]
     pub fn execute_call_indirect(
         &mut self,
         store: &mut PrunedStore,
@@ -701,6 +721,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirectImm16`].
+    // #[inline(never)]
     pub fn execute_call_indirect_imm16(
         &mut self,
         store: &mut PrunedStore,
