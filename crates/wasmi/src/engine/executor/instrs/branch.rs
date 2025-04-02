@@ -196,6 +196,7 @@ impl Executor<'_> {
     }
 
     /// Executes a generic fused compare and branch instruction with raw inputs.
+    #[inline(always)]
     fn execute_branch_binop<T>(
         &mut self,
         lhs: Reg,
@@ -309,6 +310,7 @@ macro_rules! impl_execute_branch_binop {
         impl<'engine> Executor<'engine> {
             $(
                 #[doc = concat!("Executes an [`Instruction::", stringify!($op_name), "`].")]
+                #[inline(always)]
                 pub fn $fn_name(&mut self, lhs: Reg, rhs: Reg, offset: BranchOffset16) {
                     self.execute_branch_binop::<$ty>(lhs, rhs, offset, $op)
                 }
