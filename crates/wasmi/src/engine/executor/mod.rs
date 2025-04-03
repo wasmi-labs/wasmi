@@ -9,6 +9,7 @@ use crate::{
     engine::{CallParams, CallResults, EngineInner, ResumableCallBase, ResumableInvocation},
     func::HostFuncEntity,
     ir::{Reg, RegSpan},
+    store::CallHooks,
     CallHook,
     Error,
     Func,
@@ -286,7 +287,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// When encountering a Wasm or host trap during execution.
     #[inline(always)]
     fn execute_func<T>(&mut self, store: &mut Store<T>) -> Result<(), Error> {
-        execute_instrs(store, self.stack, self.code_map)
+        execute_instrs(store.prune(), self.stack, self.code_map)
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
@@ -296,7 +297,13 @@ impl<'engine> EngineExecutor<'engine> {
         store: &mut Store<T>,
         host_func: HostFuncEntity,
     ) -> Result<(), Error> {
-        dispatch_host_func(store, &mut self.stack.values, host_func, None)?;
+        dispatch_host_func(
+            store.prune(),
+            &mut self.stack.values,
+            host_func,
+            None,
+            CallHooks::Ignore,
+        )?;
         Ok(())
     }
 

@@ -1,6 +1,6 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
-    core::TrapCode,
+    core::{hint::unlikely, TrapCode},
     engine::{DedupFuncType, FuelCosts},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
@@ -33,10 +33,11 @@ use crate::{
     TableEntity,
     TableIdx,
 };
-use alloc::boxed::Box;
+use alloc::{boxed::Box, sync::Arc};
 use core::{
-    any::type_name,
+    any::{type_name, TypeId},
     fmt::{self, Debug},
+    mem,
     sync::atomic::{AtomicU32, Ordering},
 };
 
@@ -117,6 +118,78 @@ impl<T> Debug for CallHookWrapper<T> {
     }
 }
 
+/// A wrapper used to restore a [`PrunedStore`].
+///
+/// This wrapper exists to provide a `Debug` impl so that `#[derive(Debug)]`
+/// works for [`Store`].
+#[allow(clippy::type_complexity)]
+#[derive(Clone)]
+struct RestorePrunedWrapper(Arc<dyn Send + Sync + Fn(&mut PrunedStore) -> &mut dyn TypedStore>);
+impl RestorePrunedWrapper {
+    /// Restores the [`PrunedStore`] and returns a reference to it via [`TypedStore`].
+    #[inline]
+    fn restore<'a>(&self, pruned: &'a mut PrunedStore) -> &'a mut dyn TypedStore {
+        (self.0)(pruned)
+    }
+}
+impl Debug for RestorePrunedWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "RestorePrunedWrapper")
+    }
+}
+
+/// The call hook behavior when calling a host function.
+#[derive(Debug, Copy, Clone)]
+pub enum CallHooks {
+    /// Invoke the host call hooks.
+    Call,
+    /// Ignore the host call hooks.
+    Ignore,
+}
+
+/// Methods available from [`PrunedStore`] that have been restored dynamically.
+pub trait TypedStore {
+    /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
+    ///
+    /// # Errors
+    ///
+    /// If the called host function returned an error.
+    fn call_host_func(
+        &mut self,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+        call_hooks: CallHooks,
+    ) -> Result<(), Error>;
+
+    /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
+    fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef);
+}
+
+impl<T> TypedStore for Store<T> {
+    fn call_host_func(
+        &mut self,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+        call_hooks: CallHooks,
+    ) -> Result<(), Error> {
+        if matches!(call_hooks, CallHooks::Call) {
+            <Store<T>>::invoke_call_hook(self, CallHook::CallingHost)?;
+        }
+        <Store<T>>::call_host_func(self, func, instance, params_results)?;
+        if matches!(call_hooks, CallHooks::Call) {
+            <Store<T>>::invoke_call_hook(self, CallHook::ReturningFromHost)?;
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn store_inner_and_resource_limiter_ref(&mut self) -> (&mut StoreInner, ResourceLimiterRef) {
+        <Store<T>>::store_inner_and_resource_limiter_ref(self)
+    }
+}
+
 /// The store that owns all data associated to Wasm modules.
 #[derive(Debug)]
 pub struct Store<T> {
@@ -127,16 +200,183 @@ pub struct Store<T> {
     /// This is re-exported to the rest of the crate since
     /// it is used directly by the engine's executor.
     pub(crate) inner: StoreInner,
+    /// The inner parts of the [`Store`] that are generic over a host provided `T`.
+    typed: TypedStoreInner<T>,
+    /// The [`TypeId`] of the `T` of the `store`.
+    ///
+    /// This is used in [`PrunedStore::restore`] to check if the
+    /// restored `T` matches the original `T` of the `store`.
+    id: TypeId,
+    /// Used to restore a [`PrunedStore`] to a [`Store<T>`].
+    restore_pruned: RestorePrunedWrapper,
+}
+
+/// A [`Store`] with a pruned `T`.
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct PrunedStore {
+    /// The underlying [`Store`] with pruned type signature.
+    pruned: Store<Pruned>,
+}
+
+/// Placeholder type of `T` for a pruned `Store<T>`.
+#[derive(Debug)]
+pub struct Pruned;
+
+impl<'a, T> From<&'a mut Store<T>> for &'a mut PrunedStore {
+    #[inline]
+    fn from(store: &'a mut Store<T>) -> Self {
+        // Safety: the generic `Store<T>` has its `T` pruned here.
+        //
+        // - This is safe because we are operating on a `&mut Store<T>` thus it is just
+        //   a reference and since `Store<T>` and `Store<Pruned>` have the same size and API.
+        // - We make sure in `PrunedStore` to never access the typed parts of the original
+        //   `Store<T>` and check in the restoration process the type-ID of the target `T`.
+        // - `Store<T>` has the same size and alignment for all `T`.
+        unsafe { mem::transmute::<&'a mut Store<T>, &'a mut PrunedStore>(store) }
+    }
+}
+
+impl<T> Store<T> {
+    /// Prune the [`Store`] from `T` returning a [`PrunedStore`].
+    #[inline]
+    pub(crate) fn prune(&mut self) -> &mut PrunedStore {
+        self.into()
+    }
+}
+
+impl PrunedStore {
+    /// Returns a shared reference to the underlying [`StoreInner`].
+    #[inline]
+    pub fn inner(&self) -> &StoreInner {
+        &self.pruned.inner
+    }
+
+    /// Returns an exclusive reference to the underlying [`StoreInner`].
+    #[inline]
+    pub fn inner_mut(&mut self) -> &mut StoreInner {
+        &mut self.pruned.inner
+    }
+
+    /// Calls a host `func` at `instance` with `params_results` buffer.
+    ///
+    /// # Errors
+    ///
+    /// If the host function returns an error.
+    pub fn call_host_func(
+        &mut self,
+        func: &HostFuncEntity,
+        instance: Option<&Instance>,
+        params_results: FuncInOut,
+        call_hooks: CallHooks,
+    ) -> Result<(), Error> {
+        self.typed_store()
+            .call_host_func(func, instance, params_results, call_hooks)
+    }
+
+    /// Returns an exclusive reference to [`StoreInner`] and a [`ResourceLimiterRef`].
+    pub fn store_inner_and_resource_limiter_ref(
+        &mut self,
+    ) -> (&mut StoreInner, ResourceLimiterRef) {
+        self.typed_store().store_inner_and_resource_limiter_ref()
+    }
+
+    /// Returns the associated [`TypedStore`] of `self`.
+    fn typed_store(&mut self) -> &mut dyn TypedStore {
+        self.pruned.restore_pruned.clone().restore(self)
+    }
+
+    /// Restores `self` to a proper [`Store<T>`] if possible.
+    ///
+    /// # Errors
+    ///
+    /// If the `T` of the resulting [`Store<T>`] does not match the given `T`.
+    #[inline]
+    fn restore<T: 'static>(&mut self) -> Result<&mut Store<T>, PrunedStoreError> {
+        if unlikely(TypeId::of::<T>() != self.pruned.id) {
+            return Err(PrunedStoreError);
+        }
+        let store = {
+            // Safety: we restore the original `Store<T>` from the pruned `Store<Pruned>`.
+            //
+            // This is safe because we have already checked above that the `TypedId` of `T`
+            // matches the `id` of the original `Store<T>` and thus the `T`'s are identical.
+            //
+            // Furthermore, we are only operating on `&mut` pointers and not values.
+            // Finally, `Store<T>` has the same size and alignment for all `T`.
+            unsafe { mem::transmute::<&mut PrunedStore, &mut Store<T>>(self) }
+        };
+        Ok(store)
+    }
+}
+
+/// Returned when [`PrunedStore::restore`] failed.
+#[derive(Debug)]
+pub struct PrunedStoreError;
+
+#[test]
+fn pruning_works() {
+    let engine = Engine::default();
+    let mut store = Store::new(&engine, ());
+    let pruned = store.prune();
+    assert!(pruned.restore::<()>().is_ok());
+}
+
+#[test]
+fn pruning_errors() {
+    let engine = Engine::default();
+    let mut store = Store::new(&engine, ());
+    let pruned = store.prune();
+    assert!(pruned.restore::<i32>().is_err());
+}
+
+#[test]
+fn pruned_store_deref() {
+    let mut config = Config::default();
+    config.consume_fuel(true);
+    let engine = Engine::new(&config);
+    let mut store = Store::new(&engine, ());
+    let fuel_amount = 100;
+    store.set_fuel(fuel_amount).unwrap();
+    let pruned = store.prune();
+    assert_eq!(
+        PrunedStore::inner(pruned).fuel.get_fuel().unwrap(),
+        fuel_amount
+    );
+    PrunedStore::inner_mut(pruned)
+        .fuel
+        .set_fuel(fuel_amount * 2)
+        .unwrap();
+    assert_eq!(
+        PrunedStore::inner(pruned).fuel.get_fuel().unwrap(),
+        fuel_amount * 2
+    );
+}
+
+/// The inner parts of the [`Store`] which are generic over a host provided `T`.
+#[derive(Debug)]
+pub struct TypedStoreInner<T> {
     /// Stored host function trampolines.
     trampolines: Arena<TrampolineIdx, TrampolineEntity<T>>,
-    /// User provided host data owned by the [`Store`].
-    data: T,
     /// User provided hook to retrieve a [`ResourceLimiter`].
     limiter: Option<ResourceLimiterQuery<T>>,
     /// User provided callback called when a host calls a WebAssembly function
     /// or a WebAssembly function calls a host function, or these functions
     /// return.
     call_hook: Option<CallHookWrapper<T>>,
+    /// User provided host data owned by the [`Store`].
+    data: Box<T>,
+}
+
+#[test]
+fn equal_size() {
+    // Note: `TypedStore<T>` must be of the same size for all `T` so that
+    //       `PrunedStore` works and is a safe abstraction.
+    use core::mem::size_of;
+    assert_eq!(
+        size_of::<TypedStoreInner<()>>(),
+        size_of::<TypedStoreInner<[i64; 8]>>(),
+    );
 }
 
 /// The inner store that owns all data not associated to the host state.
@@ -862,44 +1102,40 @@ impl StoreInner {
 
 impl<T> Default for Store<T>
 where
-    T: Default,
+    T: Default + 'static,
 {
     fn default() -> Self {
         let engine = Engine::default();
+        Self::new(&engine, T::default())
+    }
+}
+
+impl<T: 'static> Store<T> {
+    /// Creates a new store.
+    pub fn new(engine: &Engine, data: T) -> Self {
         Self {
-            inner: StoreInner::new(&engine),
-            trampolines: Arena::new(),
-            data: T::default(),
-            limiter: None,
-            call_hook: None,
+            inner: StoreInner::new(engine),
+            typed: TypedStoreInner {
+                trampolines: Arena::new(),
+                data: Box::new(data),
+                limiter: None,
+                call_hook: None,
+            },
+            id: TypeId::of::<T>(),
+            restore_pruned: RestorePrunedWrapper(Arc::new(|pruned| -> &mut dyn TypedStore {
+                let Ok(store) = PrunedStore::restore::<T>(pruned) else {
+                    panic!(
+                        "failed to convert `PrunedStore` back into `Store<{}>`",
+                        type_name::<T>(),
+                    );
+                };
+                store
+            })),
         }
     }
 }
 
 impl<T> Store<T> {
-    /// Creates a new store.
-    pub fn new(engine: &Engine, data: T) -> Self {
-        Self {
-            inner: StoreInner::new(engine),
-            trampolines: Arena::new(),
-            data,
-            limiter: None,
-            call_hook: None,
-        }
-    }
-
-    /// Returns a shared reference to the [`StoreInner`].
-    #[inline]
-    pub(crate) fn inner(&self) -> &StoreInner {
-        &self.inner
-    }
-
-    /// Returns an exclusive reference to the [`StoreInner`].
-    #[inline]
-    pub(crate) fn inner_mut(&mut self) -> &mut StoreInner {
-        &mut self.inner
-    }
-
     /// Returns the [`Engine`] that this store is associated with.
     pub fn engine(&self) -> &Engine {
         self.inner.engine()
@@ -907,17 +1143,17 @@ impl<T> Store<T> {
 
     /// Returns a shared reference to the user provided data owned by this [`Store`].
     pub fn data(&self) -> &T {
-        &self.data
+        &self.typed.data
     }
 
     /// Returns an exclusive reference to the user provided data owned by this [`Store`].
     pub fn data_mut(&mut self) -> &mut T {
-        &mut self.data
+        &mut self.typed.data
     }
 
     /// Consumes `self` and returns its user provided data.
     pub fn into_data(self) -> T {
-        self.data
+        *self.typed.data
     }
 
     /// Installs a function into the [`Store`] that will be called with the user
@@ -927,7 +1163,7 @@ impl<T> Store<T> {
         &mut self,
         limiter: impl FnMut(&mut T) -> &mut (dyn ResourceLimiter) + Send + Sync + 'static,
     ) {
-        self.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
+        self.typed.limiter = Some(ResourceLimiterQuery(Box::new(limiter)))
     }
 
     /// Calls the given [`HostFuncEntity`] with the `params` and `results` on `instance`.
@@ -988,8 +1224,8 @@ impl<T> Store<T> {
     pub(crate) fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
-        let resource_limiter = ResourceLimiterRef(match &mut self.limiter {
-            Some(q) => Some(q.0(&mut self.data)),
+        let resource_limiter = ResourceLimiterRef(match &mut self.typed.limiter {
+            Some(q) => Some(q.0(&mut self.typed.data)),
             None => None,
         });
         (&mut self.inner, resource_limiter)
@@ -1023,7 +1259,7 @@ impl<T> Store<T> {
 
     /// Allocates a new [`TrampolineEntity`] and returns a [`Trampoline`] reference to it.
     pub(super) fn alloc_trampoline(&mut self, func: TrampolineEntity<T>) -> Trampoline {
-        let idx = self.trampolines.alloc(func);
+        let idx = self.typed.trampolines.alloc(func);
         Trampoline::from_inner(self.inner.wrap_stored(idx))
     }
 
@@ -1043,7 +1279,7 @@ impl<T> Store<T> {
         &mut self,
         memory: &Memory,
     ) -> (&mut MemoryEntity, &mut T) {
-        (self.inner.resolve_memory_mut(memory), &mut self.data)
+        (self.inner.resolve_memory_mut(memory), &mut self.typed.data)
     }
 
     /// Returns a shared reference to the associated entity of the host function trampoline.
@@ -1054,7 +1290,8 @@ impl<T> Store<T> {
     /// - If the [`Trampoline`] cannot be resolved to its entity.
     fn resolve_trampoline(&self, func: &Trampoline) -> &TrampolineEntity<T> {
         let entity_index = self.inner.unwrap_stored(func.as_inner());
-        self.trampolines
+        self.typed
+            .trampolines
             .get(entity_index)
             .unwrap_or_else(|| panic!("failed to resolve stored host function: {entity_index:?}"))
     }
@@ -1076,7 +1313,7 @@ impl<T> Store<T> {
         &mut self,
         hook: impl FnMut(&mut T, CallHook) -> Result<(), Error> + Send + Sync + 'static,
     ) {
-        self.call_hook = Some(CallHookWrapper(Box::new(hook)));
+        self.typed.call_hook = Some(CallHookWrapper(Box::new(hook)));
     }
 
     /// Executes the callback set by [`Store::call_hook`] if any has been set.
@@ -1087,9 +1324,11 @@ impl<T> Store<T> {
     /// - Returns `Ok(())` if no call hook exists.
     #[inline]
     pub(crate) fn invoke_call_hook(&mut self, call_type: CallHook) -> Result<(), Error> {
-        match self.call_hook.as_mut() {
+        match self.typed.call_hook.as_mut() {
             None => Ok(()),
-            Some(call_hook) => Self::invoke_call_hook_impl(&mut self.data, call_type, call_hook),
+            Some(call_hook) => {
+                Self::invoke_call_hook_impl(&mut self.typed.data, call_type, call_hook)
+            }
         }
     }
 

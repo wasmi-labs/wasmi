@@ -76,7 +76,7 @@ impl Stack {
     /// Any [`FrameRegisters`] allocated within the range `from..to` on the [`ValueStack`]
     /// may be invalidated by this operation. It is the caller's responsibility to reinstantiate
     /// all [`FrameRegisters`] affected by this.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub unsafe fn merge_call_frames(&mut self, callee: &mut CallFrame) -> Option<Instance> {
         let (caller, instance) = self.calls.pop().expect("caller call frame must exist");

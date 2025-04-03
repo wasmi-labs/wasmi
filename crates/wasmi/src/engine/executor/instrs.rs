@@ -11,14 +11,13 @@ use crate::{
     },
     ir::{index, BlockFuel, Const16, Instruction, Offset64Hi, Reg, ShiftAmount},
     memory::DataSegment,
-    store::StoreInner,
+    store::{PrunedStore, StoreInner},
     table::ElementSegment,
     Error,
     Func,
     FuncRef,
     Global,
     Memory,
-    Store,
     Table,
 };
 
@@ -64,8 +63,8 @@ type ControlFlow = ::core::ops::ControlFlow<(), ()>;
 ///
 /// If the execution encounters a trap.
 #[inline(never)]
-pub fn execute_instrs<'engine, T>(
-    store: &mut Store<T>,
+pub fn execute_instrs<'engine>(
+    store: &mut PrunedStore,
     stack: &'engine mut Stack,
     code_map: &'engine CodeMap,
 ) -> Result<(), Error> {
@@ -119,7 +118,7 @@ impl<'engine> Executor<'engine> {
 
     /// Executes the function frame until it returns or traps.
     #[inline(always)]
-    fn execute<T>(mut self, store: &mut Store<T>) -> Result<(), Error> {
+    fn execute(mut self, store: &mut PrunedStore) -> Result<(), Error> {
         use Instruction as Instr;
         loop {
             match *self.ip.get() {
@@ -410,24 +409,22 @@ impl<'engine> Executor<'engine> {
                     self.execute_return_call_internal(store.inner_mut(), EngineFunc::from(func))?
                 }
                 Instr::ReturnCallImported0 { func } => {
-                    forward_return!(self.execute_return_call_imported_0::<T>(store, func)?)
+                    forward_return!(self.execute_return_call_imported_0(store, func)?)
                 }
                 Instr::ReturnCallImported { func } => {
-                    forward_return!(self.execute_return_call_imported::<T>(store, func)?)
+                    forward_return!(self.execute_return_call_imported(store, func)?)
                 }
                 Instr::ReturnCallIndirect0 { func_type } => {
-                    forward_return!(self.execute_return_call_indirect_0::<T>(store, func_type)?)
+                    forward_return!(self.execute_return_call_indirect_0(store, func_type)?)
                 }
                 Instr::ReturnCallIndirect0Imm16 { func_type } => {
-                    forward_return!(
-                        self.execute_return_call_indirect_0_imm16::<T>(store, func_type)?
-                    )
+                    forward_return!(self.execute_return_call_indirect_0_imm16(store, func_type)?)
                 }
                 Instr::ReturnCallIndirect { func_type } => {
-                    forward_return!(self.execute_return_call_indirect::<T>(store, func_type)?)
+                    forward_return!(self.execute_return_call_indirect(store, func_type)?)
                 }
                 Instr::ReturnCallIndirectImm16 { func_type } => {
-                    forward_return!(self.execute_return_call_indirect_imm16::<T>(store, func_type)?)
+                    forward_return!(self.execute_return_call_indirect_imm16(store, func_type)?)
                 }
                 Instr::CallInternal0 { results, func } => self.execute_call_internal_0(
                     store.inner_mut(),
@@ -438,22 +435,22 @@ impl<'engine> Executor<'engine> {
                     self.execute_call_internal(store.inner_mut(), results, EngineFunc::from(func))?
                 }
                 Instr::CallImported0 { results, func } => {
-                    self.execute_call_imported_0::<T>(store, results, func)?
+                    self.execute_call_imported_0(store, results, func)?
                 }
                 Instr::CallImported { results, func } => {
-                    self.execute_call_imported::<T>(store, results, func)?
+                    self.execute_call_imported(store, results, func)?
                 }
                 Instr::CallIndirect0 { results, func_type } => {
-                    self.execute_call_indirect_0::<T>(store, results, func_type)?
+                    self.execute_call_indirect_0(store, results, func_type)?
                 }
                 Instr::CallIndirect0Imm16 { results, func_type } => {
-                    self.execute_call_indirect_0_imm16::<T>(store, results, func_type)?
+                    self.execute_call_indirect_0_imm16(store, results, func_type)?
                 }
                 Instr::CallIndirect { results, func_type } => {
-                    self.execute_call_indirect::<T>(store, results, func_type)?
+                    self.execute_call_indirect(store, results, func_type)?
                 }
                 Instr::CallIndirectImm16 { results, func_type } => {
-                    self.execute_call_indirect_imm16::<T>(store, results, func_type)?
+                    self.execute_call_indirect_imm16(store, results, func_type)?
                 }
                 Instr::Select { result, lhs } => self.execute_select(result, lhs),
                 Instr::SelectImm32Rhs { result, lhs } => self.execute_select_imm32_rhs(result, lhs),

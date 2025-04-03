@@ -10,9 +10,8 @@ use crate::{
         Instruction,
         Reg,
     },
-    store::{ResourceLimiterRef, StoreInner},
+    store::{PrunedStore, ResourceLimiterRef, StoreInner},
     Error,
-    Store,
 };
 
 impl Executor<'_> {
@@ -71,9 +70,9 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryGrow`].
-    pub fn execute_memory_grow<T>(
+    pub fn execute_memory_grow(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         result: Reg,
         delta: Reg,
     ) -> Result<(), Error> {
@@ -83,9 +82,9 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::MemoryGrowBy`].
-    pub fn execute_memory_grow_by<T>(
+    pub fn execute_memory_grow_by(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         result: Reg,
         delta: Const32<u64>,
     ) -> Result<(), Error> {

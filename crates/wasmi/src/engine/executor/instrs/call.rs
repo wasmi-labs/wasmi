@@ -10,13 +10,11 @@ use crate::{
     },
     func::{FuncEntity, HostFuncEntity},
     ir::{index, Instruction, Reg, RegSpan},
-    store::StoreInner,
-    CallHook,
+    store::{CallHooks, PrunedStore, StoreInner},
     Error,
     Func,
     FuncRef,
     Instance,
-    Store,
 };
 use core::{array, fmt};
 
@@ -27,11 +25,12 @@ use core::{array, fmt};
 /// # Errors
 ///
 /// Returns the error of the host function if an error occurred.
-pub fn dispatch_host_func<T>(
-    store: &mut Store<T>,
+pub fn dispatch_host_func(
+    store: &mut PrunedStore,
     value_stack: &mut ValueStack,
     host_func: HostFuncEntity,
     instance: Option<&Instance>,
+    call_hooks: CallHooks,
 ) -> Result<(u16, u16), Error> {
     let len_params = host_func.len_params();
     let len_results = host_func.len_results();
@@ -43,7 +42,7 @@ pub fn dispatch_host_func<T>(
         usize::from(len_results),
     );
     store
-        .call_host_func(&host_func, instance, params_results)
+        .call_host_func(&host_func, instance, params_results, call_hooks)
         .inspect_err(|_error| {
             // Note: We drop the values that have been temporarily added to
             //       the stack to act as parameter and result buffer for the
@@ -153,6 +152,7 @@ impl Executor<'_> {
     /// # Note
     ///
     /// The `offset` denotes how many [`Instruction`] words make up the call instruction.
+    #[inline(always)]
     fn update_instr_ptr_at(&mut self, offset: usize) {
         // Note: we explicitly do not mutate `self.ip` since that would make
         // other parts of the code more fragile with respect to instruction ordering.
@@ -224,6 +224,7 @@ impl Executor<'_> {
     }
 
     /// Creates a [`CallFrame`] for calling the [`EngineFunc`].
+    #[inline(always)]
     fn dispatch_compiled_func<C: CallContext>(
         &mut self,
         results: RegSpan,
@@ -305,6 +306,7 @@ impl Executor<'_> {
     }
 
     /// Prepares a [`EngineFunc`] call with optional call parameters.
+    #[inline(always)]
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
@@ -342,6 +344,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal0`].
+    #[inline(always)]
     pub fn execute_return_call_internal_0(
         &mut self,
         store: &mut StoreInner,
@@ -351,6 +354,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`].
+    #[inline(always)]
     pub fn execute_return_call_internal(
         &mut self,
         store: &mut StoreInner,
@@ -360,6 +364,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallInternal`] or [`Instruction::ReturnCallInternal0`].
+    #[inline(always)]
     fn execute_return_call_internal_impl<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
@@ -377,6 +382,7 @@ impl Executor<'_> {
     /// tail call instructions for which the top-most [`CallFrame`] is the caller.
     ///
     /// [`CallStack`]: crate::engine::executor::stack::CallStack
+    #[inline(always)]
     fn caller_results(&self) -> RegSpan {
         self.stack
             .calls
@@ -386,6 +392,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallInternal0`].
+    #[inline(always)]
     pub fn execute_call_internal_0(
         &mut self,
         store: &mut StoreInner,
@@ -396,6 +403,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallInternal`].
+    #[inline(always)]
     pub fn execute_call_internal(
         &mut self,
         store: &mut StoreInner,
@@ -406,67 +414,65 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::ReturnCallImported0`].
-    pub fn execute_return_call_imported_0<T>(
+    pub fn execute_return_call_imported_0(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         func: index::Func,
     ) -> Result<ControlFlow, Error> {
-        self.execute_return_call_imported_impl::<marker::ReturnCall0, T>(store, func)
+        self.execute_return_call_imported_impl::<marker::ReturnCall0>(store, func)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`].
-    pub fn execute_return_call_imported<T>(
+    pub fn execute_return_call_imported(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         func: index::Func,
     ) -> Result<ControlFlow, Error> {
-        self.execute_return_call_imported_impl::<marker::ReturnCall, T>(store, func)
+        self.execute_return_call_imported_impl::<marker::ReturnCall>(store, func)
     }
 
     /// Executes an [`Instruction::ReturnCallImported`] or [`Instruction::ReturnCallImported0`].
-    fn execute_return_call_imported_impl<C: ReturnCallContext, T>(
+    fn execute_return_call_imported_impl<C: ReturnCallContext>(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         func: index::Func,
     ) -> Result<ControlFlow, Error> {
         let func = self.get_func(func);
-        self.execute_call_imported_impl::<C, T>(store, None, &func)
+        self.execute_call_imported_impl::<C>(store, None, &func)
     }
 
     /// Executes an [`Instruction::CallImported0`].
-    pub fn execute_call_imported_0<T>(
+    pub fn execute_call_imported_0(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         results: RegSpan,
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
-        _ =
-            self.execute_call_imported_impl::<marker::NestedCall0, T>(store, Some(results), &func)?;
+        _ = self.execute_call_imported_impl::<marker::NestedCall0>(store, Some(results), &func)?;
         Ok(())
     }
 
     /// Executes an [`Instruction::CallImported`].
-    pub fn execute_call_imported<T>(
+    pub fn execute_call_imported(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         results: RegSpan,
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
-        _ =
-            self.execute_call_imported_impl::<marker::NestedCall, T>(store, Some(results), &func)?;
+        _ = self.execute_call_imported_impl::<marker::NestedCall>(store, Some(results), &func)?;
         Ok(())
     }
 
     /// Executes an imported or indirect (tail) call instruction.
-    fn execute_call_imported_impl<C: CallContext, T>(
+    fn execute_call_imported_impl<C: CallContext>(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         results: Option<RegSpan>,
         func: &Func,
     ) -> Result<ControlFlow, Error> {
-        match store.inner.resolve_func(func) {
+        match store.inner().resolve_func(func) {
             FuncEntity::Wasm(func) => {
                 let instance = *func.instance();
                 let func_body = func.func_body();
@@ -482,12 +488,7 @@ impl Executor<'_> {
             }
             FuncEntity::Host(host_func) => {
                 let host_func = *host_func;
-
-                store.invoke_call_hook(CallHook::CallingHost)?;
-                let control = self.execute_host_func::<C, T>(store, results, func, host_func)?;
-                store.invoke_call_hook(CallHook::ReturningFromHost)?;
-
-                Ok(control)
+                self.execute_host_func::<C>(store, results, func, host_func)
             }
         }
     }
@@ -502,9 +503,9 @@ impl Executor<'_> {
     /// execution at a later point in time.
     ///
     /// [`ErrorKind::ResumableHost`]: crate::error::ErrorKind::ResumableHost
-    fn execute_host_func<C: CallContext, T>(
+    fn execute_host_func<C: CallContext>(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         results: Option<RegSpan>,
         func: &Func,
         host_func: HostFuncEntity,
@@ -532,7 +533,7 @@ impl Executor<'_> {
             self.update_instr_ptr_at(1);
         }
         let results = results.unwrap_or_else(|| caller.results());
-        self.dispatch_host_func::<T>(store, host_func, &instance)
+        self.dispatch_host_func(store, host_func, &instance)
             .map_err(|error| match self.stack.calls.is_empty() {
                 true => error,
                 false => ResumableHostError::new(error, *func, results).into(),
@@ -599,72 +600,70 @@ impl Executor<'_> {
     }
 
     /// Convenience forwarder to [`dispatch_host_func`].
-    fn dispatch_host_func<T>(
+    fn dispatch_host_func(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         host_func: HostFuncEntity,
         instance: &Instance,
     ) -> Result<(u16, u16), Error> {
-        dispatch_host_func(store, &mut self.stack.values, host_func, Some(instance))
+        dispatch_host_func(
+            store,
+            &mut self.stack.values,
+            host_func,
+            Some(instance),
+            CallHooks::Call,
+        )
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    pub fn execute_return_call_indirect_0<T>(
+    pub fn execute_return_call_indirect_0(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         func_type: index::FuncType,
     ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params();
-        self.execute_call_indirect_impl::<marker::ReturnCall0, T>(
-            store, None, func_type, index, table,
-        )
+        self.execute_call_indirect_impl::<marker::ReturnCall0>(store, None, func_type, index, table)
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
-    pub fn execute_return_call_indirect_0_imm16<T>(
+    pub fn execute_return_call_indirect_0_imm16(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         func_type: index::FuncType,
     ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
-        self.execute_call_indirect_impl::<marker::ReturnCall0, T>(
-            store, None, func_type, index, table,
-        )
+        self.execute_call_indirect_impl::<marker::ReturnCall0>(store, None, func_type, index, table)
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    pub fn execute_return_call_indirect<T>(
+    pub fn execute_return_call_indirect(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         func_type: index::FuncType,
     ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params();
-        self.execute_call_indirect_impl::<marker::ReturnCall, T>(
-            store, None, func_type, index, table,
-        )
+        self.execute_call_indirect_impl::<marker::ReturnCall>(store, None, func_type, index, table)
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
-    pub fn execute_return_call_indirect_imm16<T>(
+    pub fn execute_return_call_indirect_imm16(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         func_type: index::FuncType,
     ) -> Result<ControlFlow, Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
-        self.execute_call_indirect_impl::<marker::ReturnCall, T>(
-            store, None, func_type, index, table,
-        )
+        self.execute_call_indirect_impl::<marker::ReturnCall>(store, None, func_type, index, table)
     }
 
     /// Executes an [`Instruction::CallIndirect0`].
-    pub fn execute_call_indirect_0<T>(
+    pub fn execute_call_indirect_0(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         results: RegSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
-        _ = self.execute_call_indirect_impl::<marker::NestedCall0, T>(
+        _ = self.execute_call_indirect_impl::<marker::NestedCall0>(
             store,
             Some(results),
             func_type,
@@ -675,14 +674,14 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect0Imm16`].
-    pub fn execute_call_indirect_0_imm16<T>(
+    pub fn execute_call_indirect_0_imm16(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         results: RegSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
-        _ = self.execute_call_indirect_impl::<marker::NestedCall0, T>(
+        _ = self.execute_call_indirect_impl::<marker::NestedCall0>(
             store,
             Some(results),
             func_type,
@@ -693,14 +692,14 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect`].
-    pub fn execute_call_indirect<T>(
+    pub fn execute_call_indirect(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         results: RegSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
-        _ = self.execute_call_indirect_impl::<marker::NestedCall, T>(
+        _ = self.execute_call_indirect_impl::<marker::NestedCall>(
             store,
             Some(results),
             func_type,
@@ -711,14 +710,14 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirectImm16`].
-    pub fn execute_call_indirect_imm16<T>(
+    pub fn execute_call_indirect_imm16(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         results: RegSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
-        _ = self.execute_call_indirect_impl::<marker::NestedCall, T>(
+        _ = self.execute_call_indirect_impl::<marker::NestedCall>(
             store,
             Some(results),
             func_type,
@@ -729,9 +728,9 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CallIndirect`] and [`Instruction::CallIndirect0`].
-    fn execute_call_indirect_impl<C: CallContext, T>(
+    fn execute_call_indirect_impl<C: CallContext>(
         &mut self,
-        store: &mut Store<T>,
+        store: &mut PrunedStore,
         results: Option<RegSpan>,
         func_type: index::FuncType,
         index: u64,
@@ -745,11 +744,11 @@ impl Executor<'_> {
             .map(FuncRef::from)
             .ok_or(TrapCode::TableOutOfBounds)?;
         let func = funcref.func().ok_or(TrapCode::IndirectCallToNull)?;
-        let actual_signature = store.inner.resolve_func(func).ty_dedup();
+        let actual_signature = store.inner().resolve_func(func).ty_dedup();
         let expected_signature = &self.get_func_type_dedup(func_type);
         if actual_signature != expected_signature {
             return Err(Error::from(TrapCode::BadSignature));
         }
-        self.execute_call_imported_impl::<C, T>(store, results, func)
+        self.execute_call_imported_impl::<C>(store, results, func)
     }
 }
