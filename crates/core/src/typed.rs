@@ -216,23 +216,7 @@ impl TypedVal {
         fn i64_rotl(i64, i64) -> i64;
         fn i64_rotr(i64, i64) -> i64;
 
-        // Float Arithmetic Instructions
-
-        fn f32_abs(f32) -> f32;
-        fn f32_neg(f32) -> f32;
-        fn f32_ceil(f32) -> f32;
-        fn f32_floor(f32) -> f32;
-        fn f32_trunc(f32) -> f32;
-        fn f32_nearest(f32) -> f32;
-        fn f32_sqrt(f32) -> f32;
-
-        fn f64_abs(f64) -> f64;
-        fn f64_neg(f64) -> f64;
-        fn f64_ceil(f64) -> f64;
-        fn f64_floor(f64) -> f64;
-        fn f64_trunc(f64) -> f64;
-        fn f64_nearest(f64) -> f64;
-        fn f64_sqrt(f64) -> f64;
+        // Float Instructions
 
         fn f32_copysign(f32, f32) -> f32;
         fn f64_copysign(f64, f64) -> f64;

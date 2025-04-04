@@ -2654,31 +2654,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_abs(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_abs, TypedVal::f32_abs)
+        self.translate_unary::<f32, f32>(Instruction::f32_abs, wasm::f32_abs)
     }
 
     fn visit_f32_neg(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_neg, TypedVal::f32_neg)
+        self.translate_unary::<f32, f32>(Instruction::f32_neg, wasm::f32_neg)
     }
 
     fn visit_f32_ceil(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_ceil, TypedVal::f32_ceil)
+        self.translate_unary::<f32, f32>(Instruction::f32_ceil, wasm::f32_ceil)
     }
 
     fn visit_f32_floor(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_floor, TypedVal::f32_floor)
+        self.translate_unary::<f32, f32>(Instruction::f32_floor, wasm::f32_floor)
     }
 
     fn visit_f32_trunc(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_trunc, TypedVal::f32_trunc)
+        self.translate_unary::<f32, f32>(Instruction::f32_trunc, wasm::f32_trunc)
     }
 
     fn visit_f32_nearest(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_nearest, TypedVal::f32_nearest)
+        self.translate_unary::<f32, f32>(Instruction::f32_nearest, wasm::f32_nearest)
     }
 
     fn visit_f32_sqrt(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_sqrt, TypedVal::f32_sqrt)
+        self.translate_unary::<f32, f32>(Instruction::f32_sqrt, wasm::f32_sqrt)
     }
 
     fn visit_f32_add(&mut self) -> Self::Output {
@@ -2766,31 +2766,31 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_abs(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_abs, TypedVal::f64_abs)
+        self.translate_unary::<f64, f64>(Instruction::f64_abs, wasm::f64_abs)
     }
 
     fn visit_f64_neg(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_neg, TypedVal::f64_neg)
+        self.translate_unary::<f64, f64>(Instruction::f64_neg, wasm::f64_neg)
     }
 
     fn visit_f64_ceil(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_ceil, TypedVal::f64_ceil)
+        self.translate_unary::<f64, f64>(Instruction::f64_ceil, wasm::f64_ceil)
     }
 
     fn visit_f64_floor(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_floor, TypedVal::f64_floor)
+        self.translate_unary::<f64, f64>(Instruction::f64_floor, wasm::f64_floor)
     }
 
     fn visit_f64_trunc(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_trunc, TypedVal::f64_trunc)
+        self.translate_unary::<f64, f64>(Instruction::f64_trunc, wasm::f64_trunc)
     }
 
     fn visit_f64_nearest(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_nearest, TypedVal::f64_nearest)
+        self.translate_unary::<f64, f64>(Instruction::f64_nearest, wasm::f64_nearest)
     }
 
     fn visit_f64_sqrt(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_sqrt, TypedVal::f64_sqrt)
+        self.translate_unary::<f64, f64>(Instruction::f64_sqrt, wasm::f64_sqrt)
     }
 
     fn visit_f64_add(&mut self) -> Self::Output {
