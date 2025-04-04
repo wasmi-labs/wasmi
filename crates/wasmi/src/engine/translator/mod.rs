@@ -1888,7 +1888,7 @@ impl FuncTranslator {
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
         make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<NonZeroT>) -> Instruction,
         make_instr_imm16_rev: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
-        consteval: fn(TypedVal, TypedVal) -> Result<TypedVal, TrapCode>,
+        consteval: fn(T, T) -> Result<T, TrapCode>,
         make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
         make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
@@ -1928,13 +1928,15 @@ impl FuncTranslator {
                 }
                 self.push_binary_instr_imm_rev(lhs, rhs, make_instr)
             }
-            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => match consteval(lhs, rhs) {
-                Ok(result) => {
-                    self.alloc.stack.push_const(result);
-                    Ok(())
+            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
+                match consteval(lhs.into(), rhs.into()) {
+                    Ok(result) => {
+                        self.alloc.stack.push_const(result);
+                        Ok(())
+                    }
+                    Err(trap_code) => self.translate_trap(trap_code),
                 }
-                Err(trap_code) => self.translate_trap(trap_code),
-            },
+            }
         }
     }
 

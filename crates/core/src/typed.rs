@@ -202,18 +202,6 @@ macro_rules! impl_forwarding {
 }
 impl TypedVal {
     impl_forwarding! {
-        // Integer Arithmetic Instructions
-
-        #[fallible] fn i32_div_s(i32, i32) -> Result<i32, TrapCode>;
-        #[fallible] fn i32_div_u(i32, i32) -> Result<i32, TrapCode>;
-        #[fallible] fn i32_rem_s(i32, i32) -> Result<i32, TrapCode>;
-        #[fallible] fn i32_rem_u(i32, i32) -> Result<i32, TrapCode>;
-
-        #[fallible] fn i64_div_s(i64, i64) -> Result<i64, TrapCode>;
-        #[fallible] fn i64_div_u(i64, i64) -> Result<i64, TrapCode>;
-        #[fallible] fn i64_rem_s(i64, i64) -> Result<i64, TrapCode>;
-        #[fallible] fn i64_rem_u(i64, i64) -> Result<i64, TrapCode>;
-
         // Shift & Rotate Instructions
 
         fn i32_shl(i32, i32) -> i32;

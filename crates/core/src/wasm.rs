@@ -111,10 +111,10 @@ impl_untyped_val! {
     fn i64_div_s(lhs: i64, rhs: i64) -> Result<i64> = Integer::div_s;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i32_div_u(lhs: u32, rhs: u32) -> Result<i32> = Integer::div_u;
+    fn i32_div_u(lhs: u32, rhs: u32) -> Result<u32> = <i32 as Integer>::div_u;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i64_div_u(lhs: u64, rhs: u64) -> Result<i64> = Integer::div_u;
+    fn i64_div_u(lhs: u64, rhs: u64) -> Result<u64> = <i64 as Integer>::div_u;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
     fn i32_rem_s(lhs: i32, rhs: i32) -> Result<i32> = Integer::rem_s;
@@ -123,10 +123,10 @@ impl_untyped_val! {
     fn i64_rem_s(lhs: i64, rhs: i64) -> Result<i64> = Integer::rem_s;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i32_rem_u(lhs: u32, rhs: u32) -> Result<i32> = Integer::rem_u;
+    fn i32_rem_u(lhs: u32, rhs: u32) -> Result<u32> = <i32 as Integer>::rem_u;
     /// - [`TrapCode::IntegerDivisionByZero`]: if `rhs` is zero.
     /// - [`TrapCode::IntegerOverflow`]: if `lhs` is [`i32::MIN`] and `rhs` is `-1`.
-    fn i64_rem_u(lhs: u64, rhs: u64) -> Result<i64> = Integer::rem_u;
+    fn i64_rem_u(lhs: u64, rhs: u64) -> Result<u64> = <i64 as Integer>::rem_u;
 }
 
 impl_untyped_val! {

@@ -34,7 +34,7 @@ use crate::{
     FuncRef,
     Mutability,
 };
-use core::num::{NonZeroU32, NonZeroU64};
+use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
 use wasmparser::VisitOperator;
 
 /// Used to swap operands of binary [`Instruction`] constructor.
@@ -2106,11 +2106,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_div_s(&mut self) -> Self::Output {
-        self.translate_divrem(
+        self.translate_divrem::<i32, NonZeroI32>(
             Instruction::i32_div_s,
             Instruction::i32_div_s_imm16_rhs,
             Instruction::i32_div_s_imm16_lhs,
-            TypedVal::i32_div_s,
+            wasm::i32_div_s,
             Self::no_custom_opt,
             |this, lhs: Reg, rhs: i32| {
                 if rhs == 1 {
@@ -2128,7 +2128,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_div_u,
             Instruction::i32_div_u_imm16_rhs,
             Instruction::i32_div_u_imm16_lhs,
-            TypedVal::i32_div_u,
+            wasm::i32_div_u,
             Self::no_custom_opt,
             |this, lhs: Reg, rhs: u32| {
                 if rhs == 1 {
@@ -2142,11 +2142,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_rem_s(&mut self) -> Self::Output {
-        self.translate_divrem(
+        self.translate_divrem::<i32, NonZeroI32>(
             Instruction::i32_rem_s,
             Instruction::i32_rem_s_imm16_rhs,
             Instruction::i32_rem_s_imm16_lhs,
-            TypedVal::i32_rem_s,
+            wasm::i32_rem_s,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: i32| {
                 if rhs == 1 || rhs == -1 {
@@ -2164,7 +2164,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_rem_u,
             Instruction::i32_rem_u_imm16_rhs,
             Instruction::i32_rem_u_imm16_lhs,
-            TypedVal::i32_rem_u,
+            wasm::i32_rem_u,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: u32| {
                 if rhs == 1 {
@@ -2423,11 +2423,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_div_s(&mut self) -> Self::Output {
-        self.translate_divrem(
+        self.translate_divrem::<i64, NonZeroI64>(
             Instruction::i64_div_s,
             Instruction::i64_div_s_imm16_rhs,
             Instruction::i64_div_s_imm16_lhs,
-            TypedVal::i64_div_s,
+            wasm::i64_div_s,
             Self::no_custom_opt,
             |this, lhs: Reg, rhs: i64| {
                 if rhs == 1 {
@@ -2445,7 +2445,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_div_u,
             Instruction::i64_div_u_imm16_rhs,
             Instruction::i64_div_u_imm16_lhs,
-            TypedVal::i64_div_u,
+            wasm::i64_div_u,
             Self::no_custom_opt,
             |this, lhs: Reg, rhs: u64| {
                 if rhs == 1 {
@@ -2459,11 +2459,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_rem_s(&mut self) -> Self::Output {
-        self.translate_divrem(
+        self.translate_divrem::<i64, NonZeroI64>(
             Instruction::i64_rem_s,
             Instruction::i64_rem_s_imm16_rhs,
             Instruction::i64_rem_s_imm16_lhs,
-            TypedVal::i64_rem_s,
+            wasm::i64_rem_s,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: i64| {
                 if rhs == 1 || rhs == -1 {
@@ -2481,7 +2481,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_rem_u,
             Instruction::i64_rem_u_imm16_rhs,
             Instruction::i64_rem_u_imm16_lhs,
-            TypedVal::i64_rem_u,
+            wasm::i64_rem_u,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: u64| {
                 if rhs == 1 {
