@@ -204,14 +204,6 @@ impl TypedVal {
     impl_forwarding! {
         // Integer Arithmetic Instructions
 
-        fn i32_clz(i32) -> i32;
-        fn i32_ctz(i32) -> i32;
-        fn i32_popcnt(i32) -> i32;
-
-        fn i64_clz(i64) -> i64;
-        fn i64_ctz(i64) -> i64;
-        fn i64_popcnt(i64) -> i64;
-
         #[fallible] fn i32_div_s(i32, i32) -> Result<i32, TrapCode>;
         #[fallible] fn i32_div_u(i32, i32) -> Result<i32, TrapCode>;
         #[fallible] fn i32_rem_s(i32, i32) -> Result<i32, TrapCode>;

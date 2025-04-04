@@ -1944,11 +1944,15 @@ impl FuncTranslator {
     }
 
     /// Translates a unary Wasm instruction to Wasmi bytecode.
-    fn translate_unary(
+    fn translate_unary<T, R>(
         &mut self,
         make_instr: fn(result: Reg, input: Reg) -> Instruction,
-        consteval: fn(input: TypedVal) -> TypedVal,
-    ) -> Result<(), Error> {
+        consteval: fn(input: T) -> R,
+    ) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal>,
+    {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
@@ -1957,7 +1961,7 @@ impl FuncTranslator {
                 Ok(())
             }
             TypedProvider::Const(input) => {
-                self.alloc.stack.push_const(consteval(input));
+                self.alloc.stack.push_const(consteval(input.into()).into());
                 Ok(())
             }
         }
