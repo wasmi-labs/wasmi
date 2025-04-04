@@ -1424,13 +1424,19 @@ impl FuncTranslator {
     }
 
     /// Evaluates the constants and pushes the proper result to the value stack.
-    fn push_binary_consteval(
+    fn push_binary_consteval<T, R>(
         &mut self,
         lhs: TypedVal,
         rhs: TypedVal,
-        consteval: fn(TypedVal, TypedVal) -> TypedVal,
-    ) -> Result<(), Error> {
-        self.alloc.stack.push_const(consteval(lhs, rhs));
+        consteval: fn(T, T) -> R,
+    ) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal>,
+    {
+        self.alloc
+            .stack
+            .push_const(consteval(lhs.into(), rhs.into()).into());
         Ok(())
     }
 
@@ -1506,18 +1512,19 @@ impl FuncTranslator {
     ///
     /// - `{i32, i64}.{sub, lt_s, lt_u, le_s, le_u, gt_s, gt_u, ge_s, ge_u}`
     #[allow(clippy::too_many_arguments)]
-    fn translate_binary<T>(
+    fn translate_binary<T, R>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
         make_instr_imm16_rhs: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
         make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
-        consteval: fn(TypedVal, TypedVal) -> TypedVal,
+        consteval: fn(T, T) -> R,
         make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
         make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
-        T: Copy + From<TypedVal> + Into<TypedVal> + TryInto<Const16<T>>,
+        T: Copy + From<TypedVal> + TryInto<Const16<T>>,
+        R: Into<TypedVal>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1578,16 +1585,17 @@ impl FuncTranslator {
     ///
     /// - `{f32, f64}.{sub, div}`
     #[allow(clippy::too_many_arguments)]
-    fn translate_fbinary<T>(
+    fn translate_fbinary<T, R>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        consteval: fn(TypedVal, TypedVal) -> TypedVal,
+        consteval: fn(T, T) -> R,
         make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
         make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmFloat,
+        R: Into<TypedVal>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1638,7 +1646,7 @@ impl FuncTranslator {
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
         make_instr_imm: fn(result: Reg, lhs: Reg, rhs: Sign<T>) -> Instruction,
-        consteval: fn(TypedVal, TypedVal) -> TypedVal,
+        consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
         T: WasmFloat,
@@ -1690,16 +1698,17 @@ impl FuncTranslator {
     ///
     /// - `{i32, i64}.{eq, ne, add, mul, and, or, xor}`
     #[allow(clippy::too_many_arguments)]
-    fn translate_binary_commutative<T>(
+    fn translate_binary_commutative<T, R>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
         make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
-        consteval: fn(TypedVal, TypedVal) -> TypedVal,
+        consteval: fn(T, T) -> R,
         make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
         make_instr_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: Copy + From<TypedVal> + TryInto<Const16<T>>,
+        R: Into<TypedVal>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1723,7 +1732,7 @@ impl FuncTranslator {
                 self.push_binary_instr_imm(reg_in, imm_in, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
-                self.push_binary_consteval(lhs, rhs, consteval)
+                self.push_binary_consteval::<T, R>(lhs, rhs, consteval)
             }
         }
     }
@@ -1748,15 +1757,16 @@ impl FuncTranslator {
     ///
     /// - `{f32, f64}.{add, mul, min, max}`
     #[allow(clippy::too_many_arguments)]
-    fn translate_fbinary_commutative<T>(
+    fn translate_fbinary_commutative<T, R>(
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        consteval: fn(TypedVal, TypedVal) -> TypedVal,
+        consteval: fn(T, T) -> R,
         make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
         make_instr_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmFloat,
+        R: Into<TypedVal>,
     {
         bail_unreachable!(self);
         match self.alloc.stack.pop2() {
@@ -1812,7 +1822,7 @@ impl FuncTranslator {
             rhs: <T as IntoShiftAmount>::Output,
         ) -> Instruction,
         make_instr_imm16: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
-        consteval: fn(TypedVal, TypedVal) -> TypedVal,
+        consteval: fn(T, T) -> T,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
@@ -1878,7 +1888,7 @@ impl FuncTranslator {
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
         make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<NonZeroT>) -> Instruction,
         make_instr_imm16_rev: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
-        consteval: fn(TypedVal, TypedVal) -> Result<TypedVal, TrapCode>,
+        consteval: fn(T, T) -> Result<T, TrapCode>,
         make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
         make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
@@ -1918,13 +1928,15 @@ impl FuncTranslator {
                 }
                 self.push_binary_instr_imm_rev(lhs, rhs, make_instr)
             }
-            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => match consteval(lhs, rhs) {
-                Ok(result) => {
-                    self.alloc.stack.push_const(result);
-                    Ok(())
+            (TypedProvider::Const(lhs), TypedProvider::Const(rhs)) => {
+                match consteval(lhs.into(), rhs.into()) {
+                    Ok(result) => {
+                        self.alloc.stack.push_const(result);
+                        Ok(())
+                    }
+                    Err(trap_code) => self.translate_trap(trap_code),
                 }
-                Err(trap_code) => self.translate_trap(trap_code),
-            },
+            }
         }
     }
 
@@ -1934,11 +1946,15 @@ impl FuncTranslator {
     }
 
     /// Translates a unary Wasm instruction to Wasmi bytecode.
-    fn translate_unary(
+    fn translate_unary<T, R>(
         &mut self,
         make_instr: fn(result: Reg, input: Reg) -> Instruction,
-        consteval: fn(input: TypedVal) -> TypedVal,
-    ) -> Result<(), Error> {
+        consteval: fn(input: T) -> R,
+    ) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal>,
+    {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
@@ -1947,18 +1963,22 @@ impl FuncTranslator {
                 Ok(())
             }
             TypedProvider::Const(input) => {
-                self.alloc.stack.push_const(consteval(input));
+                self.alloc.stack.push_const(consteval(input.into()).into());
                 Ok(())
             }
         }
     }
 
     /// Translates a fallible unary Wasm instruction to Wasmi bytecode.
-    fn translate_unary_fallible(
+    fn translate_unary_fallible<T, R>(
         &mut self,
         make_instr: fn(result: Reg, input: Reg) -> Instruction,
-        consteval: fn(input: TypedVal) -> Result<TypedVal, TrapCode>,
-    ) -> Result<(), Error> {
+        consteval: fn(input: T) -> Result<R, TrapCode>,
+    ) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal>,
+    {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
@@ -1966,7 +1986,7 @@ impl FuncTranslator {
                 self.push_fueled_instr(make_instr(result, input), FuelCosts::base)?;
                 Ok(())
             }
-            TypedProvider::Const(input) => match consteval(input) {
+            TypedProvider::Const(input) => match consteval(input.into()) {
                 Ok(result) => {
                     self.alloc.stack.push_const(result);
                     Ok(())

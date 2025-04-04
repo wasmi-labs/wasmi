@@ -111,7 +111,7 @@ pub trait Integer: Sized + Unsigned {
     /// # Errors
     ///
     /// If `other` is equal to zero.
-    fn div_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self, TrapCode>;
+    fn div_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self::Uint, TrapCode>;
     /// Signed integer remainder.
     ///
     /// # Errors
@@ -123,7 +123,7 @@ pub trait Integer: Sized + Unsigned {
     /// # Errors
     ///
     /// If `other` is equal to zero.
-    fn rem_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self, TrapCode>;
+    fn rem_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self::Uint, TrapCode>;
 }
 
 /// Integer types that have an unsigned mirroring type.
@@ -293,7 +293,7 @@ macro_rules! impl_integer {
                 Ok(result)
             }
             #[inline]
-            fn div_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self, TrapCode> {
+            fn div_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self::Uint, TrapCode> {
                 if unlikely(rhs == 0) {
                     return Err(TrapCode::IntegerDivisionByZero);
                 }
@@ -301,7 +301,7 @@ macro_rules! impl_integer {
                 if unlikely(overflow) {
                     return Err(TrapCode::IntegerOverflow);
                 }
-                Ok(result as _)
+                Ok(result)
             }
             #[inline]
             fn rem_s(lhs: Self, rhs: Self) -> Result<Self, TrapCode> {
@@ -311,11 +311,11 @@ macro_rules! impl_integer {
                 Ok(lhs.wrapping_rem(rhs))
             }
             #[inline]
-            fn rem_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self, TrapCode> {
+            fn rem_u(lhs: Self::Uint, rhs: Self::Uint) -> Result<Self::Uint, TrapCode> {
                 if unlikely(rhs == 0) {
                     return Err(TrapCode::IntegerDivisionByZero);
                 }
-                Ok(lhs.wrapping_rem(rhs) as _)
+                Ok(lhs.wrapping_rem(rhs))
             }
         }
     };
