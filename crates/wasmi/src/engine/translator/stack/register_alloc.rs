@@ -197,7 +197,7 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Init`].
-    pub fn register_locals(&mut self, amount: u32) -> Result<(), Error> {
+    pub fn define_locals(&mut self, amount: u32) -> Result<(), Error> {
         /// Bumps `len_locals` by `amount` if possible.
         fn bump_locals(len_locals: u16, amount: u32) -> Option<u16> {
             let amount = u16::try_from(amount).ok()?;
@@ -220,9 +220,9 @@ impl RegisterAlloc {
     ///
     /// # Note
     ///
-    /// After this operation no local variable can be registered anymore.
+    /// After this operation no local variable can be defined anymore.
     /// However, it is then possible to push and pop dynamic and preserved locals to the stack.
-    pub fn finish_register_locals(&mut self) {
+    pub fn finish_defining_locals(&mut self) {
         assert!(matches!(self.phase, AllocPhase::Init));
         self.phase = AllocPhase::Alloc;
     }

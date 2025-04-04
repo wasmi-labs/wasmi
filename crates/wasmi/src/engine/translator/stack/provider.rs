@@ -309,8 +309,8 @@ impl ProviderStack {
     /// # Errors
     ///
     /// If too many locals have been registered.
-    pub fn register_locals(&mut self, amount: u32) {
-        self.locals.register_locals(amount)
+    pub fn define_locals(&mut self, amount: u32) {
+        self.locals.define_locals(amount)
     }
 
     /// Returns the number of [`TaggedProvider`] on the [`ProviderStack`].

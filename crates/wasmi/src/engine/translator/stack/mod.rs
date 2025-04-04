@@ -125,7 +125,7 @@ impl ValueStack {
         self.consts.len_consts() + self.reg_alloc.len_registers()
     }
 
-    /// Registers an `amount` of function inputs or local variables.
+    /// Defines an `amount` of function inputs or local variables.
     ///
     /// # Errors
     ///
@@ -134,20 +134,20 @@ impl ValueStack {
     /// # Panics
     ///
     /// If the [`RegisterAlloc`] is not in its initialization phase.
-    pub fn register_locals(&mut self, amount: u32) -> Result<(), Error> {
-        self.providers.register_locals(amount);
-        self.reg_alloc.register_locals(amount)?;
+    pub fn define_locals(&mut self, amount: u32) -> Result<(), Error> {
+        self.providers.define_locals(amount);
+        self.reg_alloc.define_locals(amount)?;
         Ok(())
     }
 
-    /// Finishes the local variable registration phase.
+    /// Finishes the local variable definition phase.
     ///
     /// # Note
     ///
     /// After this operation no local variable can be registered anymore.
     /// However, it is then possible to push and pop dynamic and storage locals to the stack.
-    pub fn finish_register_locals(&mut self) {
-        self.reg_alloc.finish_register_locals()
+    pub fn finish_defining_locals(&mut self) {
+        self.reg_alloc.finish_defining_locals()
     }
 
     /// Allocates a new function local constant value and returns its [`Local`].

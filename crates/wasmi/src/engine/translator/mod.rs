@@ -684,11 +684,11 @@ impl WasmTranslator<'_> for FuncTranslator {
         amount: u32,
         _value_type: wasmparser::ValType,
     ) -> Result<(), Error> {
-        self.alloc.stack.register_locals(amount)
+        self.alloc.stack.define_locals(amount)
     }
 
     fn finish_translate_locals(&mut self) -> Result<(), Error> {
-        self.alloc.stack.finish_register_locals();
+        self.alloc.stack.finish_defining_locals();
         Ok(())
     }
 
@@ -815,7 +815,7 @@ impl FuncTranslator {
     /// Registers the function parameters in the emulated value stack.
     fn init_func_params(&mut self) -> Result<(), Error> {
         for _param_type in self.func_type().params() {
-            self.alloc.stack.register_locals(1)?;
+            self.alloc.stack.define_locals(1)?;
         }
         Ok(())
     }
