@@ -136,7 +136,7 @@ impl LocalRefs {
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     pub fn register_locals(&mut self, _amount: u32) {
         // Nothing to do here.
     }

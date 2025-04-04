@@ -803,7 +803,7 @@ fn test_imm_params_dynamic_index() {
             (func (result i32)
                 (call_indirect (type $sig)
                     (i32.const 10) (i32.const 20) ;; call params
-                    (global.get $g) ;; index on dynamic register space
+                    (global.get $g) ;; index on dynamic local space
                 )
             )
         )
@@ -840,7 +840,7 @@ fn regression_issue_768() {
             (func (result i32)
                 (call_indirect (type $sig)
                     (global.get $g0) (i32.const 20) ;; call params
-                    (global.get $g1) ;; index on dynamic register space
+                    (global.get $g1) ;; index on dynamic local space
                 )
             )
         )

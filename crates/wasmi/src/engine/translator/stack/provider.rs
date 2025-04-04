@@ -11,13 +11,13 @@ use crate::core::UntypedVal;
 /// Either a [`Local`] or a constant [`UntypedVal`].
 #[derive(Debug, Copy, Clone)]
 pub enum TaggedProvider {
-    /// A register referring to a function local constant value.
+    /// A local referring to a function local constant value.
     ConstLocal(Local),
-    /// A register referring to a function parameter or local variable.
+    /// A local referring to a function parameter or local variable.
     Local(Local),
-    /// A register referring to a dynamically allocated register.
+    /// A local referring to a dynamically allocated register.
     Dynamic(Local),
-    /// A register referring to a preservation allocated register.
+    /// A local referring to a preservation allocated register.
     Preserved(Local),
     /// An untyped constant value.
     ConstValue(TypedVal),
@@ -98,9 +98,7 @@ impl ProviderStack {
         self.sync_local_refs();
         let local = i16::try_from(preserve_index)
             .map(Local::from)
-            .unwrap_or_else(|_| {
-                panic!("encountered invalid local register index: {preserve_index}")
-            });
+            .unwrap_or_else(|_| panic!("encountered invalid local index: {preserve_index}"));
         match self.use_locals {
             false => self.preserve_locals_inplace(local, reg_alloc),
             true => self.preserve_locals_extern(local, reg_alloc),
@@ -112,7 +110,7 @@ impl ProviderStack {
     /// # Note
     ///
     /// - Calls `f(local_index, preserved_register)` for each local preserved this way with its `local_index`
-    ///   and the newly allocated `preserved_register` on the presevation register space.
+    ///   and the newly allocated `preserved_register` on the presevation local space.
     /// - If the same local appears multiple  times on the provider stack `f` is only called once
     ///   representing all of them.
     pub fn preserve_all_locals(
@@ -140,31 +138,31 @@ impl ProviderStack {
     /// - Therefore we only use it behind a safety guard to remove the attack surface.
     fn preserve_locals_inplace(
         &mut self,
-        local: Local,
+        to_be_preserved: Local,
         reg_alloc: &mut RegisterAlloc,
     ) -> Result<Option<Local>, Error> {
         debug_assert!(!self.use_locals);
         let mut preserved = None;
         for provider in &mut self.providers {
-            let TaggedProvider::Local(register) = *provider else {
+            let TaggedProvider::Local(local) = *provider else {
                 continue;
             };
-            debug_assert!(reg_alloc.is_local(register));
-            if register != local {
+            debug_assert!(reg_alloc.is_local(local));
+            if local != to_be_preserved {
                 continue;
             }
-            let preserved_register = match preserved {
+            let preserved_local = match preserved {
                 None => {
-                    let register = reg_alloc.push_preserved()?;
-                    preserved = Some(register);
-                    register
+                    let local = reg_alloc.push_preserved()?;
+                    preserved = Some(local);
+                    local
                 }
-                Some(register) => {
-                    reg_alloc.bump_preserved(register);
-                    register
+                Some(local) => {
+                    reg_alloc.bump_preserved(local);
+                    local
                 }
             };
-            *provider = TaggedProvider::Preserved(preserved_register);
+            *provider = TaggedProvider::Preserved(preserved_local);
             self.len_locals -= 1;
             if self.len_locals == 0 {
                 break;
@@ -178,7 +176,7 @@ impl ProviderStack {
     /// # Note
     ///
     /// - Calls `f(local_index, preserved_register)` for each local preserved this way with its `local_index`
-    ///   and the newly allocated `preserved_register` on the presevation register space.
+    ///   and the newly allocated `preserved_register` on the presevation local space.
     /// - If the same local appears multiple  times on the provider stack `f` is only called once
     ///   representing all of them.
     ///
@@ -237,23 +235,23 @@ impl ProviderStack {
     /// - Since this is slower we only use it when necessary.
     fn preserve_locals_extern(
         &mut self,
-        local: Local,
+        to_be_preserved: Local,
         reg_alloc: &mut RegisterAlloc,
     ) -> Result<Option<Local>, Error> {
         debug_assert!(self.use_locals);
         let mut preserved = None;
-        self.locals.drain_at(local, |provider_index| {
+        self.locals.drain_at(to_be_preserved, |provider_index| {
             let provider = &mut self.providers[provider_index];
             debug_assert!(matches!(provider, TaggedProvider::Local(_)));
             let preserved_register = match preserved {
-                Some(register) => {
-                    reg_alloc.bump_preserved(register);
-                    register
+                Some(local) => {
+                    reg_alloc.bump_preserved(local);
+                    local
                 }
                 None => {
-                    let register = reg_alloc.push_preserved()?;
-                    preserved = Some(register);
-                    register
+                    let local = reg_alloc.push_preserved()?;
+                    preserved = Some(local);
+                    local
                 }
             };
             *provider = TaggedProvider::Preserved(preserved_register);
@@ -268,7 +266,7 @@ impl ProviderStack {
     /// # Note
     ///
     /// - Calls `f(local_index, preserved_register)` for each local preserved this way with its `local_index`
-    ///   and the newly allocated `preserved_register` on the presevation register space.
+    ///   and the newly allocated `preserved_register` on the presevation local space.
     /// - If the same local appears multiple  times on the provider stack `f` is only called once
     ///   representing all of them.
     ///
@@ -310,7 +308,7 @@ impl ProviderStack {
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     pub fn register_locals(&mut self, amount: u32) {
         self.locals.register_locals(amount)
     }

@@ -30,9 +30,9 @@ macro_rules! impl_binary_executors {
 }
 
 impl Executor<'_> {
-    /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
+    /// Returns the local `value` and `offset` parameters for a `load` [`Instruction`].
     pub fn fetch_value_and_offset_hi(&self) -> (Local, Offset64Hi) {
-        // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
+        // Safety: Wasmi translation guarantees that `Instruction::LocalAndImm32` exists.
         unsafe { self.fetch_reg_and_offset_hi() }
     }
 

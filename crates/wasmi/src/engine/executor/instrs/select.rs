@@ -11,7 +11,7 @@ impl<'engine> Executor<'engine> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Instruction::Register2 { regs: [reg0, reg1] } => (reg0, reg1),
+            Instruction::Local2 { regs: [reg0, reg1] } => (reg0, reg1),
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Instruction::Register2`] exists.
                 unsafe {
@@ -31,12 +31,12 @@ impl<'engine> Executor<'engine> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Instruction::RegisterAndImm32 { reg, imm } => (reg, T::from(imm)),
+            Instruction::LocalAndImm32 { reg, imm } => (reg, T::from(imm)),
             unexpected => {
-                // Safety: Wasmi translation guarantees that [`Instruction::RegisterAndImm32`] exists.
+                // Safety: Wasmi translation guarantees that [`Instruction::LocalAndImm32`] exists.
                 unsafe {
                     unreachable_unchecked!(
-                        "expected `Instruction::RegisterAndImm32` but found {unexpected:?}"
+                        "expected `Instruction::LocalAndImm32` but found {unexpected:?}"
                     )
                 }
             }

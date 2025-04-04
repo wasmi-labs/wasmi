@@ -96,7 +96,7 @@ pub struct InstrEncoder {
     /// # Note
     ///
     /// This is an optimization to reduce the amount of work performed during
-    /// defragmentation of the register space due to `local.set` register
+    /// defragmentation of the local space due to `local.set` register
     /// preservations.
     notified_preservation: Option<Instr>,
 }
@@ -338,7 +338,7 @@ impl InstrEncoder {
     /// # Note
     ///
     /// This is used primarily for [`Instruction`] words that are just carrying
-    /// parameters for the [`Instruction`]. An example of this is [`Instruction::RegisterAndImm32`]
+    /// parameters for the [`Instruction`]. An example of this is [`Instruction::LocalAndImm32`]
     /// carrying the `ptr` and `offset` parameters for [`Instruction::Load32`].
     pub fn append_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
         self.instrs.push(instr)
@@ -369,7 +369,7 @@ impl InstrEncoder {
             return None;
         };
         if !(result == last_result.next() || result == last_result.prev()) {
-            // Case: cannot merge copy instructions as `copy2` since result registers are not contiguous.
+            // Case: cannot merge copy instructions as `copy2` since result locals are not contiguous.
             return None;
         }
 
@@ -417,7 +417,7 @@ impl InstrEncoder {
         let instr = match value {
             TypedProvider::Register(value) => {
                 if result == value {
-                    // Optimization: copying from register `x` into `x` is a no-op.
+                    // Optimization: copying from local `x` into `x` is a no-op.
                     return Ok(None);
                 }
                 Instruction::copy(result, value)
@@ -537,9 +537,9 @@ impl InstrEncoder {
     /// # Examples
     ///
     /// - The sequence `[ 0 <- 1, 1 <- 1, 2 <- 4 ]` has no overlapping copies.
-    /// - The sequence `[ 0 <- 1, 1 <- 0 ]` has overlapping copies since register `0`
+    /// - The sequence `[ 0 <- 1, 1 <- 0 ]` has overlapping copies since local `0`
     ///   is written to in the first copy but read from in the next.
-    /// - The sequence `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since register `3`
+    /// - The sequence `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since local `3`
     ///   is written to in the first copy but read from in the third.
     pub fn has_overlapping_copies(results: BoundedRegSpan, values: &[TypedProvider]) -> bool {
         debug_assert_eq!(usize::from(results.len()), values.len());
@@ -549,10 +549,10 @@ impl InstrEncoder {
         }
         let result0 = results.span().head();
         for (result, value) in results.iter().zip(values) {
-            // Note: We only have to check the register case since constant value
+            // Note: We only have to check the local case since constant value
             //       copies can never overlap.
             if let TypedProvider::Register(value) = *value {
-                // If the register `value` index is within range of `result0..result`
+                // If the local `value` index is within range of `result0..result`
                 // then its value has been overwritten by previous copies.
                 if result0 <= value && value < result {
                     return true;
@@ -807,19 +807,19 @@ impl InstrEncoder {
             RegisterSpace::Local | RegisterSpace::Preserve
         ) {
             // Can only apply the optimization if the returned value of `last_instr`
-            // is _NOT_ itself a local register due to observable behavior or already preserved.
+            // is _NOT_ itself a local variable due to observable behavior or already preserved.
             return fallback_case(self, stack, local, value, preserved, fuel_info);
         }
         let Some(last_instr) = self.last_instr else {
             // Can only apply the optimization if there is a previous instruction
-            // to replace its result register instead of emitting a copy.
+            // to replace its result local instead of emitting a copy.
             return fallback_case(self, stack, local, value, preserved, fuel_info);
         };
         if preserved.is_some() && last_instr.distance(self.instrs.next_instr()) >= 4 {
             // We avoid applying the optimization if the last instruction
             // has a very large encoding, e.g. for function calls with lots
             // of parameters. This is because the optimization while also
-            // preserving a local register requires costly shifting all
+            // preserving a local requires costly shifting all
             // instruction words of the last instruction.
             // Thankfully most instructions are small enough.
             return fallback_case(self, stack, local, value, preserved, fuel_info);
@@ -884,7 +884,7 @@ impl InstrEncoder {
                         | Instruction::CopySpanNonOverlapping { .. }
                         | Instruction::CopyManyNonOverlapping { .. }
                 ),
-                "a preserve instruction is always a register copy instruction but found: {:?}",
+                "a preserve instruction is always a local copy instruction but found: {:?}",
                 preserved,
             );
         }
@@ -893,7 +893,7 @@ impl InstrEncoder {
         }
     }
 
-    /// Defragments storage-space registers of all encoded [`Instruction`].
+    /// Defragments storage-space locals of all encoded [`Instruction`].
     pub fn defrag_registers(&mut self, stack: &mut ValueStack) -> Result<(), Error> {
         stack.finalize_alloc();
         if let Some(notified_preserved) = self.notified_preservation {
@@ -910,7 +910,7 @@ impl InstrEncoder {
     /// Returns `true` if it was possible to fuse the `i32.eqz` instruction.
     pub fn fuse_i32_eqz(&mut self, stack: &mut ValueStack) -> bool {
         let Provider::Register(input) = stack.peek() else {
-            // Only register inputs can be negated.
+            // Only local inputs can be negated.
             // Constant inputs are resolved via constant propagation.
             return false;
         };

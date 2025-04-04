@@ -40,7 +40,7 @@ impl Executor<'_> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Instruction::Register { reg } => reg,
+            Instruction::Local { reg } => reg,
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Instruction::Register`] exists.
                 unsafe {
@@ -63,18 +63,18 @@ impl Executor<'_> {
             Ok(value) => value,
             Err(instr) => unsafe {
                 unreachable_unchecked!(
-                    "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
+                    "expected an `Instruction::LocalAndImm32` but found: {instr:?}"
                 )
             },
         }
     }
 
-    /// Returns the register `value` and `lane` parameters for a `load` [`Instruction`].
+    /// Returns the local `value` and `lane` parameters for a `load` [`Instruction`].
     pub fn fetch_value_and_lane<LaneType>(&self, delta: usize) -> (Local, LaneType)
     where
         LaneType: TryFrom<u8>,
     {
-        // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
+        // Safety: Wasmi translation guarantees that `Instruction::LocalAndImm32` exists.
         unsafe { self.fetch_reg_and_lane::<LaneType>(delta) }
     }
 

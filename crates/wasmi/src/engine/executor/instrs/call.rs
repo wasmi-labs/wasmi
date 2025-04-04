@@ -70,7 +70,7 @@ pub struct ResumableHostError {
     host_error: Error,
     /// The host function that returned the error.
     host_func: Func,
-    /// The result registers of the caller of the host function.
+    /// The result locals of the caller of the host function.
     caller_results: RegSpan,
 }
 
@@ -256,21 +256,21 @@ impl Executor<'_> {
     /// last call parameter [`Instruction`] if any.
     fn copy_call_params(&mut self, uninit_params: &mut FrameParams) {
         self.ip.add(1);
-        if let Instruction::RegisterList { .. } = self.ip.get() {
+        if let Instruction::LocalList { .. } = self.ip.get() {
             self.copy_call_params_list(uninit_params);
         }
         match self.ip.get() {
-            Instruction::Register { reg } => {
+            Instruction::Local { reg } => {
                 self.copy_regs(uninit_params, array::from_ref(reg));
             }
-            Instruction::Register2 { regs } => {
+            Instruction::Local2 { regs } => {
                 self.copy_regs(uninit_params, regs);
             }
-            Instruction::Register3 { regs } => {
+            Instruction::Local3 { regs } => {
                 self.copy_regs(uninit_params, regs);
             }
             unexpected => {
-                // Safety: Wasmi translation guarantees that register list finalizer exists.
+                // Safety: Wasmi translation guarantees that local list finalizer exists.
                 unsafe {
                     unreachable_unchecked!(
                         "expected register-list finalizer but found: {unexpected:?}"
@@ -285,21 +285,21 @@ impl Executor<'_> {
         for value in regs {
             let value = self.get_register(*value);
             // Safety: The `callee.results()` always refer to a span of valid
-            //         registers of the `caller` that does not overlap with the
-            //         registers of the callee since they reside in different
+            //         locals of the `caller` that does not overlap with the
+            //         locals of the callee since they reside in different
             //         call frames. Therefore this access is safe.
             unsafe { uninit_params.init_next(value) }
         }
     }
 
-    /// Copies a list of [`Instruction::RegisterList`] to the `dst` [`Local`] span.
+    /// Copies a list of [`Instruction::LocalList`] to the `dst` [`Local`] span.
     /// Copies the parameters from `src` for the called [`CallFrame`].
     ///
     /// This will make the [`InstructionPtr`] point to the [`Instruction`] following the
-    /// last [`Instruction::RegisterList`] if any.
+    /// last [`Instruction::LocalList`] if any.
     #[cold]
     fn copy_call_params_list(&mut self, uninit_params: &mut FrameParams) {
-        while let Instruction::RegisterList { regs } = self.ip.get() {
+        while let Instruction::LocalList { regs } = self.ip.get() {
             self.copy_regs(uninit_params, regs);
             self.ip.add(1);
         }
@@ -549,7 +549,7 @@ impl Executor<'_> {
                     // We can safely acquire the stack pointer to the caller's and callee's (host)
                     // call frames because we just allocated the host call frame and can be sure that
                     // they are different.
-                    // In the following we make sure to not access registers out of bounds of each
+                    // In the following we make sure to not access locals out of bounds of each
                     // call frame since we rely on Wasm validation and proper Wasm translation to
                     // provide us with valid result registers.
                     unsafe { self.sp.set(result, *value) };
@@ -576,7 +576,7 @@ impl Executor<'_> {
                     // We can safely acquire the stack pointer to the caller's and callee's (host)
                     // call frames because we just allocated the host call frame and can be sure that
                     // they are different.
-                    // In the following we make sure to not access registers out of bounds of each
+                    // In the following we make sure to not access locals out of bounds of each
                     // call frame since we rely on Wasm validation and proper Wasm translation to
                     // provide us with valid result registers.
                     unsafe { regs.set(result, *value) };

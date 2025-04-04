@@ -84,7 +84,7 @@ pub struct ResumableInvocation {
     /// actual host error. This is therefore guaranteed to never
     /// be a Wasm trap.
     host_error: Error,
-    /// The registers where to put provided host function results upon resumption.
+    /// The locals where to put provided host function results upon resumption.
     ///
     /// # Note
     ///

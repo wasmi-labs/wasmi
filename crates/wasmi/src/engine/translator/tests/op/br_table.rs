@@ -346,7 +346,7 @@ fn reg_params_2_return() {
 fn reg_params_1_diff() {
     // Test that uses `br_table` with targets that do not share
     // common branch parameters. We achieve this by interleaving
-    // dynamic register allocations via `global.get`.
+    // dynamic local allocations via `global.get`.
     //
     // This way the translator is forced to generated less optimized bytecode.
     let wasm = r"
@@ -397,7 +397,7 @@ fn reg_params_1_diff() {
 fn reg_params_2_diff() {
     // Test that uses `br_table` with targets that do not share
     // common branch parameters. We achieve this by interleaving
-    // dynamic register allocations via `global.get`.
+    // dynamic local allocations via `global.get`.
     //
     // This way the translator is forced to generated less optimized bytecode.
     let wasm = r"

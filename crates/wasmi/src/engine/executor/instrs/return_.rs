@@ -56,7 +56,7 @@ impl Executor<'_> {
                 // Case: we need to return the `value` back to the caller frame.
                 //
                 // In this case we transfer the single return `value` to the `results`
-                // register span of the caller's call frame.
+                // local span of the caller's call frame.
                 //
                 // Safety: The caller call frame is still live on the value stack
                 //         and therefore it is safe to acquire its value stack pointer.
@@ -68,7 +68,7 @@ impl Executor<'_> {
                 // Case: the root call frame is returning.
                 //
                 // In this case we transfer the single return `value` to the root
-                // register span of the entire value stack which is simply its zero index.
+                // local span of the entire value stack which is simply its zero index.
                 let dst_sp = self.stack.values.root_stack_ptr();
                 let results = RegSpan::new(Local::from(0));
                 (dst_sp, results)
@@ -86,8 +86,8 @@ impl Executor<'_> {
         let (mut caller_sp, results) = self.return_caller_results();
         let value = f(self, value);
         // Safety: The `callee.results()` always refer to a span of valid
-        //         registers of the `caller` that does not overlap with the
-        //         registers of the callee since they reside in different
+        //         locals of the `caller` that does not overlap with the
+        //         locals of the callee since they reside in different
         //         call frames. Therefore this access is safe.
         unsafe { caller_sp.set(results.head(), value) }
         self.return_impl(store)
@@ -127,8 +127,8 @@ impl Executor<'_> {
         for (result, value) in results.iter(N as u16).zip(values) {
             let value = self.get_register(value);
             // Safety: The `callee.results()` always refer to a span of valid
-            //         registers of the `caller` that does not overlap with the
-            //         registers of the callee since they reside in different
+            //         locals of the `caller` that does not overlap with the
+            //         locals of the callee since they reside in different
             //         call frames. Therefore this access is safe.
             unsafe { caller_sp.set(result, value) }
         }
@@ -172,8 +172,8 @@ impl Executor<'_> {
         let results = results.iter(values.len());
         for (result, value) in results.zip(values) {
             // Safety: The `callee.results()` always refer to a span of valid
-            //         registers of the `caller` that does not overlap with the
-            //         registers of the callee since they reside in different
+            //         locals of the `caller` that does not overlap with the
+            //         locals of the callee since they reside in different
             //         call frames. Therefore this access is safe.
             let value = self.get_register(value);
             unsafe { caller_sp.set(result, value) }
@@ -208,8 +208,8 @@ impl Executor<'_> {
             for value in values {
                 let value = self.get_register(*value);
                 // Safety: The `callee.results()` always refer to a span of valid
-                //         registers of the `caller` that does not overlap with the
-                //         registers of the callee since they reside in different
+                //         locals of the `caller` that does not overlap with the
+                //         locals of the callee since they reside in different
                 //         call frames. Therefore this access is safe.
                 unsafe { caller_sp.set(result, value) }
                 result = result.next();
@@ -217,14 +217,14 @@ impl Executor<'_> {
         };
         copy_results(values);
         let mut ip = ip;
-        while let Instruction::RegisterList { regs } = ip.get() {
+        while let Instruction::LocalList { regs } = ip.get() {
             copy_results(regs);
             ip.add(1);
         }
         let values = match ip.get() {
-            Instruction::Register { reg } => slice::from_ref(reg),
-            Instruction::Register2 { regs } => regs,
-            Instruction::Register3 { regs } => regs,
+            Instruction::Local { reg } => slice::from_ref(reg),
+            Instruction::Local2 { regs } => regs,
+            Instruction::Local3 { regs } => regs,
             unexpected => {
                 // Safety: Wasmi translation guarantees that a register-list finalizer exists.
                 unsafe {

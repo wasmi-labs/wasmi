@@ -210,12 +210,12 @@ impl Instruction {
         Self::copy_many_non_overlapping(results, [head0.into(), head1.into()])
     }
 
-    /// Creates a new [`Instruction::Register2`] instruction parameter.
+    /// Creates a new [`Instruction::Local2`] instruction parameter.
     pub fn register2_ext(reg0: impl Into<Local>, reg1: impl Into<Local>) -> Self {
         Self::register2([reg0.into(), reg1.into()])
     }
 
-    /// Creates a new [`Instruction::Register3`] instruction parameter.
+    /// Creates a new [`Instruction::Local3`] instruction parameter.
     pub fn register3_ext(
         reg0: impl Into<Local>,
         reg1: impl Into<Local>,
@@ -224,7 +224,7 @@ impl Instruction {
         Self::register3([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Instruction::RegisterList`] instruction parameter.
+    /// Creates a new [`Instruction::LocalList`] instruction parameter.
     pub fn register_list_ext(
         reg0: impl Into<Local>,
         reg1: impl Into<Local>,
@@ -233,7 +233,7 @@ impl Instruction {
         Self::register_list([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Instruction::RegisterAndImm32`] from the given `reg` and `offset_hi`.
+    /// Creates a new [`Instruction::LocalAndImm32`] from the given `reg` and `offset_hi`.
     pub fn register_and_offset_hi(reg: impl Into<Local>, offset_hi: Offset64Hi) -> Self {
         Self::register_and_imm32(reg, offset_hi.0)
     }
@@ -245,13 +245,13 @@ impl Instruction {
     /// Returns back `self` if it was an incorrect [`Instruction`].
     /// This allows for a better error message to inform the user.
     pub fn filter_register_and_offset_hi(self) -> Result<(Local, Offset64Hi), Self> {
-        if let Instruction::RegisterAndImm32 { reg, imm } = self {
+        if let Instruction::LocalAndImm32 { reg, imm } = self {
             return Ok((reg, Offset64Hi(u32::from(imm))));
         }
         Err(self)
     }
 
-    /// Creates a new [`Instruction::RegisterAndImm32`] from the given `reg` and `offset_hi`.
+    /// Creates a new [`Instruction::LocalAndImm32`] from the given `reg` and `offset_hi`.
     pub fn register_and_lane<LaneType>(reg: impl Into<Local>, lane: LaneType) -> Self
     where
         LaneType: Into<u8>,
@@ -269,7 +269,7 @@ impl Instruction {
     where
         LaneType: TryFrom<u8>,
     {
-        if let Instruction::RegisterAndImm32 { reg, imm } = self {
+        if let Instruction::LocalAndImm32 { reg, imm } = self {
             let lane_index = u32::from(imm) as u8;
             let Ok(lane) = LaneType::try_from(lane_index) else {
                 panic!("encountered out of bounds lane index: {}", lane_index)

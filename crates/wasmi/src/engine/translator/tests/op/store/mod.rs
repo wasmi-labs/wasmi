@@ -990,7 +990,7 @@ fn test_store_at_imm_fallback_for<T>(
     let (value_reg, value_const) = match value.into() == 0_u64.into() {
         true => {
             // Case: since this scheme always allocates a 0 as function constant value
-            //       and address is zero the translator only uses a single register to
+            //       and address is zero the translator only uses a single local to
             //       represent both. (special case)
             (Local::from(-1), None)
         }

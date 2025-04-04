@@ -14,7 +14,7 @@ use multi_stash::{Key, Key as StashKey, MultiStash};
 #[cfg(doc)]
 use crate::engine::translator::InstrEncoder;
 
-/// The register allocator using during translation.
+/// The local allocator using during translation.
 ///
 /// # Note
 ///
@@ -32,11 +32,11 @@ use crate::engine::translator::InstrEncoder;
 ///    used during instruction execution, for example to hold
 ///    and accumulate computation results temporarily.
 /// 3. `defrag`:
-///    The allocation phase has finished and the register allocator
-///    can now defragment allocated register space to form a consecutive
-///    block of registers in use by the function.
+///    The allocation phase has finished and the local allocator
+///    can now defragment allocated local space to form a consecutive
+///    block of locals in use by the function.
 ///
-/// The stack of registers is always ordered in this way:
+/// The stack of locals is always ordered in this way:
 ///
 /// | `inputs` | `locals` | `dynamics` | `preservation` |
 ///
@@ -45,32 +45,32 @@ use crate::engine::translator::InstrEncoder;
 /// - `inputs`: function inputs
 /// - `locals`: function local variables
 /// - `dynamics:` dynamically allocated registers
-/// - `preservations:` registers holding state for later use
+/// - `preservations:` locals holding state for later use
 ///
-/// The dynamically allocated registers grow upwards
+/// The dynamically allocated locals grow upwards
 /// starting with the lowest index possible whereas the
-/// preservation registers are growing downwards starting with
+/// preservation locals are growing downwards starting with
 /// the largest index (`u16::MAX`).
-/// If both meet we officially ran out of registers to allocate.
+/// If both meet we officially ran out of locals to allocate.
 ///
-/// After allocation the preservation registers are normalized and
-/// simply appended to the dynamically registers to form a
-/// consecutive block of registers for the function.
+/// After allocation the preservation locals are normalized and
+/// simply appended to the dynamically locals to form a
+/// consecutive block of locals for the function.
 #[derive(Debug, Default)]
 pub struct RegisterAlloc {
     /// The preservation stack.
     preservations: MultiStash<()>,
     /// Keys that might have been fully removed from the `preservations` stack.
     ///
-    /// When popping a preserved register we store its key into this set.
-    /// The next time allocating a preserved register we first check if any
-    /// of the preserved register allocations in this set are now fully unused
+    /// When popping a preserved local we store its key into this set.
+    /// The next time allocating a preserved local we first check if any
+    /// of the preserved local allocations in this set are now fully unused
     /// and then remove them. We achieve this by having a starting amount of 2.
     ///
-    /// This allows to extend the lifetimes of preserved registers so that we
+    /// This allows to extend the lifetimes of preserved locals so that we
     /// can re-push them in case we still need them until the next allocation.
     removed_preserved: BTreeSet<Key>,
-    /// The current phase of the register allocation procedure.
+    /// The current phase of the local allocation procedure.
     phase: AllocPhase,
     /// The combined number of registered function inputs and local variables.
     len_locals: u16,
@@ -80,7 +80,7 @@ pub struct RegisterAlloc {
     max_dynamic: i16,
     /// The minimum index registered for a preservation allocated register.
     min_preserve: i16,
-    /// The offset for the defragmentation register index.
+    /// The offset for the defragmentation local index.
     defrag_offset: i16,
 }
 
@@ -91,7 +91,7 @@ enum AllocPhase {
     ///
     /// # Note
     ///
-    /// This disallows allocating registers but allows registering local variables.
+    /// This disallows allocating locals but allows registering local variables.
     #[default]
     Init,
     /// The [`RegisterAlloc`] is in its allocation phase.
@@ -101,8 +101,8 @@ enum AllocPhase {
     /// This disallows registering new local variables to the [`RegisterAlloc`].
     Alloc,
     /// The [`RegisterAlloc`] finished allocation and now
-    /// can defragment registers allocated for preservation purposes
-    /// to form a consecutive register stack.
+    /// can defragment locals allocated for preservation purposes
+    /// to form a consecutive local stack.
     ///
     /// # Note
     ///
@@ -128,7 +128,7 @@ impl RegisterAlloc {
     /// The maximum amount of local variables (and function parameters) a function may define.
     const MAX_LEN_LOCALS: u16 = i16::MAX as u16 - 1;
 
-    /// The initial preservation register index.
+    /// The initial preservation local index.
     const INITIAL_PRESERVATION_INDEX: i16 = i16::MAX - 1;
 
     /// Resets the [`RegisterAlloc`] to start compiling a new function.
@@ -173,7 +173,7 @@ impl RegisterAlloc {
         RegisterSpace::Dynamic
     }
 
-    /// Returns thenumber of registers allocated as function parameters or locals.
+    /// Returns thenumber of locals allocated as function parameters or locals.
     pub fn len_locals(&self) -> u16 {
         self.len_locals
     }
@@ -183,7 +183,7 @@ impl RegisterAlloc {
         self.len_locals() as i16
     }
 
-    /// Returns the number of registers allocated by the [`RegisterAlloc`].
+    /// Returns the number of locals allocated by the [`RegisterAlloc`].
     pub fn len_registers(&self) -> u16 {
         Self::MAX_LEN_LOCALS - self.max_dynamic.abs_diff(self.min_preserve)
     }
@@ -192,7 +192,7 @@ impl RegisterAlloc {
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     ///
     /// # Panics
     ///
@@ -221,7 +221,7 @@ impl RegisterAlloc {
     /// # Note
     ///
     /// After this operation no local variable can be registered anymore.
-    /// However, it is then possible to push and pop dynamic and preserved registers to the stack.
+    /// However, it is then possible to push and pop dynamic and preserved locals to the stack.
     pub fn finish_register_locals(&mut self) {
         assert!(matches!(self.phase, AllocPhase::Init));
         self.phase = AllocPhase::Alloc;
@@ -238,7 +238,7 @@ impl RegisterAlloc {
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     ///
     /// # Panics
     ///
@@ -258,7 +258,7 @@ impl RegisterAlloc {
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     ///
     /// # Panics
     ///
@@ -270,10 +270,10 @@ impl RegisterAlloc {
             if next_dynamic >= this.min_preserve {
                 return None;
             }
-            let register = RegSpan::new(Local::from(this.next_dynamic));
+            let local = RegSpan::new(Local::from(this.next_dynamic));
             this.next_dynamic += n;
             this.max_dynamic = max(this.max_dynamic, this.next_dynamic);
-            Some(register)
+            Some(local)
         }
         self.assert_alloc_phase();
         next_dynamic_n(self, n)
@@ -284,14 +284,14 @@ impl RegisterAlloc {
     ///
     /// # Panics
     ///
-    /// - If the dynamic register allocation stack is empty.
+    /// - If the dynamic local allocation stack is empty.
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
     fn pop_dynamic(&mut self) {
         self.assert_alloc_phase();
         assert_ne!(
             self.next_dynamic,
             self.min_dynamic(),
-            "dynamic register allocation stack is empty"
+            "dynamic local allocation stack is empty"
         );
         self.next_dynamic -= 1;
     }
@@ -300,7 +300,7 @@ impl RegisterAlloc {
     ///
     /// # Panics
     ///
-    /// - If the dynamic register allocation stack is empty.
+    /// - If the dynamic local allocation stack is empty.
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
     pub fn pop_dynamic_n(&mut self, n: usize) {
         fn pop_impl(this: &mut RegisterAlloc, n: usize) -> Option<()> {
@@ -313,7 +313,7 @@ impl RegisterAlloc {
             Some(())
         }
         self.assert_alloc_phase();
-        pop_impl(self, n).expect("dynamic register underflow")
+        pop_impl(self, n).expect("dynamic local underflow")
     }
 
     /// Allocates a new [`Local`] on the preservation stack and returns it.
@@ -321,11 +321,11 @@ impl RegisterAlloc {
     /// # Note
     ///
     /// Registers allocated to the preservation space generally need
-    /// to be readjusted later on in order to have a consecutive register space.
+    /// to be readjusted later on in order to have a consecutive local space.
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     ///
     /// # Panics
     ///
@@ -356,11 +356,11 @@ impl RegisterAlloc {
             let entry = self.preservations.get(key);
             debug_assert!(
                 !matches!(entry, Some((0, _))),
-                "found preserved register allocation entry with invalid 0 amount"
+                "found preserved local allocation entry with invalid 0 amount"
             );
             if let Some((1, _)) = entry {
                 // Case: we only have one preservation left which
-                //       indicates that all preserved registers have
+                //       indicates that all preserved locals have
                 //       been used, thus we can remove this entry
                 //       which makes it available for allocation again.
                 self.preservations.take_all(key);
@@ -391,7 +391,7 @@ impl RegisterAlloc {
     ///
     /// # Panics
     ///
-    /// - If the dynamic register allocation stack is empty.
+    /// - If the dynamic local allocation stack is empty.
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
     fn pop_preserved(&mut self, register: Local) {
         self.assert_alloc_phase();
@@ -442,7 +442,7 @@ impl RegisterAlloc {
         self.min_preserve < i16::from(reg)
     }
 
-    /// Finalizes register allocation and allows to defragment the register space.
+    /// Finalizes local allocation and allows to defragment the local space.
     pub fn finalize_alloc(&mut self) {
         assert!(matches!(self.phase, AllocPhase::Alloc));
         self.phase = AllocPhase::Defrag;
@@ -453,7 +453,7 @@ impl RegisterAlloc {
     pub fn defrag_register(&self, register: Local) -> Local {
         assert!(matches!(self.phase, AllocPhase::Defrag));
         if !self.is_preserved(register) {
-            // Only registers allocated to the preservation space need defragmentation.
+            // Only locals allocated to the preservation space need defragmentation.
             return register;
         }
         Local::from(i16::from(register) - self.defrag_offset)

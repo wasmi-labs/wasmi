@@ -248,7 +248,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 self.alloc
                     .control_stack
                     .push_else_providers(self.alloc.buffer.providers.iter().copied())?;
-                // Note: We increase preservation register usage of else providers
+                // Note: We increase preservation local usage of else providers
                 //       so that they cannot be invalidated in the `then` block before
                 //       arriving at the `else` block of an `if`.
                 //       We manually decrease the usage of the else providers at the

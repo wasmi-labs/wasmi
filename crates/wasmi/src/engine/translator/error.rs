@@ -13,9 +13,9 @@ pub enum TranslationError {
     BranchOffsetOutOfBounds,
     /// Fuel required for a block is out of bounds.
     BlockFuelOutOfBounds,
-    /// Tried to allocate more registers than possible.
+    /// Tried to allocate more locals than possible.
     AllocatedTooManyRegisters,
-    /// Tried to use an out of bounds register index.
+    /// Tried to use an out of bounds local index.
     RegisterOutOfBounds,
     /// Pushed too many values on the emulated value stack during translation.
     EmulatedValueStackOverflow,
@@ -73,11 +73,11 @@ impl Display for TranslationError {
             Self::AllocatedTooManyRegisters => {
                 write!(
                     f,
-                    "translation requires more registers for a function than available"
+                    "translation requires more locals for a function than available"
                 )
             }
             Self::RegisterOutOfBounds => {
-                write!(f, "tried to access out of bounds register index")
+                write!(f, "tried to access out of bounds local index")
             }
             Self::EmulatedValueStackOverflow => {
                 write!(f, "function requires value stack with out of bounds depth")

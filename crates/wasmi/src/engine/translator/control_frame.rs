@@ -54,7 +54,7 @@ pub struct BlockControlFrame {
     ///
     /// # Note
     ///
-    /// These are the registers that store the results of
+    /// These are the locals that store the results of
     /// the [`BlockControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`BlockControlFrame`] exits it.
     branch_params: RegSpan,
@@ -101,7 +101,7 @@ impl BlockControlFrame {
         self.len_branches += 1;
     }
 
-    /// Returns an iterator over the registers holding the branching parameters of the [`BlockControlFrame`].
+    /// Returns an iterator over the locals holding the branching parameters of the [`BlockControlFrame`].
     pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
         BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
     }
@@ -159,7 +159,7 @@ pub struct LoopControlFrame {
     ///
     /// # Note
     ///
-    /// These are the registers that store the inputs of
+    /// These are the locals that store the inputs of
     /// the [`LoopControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`LoopControlFrame`] re-enters it.
     branch_params: RegSpan,
@@ -205,7 +205,7 @@ impl LoopControlFrame {
         self.len_branches += 1;
     }
 
-    /// Returns an iterator over the registers holding the branching parameters of the [`LoopControlFrame`].
+    /// Returns an iterator over the locals holding the branching parameters of the [`LoopControlFrame`].
     pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
         BoundedRegSpan::new(self.branch_params, self.block_type().len_params(engine))
     }
@@ -254,7 +254,7 @@ pub struct IfControlFrame {
     ///
     /// # Note
     ///
-    /// These are the registers that store the results of
+    /// These are the locals that store the results of
     /// the [`IfControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`IfControlFrame`] exits it.
     /// The behavior is the same for the `then` and `else` blocks.
@@ -374,7 +374,7 @@ impl IfControlFrame {
         self.len_branches += 1;
     }
 
-    /// Returns an iterator over the registers holding the branching parameters of the [`IfControlFrame`].
+    /// Returns an iterator over the locals holding the branching parameters of the [`IfControlFrame`].
     pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
         BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
     }
@@ -594,7 +594,7 @@ impl ControlFrame {
         }
     }
 
-    /// Returns an iterator over the registers holding the branch parameters of the [`ControlFrame`].
+    /// Returns an iterator over the locals holding the branch parameters of the [`ControlFrame`].
     pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
         match self {
             Self::Block(frame) => frame.branch_params(engine),

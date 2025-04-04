@@ -7,11 +7,11 @@ use crate::{
 
 /// Parameters for the `i64.add128` and `i64.sub128` instructions.
 struct Params128 {
-    /// The register storing the high 64-bit part of the `lhs` parameter value.
+    /// The local storing the high 64-bit part of the `lhs` parameter value.
     lhs_hi: Local,
-    /// The register storing the low 64-bit part of the `rhs` parameter value.
+    /// The local storing the low 64-bit part of the `rhs` parameter value.
     rhs_lo: Local,
-    /// The register storing the low 64-bit part of the `rhs` parameter value.
+    /// The local storing the low 64-bit part of the `rhs` parameter value.
     rhs_hi: Local,
 }
 
@@ -27,7 +27,7 @@ impl Executor<'_> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Instruction::Register3 { regs } => Params128 {
+            Instruction::Local3 { regs } => Params128 {
                 lhs_hi: regs[0],
                 rhs_lo: regs[1],
                 rhs_hi: regs[2],

@@ -67,7 +67,7 @@ impl TryFrom<u32> for Local {
 
     fn try_from(local_index: u32) -> Result<Self, Self::Error> {
         i16::try_from(local_index)
-            .map_err(|_| Error::RegisterOutOfBounds)
+            .map_err(|_| Error::LocalOutOfBounds)
             .map(Self::from)
     }
 }

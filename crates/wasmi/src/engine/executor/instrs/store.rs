@@ -42,7 +42,7 @@ impl Executor<'_> {
             Ok(value) => value,
             Err(instr) => unsafe {
                 unreachable_unchecked!(
-                    "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
+                    "expected an `Instruction::LocalAndImm32` but found: {instr:?}"
                 )
             },
         }

@@ -106,8 +106,8 @@ macro_rules! impl_provider_new_const16 {
                     {
                         Some(value) => Ok(Self::Const(value)),
                         None => {
-                            let register = stack.alloc_const(value)?;
-                            Ok(Self::Register(register))
+                            let local = stack.alloc_const(value)?;
+                            Ok(Self::Register(local))
                         }
                     },
                     TypedProvider::Register(index) => Ok(Self::Register(index)),
@@ -147,8 +147,8 @@ impl super::FuncTranslator {
                 }
             }
         }
-        let register = self.alloc.stack.alloc_const(value)?;
-        Ok(Provider::Register(register))
+        let local = self.alloc.stack.alloc_const(value)?;
+        Ok(Provider::Register(local))
     }
 
     /// Converts the `provider` to a 32-bit index-type constant value.
@@ -177,8 +177,8 @@ impl super::FuncTranslator {
                 return Ok(Provider::Const(<Const32<u64>>::cast(value)));
             }
         }
-        let register = self.alloc.stack.alloc_const(value)?;
-        Ok(Provider::Register(register))
+        let local = self.alloc.stack.alloc_const(value)?;
+        Ok(Provider::Register(local))
     }
 }
 

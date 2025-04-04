@@ -125,14 +125,14 @@ impl Executor<'_> {
         let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
         let mut ip = ip;
         tmp.extend(values.iter().map(|value| self.get_register(*value)));
-        while let Instruction::RegisterList { regs } = ip.get() {
+        while let Instruction::LocalList { regs } = ip.get() {
             tmp.extend(regs.iter().map(|value| self.get_register(*value)));
             ip.add(1);
         }
         let values = match ip.get() {
-            Instruction::Register { reg } => slice::from_ref(reg),
-            Instruction::Register2 { regs } => regs,
-            Instruction::Register3 { regs } => regs,
+            Instruction::Local { reg } => slice::from_ref(reg),
+            Instruction::Local2 { regs } => regs,
+            Instruction::Local3 { regs } => regs,
             unexpected => {
                 // Safety: Wasmi translator guarantees that register-list finalizer exists.
                 unsafe {
@@ -173,14 +173,14 @@ impl Executor<'_> {
             }
         };
         copy_values(values);
-        while let Instruction::RegisterList { regs } = ip.get() {
+        while let Instruction::LocalList { regs } = ip.get() {
             copy_values(regs);
             ip.add(1);
         }
         let values = match ip.get() {
-            Instruction::Register { reg } => slice::from_ref(reg),
-            Instruction::Register2 { regs } => regs,
-            Instruction::Register3 { regs } => regs,
+            Instruction::Local { reg } => slice::from_ref(reg),
+            Instruction::Local2 { regs } => regs,
+            Instruction::Local3 { regs } => regs,
             unexpected => {
                 // Safety: Wasmi translator guarantees that register-list finalizer exists.
                 unsafe {

@@ -19,9 +19,9 @@ type WasmLoadOp<T> = fn(memory: &[u8], ptr: u64, offset: u64) -> Result<T, TrapC
 type WasmLoadAtOp<T> = fn(memory: &[u8], address: usize) -> Result<T, TrapCode>;
 
 impl Executor<'_> {
-    /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
+    /// Returns the local `value` and `offset` parameters for a `load` [`Instruction`].
     fn fetch_ptr_and_offset_hi(&self) -> (Local, Offset64Hi) {
-        // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
+        // Safety: Wasmi translation guarantees that `Instruction::LocalAndImm32` exists.
         unsafe { self.fetch_reg_and_offset_hi() }
     }
 

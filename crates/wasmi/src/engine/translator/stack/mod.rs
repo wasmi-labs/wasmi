@@ -95,7 +95,7 @@ impl ValueStack {
     /// Preserves all locals on the [`ProviderStack`] by shifting them to the preservation space.
     ///
     /// Calls `f(local_register, preserved_register)` for each `local_register` preserved this way with its
-    /// newly allocated `preserved_register` on the presevation register space.
+    /// newly allocated `preserved_register` on the presevation local space.
     pub fn preserve_all_locals(
         &mut self,
         f: impl FnMut(PreservedLocal) -> Result<(), Error>,
@@ -119,7 +119,7 @@ impl ValueStack {
         self.providers.len()
     }
 
-    /// Returns the number of registers allocated by the [`RegisterAlloc`].
+    /// Returns the number of locals allocated by the [`RegisterAlloc`].
     pub fn len_registers(&self) -> u16 {
         // The addition won't overflow since both operands are in the range of `0..i16::MAX`.
         self.consts.len_consts() + self.reg_alloc.len_registers()
@@ -129,7 +129,7 @@ impl ValueStack {
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     ///
     /// # Panics
     ///
@@ -145,7 +145,7 @@ impl ValueStack {
     /// # Note
     ///
     /// After this operation no local variable can be registered anymore.
-    /// However, it is then possible to push and pop dynamic and storage registers to the stack.
+    /// However, it is then possible to push and pop dynamic and storage locals to the stack.
     pub fn finish_register_locals(&mut self) {
         self.reg_alloc.finish_register_locals()
     }
@@ -210,7 +210,7 @@ impl ValueStack {
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     pub fn push_register(&mut self, reg: Local) -> Result<(), Error> {
         match self.reg_alloc.register_space(reg) {
             RegisterSpace::Dynamic => {
@@ -220,9 +220,9 @@ impl ValueStack {
             }
             RegisterSpace::Preserve => {
                 // Note: we currently do not call `self.reg_alloc.push_storage()`
-                //       since that API would push always another register on the preservation
+                //       since that API would push always another local on the preservation
                 //       stack instead of trying to bump the amount of already existing
-                //       preservation slots for the same register if possible.
+                //       preservation slots for the same local if possible.
                 self.reg_alloc.bump_preserved(reg);
                 self.providers.push_preserved(reg);
             }
@@ -240,7 +240,7 @@ impl ValueStack {
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     pub fn push_local(&mut self, local_index: u32) -> Result<Local, Error> {
         let reg = i16::try_from(local_index)
             .ok()
@@ -255,7 +255,7 @@ impl ValueStack {
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     pub fn push_dynamic(&mut self) -> Result<Local, Error> {
         let reg = self.reg_alloc.push_dynamic()?;
         self.providers.push_dynamic(reg);
@@ -337,7 +337,7 @@ impl ValueStack {
     ///
     /// # Errors
     ///
-    /// If too many registers have been registered.
+    /// If too many locals have been registered.
     pub fn push_n(&mut self, providers: &[TypedProvider]) -> Result<(), Error> {
         for provider in providers {
             match *provider {
@@ -348,7 +348,7 @@ impl ValueStack {
         Ok(())
     }
 
-    /// Returns a [`RegSpan`] of `n` registers as if they were dynamically allocated.
+    /// Returns a [`RegSpan`] of `n` locals as if they were dynamically allocated.
     ///
     /// # Note
     ///
@@ -359,16 +359,16 @@ impl ValueStack {
     ///
     /// # Errors
     ///
-    /// If this procedure would allocate more registers than are available.
+    /// If this procedure would allocate more locals than are available.
     pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegSpan, Error> {
-        let registers = self.reg_alloc.push_dynamic_n(n)?;
-        for register in registers.iter_sized(n) {
-            self.providers.push_dynamic(register);
+        let locals = self.reg_alloc.push_dynamic_n(n)?;
+        for local in locals.iter_sized(n) {
+            self.providers.push_dynamic(local);
         }
-        Ok(registers)
+        Ok(locals)
     }
 
-    /// Returns a [`RegSpan`] of `n` registers as if they were dynamically allocated.
+    /// Returns a [`RegSpan`] of `n` locals as if they were dynamically allocated.
     ///
     /// # Note
     ///
@@ -378,14 +378,14 @@ impl ValueStack {
     ///
     /// # Errors
     ///
-    /// If this procedure would allocate more registers than are available.
+    /// If this procedure would allocate more locals than are available.
     pub fn peek_dynamic_n(&mut self, n: usize) -> Result<RegSpan, Error> {
-        let registers = self.reg_alloc.push_dynamic_n(n)?;
+        let locals = self.reg_alloc.push_dynamic_n(n)?;
         self.reg_alloc.pop_dynamic_n(n);
-        Ok(registers)
+        Ok(locals)
     }
 
-    /// Finalizes register allocation and allows to defragment the register space.
+    /// Finalizes local allocation and allows to defragment the local space.
     pub fn finalize_alloc(&mut self) {
         self.reg_alloc.finalize_alloc()
     }

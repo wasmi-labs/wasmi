@@ -111,11 +111,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Instruction::LocalList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(return_many)]
                 ReturnMany {
                     /// The first three returned values.
@@ -220,11 +220,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Instruction::LocalList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(return_nez_many)]
                 ReturnNezMany {
                     /// The register holding the condition to evaluate against zero.
@@ -820,7 +820,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// 1. Followed by one of
                 ///
-                /// - [`Instruction::Register`]
+                /// - [`Instruction::Local`]
                 /// - [`Instruction::Const32`]
                 /// - [`Instruction::I64Const32`]
                 /// - [`Instruction::F64Const32`]
@@ -843,7 +843,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// 1. Followed by [`Instruction::Register2`].
+                /// 1. Followed by [`Instruction::Local2`].
                 /// 2. Followed `len_target` times by
                 ///
                 /// - [`Instruction::BranchTableTarget`]
@@ -859,7 +859,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// 1. Followed by [`Instruction::Register3`].
+                /// 1. Followed by [`Instruction::Local3`].
                 /// 2. Followed `len_target` times by
                 ///
                 /// - [`Instruction::BranchTableTarget`]
@@ -879,7 +879,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// 1. Followed by one of [`Instruction::RegisterSpan`].
+                /// 1. Followed by one of [`Instruction::LocalSpan`].
                 /// 2. Followed `len_target` times by
                 ///
                 /// - [`Instruction::BranchTableTarget`]
@@ -900,7 +900,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// 1. Followed by [`Instruction::RegisterList`] encoding.
+                /// 1. Followed by [`Instruction::LocalList`] encoding.
                 /// 2. Followed `len_target` times by
                 ///
                 /// - [`Instruction::BranchTableTarget`]
@@ -1005,11 +1005,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Instruction::LocalList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(copy_many)]
                 CopyMany {
                     @results: RegSpan,
@@ -1020,11 +1020,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Instruction::LocalList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(copy_many_non_overlapping)]
                 CopyManyNonOverlapping {
                     @results: RegSpan,
@@ -1052,11 +1052,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Instruction::LocalList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(return_call_internal)]
                 ReturnCallInternal {
                     /// The called internal function.
@@ -1083,11 +1083,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Instruction::LocalList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(return_call_imported)]
                 ReturnCallImported {
                     /// The called imported function.
@@ -1133,11 +1133,11 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by
                 ///
                 /// 1. [`Instruction::CallIndirectParams`]: encoding `table` and `index`
-                /// 2. Zero or more [`Instruction::RegisterList`]
+                /// 2. Zero or more [`Instruction::LocalList`]
                 /// 3. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(return_call_indirect)]
                 ReturnCallIndirect {
                     /// The called internal function.
@@ -1154,11 +1154,11 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by
                 ///
                 /// 1. [`Instruction::CallIndirectParamsImm16`]: encoding `table` and `index`
-                /// 2. Zero or more [`Instruction::RegisterList`]
+                /// 2. Zero or more [`Instruction::LocalList`]
                 /// 3. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(return_call_indirect_imm16)]
                 ReturnCallIndirectImm16 {
                     /// The called internal function.
@@ -1186,11 +1186,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Instruction::LocalList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(call_internal)]
                 CallInternal {
                     @results: RegSpan,
@@ -1219,11 +1219,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Must be followed by
                 ///
-                /// 1. Zero or more [`Instruction::RegisterList`]
+                /// 1. Zero or more [`Instruction::LocalList`]
                 /// 2. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(call_imported)]
                 CallImported {
                     @results: RegSpan,
@@ -1272,11 +1272,11 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by
                 ///
                 /// 1. [`Instruction::CallIndirectParams`]: encoding `table` and `index`
-                /// 2. Zero or more [`Instruction::RegisterList`]
+                /// 2. Zero or more [`Instruction::LocalList`]
                 /// 3. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(call_indirect)]
                 CallIndirect {
                     @results: RegSpan,
@@ -1294,11 +1294,11 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by
                 ///
                 /// 1. [`Instruction::CallIndirectParamsImm16`]: encoding `table` and `index`
-                /// 2. Zero or more [`Instruction::RegisterList`]
+                /// 2. Zero or more [`Instruction::LocalList`]
                 /// 3. Followed by one of
-                ///     - [`Instruction::Register`]
-                ///     - [`Instruction::Register2`]
-                ///     - [`Instruction::Register3`]
+                ///     - [`Instruction::Local`]
+                ///     - [`Instruction::Local2`]
+                ///     - [`Instruction::Local3`]
                 #[snake_name(call_indirect_imm16)]
                 CallIndirectImm16 {
                     @results: RegSpan,
@@ -1310,7 +1310,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
+                /// Must be followed by [`Instruction::Local2`] to encode `condition` and `rhs`.
                 #[snake_name(select)]
                 Select {
                     @result: Local,
@@ -1321,7 +1321,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+                /// Must be followed by [`Instruction::LocalAndImm32`] to encode `condition` and `rhs`.
                 #[snake_name(select_imm32_rhs)]
                 SelectImm32Rhs {
                     @result: Local,
@@ -1332,7 +1332,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::Register2`] to encode `condition` and `lhs`.
+                /// Must be followed by [`Instruction::Local2`] to encode `condition` and `lhs`.
                 #[snake_name(select_imm32_lhs)]
                 SelectImm32Lhs {
                     @result: Local,
@@ -1343,7 +1343,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+                /// Must be followed by [`Instruction::LocalAndImm32`] to encode `condition` and `rhs`.
                 #[snake_name(select_imm32)]
                 SelectImm32 {
                     @result: Local,
@@ -1354,7 +1354,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+                /// Must be followed by [`Instruction::LocalAndImm32`] to encode `condition` and `rhs`.
                 #[snake_name(select_i64imm32_rhs)]
                 SelectI64Imm32Rhs {
                     @result: Local,
@@ -1365,7 +1365,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
+                /// Must be followed by [`Instruction::Local2`] to encode `condition` and `rhs`.
                 #[snake_name(select_i64imm32_lhs)]
                 SelectI64Imm32Lhs {
                     @result: Local,
@@ -1376,7 +1376,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+                /// Must be followed by [`Instruction::LocalAndImm32`] to encode `condition` and `rhs`.
                 #[snake_name(select_i64imm32)]
                 SelectI64Imm32 {
                     @result: Local,
@@ -1387,7 +1387,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+                /// Must be followed by [`Instruction::LocalAndImm32`] to encode `condition` and `rhs`.
                 #[snake_name(select_f64imm32_rhs)]
                 SelectF64Imm32Rhs {
                     @result: Local,
@@ -1398,7 +1398,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::Register2`] to encode `condition` and `rhs`.
+                /// Must be followed by [`Instruction::Local2`] to encode `condition` and `rhs`.
                 #[snake_name(select_f64imm32_lhs)]
                 SelectF64Imm32Lhs {
                     @result: Local,
@@ -1409,7 +1409,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Must be followed by [`Instruction::RegisterAndImm32`] to encode `condition` and `rhs`.
+                /// Must be followed by [`Instruction::LocalAndImm32`] to encode `condition` and `rhs`.
                 #[snake_name(select_f64imm32)]
                 SelectF64Imm32 {
                     @result: Local,
@@ -1475,7 +1475,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -1527,7 +1527,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -1575,7 +1575,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -1623,7 +1623,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -1671,7 +1671,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -1719,7 +1719,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -1767,7 +1767,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -1815,7 +1815,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -1863,7 +1863,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -1911,7 +1911,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -1959,7 +1959,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2007,7 +2007,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `ptr` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `ptr` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2059,7 +2059,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2114,7 +2114,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2169,7 +2169,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2220,7 +2220,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2241,7 +2241,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2325,7 +2325,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2346,7 +2346,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2434,7 +2434,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2485,7 +2485,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2506,7 +2506,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2590,7 +2590,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2611,7 +2611,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2695,7 +2695,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -2716,7 +2716,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// 1. [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// 2. Optional [`Instruction::MemoryIndex`]: encoding `memory` index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -4156,7 +4156,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
+                /// Followed by [`Instruction::Local3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
                 #[snake_name(i64_add128)]
                 I64Add128 {
                     // Note:
@@ -4174,7 +4174,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
+                /// Followed by [`Instruction::Local3`] encoding `lhs_hi`, `rhs_lo` and `rhs_hi`
                 #[snake_name(i64_sub128)]
                 I64Sub128 {
                     // Note:
@@ -5742,7 +5742,7 @@ macro_rules! for_each_op_grouped {
                 },
                 /// An instruction parameter with a [`Local`] and a 32-bit immediate value.
                 #[snake_name(register_and_imm32)]
-                RegisterAndImm32 {
+                LocalAndImm32 {
                     /// The [`Local`] parameter value.
                     reg: Local,
                     /// The 32-bit immediate value.
@@ -5750,7 +5750,7 @@ macro_rules! for_each_op_grouped {
                 },
                 /// A bounded [`RegSpan`] instruction parameter.
                 #[snake_name(register_span)]
-                RegisterSpan { span: BoundedRegSpan },
+                LocalSpan { span: BoundedRegSpan },
                 /// A [`Local`] instruction parameter.
                 ///
                 /// # Note
@@ -5758,7 +5758,7 @@ macro_rules! for_each_op_grouped {
                 /// This [`Instruction`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(register)]
-                Register {
+                Local {
                     reg: Local
                 },
                 /// Two [`Local`] instruction parameters.
@@ -5768,7 +5768,7 @@ macro_rules! for_each_op_grouped {
                 /// This [`Instruction`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(register2)]
-                Register2 {
+                Local2 {
                     regs: [Local; 2]
                 },
                 /// Three [`Local`] instruction parameters.
@@ -5778,7 +5778,7 @@ macro_rules! for_each_op_grouped {
                 /// This [`Instruction`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
                 #[snake_name(register3)]
-                Register3 {
+                Local3 {
                     regs: [Local; 3]
                 },
                 /// [`Local`] slice parameters.
@@ -5792,11 +5792,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// This must always be followed by one of
                 ///
-                /// - [`Instruction::Register`]
-                /// - [`Instruction::Register2`]
-                /// - [`Instruction::Register3`]
+                /// - [`Instruction::Local`]
+                /// - [`Instruction::Local2`]
+                /// - [`Instruction::Local3`]
                 #[snake_name(register_list)]
-                RegisterList {
+                LocalList {
                     regs: [Local; 3]
                 },
                 /// Auxiliary [`Instruction`] to encode table access information for indirect call instructions.
@@ -5938,7 +5938,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Instruction::Local`] encoding `value`.
                 #[snake_name(i8x16_replace_lane)]
                 I8x16ReplaceLane {
                     @result: Local,
@@ -5962,7 +5962,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Instruction::Local`] encoding `value`.
                 #[snake_name(i16x8_replace_lane)]
                 I16x8ReplaceLane {
                     @result: Local,
@@ -5988,7 +5988,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Instruction::Local`] encoding `value`.
                 #[snake_name(i32x4_replace_lane)]
                 I32x4ReplaceLane {
                     @result: Local,
@@ -6001,7 +6001,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding the immediate `value` of type `i32`.
+                /// Followed by [`Instruction::Local`] encoding the immediate `value` of type `i32`.
                 #[snake_name(i32x4_replace_lane_imm)]
                 I32x4ReplaceLaneImm {
                     @result: Local,
@@ -6014,7 +6014,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Instruction::Local`] encoding `value`.
                 #[snake_name(i64x2_replace_lane)]
                 I64x2ReplaceLane {
                     @result: Local,
@@ -6040,7 +6040,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Instruction::Local`] encoding `value`.
                 #[snake_name(f32x4_replace_lane)]
                 F32x4ReplaceLane {
                     @result: Local,
@@ -6066,7 +6066,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding `value`.
+                /// Followed by [`Instruction::Local`] encoding `value`.
                 #[snake_name(f64x2_replace_lane)]
                 F64x2ReplaceLane {
                     @result: Local,
@@ -6093,7 +6093,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding the `selector` of type [`V128`].
+                /// Followed by [`Instruction::Local`] encoding the `selector` of type [`V128`].
                 #[snake_name(i8x16_shuffle)]
                 I8x16Shuffle {
                     @result: Local,
@@ -6234,7 +6234,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Register`] encoding `c`.
+                /// Followed by an [`Instruction::Local`] encoding `c`.
                 #[snake_name(i32x4_relaxed_dot_i8x16_i7x16_add_s)]
                 I32x4RelaxedDotI8x16I7x16AddS {
                     @result: Local,
@@ -6248,7 +6248,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Register`] encoding `c`.
+                /// Followed by an [`Instruction::Local`] encoding `c`.
                 #[snake_name(f32x4_relaxed_madd)]
                 F32x4RelaxedMadd {
                     @result: Local,
@@ -6261,7 +6261,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Register`] encoding `c`.
+                /// Followed by an [`Instruction::Local`] encoding `c`.
                 #[snake_name(f32x4_relaxed_nmadd)]
                 F32x4RelaxedNmadd {
                     @result: Local,
@@ -6274,7 +6274,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Register`] encoding `c`.
+                /// Followed by an [`Instruction::Local`] encoding `c`.
                 #[snake_name(f64x2_relaxed_madd)]
                 F64x2RelaxedMadd {
                     @result: Local,
@@ -6287,7 +6287,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by an [`Instruction::Register`] encoding `c`.
+                /// Followed by an [`Instruction::Local`] encoding `c`.
                 #[snake_name(f64x2_relaxed_nmadd)]
                 F64x2RelaxedNmadd {
                     @result: Local,
@@ -6301,28 +6301,28 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_neg)]
                 I8x16Neg {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i16x8.neg` instruction.
                 #[snake_name(i16x8_neg)]
                 I16x8Neg {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.neg` instruction.
                 #[snake_name(i32x4_neg)]
                 I32x4Neg {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64x2.neg` instruction.
                 #[snake_name(i64x2_neg)]
                 I64x2Neg {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
 
@@ -6330,108 +6330,108 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i16x8_extmul_low_i8x16_s)]
                 I16x8ExtmulLowI8x16S {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.extmul_high_i8x16_s` instruction.
                 #[snake_name(i16x8_extmul_high_i8x16_s)]
                 I16x8ExtmulHighI8x16S {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.extmul_low_i8x16_u` instruction.
                 #[snake_name(i16x8_extmul_low_i8x16_u)]
                 I16x8ExtmulLowI8x16U {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.extmul_high_i8x16_u` instruction.
                 #[snake_name(i16x8_extmul_high_i8x16_u)]
                 I16x8ExtmulHighI8x16U {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.extmul_low_i16x8_s` instruction.
                 #[snake_name(i32x4_extmul_low_i16x8_s)]
                 I32x4ExtmulLowI16x8S {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.extmul_high_i16x8_s` instruction.
                 #[snake_name(i32x4_extmul_high_i16x8_s)]
                 I32x4ExtmulHighI16x8S {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.extmul_low_i16x8_u` instruction.
                 #[snake_name(i32x4_extmul_low_i16x8_u)]
                 I32x4ExtmulLowI16x8U {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.extmul_high_i16x8_u` instruction.
                 #[snake_name(i32x4_extmul_high_i16x8_u)]
                 I32x4ExtmulHighI16x8U {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.extmul_low_i32x4_s` instruction.
                 #[snake_name(i64x2_extmul_low_i32x4_s)]
                 I64x2ExtmulLowI32x4S {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.extmul_high_i32x4_s` instruction.
                 #[snake_name(i64x2_extmul_high_i32x4_s)]
                 I64x2ExtmulHighI32x4S {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.extmul_low_i32x4_u` instruction.
                 #[snake_name(i64x2_extmul_low_i32x4_u)]
                 I64x2ExtmulLowI32x4U {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.extmul_high_i32x4_u` instruction.
                 #[snake_name(i64x2_extmul_high_i32x4_u)]
                 I64x2ExtmulHighI32x4U {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
 
@@ -6439,28 +6439,28 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i16x8_extadd_pairwise_i8x16_s)]
                 I16x8ExtaddPairwiseI8x16S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i16x8.extadd_pairwise_i8x16_u` instruction.
                 #[snake_name(i16x8_extadd_pairwise_i8x16_u)]
                 I16x8ExtaddPairwiseI8x16U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.extadd_pairwise_i16x8_s` instruction.
                 #[snake_name(i32x4_extadd_pairwise_i16x8_s)]
                 I32x4ExtaddPairwiseI16x8S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.extadd_pairwise_i16x8_u` instruction.
                 #[snake_name(i32x4_extadd_pairwise_i16x8_u)]
                 I32x4ExtaddPairwiseI16x8U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
 
@@ -6468,72 +6468,72 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_add_sat_s)]
                 I8x16AddSatS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.add_sat_u` instruction.
                 #[snake_name(i8x16_add_sat_u)]
                 I8x16AddSatU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.add_sat_s` instruction.
                 #[snake_name(i16x8_add_sat_s)]
                 I16x8AddSatS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.add_sat_u` instruction.
                 #[snake_name(i16x8_add_sat_u)]
                 I16x8AddSatU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.sub_sat_s` instruction.
                 #[snake_name(i8x16_sub_sat_s)]
                 I8x16SubSatS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.sub_sat_u` instruction.
                 #[snake_name(i8x16_sub_sat_u)]
                 I8x16SubSatU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.sub_sat_s` instruction.
                 #[snake_name(i16x8_sub_sat_s)]
                 I16x8SubSatS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.sub_sat_u` instruction.
                 #[snake_name(i16x8_sub_sat_u)]
                 I16x8SubSatU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
 
@@ -6541,9 +6541,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i16x8_q15mulr_sat_s)]
                 I16x8Q15MulrSatS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
 
@@ -6551,108 +6551,108 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_min_s)]
                 I8x16MinS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.min_u` instruction.
                 #[snake_name(i8x16_min_u)]
                 I8x16MinU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.min_s` instruction.
                 #[snake_name(i16x8_min_s)]
                 I16x8MinS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.min_u` instruction.
                 #[snake_name(i16x8_min_u)]
                 I16x8MinU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.min_s` instruction.
                 #[snake_name(i32x4_min_s)]
                 I32x4MinS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.min_u` instruction.
                 #[snake_name(i32x4_min_u)]
                 I32x4MinU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.max_s` instruction.
                 #[snake_name(i8x16_max_s)]
                 I8x16MaxS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.max_u` instruction.
                 #[snake_name(i8x16_max_u)]
                 I8x16MaxU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.max_s` instruction.
                 #[snake_name(i16x8_max_s)]
                 I16x8MaxS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.max_u` instruction.
                 #[snake_name(i16x8_max_u)]
                 I16x8MaxU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.max_s` instruction.
                 #[snake_name(i32x4_max_s)]
                 I32x4MaxS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.max_u` instruction.
                 #[snake_name(i32x4_max_u)]
                 I32x4MaxU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
 
@@ -6660,18 +6660,18 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_avgr_u)]
                 I8x16AvgrU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.avgr_u` instruction.
                 #[snake_name(i16x8_avgr_u)]
                 I16x8AvgrU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
 
@@ -6679,28 +6679,28 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_abs)]
                 I8x16Abs {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i16x8.abs` instruction.
                 #[snake_name(i16x8_abs)]
                 I16x8Abs {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.abs` instruction.
                 #[snake_name(i32x4_abs)]
                 I32x4Abs {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64x2.abs` instruction.
                 #[snake_name(i64x2_abs)]
                 I64x2Abs {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
 
@@ -6708,16 +6708,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_shl)]
                 I8x16Shl {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I8x16Shl`] with immediate shift amount.
                 #[snake_name(i8x16_shl_by)]
                 I8x16ShlBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6726,16 +6726,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i16x8_shl)]
                 I16x8Shl {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I16x8Shl`] with immediate shift amount.
                 #[snake_name(i16x8_shl_by)]
                 I16x8ShlBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6744,16 +6744,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32x4_shl)]
                 I32x4Shl {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I32x4Shl`] with immediate shift amount.
                 #[snake_name(i32x4_shl_by)]
                 I32x4ShlBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6762,16 +6762,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64x2_shl)]
                 I64x2Shl {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I64x2Shl`] with immediate shift amount.
                 #[snake_name(i64x2_shl_by)]
                 I64x2ShlBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6780,16 +6780,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_shr_s)]
                 I8x16ShrS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I8x16ShrS`] with immediate shift amount.
                 #[snake_name(i8x16_shr_s_by)]
                 I8x16ShrSBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6798,16 +6798,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_shr_u)]
                 I8x16ShrU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I8x16ShrU`] with immediate shift amount.
                 #[snake_name(i8x16_shr_u_by)]
                 I8x16ShrUBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6816,16 +6816,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i16x8_shr_s)]
                 I16x8ShrS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I16x8ShrS`] with immediate shift amount.
                 #[snake_name(i16x8_shr_s_by)]
                 I16x8ShrSBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6834,16 +6834,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i16x8_shr_u)]
                 I16x8ShrU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I16x8ShrU`] with immediate shift amount.
                 #[snake_name(i16x8_shr_u_by)]
                 I16x8ShrUBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6852,16 +6852,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32x4_shr_s)]
                 I32x4ShrS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I32x4ShrS`] with immediate shift amount.
                 #[snake_name(i32x4_shr_s_by)]
                 I32x4ShrSBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6870,16 +6870,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32x4_shr_u)]
                 I32x4ShrU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I32x4ShrU`] with immediate shift amount.
                 #[snake_name(i32x4_shr_u_by)]
                 I32x4ShrUBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6888,16 +6888,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64x2_shr_s)]
                 I64x2ShrS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I64x2ShrS`] with immediate shift amount.
                 #[snake_name(i64x2_shr_s_by)]
                 I64x2ShrSBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6906,16 +6906,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64x2_shr_u)]
                 I64x2ShrU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Variants of [`Instruction::I64x2ShrU`] with immediate shift amount.
                 #[snake_name(i64x2_shr_u_by)]
                 I64x2ShrUBy {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// The 16-bit encoded shift amount.
                     rhs: ShiftAmount<u32>,
@@ -6925,43 +6925,43 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_and)]
                 V128And {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `v128.or` instruction.
                 #[snake_name(v128_or)]
                 V128Or {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `v128.xor` instruction.
                 #[snake_name(v128_xor)]
                 V128Xor {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `v128.andnot` instruction.
                 #[snake_name(v128_andnot)]
                 V128Andnot {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `v128.not` instruction.
                 #[snake_name(v128_not)]
                 V128Not {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
 
@@ -6969,13 +6969,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Encoding
                 ///
-                /// Followed by [`Instruction::Register`] encoding the `selector`.
+                /// Followed by [`Instruction::Local`] encoding the `selector`.
                 #[snake_name(v128_bitselect)]
                 V128Bitselect {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
 
@@ -6983,70 +6983,70 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_popcnt)]
                 I8x16Popcnt {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `v128.any_true` instruction.
                 #[snake_name(v128_any_true)]
                 V128AnyTrue {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i8x16.all_true` instruction.
                 #[snake_name(i8x16_all_true)]
                 I8x16AllTrue {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i16x8.all_true` instruction.
                 #[snake_name(i16x8_all_true)]
                 I16x8AllTrue {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.all_true` instruction.
                 #[snake_name(i32x4_all_true)]
                 I32x4AllTrue {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64x2.all_true` instruction.
                 #[snake_name(i64x2_all_true)]
                 I64x2AllTrue {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i8x16.bitmask` instruction.
                 #[snake_name(i8x16_bitmask)]
                 I8x16Bitmask {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i16x8.bitmask` instruction.
                 #[snake_name(i16x8_bitmask)]
                 I16x8Bitmask {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.bitmask` instruction.
                 #[snake_name(i32x4_bitmask)]
                 I32x4Bitmask {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64x2.bitmask` instruction.
                 #[snake_name(i64x2_bitmask)]
                 I64x2Bitmask {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
 
@@ -7054,270 +7054,270 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_eq)]
                 I8x16Eq {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.eq` instruction.
                 #[snake_name(i16x8_eq)]
                 I16x8Eq {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.eq` instruction.
                 #[snake_name(i32x4_eq)]
                 I32x4Eq {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.eq` instruction.
                 #[snake_name(i64x2_eq)]
                 I64x2Eq {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.eq` instruction.
                 #[snake_name(f32x4_eq)]
                 F32x4Eq {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.eq` instruction.
                 #[snake_name(f64x2_eq)]
                 F64x2Eq {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.ne` instruction.
                 #[snake_name(i8x16_ne)]
                 I8x16Ne {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.ne` instruction.
                 #[snake_name(i16x8_ne)]
                 I16x8Ne {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.ne` instruction.
                 #[snake_name(i32x4_ne)]
                 I32x4Ne {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.ne` instruction.
                 #[snake_name(i64x2_ne)]
                 I64x2Ne {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.ne` instruction.
                 #[snake_name(f32x4_ne)]
                 F32x4Ne {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.ne` instruction.
                 #[snake_name(f64x2_ne)]
                 F64x2Ne {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.lt_s` instruction.
                 #[snake_name(i8x16_lt_s)]
                 I8x16LtS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.lt_u` instruction.
                 #[snake_name(i8x16_lt_u)]
                 I8x16LtU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.lt_s` instruction.
                 #[snake_name(i16x8_lt_s)]
                 I16x8LtS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.lt_u` instruction.
                 #[snake_name(i16x8_lt_u)]
                 I16x8LtU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.lt_s` instruction.
                 #[snake_name(i32x4_lt_s)]
                 I32x4LtS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.lt_u` instruction.
                 #[snake_name(i32x4_lt_u)]
                 I32x4LtU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.lt_s` instruction.
                 #[snake_name(i64x2_lt_s)]
                 I64x2LtS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.lt` instruction.
                 #[snake_name(f32x4_lt)]
                 F32x4Lt {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.lt` instruction.
                 #[snake_name(f64x2_lt)]
                 F64x2Lt {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.le_s` instruction.
                 #[snake_name(i8x16_le_s)]
                 I8x16LeS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.le_u` instruction.
                 #[snake_name(i8x16_le_u)]
                 I8x16LeU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.le_s` instruction.
                 #[snake_name(i16x8_le_s)]
                 I16x8LeS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.le_u` instruction.
                 #[snake_name(i16x8_le_u)]
                 I16x8LeU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.le_s` instruction.
                 #[snake_name(i32x4_le_s)]
                 I32x4LeS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.le_u` instruction.
                 #[snake_name(i32x4_le_u)]
                 I32x4LeU {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.le_s` instruction.
                 #[snake_name(i64x2_le_s)]
                 I64x2LeS {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.le` instruction.
                 #[snake_name(f32x4_le)]
                 F32x4Le {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.le` instruction.
                 #[snake_name(f64x2_le)]
                 F64x2Le {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
 
@@ -7325,28 +7325,28 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32x4_neg)]
                 F32x4Neg {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64x2.neg` instruction.
                 #[snake_name(f64x2_neg)]
                 F64x2Neg {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32x4.abs` instruction.
                 #[snake_name(f32x4_abs)]
                 F32x4Abs {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64x2.abs` instruction.
                 #[snake_name(f64x2_abs)]
                 F64x2Abs {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
 
@@ -7354,144 +7354,144 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32x4_min)]
                 F32x4Min {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.min` instruction.
                 #[snake_name(f64x2_min)]
                 F64x2Min {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.max` instruction.
                 #[snake_name(f32x4_max)]
                 F32x4Max {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.max` instruction.
                 #[snake_name(f64x2_max)]
                 F64x2Max {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.pmin` instruction.
                 #[snake_name(f32x4_pmin)]
                 F32x4Pmin {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.pmin` instruction.
                 #[snake_name(f64x2_pmin)]
                 F64x2Pmin {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.pmax` instruction.
                 #[snake_name(f32x4_pmax)]
                 F32x4Pmax {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.pmax` instruction.
                 #[snake_name(f64x2_pmax)]
                 F64x2Pmax {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.add` instruction.
                 #[snake_name(f32x4_add)]
                 F32x4Add {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.add` instruction.
                 #[snake_name(f64x2_add)]
                 F64x2Add {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.sub` instruction.
                 #[snake_name(f32x4_sub)]
                 F32x4Sub {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.sub` instruction.
                 #[snake_name(f64x2_sub)]
                 F64x2Sub {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.div` instruction.
                 #[snake_name(f32x4_div)]
                 F32x4Div {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.div` instruction.
                 #[snake_name(f64x2_div)]
                 F64x2Div {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f32x4.mul` instruction.
                 #[snake_name(f32x4_mul)]
                 F32x4Mul {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `f64x2.mul` instruction.
                 #[snake_name(f64x2_mul)]
                 F64x2Mul {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// Register holding the `rhs` of the instruction.
+                    /// Local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
 
@@ -7499,70 +7499,70 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32x4_sqrt)]
                 F32x4Sqrt {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64x2.sqrt` instruction.
                 #[snake_name(f64x2_sqrt)]
                 F64x2Sqrt {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32x4.ceil` instruction.
                 #[snake_name(f32x4_ceil)]
                 F32x4Ceil {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64x2.ceil` instruction.
                 #[snake_name(f64x2_ceil)]
                 F64x2Ceil {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32x4.floor` instruction.
                 #[snake_name(f32x4_floor)]
                 F32x4Floor {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64x2.floor` instruction.
                 #[snake_name(f64x2_floor)]
                 F64x2Floor {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32x4.trunc` instruction.
                 #[snake_name(f32x4_trunc)]
                 F32x4Trunc {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64x2.trunc` instruction.
                 #[snake_name(f64x2_trunc)]
                 F64x2Trunc {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32x4.nearest` instruction.
                 #[snake_name(f32x4_nearest)]
                 F32x4Nearest {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64x2.nearest` instruction.
                 #[snake_name(f64x2_nearest)]
                 F64x2Nearest {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
 
@@ -7570,70 +7570,70 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32x4_convert_i32x4_s)]
                 F32x4ConvertI32x4S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32x4.convert_i32x4_u` instruction.
                 #[snake_name(f32x4_convert_i32x4_u)]
                 F32x4ConvertI32x4U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64x2.convert_low_i32x4_s` instruction.
                 #[snake_name(f64x2_convert_low_i32x4_s)]
                 F64x2ConvertLowI32x4S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64x2.convert_low_i32x4_u` instruction.
                 #[snake_name(f64x2_convert_low_i32x4_u)]
                 F64x2ConvertLowI32x4U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.trunc_sat_f32x4_s` instruction.
                 #[snake_name(i32x4_trunc_sat_f32x4_s)]
                 I32x4TruncSatF32x4S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.trunc_sat_f32x4_u` instruction.
                 #[snake_name(i32x4_trunc_sat_f32x4_u)]
                 I32x4TruncSatF32x4U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.trunc_sat_f64x2_s_zero` instruction.
                 #[snake_name(i32x4_trunc_sat_f64x2_s_zero)]
                 I32x4TruncSatF64x2SZero {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.trunc_sat_f64x2_u_zero` instruction.
                 #[snake_name(i32x4_trunc_sat_f64x2_u_zero)]
                 I32x4TruncSatF64x2UZero {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32x4.demote_f64x2_zero` instruction.
                 #[snake_name(f32x4_demote_f64x2_zero)]
                 F32x4DemoteF64x2Zero {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64x2.promote_low_f32x4` instruction.
                 #[snake_name(f64x2_promote_low_f32x4)]
                 F64x2PromoteLowF32x4 {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
 
@@ -7641,7 +7641,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_narrow_i16x8_s)]
                 I8x16NarrowI16x8S {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// Regstier holding the `rhs` of the instruction.
                     rhs: Local,
@@ -7650,7 +7650,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_narrow_i16x8_u)]
                 I8x16NarrowI16x8U {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// Regstier holding the `rhs` of the instruction.
                     rhs: Local,
@@ -7659,7 +7659,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i16x8_narrow_i32x4_s)]
                 I16x8NarrowI32x4S {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// Regstier holding the `rhs` of the instruction.
                     rhs: Local,
@@ -7668,7 +7668,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i16x8_narrow_i32x4_u)]
                 I16x8NarrowI32x4U {
                     @result: Local,
-                    /// Register holding the `lhs` of the instruction.
+                    /// Local holding the `lhs` of the instruction.
                     lhs: Local,
                     /// Regstier holding the `rhs` of the instruction.
                     rhs: Local,
@@ -7678,84 +7678,84 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i16x8_extend_low_i8x16_s)]
                 I16x8ExtendLowI8x16S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i16x8.extend_high_i8x16_s` instruction.
                 #[snake_name(i16x8_extend_high_i8x16_s)]
                 I16x8ExtendHighI8x16S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i16x8.extend_low_i8x16_u` instruction.
                 #[snake_name(i16x8_extend_low_i8x16_u)]
                 I16x8ExtendLowI8x16U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i16x8.extend_high_i8x16_u` instruction.
                 #[snake_name(i16x8_extend_high_i8x16_u)]
                 I16x8ExtendHighI8x16U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.extend_low_i16x8_s` instruction.
                 #[snake_name(i32x4_extend_low_i16x8_s)]
                 I32x4ExtendLowI16x8S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.extend_high_i16x8_s` instruction.
                 #[snake_name(i32x4_extend_high_i16x8_s)]
                 I32x4ExtendHighI16x8S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.extend_low_i16x8_u` instruction.
                 #[snake_name(i32x4_extend_low_i16x8_u)]
                 I32x4ExtendLowI16x8U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32x4.extend_high_i16x8_u` instruction.
                 #[snake_name(i32x4_extend_high_i16x8_u)]
                 I32x4ExtendHighI16x8U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64x2.extend_low_i32x4_s` instruction.
                 #[snake_name(i64x2_extend_low_i32x4_s)]
                 I64x2ExtendLowI32x4S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64x2.extend_high_i32x4_s` instruction.
                 #[snake_name(i64x2_extend_high_i32x4_s)]
                 I64x2ExtendHighI32x4S {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64x2.extend_low_i32x4_u` instruction.
                 #[snake_name(i64x2_extend_low_i32x4_u)]
                 I64x2ExtendLowI32x4U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64x2.extend_high_i32x4_u` instruction.
                 #[snake_name(i64x2_extend_high_i32x4_u)]
                 I64x2ExtendHighI32x4U {
                     @result: Local,
-                    /// Register holding the `input` of the instruction.
+                    /// Local holding the `input` of the instruction.
                     input: Local,
                 },
 
@@ -7765,7 +7765,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// - Optional [`Instruction::MemoryIndex`]: encoding memory index used
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -7811,13 +7811,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx16`].
                 #[snake_name(v128_store8_lane)]
                 V128Store8Lane {
-                    /// Register storing the `ptr` of the instruction.
+                    /// Local storing the `ptr` of the instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
@@ -7829,9 +7829,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_store8_lane_offset8)]
                 V128Store8LaneOffset8 {
-                    /// Register storing the `ptr` of the instruction.
+                    /// Local storing the `ptr` of the instruction.
                     ptr: Local,
-                    /// Register storing the `value` of the instruction.
+                    /// Local storing the `value` of the instruction.
                     value: Local,
                     /// The 8-bit store `offset`.
                     offset: Offset8,
@@ -7857,13 +7857,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx8`].
                 #[snake_name(v128_store16_lane)]
                 V128Store16Lane {
-                    /// Register storing the `ptr` of the instruction.
+                    /// Local storing the `ptr` of the instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
@@ -7875,9 +7875,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_store16_lane_offset8)]
                 V128Store16LaneOffset8 {
-                    /// Register storing the `ptr` of the instruction.
+                    /// Local storing the `ptr` of the instruction.
                     ptr: Local,
-                    /// Register storing the `value` of the instruction.
+                    /// Local storing the `value` of the instruction.
                     value: Local,
                     /// The 8-bit store `offset`.
                     offset: Offset8,
@@ -7903,13 +7903,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx4`].
                 #[snake_name(v128_store32_lane)]
                 V128Store32Lane {
-                    /// Register storing the `ptr` of the instruction.
+                    /// Local storing the `ptr` of the instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
@@ -7921,9 +7921,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_store32_lane_offset8)]
                 V128Store32LaneOffset8 {
-                    /// Register storing the `ptr` of the instruction.
+                    /// Local storing the `ptr` of the instruction.
                     ptr: Local,
-                    /// Register storing the `value` of the instruction.
+                    /// Local storing the `value` of the instruction.
                     value: Local,
                     /// The 8-bit store `offset`.
                     offset: Offset8,
@@ -7949,13 +7949,13 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// - [`Instruction::RegisterAndImm32`]: encoding `value` and `offset_hi`
+                /// - [`Instruction::LocalAndImm32`]: encoding `value` and `offset_hi`
                 /// - [`Instruction::Imm16AndImm32`]: encoding `lane_index` and `memory_index` respectively
                 ///
                 /// The `lane_index` is of type [`ImmLaneIdx2`].
                 #[snake_name(v128_store64_lane)]
                 V128Store64Lane {
-                    /// Register storing the `ptr` of the instruction.
+                    /// Local storing the `ptr` of the instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit store `offset`.
                     offset_lo: Offset64Lo,
@@ -7967,9 +7967,9 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_store64_lane_offset8)]
                 V128Store64LaneOffset8 {
-                    /// Register storing the `ptr` of the instruction.
+                    /// Local storing the `ptr` of the instruction.
                     ptr: Local,
-                    /// Register storing the `value` of the instruction.
+                    /// Local storing the `value` of the instruction.
                     value: Local,
                     /// The 8-bit store `offset`.
                     offset: Offset8,
@@ -7995,7 +7995,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8026,7 +8026,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load_offset16)]
                 V128LoadOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8038,7 +8038,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8069,7 +8069,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load32_zero_offset16)]
                 V128Load32ZeroOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8081,7 +8081,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8112,7 +8112,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load64_zero_offset16)]
                 V128Load64ZeroOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8124,7 +8124,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8155,7 +8155,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load8_splat_offset16)]
                 V128Load8SplatOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8167,7 +8167,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8198,7 +8198,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load16_splat_offset16)]
                 V128Load16SplatOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8210,7 +8210,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8241,7 +8241,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load32_splat_offset16)]
                 V128Load32SplatOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8253,7 +8253,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8284,7 +8284,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load64_splat_offset16)]
                 V128Load64SplatOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8296,7 +8296,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8327,7 +8327,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load8x8_s_offset16)]
                 V128Load8x8SOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8339,7 +8339,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8370,7 +8370,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load8x8_u_offset16)]
                 V128Load8x8UOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8382,7 +8382,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8413,7 +8413,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load16x4_s_offset16)]
                 V128Load16x4SOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8425,7 +8425,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8456,7 +8456,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load16x4_u_offset16)]
                 V128Load16x4UOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8468,7 +8468,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8499,7 +8499,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load32x2_s_offset16)]
                 V128Load32x2SOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8511,7 +8511,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8542,7 +8542,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(v128_load32x2_u_offset16)]
                 V128Load32x2UOffset16 {
                     @result: Local,
-                    /// Register holding the `ptr` of the instruction.
+                    /// Local holding the `ptr` of the instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -8554,8 +8554,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Instruction::LocalAndImm32`] encoding `input` and `lane` index.
                 /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
@@ -8575,7 +8575,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `input` and `lane_index`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8592,8 +8592,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Instruction::LocalAndImm32`] encoding `input` and `lane` index.
                 /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
@@ -8613,7 +8613,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `input` and `lane_index`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8630,8 +8630,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Instruction::LocalAndImm32`] encoding `input` and `lane` index.
                 /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
@@ -8651,7 +8651,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `input` and `lane_index`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
@@ -8668,8 +8668,8 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `ptr` and `offset_hi`.
-                /// 2. [`Instruction::RegisterAndImm32`] encoding `input` and `lane` index.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `ptr` and `offset_hi`.
+                /// 2. [`Instruction::LocalAndImm32`] encoding `input` and `lane` index.
                 /// 3. Optional [`Instruction::MemoryIndex`] encoding the `memory` index used.
                 ///
                 /// # Note
@@ -8689,7 +8689,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Followed by
                 ///
-                /// 1. [`Instruction::RegisterAndImm32`] encoding `input` and `lane_index`.
+                /// 1. [`Instruction::LocalAndImm32`] encoding `input` and `lane_index`.
                 /// 2. Optional [`Instruction::MemoryIndex`] encoding the `memory_index` used.
                 ///
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.

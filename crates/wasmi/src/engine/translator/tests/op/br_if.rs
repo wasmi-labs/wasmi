@@ -835,7 +835,7 @@ fn branch_if_results_1() {
 ///
 /// # Note
 ///
-/// Copy elision is possible since the registers on top of the stack
+/// Copy elision is possible since the locals on top of the stack
 /// are the same as the expected block results when translating the Wasm `br_if`.
 /// We achieve this by using expressions as inputs such as `(i32.clz (local.get 0))`.
 #[test]
@@ -904,8 +904,8 @@ fn branch_if_results_2_avoid_copy() {
     let wasm = r"
         (module
             (func (param i32 i32 i32) (result i32)
-                (i32.clz (local.get 0)) ;; on dynamic register stack
-                (i32.ctz (local.get 1)) ;; on dynamic register stack
+                (i32.clz (local.get 0)) ;; on dynamic local stack
+                (i32.ctz (local.get 1)) ;; on dynamic local stack
                 (block (param i32 i32) (result i32 i32)
                     (br_if 0
                         (local.get 2) ;; br_if condition

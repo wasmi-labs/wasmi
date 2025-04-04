@@ -79,7 +79,7 @@ impl<const N: u16> FixedRegSpan<N> {
     pub fn new(span: RegSpan) -> Result<Self, Error> {
         let head = span.head();
         if head >= head.next_n(N) {
-            return Err(Error::RegisterOutOfBounds);
+            return Err(Error::LocalOutOfBounds);
         }
         Ok(Self { span })
     }

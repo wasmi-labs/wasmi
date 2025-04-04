@@ -31,8 +31,8 @@ impl<F: FnMut(&'_ mut Local)> VisitRegs for Visitor<F> {
 
 impl VisitInputRegisters for Instruction {
     fn visit_input_registers(&mut self, mut f: impl FnMut(&mut Local)) {
-        // Note: for copy instructions that copy register values we also need to visit
-        //       their results because preserved registers might be populating them.
+        // Note: for copy instructions that copy local values we also need to visit
+        //       their results because preserved locals might be populating them.
         match self {
             | Self::Copy { result, .. } => f(result),
             | Self::Copy2 { results, .. } => f(results.span_mut().head_mut()),

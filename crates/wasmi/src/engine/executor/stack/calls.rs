@@ -198,7 +198,7 @@ pub struct CallFrame {
     instr_ptr: InstructionPtr,
     /// Offsets of the [`CallFrame`] into the [`ValueStack`].
     offsets: StackOffsets,
-    /// Span of registers were the caller expects them in its [`CallFrame`].
+    /// Span of locals were the caller expects them in its [`CallFrame`].
     results: RegSpan,
     /// Is `true` if this [`CallFrame`] changed the currently used [`Instance`].
     ///
@@ -258,7 +258,7 @@ impl CallFrame {
     ///
     /// # Note
     ///
-    /// The registers yielded by the returned [`RegSpan`]
+    /// The locals yielded by the returned [`RegSpan`]
     /// refer to the [`CallFrame`] of the caller of this [`CallFrame`].
     pub fn results(&self) -> RegSpan {
         self.results

@@ -104,7 +104,7 @@ impl<'engine> Executor<'engine> {
             .expect("must have call frame on the call stack");
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be
-        //         valid for all register indices used by the associated function body.
+        //         valid for all local indices used by the associated function body.
         let sp = unsafe { stack.values.stack_ptr_at(frame.base_offset()) };
         let ip = frame.instr_ptr();
         Self {
@@ -1306,13 +1306,13 @@ impl<'engine> Executor<'engine> {
                 | Instr::F64Const32 { .. }
                 | Instr::BranchTableTarget { .. }
                 | Instr::BranchTableTargetNonOverlapping { .. }
-                | Instr::Register { .. }
-                | Instr::Register2 { .. }
-                | Instr::Register3 { .. }
-                | Instr::RegisterAndImm32 { .. }
+                | Instr::Local { .. }
+                | Instr::Local2 { .. }
+                | Instr::Local3 { .. }
+                | Instr::LocalAndImm32 { .. }
                 | Instr::Imm16AndImm32 { .. }
-                | Instr::RegisterSpan { .. }
-                | Instr::RegisterList { .. }
+                | Instr::LocalSpan { .. }
+                | Instr::LocalList { .. }
                 | Instr::CallIndirectParams { .. }
                 | Instr::CallIndirectParamsImm16 { .. } => self.invalid_instruction_word()?,
                 #[cfg(feature = "simd")]
@@ -2420,7 +2420,7 @@ impl Executor<'_> {
     fn frame_stack_ptr_impl(value_stack: &mut ValueStack, frame: &CallFrame) -> FrameRegisters {
         // Safety: We are using the frame's own base offset as input because it is
         //         guaranteed by the Wasm validation and translation phase to be
-        //         valid for all register indices used by the associated function body.
+        //         valid for all local indices used by the associated function body.
         unsafe { value_stack.stack_ptr_at(frame.base_offset()) }
     }
 
@@ -2620,14 +2620,14 @@ impl Executor<'_> {
         self.try_next_instr()
     }
 
-    /// Skips all [`Instruction`]s belonging to an [`Instruction::RegisterList`] encoding.
+    /// Skips all [`Instruction`]s belonging to an [`Instruction::LocalList`] encoding.
     #[inline(always)]
     fn skip_register_list(ip: InstructionPtr) -> InstructionPtr {
         let mut ip = ip;
-        while let Instruction::RegisterList { .. } = *ip.get() {
+        while let Instruction::LocalList { .. } = *ip.get() {
             ip.add(1);
         }
-        // We skip an additional `Instruction` because we know that `Instruction::RegisterList` is always followed by one of:
+        // We skip an additional `Instruction` because we know that `Instruction::LocalList` is always followed by one of:
         // - `Instruction::Register`
         // - `Instruction::Register2`
         // - `Instruction::Register3`.
@@ -2663,7 +2663,7 @@ impl Executor<'_> {
             Ok(value) => value,
             Err(instr) => unsafe {
                 unreachable_unchecked!(
-                    "expected an `Instruction::RegisterAndImm32` but found: {instr:?}"
+                    "expected an `Instruction::LocalAndImm32` but found: {instr:?}"
                 )
             },
         }

@@ -73,11 +73,11 @@ impl FuncLocalConsts {
         match self.const2idx.entry(value) {
             btree_map::Entry::Occupied(entry) => Ok(*entry.get()),
             btree_map::Entry::Vacant(entry) => {
-                let register = Local::from(self.next_idx);
+                let local = Local::from(self.next_idx);
                 self.next_idx -= 1;
-                entry.insert(register);
+                entry.insert(local);
                 self.idx2const.push(value);
-                Ok(register)
+                Ok(local)
             }
         }
     }

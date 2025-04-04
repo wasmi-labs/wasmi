@@ -708,7 +708,7 @@ impl WasmTranslator<'_> for FuncTranslator {
         if let Some(fuel_costs) = self.fuel_costs() {
             // Note: Fuel metering is enabled so we need to bump the fuel
             //       of the function enclosing Wasm `block` by an amount
-            //       that depends on the total number of registers used by
+            //       that depends on the total number of locals used by
             //       the compiled function.
             // Note: The function enclosing block fuel instruction is always
             //       the instruction at the 0th index if fuel metering is enabled.
@@ -959,7 +959,7 @@ impl FuncTranslator {
         })?;
         preserved.reverse();
         let copy_groups = preserved.chunk_by(|a, b| {
-            // Note: we group copies into groups with continuous result register indices
+            // Note: we group copies into groups with continuous result local indices
             //       because this is what allows us to fuse single `Copy` instructions into
             //       more efficient `Copy2` or `CopyManyNonOverlapping` instructions.
             //
@@ -971,7 +971,7 @@ impl FuncTranslator {
         for copy_group in copy_groups {
             let len = u16::try_from(copy_group.len()).unwrap_or_else(|error| {
                 panic!(
-                    "too many ({}) registers in copy group: {}",
+                    "too many ({}) locals in copy group: {}",
                     copy_group.len(),
                     error
                 )
@@ -1087,7 +1087,7 @@ impl FuncTranslator {
         // # Note
         //
         // There is no need to copy the top of the stack over
-        // to the `loop` result registers because a Wasm `loop`
+        // to the `loop` result locals because a Wasm `loop`
         // only has exactly one exit point right at their end.
         //
         // If Wasm validation succeeds we can simply take whatever
@@ -1327,13 +1327,13 @@ impl FuncTranslator {
     /// 1. Pop off all block parameters of the control flow block from
     ///    the stack and store them temporarily in the `buffer`.
     /// 2. For each branch parameter dynamically allocate a register.
-    ///    - Note: All dynamically allocated registers must be contiguous.
-    ///    - These registers serve as the registers and to hold the branch
+    ///    - Note: All dynamically allocated locals must be contiguous.
+    ///    - These locals serve as the locals and to hold the branch
     ///      parameters upon branching to the control flow block and are
     ///      going to be returned via [`RegSpan`].
-    /// 3. Drop all dynamically allocated branch parameter registers again.
+    /// 3. Drop all dynamically allocated branch parameter locals again.
     /// 4. Push the block parameters stored in the `buffer` back onto the stack.
-    /// 5. Return the result registers of step 2.
+    /// 5. Return the result locals of step 2.
     ///
     /// The `buffer` will be empty after this operation.
     ///
@@ -1345,7 +1345,7 @@ impl FuncTranslator {
     ///
     /// # Errors
     ///
-    /// If this procedure would allocate more registers than are available.
+    /// If this procedure would allocate more locals than are available.
     fn alloc_branch_params(
         &mut self,
         len_block_params: u16,
@@ -1356,7 +1356,7 @@ impl FuncTranslator {
         self.alloc
             .stack
             .pop_n(usize::from(len_block_params), params);
-        // Peek the branch parameter registers which are going to be returned.
+        // Peek the branch parameter locals which are going to be returned.
         let branch_params = self
             .alloc
             .stack
@@ -1367,7 +1367,7 @@ impl FuncTranslator {
         Ok(branch_params)
     }
 
-    /// Pushes a binary instruction with two register inputs `lhs` and `rhs`.
+    /// Pushes a binary instruction with two local inputs `lhs` and `rhs`.
     fn push_binary_instr(
         &mut self,
         lhs: Local,
@@ -2403,7 +2403,7 @@ impl FuncTranslator {
     /// # Note
     ///
     /// - This applies constant propagation in case `condition` is a constant value.
-    /// - If both `lhs` and `rhs` are equal registers or constant values `lhs` is forwarded.
+    /// - If both `lhs` and `rhs` are equal locals or constant values `lhs` is forwarded.
     /// - Properly chooses the correct `select` instruction encoding and optimizes for
     ///   cases with 32-bit constant values.
     fn translate_select(&mut self, type_hint: Option<ValType>) -> Result<(), Error> {
@@ -2426,7 +2426,7 @@ impl FuncTranslator {
                         self.alloc.stack.get_register_space(reg),
                         RegisterSpace::Dynamic | RegisterSpace::Preserve
                     ) {
-                        // Case: constant propagating a dynamic or preserved register might overwrite it in
+                        // Case: constant propagating a dynamic or preserved local might overwrite it in
                         //       future instruction translation steps and thus we may require a copy instruction
                         //       to prevent this from happening.
                         let result = self.alloc.stack.push_dynamic()?;
@@ -2445,12 +2445,12 @@ impl FuncTranslator {
             }
         };
         if lhs == rhs {
-            // Optimization: both `lhs` and `rhs` either are the same register or constant values and
+            // Optimization: both `lhs` and `rhs` either are the same local or constant values and
             //               thus `select` will always yield this same value irrespective of the condition.
             //
-            // TODO: we could technically look through registers representing function local constants and
+            // TODO: we could technically look through locals representing function local constants and
             //       check whether they are equal to a given constant in cases where `lhs` and `rhs` are referring
-            //       to a function local register and a constant value or vice versa.
+            //       to a function local constant and a constant value or vice versa.
             self.alloc.stack.push_provider(lhs)?;
             return Ok(());
         }
@@ -2652,7 +2652,9 @@ impl FuncTranslator {
         // Case: At this point we know that the top-most stack item is a constant value.
         //       We pop it, change its type and push it back onto the stack.
         let TypedProvider::Const(value) = self.alloc.stack.pop() else {
-            panic!("the top-most stack item was asserted to be a constant value but a register was found")
+            panic!(
+                "the top-most stack item was asserted to be a constant value but a local was found"
+            )
         };
         self.alloc.stack.push_const(value.reinterpret(ty));
         Ok(())
@@ -2670,7 +2672,9 @@ impl FuncTranslator {
         // Case: At this point we know that the top-most stack item is a constant value.
         //       We pop it, change its type and push it back onto the stack.
         let TypedProvider::Const(value) = self.alloc.stack.pop() else {
-            panic!("the top-most stack item was asserted to be a constant value but a register was found")
+            panic!(
+                "the top-most stack item was asserted to be a constant value but a local was found"
+            )
         };
         debug_assert_eq!(value.ty(), ValType::I32);
         self.alloc.stack.push_const(u64::from(u32::from(value)));
@@ -2896,20 +2900,20 @@ impl FuncTranslator {
                 ValType::I64 => match <Const32<i64>>::try_from(i64::from(immediate)) {
                     Ok(value) => Instruction::i64const32(value),
                     Err(_) => {
-                        let register = self.alloc.stack.provider2reg(&value)?;
-                        Instruction::register(register)
+                        let local = self.alloc.stack.provider2reg(&value)?;
+                        Instruction::register(local)
                     }
                 },
                 ValType::F64 => match <Const32<f64>>::try_from(f64::from(immediate)) {
                     Ok(value) => Instruction::f64const32(value),
                     Err(_) => {
-                        let register = self.alloc.stack.provider2reg(&value)?;
-                        Instruction::register(register)
+                        let local = self.alloc.stack.provider2reg(&value)?;
+                        Instruction::register(local)
                     }
                 },
                 ValType::V128 | ValType::ExternRef | ValType::FuncRef => {
-                    let register = self.alloc.stack.provider2reg(&value)?;
-                    Instruction::register(register)
+                    let local = self.alloc.stack.provider2reg(&value)?;
+                    Instruction::register(local)
                 }
             },
         };

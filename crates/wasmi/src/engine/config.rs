@@ -34,7 +34,7 @@ pub struct Config {
 pub struct FuelCosts {
     /// The base fuel costs for all instructions.
     base: u64,
-    /// The register copies that can be performed per unit of fuel.
+    /// The local copies that can be performed per unit of fuel.
     copies_per_fuel: NonZeroU64,
     /// The bytes that can be copied per unit of fuel.
     bytes_per_fuel: NonZeroU64,
@@ -70,7 +70,7 @@ impl FuelCosts {
         self.base
     }
 
-    /// Returns the number of register copies performed per unit of fuel.
+    /// Returns the number of local copies performed per unit of fuel.
     fn copies_per_fuel(&self) -> NonZeroU64 {
         self.copies_per_fuel
     }
@@ -80,7 +80,7 @@ impl FuelCosts {
         self.bytes_per_fuel
     }
 
-    /// Returns the fuel costs for `len_copies` register copies in Wasmi IR.
+    /// Returns the fuel costs for `len_copies` local copies in Wasmi IR.
     ///
     /// # Note
     ///
@@ -99,7 +99,7 @@ impl FuelCosts {
         Self::costs_per(len_copies, self.copies_per_fuel())
     }
 
-    /// Returns the fuel costs for `len_copies` register copies in Wasmi IR.
+    /// Returns the fuel costs for `len_copies` local copies in Wasmi IR.
     ///
     /// # Note
     ///

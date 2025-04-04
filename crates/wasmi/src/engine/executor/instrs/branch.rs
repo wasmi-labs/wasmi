@@ -55,7 +55,7 @@ impl Executor<'_> {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let value = match *self.ip.get() {
-            Instruction::Register { reg } => self.get_register(reg),
+            Instruction::Local { reg } => self.get_register(reg),
             Instruction::Const32 { value } => UntypedVal::from(u32::from(value)),
             Instruction::I64Const32 { value } => UntypedVal::from(i64::from(value)),
             Instruction::F64Const32 { value } => UntypedVal::from(f64::from(value)),
@@ -81,7 +81,7 @@ impl Executor<'_> {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let regs = match *self.ip.get() {
-            Instruction::Register2 { regs } => regs,
+            Instruction::Local2 { regs } => regs,
             unexpected => {
                 // Safety: Wasmi translation guarantees that `Instruction::Register2` follows.
                 unsafe {
@@ -108,7 +108,7 @@ impl Executor<'_> {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let regs = match *self.ip.get() {
-            Instruction::Register3 { regs } => regs,
+            Instruction::Local3 { regs } => regs,
             unexpected => {
                 // Safety: Wasmi translation guarantees that `Instruction::Register3` follows.
                 unsafe {
@@ -135,12 +135,12 @@ impl Executor<'_> {
         let offset = self.fetch_branch_table_offset(index, len_targets);
         self.ip.add(1);
         let values = match *self.ip.get() {
-            Instruction::RegisterSpan { span } => span,
+            Instruction::LocalSpan { span } => span,
             unexpected => {
-                // Safety: Wasmi translation guarantees that `Instruction::RegisterSpan` follows.
+                // Safety: Wasmi translation guarantees that `Instruction::LocalSpan` follows.
                 unsafe {
                     unreachable_unchecked!(
-                        "expected `Instruction::RegisterSpan` but found: {unexpected:?}"
+                        "expected `Instruction::LocalSpan` but found: {unexpected:?}"
                     )
                 }
             }

@@ -765,11 +765,11 @@ pub struct CompiledFuncEntity {
     instrs: Pin<Box<[Instruction]>>,
     /// The constant values local to the [`EngineFunc`].
     consts: Pin<Box<[UntypedVal]>>,
-    /// The number of registers used by the [`EngineFunc`] in total.
+    /// The number of locals used by the [`EngineFunc`] in total.
     ///
     /// # Note
     ///
-    /// This includes registers to store the function local constant values,
+    /// This includes locals to store the function local constant values,
     /// function parameters, function locals and dynamically used registers.
     len_registers: u16,
 }
@@ -816,7 +816,7 @@ pub struct CompiledFuncRef<'a> {
     instrs: Pin<&'a [Instruction]>,
     /// The constant values local to the [`EngineFunc`].
     consts: Pin<&'a [UntypedVal]>,
-    /// The number of registers used by the [`EngineFunc`] in total.
+    /// The number of locals used by the [`EngineFunc`] in total.
     len_registers: u16,
 }
 
@@ -838,7 +838,7 @@ impl<'a> CompiledFuncRef<'a> {
         self.instrs.get_ref()
     }
 
-    /// Returns the number of registers used by the [`EngineFunc`].
+    /// Returns the number of locals used by the [`EngineFunc`].
     #[inline]
     pub fn len_registers(&self) -> u16 {
         self.len_registers
