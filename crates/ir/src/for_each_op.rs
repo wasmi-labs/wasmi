@@ -1511,7 +1511,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(load32_offset16)]
                 Load32Offset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1563,7 +1563,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(load64_offset16)]
                 Load64Offset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1611,7 +1611,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_load8_s_offset16)]
                 I32Load8sOffset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1659,7 +1659,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_load8_u_offset16)]
                 I32Load8uOffset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1707,7 +1707,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_load16_s_offset16)]
                 I32Load16sOffset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1755,7 +1755,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_load16_u_offset16)]
                 I32Load16uOffset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1803,7 +1803,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load8_s_offset16)]
                 I64Load8sOffset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1851,7 +1851,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load8_u_offset16)]
                 I64Load8uOffset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1899,7 +1899,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load16_s_offset16)]
                 I64Load16sOffset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1947,7 +1947,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load16_u_offset16)]
                 I64Load16uOffset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -1995,7 +1995,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load32_s_offset16)]
                 I64Load32sOffset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -2043,7 +2043,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_load32_u_offset16)]
                 I64Load32uOffset16 {
                     @result: Local,
-                    /// The register storing the pointer of the `load` instruction.
+                    /// The local storing the pointer of the `load` instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
@@ -2065,7 +2065,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(store32)]
                 Store32 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2078,9 +2078,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(store32_offset16)]
                 Store32Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Local,
@@ -2120,7 +2120,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(store64)]
                 Store64 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2133,9 +2133,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(store64_offset16)]
                 Store64Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Local,
@@ -2175,7 +2175,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store_imm16)]
                 I32StoreImm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2188,9 +2188,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store_offset16_imm16)]
                 I32StoreOffset16Imm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Const16<i32>,
@@ -2226,7 +2226,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store8)]
                 I32Store8 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2247,7 +2247,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store8_imm)]
                 I32Store8Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2260,9 +2260,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store8_offset16)]
                 I32Store8Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Local,
@@ -2275,9 +2275,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store8_offset16_imm)]
                 I32Store8Offset16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: i8,
@@ -2331,7 +2331,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store16)]
                 I32Store16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2352,7 +2352,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i32_store16_imm)]
                 I32Store16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2365,9 +2365,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store16_offset16)]
                 I32Store16Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Local,
@@ -2380,9 +2380,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i32_store16_offset16_imm)]
                 I32Store16Offset16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: i16,
@@ -2440,7 +2440,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store_imm16)]
                 I64StoreImm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2453,9 +2453,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store_offset16_imm16)]
                 I64StoreOffset16Imm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Const16<i64>,
@@ -2491,7 +2491,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store8)]
                 I64Store8 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2512,7 +2512,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store8_imm)]
                 I64Store8Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2525,9 +2525,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store8_offset16)]
                 I64Store8Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Local,
@@ -2540,9 +2540,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store8_offset16_imm)]
                 I64Store8Offset16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: i8,
@@ -2596,7 +2596,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store16)]
                 I64Store16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2617,7 +2617,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store16_imm)]
                 I64Store16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2630,9 +2630,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store16_offset16)]
                 I64Store16Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Local,
@@ -2645,9 +2645,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store16_offset16_imm)]
                 I64Store16Offset16Imm {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: i16,
@@ -2701,7 +2701,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store32)]
                 I64Store32 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2722,7 +2722,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(i64_store32_imm16)]
                 I64Store32Imm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load offset.
                     offset_lo: Offset64Lo,
@@ -2735,9 +2735,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store32_offset16)]
                 I64Store32Offset16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Local,
@@ -2750,9 +2750,9 @@ macro_rules! for_each_op_grouped {
                 /// - Operates on the default Wasm memory instance.
                 #[snake_name(i64_store32_offset16_imm16)]
                 I64Store32Offset16Imm16 {
-                    /// The register storing the pointer of the `store` instruction.
+                    /// The local storing the pointer of the `store` instruction.
                     ptr: Local,
-                    /// The register storing the pointer offset of the `store` instruction.
+                    /// The local storing the pointer offset of the `store` instruction.
                     offset: Offset16,
                     /// The value to be stored.
                     value: Const16<i32>,
@@ -4737,7 +4737,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(table_get)]
                 TableGet {
                     @result: Local,
-                    /// The register storing the index of the table element to get.
+                    /// The local storing the index of the table element to get.
                     index: Local,
                 },
                 /// Variant of [`Instruction::TableGet`] with constant `index` value.
@@ -6116,99 +6116,99 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_add)]
                 I8x16Add {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.add` instruction.
                 #[snake_name(i16x8_add)]
                 I16x8Add {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.add` instruction.
                 #[snake_name(i32x4_add)]
                 I32x4Add {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.add` instruction.
                 #[snake_name(i64x2_add)]
                 I64x2Add {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.sub` instruction.
                 #[snake_name(i8x16_sub)]
                 I8x16Sub {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.sub` instruction.
                 #[snake_name(i16x8_sub)]
                 I16x8Sub {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.sub` instruction.
                 #[snake_name(i32x4_sub)]
                 I32x4Sub {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.sub` instruction.
                 #[snake_name(i64x2_sub)]
                 I64x2Sub {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i16x8.mul` instruction.
                 #[snake_name(i16x8_mul)]
                 I16x8Mul {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.mul` instruction.
                 #[snake_name(i32x4_mul)]
                 I32x4Mul {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i64x2.mul` instruction.
                 #[snake_name(i64x2_mul)]
                 I64x2Mul {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
 
@@ -6216,18 +6216,18 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32x4_dot_i16x8_s)]
                 I32x4DotI16x8S {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.relaxed_dot_i8x16_i7x8_s` instruction.
                 #[snake_name(i16x8_relaxed_dot_i8x16_i7x16_s)]
                 I16x8RelaxedDotI8x16I7x16S {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i32x4.relaxed_dot_i8x16_i7x16_add_s` instruction.
@@ -6238,9 +6238,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32x4_relaxed_dot_i8x16_i7x16_add_s)]
                 I32x4RelaxedDotI8x16I7x16AddS {
                     @result: Local,
-                    /// The register storing the `lhs` of the instruction.
+                    /// The local storing the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register storing the `rhs` of the instruction.
+                    /// The local storing the `rhs` of the instruction.
                     rhs: Local,
                 },
 
@@ -6252,9 +6252,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32x4_relaxed_madd)]
                 F32x4RelaxedMadd {
                     @result: Local,
-                    /// The register storing the `a` of the instruction.
+                    /// The local storing the `a` of the instruction.
                     a: Local,
-                    /// The register storing the `b` of the instruction.
+                    /// The local storing the `b` of the instruction.
                     b: Local,
                 },
                 /// Wasm `f32x4.relaxed_nmadd` instruction.
@@ -6265,9 +6265,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32x4_relaxed_nmadd)]
                 F32x4RelaxedNmadd {
                     @result: Local,
-                    /// The register storing the `a` of the instruction.
+                    /// The local storing the `a` of the instruction.
                     a: Local,
-                    /// The register storing the `b` of the instruction.
+                    /// The local storing the `b` of the instruction.
                     b: Local,
                 },
                 /// Wasm `f64x2.relaxed_madd` instruction.
@@ -6278,9 +6278,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f64x2_relaxed_madd)]
                 F64x2RelaxedMadd {
                     @result: Local,
-                    /// The register storing the `a` of the instruction.
+                    /// The local storing the `a` of the instruction.
                     a: Local,
-                    /// The register storing the `b` of the instruction.
+                    /// The local storing the `b` of the instruction.
                     b: Local,
                 },
                 /// Wasm `f64x2.relaxed_nmadd` instruction.
@@ -6291,9 +6291,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f64x2_relaxed_nmadd)]
                 F64x2RelaxedNmadd {
                     @result: Local,
-                    /// The register storing the `a` of the instruction.
+                    /// The local storing the `a` of the instruction.
                     a: Local,
-                    /// The register storing the `b` of the instruction.
+                    /// The local storing the `b` of the instruction.
                     b: Local,
                 },
 
@@ -7771,7 +7771,7 @@ macro_rules! for_each_op_grouped {
                 /// If [`Instruction::MemoryIndex`] is missing the default memory is used.
                 #[snake_name(v128_store)]
                 V128Store {
-                    /// The register storing the `pointer` of the store instruction.
+                    /// The local storing the `pointer` of the store instruction.
                     ptr: Local,
                     /// The lower 32-bit of the 64-bit load `offset`.
                     offset_lo: Offset64Lo,
@@ -7783,11 +7783,11 @@ macro_rules! for_each_op_grouped {
                 /// Operates on the default Wasm memory instance.
                 #[snake_name(v128_store_offset16)]
                 V128StoreOffset16 {
-                    /// The register storing the `pointer` of the store instruction.
+                    /// The local storing the `pointer` of the store instruction.
                     ptr: Local,
                     /// The 16-bit encoded offset of the `load` instruction.
                     offset: Offset16,
-                    /// The register storing the `value` of the store instruction.
+                    /// The local storing the `value` of the store instruction.
                     value: Local,
                 },
                 /// Variant of [`Instruction::V128Store`] with 32-bit immediate address.
