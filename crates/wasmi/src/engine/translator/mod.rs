@@ -1970,11 +1970,15 @@ impl FuncTranslator {
     }
 
     /// Translates a fallible unary Wasm instruction to Wasmi bytecode.
-    fn translate_unary_fallible(
+    fn translate_unary_fallible<T, R>(
         &mut self,
         make_instr: fn(result: Reg, input: Reg) -> Instruction,
-        consteval: fn(input: TypedVal) -> Result<TypedVal, TrapCode>,
-    ) -> Result<(), Error> {
+        consteval: fn(input: T) -> Result<R, TrapCode>,
+    ) -> Result<(), Error>
+    where
+        T: From<TypedVal>,
+        R: Into<TypedVal>,
+    {
         bail_unreachable!(self);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
@@ -1982,7 +1986,7 @@ impl FuncTranslator {
                 self.push_fueled_instr(make_instr(result, input), FuelCosts::base)?;
                 Ok(())
             }
-            TypedProvider::Const(input) => match consteval(input) {
+            TypedProvider::Const(input) => match consteval(input.into()) {
                 Ok(result) => {
                     self.alloc.stack.push_const(result);
                     Ok(())

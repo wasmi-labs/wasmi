@@ -1,4 +1,4 @@
-use crate::{wasm, TrapCode, UntypedVal, ValType, F32, F64, V128};
+use crate::{wasm, UntypedVal, ValType, F32, F64, V128};
 
 /// Types that are associated to a static Wasm type.
 pub trait Typed {
@@ -215,16 +215,5 @@ impl TypedVal {
         fn i64_shr_u(i64, i64) -> i64;
         fn i64_rotl(i64, i64) -> i64;
         fn i64_rotr(i64, i64) -> i64;
-
-        // Conversions
-
-        #[fallible] fn i32_trunc_f32_s(f32) -> Result<i32, TrapCode>;
-        #[fallible] fn i32_trunc_f32_u(f32) -> Result<i32, TrapCode>;
-        #[fallible] fn i32_trunc_f64_s(f64) -> Result<i32, TrapCode>;
-        #[fallible] fn i32_trunc_f64_u(f64) -> Result<i32, TrapCode>;
-        #[fallible] fn i64_trunc_f32_s(f32) -> Result<i64, TrapCode>;
-        #[fallible] fn i64_trunc_f32_u(f32) -> Result<i64, TrapCode>;
-        #[fallible] fn i64_trunc_f64_s(f64) -> Result<i64, TrapCode>;
-        #[fallible] fn i64_trunc_f64_u(f64) -> Result<i64, TrapCode>;
     }
 }
