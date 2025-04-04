@@ -223,12 +223,6 @@ impl TypedVal {
 
         // Conversions
 
-        fn i32_wrap_i64(i64) -> i32;
-        fn i64_extend_i32_s(i32) -> i64;
-
-        fn f32_demote_f64(f64) -> f32;
-        fn f64_promote_f32(f32) -> f64;
-
         #[fallible] fn i32_trunc_f32_s(f32) -> Result<i32, TrapCode>;
         #[fallible] fn i32_trunc_f32_u(f32) -> Result<i32, TrapCode>;
         #[fallible] fn i32_trunc_f64_s(f64) -> Result<i32, TrapCode>;

@@ -2878,7 +2878,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_wrap_i64(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i32_wrap_i64, TypedVal::i32_wrap_i64)
+        self.translate_unary::<i64, i32>(Instruction::i32_wrap_i64, wasm::i32_wrap_i64)
     }
 
     fn visit_i32_trunc_f32_s(&mut self) -> Self::Output {
@@ -2898,7 +2898,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_extend_i32_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_extend32_s, TypedVal::i64_extend_i32_s)
+        self.translate_unary::<i32, i64>(Instruction::i64_extend32_s, wasm::i64_extend_i32_s)
     }
 
     fn visit_i64_extend_i32_u(&mut self) -> Self::Output {
@@ -2938,7 +2938,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_demote_f64(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f32_demote_f64, TypedVal::f32_demote_f64)
+        self.translate_unary::<f64, f32>(Instruction::f32_demote_f64, wasm::f32_demote_f64)
     }
 
     fn visit_f64_convert_i32_s(&mut self) -> Self::Output {
@@ -2958,7 +2958,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_promote_f32(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::f64_promote_f32, TypedVal::f64_promote_f32)
+        self.translate_unary::<f32, f64>(Instruction::f64_promote_f32, wasm::f64_promote_f32)
     }
 
     fn visit_i32_reinterpret_f32(&mut self) -> Self::Output {
