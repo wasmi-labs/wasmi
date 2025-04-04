@@ -1,5 +1,5 @@
 use super::{LocalRefs, RegisterAlloc, TypedVal};
-use crate::{engine::translator::PreservedLocal, ir::Reg, Error};
+use crate::{engine::translator::PreservedLocal, ir::Local, Error};
 use alloc::vec::Vec;
 use arrayvec::ArrayVec;
 
@@ -8,17 +8,17 @@ use crate::core::UntypedVal;
 
 /// Tagged providers are inputs to Wasmi bytecode instructions.
 ///
-/// Either a [`Reg`] or a constant [`UntypedVal`].
+/// Either a [`Local`] or a constant [`UntypedVal`].
 #[derive(Debug, Copy, Clone)]
 pub enum TaggedProvider {
     /// A register referring to a function local constant value.
-    ConstLocal(Reg),
+    ConstLocal(Local),
     /// A register referring to a function parameter or local variable.
-    Local(Reg),
+    Local(Local),
     /// A register referring to a dynamically allocated register.
-    Dynamic(Reg),
+    Dynamic(Local),
     /// A register referring to a preservation allocated register.
-    Preserved(Reg),
+    Preserved(Local),
     /// An untyped constant value.
     ConstValue(TypedVal),
 }
@@ -85,19 +85,19 @@ impl ProviderStack {
     /// Preserves `local.get` on the [`ProviderStack`] by shifting to the preservation space.
     ///
     /// In case there are `local.get n` with `n == preserve_index` on the [`ProviderStack`]
-    /// there is a [`Reg`] on the preservation space allocated for them. The [`Reg`]
+    /// there is a [`Local`] on the preservation space allocated for them. The [`Local`]
     /// allocated this way is returned. Otherwise `None` is returned.
     pub fn preserve_locals(
         &mut self,
         preserve_index: u32,
         reg_alloc: &mut RegisterAlloc,
-    ) -> Result<Option<Reg>, Error> {
+    ) -> Result<Option<Local>, Error> {
         if self.len_locals == 0 {
             return Ok(None);
         }
         self.sync_local_refs();
         let local = i16::try_from(preserve_index)
-            .map(Reg::from)
+            .map(Local::from)
             .unwrap_or_else(|_| {
                 panic!("encountered invalid local register index: {preserve_index}")
             });
@@ -130,7 +130,7 @@ impl ProviderStack {
         }
     }
 
-    /// Preserves the `local` [`Reg`] on the provider stack in-place.
+    /// Preserves the `local` [`Local`] on the provider stack in-place.
     ///
     /// # Note
     ///
@@ -140,9 +140,9 @@ impl ProviderStack {
     /// - Therefore we only use it behind a safety guard to remove the attack surface.
     fn preserve_locals_inplace(
         &mut self,
-        local: Reg,
+        local: Local,
         reg_alloc: &mut RegisterAlloc,
-    ) -> Result<Option<Reg>, Error> {
+    ) -> Result<Option<Local>, Error> {
         debug_assert!(!self.use_locals);
         let mut preserved = None;
         for provider in &mut self.providers {
@@ -227,7 +227,7 @@ impl ProviderStack {
         Ok(())
     }
 
-    /// Preserves the `local` [`Reg`] on the provider stack out-of-place.
+    /// Preserves the `local` [`Local`] on the provider stack out-of-place.
     ///
     /// # Note
     ///
@@ -237,9 +237,9 @@ impl ProviderStack {
     /// - Since this is slower we only use it when necessary.
     fn preserve_locals_extern(
         &mut self,
-        local: Reg,
+        local: Local,
         reg_alloc: &mut RegisterAlloc,
-    ) -> Result<Option<Reg>, Error> {
+    ) -> Result<Option<Local>, Error> {
         debug_assert!(self.use_locals);
         let mut preserved = None;
         self.locals.drain_at(local, |provider_index| {
@@ -333,26 +333,26 @@ impl ProviderStack {
         }
     }
 
-    /// Pushes a [`Reg`] to the [`ProviderStack`] referring to a function parameter or local variable.
-    pub fn push_local(&mut self, reg: Reg) {
+    /// Pushes a [`Local`] to the [`ProviderStack`] referring to a function parameter or local variable.
+    pub fn push_local(&mut self, reg: Local) {
         debug_assert!(!reg.is_const());
         self.push(TaggedProvider::Local(reg));
     }
 
-    /// Pushes a dynamically allocated [`Reg`] to the [`ProviderStack`].
-    pub fn push_dynamic(&mut self, reg: Reg) {
+    /// Pushes a dynamically allocated [`Local`] to the [`ProviderStack`].
+    pub fn push_dynamic(&mut self, reg: Local) {
         debug_assert!(!reg.is_const());
         self.push(TaggedProvider::Dynamic(reg));
     }
 
-    /// Pushes a preservation allocated [`Reg`] to the [`ProviderStack`].
-    pub fn push_preserved(&mut self, reg: Reg) {
+    /// Pushes a preservation allocated [`Local`] to the [`ProviderStack`].
+    pub fn push_preserved(&mut self, reg: Local) {
         debug_assert!(!reg.is_const());
         self.push(TaggedProvider::Preserved(reg));
     }
 
-    /// Pushes a [`Reg`] to the [`ProviderStack`] referring to a function parameter or local variable.
-    pub fn push_const_local(&mut self, reg: Reg) {
+    /// Pushes a [`Local`] to the [`ProviderStack`] referring to a function parameter or local variable.
+    pub fn push_const_local(&mut self, reg: Local) {
         debug_assert!(reg.is_const());
         self.push(TaggedProvider::ConstLocal(reg));
     }

@@ -16,14 +16,14 @@ use crate::{
         translator::{Provider, UntypedProvider},
         TranslationError,
     },
-    ir::{Reg, RegSpan},
+    ir::{Local, RegSpan},
     Error,
 };
 use alloc::vec::Vec;
 
 /// Typed inputs to Wasmi bytecode instructions.
 ///
-/// Either a [`Reg`] or a constant [`UntypedVal`].
+/// Either a [`Local`] or a constant [`UntypedVal`].
 ///
 /// # Note
 ///
@@ -41,7 +41,7 @@ impl TypedProvider {
     }
 
     /// Creates a new [`TypedProvider::Register`].
-    pub fn register(register: impl Into<Reg>) -> Self {
+    pub fn register(register: impl Into<Local>) -> Self {
         Self::Register(register.into())
     }
 }
@@ -85,9 +85,9 @@ impl ValueStack {
     /// Preserves `local.get` on the [`ProviderStack`] by shifting to the preservation space.
     ///
     /// In case there are `local.get n` with `n == preserve_index` on the [`ProviderStack`]
-    /// there is a [`Reg`] on the storage space allocated for them. The [`Reg`]
+    /// there is a [`Local`] on the storage space allocated for them. The [`Local`]
     /// allocated this way is returned. Otherwise `None` is returned.
-    pub fn preserve_locals(&mut self, preserve_index: u32) -> Result<Option<Reg>, Error> {
+    pub fn preserve_locals(&mut self, preserve_index: u32) -> Result<Option<Local>, Error> {
         self.providers
             .preserve_locals(preserve_index, &mut self.reg_alloc)
     }
@@ -150,22 +150,22 @@ impl ValueStack {
         self.reg_alloc.finish_register_locals()
     }
 
-    /// Allocates a new function local constant value and returns its [`Reg`].
+    /// Allocates a new function local constant value and returns its [`Local`].
     ///
     /// # Note
     ///
-    /// Constant values allocated this way are deduplicated and return shared [`Reg`].
-    pub fn alloc_const<T>(&mut self, value: T) -> Result<Reg, Error>
+    /// Constant values allocated this way are deduplicated and return shared [`Local`].
+    pub fn alloc_const<T>(&mut self, value: T) -> Result<Local, Error>
     where
         T: Into<UntypedVal>,
     {
         self.consts.alloc(value.into())
     }
 
-    /// Converts a [`TypedProvider`] into a [`Reg`].
+    /// Converts a [`TypedProvider`] into a [`Local`].
     ///
     /// This allocates constant values for [`TypedProvider::Const`].
-    pub fn provider2reg(&mut self, provider: &TypedProvider) -> Result<Reg, Error> {
+    pub fn provider2reg(&mut self, provider: &TypedProvider) -> Result<Local, Error> {
         match provider {
             Provider::Register(register) => Ok(*register),
             Provider::Const(value) => self.alloc_const(*value),
@@ -178,7 +178,7 @@ impl ValueStack {
     ///
     /// Upon calling a function all of its function local constant values are
     /// inserted into the current execution call frame in reversed allocation order
-    /// and accessed via negative [`Reg`] index where the 0 index is referring
+    /// and accessed via negative [`Local`] index where the 0 index is referring
     /// to the first function local and the -1 index is referring to the first
     /// allocated function local constant value.
     pub fn func_local_consts(&self) -> FuncLocalConstsIter {
@@ -206,12 +206,12 @@ impl ValueStack {
         self.providers.push_const_value(value)
     }
 
-    /// Pushes the given [`Reg`] to the [`ValueStack`].
+    /// Pushes the given [`Local`] to the [`ValueStack`].
     ///
     /// # Errors
     ///
     /// If too many registers have been registered.
-    pub fn push_register(&mut self, reg: Reg) -> Result<(), Error> {
+    pub fn push_register(&mut self, reg: Local) -> Result<(), Error> {
         match self.reg_alloc.register_space(reg) {
             RegisterSpace::Dynamic => {
                 self.reg_alloc.push_dynamic()?;
@@ -236,27 +236,27 @@ impl ValueStack {
         Ok(())
     }
 
-    /// Pushes a [`Reg`] to the [`ValueStack`] referring to a function parameter or local variable.
+    /// Pushes a [`Local`] to the [`ValueStack`] referring to a function parameter or local variable.
     ///
     /// # Errors
     ///
     /// If too many registers have been registered.
-    pub fn push_local(&mut self, local_index: u32) -> Result<Reg, Error> {
+    pub fn push_local(&mut self, local_index: u32) -> Result<Local, Error> {
         let reg = i16::try_from(local_index)
             .ok()
-            .map(Reg::from)
+            .map(Local::from)
             .filter(|reg| self.reg_alloc.is_local(*reg))
             .ok_or_else(|| Error::from(TranslationError::RegisterOutOfBounds))?;
         self.providers.push_local(reg);
         Ok(reg)
     }
 
-    /// Pushes a dynamically allocated [`Reg`] to the [`ValueStack`].
+    /// Pushes a dynamically allocated [`Local`] to the [`ValueStack`].
     ///
     /// # Errors
     ///
     /// If too many registers have been registered.
-    pub fn push_dynamic(&mut self) -> Result<Reg, Error> {
+    pub fn push_dynamic(&mut self) -> Result<Local, Error> {
         let reg = self.reg_alloc.push_dynamic()?;
         self.providers.push_dynamic(reg);
         Ok(reg)
@@ -352,7 +352,7 @@ impl ValueStack {
     ///
     /// # Note
     ///
-    /// - This procedure pushes dynamic [`Reg`] onto the [`ValueStack`].
+    /// - This procedure pushes dynamic [`Local`] onto the [`ValueStack`].
     /// - This is primarily used to allocate branch parameters for control
     ///   flow frames such as Wasm `block`, `loop` and `if` as well as for
     ///   instructions that may return multiple values such as `call`.
@@ -390,33 +390,33 @@ impl ValueStack {
         self.reg_alloc.finalize_alloc()
     }
 
-    /// Returns the defragmented [`Reg`].
-    pub fn defrag_register(&mut self, register: Reg) -> Reg {
+    /// Returns the defragmented [`Local`].
+    pub fn defrag_register(&mut self, register: Local) -> Local {
         self.reg_alloc.defrag_register(register)
     }
 
-    /// Returns the [`RegisterSpace`] for the given [`Reg`].
-    pub fn get_register_space(&self, register: Reg) -> RegisterSpace {
+    /// Returns the [`RegisterSpace`] for the given [`Local`].
+    pub fn get_register_space(&self, register: Local) -> RegisterSpace {
         self.reg_alloc.register_space(register)
     }
 
-    /// Increase preservation [`Reg`] usage.
+    /// Increase preservation [`Local`] usage.
     ///
     /// # Note
     ///
     /// - This is mainly used to extend the lifetime of `else` providers on the stack.
-    /// - This does nothing if `register` is not a preservation [`Reg`].
-    pub fn inc_register_usage(&mut self, register: Reg) {
+    /// - This does nothing if `register` is not a preservation [`Local`].
+    pub fn inc_register_usage(&mut self, register: Local) {
         self.reg_alloc.inc_register_usage(register)
     }
 
-    /// Decrease preservation [`Reg`] usage.
+    /// Decrease preservation [`Local`] usage.
     ///
     /// # Note
     ///
     /// - This is mainly used to shorten the lifetime of `else` providers on the stack.
-    /// - This does nothing if `register` is not a preservation [`Reg`].
-    pub fn dec_register_usage(&mut self, register: Reg) {
+    /// - This does nothing if `register` is not a preservation [`Local`].
+    pub fn dec_register_usage(&mut self, register: Local) {
         self.reg_alloc.dec_register_usage(register)
     }
 }

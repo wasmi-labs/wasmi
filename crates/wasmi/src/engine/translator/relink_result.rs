@@ -1,15 +1,15 @@
 use crate::{
     engine::EngineFunc,
-    ir::{index, Instruction, Reg, RegSpan, VisitRegs},
+    ir::{index, Instruction, Local, RegSpan, VisitRegs},
     module::ModuleHeader,
     Engine,
     Error,
     FuncType,
 };
 
-/// Extension trait for [`Instruction`] to conditionally relink result [`Reg`]s.
+/// Extension trait for [`Instruction`] to conditionally relink result [`Local`]s.
 pub trait RelinkResult {
-    /// Relinks the result [`Reg`] of `self` to `new_result` if its current `result` [`Reg`] equals `old_result`.
+    /// Relinks the result [`Local`] of `self` to `new_result` if its current `result` [`Local`] equals `old_result`.
     ///
     /// # Note (Return Value)
     ///
@@ -19,17 +19,17 @@ pub trait RelinkResult {
     fn relink_result(
         &mut self,
         module: &ModuleHeader,
-        new_result: Reg,
-        old_result: Reg,
+        new_result: Local,
+        old_result: Local,
     ) -> Result<bool, Error>;
 }
 
 /// Visitor to implement [`RelinkResult`] for [`Instruction`].
 struct Visitor {
-    /// The new [`Reg`] that replaces the `old_result` [`Reg`].
-    new_result: Reg,
-    /// The old result [`Reg`].
-    old_result: Reg,
+    /// The new [`Local`] that replaces the `old_result` [`Local`].
+    new_result: Local,
+    /// The old result [`Local`].
+    old_result: Local,
     /// The return value of the visitation.
     ///
     /// For more information see docs of [`RelinkResult`].
@@ -38,7 +38,7 @@ struct Visitor {
 
 impl Visitor {
     /// Creates a new [`Visitor`].
-    fn new(new_result: Reg, old_result: Reg) -> Self {
+    fn new(new_result: Local, old_result: Local) -> Self {
         Self {
             new_result,
             old_result,
@@ -49,7 +49,7 @@ impl Visitor {
 
 impl VisitRegs for Visitor {
     #[inline]
-    fn visit_result_reg(&mut self, reg: &mut Reg) {
+    fn visit_result_reg(&mut self, reg: &mut Local) {
         if self.replaced.is_err() {
             return;
         }
@@ -60,7 +60,7 @@ impl VisitRegs for Visitor {
     fn visit_result_regs(&mut self, _reg: &mut RegSpan, _len: Option<u16>) {}
 
     #[inline(always)]
-    fn visit_input_reg(&mut self, _reg: &mut Reg) {}
+    fn visit_input_reg(&mut self, _reg: &mut Local) {}
 
     #[inline(always)]
     fn visit_input_regs(&mut self, _regs: &mut RegSpan, _len: Option<u16>) {}
@@ -70,8 +70,8 @@ impl RelinkResult for Instruction {
     fn relink_result(
         &mut self,
         module: &ModuleHeader,
-        new_result: Reg,
-        old_result: Reg,
+        new_result: Local,
+        old_result: Local,
     ) -> Result<bool, Error> {
         // Note: for call instructions we have to infer with special handling if they return
         //       a single value which allows us to relink the single result register.
@@ -104,7 +104,7 @@ impl RelinkResult for Instruction {
     }
 }
 
-fn relink_simple(result: &mut Reg, new_result: Reg, old_result: Reg) -> Result<bool, Error> {
+fn relink_simple(result: &mut Local, new_result: Local, old_result: Local) -> Result<bool, Error> {
     if *result != old_result {
         // Note: This is a safeguard to prevent miscompilations.
         return Ok(false);
@@ -127,8 +127,8 @@ fn relink_call_internal(
     results: &mut RegSpan,
     func: EngineFunc,
     module: &ModuleHeader,
-    new_result: Reg,
-    old_result: Reg,
+    new_result: Local,
+    old_result: Local,
 ) -> Result<bool, Error> {
     let Some(module_func) = module.get_func_index(func) else {
         panic!("missing module func for compiled func: {func:?}")
@@ -146,8 +146,8 @@ fn relink_call_imported(
     results: &mut RegSpan,
     func: index::Func,
     module: &ModuleHeader,
-    new_result: Reg,
-    old_result: Reg,
+    new_result: Local,
+    old_result: Local,
 ) -> Result<bool, Error> {
     let engine = get_engine(module);
     let func_idx = u32::from(func).into();
@@ -163,8 +163,8 @@ fn relink_call_indirect(
     results: &mut RegSpan,
     func_type: index::FuncType,
     module: &ModuleHeader,
-    new_result: Reg,
-    old_result: Reg,
+    new_result: Local,
+    old_result: Local,
 ) -> Result<bool, Error> {
     let engine = get_engine(module);
     let func_type_idx = u32::from(func_type).into();

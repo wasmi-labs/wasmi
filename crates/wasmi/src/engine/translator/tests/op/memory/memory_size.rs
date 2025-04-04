@@ -13,8 +13,8 @@ fn reg() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::memory_size(Reg::from(0), Memory::from(0)),
-            Instruction::return_reg(Reg::from(0)),
+            Instruction::memory_size(Local::from(0), Memory::from(0)),
+            Instruction::return_reg(Local::from(0)),
         ])
         .run();
 }

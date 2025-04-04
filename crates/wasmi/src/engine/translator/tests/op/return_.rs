@@ -27,7 +27,7 @@ fn return_1() {
             )
         )";
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg(Reg::from(0))])
+        .expect_func_instrs([Instruction::return_reg(Local::from(0))])
         .run()
 }
 
@@ -52,7 +52,8 @@ fn return_1_imm() {
         );
         TranslationTest::new(&wasm)
             .expect_func(
-                ExpectedFunc::new([Instruction::return_reg(Reg::from(-1))]).consts([value.into()]),
+                ExpectedFunc::new([Instruction::return_reg(Local::from(-1))])
+                    .consts([value.into()]),
             )
             .run()
     }

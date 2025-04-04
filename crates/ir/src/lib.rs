@@ -23,7 +23,7 @@ use wasmi_core as core;
 pub use self::{
     error::Error,
     immeditate::{AnyConst16, AnyConst32, Const16, Const32},
-    index::Reg,
+    index::Local,
     primitive::{
         Address,
         Address32,

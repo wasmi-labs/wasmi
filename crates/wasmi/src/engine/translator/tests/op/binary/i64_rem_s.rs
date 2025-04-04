@@ -8,8 +8,8 @@ const WASM_OP: WasmOp = WasmOp::binary(WasmType::I64, "rem_s");
 fn same_reg() {
     // Note: we cannot optimize for `x % x` since `x == 0` has to trap.
     let expected = [
-        Instruction::i64_rem_s(Reg::from(1), Reg::from(0), Reg::from(0)),
-        Instruction::return_reg(Reg::from(1)),
+        Instruction::i64_rem_s(Local::from(1), Local::from(0), Local::from(0)),
+        Instruction::return_reg(Local::from(1)),
     ];
     test_binary_same_reg(WASM_OP, expected)
 }

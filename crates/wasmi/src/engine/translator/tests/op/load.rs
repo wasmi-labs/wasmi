@@ -10,7 +10,7 @@ fn test_load(
     wasm_op: WasmOp,
     index_ty: IndexType,
     memory_index: MemIdx,
-    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(result: Local, offset_lo: Offset64Lo) -> Instruction,
     offset: impl Into<u64>,
 ) {
     let offset = offset.into();
@@ -35,10 +35,10 @@ fn test_load(
     let (offset_hi, offset_lo) = Offset64::split(offset);
     TranslationTest::new(&wasm)
         .expect_func_instrs(iter_filter_opts![
-            make_instr(Reg::from(1), offset_lo),
-            Instruction::register_and_offset_hi(Reg::from(0), offset_hi),
+            make_instr(Local::from(1), offset_lo),
+            Instruction::register_and_offset_hi(Local::from(0), offset_hi),
             memory_index.instr(),
-            Instruction::return_reg(Reg::from(1)),
+            Instruction::return_reg(Local::from(1)),
         ])
         .run();
 }
@@ -47,7 +47,7 @@ fn test_load_offset16(
     wasm_op: WasmOp,
     index_ty: IndexType,
     offset: u16,
-    make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Offset16) -> Instruction,
+    make_instr_offset16: fn(result: Local, ptr: Local, offset: Offset16) -> Instruction,
 ) {
     let result_ty = wasm_op.result_ty();
     let index_ty = index_ty.wat();
@@ -64,8 +64,8 @@ fn test_load_offset16(
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            make_instr_offset16(Reg::from(1), Reg::from(0), offset16(offset)),
-            Instruction::return_reg(Reg::from(1)),
+            make_instr_offset16(Local::from(1), Local::from(0), offset16(offset)),
+            Instruction::return_reg(Local::from(1)),
         ])
         .run();
 }
@@ -74,7 +74,7 @@ fn test_load_at(
     wasm_op: WasmOp,
     index_ty: IndexType,
     memory_index: MemIdx,
-    make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
+    make_instr_at: fn(result: Local, address: Address32) -> Instruction,
     ptr: u64,
     offset: u64,
 ) {
@@ -95,7 +95,7 @@ fn test_load_at(
     let address = effective_address32(ptr, offset);
     TranslationTest::new(&wasm)
         .expect_func_instrs(iter_filter_opts![
-            make_instr_at(Reg::from(0), address),
+            make_instr_at(Local::from(0), address),
             memory_index.instr(),
             Instruction::return_reg(0),
         ])
@@ -132,7 +132,7 @@ fn test_load_at_overflow(
 fn test_load_at_fallback(
     wasm_op: WasmOp,
     memory_index: MemIdx,
-    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(result: Local, offset_lo: Offset64Lo) -> Instruction,
     ptr: u64,
     offset: u64,
 ) {
@@ -159,10 +159,10 @@ fn test_load_at_fallback(
     TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new(iter_filter_opts![
-                make_instr(Reg::from(0), offset_lo),
-                Instruction::register_and_offset_hi(Reg::from(-1), offset_hi),
+                make_instr(Local::from(0), offset_lo),
+                Instruction::register_and_offset_hi(Local::from(-1), offset_hi),
                 memory_index.instr(),
-                Instruction::return_reg(Reg::from(0)),
+                Instruction::return_reg(Local::from(0)),
             ])
             .consts([0_u64]),
         )

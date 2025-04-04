@@ -14,7 +14,7 @@ fn reg_reg() {
 fn reg_imm() {
     fn make_instrs(sign: Sign<f64>) -> [Instruction; 2] {
         [
-            Instruction::f64_copysign_imm(Reg::from(1), Reg::from(0), sign),
+            Instruction::f64_copysign_imm(Local::from(1), Local::from(0), sign),
             Instruction::return_reg(1),
         ]
     }

@@ -22,7 +22,7 @@ use core::fmt::Display;
 
 fn test_store_for(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     memory_index: MemIdx,
     index_ty: IndexType,
     offset: u64,
@@ -50,15 +50,15 @@ fn test_store_for(
     let (offset_hi, offset_lo) = Offset64::split(offset);
     TranslationTest::new(&wasm)
         .expect_func_instrs(iter_filter_opts![
-            make_instr(Reg::from(0), offset_lo),
-            Instruction::register_and_offset_hi(Reg::from(1), offset_hi),
+            make_instr(Local::from(0), offset_lo),
+            Instruction::register_and_offset_hi(Local::from(1), offset_hi),
             memory_index.instr(),
             Instruction::Return,
         ])
         .run();
 }
 
-fn test_store(wasm_op: WasmOp, make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction) {
+fn test_store(wasm_op: WasmOp, make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction) {
     // Case: offsets that cannot be 16-bit encoded:
     [
         u64::from(u16::MAX) + 1,
@@ -90,7 +90,7 @@ fn test_store(wasm_op: WasmOp, make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -
 
 fn test_store_offset16_for(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+    make_instr: fn(ptr: Local, offset: Offset16, value: Local) -> Instruction,
     index_ty: IndexType,
     offset: u16,
 ) {
@@ -110,7 +110,7 @@ fn test_store_offset16_for(
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            make_instr(Reg::from(0), offset16(offset), Reg::from(1)),
+            make_instr(Local::from(0), offset16(offset), Local::from(1)),
             Instruction::Return,
         ])
         .run();
@@ -118,7 +118,7 @@ fn test_store_offset16_for(
 
 fn test_store_offset16(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+    make_instr: fn(ptr: Local, offset: Offset16, value: Local) -> Instruction,
 ) {
     [0, 1, u16::MAX - 1, u16::MAX]
         .into_iter()
@@ -130,7 +130,7 @@ fn test_store_offset16(
 
 fn test_store_offset16_imm_for<T>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+    make_instr: fn(ptr: Local, offset: Offset16, value: Local) -> Instruction,
     index_ty: IndexType,
     offset: u16,
     value: T,
@@ -156,7 +156,7 @@ fn test_store_offset16_imm_for<T>(
     TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                make_instr(Reg::from(0), offset16(offset), Reg::from(-1)),
+                make_instr(Local::from(0), offset16(offset), Local::from(-1)),
                 Instruction::Return,
             ])
             .consts([value]),
@@ -167,7 +167,7 @@ fn test_store_offset16_imm_for<T>(
 fn test_store_offset16_imm<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
+    make_instr: fn(ptr: Local, offset: Offset16, value: Local) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
@@ -182,7 +182,7 @@ fn test_store_offset16_imm<T>(
 
 fn test_store_offset16_imm16_for<T>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset: Offset16, value: T) -> Instruction,
+    make_instr: fn(ptr: Local, offset: Offset16, value: T) -> Instruction,
     index_ty: IndexType,
     offset: u16,
     value: T,
@@ -207,7 +207,7 @@ fn test_store_offset16_imm16_for<T>(
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            make_instr(Reg::from(0), offset16(offset), value),
+            make_instr(Local::from(0), offset16(offset), value),
             Instruction::Return,
         ])
         .run();
@@ -215,7 +215,7 @@ fn test_store_offset16_imm16_for<T>(
 
 fn test_store_offset16_imm16<T>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset: Offset16, value: T) -> Instruction,
+    make_instr: fn(ptr: Local, offset: Offset16, value: T) -> Instruction,
     value: T,
 ) where
     T: Copy,
@@ -231,7 +231,7 @@ fn test_store_offset16_imm16<T>(
 
 fn test_store_wrap_offset16_imm_for<Src, Wrapped, Field>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
+    make_instr: fn(ptr: Local, offset: Offset16, value: Field) -> Instruction,
     index_ty: IndexType,
     offset: u16,
     value: Src,
@@ -258,7 +258,7 @@ fn test_store_wrap_offset16_imm_for<Src, Wrapped, Field>(
     let value = Field::try_from(value.wrap()).ok().unwrap();
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            make_instr(Reg::from(0), offset16(offset), value),
+            make_instr(Local::from(0), offset16(offset), value),
             Instruction::Return,
         ])
         .run();
@@ -267,7 +267,7 @@ fn test_store_wrap_offset16_imm_for<Src, Wrapped, Field>(
 fn test_store_wrap_offset16_imm<Src, Wrapped, Field>(
     wasm_op: WasmOp,
     value: Src,
-    make_instr: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
+    make_instr: fn(ptr: Local, offset: Offset16, value: Field) -> Instruction,
 ) where
     Src: Copy + Wrap<Wrapped>,
     Field: TryFrom<Wrapped>,
@@ -295,7 +295,7 @@ fn test_store_wrap_offset16_imm<Src, Wrapped, Field>(
 
 fn test_store_wrap_imm_for<Src, Wrapped, Field>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     index_ty: IndexType,
     memory_index: MemIdx,
     offset: u64,
@@ -330,7 +330,7 @@ fn test_store_wrap_imm_for<Src, Wrapped, Field>(
     let value = Field::try_from(value.wrap()).ok().unwrap();
     TranslationTest::new(&wasm)
         .expect_func_instrs(iter_filter_opts![
-            make_instr(Reg::from(0), offset_lo),
+            make_instr(Local::from(0), offset_lo),
             Instruction::imm16_and_offset_hi(value, offset_hi),
             memory_index.instr(),
             Instruction::Return,
@@ -340,7 +340,7 @@ fn test_store_wrap_imm_for<Src, Wrapped, Field>(
 
 fn test_store_wrap_imm<Src, Wrapped, Field>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     value: Src,
 ) where
     Src: Copy + Into<UntypedVal> + Wrap<Wrapped>,
@@ -376,7 +376,7 @@ fn test_store_wrap_imm<Src, Wrapped, Field>(
 
 fn test_store_imm_for<T>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     index_ty: IndexType,
     memory_index: MemIdx,
     offset: impl Into<u64>,
@@ -411,8 +411,8 @@ fn test_store_imm_for<T>(
     TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new(iter_filter_opts![
-                make_instr(Reg::from(0), offset_lo),
-                Instruction::register_and_offset_hi(Reg::from(-1), offset_hi),
+                make_instr(Local::from(0), offset_lo),
+                Instruction::register_and_offset_hi(Local::from(-1), offset_hi),
                 memory_index.instr(),
                 Instruction::Return,
             ])
@@ -423,7 +423,7 @@ fn test_store_imm_for<T>(
 
 fn test_store_imm<T>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     value: T,
 ) where
     T: Copy + Into<UntypedVal>,
@@ -452,7 +452,7 @@ fn test_store_imm<T>(
 
 fn test_store_imm16_for<T>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     index_ty: IndexType,
     memory_index: MemIdx,
     value: T,
@@ -487,7 +487,7 @@ fn test_store_imm16_for<T>(
     let value = value.try_into().ok().unwrap();
     TranslationTest::new(&wasm)
         .expect_func_instrs(iter_filter_opts![
-            make_instr(Reg::from(0), offset_lo),
+            make_instr(Local::from(0), offset_lo),
             Instruction::imm16_and_offset_hi(value, offset_hi),
             memory_index.instr(),
             Instruction::Return,
@@ -497,7 +497,7 @@ fn test_store_imm16_for<T>(
 
 fn test_store_imm16<T>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     value: T,
 ) where
     T: Copy + TryInto<AnyConst16>,
@@ -530,7 +530,7 @@ fn test_store_imm16<T>(
 
 fn test_store_at_for(
     wasm_op: WasmOp,
-    make_instr: fn(value: Reg, address: Address32) -> Instruction,
+    make_instr: fn(value: Local, address: Address32) -> Instruction,
     index_ty: IndexType,
     memory_index: MemIdx,
     ptr: u64,
@@ -554,14 +554,14 @@ fn test_store_at_for(
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs(iter_filter_opts![
-            make_instr(Reg::from(0), address),
+            make_instr(Local::from(0), address),
             memory_index.instr(),
             Instruction::Return,
         ])
         .run();
 }
 
-fn test_store_at(wasm_op: WasmOp, make_instr: fn(value: Reg, address: Address32) -> Instruction) {
+fn test_store_at(wasm_op: WasmOp, make_instr: fn(value: Local, address: Address32) -> Instruction) {
     for (ptr, offset) in [
         (0, 0),
         (0, 1),
@@ -631,7 +631,7 @@ fn test_store_at_overflow(wasm_op: WasmOp) {
 
 fn test_store_at_fallback_for(
     wasm_op: WasmOp,
-    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(result: Local, offset_lo: Offset64Lo) -> Instruction,
     memory_index: MemIdx,
     ptr: u64,
     offset: u64,
@@ -655,8 +655,8 @@ fn test_store_at_fallback_for(
     TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new(iter_filter_opts![
-                make_instr(Reg::from(-1), offset_lo),
-                Instruction::register_and_offset_hi(Reg::from(0), offset_hi),
+                make_instr(Local::from(-1), offset_lo),
+                Instruction::register_and_offset_hi(Local::from(0), offset_hi),
                 memory_index.instr(),
                 Instruction::Return,
             ])
@@ -667,7 +667,7 @@ fn test_store_at_fallback_for(
 
 fn test_store_at_fallback(
     wasm_op: WasmOp,
-    make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(result: Local, offset_lo: Offset64Lo) -> Instruction,
 ) {
     [
         (u64::from(u32::MAX), 1),
@@ -685,7 +685,7 @@ fn test_store_at_fallback(
 
 fn test_store_at_imm_for<T>(
     wasm_op: WasmOp,
-    make_instr: fn(value: Reg, address: Address32) -> Instruction,
+    make_instr: fn(value: Local, address: Address32) -> Instruction,
     index_ty: IndexType,
     memory_index: MemIdx,
     ptr: u64,
@@ -715,7 +715,7 @@ fn test_store_at_imm_for<T>(
     TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new(iter_filter_opts![
-                make_instr(Reg::from(-1), address),
+                make_instr(Local::from(-1), address),
                 memory_index.instr(),
                 Instruction::Return,
             ])
@@ -727,7 +727,7 @@ fn test_store_at_imm_for<T>(
 fn test_store_at_imm<T>(
     wasm_op: WasmOp,
     value: T,
-    make_instr: fn(value: Reg, address: Address32) -> Instruction,
+    make_instr: fn(value: Local, address: Address32) -> Instruction,
 ) where
     T: Copy + Into<UntypedVal>,
     DisplayWasm<T>: Display,
@@ -872,7 +872,7 @@ where
 
 fn test_store_at_imm16_fallback_for<T, Wrapped>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     memory_index: MemIdx,
     ptr: u64,
     offset: u64,
@@ -907,7 +907,7 @@ fn test_store_at_imm16_fallback_for<T, Wrapped>(
     TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new(iter_filter_opts![
-                make_instr(Reg::from(-1), offset_lo),
+                make_instr(Local::from(-1), offset_lo),
                 Instruction::imm16_and_offset_hi(value, offset_hi),
                 memory_index.instr(),
                 Instruction::Return,
@@ -919,7 +919,7 @@ fn test_store_at_imm16_fallback_for<T, Wrapped>(
 
 fn test_store_wrap_at_imm16_fallback<T, Wrapped>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     value: T,
 ) where
     T: Copy + Wrap<Wrapped>,
@@ -946,7 +946,7 @@ fn test_store_wrap_at_imm16_fallback<T, Wrapped>(
 
 fn test_store_at_imm16_fallback<T>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     value: T,
 ) where
     T: Copy + TryInto<AnyConst16>,
@@ -957,7 +957,7 @@ fn test_store_at_imm16_fallback<T>(
 
 fn test_store_at_imm_fallback_for<T>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     memory_index: MemIdx,
     ptr: u64,
     offset: u64,
@@ -992,18 +992,18 @@ fn test_store_at_imm_fallback_for<T>(
             // Case: since this scheme always allocates a 0 as function constant value
             //       and address is zero the translator only uses a single register to
             //       represent both. (special case)
-            (Reg::from(-1), None)
+            (Local::from(-1), None)
         }
         false => {
             // Case: address is non-zero so the translator uses 2 different registers
             //       to represent the zero'ed ptr value and the value. (common case)
-            (Reg::from(-2), Some(value.into()))
+            (Local::from(-2), Some(value.into()))
         }
     };
     TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new(iter_filter_opts![
-                make_instr(Reg::from(-1), offset_lo),
+                make_instr(Local::from(-1), offset_lo),
                 Instruction::register_and_offset_hi(value_reg, offset_hi),
                 memory_index.instr(),
                 Instruction::Return,
@@ -1015,7 +1015,7 @@ fn test_store_at_imm_fallback_for<T>(
 
 fn test_store_at_imm_fallback<T>(
     wasm_op: WasmOp,
-    make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
+    make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
     value: T,
 ) where
     T: Copy + Into<UntypedVal>,

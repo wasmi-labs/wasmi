@@ -21,8 +21,8 @@ fn simple_block_1() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
-            Instruction::branch_i32_ne_imm16(Reg::from(1), 0, BranchOffset16::from(2)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
+            Instruction::branch_i32_ne_imm16(Local::from(1), 0, BranchOffset16::from(2)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::return_reg(2),
         ])
         .run()
@@ -46,10 +46,10 @@ fn simple_block_2() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(3)), 0, 1),
-            Instruction::branch_i32_ne_imm16(Reg::from(2), 0, BranchOffset16::from(3)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
+            Instruction::copy2_ext(RegSpan::new(Local::from(3)), 0, 1),
+            Instruction::branch_i32_ne_imm16(Local::from(2), 0, BranchOffset16::from(3)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::return_reg2_ext(3, 4),
         ])
         .run()
@@ -76,14 +76,14 @@ fn simple_block_3_span() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
-                RegSpan::new(Reg::from(4)),
-                RegSpan::new(Reg::from(0)),
+                RegSpan::new(Local::from(4)),
+                RegSpan::new(Local::from(0)),
                 3_u16,
             ),
-            Instruction::branch_i32_ne_imm16(Reg::from(3), 0, BranchOffset16::from(4)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy_imm32(Reg::from(2), 30_i32),
+            Instruction::branch_i32_ne_imm16(Local::from(3), 0, BranchOffset16::from(4)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
+            Instruction::copy_imm32(Local::from(2), 30_i32),
             Instruction::return_reg3_ext(4, 5, 6),
         ])
         .run()
@@ -109,12 +109,12 @@ fn simple_block_3_many() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(4)), 2, 1),
+            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Local::from(4)), 2, 1),
             Instruction::register(0),
-            Instruction::branch_i32_ne_imm16(Reg::from(3), 0, BranchOffset16::from(4)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy_imm32(Reg::from(2), 30_i32),
+            Instruction::branch_i32_ne_imm16(Local::from(3), 0, BranchOffset16::from(4)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
+            Instruction::copy_imm32(Local::from(2), 30_i32),
             Instruction::return_reg3_ext(4, 5, 6),
         ])
         .run()
@@ -143,18 +143,18 @@ fn simple_block_4_params_2() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
-                RegSpan::new(Reg::from(7)),
-                RegSpan::new(Reg::from(0)),
+                RegSpan::new(Local::from(7)),
+                RegSpan::new(Local::from(0)),
                 4_u16,
             ),
-            Instruction::branch_i32_eq_imm16(Reg::from(4), 0, BranchOffset16::from(3)),
-            Instruction::copy2_ext(RegSpan::new(Reg::from(5)), 9, 10),
+            Instruction::branch_i32_eq_imm16(Local::from(4), 0, BranchOffset16::from(3)),
+            Instruction::copy2_ext(RegSpan::new(Local::from(5)), 9, 10),
             Instruction::branch(BranchOffset::from(6)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy_imm32(Reg::from(2), 30_i32),
-            Instruction::copy_imm32(Reg::from(3), 40_i32),
-            Instruction::copy2_ext(RegSpan::new(Reg::from(5)), 9, 10),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
+            Instruction::copy_imm32(Local::from(2), 30_i32),
+            Instruction::copy_imm32(Local::from(3), 40_i32),
+            Instruction::copy2_ext(RegSpan::new(Local::from(5)), 9, 10),
             Instruction::return_many_ext(7, 8, 5),
             Instruction::register(6),
         ])
@@ -196,21 +196,21 @@ fn simple_block_30() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(11)), 9, 8),
+            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Local::from(11)), 9, 8),
             Instruction::register_list_ext(7, 6, 5),
             Instruction::register_list_ext(4, 3, 2),
             Instruction::register2_ext(1, 0),
-            Instruction::branch_i32_ne_imm16(Reg::from(10), 0, BranchOffset16::from(11)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy_imm32(Reg::from(2), 30_i32),
-            Instruction::copy_imm32(Reg::from(3), 40_i32),
-            Instruction::copy_imm32(Reg::from(4), 50_i32),
-            Instruction::copy_imm32(Reg::from(5), 60_i32),
-            Instruction::copy_imm32(Reg::from(6), 70_i32),
-            Instruction::copy_imm32(Reg::from(7), 80_i32),
-            Instruction::copy_imm32(Reg::from(8), 90_i32),
-            Instruction::copy_imm32(Reg::from(9), 100_i32),
+            Instruction::branch_i32_ne_imm16(Local::from(10), 0, BranchOffset16::from(11)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
+            Instruction::copy_imm32(Local::from(2), 30_i32),
+            Instruction::copy_imm32(Local::from(3), 40_i32),
+            Instruction::copy_imm32(Local::from(4), 50_i32),
+            Instruction::copy_imm32(Local::from(5), 60_i32),
+            Instruction::copy_imm32(Local::from(6), 70_i32),
+            Instruction::copy_imm32(Local::from(7), 80_i32),
+            Instruction::copy_imm32(Local::from(8), 90_i32),
+            Instruction::copy_imm32(Local::from(9), 100_i32),
             Instruction::return_many_ext(20, 19, 18),
             Instruction::register_list_ext(17, 16, 15),
             Instruction::register_list_ext(14, 13, 12),
@@ -237,8 +237,8 @@ fn simple_if_1() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
-            Instruction::branch_i32_eq_imm16(Reg::from(1), 0, BranchOffset16::from(2)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
+            Instruction::branch_i32_eq_imm16(Local::from(1), 0, BranchOffset16::from(2)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::return_reg(2),
         ])
         .run()
@@ -263,10 +263,10 @@ fn simple_if_2() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(3)), 0, 1),
-            Instruction::branch_i32_eq_imm16(Reg::from(2), 0, BranchOffset16::from(3)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
+            Instruction::copy2_ext(RegSpan::new(Local::from(3)), 0, 1),
+            Instruction::branch_i32_eq_imm16(Local::from(2), 0, BranchOffset16::from(3)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::return_reg2_ext(3, 4),
         ])
         .run()
@@ -294,14 +294,14 @@ fn simple_if_3_span() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
-                RegSpan::new(Reg::from(4)),
-                RegSpan::new(Reg::from(0)),
+                RegSpan::new(Local::from(4)),
+                RegSpan::new(Local::from(0)),
                 3_u16,
             ),
-            Instruction::branch_i32_eq_imm16(Reg::from(3), 0, BranchOffset16::from(4)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy_imm32(Reg::from(2), 30_i32),
+            Instruction::branch_i32_eq_imm16(Local::from(3), 0, BranchOffset16::from(4)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
+            Instruction::copy_imm32(Local::from(2), 30_i32),
             Instruction::return_reg3_ext(4, 5, 6),
         ])
         .run()
@@ -328,12 +328,12 @@ fn simple_if_3_many() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(4)), 2, 1),
+            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Local::from(4)), 2, 1),
             Instruction::register(0),
-            Instruction::branch_i32_eq_imm16(Reg::from(3), 0, BranchOffset16::from(4)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy_imm32(Reg::from(2), 30_i32),
+            Instruction::branch_i32_eq_imm16(Local::from(3), 0, BranchOffset16::from(4)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
+            Instruction::copy_imm32(Local::from(2), 30_i32),
             Instruction::return_reg3_ext(4, 5, 6),
         ])
         .run()
@@ -363,18 +363,18 @@ fn simple_if_4_params_2() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
-                RegSpan::new(Reg::from(7)),
-                RegSpan::new(Reg::from(0)),
+                RegSpan::new(Local::from(7)),
+                RegSpan::new(Local::from(0)),
                 4_u16,
             ),
-            Instruction::branch_i32_eq_imm16(Reg::from(4), 0, BranchOffset16::from(7)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy_imm32(Reg::from(2), 30_i32),
-            Instruction::copy_imm32(Reg::from(3), 40_i32),
-            Instruction::copy2_ext(RegSpan::new(Reg::from(5)), 9, 10),
+            Instruction::branch_i32_eq_imm16(Local::from(4), 0, BranchOffset16::from(7)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
+            Instruction::copy_imm32(Local::from(2), 30_i32),
+            Instruction::copy_imm32(Local::from(3), 40_i32),
+            Instruction::copy2_ext(RegSpan::new(Local::from(5)), 9, 10),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy2_ext(RegSpan::new(Reg::from(5)), 9, 10),
+            Instruction::copy2_ext(RegSpan::new(Local::from(5)), 9, 10),
             Instruction::return_many_ext(7, 8, 5),
             Instruction::register(6),
         ])
@@ -402,11 +402,11 @@ fn nested_block() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 0, 1),
-            Instruction::branch_i32_ne_imm16(Reg::from(2), 0, BranchOffset16::from(4)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::branch_i32_ne_imm16(Reg::from(3), 0, BranchOffset16::from(2)),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
+            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
+            Instruction::branch_i32_ne_imm16(Local::from(2), 0, BranchOffset16::from(4)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::branch_i32_ne_imm16(Local::from(3), 0, BranchOffset16::from(2)),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::return_reg2_ext(4, 5),
         ])
         .run()
@@ -435,11 +435,11 @@ fn nested_if() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 0, 1),
-            Instruction::branch_i32_eq_imm16(Reg::from(2), 0, BranchOffset16::from(4)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::branch_i32_eq_imm16(Reg::from(3), 0, BranchOffset16::from(2)),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
+            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
+            Instruction::branch_i32_eq_imm16(Local::from(2), 0, BranchOffset16::from(4)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::branch_i32_eq_imm16(Local::from(3), 0, BranchOffset16::from(2)),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::return_reg2_ext(4, 5),
         ])
         .run()
@@ -468,12 +468,12 @@ fn expr_block() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(3, 1),
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(3)),
-            Instruction::copy_imm32(Reg::from(2), 10_i32),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(3)),
+            Instruction::copy_imm32(Local::from(2), 10_i32),
             Instruction::branch(BranchOffset::from(3)),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy_imm32(Reg::from(2), 30_i32),
-            Instruction::i32_add(Reg::from(2), Reg::from(3), Reg::from(2)),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
+            Instruction::copy_imm32(Local::from(2), 30_i32),
+            Instruction::i32_add(Local::from(2), Local::from(3), Local::from(2)),
             Instruction::return_reg(2),
         ])
         .run()
@@ -503,12 +503,12 @@ fn expr_if() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(4, 0),
-            Instruction::branch_i32_eq_imm16(Reg::from(1), 0, BranchOffset16::from(4)),
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(3), 20_i32),
+            Instruction::branch_i32_eq_imm16(Local::from(1), 0, BranchOffset16::from(4)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(3), 20_i32),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy_imm32(Reg::from(3), 30_i32),
-            Instruction::i32_add(Reg::from(3), Reg::from(4), Reg::from(3)),
+            Instruction::copy_imm32(Local::from(3), 30_i32),
+            Instruction::i32_add(Local::from(3), Local::from(4), Local::from(3)),
             Instruction::return_reg(3),
         ])
         .run()
@@ -532,8 +532,8 @@ fn invalid_preservation_slot_reuse_1() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(3, 0),
-            Instruction::i32_popcnt(Reg::from(0), Reg::from(0)),
-            Instruction::i32_add(Reg::from(2), Reg::from(3), Reg::from(0)),
+            Instruction::i32_popcnt(Local::from(0), Local::from(0)),
+            Instruction::i32_add(Local::from(2), Local::from(3), Local::from(0)),
             Instruction::copy(3, 1),
             Instruction::copy(1, 2),
             Instruction::Return,
@@ -564,8 +564,8 @@ fn invalid_preservation_slot_reuse_2() {
         .expect_func(ExpectedFunc::new([Instruction::return_imm32(20_i32)]))
         .expect_func(ExpectedFunc::new([
             Instruction::copy(3, 0),
-            Instruction::i32_popcnt(Reg::from(0), Reg::from(0)),
-            Instruction::call_internal(RegSpan::new(Reg::from(2)), EngineFunc::from_u32(0)),
+            Instruction::i32_popcnt(Local::from(0), Local::from(0)),
+            Instruction::call_internal(RegSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
             Instruction::register3_ext(1, 3, 0),
             Instruction::copy(3, 1),
             Instruction::copy(1, 2),
@@ -596,13 +596,13 @@ fn concat_local_tee_pair() {
     ";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy_imm32(Reg::from(1), 20_i32),
-            Instruction::copy(Reg::from(4), Reg::from(0)), // preserved
-            Instruction::copy_imm32(Reg::from(0), 10_i32),
-            Instruction::copy(Reg::from(3), Reg::from(1)), // preserved
-            Instruction::copy(Reg::from(1), Reg::from(4)),
-            Instruction::i32_add(Reg::from(2), Reg::from(3), Reg::from(1)),
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy_imm32(Local::from(1), 20_i32),
+            Instruction::copy(Local::from(4), Local::from(0)), // preserved
+            Instruction::copy_imm32(Local::from(0), 10_i32),
+            Instruction::copy(Local::from(3), Local::from(1)), // preserved
+            Instruction::copy(Local::from(1), Local::from(4)),
+            Instruction::i32_add(Local::from(2), Local::from(3), Local::from(1)),
             Instruction::return_reg(2),
         ])
         .run()

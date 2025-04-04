@@ -7,7 +7,7 @@ use crate::{
         translator::{provider::Provider, FuncTranslator},
         FuelCosts,
     },
-    ir::{Const32, Instruction, Reg},
+    ir::{Const32, Instruction, Local},
 };
 use core::array;
 use wasmparser::{MemArg, VisitSimdOperator};
@@ -15,7 +15,7 @@ use wasmparser::{MemArg, VisitSimdOperator};
 /// Used to swap operands of binary [`Instruction`] constructor.
 macro_rules! swap_ops {
     ($fn_name:path) => {
-        |result: Reg, lhs, rhs| -> Instruction { $fn_name(result, rhs, lhs) }
+        |result: Local, lhs, rhs| -> Instruction { $fn_name(result, rhs, lhs) }
     };
 }
 

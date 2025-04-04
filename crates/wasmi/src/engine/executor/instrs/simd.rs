@@ -21,10 +21,10 @@ use crate::{
         Address32,
         AnyConst32,
         Instruction,
+        Local,
         Offset64,
         Offset64Lo,
         Offset8,
-        Reg,
         ShiftAmount,
     },
     store::StoreInner,
@@ -35,8 +35,8 @@ use crate::{
 use crate::ir::Offset64Hi;
 
 impl Executor<'_> {
-    /// Fetches a [`Reg`] from an [`Instruction::Register`] instruction parameter.
-    fn fetch_register(&self) -> Reg {
+    /// Fetches a [`Local`] from an [`Instruction::Register`] instruction parameter.
+    fn fetch_register(&self) -> Local {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
@@ -52,8 +52,8 @@ impl Executor<'_> {
         }
     }
 
-    /// Fetches the [`Reg`] and [`Offset64Hi`] parameters for a load or store [`Instruction`].
-    unsafe fn fetch_reg_and_lane<LaneType>(&self, delta: usize) -> (Reg, LaneType)
+    /// Fetches the [`Local`] and [`Offset64Hi`] parameters for a load or store [`Instruction`].
+    unsafe fn fetch_reg_and_lane<LaneType>(&self, delta: usize) -> (Local, LaneType)
     where
         LaneType: TryFrom<u8>,
     {
@@ -70,7 +70,7 @@ impl Executor<'_> {
     }
 
     /// Returns the register `value` and `lane` parameters for a `load` [`Instruction`].
-    pub fn fetch_value_and_lane<LaneType>(&self, delta: usize) -> (Reg, LaneType)
+    pub fn fetch_value_and_lane<LaneType>(&self, delta: usize) -> (Local, LaneType)
     where
         LaneType: TryFrom<u8>,
     {
@@ -78,7 +78,7 @@ impl Executor<'_> {
         unsafe { self.fetch_reg_and_lane::<LaneType>(delta) }
     }
 
-    /// Fetches a [`Reg`] from an [`Instruction::Const32`] instruction parameter.
+    /// Fetches a [`Local`] from an [`Instruction::Const32`] instruction parameter.
     fn fetch_const32_as<T>(&self) -> T
     where
         T: From<AnyConst32>,
@@ -98,7 +98,7 @@ impl Executor<'_> {
         }
     }
 
-    /// Fetches a [`Reg`] from an [`Instruction::I64Const32`] instruction parameter.
+    /// Fetches a [`Local`] from an [`Instruction::I64Const32`] instruction parameter.
     fn fetch_i64const32(&self) -> i64 {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
@@ -115,7 +115,7 @@ impl Executor<'_> {
         }
     }
 
-    /// Fetches a [`Reg`] from an [`Instruction::F64Const32`] instruction parameter.
+    /// Fetches a [`Local`] from an [`Instruction::F64Const32`] instruction parameter.
     fn fetch_f64const32(&self) -> f64 {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
@@ -133,7 +133,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::I8x16Shuffle`] instruction.
-    pub fn execute_i8x16_shuffle(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
+    pub fn execute_i8x16_shuffle(&mut self, result: Local, lhs: Local, rhs: Local) {
         let selector = self.fetch_register();
         let lhs = self.get_register_as::<V128>(lhs);
         let rhs = self.get_register_as::<V128>(rhs);
@@ -159,7 +159,7 @@ macro_rules! impl_ternary_simd_executors {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr $(,)?) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, a: Reg, b: Reg) {
+            pub fn $fn_name(&mut self, result: Local, a: Local, b: Local) {
                 let c = self.fetch_register();
                 let a = self.get_register_as::<V128>(a);
                 let b = self.get_register_as::<V128>(b);
@@ -194,7 +194,7 @@ macro_rules! impl_replace_lane_ops {
     ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($instr_name), "`].")]
-            pub fn $exec_name(&mut self, result: Reg, input: Reg, lane: <$ty as IntoLaneIdx>::LaneIdx) {
+            pub fn $exec_name(&mut self, result: Local, input: Local, lane: <$ty as IntoLaneIdx>::LaneIdx) {
                 let value = self.fetch_register();
                 let input = self.get_register_as::<V128>(input);
                 let value = self.get_register_as::<$ty>(value);
@@ -218,8 +218,8 @@ impl Executor<'_> {
     /// Executes an [`Instruction::I8x16ReplaceLaneImm`] instruction.
     pub fn execute_i8x16_replace_lane_imm(
         &mut self,
-        result: Reg,
-        input: Reg,
+        result: Local,
+        input: Local,
         lane: ImmLaneIdx16,
         value: i8,
     ) {
@@ -227,31 +227,56 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::I16x8ReplaceLaneImm`] instruction.
-    pub fn execute_i16x8_replace_lane_imm(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx8) {
+    pub fn execute_i16x8_replace_lane_imm(
+        &mut self,
+        result: Local,
+        input: Local,
+        lane: ImmLaneIdx8,
+    ) {
         let value = self.fetch_const32_as::<i32>() as i16;
         self.execute_replace_lane_impl(result, input, lane, value, 2, simd::i16x8_replace_lane)
     }
 
     /// Executes an [`Instruction::I32x4ReplaceLaneImm`] instruction.
-    pub fn execute_i32x4_replace_lane_imm(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx4) {
+    pub fn execute_i32x4_replace_lane_imm(
+        &mut self,
+        result: Local,
+        input: Local,
+        lane: ImmLaneIdx4,
+    ) {
         let value = self.fetch_const32_as::<i32>();
         self.execute_replace_lane_impl(result, input, lane, value, 2, simd::i32x4_replace_lane)
     }
 
     /// Executes an [`Instruction::I64x2ReplaceLaneImm32`] instruction.
-    pub fn execute_i64x2_replace_lane_imm32(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx2) {
+    pub fn execute_i64x2_replace_lane_imm32(
+        &mut self,
+        result: Local,
+        input: Local,
+        lane: ImmLaneIdx2,
+    ) {
         let value = self.fetch_i64const32();
         self.execute_replace_lane_impl(result, input, lane, value, 2, simd::i64x2_replace_lane)
     }
 
     /// Executes an [`Instruction::F32x4ReplaceLaneImm`] instruction.
-    pub fn execute_f32x4_replace_lane_imm(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx4) {
+    pub fn execute_f32x4_replace_lane_imm(
+        &mut self,
+        result: Local,
+        input: Local,
+        lane: ImmLaneIdx4,
+    ) {
         let value = self.fetch_const32_as::<f32>();
         self.execute_replace_lane_impl(result, input, lane, value, 2, simd::f32x4_replace_lane)
     }
 
     /// Executes an [`Instruction::F64x2ReplaceLaneImm32`] instruction.
-    pub fn execute_f64x2_replace_lane_imm32(&mut self, result: Reg, input: Reg, lane: ImmLaneIdx2) {
+    pub fn execute_f64x2_replace_lane_imm32(
+        &mut self,
+        result: Local,
+        input: Local,
+        lane: ImmLaneIdx2,
+    ) {
         let value = self.fetch_f64const32();
         self.execute_replace_lane_impl(result, input, lane, value, 2, simd::f64x2_replace_lane)
     }
@@ -259,8 +284,8 @@ impl Executor<'_> {
     /// Generically execute a SIMD replace lane instruction.
     fn execute_replace_lane_impl<T, LaneType>(
         &mut self,
-        result: Reg,
-        input: Reg,
+        result: Local,
+        input: Local,
         lane: LaneType,
         value: T,
         delta: usize,
@@ -484,8 +509,8 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_extract_lane<T, Lane>(
         &mut self,
-        result: Reg,
-        input: Reg,
+        result: Local,
+        input: Local,
         lane: Lane,
         op: fn(V128, Lane) -> T,
     ) where
@@ -503,7 +528,7 @@ macro_rules! impl_extract_lane_executors {
     ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, input: Reg, lane: <$ty as IntoLaneIdx>::LaneIdx) {
+            pub fn $fn_name(&mut self, result: Local, input: Local, lane: <$ty as IntoLaneIdx>::LaneIdx) {
                 self.execute_extract_lane(result, input, lane, $op)
             }
         )*
@@ -527,8 +552,8 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_simd_shift_by(
         &mut self,
-        result: Reg,
-        lhs: Reg,
+        result: Local,
+        lhs: Local,
         rhs: ShiftAmount<u32>,
         op: fn(V128, u32) -> V128,
     ) {
@@ -543,7 +568,7 @@ macro_rules! impl_simd_shift_executors {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: ShiftAmount<u32>) {
+            pub fn $fn_name(&mut self, result: Local, lhs: Local, rhs: ShiftAmount<u32>) {
                 self.execute_simd_shift_by(result, lhs, rhs, $op)
             }
         )*
@@ -606,7 +631,7 @@ macro_rules! impl_execute_v128_load_lane {
             pub fn $exec(
                 &mut self,
                 store: &StoreInner,
-                result: Reg,
+                result: Local,
                 offset_lo: Offset64Lo,
             ) -> Result<(), Error> {
                 self.execute_v128_load_lane_impl::<<$ty as IntoLaneIdx>::LaneIdx>(store, result, offset_lo, $eval)
@@ -624,7 +649,7 @@ macro_rules! impl_execute_v128_load_lane_at {
             pub fn $exec(
                 &mut self,
                 store: &StoreInner,
-                result: Reg,
+                result: Local,
                 address: Address32,
             ) -> Result<(), Error> {
                 self.execute_v128_load_lane_at_impl::<<$ty as IntoLaneIdx>::LaneIdx>(store, result, address, $eval)
@@ -637,7 +662,7 @@ impl Executor<'_> {
     fn execute_v128_load_lane_impl<LaneType>(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Local,
         offset_lo: Offset64Lo,
         load: V128LoadLane<LaneType>,
     ) -> Result<(), Error>
@@ -666,7 +691,7 @@ impl Executor<'_> {
     fn execute_v128_load_lane_at_impl<LaneType>(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Local,
         address: Address32,
         load_at: V128LoadLaneAt<LaneType>,
     ) -> Result<(), Error>
@@ -699,7 +724,7 @@ macro_rules! impl_execute_v128_store_lane {
             pub fn $exec(
                 &mut self,
                 store: &mut StoreInner,
-                ptr: Reg,
+                ptr: Local,
                 offset_lo: Offset64Lo,
             ) -> Result<(), Error> {
                 self.execute_v128_store_lane::<$ty>(store, ptr, offset_lo, $eval)
@@ -716,8 +741,8 @@ macro_rules! impl_execute_v128_store_lane_offset16 {
             #[doc = concat!("Executes an [`Instruction::", stringify!($op), "`] instruction.")]
             pub fn $exec(
                 &mut self,
-                ptr: Reg,
-                value: Reg,
+                ptr: Local,
+                value: Local,
                 offset: Offset8,
                 lane: <$ty as IntoLaneIdx>::LaneIdx,
             ) -> Result<(), Error> {
@@ -736,7 +761,7 @@ macro_rules! impl_execute_v128_store_lane_at {
             pub fn $exec(
                 &mut self,
                 store: &mut StoreInner,
-                value: Reg,
+                value: Local,
                 address: Address32,
             ) -> Result<(), Error> {
                 self.execute_v128_store_lane_at::<$ty>(store, value, address, $eval)
@@ -760,7 +785,7 @@ impl Executor<'_> {
     fn execute_v128_store_lane<T: IntoLaneIdx>(
         &mut self,
         store: &mut StoreInner,
-        ptr: Reg,
+        ptr: Local,
         offset_lo: Offset64Lo,
         eval: V128StoreLane<T::LaneIdx>,
     ) -> Result<(), Error> {
@@ -783,8 +808,8 @@ impl Executor<'_> {
 
     fn execute_v128_store_lane_offset8<T: IntoLaneIdx>(
         &mut self,
-        ptr: Reg,
-        value: Reg,
+        ptr: Local,
+        value: Local,
         offset: Offset8,
         lane: T::LaneIdx,
         eval: V128StoreLane<T::LaneIdx>,
@@ -807,7 +832,7 @@ impl Executor<'_> {
     fn execute_v128_store_lane_at<T: IntoLaneIdx>(
         &mut self,
         store: &mut StoreInner,
-        value: Reg,
+        value: Local,
         address: Address32,
         eval: V128StoreLaneAt<T::LaneIdx>,
     ) -> Result<(), Error>

@@ -14,9 +14,9 @@ fn reg() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::memory_grow(Reg::from(1), Reg::from(0)),
+            Instruction::memory_grow(Local::from(1), Local::from(0)),
             Instruction::memory_index(0),
-            Instruction::return_reg(Reg::from(1)),
+            Instruction::return_reg(Local::from(1)),
         ])
         .run();
 }
@@ -37,9 +37,9 @@ fn test_imm32(index_ty: IndexType, memory_index: MemIdx, delta: u32) {
     );
     TranslationTest::new(wasm)
         .expect_func_instrs(iter_filter_opts![
-            Instruction::memory_grow_by(Reg::from(0), delta),
+            Instruction::memory_grow_by(Local::from(0), delta),
             Instruction::memory_index(memory_index.0),
-            Instruction::return_reg(Reg::from(0)),
+            Instruction::return_reg(Local::from(0)),
         ])
         .run();
 }
@@ -77,8 +77,8 @@ fn imm_zero() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::memory_size(Reg::from(0), Memory::from(0)),
-            Instruction::return_reg(Reg::from(0)),
+            Instruction::memory_size(Local::from(0), Memory::from(0)),
+            Instruction::return_reg(Local::from(0)),
         ])
         .run();
 }

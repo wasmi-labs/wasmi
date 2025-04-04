@@ -30,8 +30,8 @@ where
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::global_get(Reg::from(0), Global::from(0)),
-            Instruction::return_reg(Reg::from(0)),
+            Instruction::global_get(Local::from(0), Global::from(0)),
+            Instruction::return_reg(Local::from(0)),
         ])
         .run()
 }
@@ -145,8 +145,8 @@ where
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::global_get(Reg::from(0), Global::from(0)),
-            Instruction::return_reg(Reg::from(0)),
+            Instruction::global_get(Local::from(0), Global::from(0)),
+            Instruction::return_reg(Local::from(0)),
         ])
         .run()
 }
@@ -190,7 +190,7 @@ fn test_global_get_as_return_values_0() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::global_get(Reg::from(0), Global::from(0)),
+                Instruction::global_get(Local::from(0), Global::from(0)),
                 Instruction::return_reg2_ext(-1, 0),
             ])
             .consts([2_i32]),
@@ -215,7 +215,7 @@ fn test_global_get_as_return_values_1() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::global_get(Reg::from(0), Global::from(0)),
+                Instruction::global_get(Local::from(0), Global::from(0)),
                 Instruction::return_reg2_ext(-1, 0),
             ])
             .consts([2_i32]),

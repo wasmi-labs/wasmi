@@ -16,9 +16,9 @@ fn test_reg(ty: ValType) {
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::table_grow(Reg::from(2), Reg::from(1), Reg::from(0)),
+            Instruction::table_grow(Local::from(2), Local::from(1), Local::from(0)),
             Instruction::table_index(0),
-            Instruction::return_reg(Reg::from(2)),
+            Instruction::return_reg(Local::from(2)),
         ])
         .run();
 }
@@ -45,9 +45,9 @@ fn test_imm16(ty: ValType, delta: u64) {
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::table_grow_imm(Reg::from(1), u64imm16(delta), Reg::from(0)),
+            Instruction::table_grow_imm(Local::from(1), u64imm16(delta), Local::from(0)),
             Instruction::table_index(0),
-            Instruction::return_reg(Reg::from(1)),
+            Instruction::return_reg(Local::from(1)),
         ])
         .run();
 }
@@ -80,8 +80,8 @@ fn test_imm_zero(ty: ValType) {
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::table_size(Reg::from(1), 0),
-            Instruction::return_reg(Reg::from(1)),
+            Instruction::table_size(Local::from(1), 0),
+            Instruction::return_reg(Local::from(1)),
         ])
         .run();
 }
@@ -113,8 +113,8 @@ fn test_imm_value_and_zero(ty: ValType) {
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::table_size(Reg::from(1), 0),
-            Instruction::return_reg(Reg::from(1)),
+            Instruction::table_size(Local::from(1), 0),
+            Instruction::return_reg(Local::from(1)),
         ])
         .run();
 }
@@ -142,9 +142,9 @@ fn test_imm(ty: ValType, delta: u32) {
     TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::table_grow(Reg::from(1), Reg::from(-1), Reg::from(0)),
+                Instruction::table_grow(Local::from(1), Local::from(-1), Local::from(0)),
                 Instruction::table_index(0),
-                Instruction::return_reg(Reg::from(1)),
+                Instruction::return_reg(Local::from(1)),
             ])
             .consts([delta]),
         )

@@ -7,8 +7,8 @@ const WASM_OP: WasmOp = WasmOp::cmp(WasmType::F32, "eq");
 fn same_reg() {
     // We cannot optimize `x == x` to `true` since `x == Nan` or `Nan == x` is always `false`.
     let expected = [
-        Instruction::f32_eq(Reg::from(1), Reg::from(0), Reg::from(0)),
-        Instruction::return_reg(Reg::from(1)),
+        Instruction::f32_eq(Local::from(1), Local::from(0), Local::from(0)),
+        Instruction::return_reg(Local::from(1)),
     ];
     test_binary_same_reg(WASM_OP, expected)
 }

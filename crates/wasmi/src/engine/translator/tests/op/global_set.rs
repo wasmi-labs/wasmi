@@ -24,7 +24,7 @@ where
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::global_set(Reg::from(0), Global::from(0)),
+            Instruction::global_set(Local::from(0), Global::from(0)),
             Instruction::Return,
         ])
         .run()
@@ -60,7 +60,7 @@ where
     TranslationTest::new(&wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::global_set(Reg::from(-1), Global::from(0)),
+                Instruction::global_set(Local::from(-1), Global::from(0)),
                 Instruction::Return,
             ])
             .consts([value]),

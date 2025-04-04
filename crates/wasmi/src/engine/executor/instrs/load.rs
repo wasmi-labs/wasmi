@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{wasm, TrapCode, UntypedVal, WriteAs},
-    ir::{index::Memory, Address32, Offset16, Offset64, Offset64Hi, Offset64Lo, Reg},
+    ir::{index::Memory, Address32, Local, Offset16, Offset64, Offset64Hi, Offset64Lo},
     store::StoreInner,
     Error,
 };
@@ -20,7 +20,7 @@ type WasmLoadAtOp<T> = fn(memory: &[u8], address: usize) -> Result<T, TrapCode>;
 
 impl Executor<'_> {
     /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
-    fn fetch_ptr_and_offset_hi(&self) -> (Reg, Offset64Hi) {
+    fn fetch_ptr_and_offset_hi(&self) -> (Local, Offset64Hi) {
         // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
         unsafe { self.fetch_reg_and_offset_hi() }
     }
@@ -42,7 +42,7 @@ impl Executor<'_> {
         &mut self,
         store: &StoreInner,
         memory: Memory,
-        result: Reg,
+        result: Local,
         address: u64,
         offset: Offset64,
         load_extend: WasmLoadOp<T>,
@@ -73,7 +73,7 @@ impl Executor<'_> {
         &mut self,
         store: &StoreInner,
         memory: Memory,
-        result: Reg,
+        result: Local,
         address: Address32,
         load_extend_at: WasmLoadAtOp<T>,
     ) -> Result<(), Error>
@@ -101,7 +101,7 @@ impl Executor<'_> {
     /// - `i64.load32_u`
     fn execute_load_extend_mem0<T>(
         &mut self,
-        result: Reg,
+        result: Local,
         address: u64,
         offset: Offset64,
         load_extend: WasmLoadOp<T>,
@@ -119,7 +119,7 @@ impl Executor<'_> {
     fn execute_load_impl<T>(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Local,
         offset_lo: Offset64Lo,
         load_extend: WasmLoadOp<T>,
     ) -> Result<(), Error>
@@ -138,7 +138,7 @@ impl Executor<'_> {
     fn execute_load_at_impl<T>(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Local,
         address: Address32,
         load_extend_at: WasmLoadAtOp<T>,
     ) -> Result<(), Error>
@@ -153,8 +153,8 @@ impl Executor<'_> {
     /// Executes a generic `load_offset16` [`Instruction`].
     fn execute_load_offset16_impl<T>(
         &mut self,
-        result: Reg,
-        ptr: Reg,
+        result: Local,
+        ptr: Local,
         offset: Offset16,
         load_extend: WasmLoadOp<T>,
     ) -> Result<(), Error>
@@ -181,17 +181,17 @@ macro_rules! impl_execute_load {
     ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load), "`].")]
-            pub fn $fn_load(&mut self, store: &StoreInner, result: Reg, offset_lo: Offset64Lo) -> Result<(), Error> {
+            pub fn $fn_load(&mut self, store: &StoreInner, result: Local, offset_lo: Offset64Lo) -> Result<(), Error> {
                 self.execute_load_impl(store, result, offset_lo, $load_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_at), "`].")]
-            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Reg, address: Address32) -> Result<(), Error> {
+            pub fn $fn_load_at(&mut self, store: &StoreInner, result: Local, address: Address32) -> Result<(), Error> {
                 self.execute_load_at_impl(store, result, address, $load_at_fn)
             }
 
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_load_off16), "`].")]
-            pub fn $fn_load_off16(&mut self, result: Reg, ptr: Reg, offset: Offset16) -> Result<(), Error> {
+            pub fn $fn_load_off16(&mut self, result: Local, ptr: Local, offset: Offset16) -> Result<(), Error> {
                 self.execute_load_offset16_impl::<$ty>(result, ptr, offset, $load_fn)
             }
         )*

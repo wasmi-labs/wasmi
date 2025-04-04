@@ -60,10 +60,10 @@ use crate::{
         FixedRegSpan,
         Instruction,
         IntoShiftAmount,
+        Local,
         Offset16,
         Offset64,
         Offset64Lo,
-        Reg,
         RegSpan,
         Sign,
     },
@@ -135,20 +135,20 @@ pub struct TranslationBuffers {
     providers: Vec<TypedProvider>,
     /// Buffer to temporarily hold `br_table` target depths.
     br_table_targets: Vec<u32>,
-    /// Buffer to temporarily hold a bunch of preserved [`Reg`] locals.
+    /// Buffer to temporarily hold a bunch of preserved [`Local`] locals.
     preserved: Vec<PreservedLocal>,
 }
 
-/// A pair of local [`Reg`] and its preserved [`Reg`].
+/// A pair of local [`Local`] and its preserved [`Local`].
 #[derive(Debug, Copy, Clone)]
 pub struct PreservedLocal {
-    local: Reg,
-    preserved: Reg,
+    local: Local,
+    preserved: Local,
 }
 
 impl PreservedLocal {
     /// Creates a new [`PreservedLocal`].
-    pub fn new(local: Reg, preserved: Reg) -> Self {
+    pub fn new(local: Local, preserved: Local) -> Self {
         Self { local, preserved }
     }
 }
@@ -800,7 +800,7 @@ impl FuncTranslator {
         //
         // We can do this since the branch parameters of the function enclosing block
         // are never used due to optimizations to directly return to the caller instead.
-        let branch_params = RegSpan::new(Reg::from(0));
+        let branch_params = RegSpan::new(Local::from(0));
         let block_frame = BlockControlFrame::new(
             block_type,
             end_label,
@@ -1370,9 +1370,9 @@ impl FuncTranslator {
     /// Pushes a binary instruction with two register inputs `lhs` and `rhs`.
     fn push_binary_instr(
         &mut self,
-        lhs: Reg,
-        rhs: Reg,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        lhs: Local,
+        rhs: Local,
+        make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
     ) -> Result<(), Error> {
         let result = self.alloc.stack.push_dynamic()?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
@@ -1388,9 +1388,9 @@ impl FuncTranslator {
     /// - Returns `Err(_)` if a translation error occurred.
     fn try_push_binary_instr_imm16<T>(
         &mut self,
-        lhs: Reg,
+        lhs: Local,
         rhs: T,
-        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        make_instr_imm16: fn(result: Local, lhs: Local, rhs: Const16<T>) -> Instruction,
     ) -> Result<bool, Error>
     where
         T: Copy + TryInto<Const16<T>>,
@@ -1408,8 +1408,8 @@ impl FuncTranslator {
     fn try_push_binary_instr_imm16_rev<T>(
         &mut self,
         lhs: T,
-        rhs: Reg,
-        make_instr_imm16: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        rhs: Local,
+        make_instr_imm16: fn(result: Local, lhs: Const16<T>, rhs: Local) -> Instruction,
     ) -> Result<bool, Error>
     where
         T: Copy + TryInto<Const16<T>>,
@@ -1442,9 +1442,9 @@ impl FuncTranslator {
     /// words for its encoding in the [`Instruction`] sequence.
     fn push_binary_instr_imm<T>(
         &mut self,
-        lhs: Reg,
+        lhs: Local,
         rhs: T,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
     ) -> Result<(), Error>
     where
         T: Into<UntypedVal>,
@@ -1464,8 +1464,8 @@ impl FuncTranslator {
     fn push_binary_instr_imm_rev<T>(
         &mut self,
         lhs: T,
-        rhs: Reg,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        rhs: Local,
+        make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
     ) -> Result<(), Error>
     where
         T: Into<UntypedVal>,
@@ -1508,13 +1508,13 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_binary<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm16_rhs: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
-        make_instr_imm16_lhs: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
+        make_instr_imm16_rhs: fn(result: Local, lhs: Local, rhs: Const16<T>) -> Instruction,
+        make_instr_imm16_lhs: fn(result: Local, lhs: Const16<T>, rhs: Local) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
-        make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
-        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
+        make_instr_opt: fn(&mut Self, lhs: Local, rhs: Local) -> Result<bool, Error>,
+        make_instr_reg_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
+        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Local) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: Copy + From<TypedVal> + Into<TypedVal> + TryInto<Const16<T>>,
@@ -1580,11 +1580,11 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_fbinary<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
-        make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
-        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
+        make_instr_opt: fn(&mut Self, lhs: Local, rhs: Local) -> Result<bool, Error>,
+        make_instr_reg_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
+        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Local) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmFloat,
@@ -1636,8 +1636,8 @@ impl FuncTranslator {
     /// - Applies constant evaluation if both operands are constant values.
     fn translate_fcopysign<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm: fn(result: Reg, lhs: Reg, rhs: Sign<T>) -> Instruction,
+        make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
+        make_instr_imm: fn(result: Local, lhs: Local, rhs: Sign<T>) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
     ) -> Result<(), Error>
     where
@@ -1692,11 +1692,11 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_binary_commutative<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
+        make_instr_imm16: fn(result: Local, lhs: Local, rhs: Const16<T>) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
-        make_instr_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
+        make_instr_opt: fn(&mut Self, lhs: Local, rhs: Local) -> Result<bool, Error>,
+        make_instr_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: Copy + From<TypedVal> + TryInto<Const16<T>>,
@@ -1750,10 +1750,10 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_fbinary_commutative<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
-        make_instr_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
+        make_instr_opt: fn(&mut Self, lhs: Local, rhs: Local) -> Result<bool, Error>,
+        make_instr_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmFloat,
@@ -1805,15 +1805,15 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_shift<T>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
         make_instr_by: fn(
-            result: Reg,
-            lhs: Reg,
+            result: Local,
+            lhs: Local,
             rhs: <T as IntoShiftAmount>::Output,
         ) -> Instruction,
-        make_instr_imm16: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        make_instr_imm16: fn(result: Local, lhs: Const16<T>, rhs: Local) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
+        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Local) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmInteger + IntoShiftAmount<Input: From<TypedVal>>,
@@ -1875,12 +1875,12 @@ impl FuncTranslator {
     #[allow(clippy::too_many_arguments)]
     fn translate_divrem<T, NonZeroT>(
         &mut self,
-        make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
-        make_instr_imm16: fn(result: Reg, lhs: Reg, rhs: Const16<NonZeroT>) -> Instruction,
-        make_instr_imm16_rev: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
+        make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
+        make_instr_imm16: fn(result: Local, lhs: Local, rhs: Const16<NonZeroT>) -> Instruction,
+        make_instr_imm16_rev: fn(result: Local, lhs: Const16<T>, rhs: Local) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> Result<TypedVal, TrapCode>,
-        make_instr_opt: fn(&mut Self, lhs: Reg, rhs: Reg) -> Result<bool, Error>,
-        make_instr_reg_imm_opt: fn(&mut Self, lhs: Reg, rhs: T) -> Result<bool, Error>,
+        make_instr_opt: fn(&mut Self, lhs: Local, rhs: Local) -> Result<bool, Error>,
+        make_instr_reg_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmInteger,
@@ -1936,7 +1936,7 @@ impl FuncTranslator {
     /// Translates a unary Wasm instruction to Wasmi bytecode.
     fn translate_unary(
         &mut self,
-        make_instr: fn(result: Reg, input: Reg) -> Instruction,
+        make_instr: fn(result: Local, input: Local) -> Instruction,
         consteval: fn(input: TypedVal) -> TypedVal,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -1956,7 +1956,7 @@ impl FuncTranslator {
     /// Translates a fallible unary Wasm instruction to Wasmi bytecode.
     fn translate_unary_fallible(
         &mut self,
-        make_instr: fn(result: Reg, input: Reg) -> Instruction,
+        make_instr: fn(result: Local, input: Local) -> Instruction,
         consteval: fn(input: TypedVal) -> Result<TypedVal, TrapCode>,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -2035,9 +2035,9 @@ impl FuncTranslator {
     fn translate_load(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(result: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset16: fn(result: Reg, ptr: Reg, offset: Offset16) -> Instruction,
-        make_instr_at: fn(result: Reg, address: Address32) -> Instruction,
+        make_instr: fn(result: Local, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(result: Local, ptr: Local, offset: Offset16) -> Instruction,
+        make_instr_at: fn(result: Local, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -2094,11 +2094,11 @@ impl FuncTranslator {
     fn translate_istore<Src, Field>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
-        make_instr_offset16_imm: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
-        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_imm: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(ptr: Local, offset: Offset16, value: Local) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Local, offset: Offset16, value: Field) -> Instruction,
+        make_instr_at: fn(value: Local, address: Address32) -> Instruction,
         make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
@@ -2132,11 +2132,11 @@ impl FuncTranslator {
     fn translate_istore_wrap<Src, Wrapped, Field>(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
-        make_instr_offset16_imm: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
-        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_imm: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(ptr: Local, offset: Offset16, value: Local) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Local, offset: Offset16, value: Field) -> Instruction,
+        make_instr_at: fn(value: Local, address: Address32) -> Instruction,
         make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
@@ -2165,11 +2165,11 @@ impl FuncTranslator {
         memarg: MemArg,
         ptr: TypedProvider,
         value: TypedProvider,
-        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_imm: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
-        make_instr_offset16_imm: fn(ptr: Reg, offset: Offset16, value: Field) -> Instruction,
-        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_imm: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(ptr: Local, offset: Offset16, value: Local) -> Instruction,
+        make_instr_offset16_imm: fn(ptr: Local, offset: Offset16, value: Field) -> Instruction,
+        make_instr_at: fn(value: Local, address: Address32) -> Instruction,
         make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
@@ -2250,7 +2250,7 @@ impl FuncTranslator {
         memory: index::Memory,
         address: Address32,
         value: TypedProvider,
-        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at: fn(value: Local, address: Address32) -> Instruction,
         make_instr_at_imm: fn(value: Field, address: Address32) -> Instruction,
     ) -> Result<(), Error>
     where
@@ -2287,11 +2287,11 @@ impl FuncTranslator {
     /// Returns `Some` in case the optimized instructions have been encoded.
     fn translate_istore_wrap_mem0<Src, Wrapped, Field>(
         &mut self,
-        ptr: Reg,
+        ptr: Local,
         offset: u64,
         value: TypedProvider,
-        make_instr_offset16: fn(Reg, Offset16, Reg) -> Instruction,
-        make_instr_offset16_imm: fn(Reg, Offset16, Field) -> Instruction,
+        make_instr_offset16: fn(Local, Offset16, Local) -> Instruction,
+        make_instr_offset16_imm: fn(Local, Offset16, Field) -> Instruction,
     ) -> Result<Option<Instr>, Error>
     where
         Src: Copy + From<TypedVal> + Wrap<Wrapped>,
@@ -2336,9 +2336,9 @@ impl FuncTranslator {
     fn translate_store(
         &mut self,
         memarg: MemArg,
-        make_instr: fn(ptr: Reg, offset_lo: Offset64Lo) -> Instruction,
-        make_instr_offset16: fn(ptr: Reg, offset: Offset16, value: Reg) -> Instruction,
-        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr: fn(ptr: Local, offset_lo: Offset64Lo) -> Instruction,
+        make_instr_offset16: fn(ptr: Local, offset: Offset16, value: Local) -> Instruction,
+        make_instr_at: fn(value: Local, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         bail_unreachable!(self);
         let (memory, offset) = Self::decode_memarg(memarg);
@@ -2386,7 +2386,7 @@ impl FuncTranslator {
         memory: index::Memory,
         address: Address32,
         value: TypedProvider,
-        make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
+        make_instr_at: fn(value: Local, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         let value = self.alloc.stack.provider2reg(&value)?;
         self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
@@ -2482,10 +2482,10 @@ impl FuncTranslator {
 
     fn translate_select_regs(
         &mut self,
-        result: Reg,
-        condition: Reg,
-        lhs: Reg,
-        rhs: Reg,
+        result: Local,
+        condition: Local,
+        lhs: Local,
+        rhs: Local,
     ) -> Result<(), Error> {
         debug_assert_ne!(lhs, rhs);
         self.push_fueled_instr(Instruction::select(result, lhs), FuelCosts::base)?;
@@ -2497,8 +2497,8 @@ impl FuncTranslator {
 
     fn translate_select_32(
         &mut self,
-        result: Reg,
-        condition: Reg,
+        result: Local,
+        condition: Local,
         lhs: Provider<TypedVal>,
         rhs: Provider<TypedVal>,
     ) -> Result<(), Error> {
@@ -2535,8 +2535,8 @@ impl FuncTranslator {
 
     fn translate_select_i64(
         &mut self,
-        result: Reg,
-        condition: Reg,
+        result: Local,
+        condition: Local,
         lhs: Provider<TypedVal>,
         rhs: Provider<TypedVal>,
     ) -> Result<(), Error> {
@@ -2579,8 +2579,8 @@ impl FuncTranslator {
 
     fn translate_select_f64(
         &mut self,
-        result: Reg,
-        condition: Reg,
+        result: Local,
+        condition: Local,
         lhs: Provider<TypedVal>,
         rhs: Provider<TypedVal>,
     ) -> Result<(), Error> {
@@ -2623,8 +2623,8 @@ impl FuncTranslator {
 
     fn translate_select_generic(
         &mut self,
-        result: Reg,
-        condition: Reg,
+        result: Local,
+        condition: Local,
         lhs: Provider<TypedVal>,
         rhs: Provider<TypedVal>,
     ) -> Result<(), Error> {
@@ -2633,7 +2633,7 @@ impl FuncTranslator {
             Provider::Register(lhs) => lhs,
             Provider::Const(lhs) => self.alloc.stack.alloc_const(lhs)?,
         };
-        let rhs: Reg = match rhs {
+        let rhs: Local = match rhs {
             Provider::Register(rhs) => rhs,
             Provider::Const(rhs) => self.alloc.stack.alloc_const(rhs)?,
         };
@@ -2697,7 +2697,7 @@ impl FuncTranslator {
     }
 
     /// Translates a conditional `br_if` that targets the function enclosing `block`.
-    fn translate_return_if(&mut self, condition: Reg) -> Result<(), Error> {
+    fn translate_return_if(&mut self, condition: Local) -> Result<(), Error> {
         bail_unreachable!(self);
         let len_results = self.func_type().results().len();
         let fuel_info = self.fuel_info();
@@ -2781,7 +2781,7 @@ impl FuncTranslator {
             // Case: the `br_table` only has a single target `t` which is equal to a `br t`.
             return self.translate_br(default_target);
         }
-        let index: Reg = match index {
+        let index: Local = match index {
             TypedProvider::Register(index) => index,
             TypedProvider::Const(index) => {
                 // Case: the `br_table` index is a constant value, therefore always taking the same branch.
@@ -2864,7 +2864,7 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `br_table` instruction without inputs.
-    fn translate_br_table_0(&mut self, index: Reg) -> Result<(), Error> {
+    fn translate_br_table_0(&mut self, index: Local) -> Result<(), Error> {
         let targets = &self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
         self.alloc.instr_encoder.push_fueled_instr(
@@ -2878,7 +2878,7 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `br_table` instruction with a single input.
-    fn translate_br_table_1(&mut self, index: Reg) -> Result<(), Error> {
+    fn translate_br_table_1(&mut self, index: Local) -> Result<(), Error> {
         let targets = &self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
         let fuel_info = self.fuel_info();
@@ -2920,7 +2920,7 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `br_table` instruction with exactly two inputs.
-    fn translate_br_table_2(&mut self, index: Reg) -> Result<(), Error> {
+    fn translate_br_table_2(&mut self, index: Local) -> Result<(), Error> {
         let targets = &self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
         let fuel_info = self.fuel_info();
@@ -2943,7 +2943,7 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `br_table` instruction with exactly three inputs.
-    fn translate_br_table_3(&mut self, index: Reg) -> Result<(), Error> {
+    fn translate_br_table_3(&mut self, index: Local) -> Result<(), Error> {
         let targets = &self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
         let fuel_info = self.fuel_info();
@@ -2967,7 +2967,7 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `br_table` instruction with 4 or more inputs.
-    fn translate_br_table_n(&mut self, index: Reg, len_values: u16) -> Result<(), Error> {
+    fn translate_br_table_n(&mut self, index: Local, len_values: u16) -> Result<(), Error> {
         debug_assert!(len_values > 3);
         let values = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(usize::from(len_values), values);
@@ -2978,7 +2978,11 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `br_table` instruction with 4 or more inputs that form a [`RegSpan`].
-    fn translate_br_table_span(&mut self, index: Reg, values: BoundedRegSpan) -> Result<(), Error> {
+    fn translate_br_table_span(
+        &mut self,
+        index: Local,
+        values: BoundedRegSpan,
+    ) -> Result<(), Error> {
         debug_assert!(values.len() > 3);
         let fuel_info = self.fuel_info();
         let targets = &mut self.alloc.buffer.br_table_targets;
@@ -3010,7 +3014,7 @@ impl FuncTranslator {
     }
 
     /// Translates a Wasm `br_table` instruction with 4 or more inputs that cannot form a [`RegSpan`].
-    fn translate_br_table_many(&mut self, index: Reg) -> Result<(), Error> {
+    fn translate_br_table_many(&mut self, index: Local) -> Result<(), Error> {
         let targets = &mut self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
         let fuel_info = self.fuel_info();
@@ -3041,7 +3045,7 @@ impl FuncTranslator {
     /// Translates a Wasm `i64.binop128` instruction from the `wide-arithmetic` proposal.
     fn translate_i64_binop128(
         &mut self,
-        make_instr: fn(results: [Reg; 2], lhs_lo: Reg) -> Instruction,
+        make_instr: fn(results: [Local; 2], lhs_lo: Local) -> Instruction,
         const_eval: fn(lhs_lo: i64, lhs_hi: i64, rhs_lo: i64, rhs_hi: i64) -> (i64, i64),
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -3088,7 +3092,7 @@ impl FuncTranslator {
     /// Translates a Wasm `i64.mul_wide_sx` instruction from the `wide-arithmetic` proposal.
     fn translate_i64_mul_wide_sx(
         &mut self,
-        make_instr: fn(results: FixedRegSpan<2>, lhs: Reg, rhs: Reg) -> Instruction,
+        make_instr: fn(results: FixedRegSpan<2>, lhs: Local, rhs: Local) -> Instruction,
         const_eval: fn(lhs: i64, rhs: i64) -> (i64, i64),
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -3124,11 +3128,11 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Try to optimize a `i64.mul_wide_sx` instruction with one [`Reg`] and one immediate input.
+    /// Try to optimize a `i64.mul_wide_sx` instruction with one [`Local`] and one immediate input.
     ///
     /// - Returns `Ok(true)` if the optimiation was applied successfully.
     /// - Returns `Ok(false)` if no optimization was applied.
-    fn try_opt_i64_mul_wide_sx(&mut self, reg_in: Reg, imm_in: TypedVal) -> Result<bool, Error> {
+    fn try_opt_i64_mul_wide_sx(&mut self, reg_in: Local, imm_in: TypedVal) -> Result<bool, Error> {
         let imm_in = i64::from(imm_in);
         if imm_in == 0 {
             // Case: `mul(x, 0)` or `mul(0, x)` always evaluates to 0.

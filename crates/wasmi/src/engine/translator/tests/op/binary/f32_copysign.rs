@@ -14,7 +14,7 @@ fn reg_reg() {
 fn reg_imm() {
     fn make_instrs(sign: Sign<f32>) -> [Instruction; 2] {
         [
-            Instruction::f32_copysign_imm(Reg::from(1), Reg::from(0), sign),
+            Instruction::f32_copysign_imm(Local::from(1), Local::from(0), sign),
             Instruction::return_reg(1),
         ]
     }

@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::{hint, UntypedVal},
-    ir::{index, Const16, Reg},
+    ir::{index, Const16, Local},
     store::StoreInner,
 };
 
@@ -10,7 +10,7 @@ use crate::ir::Instruction;
 
 impl Executor<'_> {
     /// Executes an [`Instruction::GlobalGet`].
-    pub fn execute_global_get(&mut self, store: &StoreInner, result: Reg, global: index::Global) {
+    pub fn execute_global_get(&mut self, store: &StoreInner, result: Local, global: index::Global) {
         let value = match u32::from(global) {
             0 => unsafe { self.cache.global.get() },
             _ => {
@@ -28,7 +28,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         global: index::Global,
-        input: Reg,
+        input: Local,
     ) {
         let input = self.get_register(input);
         self.execute_global_set_impl(store, global, input)

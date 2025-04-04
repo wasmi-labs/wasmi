@@ -323,7 +323,7 @@ macro_rules! iN_reinterpret_fN_tests {
 
                 #[test] #[cfg_attr(miri, ignore)]
                 fn reg() {
-                    conversion_reg_with::<$input_ty, $output_ty, _>(OP, [Instruction::return_reg(Reg::from(0))]);
+                    conversion_reg_with::<$input_ty, $output_ty, _>(OP, [Instruction::return_reg(Local::from(0))]);
                 }
 
                 #[test] #[cfg_attr(miri, ignore)]
@@ -357,7 +357,7 @@ macro_rules! fN_reinterpret_iN_tests {
 
                 #[test] #[cfg_attr(miri, ignore)]
                 fn reg() {
-                    conversion_reg_with::<$input_ty, $output_ty, _>(OP, [Instruction::return_reg(Reg::from(0))]);
+                    conversion_reg_with::<$input_ty, $output_ty, _>(OP, [Instruction::return_reg(Local::from(0))]);
                 }
 
                 #[test] #[cfg_attr(miri, ignore)]

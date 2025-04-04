@@ -1,7 +1,7 @@
 use crate::{
     core::UntypedVal,
     engine::translator::TranslationError,
-    ir::{AnyConst32, Reg},
+    ir::{AnyConst32, Local},
     Error,
 };
 use alloc::vec::{Drain, Vec};
@@ -9,7 +9,7 @@ use alloc::vec::{Drain, Vec};
 #[cfg(doc)]
 use super::Instruction;
 
-/// A light-weight reference to a [`Reg`] slice.
+/// A light-weight reference to a [`Local`] slice.
 ///
 /// # Dev. Note
 ///
@@ -34,15 +34,15 @@ impl ProviderSliceRef {
 /// A provider for an input to an [`Instruction`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Provider<T> {
-    /// A [`Reg`] value.
-    Register(Reg),
+    /// A [`Local`] value.
+    Register(Local),
     /// An immediate (or constant) value.
     Const(T),
 }
 
 impl<T> Provider<T> {
     /// Returns `Some` if `self` is a [`Provider::Register`].
-    pub fn into_register(self) -> Option<Reg> {
+    pub fn into_register(self) -> Option<Local> {
         match self {
             Self::Register(register) => Some(register),
             Self::Const(_) => None,
@@ -66,8 +66,8 @@ impl<T> Provider<T> {
 /// Wasmi bytecode where typing usually no longer plays a role.
 pub type UntypedProvider = Provider<UntypedVal>;
 
-impl From<Reg> for UntypedProvider {
-    fn from(register: Reg) -> Self {
+impl From<Local> for UntypedProvider {
+    fn from(register: Local) -> Self {
         Self::Register(register)
     }
 }
@@ -122,7 +122,7 @@ impl<T> ProviderSliceStack<T> {
         ProviderSliceRef::from_index(index)
     }
 
-    /// Pops the top-most [`Reg`] slice from the [`ProviderSliceStack`] and returns it.
+    /// Pops the top-most [`Local`] slice from the [`ProviderSliceStack`] and returns it.
     pub fn pop(&mut self) -> Option<Drain<Provider<T>>> {
         let end = self.ends.pop()?;
         let start = self.ends.last().copied().unwrap_or(0);

@@ -17,7 +17,7 @@ fn test_fill(ty: ValType) {
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::table_fill(Reg::from(0), Reg::from(2), Reg::from(1)),
+            Instruction::table_fill(Local::from(0), Local::from(2), Local::from(1)),
             Instruction::table_index(0),
             Instruction::Return,
         ])
@@ -51,7 +51,7 @@ fn testcase_fill_exact(ty: ValType, len: u64) -> TranslationTest {
 fn test_fill_exact16(ty: ValType, len: u64) {
     testcase_fill_exact(ty, len)
         .expect_func_instrs([
-            Instruction::table_fill_exact(Reg::from(0), u64imm16(len), Reg::from(1)),
+            Instruction::table_fill_exact(Local::from(0), u64imm16(len), Local::from(1)),
             Instruction::table_index(0),
             Instruction::Return,
         ])
@@ -75,7 +75,7 @@ fn test_fill_exact(ty: ValType, len: u64) {
     testcase_fill_exact(ty, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::table_fill(Reg::from(0), Reg::from(-1), Reg::from(1)),
+                Instruction::table_fill(Local::from(0), Local::from(-1), Local::from(1)),
                 Instruction::table_index(0),
                 Instruction::Return,
             ])
@@ -115,7 +115,7 @@ fn testcase_fill_at(ty: ValType, dst: u64) -> TranslationTest {
 fn test_fill_at16(ty: ValType, dst: u64) {
     testcase_fill_at(ty, dst)
         .expect_func_instrs([
-            Instruction::table_fill_at(u64imm16(dst), Reg::from(1), Reg::from(0)),
+            Instruction::table_fill_at(u64imm16(dst), Local::from(1), Local::from(0)),
             Instruction::table_index(0),
             Instruction::Return,
         ])
@@ -137,7 +137,7 @@ fn test_fill_at(ty: ValType, dst: u64) {
     testcase_fill_at(ty, dst)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::table_fill(Reg::from(-1), Reg::from(1), Reg::from(0)),
+                Instruction::table_fill(Local::from(-1), Local::from(1), Local::from(0)),
                 Instruction::table_index(0),
                 Instruction::Return,
             ])
@@ -177,7 +177,7 @@ fn testcase_fill_at_exact(ty: ValType, dst: u64, len: u64) -> TranslationTest {
 fn test_fill_at_exact16(ty: ValType, dst: u64, len: u64) {
     testcase_fill_at_exact(ty, dst, len)
         .expect_func_instrs([
-            Instruction::table_fill_at_exact(u64imm16(dst), u64imm16(len), Reg::from(0)),
+            Instruction::table_fill_at_exact(u64imm16(dst), u64imm16(len), Local::from(0)),
             Instruction::table_index(0),
             Instruction::Return,
         ])
@@ -203,7 +203,7 @@ fn test_fill_at_exact(ty: ValType, dst: u64, len: u64) {
     testcase_fill_at_exact(ty, dst, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::table_fill(Reg::from(-1), Reg::from(-2), Reg::from(0)),
+                Instruction::table_fill(Local::from(-1), Local::from(-2), Local::from(0)),
                 Instruction::table_index(0),
                 Instruction::Return,
             ])
@@ -264,7 +264,7 @@ fn test_fill_at_exact_imm(ty: ValType, dst: u32, len: u32) {
     testcase_fill_at_exact_imm(ty, dst, len)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::table_fill(Reg::from(-1), Reg::from(-2), Reg::from(-3)),
+                Instruction::table_fill(Local::from(-1), Local::from(-2), Local::from(-3)),
                 Instruction::table_index(0),
                 Instruction::Return,
             ])

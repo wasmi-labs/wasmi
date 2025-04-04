@@ -12,7 +12,11 @@ use std::{
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loop_backward() {
-    fn test_for(ty: ValType, op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+    fn test_for(
+        ty: ValType,
+        op: &str,
+        expect_instr: fn(Local, Local, BranchOffset16) -> Instruction,
+    ) {
         let ty = DisplayValueType::from(ty);
         let wasm = format!(
             r"
@@ -29,7 +33,7 @@ fn loop_backward() {
         );
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(0)),
+                expect_instr(Local::from(0), Local::from(1), BranchOffset16::from(0)),
                 Instruction::Return,
             ])
             .run()
@@ -129,7 +133,7 @@ fn loop_backward_imm_rhs() {
     fn test_for<T>(
         op: &str,
         value: T,
-        expect_instr: fn(Reg, Const16<T>, BranchOffset16) -> Instruction,
+        expect_instr: fn(Local, Const16<T>, BranchOffset16) -> Instruction,
     ) where
         T: WasmTy,
         Const16<T>: TryFrom<T> + Debug,
@@ -153,7 +157,7 @@ fn loop_backward_imm_rhs() {
         TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expect_instr(
-                    Reg::from(0),
+                    Local::from(0),
                     <Const16<T>>::try_from(value).ok().unwrap(),
                     BranchOffset16::from(0),
                 ),
@@ -226,7 +230,7 @@ fn loop_backward_imm_lhs() {
     fn test_for<T>(
         op: &str,
         value: T,
-        expect_instr: fn(Reg, Const16<T>, BranchOffset16) -> Instruction,
+        expect_instr: fn(Local, Const16<T>, BranchOffset16) -> Instruction,
     ) where
         T: WasmTy,
         Const16<T>: TryFrom<T> + Debug,
@@ -250,7 +254,7 @@ fn loop_backward_imm_lhs() {
         TranslationTest::new(&wasm)
             .expect_func_instrs([
                 expect_instr(
-                    Reg::from(0),
+                    Local::from(0),
                     <Const16<T>>::try_from(value).ok().unwrap(),
                     BranchOffset16::from(0),
                 ),
@@ -320,7 +324,11 @@ fn loop_backward_imm_lhs() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn block_forward() {
-    fn test_for(ty: ValType, op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+    fn test_for(
+        ty: ValType,
+        op: &str,
+        expect_instr: fn(Local, Local, BranchOffset16) -> Instruction,
+    ) {
         let ty = DisplayValueType::from(ty);
         let wasm = format!(
             r"
@@ -337,7 +345,7 @@ fn block_forward() {
         );
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
+                expect_instr(Local::from(0), Local::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
             ])
             .run()
@@ -434,7 +442,11 @@ fn block_forward() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn block_forward_nop_copy() {
-    fn test_for(ty: ValType, op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+    fn test_for(
+        ty: ValType,
+        op: &str,
+        expect_instr: fn(Local, Local, BranchOffset16) -> Instruction,
+    ) {
         let ty = DisplayValueType::from(ty);
         let wasm = format!(
             r"
@@ -455,9 +467,9 @@ fn block_forward_nop_copy() {
         );
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                Instruction::global_get(Reg::from(2), Global::from(0)),
-                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(2)),
-                Instruction::copy(Reg::from(2), Reg::from(0)),
+                Instruction::global_get(Local::from(2), Global::from(0)),
+                expect_instr(Local::from(0), Local::from(1), BranchOffset16::from(2)),
+                Instruction::copy(Local::from(2), Local::from(0)),
                 Instruction::return_reg(2),
             ])
             .run()
@@ -554,7 +566,11 @@ fn block_forward_nop_copy() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_forward_multi_value() {
-    fn test_for(ty: ValType, op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+    fn test_for(
+        ty: ValType,
+        op: &str,
+        expect_instr: fn(Local, Local, BranchOffset16) -> Instruction,
+    ) {
         let ty = DisplayValueType::from(ty);
         let wasm = format!(
             r"
@@ -574,10 +590,10 @@ fn if_forward_multi_value() {
         );
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(3)),
-                Instruction::copy(Reg::from(2), Reg::from(0)),
+                expect_instr(Local::from(0), Local::from(1), BranchOffset16::from(3)),
+                Instruction::copy(Local::from(2), Local::from(0)),
                 Instruction::branch(BranchOffset::from(2)),
-                Instruction::copy(Reg::from(2), Reg::from(1)),
+                Instruction::copy(Local::from(2), Local::from(1)),
                 Instruction::return_reg(2),
             ])
             .run()
@@ -644,7 +660,11 @@ fn if_forward_multi_value() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_forward() {
-    fn test_for(ty: ValType, op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+    fn test_for(
+        ty: ValType,
+        op: &str,
+        expect_instr: fn(Local, Local, BranchOffset16) -> Instruction,
+    ) {
         let ty = DisplayValueType::from(ty);
         let wasm = format!(
             r"
@@ -662,7 +682,7 @@ fn if_forward() {
         );
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
+                expect_instr(Local::from(0), Local::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
             ])
             .run()
@@ -729,7 +749,7 @@ fn if_forward() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn block_i32_eqz_fuse() {
-    fn test_for(op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+    fn test_for(op: &str, expect_instr: fn(Local, Local, BranchOffset16) -> Instruction) {
         let wasm = format!(
             r"
             (module
@@ -746,7 +766,7 @@ fn block_i32_eqz_fuse() {
         );
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
+                expect_instr(Local::from(0), Local::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
             ])
             .run()
@@ -762,7 +782,7 @@ fn block_i32_eqz_fuse() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn if_i32_eqz_fuse() {
-    fn test_for(op: &str, expect_instr: fn(Reg, Reg, BranchOffset16) -> Instruction) {
+    fn test_for(op: &str, expect_instr: fn(Local, Local, BranchOffset16) -> Instruction) {
         let wasm = format!(
             r"
             (module
@@ -776,7 +796,7 @@ fn if_i32_eqz_fuse() {
         );
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(0), Reg::from(1), BranchOffset16::from(1)),
+                expect_instr(Local::from(0), Local::from(1), BranchOffset16::from(1)),
                 Instruction::Return,
             ])
             .run()
@@ -803,7 +823,7 @@ fn block_i64_eqz_fuse() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_eq_imm16(Reg::from(0), 0, BranchOffset16::from(1)),
+            Instruction::branch_i64_eq_imm16(Local::from(0), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -823,7 +843,7 @@ fn if_i64_eqz_fuse() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i64_ne_imm16(Reg::from(0), 0, BranchOffset16::from(1)),
+            Instruction::branch_i64_ne_imm16(Local::from(0), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()

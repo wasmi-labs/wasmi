@@ -9,7 +9,7 @@ use crate::{
         FuncInOut,
     },
     func::{FuncEntity, HostFuncEntity},
-    ir::{index, Instruction, Reg, RegSpan},
+    ir::{index, Instruction, Local, RegSpan},
     store::{CallHooks, PrunedStore, StoreInner},
     Error,
     Func,
@@ -280,8 +280,8 @@ impl Executor<'_> {
         }
     }
 
-    /// Copies an array of [`Reg`] to the `dst` [`Reg`] span.
-    fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Reg; N]) {
+    /// Copies an array of [`Local`] to the `dst` [`Local`] span.
+    fn copy_regs<const N: usize>(&self, uninit_params: &mut FrameParams, regs: &[Local; N]) {
         for value in regs {
             let value = self.get_register(*value);
             // Safety: The `callee.results()` always refer to a span of valid
@@ -292,7 +292,7 @@ impl Executor<'_> {
         }
     }
 
-    /// Copies a list of [`Instruction::RegisterList`] to the `dst` [`Reg`] span.
+    /// Copies a list of [`Instruction::RegisterList`] to the `dst` [`Local`] span.
     /// Copies the parameters from `src` for the called [`CallFrame`].
     ///
     /// This will make the [`InstructionPtr`] point to the [`Instruction`] following the

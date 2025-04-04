@@ -8,7 +8,7 @@ use crate::{
         Const16,
         Const32,
         Instruction,
-        Reg,
+        Local,
     },
     store::{PrunedStore, ResourceLimiterRef, StoreInner},
     table::TableEntity,
@@ -54,8 +54,8 @@ impl Executor<'_> {
     pub fn execute_table_get(
         &mut self,
         store: &StoreInner,
-        result: Reg,
-        index: Reg,
+        result: Local,
+        index: Local,
     ) -> Result<(), Error> {
         let index: u64 = self.get_register_as(index);
         self.execute_table_get_impl(store, result, index)
@@ -65,7 +65,7 @@ impl Executor<'_> {
     pub fn execute_table_get_imm(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Local,
         index: Const32<u64>,
     ) -> Result<(), Error> {
         let index: u64 = index.into();
@@ -76,7 +76,7 @@ impl Executor<'_> {
     fn execute_table_get_impl(
         &mut self,
         store: &StoreInner,
-        result: Reg,
+        result: Local,
         index: u64,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
@@ -90,13 +90,13 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::TableSize`].
-    pub fn execute_table_size(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
+    pub fn execute_table_size(&mut self, store: &StoreInner, result: Local, table_index: Table) {
         self.execute_table_size_impl(store, result, table_index);
         self.next_instr();
     }
 
     /// Executes a generic `table.size` instruction.
-    fn execute_table_size_impl(&mut self, store: &StoreInner, result: Reg, table_index: Table) {
+    fn execute_table_size_impl(&mut self, store: &StoreInner, result: Local, table_index: Table) {
         let table = self.get_table(table_index);
         let size = store.resolve_table(&table).size();
         self.set_register(result, size);
@@ -106,8 +106,8 @@ impl Executor<'_> {
     pub fn execute_table_set(
         &mut self,
         store: &mut StoreInner,
-        index: Reg,
-        value: Reg,
+        index: Local,
+        value: Local,
     ) -> Result<(), Error> {
         let index: u64 = self.get_register_as(index);
         self.execute_table_set_impl(store, index, value)
@@ -118,7 +118,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         index: Const32<u64>,
-        value: Reg,
+        value: Local,
     ) -> Result<(), Error> {
         let index: u64 = index.into();
         self.execute_table_set_impl(store, index, value)
@@ -129,7 +129,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         index: u64,
-        value: Reg,
+        value: Local,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let table = self.get_table(table_index);
@@ -145,9 +145,9 @@ impl Executor<'_> {
     pub fn execute_table_copy(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Reg,
+        dst: Local,
+        src: Local,
+        len: Local,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u64 = self.get_register_as(src);
@@ -160,8 +160,8 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u64>,
-        src: Reg,
-        len: Reg,
+        src: Local,
+        len: Local,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
         let src: u64 = self.get_register_as(src);
@@ -173,9 +173,9 @@ impl Executor<'_> {
     pub fn execute_table_copy_from(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
+        dst: Local,
         src: Const16<u64>,
-        len: Reg,
+        len: Local,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u64 = src.into();
@@ -189,7 +189,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         dst: Const16<u64>,
         src: Const16<u64>,
-        len: Reg,
+        len: Local,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
         let src: u64 = src.into();
@@ -201,8 +201,8 @@ impl Executor<'_> {
     pub fn execute_table_copy_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
+        dst: Local,
+        src: Local,
         len: Const16<u64>,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
@@ -216,7 +216,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u64>,
-        src: Reg,
+        src: Local,
         len: Const16<u64>,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
@@ -229,7 +229,7 @@ impl Executor<'_> {
     pub fn execute_table_copy_from_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
+        dst: Local,
         src: Const16<u64>,
         len: Const16<u64>,
     ) -> Result<(), Error> {
@@ -285,9 +285,9 @@ impl Executor<'_> {
     pub fn execute_table_init(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
-        len: Reg,
+        dst: Local,
+        src: Local,
+        len: Local,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u32 = self.get_register_as(src);
@@ -300,8 +300,8 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u64>,
-        src: Reg,
-        len: Reg,
+        src: Local,
+        len: Local,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
         let src: u32 = self.get_register_as(src);
@@ -313,9 +313,9 @@ impl Executor<'_> {
     pub fn execute_table_init_from(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
+        dst: Local,
         src: Const16<u32>,
-        len: Reg,
+        len: Local,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let src: u32 = src.into();
@@ -329,7 +329,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         dst: Const16<u64>,
         src: Const16<u32>,
-        len: Reg,
+        len: Local,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
         let src: u32 = src.into();
@@ -341,8 +341,8 @@ impl Executor<'_> {
     pub fn execute_table_init_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        src: Reg,
+        dst: Local,
+        src: Local,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
@@ -356,7 +356,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u64>,
-        src: Reg,
+        src: Local,
         len: Const16<u32>,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
@@ -369,7 +369,7 @@ impl Executor<'_> {
     pub fn execute_table_init_from_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
+        dst: Local,
         src: Const16<u32>,
         len: Const16<u32>,
     ) -> Result<(), Error> {
@@ -416,9 +416,9 @@ impl Executor<'_> {
     pub fn execute_table_fill(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
-        len: Reg,
-        value: Reg,
+        dst: Local,
+        len: Local,
+        value: Local,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let len: u64 = self.get_register_as(len);
@@ -430,8 +430,8 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         dst: Const16<u64>,
-        len: Reg,
-        value: Reg,
+        len: Local,
+        value: Local,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
         let len: u64 = self.get_register_as(len);
@@ -442,9 +442,9 @@ impl Executor<'_> {
     pub fn execute_table_fill_exact(
         &mut self,
         store: &mut StoreInner,
-        dst: Reg,
+        dst: Local,
         len: Const16<u64>,
-        value: Reg,
+        value: Local,
     ) -> Result<(), Error> {
         let dst: u64 = self.get_register_as(dst);
         let len: u64 = len.into();
@@ -457,7 +457,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         dst: Const16<u64>,
         len: Const16<u64>,
-        value: Reg,
+        value: Local,
     ) -> Result<(), Error> {
         let dst: u64 = dst.into();
         let len: u64 = len.into();
@@ -471,7 +471,7 @@ impl Executor<'_> {
         store: &mut StoreInner,
         dst: u64,
         len: u64,
-        value: Reg,
+        value: Local,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);
         let value = self.get_register(value);
@@ -485,9 +485,9 @@ impl Executor<'_> {
     pub fn execute_table_grow(
         &mut self,
         store: &mut PrunedStore,
-        result: Reg,
-        delta: Reg,
-        value: Reg,
+        result: Local,
+        delta: Local,
+        value: Local,
     ) -> Result<(), Error> {
         let delta: u64 = self.get_register_as(delta);
         let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
@@ -498,9 +498,9 @@ impl Executor<'_> {
     pub fn execute_table_grow_imm(
         &mut self,
         store: &mut PrunedStore,
-        result: Reg,
+        result: Local,
         delta: Const16<u64>,
-        value: Reg,
+        value: Local,
     ) -> Result<(), Error> {
         let delta: u64 = delta.into();
         let (store, mut resource_limiter) = store.store_inner_and_resource_limiter_ref();
@@ -512,9 +512,9 @@ impl Executor<'_> {
     fn execute_table_grow_impl<'store>(
         &mut self,
         store: &'store mut StoreInner,
-        result: Reg,
+        result: Local,
         delta: u64,
-        value: Reg,
+        value: Local,
         resource_limiter: &mut ResourceLimiterRef<'store>,
     ) -> Result<(), Error> {
         let table_index = self.fetch_table_index(1);

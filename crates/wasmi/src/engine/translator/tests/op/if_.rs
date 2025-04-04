@@ -18,7 +18,7 @@ fn simple_if_then() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(1)),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -41,8 +41,8 @@ fn simple_if_then_nested() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(2)),
-            Instruction::branch_i32_eq_imm16(Reg::from(1), 0, BranchOffset16::from(1)),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm16(Local::from(1), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -65,8 +65,8 @@ fn if_then_global_set() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(2_i16)),
-            Instruction::global_set(Reg::from(1), Global::from(0)),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(2_i16)),
+            Instruction::global_set(Local::from(1), Global::from(0)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
         ])
         .run()
@@ -93,9 +93,9 @@ fn if_then_return() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(3)),
-            Instruction::i32_add(Reg::from(3), Reg::from(1), Reg::from(2)),
-            Instruction::return_reg(Reg::from(3)),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(3)),
+            Instruction::i32_add(Local::from(3), Local::from(1), Local::from(2)),
+            Instruction::return_reg(Local::from(3)),
             Instruction::return_imm32(AnyConst32::from(0_i32)),
         ])
         .run()
@@ -120,7 +120,7 @@ fn if_then_else_return() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(2)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
             Instruction::return_imm32(AnyConst32::from(20_i32)),
         ])
@@ -146,7 +146,7 @@ fn if_then_br_else() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
             Instruction::return_imm32(AnyConst32::from(20_i32)),
@@ -173,7 +173,7 @@ fn if_then_else_br() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(2)),
             Instruction::return_imm32(AnyConst32::from(10_i32)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_imm32(AnyConst32::from(20_i32)),
@@ -197,7 +197,7 @@ fn simple_if_then_else() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::Return,
         ])
@@ -228,11 +228,11 @@ fn simple_if_then_else_nested() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(4)),
-            Instruction::branch_i32_eq_imm16(Reg::from(1), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(4)),
+            Instruction::branch_i32_eq_imm16(Local::from(1), 0, BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::branch(BranchOffset::from(3)),
-            Instruction::branch_i32_eq_imm16(Reg::from(1), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_eq_imm16(Local::from(1), 0, BranchOffset16::from(2)),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::Return,
         ])
@@ -255,12 +255,12 @@ fn if_then_else_with_params() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 1, 2),
-            Instruction::branch_i32_eq_imm16(Reg::from(0), 0, BranchOffset16::from(3)),
-            Instruction::i32_add(Reg::from(3), Reg::from(4), Reg::from(5)),
+            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 1, 2),
+            Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(3)),
+            Instruction::i32_add(Local::from(3), Local::from(4), Local::from(5)),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::i32_mul(Reg::from(3), Reg::from(4), Reg::from(5)),
-            Instruction::return_reg(Reg::from(3)),
+            Instruction::i32_mul(Local::from(3), Local::from(4), Local::from(5)),
+            Instruction::return_reg(Local::from(3)),
         ])
         .run()
 }
@@ -328,8 +328,8 @@ fn const_condition_trap_then() {
     test_for(
         false,
         [
-            Instruction::i32_add(Reg::from(2), Reg::from(0), Reg::from(1)),
-            Instruction::return_reg(Reg::from(2)),
+            Instruction::i32_add(Local::from(2), Local::from(0), Local::from(1)),
+            Instruction::return_reg(Local::from(2)),
         ],
     );
 }
@@ -365,8 +365,8 @@ fn const_condition_trap_else() {
     test_for(
         true,
         [
-            Instruction::i32_add(Reg::from(2), Reg::from(0), Reg::from(1)),
-            Instruction::return_reg(Reg::from(2)),
+            Instruction::i32_add(Local::from(2), Local::from(0), Local::from(1)),
+            Instruction::return_reg(Local::from(2)),
         ],
     );
     test_for(false, [Instruction::trap(TrapCode::UnreachableCodeReached)]);
@@ -405,7 +405,7 @@ fn const_condition_br_if_then() {
     test_for(
         false,
         [
-            Instruction::branch_i32_ne_imm16(Reg::from(0), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_ne_imm16(Local::from(0), 0, BranchOffset16::from(2)),
             Instruction::trap(TrapCode::UnreachableCodeReached),
             Instruction::return_imm32(AnyConst32::from(1_i32)),
         ],
@@ -444,7 +444,7 @@ fn const_condition_br_if_else() {
     test_for(
         true,
         [
-            Instruction::branch_i32_ne_imm16(Reg::from(0), 0, BranchOffset16::from(2)),
+            Instruction::branch_i32_ne_imm16(Local::from(0), 0, BranchOffset16::from(2)),
             Instruction::trap(TrapCode::UnreachableCodeReached),
             Instruction::return_imm32(AnyConst32::from(1_i32)),
         ],
@@ -519,11 +519,11 @@ fn test_if_without_else_has_result() {
                 .consts([UntypedVal::from(1_i64), UntypedVal::from(0_i32)]),
         )
         .expect_func_instrs([
-            Instruction::call_internal_0(RegSpan::new(Reg::from(0)), EngineFunc::from_u32(0)),
-            Instruction::branch_i32_eq_imm16(Reg::from(1), 0, BranchOffset16::from(3)),
-            Instruction::copy_i64imm32(Reg::from(0), -1),
+            Instruction::call_internal_0(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+            Instruction::branch_i32_eq_imm16(Local::from(1), 0, BranchOffset16::from(3)),
+            Instruction::copy_i64imm32(Local::from(0), -1),
             Instruction::branch(BranchOffset::from(1)),
-            Instruction::return_reg(Reg::from(0)),
+            Instruction::return_reg(Local::from(0)),
         ])
         .run()
 }

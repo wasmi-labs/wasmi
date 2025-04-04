@@ -13,7 +13,7 @@ fn merge_2_copy_instrs_0() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(0)), Reg::from(2), Reg::from(4)),
+            Instruction::copy2_ext(RegSpan::new(Local::from(0)), Local::from(2), Local::from(4)),
             Instruction::Return,
         ])
         .run()
@@ -31,7 +31,7 @@ fn merge_2_copy_instrs_1() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(0)), Reg::from(4), Reg::from(2)),
+            Instruction::copy2_ext(RegSpan::new(Local::from(0)), Local::from(4), Local::from(2)),
             Instruction::Return,
         ])
         .run()
@@ -49,7 +49,7 @@ fn merge_2_copy_instrs_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(0)), Reg::from(2), Reg::from(4)),
+            Instruction::copy2_ext(RegSpan::new(Local::from(0)), Local::from(2), Local::from(4)),
             Instruction::Return,
         ])
         .run()

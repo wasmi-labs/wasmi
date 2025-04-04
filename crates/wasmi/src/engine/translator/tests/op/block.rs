@@ -58,7 +58,7 @@ fn identity_block_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 0, 1),
+            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
             Instruction::return_reg(4),
         ])
         .run()
@@ -97,7 +97,7 @@ fn nested_identity_block_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 0, 1),
+            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
             Instruction::return_reg(4),
         ])
         .run()
@@ -171,9 +171,9 @@ fn branched_block_1_imm_i32() {
     fn test_for_i32(value: i32) {
         testcase_branched_block_1_imm::<i32>(value)
             .expect_func_instrs([
-                Instruction::copy_imm32(Reg::from(0), AnyConst32::from(value)),
+                Instruction::copy_imm32(Local::from(0), AnyConst32::from(value)),
                 Instruction::branch(BranchOffset::from(1)),
-                Instruction::return_reg(Reg::from(0)),
+                Instruction::return_reg(Local::from(0)),
             ])
             .run();
     }
@@ -192,9 +192,9 @@ fn branched_block_1_imm_i64imm32() {
             <Const32<i64>>::try_from(value).expect("value must be 32-bit encodable for this test");
         testcase_branched_block_1_imm::<i64>(value)
             .expect_func_instrs([
-                Instruction::copy_i64imm32(Reg::from(0), const32),
+                Instruction::copy_i64imm32(Local::from(0), const32),
                 Instruction::branch(BranchOffset::from(1)),
-                Instruction::return_reg(Reg::from(0)),
+                Instruction::return_reg(Local::from(0)),
             ])
             .run();
     }
@@ -214,9 +214,9 @@ fn branched_block_1_imm_i64() {
         testcase_branched_block_1_imm::<i64>(value)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::copy(Reg::from(0), Reg::from(-1)),
+                    Instruction::copy(Local::from(0), Local::from(-1)),
                     Instruction::branch(BranchOffset::from(1)),
-                    Instruction::return_reg(Reg::from(0)),
+                    Instruction::return_reg(Local::from(0)),
                 ])
                 .consts([value]),
             )
@@ -234,9 +234,9 @@ fn branched_block_1_imm_f32() {
     fn test_for_f32(value: f32) {
         testcase_branched_block_1_imm::<f32>(value)
             .expect_func_instrs([
-                Instruction::copy_imm32(Reg::from(0), AnyConst32::from(value)),
+                Instruction::copy_imm32(Local::from(0), AnyConst32::from(value)),
                 Instruction::branch(BranchOffset::from(1)),
-                Instruction::return_reg(Reg::from(0)),
+                Instruction::return_reg(Local::from(0)),
             ])
             .run();
     }
@@ -256,9 +256,9 @@ fn branched_block_1_imm_f64imm32() {
             .expect("value must be losslessly 32-bit encodable for this test");
         testcase_branched_block_1_imm::<f64>(value)
             .expect_func_instrs([
-                Instruction::copy_f64imm32(Reg::from(0), const32),
+                Instruction::copy_f64imm32(Local::from(0), const32),
                 Instruction::branch(BranchOffset::from(1)),
-                Instruction::return_reg(Reg::from(0)),
+                Instruction::return_reg(Local::from(0)),
             ])
             .run();
     }
@@ -280,9 +280,9 @@ fn branched_block_1_imm_f64() {
         testcase_branched_block_1_imm::<f64>(value)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::copy(Reg::from(0), Reg::from(-1)),
+                    Instruction::copy(Local::from(0), Local::from(-1)),
                     Instruction::branch(BranchOffset::from(1)),
-                    Instruction::return_reg(Reg::from(0)),
+                    Instruction::return_reg(Local::from(0)),
                 ])
                 .consts([value]),
             )
@@ -309,10 +309,10 @@ fn branched_block_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 0, 1),
-            Instruction::copy2_ext(RegSpan::new(Reg::from(2)), 4, 5),
+            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
+            Instruction::copy2_ext(RegSpan::new(Local::from(2)), 4, 5),
             Instruction::branch(BranchOffset::from(1)),
-            Instruction::return_reg(Reg::from(2)),
+            Instruction::return_reg(Local::from(2)),
         ])
         .run()
 }
@@ -332,7 +332,7 @@ fn branch_if_block_0() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(1, 0),
-            Instruction::branch_i32_ne_imm16(Reg::from(1), 0, BranchOffset16::from(1)),
+            Instruction::branch_i32_ne_imm16(Local::from(1), 0, BranchOffset16::from(1)),
             Instruction::Return,
         ])
         .run()
@@ -353,12 +353,12 @@ fn branch_if_block_1() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(3)), 0, 1),
-            Instruction::branch_i32_eq_imm16(Reg::from(4), 0, BranchOffset16::from(3)),
-            Instruction::copy(Reg::from(2), Reg::from(3)),
+            Instruction::copy2_ext(RegSpan::new(Local::from(3)), 0, 1),
+            Instruction::branch_i32_eq_imm16(Local::from(4), 0, BranchOffset16::from(3)),
+            Instruction::copy(Local::from(2), Local::from(3)),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy(Reg::from(2), Reg::from(3)),
-            Instruction::return_reg(Reg::from(2)),
+            Instruction::copy(Local::from(2), Local::from(3)),
+            Instruction::return_reg(Local::from(2)),
         ])
         .run()
 }
@@ -388,7 +388,7 @@ fn branch_to_func_block_1() {
             )
         )";
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg(Reg::from(0))])
+        .expect_func_instrs([Instruction::return_reg(Local::from(0))])
         .run()
 }
 
@@ -423,7 +423,7 @@ fn branch_to_func_block_nested_1() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy(2, 0),
-            Instruction::return_reg(Reg::from(2)),
+            Instruction::return_reg(Local::from(2)),
         ])
         .run()
 }

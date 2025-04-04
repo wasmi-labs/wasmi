@@ -37,9 +37,9 @@ fn identity_loop_1() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(Reg::from(2), Reg::from(0)),
-            Instruction::copy(Reg::from(1), Reg::from(2)),
-            Instruction::return_reg(Reg::from(1)),
+            Instruction::copy(Local::from(2), Local::from(0)),
+            Instruction::copy(Local::from(1), Local::from(2)),
+            Instruction::return_reg(Local::from(1)),
         ])
         .run()
 }
@@ -58,9 +58,9 @@ fn identity_loop_1_nested() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(Reg::from(2), Reg::from(0)),
-            Instruction::copy(Reg::from(1), Reg::from(2)),
-            Instruction::return_reg(Reg::from(1)),
+            Instruction::copy(Local::from(2), Local::from(0)),
+            Instruction::copy(Local::from(1), Local::from(2)),
+            Instruction::return_reg(Local::from(1)),
         ])
         .run()
 }
@@ -79,10 +79,10 @@ fn identity_loop_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 0, 1),
-            Instruction::copy2_ext(RegSpan::new(Reg::from(2)), 4, 5),
-            Instruction::i32_add(Reg::from(2), Reg::from(2), Reg::from(3)),
-            Instruction::return_reg(Reg::from(2)),
+            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
+            Instruction::copy2_ext(RegSpan::new(Local::from(2)), 4, 5),
+            Instruction::i32_add(Local::from(2), Local::from(2), Local::from(3)),
+            Instruction::return_reg(Local::from(2)),
         ])
         .run()
 }
@@ -103,10 +103,10 @@ fn identity_loop_2_nested() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(4)), 0, 1),
-            Instruction::copy2_ext(RegSpan::new(Reg::from(2)), 4, 5),
-            Instruction::i32_add(Reg::from(2), Reg::from(2), Reg::from(3)),
-            Instruction::return_reg(Reg::from(2)),
+            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
+            Instruction::copy2_ext(RegSpan::new(Local::from(2)), 4, 5),
+            Instruction::i32_add(Local::from(2), Local::from(2), Local::from(3)),
+            Instruction::return_reg(Local::from(2)),
         ])
         .run()
 }
@@ -137,8 +137,8 @@ fn repeat_loop_1() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(Reg::from(2), Reg::from(0)),
-            Instruction::copy(Reg::from(1), Reg::from(2)),
+            Instruction::copy(Local::from(2), Local::from(0)),
+            Instruction::copy(Local::from(1), Local::from(2)),
             Instruction::branch(BranchOffset::from(0)),
         ])
         .run()
@@ -160,9 +160,9 @@ fn repeat_loop_1_copy() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy(Reg::from(3), Reg::from(0)),
-            Instruction::copy(Reg::from(2), Reg::from(3)),
-            Instruction::copy(Reg::from(2), Reg::from(1)),
+            Instruction::copy(Local::from(3), Local::from(0)),
+            Instruction::copy(Local::from(2), Local::from(3)),
+            Instruction::copy(Local::from(2), Local::from(1)),
             Instruction::branch(BranchOffset::from(-1)),
         ])
         .run()
@@ -184,8 +184,8 @@ fn identity_loop_4_mixed_1() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::copy2_ext(RegSpan::new(Reg::from(6)), 0, 1),
-                Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(2)), -1, 6),
+                Instruction::copy2_ext(RegSpan::new(Local::from(6)), 0, 1),
+                Instruction::copy_many_non_overlapping_ext(RegSpan::new(Local::from(2)), -1, 6),
                 Instruction::register2_ext(7, -2),
                 Instruction::return_span(bspan(2, 4)),
             ])
@@ -209,8 +209,8 @@ fn identity_loop_4_mixed_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Reg::from(6)), 0, 1),
-            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Reg::from(2)), 6, 6),
+            Instruction::copy2_ext(RegSpan::new(Local::from(6)), 0, 1),
+            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Local::from(2)), 6, 6),
             Instruction::register2_ext(7, 7),
             Instruction::return_span(bspan(2, 4)),
         ])

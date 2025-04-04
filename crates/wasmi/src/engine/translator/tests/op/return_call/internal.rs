@@ -32,7 +32,7 @@ fn one_param_reg() {
         )
     "#;
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg(Reg::from(0))])
+        .expect_func_instrs([Instruction::return_reg(Local::from(0))])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register(0),

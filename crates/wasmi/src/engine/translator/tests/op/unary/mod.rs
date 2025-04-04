@@ -33,20 +33,20 @@ where
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
-fn conversion_reg<I, O>(wasm_op: &str, make_instr: fn(result: Reg, input: Reg) -> Instruction)
+fn conversion_reg<I, O>(wasm_op: &str, make_instr: fn(result: Local, input: Local) -> Instruction)
 where
     I: WasmTy,
     O: WasmTy,
 {
     let expected = [
-        make_instr(Reg::from(1), Reg::from(0)),
+        make_instr(Local::from(1), Local::from(0)),
         Instruction::return_reg(1),
     ];
     conversion_reg_with::<I, O, _>(wasm_op, expected)
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
-fn unary_reg<T>(wasm_op: &str, make_instr: fn(result: Reg, input: Reg) -> Instruction)
+fn unary_reg<T>(wasm_op: &str, make_instr: fn(result: Local, input: Local) -> Instruction)
 where
     T: WasmTy,
 {

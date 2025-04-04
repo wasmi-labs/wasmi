@@ -3,20 +3,20 @@ use crate::core::simd::{ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8};
 use crate::{core::TrapCode, index::*, *};
 
 impl Instruction {
-    /// Visit [`Reg`]s of `self` via the `visitor`.
+    /// Visit [`Local`]s of `self` via the `visitor`.
     pub fn visit_regs<V: VisitRegs>(&mut self, visitor: &mut V) {
         HostVisitor::host_visitor(self, visitor)
     }
 }
 
-/// Implemented by [`Reg`] visitors to visit [`Reg`]s of an [`Instruction`] via [`Instruction::visit_regs`].
+/// Implemented by [`Local`] visitors to visit [`Local`]s of an [`Instruction`] via [`Instruction::visit_regs`].
 pub trait VisitRegs {
-    /// Visits a [`Reg`] storing the result of an [`Instruction`].
-    fn visit_result_reg(&mut self, reg: &mut Reg);
+    /// Visits a [`Local`] storing the result of an [`Instruction`].
+    fn visit_result_reg(&mut self, reg: &mut Local);
     /// Visits a [`RegSpan`] storing the results of an [`Instruction`].
     fn visit_result_regs(&mut self, reg: &mut RegSpan, len: Option<u16>);
-    /// Visits a [`Reg`] storing an input of an [`Instruction`].
-    fn visit_input_reg(&mut self, reg: &mut Reg);
+    /// Visits a [`Local`] storing an input of an [`Instruction`].
+    fn visit_input_reg(&mut self, reg: &mut Local);
     /// Visits a [`RegSpan`] storing inputs of an [`Instruction`].
     fn visit_input_regs(&mut self, regs: &mut RegSpan, len: Option<u16>);
 }
@@ -27,13 +27,13 @@ trait HostVisitor {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V);
 }
 
-impl HostVisitor for &'_ mut Reg {
+impl HostVisitor for &'_ mut Local {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         visitor.visit_input_reg(self);
     }
 }
 
-impl<const N: usize> HostVisitor for &'_ mut [Reg; N] {
+impl<const N: usize> HostVisitor for &'_ mut [Local; N] {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         for reg in self {
             visitor.visit_input_reg(reg);
@@ -105,16 +105,16 @@ impl_host_visitor_for!(
 #[cfg(feature = "simd")]
 impl_host_visitor_for!(ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8,);
 
-/// Type-wrapper to signal that the wrapped [`Reg`], [`RegSpan`] (etc.) is a result.
+/// Type-wrapper to signal that the wrapped [`Local`], [`RegSpan`] (etc.) is a result.
 pub struct Res<T>(T);
 
-impl HostVisitor for Res<&'_ mut Reg> {
+impl HostVisitor for Res<&'_ mut Local> {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         visitor.visit_result_reg(self.0);
     }
 }
 
-impl HostVisitor for Res<&'_ mut [Reg; 2]> {
+impl HostVisitor for Res<&'_ mut [Local; 2]> {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         visitor.visit_result_reg(&mut self.0[0]);
         visitor.visit_result_reg(&mut self.0[1]);

@@ -1,7 +1,7 @@
 use super::{Executor, UntypedValueExt};
 use crate::{
     core::{wasm, TrapCode},
-    ir::{Const16, Reg, ShiftAmount, Sign},
+    ir::{Const16, Local, ShiftAmount, Sign},
     Error,
 };
 use core::num::{NonZeroI32, NonZeroI64, NonZeroU32, NonZeroU64};
@@ -62,7 +62,7 @@ macro_rules! impl_binary_imm16 {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
+            pub fn $fn_name(&mut self, result: Local, lhs: Local, rhs: Const16<$ty>) {
                 self.execute_binary_imm16_rhs_t(result, lhs, rhs, $op)
             }
         )*
@@ -91,7 +91,7 @@ macro_rules! impl_shift_by {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: ShiftAmount<$ty>) {
+            pub fn $fn_name(&mut self, result: Local, lhs: Local, rhs: ShiftAmount<$ty>) {
                 self.execute_shift_by(result, lhs, rhs, $op)
             }
         )*
@@ -117,7 +117,7 @@ macro_rules! impl_binary_imm16_lhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) {
+            pub fn $fn_name(&mut self, result: Local, lhs: Const16<$ty>, rhs: Local) {
                 self.execute_binary_imm16_lhs_t(result, lhs, rhs, $op)
             }
         )*
@@ -146,7 +146,7 @@ macro_rules! impl_fallible_binary {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) -> Result<(), Error> {
+            pub fn $fn_name(&mut self, result: Local, lhs: Local, rhs: Local) -> Result<(), Error> {
                 self.try_execute_binary(result, lhs, rhs, $op).map_err(Into::into)
             }
         )*
@@ -233,7 +233,7 @@ macro_rules! impl_divrem_s_imm16_rhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) -> Result<(), Error> {
+            pub fn $fn_name(&mut self, result: Local, lhs: Local, rhs: Const16<$ty>) -> Result<(), Error> {
                 self.try_execute_divrem_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
@@ -253,7 +253,7 @@ macro_rules! impl_divrem_u_imm16_rhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
+            pub fn $fn_name(&mut self, result: Local, lhs: Local, rhs: Const16<$ty>) {
                 self.execute_divrem_imm16_rhs(result, lhs, rhs, $op)
             }
         )*
@@ -273,7 +273,7 @@ macro_rules! impl_fallible_binary_imm16_lhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) -> Result<(), Error> {
+            pub fn $fn_name(&mut self, result: Local, lhs: Const16<$ty>, rhs: Local) -> Result<(), Error> {
                 self.try_execute_binary_imm16_lhs(result, lhs, rhs, $op).map_err(Into::into)
             }
         )*
@@ -295,7 +295,7 @@ impl Executor<'_> {
 
 impl Executor<'_> {
     /// Executes an [`Instruction::F32CopysignImm`].
-    pub fn execute_f32_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f32>) {
+    pub fn execute_f32_copysign_imm(&mut self, result: Local, lhs: Local, rhs: Sign<f32>) {
         let lhs = self.get_register_as::<f32>(lhs);
         let rhs = f32::from(rhs);
         self.set_register_as::<f32>(result, wasm::f32_copysign(lhs, rhs));
@@ -303,7 +303,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::F64CopysignImm`].
-    pub fn execute_f64_copysign_imm(&mut self, result: Reg, lhs: Reg, rhs: Sign<f64>) {
+    pub fn execute_f64_copysign_imm(&mut self, result: Local, lhs: Local, rhs: Sign<f64>) {
         let lhs = self.get_register_as::<f64>(lhs);
         let rhs = f64::from(rhs);
         self.set_register_as::<f64>(result, wasm::f64_copysign(lhs, rhs));

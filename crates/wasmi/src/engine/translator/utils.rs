@@ -1,6 +1,6 @@
 use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
-    ir::{BoundedRegSpan, Const16, Const32, Reg, RegSpan, Sign},
+    ir::{BoundedRegSpan, Const16, Const32, Local, RegSpan, Sign},
     Error,
     IndexType,
 };
@@ -183,7 +183,7 @@ impl super::FuncTranslator {
 }
 
 impl TypedProvider {
-    /// Returns the `i16` [`Reg`] index if the [`TypedProvider`] is a [`Reg`].
+    /// Returns the `i16` [`Local`] index if the [`TypedProvider`] is a [`Local`].
     fn register_index(&self) -> Option<i16> {
         match self {
             TypedProvider::Register(index) => Some(i16::from(*index)),
@@ -196,7 +196,7 @@ impl TypedProvider {
 pub trait FromProviders: Sized {
     /// Creates a [`BoundedRegSpan`] from the given slice of [`TypedProvider`] if possible.
     ///
-    /// All [`TypedProvider`] must be [`Reg`] and have
+    /// All [`TypedProvider`] must be [`Local`] and have
     /// contiguous indices for the conversion to succeed.
     ///
     /// Returns `None` if the `providers` slice is empty.
@@ -217,7 +217,7 @@ impl FromProviders for BoundedRegSpan {
         }
         let end_index = prev_index.checked_add(1)?;
         let len = (end_index - first_index) as u16;
-        Some(Self::new(RegSpan::new(Reg::from(first_index)), len))
+        Some(Self::new(RegSpan::new(Local::from(first_index)), len))
     }
 }
 

@@ -1,6 +1,6 @@
 use super::Executor;
 use crate::{
-    ir::{index::Memory, Offset64Hi, Reg},
+    ir::{index::Memory, Local, Offset64Hi},
     store::StoreInner,
 };
 
@@ -11,7 +11,7 @@ macro_rules! impl_unary_executors {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, input: Reg) {
+            pub fn $fn_name(&mut self, result: Local, input: Local) {
                 self.execute_unary_t(result, input, $op)
             }
         )*
@@ -22,7 +22,7 @@ macro_rules! impl_binary_executors {
     ( $( (Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Reg) {
+            pub fn $fn_name(&mut self, result: Local, lhs: Local, rhs: Local) {
                 self.execute_binary_t(result, lhs, rhs, $op)
             }
         )*
@@ -31,7 +31,7 @@ macro_rules! impl_binary_executors {
 
 impl Executor<'_> {
     /// Returns the register `value` and `offset` parameters for a `load` [`Instruction`].
-    pub fn fetch_value_and_offset_hi(&self) -> (Reg, Offset64Hi) {
+    pub fn fetch_value_and_offset_hi(&self) -> (Local, Offset64Hi) {
         // Safety: Wasmi translation guarantees that `Instruction::RegisterAndImm32` exists.
         unsafe { self.fetch_reg_and_offset_hi() }
     }

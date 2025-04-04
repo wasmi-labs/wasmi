@@ -5,8 +5,8 @@ use crate::Error;
 macro_rules! for_each_index {
     ($mac:ident) => {
         $mac! {
-            /// A Wasmi register.
-            Reg(pub(crate) i16);
+            /// A Wasmi local variable.
+            Local(pub(crate) i16);
             /// A Wasm function index.
             Func(pub(crate) u32);
             /// A Wasm function type index.
@@ -62,7 +62,7 @@ macro_rules! define_index {
 }
 for_each_index!(define_index);
 
-impl TryFrom<u32> for Reg {
+impl TryFrom<u32> for Local {
     type Error = Error;
 
     fn try_from(local_index: u32) -> Result<Self, Self::Error> {
@@ -72,7 +72,7 @@ impl TryFrom<u32> for Reg {
     }
 }
 
-impl Reg {
+impl Local {
     /// Returns the n-th next [`Reg`] from `self` with contigous index.
     ///
     /// # Note

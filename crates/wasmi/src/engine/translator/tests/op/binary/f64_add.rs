@@ -41,7 +41,7 @@ fn nan_reg() {
 fn reg_zero() {
     // We cannot optimize `x + 0` -> `x` because `-0 + 0` -> `0` according to IEEE.
     let expected = [
-        Instruction::f64_add(Reg::from(1), Reg::from(0), Reg::from(-1)),
+        Instruction::f64_add(Local::from(1), Local::from(0), Local::from(-1)),
         Instruction::return_reg(1),
     ];
     testcase_binary_reg_imm(WASM_OP, 0.0_f64)
@@ -54,7 +54,7 @@ fn reg_zero() {
 fn reg_zero_lhs() {
     // We cannot optimize `0 + x` -> `x` because `0 + -0` -> `0` according to IEEE.
     let expected = [
-        Instruction::f64_add(Reg::from(1), Reg::from(0), Reg::from(-1)),
+        Instruction::f64_add(Local::from(1), Local::from(0), Local::from(-1)),
         Instruction::return_reg(1),
     ];
     testcase_binary_imm_reg(WASM_OP, 0.0_f64)

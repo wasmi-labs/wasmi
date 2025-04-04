@@ -13,7 +13,7 @@ use crate::{
     engine::executor::stack::ValueStack,
     engine::EngineFunc,
     ir::Instruction,
-    ir::Reg,
+    ir::Local,
     Global,
     Memory,
     Table,

@@ -86,18 +86,18 @@ for_each_op::for_each_op!(define_enum);
 
 /// Helper trait for [`Instruction::result`] method implementation.
 trait IntoReg: Sized {
-    /// Converts `self` into a [`Reg`] if possible.
-    fn into_reg(self) -> Option<Reg> {
+    /// Converts `self` into a [`Local`] if possible.
+    fn into_reg(self) -> Option<Local> {
         None
     }
 }
 
-impl IntoReg for Reg {
-    fn into_reg(self) -> Option<Reg> {
+impl IntoReg for Local {
+    fn into_reg(self) -> Option<Local> {
         Some(self)
     }
 }
-impl IntoReg for [Reg; 2] {}
+impl IntoReg for [Local; 2] {}
 impl IntoReg for RegSpan {}
 impl<const N: u16> IntoReg for FixedRegSpan<N> {}
 impl IntoReg for () {}
@@ -123,10 +123,10 @@ macro_rules! define_result {
         ),* $(,)?
     ) => {
         impl Instruction {
-            /// Returns the result [`Reg`] for `self`.
+            /// Returns the result [`Local`] for `self`.
             ///
-            /// Returns `None` if `self` does not statically return a single [`Reg`].
-            pub fn result(&self) -> Option<$crate::Reg> {
+            /// Returns `None` if `self` does not statically return a single [`Local`].
+            pub fn result(&self) -> Option<$crate::Local> {
                 match *self {
                     $(
                         Self::$name { $( $( $result_name, )? )* .. } => {
@@ -143,49 +143,49 @@ macro_rules! define_result {
 for_each_op::for_each_op!(define_result);
 
 impl Instruction {
-    /// Creates a new [`Instruction::ReturnReg2`] for the given [`Reg`] indices.
-    pub fn return_reg2_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
+    /// Creates a new [`Instruction::ReturnReg2`] for the given [`Local`] indices.
+    pub fn return_reg2_ext(reg0: impl Into<Local>, reg1: impl Into<Local>) -> Self {
         Self::return_reg2([reg0.into(), reg1.into()])
     }
 
-    /// Creates a new [`Instruction::ReturnReg3`] for the given [`Reg`] indices.
+    /// Creates a new [`Instruction::ReturnReg3`] for the given [`Local`] indices.
     pub fn return_reg3_ext(
-        reg0: impl Into<Reg>,
-        reg1: impl Into<Reg>,
-        reg2: impl Into<Reg>,
+        reg0: impl Into<Local>,
+        reg1: impl Into<Local>,
+        reg2: impl Into<Local>,
     ) -> Self {
         Self::return_reg3([reg0.into(), reg1.into(), reg2.into()])
     }
 
-    /// Creates a new [`Instruction::ReturnMany`] for the given [`Reg`] indices.
+    /// Creates a new [`Instruction::ReturnMany`] for the given [`Local`] indices.
     pub fn return_many_ext(
-        reg0: impl Into<Reg>,
-        reg1: impl Into<Reg>,
-        reg2: impl Into<Reg>,
+        reg0: impl Into<Local>,
+        reg1: impl Into<Local>,
+        reg2: impl Into<Local>,
     ) -> Self {
         Self::return_many([reg0.into(), reg1.into(), reg2.into()])
     }
 
     /// Creates a new [`Instruction::ReturnNezReg2`] for the given `condition` and `value`.
     pub fn return_nez_reg2_ext(
-        condition: impl Into<Reg>,
-        value0: impl Into<Reg>,
-        value1: impl Into<Reg>,
+        condition: impl Into<Local>,
+        value0: impl Into<Local>,
+        value1: impl Into<Local>,
     ) -> Self {
         Self::return_nez_reg2(condition, [value0.into(), value1.into()])
     }
 
     /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `value`.
     pub fn return_nez_many_ext(
-        condition: impl Into<Reg>,
-        head0: impl Into<Reg>,
-        head1: impl Into<Reg>,
+        condition: impl Into<Local>,
+        head0: impl Into<Local>,
+        head1: impl Into<Local>,
     ) -> Self {
         Self::return_nez_many(condition, [head0.into(), head1.into()])
     }
 
     /// Creates a new [`Instruction::Copy2`].
-    pub fn copy2_ext(results: RegSpan, value0: impl Into<Reg>, value1: impl Into<Reg>) -> Self {
+    pub fn copy2_ext(results: RegSpan, value0: impl Into<Local>, value1: impl Into<Local>) -> Self {
         let span = FixedRegSpan::new(results).unwrap_or_else(|_| {
             panic!("encountered invalid `results` `RegSpan` for `Copy2`: {results:?}")
         });
@@ -193,50 +193,58 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::CopyMany`].
-    pub fn copy_many_ext(results: RegSpan, head0: impl Into<Reg>, head1: impl Into<Reg>) -> Self {
+    pub fn copy_many_ext(
+        results: RegSpan,
+        head0: impl Into<Local>,
+        head1: impl Into<Local>,
+    ) -> Self {
         Self::copy_many(results, [head0.into(), head1.into()])
     }
 
     /// Creates a new [`Instruction::CopyManyNonOverlapping`].
     pub fn copy_many_non_overlapping_ext(
         results: RegSpan,
-        head0: impl Into<Reg>,
-        head1: impl Into<Reg>,
+        head0: impl Into<Local>,
+        head1: impl Into<Local>,
     ) -> Self {
         Self::copy_many_non_overlapping(results, [head0.into(), head1.into()])
     }
 
     /// Creates a new [`Instruction::Register2`] instruction parameter.
-    pub fn register2_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>) -> Self {
+    pub fn register2_ext(reg0: impl Into<Local>, reg1: impl Into<Local>) -> Self {
         Self::register2([reg0.into(), reg1.into()])
     }
 
     /// Creates a new [`Instruction::Register3`] instruction parameter.
-    pub fn register3_ext(reg0: impl Into<Reg>, reg1: impl Into<Reg>, reg2: impl Into<Reg>) -> Self {
+    pub fn register3_ext(
+        reg0: impl Into<Local>,
+        reg1: impl Into<Local>,
+        reg2: impl Into<Local>,
+    ) -> Self {
         Self::register3([reg0.into(), reg1.into(), reg2.into()])
     }
 
     /// Creates a new [`Instruction::RegisterList`] instruction parameter.
     pub fn register_list_ext(
-        reg0: impl Into<Reg>,
-        reg1: impl Into<Reg>,
-        reg2: impl Into<Reg>,
+        reg0: impl Into<Local>,
+        reg1: impl Into<Local>,
+        reg2: impl Into<Local>,
     ) -> Self {
         Self::register_list([reg0.into(), reg1.into(), reg2.into()])
     }
 
     /// Creates a new [`Instruction::RegisterAndImm32`] from the given `reg` and `offset_hi`.
-    pub fn register_and_offset_hi(reg: impl Into<Reg>, offset_hi: Offset64Hi) -> Self {
+    pub fn register_and_offset_hi(reg: impl Into<Local>, offset_hi: Offset64Hi) -> Self {
         Self::register_and_imm32(reg, offset_hi.0)
     }
 
-    /// Returns `Some` [`Reg`] and [`Offset64Hi`] if encoded properly.
+    /// Returns `Some` [`Local`] and [`Offset64Hi`] if encoded properly.
     ///
     /// # Errors
     ///
     /// Returns back `self` if it was an incorrect [`Instruction`].
     /// This allows for a better error message to inform the user.
-    pub fn filter_register_and_offset_hi(self) -> Result<(Reg, Offset64Hi), Self> {
+    pub fn filter_register_and_offset_hi(self) -> Result<(Local, Offset64Hi), Self> {
         if let Instruction::RegisterAndImm32 { reg, imm } = self {
             return Ok((reg, Offset64Hi(u32::from(imm))));
         }
@@ -244,20 +252,20 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::RegisterAndImm32`] from the given `reg` and `offset_hi`.
-    pub fn register_and_lane<LaneType>(reg: impl Into<Reg>, lane: LaneType) -> Self
+    pub fn register_and_lane<LaneType>(reg: impl Into<Local>, lane: LaneType) -> Self
     where
         LaneType: Into<u8>,
     {
         Self::register_and_imm32(reg, u32::from(lane.into()))
     }
 
-    /// Returns `Some` [`Reg`] and a `lane` index if encoded properly.
+    /// Returns `Some` [`Local`] and a `lane` index if encoded properly.
     ///
     /// # Errors
     ///
     /// Returns back `self` if it was an incorrect [`Instruction`].
     /// This allows for a better error message to inform the user.
-    pub fn filter_register_and_lane<LaneType>(self) -> Result<(Reg, LaneType), Self>
+    pub fn filter_register_and_lane<LaneType>(self) -> Result<(Local, LaneType), Self>
     where
         LaneType: TryFrom<u8>,
     {
@@ -276,7 +284,7 @@ impl Instruction {
         Self::imm16_and_imm32(value, offset_hi.0)
     }
 
-    /// Returns `Some` [`Reg`] and [`Offset64Hi`] if encoded properly.
+    /// Returns `Some` [`Local`] and [`Offset64Hi`] if encoded properly.
     ///
     /// # Errors
     ///

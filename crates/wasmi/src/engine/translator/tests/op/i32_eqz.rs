@@ -15,7 +15,7 @@ fn binop_i32_eqz() {
     fn test_for(
         input_ty: &str,
         op: &str,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        expect_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
     ) {
         let wasm = &format!(
             r"
@@ -30,7 +30,7 @@ fn binop_i32_eqz() {
         );
         TranslationTest::new(wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(2), Reg::from(0), Reg::from(1)),
+                expect_instr(Local::from(2), Local::from(0), Local::from(1)),
                 Instruction::return_reg(2),
             ])
             .run()
@@ -79,7 +79,7 @@ fn binop_imm_i32_eqz_rhs() {
     fn test_for<T>(
         op: &str,
         value: T,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        expect_instr: fn(result: Local, lhs: Local, rhs: Const16<T>) -> Instruction,
     ) where
         T: Display + WasmTy,
         Const16<T>: TryFrom<T>,
@@ -101,8 +101,8 @@ fn binop_imm_i32_eqz_rhs() {
         TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
-                    Reg::from(2),
-                    Reg::from(0),
+                    Local::from(2),
+                    Local::from(0),
                     Const16::try_from(value).ok().unwrap(),
                 ),
                 Instruction::return_reg(2),
@@ -142,7 +142,7 @@ fn binop_imm_i32_eqz_lhs() {
     fn test_for<T>(
         op: &str,
         value: T,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        expect_instr: fn(result: Local, lhs: Local, rhs: Const16<T>) -> Instruction,
     ) where
         T: Display + WasmTy,
         Const16<T>: TryFrom<T>,
@@ -164,8 +164,8 @@ fn binop_imm_i32_eqz_lhs() {
         TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
-                    Reg::from(2),
-                    Reg::from(0),
+                    Local::from(2),
+                    Local::from(0),
                     Const16::try_from(value).ok().unwrap(),
                 ),
                 Instruction::return_reg(2),
@@ -205,7 +205,7 @@ fn binop_i32_eqz_double() {
     fn test_for(
         input_ty: &str,
         op: &str,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        expect_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
     ) {
         let wasm = &format!(
             r"
@@ -221,7 +221,7 @@ fn binop_i32_eqz_double() {
         );
         TranslationTest::new(wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(2), Reg::from(0), Reg::from(1)),
+                expect_instr(Local::from(2), Local::from(0), Local::from(1)),
                 Instruction::return_reg(2),
             ])
             .run()
@@ -260,7 +260,7 @@ fn binop_imm_i32_eqz_rhs_double() {
     fn test_for<T>(
         op: &str,
         value: T,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        expect_instr: fn(result: Local, lhs: Local, rhs: Const16<T>) -> Instruction,
     ) where
         T: Display + WasmTy,
         Const16<T>: TryFrom<T>,
@@ -283,8 +283,8 @@ fn binop_imm_i32_eqz_rhs_double() {
         TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
-                    Reg::from(2),
-                    Reg::from(0),
+                    Local::from(2),
+                    Local::from(0),
                     Const16::try_from(value).ok().unwrap(),
                 ),
                 Instruction::return_reg(2),
@@ -321,7 +321,7 @@ fn binop_imm_i32_eqz_lhs_double() {
     fn test_for<T>(
         op: &str,
         value: T,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        expect_instr: fn(result: Local, lhs: Local, rhs: Const16<T>) -> Instruction,
     ) where
         T: Display + WasmTy,
         Const16<T>: TryFrom<T>,
@@ -344,8 +344,8 @@ fn binop_imm_i32_eqz_lhs_double() {
         TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
-                    Reg::from(2),
-                    Reg::from(0),
+                    Local::from(2),
+                    Local::from(0),
                     Const16::try_from(value).ok().unwrap(),
                 ),
                 Instruction::return_reg(2),
@@ -380,7 +380,7 @@ fn binop_i32_eqz_double_invalid() {
     fn test_for(
         input_ty: &str,
         op: &str,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
+        expect_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
     ) {
         let wasm = &format!(
             r"
@@ -396,8 +396,8 @@ fn binop_i32_eqz_double_invalid() {
         );
         TranslationTest::new(wasm)
             .expect_func_instrs([
-                expect_instr(Reg::from(2), Reg::from(0), Reg::from(1)),
-                Instruction::i32_eq_imm16(Reg::from(2), Reg::from(2), 0),
+                expect_instr(Local::from(2), Local::from(0), Local::from(1)),
+                Instruction::i32_eq_imm16(Local::from(2), Local::from(2), 0),
                 Instruction::return_reg(2),
             ])
             .run()
@@ -415,7 +415,7 @@ fn binop_imm_i32_eqz_rhs_double_invalid() {
     fn test_for<T>(
         op: &str,
         value: T,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        expect_instr: fn(result: Local, lhs: Local, rhs: Const16<T>) -> Instruction,
     ) where
         T: Display + WasmTy,
         Const16<T>: TryFrom<T>,
@@ -438,11 +438,11 @@ fn binop_imm_i32_eqz_rhs_double_invalid() {
         TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
-                    Reg::from(2),
-                    Reg::from(0),
+                    Local::from(2),
+                    Local::from(0),
                     Const16::try_from(value).ok().unwrap(),
                 ),
-                Instruction::i32_eq_imm16(Reg::from(2), Reg::from(2), 0),
+                Instruction::i32_eq_imm16(Local::from(2), Local::from(2), 0),
                 Instruction::return_reg(2),
             ])
             .run()
@@ -460,7 +460,7 @@ fn binop_imm_i32_eqz_lhs_double_invalid() {
     fn test_for<T>(
         op: &str,
         value: T,
-        expect_instr: fn(result: Reg, lhs: Reg, rhs: Const16<T>) -> Instruction,
+        expect_instr: fn(result: Local, lhs: Local, rhs: Const16<T>) -> Instruction,
     ) where
         T: Display + WasmTy,
         Const16<T>: TryFrom<T>,
@@ -483,11 +483,11 @@ fn binop_imm_i32_eqz_lhs_double_invalid() {
         TranslationTest::new(wasm)
             .expect_func_instrs([
                 expect_instr(
-                    Reg::from(2),
-                    Reg::from(0),
+                    Local::from(2),
+                    Local::from(0),
                     Const16::try_from(value).ok().unwrap(),
                 ),
-                Instruction::i32_eq_imm16(Reg::from(2), Reg::from(2), 0),
+                Instruction::i32_eq_imm16(Local::from(2), Local::from(2), 0),
                 Instruction::return_reg(2),
             ])
             .run()

@@ -15,9 +15,9 @@ fn test_reg(ty: ValType) {
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::table_get(Reg::from(1), Reg::from(0)),
+            Instruction::table_get(Local::from(1), Local::from(0)),
             Instruction::table_index(0),
-            Instruction::return_reg(Reg::from(1)),
+            Instruction::return_reg(Local::from(1)),
         ])
         .run();
 }
@@ -44,9 +44,9 @@ fn test_imm(ty: ValType, index: u32) {
     );
     TranslationTest::new(&wasm)
         .expect_func_instrs([
-            Instruction::table_get_imm(Reg::from(0), index),
+            Instruction::table_get_imm(Local::from(0), index),
             Instruction::table_index(0),
-            Instruction::return_reg(Reg::from(0)),
+            Instruction::return_reg(Local::from(0)),
         ])
         .run();
 }

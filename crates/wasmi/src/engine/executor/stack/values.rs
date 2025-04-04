@@ -2,7 +2,7 @@ use super::{err_stack_overflow, StackOffsets};
 use crate::{
     core::{ReadAs, TrapCode, UntypedVal, WriteAs},
     engine::code_map::CompiledFuncRef,
-    ir::Reg,
+    ir::Local,
 };
 use alloc::vec::Vec;
 use core::{
@@ -330,7 +330,7 @@ impl From<ValueStackOffset> for FrameValueStackOffset {
 /// This points to the first mutable cell of the allocated [`CallFrame`].
 /// The first mutable cell of a [`CallFrame`] is accessed by [`Register(0)`].
 ///
-/// [`Register(0)`]: [`Reg`]
+/// [`Register(0)`]: [`Local`]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BaseValueStackOffset(ValueStackOffset);
 
@@ -364,7 +364,7 @@ impl FrameParams {
     ///
     /// # Safety
     ///
-    /// It is the callers responsibility to provide a [`Reg`] that
+    /// It is the callers responsibility to provide a [`Local`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
     pub unsafe fn init_next(&mut self, value: UntypedVal) {
         self.range.start.write(MaybeUninit::new(value));
@@ -381,7 +381,7 @@ impl FrameParams {
     }
 }
 
-/// Accessor to the [`Reg`] values of a [`CallFrame`] on the [`CallStack`].
+/// Accessor to the [`Local`] values of a [`CallFrame`] on the [`CallStack`].
 ///
 /// [`CallStack`]: [`super::CallStack`]
 pub struct FrameRegisters {
@@ -401,23 +401,23 @@ impl FrameRegisters {
         Self { ptr }
     }
 
-    /// Returns the [`UntypedVal`] at the given [`Reg`].
+    /// Returns the [`UntypedVal`] at the given [`Local`].
     ///
     /// # Safety
     ///
-    /// It is the callers responsibility to provide a [`Reg`] that
+    /// It is the callers responsibility to provide a [`Local`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn get(&self, register: Reg) -> UntypedVal {
+    pub unsafe fn get(&self, register: Local) -> UntypedVal {
         ptr::read(self.register_offset(register))
     }
 
-    /// Returns the [`UntypedVal`] at the given [`Reg`].
+    /// Returns the [`UntypedVal`] at the given [`Local`].
     ///
     /// # Safety
     ///
-    /// It is the callers responsibility to provide a [`Reg`] that
+    /// It is the callers responsibility to provide a [`Local`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn read_as<T>(&self, register: Reg) -> T
+    pub unsafe fn read_as<T>(&self, register: Local) -> T
     where
         UntypedVal: ReadAs<T>,
     {
@@ -428,9 +428,9 @@ impl FrameRegisters {
     ///
     /// # Safety
     ///
-    /// It is the callers responsibility to provide a [`Reg`] that
+    /// It is the callers responsibility to provide a [`Local`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn set(&mut self, register: Reg, value: UntypedVal) {
+    pub unsafe fn set(&mut self, register: Local, value: UntypedVal) {
         ptr::write(self.register_offset(register), value)
     }
 
@@ -438,9 +438,9 @@ impl FrameRegisters {
     ///
     /// # Safety
     ///
-    /// It is the callers responsibility to provide a [`Reg`] that
+    /// It is the callers responsibility to provide a [`Local`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn write_as<T>(&mut self, register: Reg, value: T)
+    pub unsafe fn write_as<T>(&mut self, register: Local, value: T)
     where
         UntypedVal: WriteAs<T>,
     {
@@ -448,8 +448,8 @@ impl FrameRegisters {
         val.write_as(value);
     }
 
-    /// Returns the underlying pointer offset by the [`Reg`] index.
-    unsafe fn register_offset(&self, register: Reg) -> *mut UntypedVal {
+    /// Returns the underlying pointer offset by the [`Local`] index.
+    unsafe fn register_offset(&self, register: Local) -> *mut UntypedVal {
         unsafe { self.ptr.offset(isize::from(i16::from(register))) }
     }
 }

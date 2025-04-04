@@ -1,7 +1,7 @@
 use super::Executor;
 use crate::{
     core::wasm,
-    ir::{Const16, Reg},
+    ir::{Const16, Local},
 };
 
 #[cfg(doc)]
@@ -39,7 +39,7 @@ macro_rules! impl_comparison_imm16_rhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Reg, rhs: Const16<$ty>) {
+            pub fn $fn_name(&mut self, result: Local, lhs: Local, rhs: Const16<$ty>) {
                 self.execute_binary_imm16_rhs_t(result, lhs, rhs, $op)
             }
         )*
@@ -68,7 +68,7 @@ macro_rules! impl_comparison_imm16_lhs {
     ( $( ($ty:ty, Instruction::$var_name:ident, $fn_name:ident, $op:expr) ),* $(,)? ) => {
         $(
             #[doc = concat!("Executes an [`Instruction::", stringify!($var_name), "`].")]
-            pub fn $fn_name(&mut self, result: Reg, lhs: Const16<$ty>, rhs: Reg) {
+            pub fn $fn_name(&mut self, result: Local, lhs: Const16<$ty>, rhs: Local) {
                 self.execute_binary_imm16_lhs_t(result, lhs, rhs, $op)
             }
         )*

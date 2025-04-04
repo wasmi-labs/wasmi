@@ -9,7 +9,7 @@ use crate::{
         DedupFuncType,
         EngineFunc,
     },
-    ir::{index, BlockFuel, Const16, Instruction, Offset64Hi, Reg, ShiftAmount},
+    ir::{index, BlockFuel, Const16, Instruction, Local, Offset64Hi, ShiftAmount},
     memory::DataSegment,
     store::{PrunedStore, StoreInner},
     table::ElementSegment,
@@ -2326,8 +2326,8 @@ impl Executor<'_> {
         fn get_element_segment(&self, index: index::Elem) -> ElementSegment;
     }
 
-    /// Returns the [`Reg`] value.
-    fn get_register(&self, register: Reg) -> UntypedVal {
+    /// Returns the [`Local`] value.
+    fn get_register(&self, register: Local) -> UntypedVal {
         // Safety: - It is the responsibility of the `Executor`
         //           implementation to keep the `sp` pointer valid
         //           whenever this method is accessed.
@@ -2336,8 +2336,8 @@ impl Executor<'_> {
         unsafe { self.sp.get(register) }
     }
 
-    /// Returns the [`Reg`] value.
-    fn get_register_as<T>(&self, register: Reg) -> T
+    /// Returns the [`Local`] value.
+    fn get_register_as<T>(&self, register: Local) -> T
     where
         UntypedVal: ReadAs<T>,
     {
@@ -2349,8 +2349,8 @@ impl Executor<'_> {
         unsafe { self.sp.read_as::<T>(register) }
     }
 
-    /// Sets the [`Reg`] value to `value`.
-    fn set_register(&mut self, register: Reg, value: impl Into<UntypedVal>) {
+    /// Sets the [`Local`] value to `value`.
+    fn set_register(&mut self, register: Local, value: impl Into<UntypedVal>) {
         // Safety: - It is the responsibility of the `Executor`
         //           implementation to keep the `sp` pointer valid
         //           whenever this method is accessed.
@@ -2359,8 +2359,8 @@ impl Executor<'_> {
         unsafe { self.sp.set(register, value.into()) };
     }
 
-    /// Sets the [`Reg`] value to `value`.
-    fn set_register_as<T>(&mut self, register: Reg, value: T)
+    /// Sets the [`Local`] value to `value`.
+    fn set_register_as<T>(&mut self, register: Local, value: T)
     where
         UntypedVal: WriteAs<T>,
     {
@@ -2450,7 +2450,7 @@ impl Executor<'_> {
 
     /// Executes a generic unary [`Instruction`].
     #[inline(always)]
-    fn execute_unary_t<P, R>(&mut self, result: Reg, input: Reg, op: fn(P) -> R)
+    fn execute_unary_t<P, R>(&mut self, result: Local, input: Local, op: fn(P) -> R)
     where
         UntypedVal: ReadAs<P> + WriteAs<R>,
     {
@@ -2463,8 +2463,8 @@ impl Executor<'_> {
     #[inline(always)]
     fn try_execute_unary_t<P, R>(
         &mut self,
-        result: Reg,
-        input: Reg,
+        result: Local,
+        input: Local,
         op: fn(P) -> Result<R, TrapCode>,
     ) -> Result<(), Error>
     where
@@ -2479,9 +2479,9 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_binary_t<Lhs, Rhs, Result>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
-        rhs: Reg,
+        result: Local,
+        lhs: Local,
+        rhs: Local,
         op: fn(Lhs, Rhs) -> Result,
     ) where
         UntypedVal: ReadAs<Lhs> + ReadAs<Rhs> + WriteAs<Result>,
@@ -2496,8 +2496,8 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_binary_imm16_rhs_t<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
+        result: Local,
+        lhs: Local,
         rhs: Const16<Rhs>,
         op: fn(Lhs, Rhs) -> T,
     ) where
@@ -2514,9 +2514,9 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_binary_imm16_lhs_t<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
+        result: Local,
         lhs: Const16<Lhs>,
-        rhs: Reg,
+        rhs: Local,
         op: fn(Lhs, Rhs) -> T,
     ) where
         Lhs: From<Const16<Lhs>>,
@@ -2532,8 +2532,8 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_shift_by<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
+        result: Local,
+        lhs: Local,
         rhs: ShiftAmount<Rhs>,
         op: fn(Lhs, Rhs) -> T,
     ) where
@@ -2550,9 +2550,9 @@ impl Executor<'_> {
     #[inline(always)]
     fn try_execute_binary<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
-        rhs: Reg,
+        result: Local,
+        lhs: Local,
+        rhs: Local,
         op: fn(Lhs, Rhs) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
@@ -2568,8 +2568,8 @@ impl Executor<'_> {
     #[inline(always)]
     fn try_execute_divrem_imm16_rhs<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
+        result: Local,
+        lhs: Local,
         rhs: Const16<Rhs>,
         op: fn(Lhs, Rhs) -> Result<T, Error>,
     ) -> Result<(), Error>
@@ -2587,8 +2587,8 @@ impl Executor<'_> {
     #[inline(always)]
     fn execute_divrem_imm16_rhs<Lhs, NonZeroT, T>(
         &mut self,
-        result: Reg,
-        lhs: Reg,
+        result: Local,
+        lhs: Local,
         rhs: Const16<NonZeroT>,
         op: fn(Lhs, NonZeroT) -> T,
     ) where
@@ -2605,9 +2605,9 @@ impl Executor<'_> {
     #[inline(always)]
     fn try_execute_binary_imm16_lhs<Lhs, Rhs, T>(
         &mut self,
-        result: Reg,
+        result: Local,
         lhs: Const16<Lhs>,
-        rhs: Reg,
+        rhs: Local,
         op: fn(Lhs, Rhs) -> Result<T, TrapCode>,
     ) -> Result<(), Error>
     where
@@ -2655,8 +2655,8 @@ impl Executor<'_> {
         }
     }
 
-    /// Fetches the [`Reg`] and [`Offset64Hi`] parameters for a load or store [`Instruction`].
-    unsafe fn fetch_reg_and_offset_hi(&self) -> (Reg, Offset64Hi) {
+    /// Fetches the [`Local`] and [`Offset64Hi`] parameters for a load or store [`Instruction`].
+    unsafe fn fetch_reg_and_offset_hi(&self) -> (Local, Offset64Hi) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match addr.get().filter_register_and_offset_hi() {
@@ -2708,7 +2708,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::RefFunc`].
-    fn execute_ref_func(&mut self, result: Reg, func_index: index::Func) {
+    fn execute_ref_func(&mut self, result: Local, func_index: index::Func) {
         let func = self.get_func(func_index);
         let funcref = FuncRef::new(func);
         self.set_register(result, funcref);

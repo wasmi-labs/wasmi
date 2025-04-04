@@ -26,7 +26,7 @@ use crate::{
         ComparatorAndOffset,
         Const32,
         Instruction,
-        Reg,
+        Local,
         RegSpan,
     },
     module::ModuleHeader,
@@ -215,7 +215,7 @@ impl InstrEncoder {
     /// # Note
     ///
     /// The `last_instr` information is used for an optimization with `local.set`
-    /// and `local.tee` translation to replace the result [`Reg`] of the
+    /// and `local.tee` translation to replace the result [`Local`] of the
     /// last created [`Instruction`] instead of creating another copy [`Instruction`].
     ///
     /// Whenever ending a control block during Wasm translation the `last_instr`
@@ -348,7 +348,7 @@ impl InstrEncoder {
     ///
     /// - Returns `None` if merging of the copy instruction was not possible.
     /// - Returns the `Instr` of the merged `copy2` instruction if merging was successful.
-    fn merge_copy_instrs(&mut self, result: Reg, value: TypedProvider) -> Option<Instr> {
+    fn merge_copy_instrs(&mut self, result: Local, value: TypedProvider) -> Option<Instr> {
         let TypedProvider::Register(mut value) = value else {
             // Case: cannot merge copies with immediate values at the moment.
             //
@@ -398,14 +398,14 @@ impl InstrEncoder {
     pub fn encode_copy(
         &mut self,
         stack: &mut ValueStack,
-        result: Reg,
+        result: Local,
         value: TypedProvider,
         fuel_info: FuelInfo,
     ) -> Result<Option<Instr>, Error> {
         /// Convenience to create an [`Instruction::Copy`] to copy a constant value.
         fn copy_imm(
             stack: &mut ValueStack,
-            result: Reg,
+            result: Local,
             value: impl Into<UntypedVal>,
         ) -> Result<Instruction, Error> {
             let cref = stack.alloc_const(value.into())?;
@@ -648,7 +648,7 @@ impl InstrEncoder {
     pub fn encode_return_nez(
         &mut self,
         stack: &mut ValueStack,
-        condition: Reg,
+        condition: Local,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
     ) -> Result<(), Error> {
@@ -705,7 +705,7 @@ impl InstrEncoder {
         Ok(())
     }
 
-    /// Encode the given slice of [`TypedProvider`] as a list of [`Reg`].
+    /// Encode the given slice of [`TypedProvider`] as a list of [`Local`].
     ///
     /// # Note
     ///
@@ -760,29 +760,29 @@ impl InstrEncoder {
     /// Encode a `local.set` or `local.tee` instruction.
     ///
     /// This also applies an optimization in that the previous instruction
-    /// result is replaced with the `local` [`Reg`] instead of encoding
+    /// result is replaced with the `local` [`Local`] instead of encoding
     /// another `copy` instruction if the `local.set` or `local.tee` belongs
     /// to the same basic block.
     ///
     /// # Note
     ///
-    /// - If `value` is a [`Reg`] it usually is equal to the
-    ///   result [`Reg`] of the previous instruction.
+    /// - If `value` is a [`Local`] it usually is equal to the
+    ///   result [`Local`] of the previous instruction.
     pub fn encode_local_set(
         &mut self,
         stack: &mut ValueStack,
         res: &ModuleHeader,
-        local: Reg,
+        local: Local,
         value: TypedProvider,
-        preserved: Option<Reg>,
+        preserved: Option<Local>,
         fuel_info: FuelInfo,
     ) -> Result<(), Error> {
         fn fallback_case(
             this: &mut InstrEncoder,
             stack: &mut ValueStack,
-            local: Reg,
+            local: Local,
             value: TypedProvider,
-            preserved: Option<Reg>,
+            preserved: Option<Local>,
             fuel_info: FuelInfo,
         ) -> Result<(), Error> {
             if let Some(preserved) = preserved {
@@ -945,8 +945,8 @@ impl InstrEncoder {
     fn make_branch_cmp_fallback(
         stack: &mut ValueStack,
         cmp: Comparator,
-        lhs: Reg,
-        rhs: Reg,
+        lhs: Local,
+        rhs: Local,
         offset: BranchOffset,
     ) -> Result<Instruction, Error> {
         let params = stack.alloc_const(ComparatorAndOffset::new(cmp, offset))?;
@@ -957,7 +957,7 @@ impl InstrEncoder {
     pub fn encode_branch_eqz(
         &mut self,
         stack: &mut ValueStack,
-        condition: Reg,
+        condition: Local,
         label: LabelRef,
     ) -> Result<(), Error> {
         let Some(last_instr) = self.last_instr else {
@@ -978,7 +978,7 @@ impl InstrEncoder {
     fn encode_branch_eqz_unopt(
         &mut self,
         stack: &mut ValueStack,
-        condition: Reg,
+        condition: Local,
         label: LabelRef,
     ) -> Result<(), Error> {
         let offset = self.try_resolve_label(label)?;
@@ -1003,7 +1003,7 @@ impl InstrEncoder {
     pub fn encode_branch_nez(
         &mut self,
         stack: &mut ValueStack,
-        condition: Reg,
+        condition: Local,
         label: LabelRef,
     ) -> Result<(), Error> {
         let Some(last_instr) = self.last_instr else {
@@ -1026,7 +1026,7 @@ impl InstrEncoder {
         &mut self,
         stack: &mut ValueStack,
         last_instr: Instr,
-        condition: Reg,
+        condition: Local,
         label: LabelRef,
         negate: bool,
     ) -> Result<Option<Instruction>, Error> {
@@ -1089,7 +1089,7 @@ impl InstrEncoder {
     fn encode_branch_nez_unopt(
         &mut self,
         stack: &mut ValueStack,
-        condition: Reg,
+        condition: Local,
         label: LabelRef,
     ) -> Result<(), Error> {
         let offset = self.try_resolve_label(label)?;
@@ -1212,7 +1212,7 @@ mod tests {
     use crate::core::TypedVal;
 
     fn bspan(reg: i16, len: u16) -> BoundedRegSpan {
-        BoundedRegSpan::new(RegSpan::new(Reg::from(reg)), len)
+        BoundedRegSpan::new(RegSpan::new(Local::from(reg)), len)
     }
 
     #[test]

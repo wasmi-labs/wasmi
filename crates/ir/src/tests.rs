@@ -1,8 +1,8 @@
-use crate::{Reg, RegSpan, RegSpanIter};
+use crate::{Local, RegSpan, RegSpanIter};
 
 #[test]
 fn has_overlapping_copy_spans_works() {
-    fn span(reg: impl Into<Reg>) -> RegSpan {
+    fn span(reg: impl Into<Local>) -> RegSpan {
         RegSpan::new(reg.into())
     }
 
