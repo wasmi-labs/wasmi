@@ -729,22 +729,19 @@ impl InstrEncoder {
         let instr = loop {
             match remaining {
                 [] => return Ok(()),
-                [v0] => break Instruction::register(stack.provider2reg(v0)?),
+                [v0] => break Instruction::local(stack.provider2reg(v0)?),
                 [v0, v1] => {
-                    break Instruction::register2_ext(
-                        stack.provider2reg(v0)?,
-                        stack.provider2reg(v1)?,
-                    )
+                    break Instruction::local2_ext(stack.provider2reg(v0)?, stack.provider2reg(v1)?)
                 }
                 [v0, v1, v2] => {
-                    break Instruction::register3_ext(
+                    break Instruction::local3_ext(
                         stack.provider2reg(v0)?,
                         stack.provider2reg(v1)?,
                         stack.provider2reg(v2)?,
                     );
                 }
                 [v0, v1, v2, rest @ ..] => {
-                    self.instrs.push(Instruction::register_list_ext(
+                    self.instrs.push(Instruction::local_list_ext(
                         stack.provider2reg(v0)?,
                         stack.provider2reg(v1)?,
                         stack.provider2reg(v2)?,

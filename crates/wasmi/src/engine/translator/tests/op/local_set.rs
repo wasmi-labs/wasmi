@@ -82,7 +82,7 @@ fn overwrite_call_internal_result_1() {
         .expect_func_instrs([Instruction::return_reg(Local::from(0))])
         .expect_func_instrs([
             Instruction::call_internal(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
-            Instruction::register(0),
+            Instruction::local(0),
             Instruction::return_reg(Local::from(0)),
         ])
         .run()
@@ -103,7 +103,7 @@ fn overwrite_call_imported_result_1() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(0)), Func::from(0)),
-            Instruction::register(0),
+            Instruction::local(0),
             Instruction::return_reg(Local::from(0)),
         ])
         .run()
@@ -126,7 +126,7 @@ fn overwrite_call_indirect_result_1() {
         .expect_func_instrs([
             Instruction::call_indirect(LocalSpan::new(Local::from(0)), FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
-            Instruction::register(1),
+            Instruction::local(1),
             Instruction::return_reg(Local::from(0)),
         ])
         .run()

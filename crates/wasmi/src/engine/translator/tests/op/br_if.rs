@@ -563,7 +563,7 @@ fn return_if_results_3() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many_ext(Local::from(2), 0, 1),
-            Instruction::register(0),
+            Instruction::local(0),
             Instruction::return_loc3_ext(0, 1, 0),
         ])
         .run()
@@ -587,7 +587,7 @@ fn return_if_results_3_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_nez_many_ext(Local::from(0), -1, -2),
-                Instruction::register(-3),
+                Instruction::local(-3),
                 Instruction::return_loc3_ext(-1, -2, -3),
             ])
             .consts([10_i32, 20, 30]),
@@ -636,9 +636,9 @@ fn return_if_results_4() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many_ext(Local::from(2), 0, 1),
-            Instruction::register2_ext(0, 1),
+            Instruction::local2_ext(0, 1),
             Instruction::return_many_ext(0, 1, 0),
-            Instruction::register(1),
+            Instruction::local(1),
         ])
         .run()
 }
@@ -662,9 +662,9 @@ fn return_if_results_4_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_nez_many_ext(Local::from(0), -1, -2),
-                Instruction::register2_ext(-1, -2),
+                Instruction::local2_ext(-1, -2),
                 Instruction::return_many_ext(-1, -2, -1),
-                Instruction::register(-2),
+                Instruction::local(-2),
             ])
             .consts([10_i32, 20]),
         )
@@ -690,9 +690,9 @@ fn return_if_results_5() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many_ext(Local::from(2), 0, 1),
-            Instruction::register3_ext(0, 1, 0),
+            Instruction::local3_ext(0, 1, 0),
             Instruction::return_many_ext(0, 1, 0),
-            Instruction::register2_ext(1, 0),
+            Instruction::local2_ext(1, 0),
         ])
         .run()
 }
@@ -717,9 +717,9 @@ fn return_if_results_5_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_nez_many_ext(Local::from(0), -1, -2),
-                Instruction::register3_ext(-1, -2, -1),
+                Instruction::local3_ext(-1, -2, -1),
                 Instruction::return_many_ext(-1, -2, -1),
-                Instruction::register2_ext(-2, -1),
+                Instruction::local2_ext(-2, -1),
             ])
             .consts([10_i32, 20]),
         )
@@ -746,10 +746,10 @@ fn return_if_results_6() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many_ext(Local::from(2), 0, 1),
-            Instruction::register_list_ext(0, 1, 0),
-            Instruction::register(1),
+            Instruction::local_list_ext(0, 1, 0),
+            Instruction::local(1),
             Instruction::return_many_ext(0, 1, 0),
-            Instruction::register3_ext(1, 0, 1),
+            Instruction::local3_ext(1, 0, 1),
         ])
         .run()
 }
@@ -775,10 +775,10 @@ fn return_if_results_6_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_nez_many_ext(Local::from(0), -1, -2),
-                Instruction::register_list_ext(-1, -2, -1),
-                Instruction::register(-2),
+                Instruction::local_list_ext(-1, -2, -1),
+                Instruction::local(-2),
                 Instruction::return_many_ext(-1, -2, -1),
-                Instruction::register3_ext(-2, -1, -2),
+                Instruction::local3_ext(-2, -1, -2),
             ])
             .consts([10_i32, 20]),
         )
@@ -948,10 +948,10 @@ fn branch_if_results_4_mixed_1() {
             ExpectedFunc::new([
                 Instruction::branch_i32_eq_imm16(Local::from(2), 0, BranchOffset16::from(4)),
                 Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(3)), -1, 0),
-                Instruction::register2_ext(1, -2),
+                Instruction::local2_ext(1, -2),
                 Instruction::branch(BranchOffset::from(3)),
                 Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(3)), -1, 0),
-                Instruction::register2_ext(1, -2),
+                Instruction::local2_ext(1, -2),
                 Instruction::return_span(bspan(3, 4)),
             ])
             .consts([10_i32, 20]),
@@ -981,10 +981,10 @@ fn branch_if_results_4_mixed_2() {
         .expect_func_instrs([
             Instruction::branch_i32_eq_imm16(Local::from(2), 0, BranchOffset16::from(4)),
             Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(3)), 0, 0),
-            Instruction::register2_ext(1, 1),
+            Instruction::local2_ext(1, 1),
             Instruction::branch(BranchOffset::from(3)),
             Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(3)), 0, 0),
-            Instruction::register2_ext(1, 1),
+            Instruction::local2_ext(1, 1),
             Instruction::return_span(bspan(3, 4)),
         ])
         .run()

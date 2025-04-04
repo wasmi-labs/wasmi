@@ -5757,7 +5757,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// This [`Instruction`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
-                #[snake_name(register)]
+                #[snake_name(local)]
                 Local {
                     reg: Local
                 },
@@ -5767,7 +5767,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// This [`Instruction`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
-                #[snake_name(register2)]
+                #[snake_name(local2)]
                 Local2 {
                     regs: [Local; 2]
                 },
@@ -5777,7 +5777,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// This [`Instruction`] only acts as a parameter to another
                 /// one and will never be executed itself directly.
-                #[snake_name(register3)]
+                #[snake_name(local3)]
                 Local3 {
                     regs: [Local; 3]
                 },

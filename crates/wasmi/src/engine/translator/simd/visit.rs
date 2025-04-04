@@ -304,7 +304,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             Instruction::i8x16_shuffle(result, lhs, rhs),
             FuelCosts::base,
         )?;
-        self.append_instr(Instruction::register(selector))?;
+        self.append_instr(Instruction::local(selector))?;
         Ok(())
     }
 
@@ -428,7 +428,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
                     let value = this.alloc.stack.alloc_const(value)?;
                     Ok((
                         Instruction::i64x2_replace_lane(result, input, lane),
-                        Some(Instruction::register(value)),
+                        Some(Instruction::local(value)),
                     ))
                 }
             },
@@ -463,7 +463,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
                     let value = this.alloc.stack.alloc_const(value)?;
                     Ok((
                         Instruction::f64x2_replace_lane(result, input, lane),
-                        Some(Instruction::register(value)),
+                        Some(Instruction::local(value)),
                     ))
                 }
             },

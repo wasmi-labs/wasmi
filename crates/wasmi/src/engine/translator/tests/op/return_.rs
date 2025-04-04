@@ -283,10 +283,7 @@ fn return_4() {
             )
         )";
     TranslationTest::new(wasm)
-        .expect_func_instrs([
-            Instruction::return_many_ext(0, 0, 0),
-            Instruction::register(0),
-        ])
+        .expect_func_instrs([Instruction::return_many_ext(0, 0, 0), Instruction::local(0)])
         .run()
 }
 
@@ -326,7 +323,7 @@ fn return_5() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_many_ext(0, 1, 0),
-            Instruction::register2_ext(1, 0),
+            Instruction::local2_ext(1, 0),
         ])
         .run()
 }
@@ -349,7 +346,7 @@ fn return_6() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_many_ext(0, 1, 0),
-            Instruction::register3_ext(1, 0, 1),
+            Instruction::local3_ext(1, 0, 1),
         ])
         .run()
 }
@@ -373,8 +370,8 @@ fn return_7() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_many_ext(0, 1, 0),
-            Instruction::register_list_ext(1, 0, 1),
-            Instruction::register(0),
+            Instruction::local_list_ext(1, 0, 1),
+            Instruction::local(0),
         ])
         .run()
 }
@@ -399,8 +396,8 @@ fn return_8() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_many_ext(0, 1, 0),
-            Instruction::register_list_ext(1, 0, 1),
-            Instruction::register2_ext(0, 1),
+            Instruction::local_list_ext(1, 0, 1),
+            Instruction::local2_ext(0, 1),
         ])
         .run()
 }
@@ -426,8 +423,8 @@ fn return_9() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_many_ext(0, 1, 0),
-            Instruction::register_list_ext(1, 0, 1),
-            Instruction::register3_ext(0, 1, 0),
+            Instruction::local_list_ext(1, 0, 1),
+            Instruction::local3_ext(0, 1, 0),
         ])
         .run()
 }

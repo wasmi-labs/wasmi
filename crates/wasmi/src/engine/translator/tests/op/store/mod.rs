@@ -51,7 +51,7 @@ fn test_store_for(
     TranslationTest::new(&wasm)
         .expect_func_instrs(iter_filter_opts![
             make_instr(Local::from(0), offset_lo),
-            Instruction::register_and_offset_hi(Local::from(1), offset_hi),
+            Instruction::local_and_offset_hi(Local::from(1), offset_hi),
             memory_index.instr(),
             Instruction::Return,
         ])
@@ -412,7 +412,7 @@ fn test_store_imm_for<T>(
         .expect_func(
             ExpectedFunc::new(iter_filter_opts![
                 make_instr(Local::from(0), offset_lo),
-                Instruction::register_and_offset_hi(Local::from(-1), offset_hi),
+                Instruction::local_and_offset_hi(Local::from(-1), offset_hi),
                 memory_index.instr(),
                 Instruction::Return,
             ])
@@ -656,7 +656,7 @@ fn test_store_at_fallback_for(
         .expect_func(
             ExpectedFunc::new(iter_filter_opts![
                 make_instr(Local::from(-1), offset_lo),
-                Instruction::register_and_offset_hi(Local::from(0), offset_hi),
+                Instruction::local_and_offset_hi(Local::from(0), offset_hi),
                 memory_index.instr(),
                 Instruction::Return,
             ])
@@ -1004,7 +1004,7 @@ fn test_store_at_imm_fallback_for<T>(
         .expect_func(
             ExpectedFunc::new(iter_filter_opts![
                 make_instr(Local::from(-1), offset_lo),
-                Instruction::register_and_offset_hi(value_reg, offset_hi),
+                Instruction::local_and_offset_hi(value_reg, offset_hi),
                 memory_index.instr(),
                 Instruction::Return,
             ])

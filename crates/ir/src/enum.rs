@@ -50,7 +50,7 @@ macro_rules! define_enum {
                 $(
                     {
                         $(
-                            /// The register(s) storing the result of the instruction.
+                            /// The local(s) storing the result of the instruction.
                             $result_name: $result_ty,
                         )?
                         $(
@@ -215,21 +215,21 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::Local2`] instruction parameter.
-    pub fn register2_ext(loc0: impl Into<Local>, loc1: impl Into<Local>) -> Self {
-        Self::register2([loc0.into(), loc1.into()])
+    pub fn local2_ext(loc0: impl Into<Local>, loc1: impl Into<Local>) -> Self {
+        Self::local2([loc0.into(), loc1.into()])
     }
 
     /// Creates a new [`Instruction::Local3`] instruction parameter.
-    pub fn register3_ext(
+    pub fn local3_ext(
         loc0: impl Into<Local>,
         loc1: impl Into<Local>,
         loc2: impl Into<Local>,
     ) -> Self {
-        Self::register3([loc0.into(), loc1.into(), loc2.into()])
+        Self::local3([loc0.into(), loc1.into(), loc2.into()])
     }
 
     /// Creates a new [`Instruction::LocalList`] instruction parameter.
-    pub fn register_list_ext(
+    pub fn local_list_ext(
         loc0: impl Into<Local>,
         loc1: impl Into<Local>,
         loc2: impl Into<Local>,
@@ -238,7 +238,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::LocalAndImm32`] from the given `reg` and `offset_hi`.
-    pub fn register_and_offset_hi(reg: impl Into<Local>, offset_hi: Offset64Hi) -> Self {
+    pub fn local_and_offset_hi(reg: impl Into<Local>, offset_hi: Offset64Hi) -> Self {
         Self::local_and_imm32(reg, offset_hi.0)
     }
 
@@ -248,7 +248,7 @@ impl Instruction {
     ///
     /// Returns back `self` if it was an incorrect [`Instruction`].
     /// This allows for a better error message to inform the user.
-    pub fn filter_register_and_offset_hi(self) -> Result<(Local, Offset64Hi), Self> {
+    pub fn filter_local_and_offset_hi(self) -> Result<(Local, Offset64Hi), Self> {
         if let Instruction::LocalAndImm32 { reg, imm } = self {
             return Ok((reg, Offset64Hi(u32::from(imm))));
         }
@@ -256,7 +256,7 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::LocalAndImm32`] from the given `reg` and `offset_hi`.
-    pub fn register_and_lane<LaneType>(reg: impl Into<Local>, lane: LaneType) -> Self
+    pub fn local_and_lane<LaneType>(reg: impl Into<Local>, lane: LaneType) -> Self
     where
         LaneType: Into<u8>,
     {
@@ -269,7 +269,7 @@ impl Instruction {
     ///
     /// Returns back `self` if it was an incorrect [`Instruction`].
     /// This allows for a better error message to inform the user.
-    pub fn filter_register_and_lane<LaneType>(self) -> Result<(Local, LaneType), Self>
+    pub fn filter_local_and_lane<LaneType>(self) -> Result<(Local, LaneType), Self>
     where
         LaneType: TryFrom<u8>,
     {

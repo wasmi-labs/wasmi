@@ -36,7 +36,7 @@ fn test_load(
     TranslationTest::new(&wasm)
         .expect_func_instrs(iter_filter_opts![
             make_instr(Local::from(1), offset_lo),
-            Instruction::register_and_offset_hi(Local::from(0), offset_hi),
+            Instruction::local_and_offset_hi(Local::from(0), offset_hi),
             memory_index.instr(),
             Instruction::return_reg(Local::from(1)),
         ])
@@ -160,7 +160,7 @@ fn test_load_at_fallback(
         .expect_func(
             ExpectedFunc::new(iter_filter_opts![
                 make_instr(Local::from(0), offset_lo),
-                Instruction::register_and_offset_hi(Local::from(-1), offset_hi),
+                Instruction::local_and_offset_hi(Local::from(-1), offset_hi),
                 memory_index.instr(),
                 Instruction::return_reg(Local::from(0)),
             ])

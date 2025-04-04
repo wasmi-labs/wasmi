@@ -70,7 +70,7 @@ fn one_local_param_reg() {
         .expect_func_instrs([
             Instruction::return_call_indirect(FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
-            Instruction::register(1),
+            Instruction::local(1),
         ])
         .run();
 }
@@ -96,7 +96,7 @@ fn one_local_param_imm16() {
             .expect_func_instrs([
                 Instruction::return_call_indirect_imm16(FuncType::from(0)),
                 Instruction::call_indirect_params_imm16(u64imm16(index), Table::from(0)),
-                Instruction::register(1),
+                Instruction::local(1),
             ])
             .run();
     }
@@ -129,7 +129,7 @@ fn one_local_param_imm() {
                 ExpectedFunc::new([
                     Instruction::return_call_indirect(FuncType::from(0)),
                     Instruction::call_indirect_params(Local::from(-1), Table::from(0)),
-                    Instruction::register(1),
+                    Instruction::local(1),
                 ])
                 .consts([index]),
             )
@@ -160,7 +160,7 @@ fn one_imm_param_reg() {
             ExpectedFunc::new([
                 Instruction::return_call_indirect(FuncType::from(0)),
                 Instruction::call_indirect_params(Local::from(0), Table::from(0)),
-                Instruction::register(-1),
+                Instruction::local(-1),
             ])
             .consts([10_i32]),
         )
@@ -189,7 +189,7 @@ fn one_imm_param_imm16() {
                 ExpectedFunc::new([
                     Instruction::return_call_indirect_imm16(FuncType::from(0)),
                     Instruction::call_indirect_params_imm16(u64imm16(index), Table::from(0)),
-                    Instruction::register(-1),
+                    Instruction::local(-1),
                 ])
                 .consts([10_i32]),
             )
@@ -224,7 +224,7 @@ fn one_imm_param_imm() {
                 ExpectedFunc::new([
                     Instruction::return_call_indirect(FuncType::from(0)),
                     Instruction::call_indirect_params(Local::from(-1), Table::from(0)),
-                    Instruction::register(-2),
+                    Instruction::local(-2),
                 ])
                 .consts([index as i32, 10]),
             )
@@ -256,7 +256,7 @@ fn two_local_params_reg() {
         .expect_func_instrs([
             Instruction::return_call_indirect(FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
-            Instruction::register2_ext(1, 2),
+            Instruction::local2_ext(1, 2),
         ])
         .run();
 }
@@ -281,7 +281,7 @@ fn two_local_params_local_lhs() {
         .expect_func_instrs([
             Instruction::return_call_indirect(FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
-            Instruction::register2_ext(2, 1),
+            Instruction::local2_ext(2, 1),
         ])
         .run();
 }
@@ -307,7 +307,7 @@ fn two_imm_params_reg() {
             ExpectedFunc::new([
                 Instruction::return_call_indirect(FuncType::from(0)),
                 Instruction::call_indirect_params(elem_index, Table::from(0)),
-                Instruction::register2_ext(-1, -2),
+                Instruction::local2_ext(-1, -2),
             ])
             .consts([10_i32, 20_i32]),
         )
@@ -337,7 +337,7 @@ fn two_local_params_imm16() {
             .expect_func_instrs([
                 Instruction::return_call_indirect_imm16(FuncType::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
-                Instruction::register2_ext(0, 1),
+                Instruction::local2_ext(0, 1),
             ])
             .run();
     }
@@ -371,7 +371,7 @@ fn two_local_params_lhs_imm16() {
             .expect_func_instrs([
                 Instruction::return_call_indirect_imm16(FuncType::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
-                Instruction::register2_ext(1, 0),
+                Instruction::local2_ext(1, 0),
             ])
             .run();
     }
@@ -406,7 +406,7 @@ fn two_imm_params_imm16() {
                 ExpectedFunc::new([
                     Instruction::return_call_indirect_imm16(FuncType::from(0)),
                     Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
-                    Instruction::register2_ext(-1, -2),
+                    Instruction::local2_ext(-1, -2),
                 ])
                 .consts([10_i32, 20_i32]),
             )
@@ -440,7 +440,7 @@ fn three_local_params_reg() {
         .expect_func_instrs([
             Instruction::return_call_indirect(FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
-            Instruction::register3_ext(1, 2, 3),
+            Instruction::local3_ext(1, 2, 3),
         ])
         .run();
 }
@@ -466,7 +466,7 @@ fn three_local_params_local_lhs() {
         .expect_func_instrs([
             Instruction::return_call_indirect(FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
-            Instruction::register3_ext(3, 2, 1),
+            Instruction::local3_ext(3, 2, 1),
         ])
         .run();
 }
@@ -493,7 +493,7 @@ fn three_imm_params_reg() {
             ExpectedFunc::new([
                 Instruction::return_call_indirect(FuncType::from(0)),
                 Instruction::call_indirect_params(elem_index, Table::from(0)),
-                Instruction::register3_ext(-1, -2, -3),
+                Instruction::local3_ext(-1, -2, -3),
             ])
             .consts([10_i32, 20, 30]),
         )
@@ -525,7 +525,7 @@ fn three_imm_params_imm16() {
                 ExpectedFunc::new([
                     Instruction::return_call_indirect_imm16(FuncType::from(0)),
                     Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
-                    Instruction::register3_ext(-1, -2, -3),
+                    Instruction::local3_ext(-1, -2, -3),
                 ])
                 .consts([10_i32, 20, 30]),
             )
@@ -562,9 +562,9 @@ fn params7_local_index_local() {
         .expect_func_instrs([
             Instruction::return_call_indirect(FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
-            Instruction::register_list_ext(1, 2, 3),
-            Instruction::register_list_ext(4, 5, 6),
-            Instruction::register(7),
+            Instruction::local_list_ext(1, 2, 3),
+            Instruction::local_list_ext(4, 5, 6),
+            Instruction::local(7),
         ])
         .run();
 }
@@ -594,9 +594,9 @@ fn params7_imm_index_local() {
             ExpectedFunc::new([
                 Instruction::return_call_indirect(FuncType::from(0)),
                 Instruction::call_indirect_params(Local::from(0), Table::from(0)),
-                Instruction::register_list_ext(-1, -2, -3),
-                Instruction::register_list_ext(-4, -5, -6),
-                Instruction::register(-7),
+                Instruction::local_list_ext(-1, -2, -3),
+                Instruction::local_list_ext(-4, -5, -6),
+                Instruction::local(-7),
             ])
             .consts([10_i32, 20, 30, 40, 50, 60, 70]),
         )
@@ -628,9 +628,9 @@ fn params8_local_index_local() {
         .expect_func_instrs([
             Instruction::return_call_indirect(FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
-            Instruction::register_list_ext(1, 2, 3),
-            Instruction::register_list_ext(4, 5, 6),
-            Instruction::register2_ext(7, 8),
+            Instruction::local_list_ext(1, 2, 3),
+            Instruction::local_list_ext(4, 5, 6),
+            Instruction::local2_ext(7, 8),
         ])
         .run();
 }
@@ -661,9 +661,9 @@ fn params8_imm_index_local() {
             ExpectedFunc::new([
                 Instruction::return_call_indirect(FuncType::from(0)),
                 Instruction::call_indirect_params(Local::from(0), Table::from(0)),
-                Instruction::register_list_ext(-1, -2, -3),
-                Instruction::register_list_ext(-4, -5, -6),
-                Instruction::register2_ext(-7, -8),
+                Instruction::local_list_ext(-1, -2, -3),
+                Instruction::local_list_ext(-4, -5, -6),
+                Instruction::local2_ext(-7, -8),
             ])
             .consts([10_i32, 20, 30, 40, 50, 60, 70, 80]),
         )
@@ -696,9 +696,9 @@ fn params9_local_index_local() {
         .expect_func_instrs([
             Instruction::return_call_indirect(FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
-            Instruction::register_list_ext(1, 2, 3),
-            Instruction::register_list_ext(4, 5, 6),
-            Instruction::register3_ext(7, 8, 9),
+            Instruction::local_list_ext(1, 2, 3),
+            Instruction::local_list_ext(4, 5, 6),
+            Instruction::local3_ext(7, 8, 9),
         ])
         .run();
 }
@@ -730,9 +730,9 @@ fn params9_imm_index_local() {
             ExpectedFunc::new([
                 Instruction::return_call_indirect(FuncType::from(0)),
                 Instruction::call_indirect_params(Local::from(0), Table::from(0)),
-                Instruction::register_list_ext(-1, -2, -3),
-                Instruction::register_list_ext(-4, -5, -6),
-                Instruction::register3_ext(-7, -8, -9),
+                Instruction::local_list_ext(-1, -2, -3),
+                Instruction::local_list_ext(-4, -5, -6),
+                Instruction::local3_ext(-7, -8, -9),
             ])
             .consts([10_i32, 20, 30, 40, 50, 60, 70, 80, 90]),
         )
@@ -765,7 +765,7 @@ fn test_imm_params_dynamic_index() {
                 Instruction::global_get(Local::from(0), Global::from(0)),
                 Instruction::return_call_indirect(FuncType::from(0)),
                 Instruction::call_indirect_params(Local::from(0), Table::from(0)),
-                Instruction::register2_ext(-1, -2),
+                Instruction::local2_ext(-1, -2),
             ])
             .consts([10_i32, 20_i32]),
         )
@@ -800,7 +800,7 @@ fn regression_issue_768() {
                 Instruction::global_get(Local::from(1), Global::from(1)),
                 Instruction::return_call_indirect(FuncType::from(0)),
                 Instruction::call_indirect_params(Local::from(1), Table::from(0)),
-                Instruction::register2_ext(0, -1),
+                Instruction::local2_ext(0, -1),
             ])
             .consts([20_i32]),
         )

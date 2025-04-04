@@ -140,7 +140,7 @@ impl FuncTranslator {
         let rhs = self.alloc.stack.provider2reg(&b)?;
         let selector = self.alloc.stack.provider2reg(&c)?;
         self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
-        self.append_instr(Instruction::register(selector))?;
+        self.append_instr(Instruction::local(selector))?;
         Ok(())
     }
 
@@ -218,7 +218,7 @@ impl FuncTranslator {
         let (instr, param) = match value {
             Provider::Register(value) => (
                 make_instr(result, input, lane),
-                Some(Instruction::register(value)),
+                Some(Instruction::local(value)),
             ),
             Provider::Const(value) => make_instr_imm(self, result, input, lane, value.into())?,
         };
@@ -293,7 +293,7 @@ impl FuncTranslator {
         }
         let (offset_hi, offset_lo) = Offset64::split(offset);
         let instr = make_instr(ptr, offset_lo);
-        let param = Instruction::register_and_offset_hi(v128, offset_hi);
+        let param = Instruction::local_and_offset_hi(v128, offset_hi);
         let param2 = Instruction::lane_and_memory_index(lane, memory);
         self.push_fueled_instr(instr, FuelCosts::store)?;
         self.append_instr(param)?;
@@ -398,8 +398,8 @@ impl FuncTranslator {
         let (offset_hi, offset_lo) = Offset64::split(offset);
         let result = self.alloc.stack.push_dynamic()?;
         self.push_fueled_instr(make_instr(result, offset_lo), FuelCosts::store)?;
-        self.append_instr(Instruction::register_and_offset_hi(ptr, offset_hi))?;
-        self.append_instr(Instruction::register_and_lane(x, lane))?;
+        self.append_instr(Instruction::local_and_offset_hi(ptr, offset_hi))?;
+        self.append_instr(Instruction::local_and_lane(x, lane))?;
         if !memory.is_default() {
             self.append_instr(Instruction::memory_index(memory))?;
         }
@@ -419,7 +419,7 @@ impl FuncTranslator {
     {
         let result = self.alloc.stack.push_dynamic()?;
         let instr = make_instr_at(result, address);
-        let param = Instruction::register_and_lane(x, lane);
+        let param = Instruction::local_and_lane(x, lane);
         self.push_fueled_instr(instr, FuelCosts::base)?;
         self.append_instr(param)?;
         if !memory.is_default() {

@@ -34,7 +34,7 @@ fn one_param_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(1)), Func::from(0)),
-            Instruction::register(0),
+            Instruction::local(0),
             Instruction::return_reg(Local::from(1)),
         ])
         .run();
@@ -55,7 +55,7 @@ fn one_param_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(LocalSpan::new(Local::from(0)), Func::from(0)),
-                Instruction::register(-1),
+                Instruction::local(-1),
                 Instruction::return_reg(Local::from(0)),
             ])
             .consts([10_i32]),
@@ -77,7 +77,7 @@ fn two_params_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(2)), Func::from(0)),
-            Instruction::register2_ext(0, 1),
+            Instruction::local2_ext(0, 1),
             Instruction::return_loc2_ext(2, 3),
         ])
         .run();
@@ -97,7 +97,7 @@ fn two_params_local_lhs() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(2)), Func::from(0)),
-            Instruction::register2_ext(1, 0),
+            Instruction::local2_ext(1, 0),
             Instruction::return_loc2_ext(2, 3),
         ])
         .run();
@@ -118,7 +118,7 @@ fn two_params_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(LocalSpan::new(Local::from(0)), Func::from(0)),
-                Instruction::register2_ext(-1, -2),
+                Instruction::local2_ext(-1, -2),
                 Instruction::return_loc2_ext(0, 1),
             ])
             .consts([10_i32, 20]),
@@ -140,7 +140,7 @@ fn three_params_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(3)), Func::from(0)),
-            Instruction::register3_ext(0, 1, 2),
+            Instruction::local3_ext(0, 1, 2),
             Instruction::return_loc3_ext(3, 4, 5),
         ])
         .run();
@@ -160,7 +160,7 @@ fn three_params_local_lhs() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(3)), Func::from(0)),
-            Instruction::register3_ext(2, 1, 0),
+            Instruction::local3_ext(2, 1, 0),
             Instruction::return_loc3_ext(3, 4, 5),
         ])
         .run();
@@ -181,7 +181,7 @@ fn three_params_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(LocalSpan::new(Local::from(0)), Func::from(0)),
-                Instruction::register3_ext(-1, -2, -3),
+                Instruction::local3_ext(-1, -2, -3),
                 Instruction::return_loc3_ext(0, 1, 2),
             ])
             .consts([10_i32, 20, 30]),
@@ -211,9 +211,9 @@ fn params7_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(7)), Func::from(0)),
-            Instruction::register_list_ext(0, 1, 2),
-            Instruction::register_list_ext(3, 4, 5),
-            Instruction::register(6),
+            Instruction::local_list_ext(0, 1, 2),
+            Instruction::local_list_ext(3, 4, 5),
+            Instruction::local(6),
             Instruction::return_span(bspan(7, 7)),
         ])
         .run();
@@ -241,9 +241,9 @@ fn params7_local_lhs() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(7)), Func::from(0)),
-            Instruction::register_list_ext(6, 5, 4),
-            Instruction::register_list_ext(3, 2, 1),
-            Instruction::register(0),
+            Instruction::local_list_ext(6, 5, 4),
+            Instruction::local_list_ext(3, 2, 1),
+            Instruction::local(0),
             Instruction::return_span(bspan(7, 7)),
         ])
         .run();
@@ -272,9 +272,9 @@ fn params7_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(LocalSpan::new(Local::from(0)), Func::from(0)),
-                Instruction::register_list_ext(-1, -2, -3),
-                Instruction::register_list_ext(-4, -5, -6),
-                Instruction::register(-7),
+                Instruction::local_list_ext(-1, -2, -3),
+                Instruction::local_list_ext(-4, -5, -6),
+                Instruction::local(-7),
                 Instruction::return_span(bspan(0, 7)),
             ])
             .consts([10, 20, 30, 40, 50, 60, 70]),
@@ -305,9 +305,9 @@ fn params8_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(8)), Func::from(0)),
-            Instruction::register_list_ext(0, 1, 2),
-            Instruction::register_list_ext(3, 4, 5),
-            Instruction::register2_ext(6, 7),
+            Instruction::local_list_ext(0, 1, 2),
+            Instruction::local_list_ext(3, 4, 5),
+            Instruction::local2_ext(6, 7),
             Instruction::return_span(bspan(8, 8)),
         ])
         .run();
@@ -336,9 +336,9 @@ fn params8_local_lhs() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(8)), Func::from(0)),
-            Instruction::register_list_ext(7, 6, 5),
-            Instruction::register_list_ext(4, 3, 2),
-            Instruction::register2_ext(1, 0),
+            Instruction::local_list_ext(7, 6, 5),
+            Instruction::local_list_ext(4, 3, 2),
+            Instruction::local2_ext(1, 0),
             Instruction::return_span(bspan(8, 8)),
         ])
         .run();
@@ -368,9 +368,9 @@ fn params8_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(LocalSpan::new(Local::from(0)), Func::from(0)),
-                Instruction::register_list_ext(-1, -2, -3),
-                Instruction::register_list_ext(-4, -5, -6),
-                Instruction::register2_ext(-7, -8),
+                Instruction::local_list_ext(-1, -2, -3),
+                Instruction::local_list_ext(-4, -5, -6),
+                Instruction::local2_ext(-7, -8),
                 Instruction::return_span(bspan(0, 8)),
             ])
             .consts([10, 20, 30, 40, 50, 60, 70, 80]),
@@ -402,9 +402,9 @@ fn params9_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(9)), Func::from(0)),
-            Instruction::register_list_ext(0, 1, 2),
-            Instruction::register_list_ext(3, 4, 5),
-            Instruction::register3_ext(6, 7, 8),
+            Instruction::local_list_ext(0, 1, 2),
+            Instruction::local_list_ext(3, 4, 5),
+            Instruction::local3_ext(6, 7, 8),
             Instruction::return_span(bspan(9, 9)),
         ])
         .run();
@@ -434,9 +434,9 @@ fn params9_local_lhs() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(9)), Func::from(0)),
-            Instruction::register_list_ext(8, 7, 6),
-            Instruction::register_list_ext(5, 4, 3),
-            Instruction::register3_ext(2, 1, 0),
+            Instruction::local_list_ext(8, 7, 6),
+            Instruction::local_list_ext(5, 4, 3),
+            Instruction::local3_ext(2, 1, 0),
             Instruction::return_span(bspan(9, 9)),
         ])
         .run();
@@ -467,9 +467,9 @@ fn params9_imm() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::call_imported(LocalSpan::new(Local::from(0)), Func::from(0)),
-                Instruction::register_list_ext(-1, -2, -3),
-                Instruction::register_list_ext(-4, -5, -6),
-                Instruction::register3_ext(-7, -8, -9),
+                Instruction::local_list_ext(-1, -2, -3),
+                Instruction::local_list_ext(-4, -5, -6),
+                Instruction::local3_ext(-7, -8, -9),
                 Instruction::return_span(bspan(0, 9)),
             ])
             .consts([10, 20, 30, 40, 50, 60, 70, 80, 90]),

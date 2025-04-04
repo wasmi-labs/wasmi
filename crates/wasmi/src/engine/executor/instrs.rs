@@ -2659,7 +2659,7 @@ impl Executor<'_> {
     unsafe fn fetch_local_and_offset_hi(&self) -> (Local, Offset64Hi) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
-        match addr.get().filter_register_and_offset_hi() {
+        match addr.get().filter_local_and_offset_hi() {
             Ok(value) => value,
             Err(instr) => unsafe {
                 unreachable_unchecked!(

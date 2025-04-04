@@ -66,7 +66,7 @@ fn reg() {
         TranslationTest::new(&wasm)
             .expect_func_instrs([
                 Instruction::select(result, lhs),
-                Instruction::register2_ext(condition, rhs),
+                Instruction::local2_ext(condition, rhs),
                 Instruction::return_reg(result),
             ])
             .run();
@@ -352,7 +352,7 @@ fn reg_imm() {
         let lhs = Local::from(1);
         let instrs = [
             Instruction::select(result, lhs),
-            Instruction::register2_ext(condition, Local::from(-1)),
+            Instruction::local2_ext(condition, Local::from(-1)),
             Instruction::return_reg(result),
         ];
         let expected = ExpectedFunc::new(instrs).consts([value]);
@@ -485,7 +485,7 @@ fn imm32_reg() {
         let lhs = Local::from(1);
         let expected = [
             Instruction::select_imm32_lhs(result, value),
-            Instruction::register2_ext(condition, lhs),
+            Instruction::local2_ext(condition, lhs),
             Instruction::return_reg(result),
         ];
         test_imm_reg(kind, value).expect_func_instrs(expected).run();
@@ -535,7 +535,7 @@ fn imm_reg() {
         let lhs = Local::from(1);
         let instrs = [
             Instruction::select(result, Local::from(-1)),
-            Instruction::register2_ext(condition, lhs),
+            Instruction::local2_ext(condition, lhs),
             Instruction::return_reg(result),
         ];
         let expected = ExpectedFunc::new(instrs).consts([value]);
@@ -575,7 +575,7 @@ fn i64imm32_reg() {
         let lhs = Local::from(1);
         let expected = [
             Instruction::select_i64imm32_lhs(result, i32::try_from(value).unwrap()),
-            Instruction::register2_ext(condition, lhs),
+            Instruction::local2_ext(condition, lhs),
             Instruction::return_reg(result),
         ];
         test_imm_reg(kind, value).expect_func_instrs(expected).run();
@@ -604,7 +604,7 @@ fn f64imm32_reg() {
         let lhs = Local::from(1);
         let expected = [
             Instruction::select_f64imm32_lhs(result, value as f32),
-            Instruction::register2_ext(condition, lhs),
+            Instruction::local2_ext(condition, lhs),
             Instruction::return_reg(result),
         ];
         test_imm_reg(kind, value).expect_func_instrs(expected).run();
@@ -711,7 +711,7 @@ fn both_imm() {
         let rhs_reg = Local::from(-2);
         let instrs = [
             Instruction::select(result, lhs_reg),
-            Instruction::register2_ext(condition, rhs_reg),
+            Instruction::local2_ext(condition, rhs_reg),
             Instruction::return_reg(result),
         ];
         test_both_imm(kind, lhs, rhs)

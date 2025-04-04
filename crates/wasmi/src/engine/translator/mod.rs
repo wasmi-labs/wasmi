@@ -2079,7 +2079,7 @@ impl FuncTranslator {
         self.push_fueled_instr(make_instr(result, offset_lo), FuelCosts::load)?;
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register_and_offset_hi(ptr, offset_hi))?;
+            .append_instr(Instruction::local_and_offset_hi(ptr, offset_hi))?;
         if !memory.is_default() {
             self.alloc
                 .instr_encoder
@@ -2217,7 +2217,7 @@ impl FuncTranslator {
         let (instr, param) = match value {
             TypedProvider::Register(value) => (
                 make_instr(ptr, offset_lo),
-                Instruction::register_and_offset_hi(value, offset_hi),
+                Instruction::local_and_offset_hi(value, offset_hi),
             ),
             TypedProvider::Const(value) => match Field::try_from(Src::from(value).wrap()).ok() {
                 Some(value) => (
@@ -2226,7 +2226,7 @@ impl FuncTranslator {
                 ),
                 None => (
                     make_instr(ptr, offset_lo),
-                    Instruction::register_and_offset_hi(
+                    Instruction::local_and_offset_hi(
                         self.alloc.stack.alloc_const(value)?,
                         offset_hi,
                     ),
@@ -2370,7 +2370,7 @@ impl FuncTranslator {
         self.push_fueled_instr(make_instr(ptr, offset_lo), FuelCosts::store)?;
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register_and_offset_hi(value, offset_hi))?;
+            .append_instr(Instruction::local_and_offset_hi(value, offset_hi))?;
         if !memory.is_default() {
             self.alloc
                 .instr_encoder
@@ -2494,7 +2494,7 @@ impl FuncTranslator {
         self.push_fueled_instr(Instruction::select(result, lhs), FuelCosts::base)?;
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register2_ext(condition, rhs))?;
+            .append_instr(Instruction::local2_ext(condition, rhs))?;
         Ok(())
     }
 
@@ -2519,7 +2519,7 @@ impl FuncTranslator {
                 debug_assert!(matches!(lhs.ty(), ValType::I32 | ValType::F32));
                 (
                     Instruction::select_imm32_lhs(result, u32::from(lhs.untyped())),
-                    Instruction::register2_ext(condition, rhs),
+                    Instruction::local2_ext(condition, rhs),
                 )
             }
             (Provider::Const(lhs), Provider::Const(rhs)) => {
@@ -2568,7 +2568,7 @@ impl FuncTranslator {
             ),
             (Provider::Const(lhs), Provider::Register(rhs)) => (
                 Instruction::select_i64imm32_lhs(result, lhs),
-                Instruction::register2_ext(condition, rhs),
+                Instruction::local2_ext(condition, rhs),
             ),
             (Provider::Const(lhs), Provider::Const(rhs)) => (
                 Instruction::select_i64imm32(result, lhs),
@@ -2612,7 +2612,7 @@ impl FuncTranslator {
             ),
             (Provider::Const(lhs), Provider::Register(rhs)) => (
                 Instruction::select_f64imm32_lhs(result, lhs),
-                Instruction::register2_ext(condition, rhs),
+                Instruction::local2_ext(condition, rhs),
             ),
             (Provider::Const(lhs), Provider::Const(rhs)) => (
                 Instruction::select_f64imm32(result, lhs),
@@ -2897,26 +2897,26 @@ impl FuncTranslator {
         let stack = &mut self.alloc.stack;
         let value = stack.pop();
         let param_instr = match value {
-            TypedProvider::Register(register) => Instruction::register(register),
+            TypedProvider::Register(local) => Instruction::local(local),
             TypedProvider::Const(immediate) => match immediate.ty() {
                 ValType::I32 | ValType::F32 => Instruction::const32(u32::from(immediate.untyped())),
                 ValType::I64 => match <Const32<i64>>::try_from(i64::from(immediate)) {
                     Ok(value) => Instruction::i64const32(value),
                     Err(_) => {
                         let local = self.alloc.stack.provider2reg(&value)?;
-                        Instruction::register(local)
+                        Instruction::local(local)
                     }
                 },
                 ValType::F64 => match <Const32<f64>>::try_from(f64::from(immediate)) {
                     Ok(value) => Instruction::f64const32(value),
                     Err(_) => {
                         let local = self.alloc.stack.provider2reg(&value)?;
-                        Instruction::register(local)
+                        Instruction::local(local)
                     }
                 },
                 ValType::V128 | ValType::ExternRef | ValType::FuncRef => {
                     let local = self.alloc.stack.provider2reg(&value)?;
-                    Instruction::register(local)
+                    Instruction::local(local)
                 }
             },
         };
@@ -2940,7 +2940,7 @@ impl FuncTranslator {
         let (v0, v1) = stack.pop2();
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register2_ext(
+            .append_instr(Instruction::local2_ext(
                 stack.provider2reg(&v0)?,
                 stack.provider2reg(&v1)?,
             ))?;
@@ -2963,7 +2963,7 @@ impl FuncTranslator {
         let (v0, v1, v2) = stack.pop3();
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register3_ext(
+            .append_instr(Instruction::local3_ext(
                 stack.provider2reg(&v0)?,
                 stack.provider2reg(&v1)?,
                 stack.provider2reg(&v2)?,
@@ -3092,7 +3092,7 @@ impl FuncTranslator {
         self.push_fueled_instr(make_instr([result_lo, result_hi], lhs_lo), FuelCosts::base)?;
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register3_ext(lhs_hi, rhs_lo, rhs_hi))?;
+            .append_instr(Instruction::local3_ext(lhs_hi, rhs_lo, rhs_hi))?;
         Ok(())
     }
 

@@ -110,7 +110,7 @@ fn simple_block_3_many() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(4)), 2, 1),
-            Instruction::register(0),
+            Instruction::local(0),
             Instruction::branch_i32_ne_imm16(Local::from(3), 0, BranchOffset16::from(4)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
@@ -156,7 +156,7 @@ fn simple_block_4_params_2() {
             Instruction::copy_imm32(Local::from(3), 40_i32),
             Instruction::copy2_ext(LocalSpan::new(Local::from(5)), 9, 10),
             Instruction::return_many_ext(7, 8, 5),
-            Instruction::register(6),
+            Instruction::local(6),
         ])
         .run()
 }
@@ -197,9 +197,9 @@ fn simple_block_30() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(11)), 9, 8),
-            Instruction::register_list_ext(7, 6, 5),
-            Instruction::register_list_ext(4, 3, 2),
-            Instruction::register2_ext(1, 0),
+            Instruction::local_list_ext(7, 6, 5),
+            Instruction::local_list_ext(4, 3, 2),
+            Instruction::local2_ext(1, 0),
             Instruction::branch_i32_ne_imm16(Local::from(10), 0, BranchOffset16::from(11)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
@@ -212,9 +212,9 @@ fn simple_block_30() {
             Instruction::copy_imm32(Local::from(8), 90_i32),
             Instruction::copy_imm32(Local::from(9), 100_i32),
             Instruction::return_many_ext(20, 19, 18),
-            Instruction::register_list_ext(17, 16, 15),
-            Instruction::register_list_ext(14, 13, 12),
-            Instruction::register(11),
+            Instruction::local_list_ext(17, 16, 15),
+            Instruction::local_list_ext(14, 13, 12),
+            Instruction::local(11),
         ])
         .run()
 }
@@ -329,7 +329,7 @@ fn simple_if_3_many() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(4)), 2, 1),
-            Instruction::register(0),
+            Instruction::local(0),
             Instruction::branch_i32_eq_imm16(Local::from(3), 0, BranchOffset16::from(4)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
@@ -376,7 +376,7 @@ fn simple_if_4_params_2() {
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy2_ext(LocalSpan::new(Local::from(5)), 9, 10),
             Instruction::return_many_ext(7, 8, 5),
-            Instruction::register(6),
+            Instruction::local(6),
         ])
         .run()
 }
@@ -566,7 +566,7 @@ fn invalid_preservation_slot_reuse_2() {
             Instruction::copy(3, 0),
             Instruction::i32_popcnt(Local::from(0), Local::from(0)),
             Instruction::call_internal(LocalSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
-            Instruction::register3_ext(1, 3, 0),
+            Instruction::local3_ext(1, 3, 0),
             Instruction::copy(3, 1),
             Instruction::copy(1, 2),
             Instruction::Return,

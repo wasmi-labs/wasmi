@@ -186,7 +186,7 @@ fn identity_loop_4_mixed_1() {
             ExpectedFunc::new([
                 Instruction::copy2_ext(LocalSpan::new(Local::from(6)), 0, 1),
                 Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(2)), -1, 6),
-                Instruction::register2_ext(7, -2),
+                Instruction::local2_ext(7, -2),
                 Instruction::return_span(bspan(2, 4)),
             ])
             .consts([10_i32, 20]),
@@ -211,7 +211,7 @@ fn identity_loop_4_mixed_2() {
         .expect_func_instrs([
             Instruction::copy2_ext(LocalSpan::new(Local::from(6)), 0, 1),
             Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(2)), 6, 6),
-            Instruction::register2_ext(7, 7),
+            Instruction::local2_ext(7, 7),
             Instruction::return_span(bspan(2, 4)),
         ])
         .run()

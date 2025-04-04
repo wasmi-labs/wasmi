@@ -59,7 +59,7 @@ impl Executor<'_> {
     {
         let mut addr: InstructionPtr = self.ip;
         addr.add(delta);
-        match addr.get().filter_register_and_lane::<LaneType>() {
+        match addr.get().filter_local_and_lane::<LaneType>() {
             Ok(value) => value,
             Err(instr) => unsafe {
                 unreachable_unchecked!(

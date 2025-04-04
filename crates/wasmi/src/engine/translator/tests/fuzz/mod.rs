@@ -83,10 +83,10 @@ fn fuzz_regression_5() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::call_internal(LocalSpan::new(Local::from(1)), EngineFunc::from_u32(0)),
-            Instruction::register(Local::from(0)),
+            Instruction::local(Local::from(0)),
             Instruction::branch_i32_eq_imm16(Local::from(3), 0, BranchOffset16::from(5)),
             Instruction::call_internal(LocalSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
-            Instruction::register(Local::from(2)),
+            Instruction::local(Local::from(2)),
             Instruction::branch_i32_eq_imm16(Local::from(4), 0, BranchOffset16::from(1)),
             Instruction::branch(BranchOffset::from(2)),
             Instruction::copy_imm32(Local::from(3), 0),
@@ -245,7 +245,7 @@ fn fuzz_regression_13_codegen() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_nez_many_ext(0, 0, 0),
-            Instruction::register(0),
+            Instruction::local(0),
             Instruction::return_loc3_ext(0, 0, 0),
         ])
         .run()
@@ -326,7 +326,7 @@ fn fuzz_regression_15_02() {
             ExpectedFunc::new([
                 Instruction::i32_wrap_i64(Local::from(1), Local::from(0)),
                 Instruction::branch_table_2(Local::from(1), 3_u32),
-                Instruction::register2_ext(Local::from(-1), Local::from(-2)),
+                Instruction::local2_ext(Local::from(-1), Local::from(-2)),
                 Instruction::branch_table_target(
                     LocalSpan::new(Local::from(1)),
                     BranchOffset::from(3),
@@ -355,7 +355,7 @@ fn fuzz_regression_15_03() {
                 Instruction::global_get(Local::from(2), Global::from(0)),
                 Instruction::i32_wrap_i64(Local::from(3), Local::from(0)),
                 Instruction::branch_table_2(Local::from(3), 4_u32),
-                Instruction::register2_ext(Local::from(-1), Local::from(-2)),
+                Instruction::local2_ext(Local::from(-1), Local::from(-2)),
                 Instruction::branch_table_target(
                     LocalSpan::new(Local::from(3)),
                     BranchOffset::from(4),
@@ -429,7 +429,7 @@ fn audit_0_codegen() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_many_ext(-1, -2, -1),
-                Instruction::register(-2),
+                Instruction::local(-2),
             ])
             .consts([1, 0]),
         )
@@ -440,8 +440,8 @@ fn audit_0_codegen() {
                     EngineFunc::from_u32(0),
                 ),
                 Instruction::branch_table_many(Local::from(3), 3_u32),
-                Instruction::register_list_ext(-1, 0, 1),
-                Instruction::register(2),
+                Instruction::local_list_ext(-1, 0, 1),
+                Instruction::local(2),
                 Instruction::branch_table_target(
                     LocalSpan::new(Local::from(0)),
                     BranchOffset::from(3),
@@ -501,7 +501,7 @@ fn audit_2_codegen() {
             Instruction::copy(0, 2),
             Instruction::copy(1, 0),
             Instruction::return_many_ext(2, 1, 0),
-            Instruction::register(0),
+            Instruction::local(0),
         ])
         .run()
 }
