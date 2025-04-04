@@ -1822,7 +1822,7 @@ impl FuncTranslator {
             rhs: <T as IntoShiftAmount>::Output,
         ) -> Instruction,
         make_instr_imm16: fn(result: Reg, lhs: Const16<T>, rhs: Reg) -> Instruction,
-        consteval: fn(TypedVal, TypedVal) -> TypedVal,
+        consteval: fn(T, T) -> T,
         make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Reg) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where

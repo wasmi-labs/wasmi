@@ -1,4 +1,4 @@
-use crate::{wasm, UntypedVal, ValType, F32, F64, V128};
+use crate::{UntypedVal, ValType, F32, F64, V128};
 
 /// Types that are associated to a static Wasm type.
 pub trait Typed {
@@ -135,85 +135,4 @@ impl_from_typed_value_as_for! {
     impl From<TypedVal> for i16 as i32;
     impl From<TypedVal> for u8 as u32;
     impl From<TypedVal> for u16 as u32;
-}
-
-macro_rules! impl_forwarding {
-    ( $( $(#[$mode:ident])? fn $name:ident $params:tt -> $result_ty:ty );* $(;)? ) => {
-        $(
-            impl_forwarding!( @impl $(#[$mode])? fn $name $params -> $result_ty );
-        )*
-    };
-    ( @impl #[fallible] fn $name:ident($lhs_ty:ty, $rhs_ty:ty) -> $result_ty:ty ) => {
-        #[doc = concat!("Forwards to [`wasm::", stringify!($name), "`] with debug type checks.")]
-        #[doc = ""]
-        #[doc = "# Errors"]
-        #[doc = ""]
-        #[doc = concat!("If the forwarded [`wasm::", stringify!($name), "`] returns an error.")]
-        #[doc = ""]
-        #[doc = "# Panics (Debug)"]
-        #[doc = ""]
-        #[doc = "If type checks fail."]
-        #[doc = ""]
-        #[doc = concat!("[`wasm::", stringify!($name), "`]: crate::wasm::", stringify!($name))]
-        pub fn $name(self, other: Self) -> Result<Self, TrapCode> {
-            wasm::$name(self.into(), other.into()).map(Self::from)
-        }
-    };
-    ( @impl fn $name:ident($lhs_ty:ty, $rhs_ty:ty) -> $result_ty:ty ) => {
-        #[doc = concat!("Forwards to [`wasm::", stringify!($name), "`] with debug type checks.")]
-        #[doc = ""]
-        #[doc = "# Panics (Debug)"]
-        #[doc = ""]
-        #[doc = "If type checks fail."]
-        #[doc = ""]
-        #[doc = concat!("[`wasm::", stringify!($name), "`]: crate::wasm::", stringify!($name))]
-        pub fn $name(self, other: Self) -> Self {
-            wasm::$name(self.into(), other.into()).into()
-        }
-    };
-    ( @impl #[fallible] fn $name:ident($input_ty:ty) -> $result_ty:ty ) => {
-        #[doc = concat!("Forwards to [`wasm::", stringify!($name), "`] with debug type checks.")]
-        #[doc = ""]
-        #[doc = "# Errors"]
-        #[doc = ""]
-        #[doc = concat!("If the forwarded [`wasm::", stringify!($name), "`] returns an error.")]
-        #[doc = ""]
-        #[doc = "# Panics (Debug)"]
-        #[doc = ""]
-        #[doc = "If type checks fail."]
-        #[doc = ""]
-        #[doc = concat!("[`wasm::", stringify!($name), "`]: crate::wasm::", stringify!($name))]
-        pub fn $name(self) -> Result<Self, TrapCode> {
-            wasm::$name(self.into()).map(Self::from)
-        }
-    };
-    ( @impl fn $name:ident($input_ty:ty) -> $result_ty:ty ) => {
-        #[doc = concat!("Forwards to [`wasm::", stringify!($name), "`] with debug type checks.")]
-        #[doc = ""]
-        #[doc = "# Panics (Debug)"]
-        #[doc = ""]
-        #[doc = "If type checks fail."]
-        #[doc = ""]
-        #[doc = concat!("[`wasm::", stringify!($name), "`]: crate::wasm::", stringify!($name))]
-        pub fn $name(self) -> Self {
-            wasm::$name(self.into()).into()
-        }
-    };
-}
-impl TypedVal {
-    impl_forwarding! {
-        // Shift & Rotate Instructions
-
-        fn i32_shl(i32, i32) -> i32;
-        fn i32_shr_s(i32, i32) -> i32;
-        fn i32_shr_u(i32, i32) -> i32;
-        fn i32_rotl(i32, i32) -> i32;
-        fn i32_rotr(i32, i32) -> i32;
-
-        fn i64_shl(i64, i64) -> i64;
-        fn i64_shr_s(i64, i64) -> i64;
-        fn i64_shr_u(i64, i64) -> i64;
-        fn i64_rotl(i64, i64) -> i64;
-        fn i64_rotr(i64, i64) -> i64;
-    }
 }

@@ -2270,17 +2270,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_shl,
             Instruction::i32_shl_by,
             Instruction::i32_shl_imm16,
-            TypedVal::i32_shl,
+            wasm::i32_shl,
             Self::no_custom_opt,
         )
     }
 
     fn visit_i32_shr_s(&mut self) -> Self::Output {
-        self.translate_shift(
+        self.translate_shift::<i32>(
             Instruction::i32_shr_s,
             Instruction::i32_shr_s_by,
             Instruction::i32_shr_s_imm16,
-            TypedVal::i32_shr_s,
+            wasm::i32_shr_s,
             |this, lhs: i32, _rhs: Reg| {
                 if lhs == -1 {
                     // Optimization: `-1 >> x` is always `-1` for every valid `x`
@@ -2297,17 +2297,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i32_shr_u,
             Instruction::i32_shr_u_by,
             Instruction::i32_shr_u_imm16,
-            TypedVal::i32_shr_u,
+            wasm::i32_shr_u,
             Self::no_custom_opt,
         )
     }
 
     fn visit_i32_rotl(&mut self) -> Self::Output {
-        self.translate_shift(
+        self.translate_shift::<i32>(
             Instruction::i32_rotl,
             Instruction::i32_rotl_by,
             Instruction::i32_rotl_imm16,
-            TypedVal::i32_rotl,
+            wasm::i32_rotl,
             |this, lhs: i32, _rhs: Reg| {
                 if lhs == -1 {
                     // Optimization: `-1.rotate_left(x)` is always `-1` for every valid `x`
@@ -2320,11 +2320,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_rotr(&mut self) -> Self::Output {
-        self.translate_shift(
+        self.translate_shift::<i32>(
             Instruction::i32_rotr,
             Instruction::i32_rotr_by,
             Instruction::i32_rotr_imm16,
-            TypedVal::i32_rotr,
+            wasm::i32_rotr,
             |this, lhs: i32, _rhs: Reg| {
                 if lhs == -1 {
                     // Optimization: `-1.rotate_right(x)` is always `-1` for every valid `x`
@@ -2587,17 +2587,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_shl,
             Instruction::i64_shl_by,
             Instruction::i64_shl_imm16,
-            TypedVal::i64_shl,
+            wasm::i64_shl,
             Self::no_custom_opt,
         )
     }
 
     fn visit_i64_shr_s(&mut self) -> Self::Output {
-        self.translate_shift(
+        self.translate_shift::<i64>(
             Instruction::i64_shr_s,
             Instruction::i64_shr_s_by,
             Instruction::i64_shr_s_imm16,
-            TypedVal::i64_shr_s,
+            wasm::i64_shr_s,
             |this, lhs: i64, _rhs: Reg| {
                 if lhs == -1 {
                     // Optimization: `-1 >> x` is always `-1` for every valid `x`
@@ -2614,17 +2614,17 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::i64_shr_u,
             Instruction::i64_shr_u_by,
             Instruction::i64_shr_u_imm16,
-            TypedVal::i64_shr_u,
+            wasm::i64_shr_u,
             Self::no_custom_opt,
         )
     }
 
     fn visit_i64_rotl(&mut self) -> Self::Output {
-        self.translate_shift(
+        self.translate_shift::<i64>(
             Instruction::i64_rotl,
             Instruction::i64_rotl_by,
             Instruction::i64_rotl_imm16,
-            TypedVal::i64_rotl,
+            wasm::i64_rotl,
             |this, lhs: i64, _rhs: Reg| {
                 if lhs == -1 {
                     // Optimization: `-1 >> x` is always `-1` for every valid `x`
@@ -2637,11 +2637,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_rotr(&mut self) -> Self::Output {
-        self.translate_shift(
+        self.translate_shift::<i64>(
             Instruction::i64_rotr,
             Instruction::i64_rotr_by,
             Instruction::i64_rotr_imm16,
-            TypedVal::i64_rotr,
+            wasm::i64_rotr,
             |this, lhs: i64, _rhs: Reg| {
                 if lhs == -1 {
                     // Optimization: `-1 >> x` is always `-1` for every valid `x`
