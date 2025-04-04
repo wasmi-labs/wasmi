@@ -160,14 +160,14 @@ impl RegisterAlloc {
     }
 
     /// Returns the [`RegisterSpace`] for the given [`Local`].
-    pub fn register_space(&self, register: Local) -> RegisterSpace {
-        if register.is_const() {
+    pub fn register_space(&self, local: Local) -> RegisterSpace {
+        if local.is_const() {
             return RegisterSpace::Const;
         }
-        if self.is_local(register) {
+        if self.is_local(local) {
             return RegisterSpace::Local;
         }
-        if self.is_preserved(register) {
+        if self.is_preserved(local) {
             return RegisterSpace::Preserve;
         }
         RegisterSpace::Dynamic
@@ -373,12 +373,12 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If `register` is not a preservation [`Local`].
-    pub fn bump_preserved(&mut self, register: Local) {
+    pub fn bump_preserved(&mut self, local: Local) {
         debug_assert!(matches!(
-            self.register_space(register),
+            self.register_space(local),
             RegisterSpace::Preserve
         ));
-        let key = Self::loc2key(register);
+        let key = Self::loc2key(local);
         let old_amount = self.preservations.bump(key, 1);
         debug_assert!(
             // Note: We check that the returned value is `Some` to guard
@@ -393,18 +393,18 @@ impl RegisterAlloc {
     ///
     /// - If the dynamic local allocation stack is empty.
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    fn pop_preserved(&mut self, register: Local) {
+    fn pop_preserved(&mut self, local: Local) {
         self.assert_alloc_phase();
-        let key = Self::loc2key(register);
+        let key = Self::loc2key(local);
         self.removed_preserved.insert(key);
         self.preservations
             .take_one(key)
-            .unwrap_or_else(|| panic!("missing preservation slot for {register:?}"));
+            .unwrap_or_else(|| panic!("missing preservation slot for {local:?}"));
     }
 
     /// Updates the minimum preservation [`Local`] index if needed.
-    fn update_min_preserved(&mut self, register: Local) -> Result<(), Error> {
-        self.min_preserve = min(self.min_preserve, i16::from(register));
+    fn update_min_preserved(&mut self, local: Local) -> Result<(), Error> {
+        self.min_preserve = min(self.min_preserve, i16::from(local));
         if self.next_dynamic == self.min_preserve {
             return Err(Error::from(TranslationError::AllocatedTooManyRegisters));
         }
@@ -412,8 +412,8 @@ impl RegisterAlloc {
     }
 
     /// Converts a preservation [`Local`] into a [`StashKey`].
-    fn loc2key(register: Local) -> StashKey {
-        let reg_index = Self::INITIAL_PRESERVATION_INDEX - i16::from(register);
+    fn loc2key(local: Local) -> StashKey {
+        let reg_index = Self::INITIAL_PRESERVATION_INDEX - i16::from(local);
         let key_index = usize::try_from(reg_index).unwrap_or_else(|error| {
             panic!("reg_index ({reg_index}) must be convertible to usize: {error}")
         });
@@ -450,13 +450,13 @@ impl RegisterAlloc {
     }
 
     /// Returns the defragmented [`Local`].
-    pub fn defrag_register(&self, register: Local) -> Local {
+    pub fn defrag_register(&self, local: Local) -> Local {
         assert!(matches!(self.phase, AllocPhase::Defrag));
-        if !self.is_preserved(register) {
+        if !self.is_preserved(local) {
             // Only locals allocated to the preservation space need defragmentation.
-            return register;
+            return local;
         }
-        Local::from(i16::from(register) - self.defrag_offset)
+        Local::from(i16::from(local) - self.defrag_offset)
     }
 
     /// Increase preservation [`Local`] usage.
@@ -465,11 +465,11 @@ impl RegisterAlloc {
     ///
     /// - This is mainly used to extend the lifetime of `else` providers on the stack.
     /// - This does nothing if `register` is not a preservation [`Local`].
-    pub fn inc_register_usage(&mut self, register: Local) {
-        if !self.is_preserved(register) {
+    pub fn inc_register_usage(&mut self, local: Local) {
+        if !self.is_preserved(local) {
             return;
         }
-        self.bump_preserved(register)
+        self.bump_preserved(local)
     }
 
     /// Decrease preservation [`Local`] usage.
@@ -478,10 +478,10 @@ impl RegisterAlloc {
     ///
     /// - This is mainly used to shorten the lifetime of `else` providers on the stack.
     /// - This does nothing if `register` is not a preservation [`Local`].
-    pub fn dec_register_usage(&mut self, register: Local) {
-        if !self.is_preserved(register) {
+    pub fn dec_register_usage(&mut self, local: Local) {
+        if !self.is_preserved(local) {
             return;
         }
-        self.pop_preserved(register)
+        self.pop_preserved(local)
     }
 }

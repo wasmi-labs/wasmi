@@ -391,13 +391,13 @@ impl ValueStack {
     }
 
     /// Returns the defragmented [`Local`].
-    pub fn defrag_register(&mut self, register: Local) -> Local {
-        self.reg_alloc.defrag_register(register)
+    pub fn defrag_register(&mut self, local: Local) -> Local {
+        self.reg_alloc.defrag_register(local)
     }
 
     /// Returns the [`RegisterSpace`] for the given [`Local`].
-    pub fn get_register_space(&self, register: Local) -> RegisterSpace {
-        self.reg_alloc.register_space(register)
+    pub fn get_register_space(&self, local: Local) -> RegisterSpace {
+        self.reg_alloc.register_space(local)
     }
 
     /// Increase preservation [`Local`] usage.
@@ -406,8 +406,8 @@ impl ValueStack {
     ///
     /// - This is mainly used to extend the lifetime of `else` providers on the stack.
     /// - This does nothing if `register` is not a preservation [`Local`].
-    pub fn inc_register_usage(&mut self, register: Local) {
-        self.reg_alloc.inc_register_usage(register)
+    pub fn inc_register_usage(&mut self, local: Local) {
+        self.reg_alloc.inc_register_usage(local)
     }
 
     /// Decrease preservation [`Local`] usage.
@@ -416,7 +416,7 @@ impl ValueStack {
     ///
     /// - This is mainly used to shorten the lifetime of `else` providers on the stack.
     /// - This does nothing if `register` is not a preservation [`Local`].
-    pub fn dec_register_usage(&mut self, register: Local) {
-        self.reg_alloc.dec_register_usage(register)
+    pub fn dec_register_usage(&mut self, local: Local) {
+        self.reg_alloc.dec_register_usage(local)
     }
 }

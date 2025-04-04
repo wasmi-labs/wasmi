@@ -83,11 +83,11 @@ impl FuncLocalConsts {
     }
 
     /// Returns the function local constant [`UntypedVal`] of the [`Local`] if any.
-    pub fn get(&self, register: Local) -> Option<UntypedVal> {
-        if !register.is_const() {
+    pub fn get(&self, local: Local) -> Option<UntypedVal> {
+        if !local.is_const() {
             return None;
         }
-        let index = i16::from(register).wrapping_add(1).unsigned_abs() as usize;
+        let index = i16::from(local).wrapping_add(1).unsigned_abs() as usize;
         self.idx2const.get(index).copied()
     }
 

@@ -67,8 +67,8 @@ impl<T> Provider<T> {
 pub type UntypedProvider = Provider<UntypedVal>;
 
 impl From<Local> for UntypedProvider {
-    fn from(register: Local) -> Self {
-        Self::Register(register)
+    fn from(local: Local) -> Self {
+        Self::Register(local)
     }
 }
 

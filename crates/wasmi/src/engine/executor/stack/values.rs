@@ -407,8 +407,8 @@ impl FrameRegisters {
     ///
     /// It is the callers responsibility to provide a [`Local`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn get(&self, register: Local) -> UntypedVal {
-        ptr::read(self.register_offset(register))
+    pub unsafe fn get(&self, local: Local) -> UntypedVal {
+        ptr::read(self.register_offset(local))
     }
 
     /// Returns the [`UntypedVal`] at the given [`Local`].
@@ -417,11 +417,11 @@ impl FrameRegisters {
     ///
     /// It is the callers responsibility to provide a [`Local`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn read_as<T>(&self, register: Local) -> T
+    pub unsafe fn read_as<T>(&self, local: Local) -> T
     where
         UntypedVal: ReadAs<T>,
     {
-        UntypedVal::read_as(&*self.register_offset(register))
+        UntypedVal::read_as(&*self.register_offset(local))
     }
 
     /// Sets the value of the `register` to `value`.`
@@ -430,8 +430,8 @@ impl FrameRegisters {
     ///
     /// It is the callers responsibility to provide a [`Local`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn set(&mut self, register: Local, value: UntypedVal) {
-        ptr::write(self.register_offset(register), value)
+    pub unsafe fn set(&mut self, local: Local, value: UntypedVal) {
+        ptr::write(self.register_offset(local), value)
     }
 
     /// Sets the value of the `register` to `value`.`
@@ -440,16 +440,16 @@ impl FrameRegisters {
     ///
     /// It is the callers responsibility to provide a [`Local`] that
     /// does not access the underlying [`ValueStack`] out of bounds.
-    pub unsafe fn write_as<T>(&mut self, register: Local, value: T)
+    pub unsafe fn write_as<T>(&mut self, local: Local, value: T)
     where
         UntypedVal: WriteAs<T>,
     {
-        let val: &mut UntypedVal = &mut *self.register_offset(register);
+        let val: &mut UntypedVal = &mut *self.register_offset(local);
         val.write_as(value);
     }
 
     /// Returns the underlying pointer offset by the [`Local`] index.
-    unsafe fn register_offset(&self, register: Local) -> *mut UntypedVal {
-        unsafe { self.ptr.offset(isize::from(i16::from(register))) }
+    unsafe fn register_offset(&self, local: Local) -> *mut UntypedVal {
+        unsafe { self.ptr.offset(isize::from(i16::from(local))) }
     }
 }
