@@ -33,7 +33,7 @@ impl Executor<'_> {
     /// Returns the local `value` and `offset` parameters for a `load` [`Instruction`].
     pub fn fetch_value_and_offset_hi(&self) -> (Local, Offset64Hi) {
         // Safety: Wasmi translation guarantees that `Instruction::LocalAndImm32` exists.
-        unsafe { self.fetch_reg_and_offset_hi() }
+        unsafe { self.fetch_local_and_offset_hi() }
     }
 
     /// Fetches the bytes of the default memory at index 0.

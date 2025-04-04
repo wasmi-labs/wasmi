@@ -12,45 +12,45 @@ fn same_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_reg() {
-    test_binary_reg_reg(WASM_OP, Instruction::i32_or)
+    test_binary_local_reg(WASM_OP, Instruction::i32_or)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16() {
-    test_binary_reg_imm16_rhs::<i32>(WASM_OP, 100, Instruction::i32_or_imm16)
+    test_binary_local_imm16_rhs::<i32>(WASM_OP, 100, Instruction::i32_or_imm16)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16_lhs() {
-    test_binary_reg_imm16_lhs::<i32>(WASM_OP, 100, swap_ops!(Instruction::i32_or_imm16))
+    test_binary_local_imm16_lhs::<i32>(WASM_OP, 100, swap_ops!(Instruction::i32_or_imm16))
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm() {
-    test_binary_reg_imm32(WASM_OP, i32::MAX, Instruction::i32_or)
+    test_binary_local_imm32(WASM_OP, i32::MAX, Instruction::i32_or)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm_lhs() {
-    test_binary_reg_imm32_lhs_commutative(WASM_OP, i32::MAX, Instruction::i32_or)
+    test_binary_local_imm32_lhs_commutative(WASM_OP, i32::MAX, Instruction::i32_or)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_zero() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_with(WASM_OP, 0i32, expected).run()
+    test_binary_local_imm_with(WASM_OP, 0i32, expected).run()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_zero_lhs() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_lhs_with(WASM_OP, 0i32, expected).run()
+    test_binary_local_imm_lhs_with(WASM_OP, 0i32, expected).run()
 }
 
 #[test]
@@ -59,7 +59,7 @@ fn reg_ones() {
     let expected = [Instruction::ReturnImm32 {
         value: AnyConst32::from(-1),
     }];
-    test_binary_reg_imm_with(WASM_OP, -1_i32, expected).run()
+    test_binary_local_imm_with(WASM_OP, -1_i32, expected).run()
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn reg_ones_lhs() {
     let expected = [Instruction::ReturnImm32 {
         value: AnyConst32::from(-1),
     }];
-    test_binary_reg_imm_lhs_with(WASM_OP, -1_i32, expected).run()
+    test_binary_local_imm_lhs_with(WASM_OP, -1_i32, expected).run()
 }
 
 #[test]

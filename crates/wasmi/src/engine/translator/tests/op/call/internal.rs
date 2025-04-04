@@ -96,7 +96,7 @@ fn two_params_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn two_params_reg_lhs() {
+fn two_params_local_lhs() {
     let wasm = r#"
         (module
             (func $f (param i32 i32) (result i32 i32)
@@ -172,7 +172,7 @@ fn three_params_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn three_params_reg_lhs() {
+fn three_params_local_lhs() {
     let wasm = r#"
         (module
             (func $f (param i32 i32 i32) (result i32 i32 i32)
@@ -264,7 +264,7 @@ fn params7_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn params7_reg_lhs() {
+fn params7_local_lhs() {
     let wasm = r#"
         (module
             (func $f (param i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32)
@@ -386,7 +386,7 @@ fn params8_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn params8_reg_lhs() {
+fn params8_local_lhs() {
     let wasm = r#"
         (module
             (func $f (param i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32)
@@ -514,7 +514,7 @@ fn params9_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn params9_reg_lhs() {
+fn params9_local_lhs() {
     let wasm = r#"
         (module
             (func $f (param i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32 i32 i32 i32 i32 i32 i32 i32 i32)

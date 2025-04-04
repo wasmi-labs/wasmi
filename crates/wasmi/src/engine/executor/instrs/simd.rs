@@ -53,7 +53,7 @@ impl Executor<'_> {
     }
 
     /// Fetches the [`Local`] and [`Offset64Hi`] parameters for a load or store [`Instruction`].
-    unsafe fn fetch_reg_and_lane<LaneType>(&self, delta: usize) -> (Local, LaneType)
+    unsafe fn fetch_local_and_lane<LaneType>(&self, delta: usize) -> (Local, LaneType)
     where
         LaneType: TryFrom<u8>,
     {
@@ -75,7 +75,7 @@ impl Executor<'_> {
         LaneType: TryFrom<u8>,
     {
         // Safety: Wasmi translation guarantees that `Instruction::LocalAndImm32` exists.
-        unsafe { self.fetch_reg_and_lane::<LaneType>(delta) }
+        unsafe { self.fetch_local_and_lane::<LaneType>(delta) }
     }
 
     /// Fetches a [`Local`] from an [`Instruction::Const32`] instruction parameter.

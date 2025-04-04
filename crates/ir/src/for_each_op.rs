@@ -130,7 +130,7 @@ macro_rules! for_each_op_grouped {
                 /// Returns back to the caller if and only if the `condition` value is non zero.
                 #[snake_name(return_nez)]
                 ReturnNez {
-                    /// The register holding the condition to evaluate against zero.
+                    /// The local holding the condition to evaluate against zero.
                     condition: Local,
                 },
                 /// A conditional `return` instruction.
@@ -141,7 +141,7 @@ macro_rules! for_each_op_grouped {
                 /// [`Local`] value if the `condition` evaluates to `true`.
                 #[snake_name(return_nez_reg)]
                 ReturnNezReg {
-                    /// The register holding the condition to evaluate against zero.
+                    /// The local holding the condition to evaluate against zero.
                     condition: Local,
                     /// The returned value.
                     value: Local,
@@ -154,7 +154,7 @@ macro_rules! for_each_op_grouped {
                 /// [`Local`] value if the `condition` evaluates to `true`.
                 #[snake_name(return_nez_loc2)]
                 ReturnNezReg2 {
-                    /// The register holding the condition to evaluate against zero.
+                    /// The local holding the condition to evaluate against zero.
                     condition: Local,
                     /// The returned value.
                     values: [Local; 2],
@@ -167,7 +167,7 @@ macro_rules! for_each_op_grouped {
                 /// [`AnyConst32`] value if the `condition` evaluates to `true`.
                 #[snake_name(return_nez_imm32)]
                 ReturnNezImm32 {
-                    /// The register holding the condition to evaluate against zero.
+                    /// The local holding the condition to evaluate against zero.
                     condition: Local,
                     /// The returned value.
                     value: AnyConst32,
@@ -180,7 +180,7 @@ macro_rules! for_each_op_grouped {
                 /// 32-bit encoded [`i64`] value if the `condition` evaluates to `true`.
                 #[snake_name(return_nez_i64imm32)]
                 ReturnNezI64Imm32 {
-                    /// The register holding the condition to evaluate against zero.
+                    /// The local holding the condition to evaluate against zero.
                     condition: Local,
                     /// The returned value.
                     value: Const32<i64>,
@@ -193,7 +193,7 @@ macro_rules! for_each_op_grouped {
                 /// 32-bit encoded [`f64`] value if the `condition` evaluates to `true`.
                 #[snake_name(return_nez_f64imm32)]
                 ReturnNezF64Imm32 {
-                    /// The register holding the condition to evaluate against zero.
+                    /// The local holding the condition to evaluate against zero.
                     condition: Local,
                     /// The returned value.
                     value: Const32<f64>,
@@ -205,7 +205,7 @@ macro_rules! for_each_op_grouped {
                 /// Variant of [`Instruction::ReturnNez`] returning two or more values.
                 #[snake_name(return_nez_span)]
                 ReturnNezSpan {
-                    /// The register holding the condition to evaluate against zero.
+                    /// The local holding the condition to evaluate against zero.
                     condition: Local,
                     /// The returned values.
                     values: BoundedLocalSpan,
@@ -227,7 +227,7 @@ macro_rules! for_each_op_grouped {
                 ///     - [`Instruction::Local3`]
                 #[snake_name(return_nez_many)]
                 ReturnNezMany {
-                    /// The register holding the condition to evaluate against zero.
+                    /// The local holding the condition to evaluate against zero.
                     condition: Local,
                     /// The first returned value.
                     values: [Local; 2],
@@ -809,7 +809,7 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::Return`]
                 #[snake_name(branch_table_0)]
                 BranchTable0 {
-                    /// The register holding the index of the instruction.
+                    /// The local holding the index of the instruction.
                     index: Local,
                     /// The number of branch table targets including the default target.
                     len_targets: u32,
@@ -834,7 +834,7 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::ReturnF64Imm32`]
                 #[snake_name(branch_table_1)]
                 BranchTable1 {
-                    /// The register holding the index of the instruction.
+                    /// The local holding the index of the instruction.
                     index: Local,
                     /// The number of branch table targets including the default target.
                     len_targets: u32,
@@ -850,7 +850,7 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::ReturnReg2`]
                 #[snake_name(branch_table_2)]
                 BranchTable2 {
-                    /// The register holding the index of the instruction.
+                    /// The local holding the index of the instruction.
                     index: Local,
                     /// The number of branch table targets including the default target.
                     len_targets: u32,
@@ -866,7 +866,7 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::ReturnReg3`]
                 #[snake_name(branch_table_3)]
                 BranchTable3 {
-                    /// The register holding the index of the instruction.
+                    /// The local holding the index of the instruction.
                     index: Local,
                     /// The number of branch table targets including the default target.
                     len_targets: u32,
@@ -887,7 +887,7 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::ReturnSpan`]
                 #[snake_name(branch_table_span)]
                 BranchTableSpan {
-                    /// The register holding the index of the instruction.
+                    /// The local holding the index of the instruction.
                     index: Local,
                     /// The number of branch table targets including the default target.
                     len_targets: u32,
@@ -908,7 +908,7 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::Return`]
                 #[snake_name(branch_table_many)]
                 BranchTableMany {
-                    /// The register holding the index of the instruction.
+                    /// The local holding the index of the instruction.
                     index: Local,
                     /// The number of branch table targets including the default target.
                     len_targets: u32,
@@ -922,7 +922,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(copy)]
                 Copy {
                     @result: Local,
-                    /// The register holding the value to copy.
+                    /// The local holding the value to copy.
                     value: Local,
                 },
                 /// Copies two [`Local`] values to `results`.
@@ -1314,7 +1314,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(select)]
                 Select {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
                 },
                 /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `rhs` value.
@@ -1325,7 +1325,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(select_imm32_rhs)]
                 SelectImm32Rhs {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
                 },
                 /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `lhs` value.
@@ -1336,7 +1336,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(select_imm32_lhs)]
                 SelectImm32Lhs {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: AnyConst32,
                 },
                 /// A Wasm `select` equivalent Wasmi instruction with 32-bit immediate `lhs` and `rhs` values.
@@ -1347,7 +1347,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(select_imm32)]
                 SelectImm32 {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: AnyConst32,
                 },
                 /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` value.
@@ -1358,7 +1358,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(select_i64imm32_rhs)]
                 SelectI64Imm32Rhs {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
                 },
                 /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` value.
@@ -1369,7 +1369,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(select_i64imm32_lhs)]
                 SelectI64Imm32Lhs {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Const32<i64>,
                 },
                 /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `i64` immediate `lhs` and `rhs` values.
@@ -1380,7 +1380,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(select_i64imm32)]
                 SelectI64Imm32 {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Const32<i64>,
                 },
                 /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `rhs` value.
@@ -1391,7 +1391,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(select_f64imm32_rhs)]
                 SelectF64Imm32Rhs {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
                 },
                 /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `lhs` value.
@@ -1402,7 +1402,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(select_f64imm32_lhs)]
                 SelectF64Imm32Lhs {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Const32<f64>,
                 },
                 /// A Wasm `select` equivalent Wasmi instruction with 32-bit encoded `f64` immediate `lhs` and `rhs` value.
@@ -1413,7 +1413,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(select_f64imm32)]
                 SelectF64Imm32 {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Const32<f64>,
                 },
 
@@ -1435,7 +1435,7 @@ macro_rules! for_each_op_grouped {
                 /// Wasm `global.set` equivalent Wasmi instruction.
                 #[snake_name(global_set)]
                 GlobalSet {
-                    /// The register holding the value to be stored in the global variable.
+                    /// The local holding the value to be stored in the global variable.
                     input: Local,
                     /// The index identifying the global variable for the `global.set` instruction.
                     global: Global,
@@ -2798,16 +2798,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_eq)]
                 I32Eq{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i32.eq` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_eq_imm16)]
                 I32EqImm16{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -2817,16 +2817,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_ne)]
                 I32Ne{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i32.ne` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_ne_imm16)]
                 I32NeImm16{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -2836,9 +2836,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_lt_s)]
                 I32LtS{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i32.lt_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -2847,14 +2847,14 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
                 /// Wasm `i32.lt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_lt_s_imm16_rhs)]
                 I32LtSImm16Rhs{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -2863,9 +2863,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_lt_u)]
                 I32LtU{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i32.lt_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -2874,14 +2874,14 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
                 /// Wasm `i32.lt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_lt_u_imm16_rhs)]
                 I32LtUImm16Rhs{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<u32>,
@@ -2891,9 +2891,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_le_s)]
                 I32LeS{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i32.le_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -2902,14 +2902,14 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
                 /// Wasm `i32.le_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_le_s_imm16_rhs)]
                 I32LeSImm16Rhs{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -2918,9 +2918,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_le_u)]
                 I32LeU{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i32.le_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -2929,14 +2929,14 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
                 /// Wasm `i32.le_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_le_u_imm16_rhs)]
                 I32LeUImm16Rhs{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<u32>,
@@ -2946,16 +2946,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_eq)]
                 I64Eq{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i64.eq` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_eq_imm16)]
                 I64EqImm16{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -2965,16 +2965,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_ne)]
                 I64Ne{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i64.ne` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_ne_imm16)]
                 I64NeImm16{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -2984,9 +2984,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_lt_s)]
                 I64LtS{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i64.lt_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -2995,14 +2995,14 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
                 /// Wasm `i64.lt_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_lt_s_imm16_rhs)]
                 I64LtSImm16Rhs{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3012,9 +3012,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_lt_u)]
                 I64LtU{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i64.lt_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3023,14 +3023,14 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
                 /// Wasm `i64.lt_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_lt_u_imm16_rhs)]
                 I64LtUImm16Rhs{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<u64>,
@@ -3040,9 +3040,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_le_s)]
                 I64LeS{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i64.le_s` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3051,14 +3051,14 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
                 /// Wasm `i64.le_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_le_s_imm16_rhs)]
                 I64LeSImm16Rhs{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3068,9 +3068,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_le_u)]
                 I64LeU{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `i64.le_u` equivalent Wasmi instruction with 16-bit immediate `lhs` value.
@@ -3079,14 +3079,14 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
                 /// Wasm `i64.le_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_le_u_imm16_rhs)]
                 I64LeUImm16Rhs{
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<u64>,
@@ -3096,36 +3096,36 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32_eq)]
                 F32Eq{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f32.ne` equivalent Wasmi instruction.
                 #[snake_name(f32_ne)]
                 F32Ne{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f32.lt` equivalent Wasmi instruction.
                 #[snake_name(f32_lt)]
                 F32Lt{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f32.le` equivalent Wasmi instruction.
                 #[snake_name(f32_le)]
                 F32Le{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
 
@@ -3133,36 +3133,36 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f64_eq)]
                 F64Eq{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f64.ne` equivalent Wasmi instruction.
                 #[snake_name(f64_ne)]
                 F64Ne{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f64.lt` equivalent Wasmi instruction.
                 #[snake_name(f64_lt)]
                 F64Lt{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f64.le` equivalent Wasmi instruction.
                 #[snake_name(f64_le)]
                 F64Le{
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
 
@@ -3170,21 +3170,21 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_clz)]
                 I32Clz {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// `i32` count-trailing-zeros (ctz) instruction.
                 #[snake_name(i32_ctz)]
                 I32Ctz {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// `i32` pop-count instruction.
                 #[snake_name(i32_popcnt)]
                 I32Popcnt {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
 
@@ -3192,9 +3192,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_add)]
                 I32Add {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i32` add (small) immediate instruction: `r0 = r1 + c0`
@@ -3205,7 +3205,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_add_imm16)]
                 I32AddImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3215,9 +3215,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_sub)]
                 I32Sub {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i32` subtract immediate instruction: `r0 = c0 - r1`
@@ -3231,7 +3231,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3239,9 +3239,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_mul)]
                 I32Mul {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i32` multiply immediate instruction: `r0 = r1 * c0`
@@ -3252,7 +3252,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_mul_imm16)]
                 I32MulImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3262,9 +3262,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_div_s)]
                 I32DivS {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i32` signed-division immediate instruction: `r0 = r1 / c0`
@@ -3276,7 +3276,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_div_s_imm16_rhs)]
                 I32DivSImm16Rhs {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI32>,
@@ -3293,7 +3293,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3301,9 +3301,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_div_u)]
                 I32DivU {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i32` unsigned-division immediate instruction: `r0 = r1 / c0`
@@ -3318,7 +3318,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_div_u_imm16_rhs)]
                 I32DivUImm16Rhs {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU32>,
@@ -3335,7 +3335,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3343,9 +3343,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rem_s)]
                 I32RemS {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i32` signed-remainder immediate instruction: `r0 = r1 % c0`
@@ -3357,7 +3357,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rem_s_imm16_rhs)]
                 I32RemSImm16Rhs {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI32>,
@@ -3374,7 +3374,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3382,9 +3382,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rem_u)]
                 I32RemU {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i32` signed-remainder immediate instruction: `r0 = r1 % c0`
@@ -3396,7 +3396,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rem_u_imm16_rhs)]
                 I32RemUImm16Rhs {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU32>,
@@ -3413,7 +3413,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<u32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3421,25 +3421,25 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_and)]
                 I32And {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`].
                 #[snake_name(i32_and_eqz)]
                 I32AndEqz {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Fused Wasm `i32.and` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
                 #[snake_name(i32_and_eqz_imm16)]
                 I32AndEqzImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3452,7 +3452,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_and_imm16)]
                 I32AndImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3462,25 +3462,25 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_or)]
                 I32Or {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`].
                 #[snake_name(i32_or_eqz)]
                 I32OrEqz {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Fused Wasm `i32.or` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
                 #[snake_name(i32_or_eqz_imm16)]
                 I32OrEqzImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3493,7 +3493,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_or_imm16)]
                 I32OrImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3503,25 +3503,25 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_xor)]
                 I32Xor {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`].
                 #[snake_name(i32_xor_eqz)]
                 I32XorEqz {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Fused Wasm `i32.xor` + `i32.eqz` [`Instruction`] with 16-bit encoded immediate.
                 #[snake_name(i32_xor_eqz_imm16)]
                 I32XorEqzImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3534,7 +3534,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_xor_imm16)]
                 I32XorImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i32>,
@@ -3544,16 +3544,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_shl)]
                 I32Shl {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// A Wasm `i32.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` operand.
                 #[snake_name(i32_shl_by)]
                 I32ShlBy {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
@@ -3564,7 +3564,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3572,16 +3572,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_shr_u)]
                 I32ShrU {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// A Wasm `i32.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_shr_u_by)]
                 I32ShrUBy {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
@@ -3592,7 +3592,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3600,16 +3600,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_shr_s)]
                 I32ShrS {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// A Wasm `i32.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_shr_s_by)]
                 I32ShrSBy {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
@@ -3620,7 +3620,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3628,16 +3628,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rotl)]
                 I32Rotl {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// A Wasm `i32.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_rotl_by)]
                 I32RotlBy {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
@@ -3648,7 +3648,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3656,16 +3656,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_rotr)]
                 I32Rotr {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// A Wasm `i32.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i32_rotr_by)]
                 I32RotrBy {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i32>,
@@ -3676,7 +3676,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i32>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3684,21 +3684,21 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_clz)]
                 I64Clz {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// `i64` count-trailing-zeros (ctz) instruction.
                 #[snake_name(i64_ctz)]
                 I64Ctz {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// `i64` pop-count instruction.
                 #[snake_name(i64_popcnt)]
                 I64Popcnt {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
 
@@ -3706,9 +3706,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_add)]
                 I64Add {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i64` add (small) immediate instruction: `r0 = r1 + c0`
@@ -3719,7 +3719,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_add_imm16)]
                 I64AddImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3729,9 +3729,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_sub)]
                 I64Sub {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i64` subtract immediate instruction: `r0 = c0 - r1`
@@ -3745,7 +3745,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3753,9 +3753,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_mul)]
                 I64Mul {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i64` multiply immediate instruction: `r0 = r1 * c0`
@@ -3766,7 +3766,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_mul_imm16)]
                 I64MulImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3776,9 +3776,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_div_s)]
                 I64DivS {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i64` signed-division immediate instruction: `r0 = r1 / c0`
@@ -3790,7 +3790,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_div_s_imm16_rhs)]
                 I64DivSImm16Rhs {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI64>,
@@ -3807,7 +3807,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3815,9 +3815,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_div_u)]
                 I64DivU {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i64` unsigned-division immediate instruction: `r0 = r1 / c0`
@@ -3832,7 +3832,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_div_u_imm16_rhs)]
                 I64DivUImm16Rhs {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU64>,
@@ -3849,7 +3849,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3857,9 +3857,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rem_s)]
                 I64RemS {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i64` signed-remainder immediate instruction: `r0 = r1 % c0`
@@ -3871,7 +3871,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rem_s_imm16_rhs)]
                 I64RemSImm16Rhs {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroI64>,
@@ -3888,7 +3888,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3896,9 +3896,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rem_u)]
                 I64RemU {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i64` signed-remainder immediate instruction: `r0 = r1 % c0`
@@ -3910,7 +3910,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rem_u_imm16_rhs)]
                 I64RemUImm16Rhs {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<NonZeroU64>,
@@ -3927,7 +3927,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<u64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -3935,9 +3935,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_and)]
                 I64And {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i64` bitwise-and (small) immediate instruction: `r0 = r1 & c0`
@@ -3948,7 +3948,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_and_imm16)]
                 I64AndImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3958,9 +3958,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_or)]
                 I64Or {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 & c0`
@@ -3971,7 +3971,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_or_imm16)]
                 I64OrImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -3981,9 +3981,9 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_xor)]
                 I64Xor {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// `i64` bitwise-or (small) immediate instruction: `r0 = r1 ^ c0`
@@ -3994,7 +3994,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_xor_imm16)]
                 I64XorImm16 {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: Const16<i64>,
@@ -4004,16 +4004,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_shl)]
                 I64Shl {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// A Wasm `i64.shl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_shl_by)]
                 I64ShlBy {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
@@ -4024,7 +4024,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -4032,16 +4032,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_shr_u)]
                 I64ShrU {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// A Wasm `i64.shr_u` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_shr_u_by)]
                 I64ShrUBy {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
@@ -4052,7 +4052,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -4060,16 +4060,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_shr_s)]
                 I64ShrS {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// A Wasm `i64.shr_s` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_shr_s_by)]
                 I64ShrSBy {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
@@ -4080,7 +4080,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -4088,16 +4088,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rotl)]
                 I64Rotl {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// A Wasm `i64.rotl` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_rotl_by)]
                 I64RotlBy {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
@@ -4108,7 +4108,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -4116,16 +4116,16 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_rotr)]
                 I64Rotr {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// A Wasm `i64.rotr` equivalent Wasmi instruction with 16-bit immediate `rhs` value.
                 #[snake_name(i64_rotr_by)]
                 I64RotrBy {
                     @result: Local,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     lhs: Local,
                     /// The 16-bit immediate value.
                     rhs: ShiftAmount<i64>,
@@ -4136,7 +4136,7 @@ macro_rules! for_each_op_grouped {
                     @result: Local,
                     /// The 16-bit immediate value.
                     lhs: Const16<i64>,
-                    /// The register holding one of the operands.
+                    /// The local holding one of the operands.
                     rhs: Local,
                 },
 
@@ -4144,7 +4144,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_wrap_i64)]
                 I32WrapI64 {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
 
@@ -4219,7 +4219,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_extend8_s)]
                 I32Extend8S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32.extend16_s` instruction.
@@ -4230,7 +4230,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_extend16_s)]
                 I32Extend16S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64.extend8_s` instruction.
@@ -4241,7 +4241,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_extend8_s)]
                 I64Extend8S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm(UnaryInstr) `i64.extend16_s` instruction.
@@ -4252,7 +4252,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_extend16_s)]
                 I64Extend16S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64.extend32_s` instruction.
@@ -4263,7 +4263,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_extend32_s)]
                 I64Extend32S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
 
@@ -4271,121 +4271,121 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32_abs)]
                 F32Abs {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32.neg` equivalent Wasmi instruction.
                 #[snake_name(f32_neg)]
                 F32Neg {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32.ceil` equivalent Wasmi instruction.
                 #[snake_name(f32_ceil)]
                 F32Ceil {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32.floor` equivalent Wasmi instruction.
                 #[snake_name(f32_floor)]
                 F32Floor {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32.trunc` equivalent Wasmi instruction.
                 #[snake_name(f32_trunc)]
                 F32Trunc {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32.nearest` equivalent Wasmi instruction.
                 #[snake_name(f32_nearest)]
                 F32Nearest {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32.sqrt` equivalent Wasmi instruction.
                 #[snake_name(f32_sqrt)]
                 F32Sqrt {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32.add` equivalent Wasmi instruction.
                 #[snake_name(f32_add)]
                 F32Add {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f32.sub` equivalent Wasmi instruction.
                 #[snake_name(f32_sub)]
                 F32Sub {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f32.mul` equivalent Wasmi instruction.
                 #[snake_name(f32_mul)]
                 F32Mul {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f32.div` equivalent Wasmi instruction.
                 #[snake_name(f32_div)]
                 F32Div {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f32.min` equivalent Wasmi instruction.
                 #[snake_name(f32_min)]
                 F32Min {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f32.max` equivalent Wasmi instruction.
                 #[snake_name(f32_max)]
                 F32Max {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f32.copysign` equivalent Wasmi instruction.
                 #[snake_name(f32_copysign)]
                 F32Copysign {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f32.copysign` equivalent Wasmi instruction with NaN canonicalization.
                 #[snake_name(f32_copysign_imm)]
                 F32CopysignImm {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Sign<f32>,
                 },
 
@@ -4393,121 +4393,121 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f64_abs)]
                 F64Abs {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.neg` equivalent Wasmi instruction.
                 #[snake_name(f64_neg)]
                 F64Neg {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.ceil` equivalent Wasmi instruction.
                 #[snake_name(f64_ceil)]
                 F64Ceil {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.floor` equivalent Wasmi instruction.
                 #[snake_name(f64_floor)]
                 F64Floor {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.trunc` equivalent Wasmi instruction.
                 #[snake_name(f64_trunc)]
                 F64Trunc {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.nearest` equivalent Wasmi instruction.
                 #[snake_name(f64_nearest)]
                 F64Nearest {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.sqrt` equivalent Wasmi instruction.
                 #[snake_name(f64_sqrt)]
                 F64Sqrt {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.add` equivalent Wasmi instruction.
                 #[snake_name(f64_add)]
                 F64Add {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f64.sub` equivalent Wasmi instruction.
                 #[snake_name(f64_sub)]
                 F64Sub {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f64.mul` equivalent Wasmi instruction.
                 #[snake_name(f64_mul)]
                 F64Mul {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f64.div` equivalent Wasmi instruction.
                 #[snake_name(f64_div)]
                 F64Div {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f64.min` equivalent Wasmi instruction.
                 #[snake_name(f64_min)]
                 F64Min {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f64.max` equivalent Wasmi instruction.
                 #[snake_name(f64_max)]
                 F64Max {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f64.copysign` equivalent Wasmi instruction.
                 #[snake_name(f64_copysign)]
                 F64Copysign {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Local,
                 },
                 /// Wasm `f64.copysign` equivalent Wasmi instruction with imediate `rhs` value.
                 #[snake_name(f64_copysign_imm)]
                 F64CopysignImm {
                     @result: Local,
-                    /// The register holding the left-hand side value.
+                    /// The local holding the left-hand side value.
                     lhs: Local,
-                    /// The register holding the right-hand side value.
+                    /// The local holding the right-hand side value.
                     rhs: Sign<f64>,
                 },
 
@@ -4515,56 +4515,56 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_trunc_f32_s)]
                 I32TruncF32S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32.trunc_f32_u` instruction.
                 #[snake_name(i32_trunc_f32_u)]
                 I32TruncF32U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32.trunc_f64_s` instruction.
                 #[snake_name(i32_trunc_f64_s)]
                 I32TruncF64S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32.trunc_f64_u` instruction.
                 #[snake_name(i32_trunc_f64_u)]
                 I32TruncF64U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64.trunc_f32_s` instruction.
                 #[snake_name(i64_trunc_f32_s)]
                 I64TruncF32S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64.trunc_f32_u` instruction.
                 #[snake_name(i64_trunc_f32_u)]
                 I64TruncF32U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64.trunc_f64_s` instruction.
                 #[snake_name(i64_trunc_f64_s)]
                 I64TruncF64S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64.trunc_f64_u` instruction.
                 #[snake_name(i64_trunc_f64_u)]
                 I64TruncF64U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
 
@@ -4576,7 +4576,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_trunc_sat_f32_s)]
                 I32TruncSatF32S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32.trunc_sat_f32_u` instruction.
@@ -4587,7 +4587,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_trunc_sat_f32_u)]
                 I32TruncSatF32U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32.trunc_sat_f64_s` instruction.
@@ -4598,7 +4598,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_trunc_sat_f64_s)]
                 I32TruncSatF64S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i32.trunc_sat_f64_u` instruction.
@@ -4609,7 +4609,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i32_trunc_sat_f64_u)]
                 I32TruncSatF64U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64.trunc_sat_f32_s` instruction.
@@ -4620,7 +4620,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_trunc_sat_f32_s)]
                 I64TruncSatF32S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64.trunc_sat_f32_u` instruction.
@@ -4631,7 +4631,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_trunc_sat_f32_u)]
                 I64TruncSatF32U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64.trunc_sat_f64_s` instruction.
@@ -4642,7 +4642,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_trunc_sat_f64_s)]
                 I64TruncSatF64S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `i64.trunc_sat_f64_u` instruction.
@@ -4653,7 +4653,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_trunc_sat_f64_u)]
                 I64TruncSatF64U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
 
@@ -4661,14 +4661,14 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32_demote_f64)]
                 F32DemoteF64 {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.promote_f32` instruction.
                 #[snake_name(f64_promote_f32)]
                 F64PromoteF32 {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
 
@@ -4676,56 +4676,56 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(f32_convert_i32_s)]
                 F32ConvertI32S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32.convert_i32_u` instruction.
                 #[snake_name(f32_convert_i32_u)]
                 F32ConvertI32U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32.convert_i64_s` instruction.
                 #[snake_name(f32_convert_i64_s)]
                 F32ConvertI64S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f32.convert_i64_u` instruction.
                 #[snake_name(f32_convert_i64_u)]
                 F32ConvertI64U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.convert_i32_s` instruction.
                 #[snake_name(f64_convert_i32_s)]
                 F64ConvertI32S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.convert_i32_u` instruction.
                 #[snake_name(f64_convert_i32_u)]
                 F64ConvertI32U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.convert_i64_s` instruction.
                 #[snake_name(f64_convert_i64_s)]
                 F64ConvertI64S {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
                 /// Wasm `f64.convert_i64_u` instruction.
                 #[snake_name(f64_convert_i64_u)]
                 F64ConvertI64U {
                     @result: Local,
-                    /// The register holding the input of the instruction.
+                    /// The local holding the input of the instruction.
                     input: Local,
                 },
 
@@ -4767,9 +4767,9 @@ macro_rules! for_each_op_grouped {
                 /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
                 #[snake_name(table_set)]
                 TableSet {
-                    /// The register holding the `index` of the instruction.
+                    /// The local holding the `index` of the instruction.
                     index: Local,
-                    /// The register holding the `value` of the instruction.
+                    /// The local holding the `value` of the instruction.
                     value: Local,
                 },
                 /// Variant of [`Instruction::TableSet`] with constant `index` value.
@@ -4779,7 +4779,7 @@ macro_rules! for_each_op_grouped {
                 /// This [`Instruction`] must be followed by an [`Instruction::TableIndex`].
                 #[snake_name(table_set_at)]
                 TableSetAt {
-                    /// The register holding the `value` of the instruction.
+                    /// The local holding the `value` of the instruction.
                     value: Local,
                     /// The constant `index` of the instruction.
                     index: Const32<u64>,
@@ -6097,18 +6097,18 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i8x16_shuffle)]
                 I8x16Shuffle {
                     @result: Local,
-                    /// The register holding the `lhs` of the instruction.
+                    /// The local holding the `lhs` of the instruction.
                     lhs: Local,
-                    /// The register holding the `rhs` of the instruction.
+                    /// The local holding the `rhs` of the instruction.
                     rhs: Local,
                 },
                 /// Wasm `i8x16.swizzle` instruction.
                 #[snake_name(i8x16_swizzle)]
                 I8x16Swizzle {
                     @result: Local,
-                    /// The register holding the `input` of the instruction.
+                    /// The local holding the `input` of the instruction.
                     input: Local,
-                    /// The register holding the `selector` of the instruction.
+                    /// The local holding the `selector` of the instruction.
                     selector: Local,
                 },
 

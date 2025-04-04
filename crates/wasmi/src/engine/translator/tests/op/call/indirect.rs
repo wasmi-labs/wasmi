@@ -62,7 +62,7 @@ fn no_params_imm16() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn one_reg_param_reg() {
+fn one_local_param_reg() {
     let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
@@ -86,7 +86,7 @@ fn one_reg_param_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn one_reg_param_imm16() {
+fn one_local_param_imm16() {
     fn test_with(index: u64) {
         let wasm = format!(
             r#"
@@ -119,7 +119,7 @@ fn one_reg_param_imm16() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn one_reg_param_imm() {
+fn one_local_param_imm() {
     fn test_with(index: u32) {
         let wasm = format!(
             r#"
@@ -255,7 +255,7 @@ fn one_imm_param_imm() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn two_reg_params_reg() {
+fn two_local_params_reg() {
     let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
@@ -283,7 +283,7 @@ fn two_reg_params_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn two_reg_params_reg_lhs() {
+fn two_local_params_local_lhs() {
     let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
@@ -342,7 +342,7 @@ fn two_imm_params_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn two_reg_params_imm16() {
+fn two_local_params_imm16() {
     fn test_with(index: u64) {
         let wasm = format!(
             r#"
@@ -379,7 +379,7 @@ fn two_reg_params_imm16() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn two_reg_params_lhs_imm16() {
+fn two_local_params_lhs_imm16() {
     fn test_with(index: u64) {
         let wasm = format!(
             r#"
@@ -456,7 +456,7 @@ fn two_imm_params_imm16() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn three_reg_params_reg() {
+fn three_local_params_reg() {
     let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
@@ -485,7 +485,7 @@ fn three_reg_params_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn three_reg_params_reg_lhs() {
+fn three_local_params_local_lhs() {
     let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
@@ -587,7 +587,7 @@ fn three_imm_params_imm16() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn params7_reg_index_local() {
+fn params7_local_index_local() {
     let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
@@ -654,7 +654,7 @@ fn params7_imm_index_local() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn params8_reg_index_local() {
+fn params8_local_index_local() {
     let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))
@@ -723,7 +723,7 @@ fn params8_imm_index_local() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn params9_reg_index_local() {
+fn params9_local_index_local() {
     let wasm = r#"
         (module
             (import "" "table" (table $table 10 funcref))

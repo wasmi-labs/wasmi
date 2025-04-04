@@ -12,7 +12,7 @@ fn same_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_reg() {
-    test_binary_reg_reg(WASM_OP, Instruction::i64_sub)
+    test_binary_local_reg(WASM_OP, Instruction::i64_sub)
 }
 
 #[test]
@@ -20,7 +20,7 @@ fn reg_reg() {
 fn reg_imm16() {
     let value = 100;
     let rhs = <Const16<i64>>::from(-value);
-    test_binary_reg_imm_with::<i64, _>(
+    test_binary_local_imm_with::<i64, _>(
         WASM_OP,
         i64::from(value),
         [
@@ -34,22 +34,22 @@ fn reg_imm16() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16_lhs() {
-    test_binary_reg_imm16_lhs::<i64>(WASM_OP, 100, Instruction::i64_sub_imm16_lhs)
+    test_binary_local_imm16_lhs::<i64>(WASM_OP, 100, Instruction::i64_sub_imm16_lhs)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm() {
-    test_reg_imm(i64::MAX);
-    test_reg_imm(i64::MAX - 1);
-    test_reg_imm(i64::MIN);
-    test_reg_imm(i64::MIN + 1);
-    test_reg_imm(i64::from(i16::MIN));
-    test_reg_imm(i64::from(i16::MAX) + 2);
+    test_local_imm(i64::MAX);
+    test_local_imm(i64::MAX - 1);
+    test_local_imm(i64::MIN);
+    test_local_imm(i64::MIN + 1);
+    test_local_imm(i64::from(i16::MIN));
+    test_local_imm(i64::from(i16::MAX) + 2);
 }
 
-fn test_reg_imm(value: i64) {
-    let mut testcase = testcase_binary_reg_imm(WASM_OP, value);
+fn test_local_imm(value: i64) {
+    let mut testcase = testcase_binary_local_imm(WASM_OP, value);
     testcase.expect_func(
         ExpectedFunc::new([
             Instruction::i64_add(Local::from(1), Local::from(0), Local::from(-1)),
@@ -63,14 +63,14 @@ fn test_reg_imm(value: i64) {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm_lhs() {
-    test_binary_reg_imm32_lhs(WASM_OP, i64::MAX, Instruction::i64_sub)
+    test_binary_local_imm32_lhs(WASM_OP, i64::MAX, Instruction::i64_sub)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_zero() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_with(WASM_OP, 0i32, expected).run()
+    test_binary_local_imm_with(WASM_OP, 0i32, expected).run()
 }
 
 #[test]

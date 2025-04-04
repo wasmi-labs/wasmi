@@ -5,25 +5,25 @@ const WASM_OP: WasmOp = WasmOp::binary(WasmType::F64, "add");
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_reg() {
-    test_binary_reg_reg(WASM_OP, Instruction::f64_add)
+    test_binary_local_reg(WASM_OP, Instruction::f64_add)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm() {
-    test_binary_reg_imm32(WASM_OP, 1.0_f64, Instruction::f64_add)
+    test_binary_local_imm32(WASM_OP, 1.0_f64, Instruction::f64_add)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm_lhs() {
-    test_binary_reg_imm32_lhs_commutative(WASM_OP, 1.0_f64, Instruction::f64_add)
+    test_binary_local_imm32_lhs_commutative(WASM_OP, 1.0_f64, Instruction::f64_add)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loc_nan() {
-    testcase_binary_reg_imm(WASM_OP, f64::NAN)
+    testcase_binary_local_imm(WASM_OP, f64::NAN)
         .expect_func(ExpectedFunc::new([return_f64imm32_instr(f64::NAN)]))
         .run();
 }
@@ -44,7 +44,7 @@ fn reg_zero() {
         Instruction::f64_add(Local::from(1), Local::from(0), Local::from(-1)),
         Instruction::return_reg(1),
     ];
-    testcase_binary_reg_imm(WASM_OP, 0.0_f64)
+    testcase_binary_local_imm(WASM_OP, 0.0_f64)
         .expect_func(ExpectedFunc::new(expected).consts([0.0_f64]))
         .run()
 }

@@ -9,7 +9,7 @@ use std::fmt::Display;
 use wasm_type::WasmTy;
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.
-fn conversion_reg_with<I, O, E>(wasm_op: &str, expected: E)
+fn conversion_local_with<I, O, E>(wasm_op: &str, expected: E)
 where
     I: WasmTy,
     O: WasmTy,
@@ -42,7 +42,7 @@ where
         make_instr(Local::from(1), Local::from(0)),
         Instruction::return_reg(1),
     ];
-    conversion_reg_with::<I, O, _>(wasm_op, expected)
+    conversion_local_with::<I, O, _>(wasm_op, expected)
 }
 
 /// Asserts that the unary Wasm operator `wasm_op` translates properly to a unary Wasmi instruction.

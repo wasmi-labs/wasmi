@@ -17,13 +17,13 @@ fn same_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_reg() {
-    test_binary_reg_reg(WASM_OP, Instruction::i32_div_u)
+    test_binary_local_reg(WASM_OP, Instruction::i32_div_u)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16_rhs() {
-    test_binary_reg_imm16_rhs::<NonZeroU32>(
+    test_binary_local_imm16_rhs::<NonZeroU32>(
         WASM_OP,
         nonzero_u32(100),
         Instruction::i32_div_u_imm16_rhs,
@@ -33,33 +33,33 @@ fn reg_imm16_rhs() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm16_lhs() {
-    test_binary_reg_imm16_lhs::<u32>(WASM_OP, 100, Instruction::i32_div_u_imm16_lhs)
+    test_binary_local_imm16_lhs::<u32>(WASM_OP, 100, Instruction::i32_div_u_imm16_lhs)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm() {
-    test_binary_reg_imm32(WASM_OP, i32::MAX, Instruction::i32_div_u)
+    test_binary_local_imm32(WASM_OP, i32::MAX, Instruction::i32_div_u)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm_lhs() {
-    test_binary_reg_imm32_lhs(WASM_OP, i32::MAX, Instruction::i32_div_u)
+    test_binary_local_imm32_lhs(WASM_OP, i32::MAX, Instruction::i32_div_u)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_zero() {
     let expected = [Instruction::trap(TrapCode::IntegerDivisionByZero)];
-    test_binary_reg_imm_with(WASM_OP, 0_i32, expected).run()
+    test_binary_local_imm_with(WASM_OP, 0_i32, expected).run()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_one() {
     let expected = [Instruction::return_reg(0)];
-    test_binary_reg_imm_with(WASM_OP, 1_i32, expected).run()
+    test_binary_local_imm_with(WASM_OP, 1_i32, expected).run()
 }
 
 #[test]

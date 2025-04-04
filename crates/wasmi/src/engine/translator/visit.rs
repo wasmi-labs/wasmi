@@ -1700,7 +1700,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::f32_eq,
             TypedVal::f32_eq,
             Self::no_custom_opt,
-            |this, _reg_in: Local, imm_in: f32| {
+            |this, _local_in: Local, imm_in: f32| {
                 if imm_in.is_nan() {
                     // Optimization: `NaN == x` or `x == NaN` is always `false`
                     this.alloc.stack.push_const(false);
@@ -1716,7 +1716,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::f32_ne,
             TypedVal::f32_ne,
             Self::no_custom_opt,
-            |this, _reg_in: Local, imm_in: f32| {
+            |this, _local_in: Local, imm_in: f32| {
                 if imm_in.is_nan() {
                     // Optimization: `NaN != x` or `x != NaN` is always `true`
                     this.alloc.stack.push_const(true);
@@ -1862,7 +1862,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::f64_eq,
             TypedVal::f64_eq,
             Self::no_custom_opt,
-            |this, _reg_in: Local, imm_in: f64| {
+            |this, _local_in: Local, imm_in: f64| {
                 if imm_in.is_nan() {
                     // Optimization: `NaN == x` or `x == NaN` is always `false`
                     this.alloc.stack.push_const(false);
@@ -1878,7 +1878,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Instruction::f64_ne,
             TypedVal::f64_ne,
             Self::no_custom_opt,
-            |this, _reg_in: Local, imm_in: f64| {
+            |this, _local_in: Local, imm_in: f64| {
                 if imm_in.is_nan() {
                     // Optimization: `NaN != x` or `x != NaN` is always `true`
                     this.alloc.stack.push_const(true);

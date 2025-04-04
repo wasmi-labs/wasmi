@@ -22,7 +22,7 @@ impl Executor<'_> {
     /// Returns the local `value` and `offset` parameters for a `load` [`Instruction`].
     fn fetch_ptr_and_offset_hi(&self) -> (Local, Offset64Hi) {
         // Safety: Wasmi translation guarantees that `Instruction::LocalAndImm32` exists.
-        unsafe { self.fetch_reg_and_offset_hi() }
+        unsafe { self.fetch_local_and_offset_hi() }
     }
 
     /// Executes a generic Wasm `load[N_{s|u}]` operation.

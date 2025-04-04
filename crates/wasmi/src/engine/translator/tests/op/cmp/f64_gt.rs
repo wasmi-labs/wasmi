@@ -14,25 +14,25 @@ fn same_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_reg() {
-    test_binary_reg_reg(WASM_OP, swap_ops!(Instruction::f64_lt))
+    test_binary_local_reg(WASM_OP, swap_ops!(Instruction::f64_lt))
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm() {
-    test_binary_reg_imm32(WASM_OP, 1.0, swap_ops!(Instruction::f64_lt))
+    test_binary_local_imm32(WASM_OP, 1.0, swap_ops!(Instruction::f64_lt))
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm_lhs() {
-    test_binary_reg_imm32_lhs(WASM_OP, 1.0, swap_ops!(Instruction::f64_lt))
+    test_binary_local_imm32_lhs(WASM_OP, 1.0, swap_ops!(Instruction::f64_lt))
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_pos_inf() {
-    test_binary_reg_imm_with(
+    test_binary_local_imm_with(
         WASM_OP,
         f64::INFINITY,
         [Instruction::ReturnImm32 {
@@ -45,7 +45,7 @@ fn reg_pos_inf() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn neg_inf_reg() {
-    test_binary_reg_imm_lhs_with(
+    test_binary_local_imm_lhs_with(
         WASM_OP,
         f64::NEG_INFINITY,
         [Instruction::ReturnImm32 {
@@ -58,13 +58,13 @@ fn neg_inf_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loc_nan() {
-    test_binary_reg_imm_with(WASM_OP, f64::NAN, [Instruction::return_imm32(false)]).run()
+    test_binary_local_imm_with(WASM_OP, f64::NAN, [Instruction::return_imm32(false)]).run()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn nan_reg() {
-    test_binary_reg_imm_lhs_with(WASM_OP, f64::NAN, [Instruction::return_imm32(false)]).run()
+    test_binary_local_imm_lhs_with(WASM_OP, f64::NAN, [Instruction::return_imm32(false)]).run()
 }
 
 #[test]

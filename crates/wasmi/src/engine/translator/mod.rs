@@ -1498,9 +1498,9 @@ impl FuncTranslator {
     ///
     /// - The `make_instr_opt` closure allows to implement custom optimization
     ///   logic for the case that both operands are registers.
-    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optimization
+    /// - The `make_instr_local_imm_opt` closure allows to implement custom optimization
     ///   logic for the case that the right-hand side operand is a constant value.
-    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optimization
+    /// - The `make_instr_imm_local_opt` closure allows to implement custom optimization
     ///   logic for the case that the left-hand side operand is a constant value.
     ///
     /// # Usage
@@ -1516,8 +1516,8 @@ impl FuncTranslator {
         make_instr_imm16_lhs: fn(result: Local, lhs: Const16<T>, rhs: Local) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_opt: fn(&mut Self, lhs: Local, rhs: Local) -> Result<bool, Error>,
-        make_instr_reg_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
-        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Local) -> Result<bool, Error>,
+        make_instr_local_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
+        make_instr_imm_local_opt: fn(&mut Self, lhs: T, rhs: Local) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: Copy + From<TypedVal> + Into<TypedVal> + TryInto<Const16<T>>,
@@ -1532,7 +1532,7 @@ impl FuncTranslator {
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
             (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
-                if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
+                if make_instr_local_imm_opt(self, lhs, T::from(rhs))? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
@@ -1543,7 +1543,7 @@ impl FuncTranslator {
                 self.push_binary_instr_imm(lhs, rhs, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
-                if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
+                if make_instr_imm_local_opt(self, T::from(lhs), rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
@@ -1570,9 +1570,9 @@ impl FuncTranslator {
     ///
     /// - The `make_instr_opt` closure allows to implement custom optimization
     ///   logic for the case that both operands are registers.
-    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optimization
+    /// - The `make_instr_local_imm_opt` closure allows to implement custom optimization
     ///   logic for the case that the right-hand side operand is a constant value.
-    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optimization
+    /// - The `make_instr_imm_local_opt` closure allows to implement custom optimization
     ///   logic for the case that the left-hand side operand is a constant value.
     ///
     /// # Usage
@@ -1586,8 +1586,8 @@ impl FuncTranslator {
         make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
         make_instr_opt: fn(&mut Self, lhs: Local, rhs: Local) -> Result<bool, Error>,
-        make_instr_reg_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
-        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Local) -> Result<bool, Error>,
+        make_instr_local_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
+        make_instr_imm_local_opt: fn(&mut Self, lhs: T, rhs: Local) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmFloat,
@@ -1602,7 +1602,7 @@ impl FuncTranslator {
                 self.push_binary_instr(lhs, rhs, make_instr)
             }
             (TypedProvider::Register(lhs), TypedProvider::Const(rhs)) => {
-                if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
+                if make_instr_local_imm_opt(self, lhs, T::from(rhs))? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
@@ -1614,7 +1614,7 @@ impl FuncTranslator {
                 self.push_binary_instr_imm(lhs, rhs, make_instr)
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
-                if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
+                if make_instr_imm_local_opt(self, T::from(lhs), rhs)? {
                     // Case: the custom logic applied its optimization and we can return.
                     return Ok(());
                 }
@@ -1797,7 +1797,7 @@ impl FuncTranslator {
     /// - Its various function arguments allow it to be used for generic Wasm types.
     /// - Applies constant evaluation if both operands are constant values.
     ///
-    /// - The `make_instr_imm_reg_opt` closure allows to implement custom optimization
+    /// - The `make_instr_imm_local_opt` closure allows to implement custom optimization
     ///   logic for the case the shifted value operand is a constant value.
     ///
     /// # Usage
@@ -1816,7 +1816,7 @@ impl FuncTranslator {
         ) -> Instruction,
         make_instr_imm16: fn(result: Local, lhs: Const16<T>, rhs: Local) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> TypedVal,
-        make_instr_imm_reg_opt: fn(&mut Self, lhs: T, rhs: Local) -> Result<bool, Error>,
+        make_instr_imm_local_opt: fn(&mut Self, lhs: T, rhs: Local) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmInteger + IntoShiftAmount<Input: From<TypedVal>>,
@@ -1838,7 +1838,7 @@ impl FuncTranslator {
                 Ok(())
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
-                if make_instr_imm_reg_opt(self, T::from(lhs), rhs)? {
+                if make_instr_imm_local_opt(self, T::from(lhs), rhs)? {
                     // Custom optimization was applied: return early
                     return Ok(());
                 }
@@ -1867,7 +1867,7 @@ impl FuncTranslator {
     /// - Its various function arguments allow it to be used for `i32` and `i64` types.
     /// - Applies constant evaluation if both operands are constant values.
     ///
-    /// - The `make_instr_reg_imm_opt` closure allows to implement custom optimization
+    /// - The `make_instr_local_imm_opt` closure allows to implement custom optimization
     ///   logic for the case the right-hand side operand is a constant value.
     ///
     /// # Usage
@@ -1883,7 +1883,7 @@ impl FuncTranslator {
         make_instr_imm16_rev: fn(result: Local, lhs: Const16<T>, rhs: Local) -> Instruction,
         consteval: fn(TypedVal, TypedVal) -> Result<TypedVal, TrapCode>,
         make_instr_opt: fn(&mut Self, lhs: Local, rhs: Local) -> Result<bool, Error>,
-        make_instr_reg_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
+        make_instr_local_imm_opt: fn(&mut Self, lhs: Local, rhs: T) -> Result<bool, Error>,
     ) -> Result<(), Error>
     where
         T: WasmInteger,
@@ -1904,7 +1904,7 @@ impl FuncTranslator {
                     self.translate_trap(TrapCode::IntegerDivisionByZero)?;
                     return Ok(());
                 };
-                if make_instr_reg_imm_opt(self, lhs, T::from(rhs))? {
+                if make_instr_local_imm_opt(self, lhs, T::from(rhs))? {
                     // Custom optimization was applied: return early
                     return Ok(());
                 }

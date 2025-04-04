@@ -184,7 +184,7 @@ impl Display for WasmType {
     }
 }
 
-fn test_binary_reg_reg(
+fn test_binary_local_reg(
     wasm_op: WasmOp,
     make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
 ) {
@@ -208,7 +208,7 @@ fn test_binary_reg_reg(
     assert_func_bodies(&wasm, [expected]);
 }
 
-fn testcase_binary_reg_imm<T>(wasm_op: WasmOp, value: T) -> TranslationTest
+fn testcase_binary_local_imm<T>(wasm_op: WasmOp, value: T) -> TranslationTest
 where
     T: Copy,
     DisplayWasm<T>: Display,
@@ -252,8 +252,8 @@ where
     TranslationTest::new(&wasm)
 }
 
-/// Variant of [`test_binary_reg_imm16`] where the `rhs` operand is an immediate value.
-fn test_binary_reg_imm16_rhs<T>(
+/// Variant of [`test_binary_local_imm16`] where the `rhs` operand is an immediate value.
+fn test_binary_local_imm16_rhs<T>(
     wasm_op: WasmOp,
     value: T,
     make_instr: fn(result: Local, lhs: Local, rhs: Const16<T>) -> Instruction,
@@ -268,11 +268,11 @@ fn test_binary_reg_imm16_rhs<T>(
         make_instr(Local::from(1), Local::from(0), immediate),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_with(wasm_op, value, expected).run()
+    test_binary_local_imm_with(wasm_op, value, expected).run()
 }
 
-/// Variant of [`test_binary_reg_imm16`] where the `lhs` operand is an immediate value.
-fn test_binary_reg_imm16_lhs<T>(
+/// Variant of [`test_binary_local_imm16`] where the `lhs` operand is an immediate value.
+fn test_binary_local_imm16_lhs<T>(
     wasm_op: WasmOp,
     value: T,
     make_instr: fn(result: Local, lhs: Const16<T>, rhs: Local) -> Instruction,
@@ -287,10 +287,10 @@ fn test_binary_reg_imm16_lhs<T>(
         make_instr(Local::from(1), immediate, Local::from(0)),
         Instruction::return_reg(1),
     ];
-    test_binary_reg_imm_lhs_with(wasm_op, value, expected).run()
+    test_binary_local_imm_lhs_with(wasm_op, value, expected).run()
 }
 
-fn test_binary_reg_imm32<T>(
+fn test_binary_local_imm32<T>(
     wasm_op: WasmOp,
     value: T,
     make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
@@ -302,13 +302,13 @@ fn test_binary_reg_imm32<T>(
         make_instr(Local::from(1), Local::from(0), Local::from(-1)),
         Instruction::return_reg(1),
     ];
-    let mut testcase = testcase_binary_reg_imm(wasm_op, value);
+    let mut testcase = testcase_binary_local_imm(wasm_op, value);
     testcase.expect_func(ExpectedFunc::new(expected).consts([value.into()]));
     testcase.run()
 }
 
-/// Variant of [`test_binary_reg_imm32`] where both operands are swapped.
-fn test_binary_reg_imm32_lhs<T>(
+/// Variant of [`test_binary_local_imm32`] where both operands are swapped.
+fn test_binary_local_imm32_lhs<T>(
     wasm_op: WasmOp,
     value: T,
     make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
@@ -325,8 +325,8 @@ fn test_binary_reg_imm32_lhs<T>(
     testcase.run()
 }
 
-/// Variant of [`test_binary_reg_imm32`] where both operands are swapped.
-fn test_binary_reg_imm32_lhs_commutative<T>(
+/// Variant of [`test_binary_local_imm32`] where both operands are swapped.
+fn test_binary_local_imm32_lhs_commutative<T>(
     wasm_op: WasmOp,
     value: T,
     make_instr: fn(result: Local, lhs: Local, rhs: Local) -> Instruction,
@@ -343,19 +343,19 @@ fn test_binary_reg_imm32_lhs_commutative<T>(
     testcase.run()
 }
 
-fn test_binary_reg_imm_with<T, E>(wasm_op: WasmOp, value: T, expected: E) -> TranslationTest
+fn test_binary_local_imm_with<T, E>(wasm_op: WasmOp, value: T, expected: E) -> TranslationTest
 where
     T: Copy,
     DisplayWasm<T>: Display,
     E: IntoIterator<Item = Instruction>,
     <E as IntoIterator>::IntoIter: ExactSizeIterator,
 {
-    let mut testcase = testcase_binary_reg_imm(wasm_op, value);
+    let mut testcase = testcase_binary_local_imm(wasm_op, value);
     testcase.expect_func_instrs(expected);
     testcase
 }
 
-fn test_binary_reg_imm_lhs_with<T, E>(wasm_op: WasmOp, value: T, expected: E) -> TranslationTest
+fn test_binary_local_imm_lhs_with<T, E>(wasm_op: WasmOp, value: T, expected: E) -> TranslationTest
 where
     T: Copy,
     DisplayWasm<T>: Display,

@@ -15,31 +15,31 @@ fn same_reg() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_reg() {
-    test_binary_reg_reg(WASM_OP, Instruction::f32_le)
+    test_binary_local_reg(WASM_OP, Instruction::f32_le)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm() {
-    test_binary_reg_imm32(WASM_OP, 1.0_f32, Instruction::f32_le)
+    test_binary_local_imm32(WASM_OP, 1.0_f32, Instruction::f32_le)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn reg_imm_lhs() {
-    test_binary_reg_imm32_lhs(WASM_OP, 1.0_f32, Instruction::f32_le)
+    test_binary_local_imm32_lhs(WASM_OP, 1.0_f32, Instruction::f32_le)
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn loc_nan() {
-    test_binary_reg_imm_with(WASM_OP, f32::NAN, [Instruction::return_imm32(false)]).run()
+    test_binary_local_imm_with(WASM_OP, f32::NAN, [Instruction::return_imm32(false)]).run()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
 fn nan_reg() {
-    test_binary_reg_imm_lhs_with(WASM_OP, f32::NAN, [Instruction::return_imm32(false)]).run()
+    test_binary_local_imm_lhs_with(WASM_OP, f32::NAN, [Instruction::return_imm32(false)]).run()
 }
 
 #[test]

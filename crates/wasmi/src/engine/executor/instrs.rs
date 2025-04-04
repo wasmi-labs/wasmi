@@ -2656,7 +2656,7 @@ impl Executor<'_> {
     }
 
     /// Fetches the [`Local`] and [`Offset64Hi`] parameters for a load or store [`Instruction`].
-    unsafe fn fetch_reg_and_offset_hi(&self) -> (Local, Offset64Hi) {
+    unsafe fn fetch_local_and_offset_hi(&self) -> (Local, Offset64Hi) {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match addr.get().filter_register_and_offset_hi() {

@@ -30,7 +30,7 @@ fn reg() {
     test_reg(ValType::ExternRef);
 }
 
-fn test_reg_at(index: u32, value_type: ValType) {
+fn test_local_at(index: u32, value_type: ValType) {
     let display_ty = DisplayValueType::from(value_type);
     let display_index = DisplayWasm::from(index);
     let wasm = format!(
@@ -57,8 +57,8 @@ fn test_reg_at(index: u32, value_type: ValType) {
 #[cfg_attr(miri, ignore)]
 fn reg_at() {
     fn test_for(index: u32) {
-        test_reg_at(index, ValType::FuncRef);
-        test_reg_at(index, ValType::ExternRef);
+        test_local_at(index, ValType::FuncRef);
+        test_local_at(index, ValType::ExternRef);
     }
     test_for(0);
     test_for(u32::MAX);

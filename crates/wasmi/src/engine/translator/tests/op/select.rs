@@ -262,7 +262,7 @@ fn same_imm() {
     test_for::<f64>(-9.87654321);
 }
 
-fn test_reg_imm<T>(kind: SelectKind, rhs: T) -> TranslationTest
+fn test_local_imm<T>(kind: SelectKind, rhs: T) -> TranslationTest
 where
     T: WasmTy,
     DisplayWasm<T>: Display,
@@ -303,7 +303,9 @@ fn reg_imm32() {
             Instruction::register_and_imm32(condition, value),
             Instruction::return_reg(result),
         ];
-        test_reg_imm(kind, value).expect_func_instrs(expected).run();
+        test_local_imm(kind, value)
+            .expect_func_instrs(expected)
+            .run();
     }
 
     fn test_for<T>(value: T)
@@ -354,7 +356,7 @@ fn reg_imm() {
             Instruction::return_reg(result),
         ];
         let expected = ExpectedFunc::new(instrs).consts([value]);
-        test_reg_imm(kind, value).expect_func(expected).run();
+        test_local_imm(kind, value).expect_func(expected).run();
     }
 
     fn test_for<T>(value: T)
@@ -393,7 +395,9 @@ fn reg_i64imm32() {
             Instruction::register_and_imm32(condition, i32::try_from(value).unwrap()),
             Instruction::return_reg(result),
         ];
-        test_reg_imm(kind, value).expect_func_instrs(expected).run();
+        test_local_imm(kind, value)
+            .expect_func_instrs(expected)
+            .run();
     }
 
     fn test_for(value: i64) {
@@ -422,7 +426,9 @@ fn reg_f64imm32() {
             Instruction::register_and_imm32(condition, value as f32),
             Instruction::return_reg(result),
         ];
-        test_reg_imm(kind, value).expect_func_instrs(expected).run();
+        test_local_imm(kind, value)
+            .expect_func_instrs(expected)
+            .run();
     }
 
     fn test_for(value: f64) {
