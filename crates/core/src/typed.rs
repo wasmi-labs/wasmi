@@ -202,46 +202,6 @@ macro_rules! impl_forwarding {
 }
 impl TypedVal {
     impl_forwarding! {
-        // Comparison Instructions
-
-        fn i32_eq(i32, i32) -> i32;
-        fn i64_eq(i64, i64) -> i32;
-        fn f32_eq(f32, f32) -> i32;
-        fn f64_eq(f64, f64) -> i32;
-
-        fn i32_ne(i32, i32) -> i32;
-        fn i64_ne(i64, i64) -> i32;
-        fn f32_ne(f32, f32) -> i32;
-        fn f64_ne(f64, f64) -> i32;
-
-        fn i32_lt_s(i32, i32) -> i32;
-        fn i32_lt_u(i32, i32) -> i32;
-        fn i32_gt_s(i32, i32) -> i32;
-        fn i32_gt_u(i32, i32) -> i32;
-        fn i32_le_s(i32, i32) -> i32;
-        fn i32_le_u(i32, i32) -> i32;
-        fn i32_ge_s(i32, i32) -> i32;
-        fn i32_ge_u(i32, i32) -> i32;
-
-        fn i64_lt_s(i64, i64) -> i32;
-        fn i64_lt_u(i64, i64) -> i32;
-        fn i64_gt_s(i64, i64) -> i32;
-        fn i64_gt_u(i64, i64) -> i32;
-        fn i64_le_s(i64, i64) -> i32;
-        fn i64_le_u(i64, i64) -> i32;
-        fn i64_ge_s(i64, i64) -> i32;
-        fn i64_ge_u(i64, i64) -> i32;
-
-        fn f32_lt(f32, f32) -> i32;
-        fn f32_gt(f32, f32) -> i32;
-        fn f32_le(f32, f32) -> i32;
-        fn f32_ge(f32, f32) -> i32;
-
-        fn f64_lt(f64, f64) -> i32;
-        fn f64_gt(f64, f64) -> i32;
-        fn f64_le(f64, f64) -> i32;
-        fn f64_ge(f64, f64) -> i32;
-
         // Integer Arithmetic Instructions
 
         fn i32_clz(i32) -> i32;
@@ -251,14 +211,6 @@ impl TypedVal {
         fn i64_clz(i64) -> i64;
         fn i64_ctz(i64) -> i64;
         fn i64_popcnt(i64) -> i64;
-
-        fn i32_add(i32, i32) -> i32;
-        fn i32_sub(i32, i32) -> i32;
-        fn i32_mul(i32, i32) -> i32;
-
-        fn i64_add(i64, i64) -> i64;
-        fn i64_sub(i64, i64) -> i64;
-        fn i64_mul(i64, i64) -> i64;
 
         #[fallible] fn i32_div_s(i32, i32) -> Result<i32, TrapCode>;
         #[fallible] fn i32_div_u(i32, i32) -> Result<i32, TrapCode>;
@@ -284,16 +236,6 @@ impl TypedVal {
         fn i64_rotl(i64, i64) -> i64;
         fn i64_rotr(i64, i64) -> i64;
 
-        // Bitwise Instructions
-
-        fn i32_and(i32, i32) -> i32;
-        fn i32_or(i32, i32) -> i32;
-        fn i32_xor(i32, i32) -> i32;
-
-        fn i64_and(i64, i64) -> i64;
-        fn i64_or(i64, i64) -> i64;
-        fn i64_xor(i64, i64) -> i64;
-
         // Float Arithmetic Instructions
 
         fn f32_abs(f32) -> f32;
@@ -312,20 +254,7 @@ impl TypedVal {
         fn f64_nearest(f64) -> f64;
         fn f64_sqrt(f64) -> f64;
 
-        fn f32_add(f32, f32) -> f32;
-        fn f32_sub(f32, f32) -> f32;
-        fn f32_mul(f32, f32) -> f32;
-        fn f32_div(f32, f32) -> f32;
-        fn f32_min(f32, f32) -> f32;
-        fn f32_max(f32, f32) -> f32;
         fn f32_copysign(f32, f32) -> f32;
-
-        fn f64_add(f64, f64) -> f64;
-        fn f64_sub(f64, f64) -> f64;
-        fn f64_mul(f64, f64) -> f64;
-        fn f64_div(f64, f64) -> f64;
-        fn f64_min(f64, f64) -> f64;
-        fn f64_max(f64, f64) -> f64;
         fn f64_copysign(f64, f64) -> f64;
 
         // Conversions

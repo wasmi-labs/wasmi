@@ -1093,10 +1093,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_eq(&mut self) -> Self::Output {
-        self.translate_binary_commutative::<i32>(
+        self.translate_binary_commutative::<i32, bool>(
             Instruction::i32_eq,
             Instruction::i32_eq_imm16,
-            TypedVal::i32_eq,
+            wasm::i32_eq,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x == x` is always `true`
@@ -1110,10 +1110,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_ne(&mut self) -> Self::Output {
-        self.translate_binary_commutative::<i32>(
+        self.translate_binary_commutative::<i32, bool>(
             Instruction::i32_ne,
             Instruction::i32_ne_imm16,
-            TypedVal::i32_ne,
+            wasm::i32_ne,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x != x` is always `false`
@@ -1127,11 +1127,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_lt_s(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<i32, bool>(
             Instruction::i32_lt_s,
             Instruction::i32_lt_s_imm16_rhs,
             Instruction::i32_lt_s_imm16_lhs,
-            TypedVal::i32_lt_s,
+            wasm::i32_lt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -1160,11 +1160,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_lt_u(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<u32, bool>(
             Instruction::i32_lt_u,
             Instruction::i32_lt_u_imm16_rhs,
             Instruction::i32_lt_u_imm16_lhs,
-            TypedVal::i32_lt_u,
+            wasm::i32_lt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -1193,11 +1193,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_gt_s(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<i32, bool>(
             swap_ops!(Instruction::i32_lt_s),
             swap_ops!(Instruction::i32_lt_s_imm16_lhs),
             swap_ops!(Instruction::i32_lt_s_imm16_rhs),
-            TypedVal::i32_gt_s,
+            wasm::i32_gt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -1226,11 +1226,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_gt_u(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<u32, bool>(
             swap_ops!(Instruction::i32_lt_u),
             swap_ops!(Instruction::i32_lt_u_imm16_lhs),
             swap_ops!(Instruction::i32_lt_u_imm16_rhs),
-            TypedVal::i32_gt_u,
+            wasm::i32_gt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -1259,11 +1259,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_le_s(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<i32, bool>(
             Instruction::i32_le_s,
             Instruction::i32_le_s_imm16_rhs,
             Instruction::i32_le_s_imm16_lhs,
-            TypedVal::i32_le_s,
+            wasm::i32_le_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x <= x` is always `true`
@@ -1292,11 +1292,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_le_u(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<u32, bool>(
             Instruction::i32_le_u,
             Instruction::i32_le_u_imm16_rhs,
             Instruction::i32_le_u_imm16_lhs,
-            TypedVal::i32_le_u,
+            wasm::i32_le_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x <= x` is always `true`
@@ -1325,11 +1325,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_ge_s(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<i32, bool>(
             swap_ops!(Instruction::i32_le_s),
             swap_ops!(Instruction::i32_le_s_imm16_lhs),
             swap_ops!(Instruction::i32_le_s_imm16_rhs),
-            TypedVal::i32_ge_s,
+            wasm::i32_ge_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x >= x` is always `true`
@@ -1358,11 +1358,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_ge_u(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<u32, bool>(
             swap_ops!(Instruction::i32_le_u),
             swap_ops!(Instruction::i32_le_u_imm16_lhs),
             swap_ops!(Instruction::i32_le_u_imm16_rhs),
-            TypedVal::i32_ge_u,
+            wasm::i32_ge_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x >= x` is always `true`
@@ -1398,10 +1398,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_eq(&mut self) -> Self::Output {
-        self.translate_binary_commutative::<i64>(
+        self.translate_binary_commutative::<i64, bool>(
             Instruction::i64_eq,
             Instruction::i64_eq_imm16,
-            TypedVal::i64_eq,
+            wasm::i64_eq,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x == x` is always `true`
@@ -1415,10 +1415,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_ne(&mut self) -> Self::Output {
-        self.translate_binary_commutative::<i64>(
+        self.translate_binary_commutative::<i64, bool>(
             Instruction::i64_ne,
             Instruction::i64_ne_imm16,
-            TypedVal::i64_ne,
+            wasm::i64_ne,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x != x` is always `false`
@@ -1432,11 +1432,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_lt_s(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<i64, bool>(
             Instruction::i64_lt_s,
             Instruction::i64_lt_s_imm16_rhs,
             Instruction::i64_lt_s_imm16_lhs,
-            TypedVal::i64_lt_s,
+            wasm::i64_lt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -1465,11 +1465,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_lt_u(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<u64, bool>(
             Instruction::i64_lt_u,
             Instruction::i64_lt_u_imm16_rhs,
             Instruction::i64_lt_u_imm16_lhs,
-            TypedVal::i64_lt_u,
+            wasm::i64_lt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -1498,11 +1498,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_gt_s(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<i64, bool>(
             swap_ops!(Instruction::i64_lt_s),
             swap_ops!(Instruction::i64_lt_s_imm16_lhs),
             swap_ops!(Instruction::i64_lt_s_imm16_rhs),
-            TypedVal::i64_gt_s,
+            wasm::i64_gt_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -1531,11 +1531,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_gt_u(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<u64, bool>(
             swap_ops!(Instruction::i64_lt_u),
             swap_ops!(Instruction::i64_lt_u_imm16_lhs),
             swap_ops!(Instruction::i64_lt_u_imm16_rhs),
-            TypedVal::i64_gt_u,
+            wasm::i64_gt_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -1564,11 +1564,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_le_s(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<i64, bool>(
             Instruction::i64_le_s,
             Instruction::i64_le_s_imm16_rhs,
             Instruction::i64_le_s_imm16_lhs,
-            TypedVal::i64_le_s,
+            wasm::i64_le_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x <= x` is always `true`
@@ -1597,11 +1597,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_le_u(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<u64, bool>(
             Instruction::i64_le_u,
             Instruction::i64_le_u_imm16_rhs,
             Instruction::i64_le_u_imm16_lhs,
-            TypedVal::i64_le_u,
+            wasm::i64_le_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x <= x` is always `true`
@@ -1630,11 +1630,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_ge_s(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<i64, bool>(
             swap_ops!(Instruction::i64_le_s),
             swap_ops!(Instruction::i64_le_s_imm16_lhs),
             swap_ops!(Instruction::i64_le_s_imm16_rhs),
-            TypedVal::i64_ge_s,
+            wasm::i64_ge_s,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x >= x` is always `true`
@@ -1663,11 +1663,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_ge_u(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<u64, bool>(
             swap_ops!(Instruction::i64_le_u),
             swap_ops!(Instruction::i64_le_u_imm16_lhs),
             swap_ops!(Instruction::i64_le_u_imm16_rhs),
-            TypedVal::i64_ge_u,
+            wasm::i64_ge_u,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x >= x` is always `true`
@@ -1696,9 +1696,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_eq(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative::<f32>(
+        self.translate_fbinary_commutative::<f32, bool>(
             Instruction::f32_eq,
-            TypedVal::f32_eq,
+            wasm::f32_eq,
             Self::no_custom_opt,
             |this, _reg_in: Reg, imm_in: f32| {
                 if imm_in.is_nan() {
@@ -1712,9 +1712,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_ne(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative::<f32>(
+        self.translate_fbinary_commutative::<f32, bool>(
             Instruction::f32_ne,
-            TypedVal::f32_ne,
+            wasm::f32_ne,
             Self::no_custom_opt,
             |this, _reg_in: Reg, imm_in: f32| {
                 if imm_in.is_nan() {
@@ -1728,9 +1728,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_lt(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f32, bool>(
             Instruction::f32_lt,
-            TypedVal::f32_lt,
+            wasm::f32_lt,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -1769,9 +1769,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_gt(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f32, bool>(
             swap_ops!(Instruction::f32_lt),
-            TypedVal::f32_gt,
+            wasm::f32_gt,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -1810,9 +1810,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_le(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f32, bool>(
             Instruction::f32_le,
-            TypedVal::f32_le,
+            wasm::f32_le,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: f32| {
                 if rhs.is_nan() {
@@ -1834,9 +1834,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_ge(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f32, bool>(
             swap_ops!(Instruction::f32_le),
-            TypedVal::f32_ge,
+            wasm::f32_ge,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: f32| {
                 if rhs.is_nan() {
@@ -1858,9 +1858,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_eq(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative::<f64>(
+        self.translate_fbinary_commutative::<f64, bool>(
             Instruction::f64_eq,
-            TypedVal::f64_eq,
+            wasm::f64_eq,
             Self::no_custom_opt,
             |this, _reg_in: Reg, imm_in: f64| {
                 if imm_in.is_nan() {
@@ -1874,9 +1874,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_ne(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative::<f64>(
+        self.translate_fbinary_commutative::<f64, bool>(
             Instruction::f64_ne,
-            TypedVal::f64_ne,
+            wasm::f64_ne,
             Self::no_custom_opt,
             |this, _reg_in: Reg, imm_in: f64| {
                 if imm_in.is_nan() {
@@ -1890,9 +1890,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_lt(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f64, bool>(
             Instruction::f64_lt,
-            TypedVal::f64_lt,
+            wasm::f64_lt,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x < x` is always `false`
@@ -1931,9 +1931,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_gt(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f64, bool>(
             swap_ops!(Instruction::f64_lt),
-            TypedVal::f64_gt,
+            wasm::f64_gt,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `x > x` is always `false`
@@ -1972,9 +1972,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_le(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f64, bool>(
             Instruction::f64_le,
-            TypedVal::f64_le,
+            wasm::f64_le,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: f64| {
                 if rhs.is_nan() {
@@ -1996,9 +1996,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_ge(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f64, bool>(
             swap_ops!(Instruction::f64_le),
-            TypedVal::f64_ge,
+            wasm::f64_ge,
             Self::no_custom_opt,
             |this, _lhs: Reg, rhs: f64| {
                 if rhs.is_nan() {
@@ -2032,10 +2032,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_add(&mut self) -> Self::Output {
-        self.translate_binary_commutative(
+        self.translate_binary_commutative::<i32, i32>(
             Instruction::i32_add,
             Instruction::i32_add_imm16,
-            TypedVal::i32_add,
+            wasm::i32_add,
             Self::no_custom_opt,
             |this, reg: Reg, value: i32| {
                 if value == 0 {
@@ -2049,11 +2049,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_sub(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<i32, i32>(
             Instruction::i32_sub,
             |_, _, _| unreachable!("`i32.sub r c` is translated as `i32.add r -c`"),
             Instruction::i32_sub_imm16_lhs,
-            TypedVal::i32_sub,
+            wasm::i32_sub,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `sub x - x` is always `0`
@@ -2084,10 +2084,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_mul(&mut self) -> Self::Output {
-        self.translate_binary_commutative(
+        self.translate_binary_commutative::<i32, i32>(
             Instruction::i32_mul,
             Instruction::i32_mul_imm16,
-            TypedVal::i32_mul,
+            wasm::i32_mul,
             Self::no_custom_opt,
             |this, reg: Reg, value: i32| {
                 if value == 0 {
@@ -2178,10 +2178,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_and(&mut self) -> Self::Output {
-        self.translate_binary_commutative(
+        self.translate_binary_commutative::<i32, i32>(
             Instruction::i32_and,
             Instruction::i32_and_imm16,
-            TypedVal::i32_and,
+            wasm::i32_and,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x & x` is always just `x`
@@ -2210,10 +2210,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_or(&mut self) -> Self::Output {
-        self.translate_binary_commutative(
+        self.translate_binary_commutative::<i32, i32>(
             Instruction::i32_or,
             Instruction::i32_or_imm16,
-            TypedVal::i32_or,
+            wasm::i32_or,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x | x` is always just `x`
@@ -2242,10 +2242,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_xor(&mut self) -> Self::Output {
-        self.translate_binary_commutative(
+        self.translate_binary_commutative::<i32, i32>(
             Instruction::i32_xor,
             Instruction::i32_xor_imm16,
-            TypedVal::i32_xor,
+            wasm::i32_xor,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x ^ x` is always `0`
@@ -2349,10 +2349,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_add(&mut self) -> Self::Output {
-        self.translate_binary_commutative(
+        self.translate_binary_commutative::<i64, i64>(
             Instruction::i64_add,
             Instruction::i64_add_imm16,
-            TypedVal::i64_add,
+            wasm::i64_add,
             Self::no_custom_opt,
             |this, reg: Reg, value: i64| {
                 if value == 0 {
@@ -2366,11 +2366,11 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_sub(&mut self) -> Self::Output {
-        self.translate_binary(
+        self.translate_binary::<i64, i64>(
             Instruction::i64_sub,
             |_, _, _| unreachable!("`i64.sub r c` is translated as `i64.add r -c`"),
             Instruction::i64_sub_imm16_lhs,
-            TypedVal::i64_sub,
+            wasm::i64_sub,
             |this, lhs: Reg, rhs: Reg| {
                 if lhs == rhs {
                     // Optimization: `sub x - x` is always `0`
@@ -2401,10 +2401,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_mul(&mut self) -> Self::Output {
-        self.translate_binary_commutative(
+        self.translate_binary_commutative::<i64, i64>(
             Instruction::i64_mul,
             Instruction::i64_mul_imm16,
-            TypedVal::i64_mul,
+            wasm::i64_mul,
             Self::no_custom_opt,
             |this, reg: Reg, value: i64| {
                 if value == 0 {
@@ -2495,10 +2495,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_and(&mut self) -> Self::Output {
-        self.translate_binary_commutative(
+        self.translate_binary_commutative::<i64, i64>(
             Instruction::i64_and,
             Instruction::i64_and_imm16,
-            TypedVal::i64_and,
+            wasm::i64_and,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x & x` is always just `x`
@@ -2527,10 +2527,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_or(&mut self) -> Self::Output {
-        self.translate_binary_commutative(
+        self.translate_binary_commutative::<i64, i64>(
             Instruction::i64_or,
             Instruction::i64_or_imm16,
-            TypedVal::i64_or,
+            wasm::i64_or,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x | x` is always just `x`
@@ -2559,10 +2559,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i64_xor(&mut self) -> Self::Output {
-        self.translate_binary_commutative(
+        self.translate_binary_commutative::<i64, i64>(
             Instruction::i64_xor,
             Instruction::i64_xor_imm16,
-            TypedVal::i64_xor,
+            wasm::i64_xor,
             |this, lhs, rhs| {
                 if lhs == rhs {
                     // Optimization: `x ^ x` is always `0`
@@ -2682,18 +2682,18 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_add(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative(
+        self.translate_fbinary_commutative::<f32, f32>(
             Instruction::f32_add,
-            TypedVal::f32_add,
+            wasm::f32_add,
             Self::no_custom_opt,
             Self::no_custom_opt::<Reg, f32>,
         )
     }
 
     fn visit_f32_sub(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f32, f32>(
             Instruction::f32_sub,
-            TypedVal::f32_sub,
+            wasm::f32_sub,
             Self::no_custom_opt,
             Self::no_custom_opt::<Reg, f32>,
             // Unfortunately we cannot optimize for the case that `lhs == 0.0`
@@ -2704,9 +2704,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_mul(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative::<f32>(
+        self.translate_fbinary_commutative::<f32, f32>(
             Instruction::f32_mul,
-            TypedVal::f32_mul,
+            wasm::f32_mul,
             Self::no_custom_opt,
             // Unfortunately we cannot apply `x * 0` or `0 * x` optimizations
             // since Wasm mandates different behaviors if `x` is infinite or
@@ -2716,9 +2716,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_div(&mut self) -> Self::Output {
-        self.translate_fbinary::<f32>(
+        self.translate_fbinary::<f32, f32>(
             Instruction::f32_div,
-            TypedVal::f32_div,
+            wasm::f32_div,
             Self::no_custom_opt,
             Self::no_custom_opt,
             Self::no_custom_opt,
@@ -2726,9 +2726,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_min(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative(
+        self.translate_fbinary_commutative::<f32, f32>(
             Instruction::f32_min,
-            TypedVal::f32_min,
+            wasm::f32_min,
             Self::no_custom_opt,
             |this, reg: Reg, value: f32| {
                 if value.is_infinite() && value.is_sign_positive() {
@@ -2742,9 +2742,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f32_max(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative(
+        self.translate_fbinary_commutative::<f32, f32>(
             Instruction::f32_max,
-            TypedVal::f32_max,
+            wasm::f32_max,
             Self::no_custom_opt,
             |this, reg: Reg, value: f32| {
                 if value.is_infinite() && value.is_sign_negative() {
@@ -2794,18 +2794,18 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_add(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative(
+        self.translate_fbinary_commutative::<f64, f64>(
             Instruction::f64_add,
-            TypedVal::f64_add,
+            wasm::f64_add,
             Self::no_custom_opt,
             Self::no_custom_opt::<Reg, f64>,
         )
     }
 
     fn visit_f64_sub(&mut self) -> Self::Output {
-        self.translate_fbinary(
+        self.translate_fbinary::<f64, f64>(
             Instruction::f64_sub,
-            TypedVal::f64_sub,
+            wasm::f64_sub,
             Self::no_custom_opt,
             Self::no_custom_opt::<Reg, f64>,
             // Unfortunately we cannot optimize for the case that `lhs == 0.0`
@@ -2816,9 +2816,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_mul(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative::<f64>(
+        self.translate_fbinary_commutative::<f64, f64>(
             Instruction::f64_mul,
-            TypedVal::f64_mul,
+            wasm::f64_mul,
             Self::no_custom_opt,
             // Unfortunately we cannot apply `x * 0` or `0 * x` optimizations
             // since Wasm mandates different behaviors if `x` is infinite or
@@ -2828,9 +2828,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_div(&mut self) -> Self::Output {
-        self.translate_fbinary::<f64>(
+        self.translate_fbinary::<f64, f64>(
             Instruction::f64_div,
-            TypedVal::f64_div,
+            wasm::f64_div,
             Self::no_custom_opt,
             Self::no_custom_opt,
             Self::no_custom_opt,
@@ -2838,9 +2838,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_min(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative(
+        self.translate_fbinary_commutative::<f64, f64>(
             Instruction::f64_min,
-            TypedVal::f64_min,
+            wasm::f64_min,
             Self::no_custom_opt,
             |this, reg: Reg, value: f64| {
                 if value.is_infinite() && value.is_sign_positive() {
@@ -2854,9 +2854,9 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_f64_max(&mut self) -> Self::Output {
-        self.translate_fbinary_commutative(
+        self.translate_fbinary_commutative::<f64, f64>(
             Instruction::f64_max,
-            TypedVal::f64_max,
+            wasm::f64_max,
             Self::no_custom_opt,
             |this, reg: Reg, value: f64| {
                 if value.is_infinite() && value.is_sign_negative() {
