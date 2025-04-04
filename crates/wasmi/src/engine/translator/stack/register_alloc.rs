@@ -378,7 +378,7 @@ impl RegisterAlloc {
             self.register_space(register),
             RegisterSpace::Preserve
         ));
-        let key = Self::reg2key(register);
+        let key = Self::loc2key(register);
         let old_amount = self.preservations.bump(key, 1);
         debug_assert!(
             // Note: We check that the returned value is `Some` to guard
@@ -395,7 +395,7 @@ impl RegisterAlloc {
     /// - If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
     fn pop_preserved(&mut self, register: Local) {
         self.assert_alloc_phase();
-        let key = Self::reg2key(register);
+        let key = Self::loc2key(register);
         self.removed_preserved.insert(key);
         self.preservations
             .take_one(key)
@@ -412,7 +412,7 @@ impl RegisterAlloc {
     }
 
     /// Converts a preservation [`Local`] into a [`StashKey`].
-    fn reg2key(register: Local) -> StashKey {
+    fn loc2key(register: Local) -> StashKey {
         let reg_index = Self::INITIAL_PRESERVATION_INDEX - i16::from(register);
         let key_index = usize::try_from(reg_index).unwrap_or_else(|error| {
             panic!("reg_index ({reg_index}) must be convertible to usize: {error}")

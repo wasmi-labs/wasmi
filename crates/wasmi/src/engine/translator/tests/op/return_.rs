@@ -162,7 +162,7 @@ fn return_2() {
             )
         )";
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg2_ext(0, 0)])
+        .expect_func_instrs([Instruction::return_loc2_ext(0, 0)])
         .run()
 }
 
@@ -178,7 +178,7 @@ fn return_2_imm() {
             )
         )";
     TranslationTest::new(wasm)
-        .expect_func(ExpectedFunc::new([Instruction::return_reg2_ext(-1, -2)]).consts([10_i32, 20]))
+        .expect_func(ExpectedFunc::new([Instruction::return_loc2_ext(-1, -2)]).consts([10_i32, 20]))
         .run()
 }
 
@@ -194,7 +194,7 @@ fn return_2_mixed() {
             )
         )";
     TranslationTest::new(wasm)
-        .expect_func(ExpectedFunc::new([Instruction::return_reg2_ext(-1, 0)]).consts([10_i32]))
+        .expect_func(ExpectedFunc::new([Instruction::return_loc2_ext(-1, 0)]).consts([10_i32]))
         .run()
 }
 
@@ -211,7 +211,7 @@ fn return_3() {
             )
         )";
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg3_ext(0, 0, 0)])
+        .expect_func_instrs([Instruction::return_loc3_ext(0, 0, 0)])
         .run()
 }
 
@@ -229,7 +229,7 @@ fn return_3_imm() {
         )";
     TranslationTest::new(wasm)
         .expect_func(
-            ExpectedFunc::new([Instruction::return_reg3_ext(-1, -2, -3)]).consts([10_i32, 20, 30]),
+            ExpectedFunc::new([Instruction::return_loc3_ext(-1, -2, -3)]).consts([10_i32, 20, 30]),
         )
         .run()
 }
@@ -247,7 +247,7 @@ fn return_3_mixed() {
             )
         )";
     TranslationTest::new(wasm)
-        .expect_func(ExpectedFunc::new([Instruction::return_reg3_ext(-1, 0, -1)]).consts([10_i32]))
+        .expect_func(ExpectedFunc::new([Instruction::return_loc3_ext(-1, 0, -1)]).consts([10_i32]))
         .run()
 }
 

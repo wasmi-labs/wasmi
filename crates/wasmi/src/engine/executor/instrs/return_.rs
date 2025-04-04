@@ -99,25 +99,25 @@ impl Executor<'_> {
     }
 
     /// Execute an [`Instruction::ReturnReg2`] returning two [`Local`] values.
-    pub fn execute_return_reg2(
+    pub fn execute_return_loc2(
         &mut self,
         store: &mut StoreInner,
         values: [Local; 2],
     ) -> ControlFlow {
-        self.execute_return_reg_n_impl::<2>(store, values)
+        self.execute_return_loc_n_impl::<2>(store, values)
     }
 
     /// Execute an [`Instruction::ReturnReg3`] returning three [`Local`] values.
-    pub fn execute_return_reg3(
+    pub fn execute_return_loc3(
         &mut self,
         store: &mut StoreInner,
         values: [Local; 3],
     ) -> ControlFlow {
-        self.execute_return_reg_n_impl::<3>(store, values)
+        self.execute_return_loc_n_impl::<3>(store, values)
     }
 
     /// Executes an [`Instruction::ReturnReg2`] or [`Instruction::ReturnReg3`] generically.
-    fn execute_return_reg_n_impl<const N: usize>(
+    fn execute_return_loc_n_impl<const N: usize>(
         &mut self,
         store: &mut StoreInner,
         values: [Local; N],
@@ -273,13 +273,13 @@ impl Executor<'_> {
     }
 
     /// Execute an [`Instruction::ReturnNezReg2`] returning two [`Local`] values.
-    pub fn execute_return_nez_reg2(
+    pub fn execute_return_nez_loc2(
         &mut self,
         store: &mut StoreInner,
         condition: Local,
         value: [Local; 2],
     ) -> ControlFlow {
-        self.execute_return_nez_impl(store, condition, value, Self::execute_return_reg2)
+        self.execute_return_nez_impl(store, condition, value, Self::execute_return_loc2)
     }
 
     /// Execute an [`Instruction::ReturnNezImm32`] returning a single 32-bit immediate value.

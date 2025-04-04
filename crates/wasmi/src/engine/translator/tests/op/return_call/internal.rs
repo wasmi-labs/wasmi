@@ -80,7 +80,7 @@ fn two_params_reg() {
         )
     "#;
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg2_ext(0, 1)])
+        .expect_func_instrs([Instruction::return_loc2_ext(0, 1)])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register2_ext(0, 1),
@@ -103,7 +103,7 @@ fn two_params_reg_lhs() {
         )
     "#;
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg2_ext(0, 1)])
+        .expect_func_instrs([Instruction::return_loc2_ext(0, 1)])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register2_ext(1, 0),
@@ -126,7 +126,7 @@ fn two_params_imm() {
         )
     "#;
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg2_ext(0, 1)])
+        .expect_func_instrs([Instruction::return_loc2_ext(0, 1)])
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_internal(EngineFunc::from_u32(0)),
@@ -153,7 +153,7 @@ fn three_params_reg() {
         )
     "#;
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg3_ext(0, 1, 2)])
+        .expect_func_instrs([Instruction::return_loc3_ext(0, 1, 2)])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register3_ext(0, 1, 2),
@@ -177,7 +177,7 @@ fn three_params_reg_lhs() {
         )
     "#;
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg3_ext(0, 1, 2)])
+        .expect_func_instrs([Instruction::return_loc3_ext(0, 1, 2)])
         .expect_func_instrs([
             Instruction::return_call_internal(EngineFunc::from_u32(0)),
             Instruction::register3_ext(2, 1, 0),
@@ -201,7 +201,7 @@ fn three_params_imm() {
         )
     "#;
     TranslationTest::new(wasm)
-        .expect_func_instrs([Instruction::return_reg3_ext(0, 1, 2)])
+        .expect_func_instrs([Instruction::return_loc3_ext(0, 1, 2)])
         .expect_func(
             ExpectedFunc::new([
                 Instruction::return_call_internal(EngineFunc::from_u32(0)),

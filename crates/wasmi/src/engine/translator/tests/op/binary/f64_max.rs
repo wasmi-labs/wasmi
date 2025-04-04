@@ -22,7 +22,7 @@ fn reg_imm_lhs() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_nan() {
+fn loc_nan() {
     testcase_binary_reg_imm(WASM_OP, f64::NAN)
         .expect_func(ExpectedFunc::new([return_f64imm32_instr(f64::NAN)]))
         .run();
@@ -38,14 +38,14 @@ fn nan_reg() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_neg_infinity() {
+fn loc_neg_infinity() {
     let expected = [Instruction::return_reg(0)];
     test_binary_reg_imm_with(WASM_OP, f64::NEG_INFINITY, expected).run()
 }
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_neg_infinity_lhs() {
+fn loc_neg_infinity_lhs() {
     let expected = [Instruction::return_reg(0)];
     test_binary_reg_imm_lhs_with(WASM_OP, f64::NEG_INFINITY, expected).run()
 }

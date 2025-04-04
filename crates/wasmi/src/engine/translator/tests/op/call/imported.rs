@@ -78,7 +78,7 @@ fn two_params_reg() {
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(2)), Func::from(0)),
             Instruction::register2_ext(0, 1),
-            Instruction::return_reg2_ext(2, 3),
+            Instruction::return_loc2_ext(2, 3),
         ])
         .run();
 }
@@ -98,7 +98,7 @@ fn two_params_reg_lhs() {
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(2)), Func::from(0)),
             Instruction::register2_ext(1, 0),
-            Instruction::return_reg2_ext(2, 3),
+            Instruction::return_loc2_ext(2, 3),
         ])
         .run();
 }
@@ -119,7 +119,7 @@ fn two_params_imm() {
             ExpectedFunc::new([
                 Instruction::call_imported(LocalSpan::new(Local::from(0)), Func::from(0)),
                 Instruction::register2_ext(-1, -2),
-                Instruction::return_reg2_ext(0, 1),
+                Instruction::return_loc2_ext(0, 1),
             ])
             .consts([10_i32, 20]),
         )
@@ -141,7 +141,7 @@ fn three_params_reg() {
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(3)), Func::from(0)),
             Instruction::register3_ext(0, 1, 2),
-            Instruction::return_reg3_ext(3, 4, 5),
+            Instruction::return_loc3_ext(3, 4, 5),
         ])
         .run();
 }
@@ -161,7 +161,7 @@ fn three_params_reg_lhs() {
         .expect_func_instrs([
             Instruction::call_imported(LocalSpan::new(Local::from(3)), Func::from(0)),
             Instruction::register3_ext(2, 1, 0),
-            Instruction::return_reg3_ext(3, 4, 5),
+            Instruction::return_loc3_ext(3, 4, 5),
         ])
         .run();
 }
@@ -182,7 +182,7 @@ fn three_params_imm() {
             ExpectedFunc::new([
                 Instruction::call_imported(LocalSpan::new(Local::from(0)), Func::from(0)),
                 Instruction::register3_ext(-1, -2, -3),
-                Instruction::return_reg3_ext(0, 1, 2),
+                Instruction::return_loc3_ext(0, 1, 2),
             ])
             .consts([10_i32, 20, 30]),
         )

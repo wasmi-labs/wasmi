@@ -473,8 +473,8 @@ fn return_if_results_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_reg2_ext(Local::from(2), 0, 1),
-            Instruction::return_reg2_ext(0, 1),
+            Instruction::return_nez_loc2_ext(Local::from(2), 0, 1),
+            Instruction::return_loc2_ext(0, 1),
         ])
         .run()
 }
@@ -494,8 +494,8 @@ fn return_if_results_2_lhs() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::return_nez_reg2_ext(Local::from(2), 1, 0),
-            Instruction::return_reg2_ext(1, 0),
+            Instruction::return_nez_loc2_ext(Local::from(2), 1, 0),
+            Instruction::return_loc2_ext(1, 0),
         ])
         .run()
 }
@@ -516,8 +516,8 @@ fn return_if_results_2_imm() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::return_nez_reg2_ext(Local::from(0), -1, -2),
-                Instruction::return_reg2_ext(-1, -2),
+                Instruction::return_nez_loc2_ext(Local::from(0), -1, -2),
+                Instruction::return_loc2_ext(-1, -2),
             ])
             .consts([10_i32, 20]),
         )
@@ -541,7 +541,7 @@ fn return_if_results_3_span() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::return_nez_span(Local::from(3), bspan(0, 3)),
-            Instruction::return_reg3_ext(0, 1, 2),
+            Instruction::return_loc3_ext(0, 1, 2),
         ])
         .run()
 }
@@ -564,7 +564,7 @@ fn return_if_results_3() {
         .expect_func_instrs([
             Instruction::return_nez_many_ext(Local::from(2), 0, 1),
             Instruction::register(0),
-            Instruction::return_reg3_ext(0, 1, 0),
+            Instruction::return_loc3_ext(0, 1, 0),
         ])
         .run()
 }
@@ -588,7 +588,7 @@ fn return_if_results_3_imm() {
             ExpectedFunc::new([
                 Instruction::return_nez_many_ext(Local::from(0), -1, -2),
                 Instruction::register(-3),
-                Instruction::return_reg3_ext(-1, -2, -3),
+                Instruction::return_loc3_ext(-1, -2, -3),
             ])
             .consts([10_i32, 20, 30]),
         )

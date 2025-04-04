@@ -25,10 +25,10 @@ fn spec_test_failure_2() {
                 Instruction::branch_table_2(0, 3_u16),
                 Instruction::register2_ext(-1, -2),
                 Instruction::branch_table_target(LocalSpan::new(result), BranchOffset::from(3)),
-                Instruction::return_reg2_ext(-1, -2),
+                Instruction::return_loc2_ext(-1, -2),
                 Instruction::branch_table_target(LocalSpan::new(result), BranchOffset::from(1)),
                 Instruction::i32_add(Local::from(1), Local::from(1), Local::from(2)),
-                Instruction::return_reg2_ext(1, -3),
+                Instruction::return_loc2_ext(1, -3),
             ])
             .consts([50, 51, 52]),
         )
@@ -325,16 +325,16 @@ fn reg_params_2_return() {
             ExpectedFunc::new([
                 Instruction::branch_table_2(index, 4_u32),
                 Instruction::register2_ext(1, 2),
-                Instruction::return_reg2_ext(1, 2),
+                Instruction::return_loc2_ext(1, 2),
                 Instruction::branch_table_target(LocalSpan::new(result), BranchOffset::from(7)),
                 Instruction::branch_table_target(LocalSpan::new(result), BranchOffset::from(4)),
                 Instruction::branch_table_target(LocalSpan::new(result), BranchOffset::from(1)),
                 Instruction::i32_add(result, result, result2),
-                Instruction::return_reg2_ext(3, -1),
+                Instruction::return_loc2_ext(3, -1),
                 Instruction::i32_sub(result, result, result2),
-                Instruction::return_reg2_ext(3, -2),
+                Instruction::return_loc2_ext(3, -2),
                 Instruction::i32_mul(result, result, result2),
-                Instruction::return_reg2_ext(3, -3),
+                Instruction::return_loc2_ext(3, -3),
             ])
             .consts([0_i32, 1, 2]),
         )
@@ -579,15 +579,15 @@ fn reg_params_3() {
             Instruction::branch_table_3(3, 4_u32),
             Instruction::register3_ext(0, 1, 2),
             Instruction::branch_table_target(LocalSpan::new(Local::from(4)), BranchOffset::from(8)),
-            Instruction::return_reg3_ext(0, 1, 2),
+            Instruction::return_loc3_ext(0, 1, 2),
             Instruction::branch_table_target(LocalSpan::new(Local::from(4)), BranchOffset::from(4)),
             Instruction::branch_table_target(LocalSpan::new(Local::from(4)), BranchOffset::from(1)),
             Instruction::i32_add_imm16(Local::from(6), Local::from(6), 10_i16),
-            Instruction::return_reg3_ext(4, 5, 6),
+            Instruction::return_loc3_ext(4, 5, 6),
             Instruction::i32_add_imm16(Local::from(6), Local::from(6), 20_i16),
-            Instruction::return_reg3_ext(4, 5, 6),
+            Instruction::return_loc3_ext(4, 5, 6),
             Instruction::i32_add_imm16(Local::from(6), Local::from(6), 30_i16),
-            Instruction::return_reg3_ext(4, 5, 6),
+            Instruction::return_loc3_ext(4, 5, 6),
         ])
         .run()
 }

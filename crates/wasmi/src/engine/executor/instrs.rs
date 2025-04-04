@@ -133,10 +133,10 @@ impl<'engine> Executor<'engine> {
                     forward_return!(self.execute_return_reg(store.inner_mut(), value))
                 }
                 Instr::ReturnReg2 { values } => {
-                    forward_return!(self.execute_return_reg2(store.inner_mut(), values))
+                    forward_return!(self.execute_return_loc2(store.inner_mut(), values))
                 }
                 Instr::ReturnReg3 { values } => {
-                    forward_return!(self.execute_return_reg3(store.inner_mut(), values))
+                    forward_return!(self.execute_return_loc3(store.inner_mut(), values))
                 }
                 Instr::ReturnImm32 { value } => {
                     forward_return!(self.execute_return_imm32(store.inner_mut(), value))
@@ -164,7 +164,7 @@ impl<'engine> Executor<'engine> {
                     ))
                 }
                 Instr::ReturnNezReg2 { condition, values } => {
-                    forward_return!(self.execute_return_nez_reg2(
+                    forward_return!(self.execute_return_nez_loc2(
                         store.inner_mut(),
                         condition,
                         values

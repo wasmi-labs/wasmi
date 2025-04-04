@@ -44,7 +44,7 @@ fn const_eval_for(op: MulWideOp, lhs: i64, rhs: i64) {
     let (result_lo, result_hi) = op.eval(lhs, rhs);
     TranslationTest::new(wasm)
         .expect_func(
-            ExpectedFunc::new([Instruction::return_reg2_ext(-1, -2)])
+            ExpectedFunc::new([Instruction::return_loc2_ext(-1, -2)])
                 .consts([result_lo, result_hi]),
         )
         .run()

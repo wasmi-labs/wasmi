@@ -50,7 +50,7 @@ fn simple_block_2() {
             Instruction::branch_i32_ne_imm16(Local::from(2), 0, BranchOffset16::from(3)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
-            Instruction::return_reg2_ext(3, 4),
+            Instruction::return_loc2_ext(3, 4),
         ])
         .run()
 }
@@ -84,7 +84,7 @@ fn simple_block_3_span() {
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::copy_imm32(Local::from(2), 30_i32),
-            Instruction::return_reg3_ext(4, 5, 6),
+            Instruction::return_loc3_ext(4, 5, 6),
         ])
         .run()
 }
@@ -115,7 +115,7 @@ fn simple_block_3_many() {
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::copy_imm32(Local::from(2), 30_i32),
-            Instruction::return_reg3_ext(4, 5, 6),
+            Instruction::return_loc3_ext(4, 5, 6),
         ])
         .run()
 }
@@ -267,7 +267,7 @@ fn simple_if_2() {
             Instruction::branch_i32_eq_imm16(Local::from(2), 0, BranchOffset16::from(3)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
-            Instruction::return_reg2_ext(3, 4),
+            Instruction::return_loc2_ext(3, 4),
         ])
         .run()
 }
@@ -302,7 +302,7 @@ fn simple_if_3_span() {
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::copy_imm32(Local::from(2), 30_i32),
-            Instruction::return_reg3_ext(4, 5, 6),
+            Instruction::return_loc3_ext(4, 5, 6),
         ])
         .run()
 }
@@ -334,7 +334,7 @@ fn simple_if_3_many() {
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::copy_imm32(Local::from(2), 30_i32),
-            Instruction::return_reg3_ext(4, 5, 6),
+            Instruction::return_loc3_ext(4, 5, 6),
         ])
         .run()
 }
@@ -407,7 +407,7 @@ fn nested_block() {
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::branch_i32_ne_imm16(Local::from(3), 0, BranchOffset16::from(2)),
             Instruction::copy_imm32(Local::from(1), 20_i32),
-            Instruction::return_reg2_ext(4, 5),
+            Instruction::return_loc2_ext(4, 5),
         ])
         .run()
 }
@@ -440,7 +440,7 @@ fn nested_if() {
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::branch_i32_eq_imm16(Local::from(3), 0, BranchOffset16::from(2)),
             Instruction::copy_imm32(Local::from(1), 20_i32),
-            Instruction::return_reg2_ext(4, 5),
+            Instruction::return_loc2_ext(4, 5),
         ])
         .run()
 }

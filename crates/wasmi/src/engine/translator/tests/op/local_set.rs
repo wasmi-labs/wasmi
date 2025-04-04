@@ -260,7 +260,7 @@ fn preserve_result_2() {
         .expect_func_instrs([
             Instruction::copy(Local::from(3), Local::from(0)),
             Instruction::i32_add(Local::from(0), Local::from(0), Local::from(1)),
-            Instruction::return_reg2_ext(3, 3),
+            Instruction::return_loc2_ext(3, 3),
         ])
         .run()
 }
@@ -299,7 +299,7 @@ fn preserve_multiple_1() {
         .expect_func_instrs([
             Instruction::copy(Local::from(1), Local::from(0)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
-            Instruction::return_reg2_ext(1, 1),
+            Instruction::return_loc2_ext(1, 1),
         ])
         .run()
 }
@@ -322,7 +322,7 @@ fn preserve_multiple_2() {
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy(Local::from(2), Local::from(0)),
             Instruction::copy_imm32(Local::from(0), 20_i32),
-            Instruction::return_reg2_ext(3, 2),
+            Instruction::return_loc2_ext(3, 2),
         ])
         .run()
 }
@@ -373,7 +373,7 @@ fn preserve_multiple_4() {
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy(Local::from(1), Local::from(0)),
             Instruction::copy_imm32(Local::from(0), 20_i32),
-            Instruction::return_reg2_ext(1, 1),
+            Instruction::return_loc2_ext(1, 1),
         ])
         .run()
 }
@@ -400,7 +400,7 @@ fn preserve_multiple_5() {
             Instruction::copy_imm32(Local::from(1), 22_i32),
             Instruction::copy(Local::from(3), Local::from(0)),
             Instruction::copy_imm32(Local::from(0), 33_i32),
-            Instruction::return_reg3_ext(3, 4, 5),
+            Instruction::return_loc3_ext(3, 4, 5),
         ])
         .run()
 }
@@ -432,7 +432,7 @@ fn preserve_multiple_6() {
             Instruction::copy_imm32(Local::from(1), 33_i32),
             Instruction::copy(Local::from(5), Local::from(1)),
             Instruction::copy_imm32(Local::from(1), 44_i32),
-            Instruction::return_reg3_ext(4, 3, 5),
+            Instruction::return_loc3_ext(4, 3, 5),
         ])
         .run()
 }

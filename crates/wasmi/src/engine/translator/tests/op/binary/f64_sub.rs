@@ -22,7 +22,7 @@ fn reg_imm_lhs() {
 
 #[test]
 #[cfg_attr(miri, ignore)]
-fn reg_nan() {
+fn loc_nan() {
     testcase_binary_reg_imm(WASM_OP, f64::NAN)
         .expect_func(ExpectedFunc::new([return_f64imm32_instr(f64::NAN)]))
         .run();

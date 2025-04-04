@@ -11,7 +11,7 @@ impl<'engine> Executor<'engine> {
         let mut addr: InstructionPtr = self.ip;
         addr.add(1);
         match *addr.get() {
-            Instruction::Local2 { regs: [reg0, reg1] } => (reg0, reg1),
+            Instruction::Local2 { regs: [loc0, loc1] } => (loc0, loc1),
             unexpected => {
                 // Safety: Wasmi translation guarantees that [`Instruction::Register2`] exists.
                 unsafe {

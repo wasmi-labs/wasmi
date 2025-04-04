@@ -515,7 +515,7 @@ fn test_if_without_else_has_result() {
         "#;
     TranslationTest::new(wasm)
         .expect_func(
-            ExpectedFunc::new([Instruction::return_reg2_ext(-1, -2)])
+            ExpectedFunc::new([Instruction::return_loc2_ext(-1, -2)])
                 .consts([UntypedVal::from(1_i64), UntypedVal::from(0_i32)]),
         )
         .expect_func_instrs([

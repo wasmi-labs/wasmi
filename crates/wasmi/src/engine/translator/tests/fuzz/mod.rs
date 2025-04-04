@@ -56,7 +56,7 @@ fn fuzz_regression_3() {
         .expect_func_instrs([
             Instruction::call_internal_0(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
             Instruction::call_internal_0(LocalSpan::new(Local::from(3)), EngineFunc::from_u32(0)),
-            Instruction::return_reg3_ext(2, 3, 4),
+            Instruction::return_loc3_ext(2, 3, 4),
         ])
         .run()
 }
@@ -136,7 +136,7 @@ fn fuzz_regression_8() {
             Instruction::copy(3, 0),
             Instruction::copy_imm32(Local::from(0), 20),
             Instruction::copy(2, 4),
-            Instruction::return_reg2_ext(3, 2),
+            Instruction::return_loc2_ext(3, 2),
         ])
         .run()
 }
@@ -246,7 +246,7 @@ fn fuzz_regression_13_codegen() {
         .expect_func_instrs([
             Instruction::return_nez_many_ext(0, 0, 0),
             Instruction::register(0),
-            Instruction::return_reg3_ext(0, 0, 0),
+            Instruction::return_loc3_ext(0, 0, 0),
         ])
         .run()
 }
@@ -269,7 +269,7 @@ fn fuzz_regression_14() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::i32_and(Local::from(2), Local::from(0), Local::from(1)),
-                Instruction::return_reg2_ext(2, -1),
+                Instruction::return_loc2_ext(2, -1),
             ])
             .consts([0_i32]),
         )
@@ -331,7 +331,7 @@ fn fuzz_regression_15_02() {
                     LocalSpan::new(Local::from(1)),
                     BranchOffset::from(3),
                 ),
-                Instruction::return_reg2_ext(Local::from(-1), Local::from(-2)),
+                Instruction::return_loc2_ext(Local::from(-1), Local::from(-2)),
                 Instruction::branch_table_target(
                     LocalSpan::new(Local::from(1)),
                     BranchOffset::from(1),

@@ -479,10 +479,10 @@ impl InstrEncoder {
                     // Note: we already asserted that the first copy is not a no-op
                     return self.encode_copy(stack, result, *v0, fuel_info);
                 }
-                let reg0 = stack.provider2reg(v0)?;
-                let reg1 = stack.provider2reg(v1)?;
+                let loc0 = stack.provider2reg(v0)?;
+                let loc1 = stack.provider2reg(v1)?;
                 self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
-                let instr = self.push_instr(Instruction::copy2_ext(results.span(), reg0, reg1))?;
+                let instr = self.push_instr(Instruction::copy2_ext(results.span(), loc0, loc1))?;
                 Ok(Some(instr))
             }
             [v0, v1, rest @ ..] => {
@@ -511,9 +511,9 @@ impl InstrEncoder {
                     true => Instruction::copy_many_ext,
                     false => Instruction::copy_many_non_overlapping_ext,
                 };
-                let reg0 = stack.provider2reg(v0)?;
-                let reg1 = stack.provider2reg(v1)?;
-                let instr = self.push_instr(make_instr(results.span(), reg0, reg1))?;
+                let loc0 = stack.provider2reg(v0)?;
+                let loc1 = stack.provider2reg(v1)?;
+                let instr = self.push_instr(make_instr(results.span(), loc0, loc1))?;
                 self.encode_register_list(stack, rest)?;
                 Ok(Some(instr))
             }
@@ -608,15 +608,15 @@ impl InstrEncoder {
                 }
             },
             [v0, v1] => {
-                let reg0 = stack.provider2reg(v0)?;
-                let reg1 = stack.provider2reg(v1)?;
-                Instruction::return_reg2_ext(reg0, reg1)
+                let loc0 = stack.provider2reg(v0)?;
+                let loc1 = stack.provider2reg(v1)?;
+                Instruction::return_loc2_ext(loc0, loc1)
             }
             [v0, v1, v2] => {
-                let reg0 = stack.provider2reg(v0)?;
-                let reg1 = stack.provider2reg(v1)?;
-                let reg2 = stack.provider2reg(v2)?;
-                Instruction::return_reg3_ext(reg0, reg1, reg2)
+                let loc0 = stack.provider2reg(v0)?;
+                let loc1 = stack.provider2reg(v1)?;
+                let loc2 = stack.provider2reg(v2)?;
+                Instruction::return_loc3_ext(loc0, loc1, loc2)
             }
             [v0, v1, v2, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
@@ -631,10 +631,10 @@ impl InstrEncoder {
                     self.push_instr(Instruction::return_span(span))?;
                     return Ok(());
                 }
-                let reg0 = stack.provider2reg(v0)?;
-                let reg1 = stack.provider2reg(v1)?;
-                let reg2 = stack.provider2reg(v2)?;
-                self.push_instr(Instruction::return_many_ext(reg0, reg1, reg2))?;
+                let loc0 = stack.provider2reg(v0)?;
+                let loc1 = stack.provider2reg(v1)?;
+                let loc2 = stack.provider2reg(v2)?;
+                self.push_instr(Instruction::return_many_ext(loc0, loc1, loc2))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
             }
@@ -676,9 +676,9 @@ impl InstrEncoder {
                 }
             },
             [v0, v1] => {
-                let reg0 = stack.provider2reg(v0)?;
-                let reg1 = stack.provider2reg(v1)?;
-                Instruction::return_nez_reg2_ext(condition, reg0, reg1)
+                let loc0 = stack.provider2reg(v0)?;
+                let loc1 = stack.provider2reg(v1)?;
+                Instruction::return_nez_loc2_ext(condition, loc0, loc1)
             }
             [v0, v1, rest @ ..] => {
                 debug_assert!(!rest.is_empty());
@@ -693,9 +693,9 @@ impl InstrEncoder {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
                     return Ok(());
                 }
-                let reg0 = stack.provider2reg(v0)?;
-                let reg1 = stack.provider2reg(v1)?;
-                self.push_instr(Instruction::return_nez_many_ext(condition, reg0, reg1))?;
+                let loc0 = stack.provider2reg(v0)?;
+                let loc1 = stack.provider2reg(v1)?;
+                self.push_instr(Instruction::return_nez_many_ext(condition, loc0, loc1))?;
                 self.encode_register_list(stack, rest)?;
                 return Ok(());
             }

@@ -85,22 +85,22 @@ macro_rules! define_enum {
 for_each_op::for_each_op!(define_enum);
 
 /// Helper trait for [`Instruction::result`] method implementation.
-trait IntoReg: Sized {
+trait IntoLocal: Sized {
     /// Converts `self` into a [`Local`] if possible.
-    fn into_reg(self) -> Option<Local> {
+    fn into_local(self) -> Option<Local> {
         None
     }
 }
 
-impl IntoReg for Local {
-    fn into_reg(self) -> Option<Local> {
+impl IntoLocal for Local {
+    fn into_local(self) -> Option<Local> {
         Some(self)
     }
 }
-impl IntoReg for [Local; 2] {}
-impl IntoReg for LocalSpan {}
-impl<const N: u16> IntoReg for FixedLocalSpan<N> {}
-impl IntoReg for () {}
+impl IntoLocal for [Local; 2] {}
+impl IntoLocal for LocalSpan {}
+impl<const N: u16> IntoLocal for FixedLocalSpan<N> {}
+impl IntoLocal for () {}
 
 macro_rules! define_result {
     (
@@ -130,7 +130,7 @@ macro_rules! define_result {
                 match *self {
                     $(
                         Self::$name { $( $( $result_name, )? )* .. } => {
-                            IntoReg::into_reg((
+                            IntoLocal::into_local((
                                 $( $( $result_name )? )*
                             ))
                         }
@@ -144,35 +144,35 @@ for_each_op::for_each_op!(define_result);
 
 impl Instruction {
     /// Creates a new [`Instruction::ReturnReg2`] for the given [`Local`] indices.
-    pub fn return_reg2_ext(reg0: impl Into<Local>, reg1: impl Into<Local>) -> Self {
-        Self::return_reg2([reg0.into(), reg1.into()])
+    pub fn return_loc2_ext(loc0: impl Into<Local>, loc1: impl Into<Local>) -> Self {
+        Self::return_loc2([loc0.into(), loc1.into()])
     }
 
     /// Creates a new [`Instruction::ReturnReg3`] for the given [`Local`] indices.
-    pub fn return_reg3_ext(
-        reg0: impl Into<Local>,
-        reg1: impl Into<Local>,
-        reg2: impl Into<Local>,
+    pub fn return_loc3_ext(
+        loc0: impl Into<Local>,
+        loc1: impl Into<Local>,
+        loc2: impl Into<Local>,
     ) -> Self {
-        Self::return_reg3([reg0.into(), reg1.into(), reg2.into()])
+        Self::return_loc3([loc0.into(), loc1.into(), loc2.into()])
     }
 
     /// Creates a new [`Instruction::ReturnMany`] for the given [`Local`] indices.
     pub fn return_many_ext(
-        reg0: impl Into<Local>,
-        reg1: impl Into<Local>,
-        reg2: impl Into<Local>,
+        loc0: impl Into<Local>,
+        loc1: impl Into<Local>,
+        loc2: impl Into<Local>,
     ) -> Self {
-        Self::return_many([reg0.into(), reg1.into(), reg2.into()])
+        Self::return_many([loc0.into(), loc1.into(), loc2.into()])
     }
 
     /// Creates a new [`Instruction::ReturnNezReg2`] for the given `condition` and `value`.
-    pub fn return_nez_reg2_ext(
+    pub fn return_nez_loc2_ext(
         condition: impl Into<Local>,
         value0: impl Into<Local>,
         value1: impl Into<Local>,
     ) -> Self {
-        Self::return_nez_reg2(condition, [value0.into(), value1.into()])
+        Self::return_nez_loc2(condition, [value0.into(), value1.into()])
     }
 
     /// Creates a new [`Instruction::ReturnNezMany`] for the given `condition` and `value`.
@@ -215,26 +215,26 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::Local2`] instruction parameter.
-    pub fn register2_ext(reg0: impl Into<Local>, reg1: impl Into<Local>) -> Self {
-        Self::register2([reg0.into(), reg1.into()])
+    pub fn register2_ext(loc0: impl Into<Local>, loc1: impl Into<Local>) -> Self {
+        Self::register2([loc0.into(), loc1.into()])
     }
 
     /// Creates a new [`Instruction::Local3`] instruction parameter.
     pub fn register3_ext(
-        reg0: impl Into<Local>,
-        reg1: impl Into<Local>,
-        reg2: impl Into<Local>,
+        loc0: impl Into<Local>,
+        loc1: impl Into<Local>,
+        loc2: impl Into<Local>,
     ) -> Self {
-        Self::register3([reg0.into(), reg1.into(), reg2.into()])
+        Self::register3([loc0.into(), loc1.into(), loc2.into()])
     }
 
     /// Creates a new [`Instruction::LocalList`] instruction parameter.
     pub fn register_list_ext(
-        reg0: impl Into<Local>,
-        reg1: impl Into<Local>,
-        reg2: impl Into<Local>,
+        loc0: impl Into<Local>,
+        loc1: impl Into<Local>,
+        loc2: impl Into<Local>,
     ) -> Self {
-        Self::register_list([reg0.into(), reg1.into(), reg2.into()])
+        Self::register_list([loc0.into(), loc1.into(), loc2.into()])
     }
 
     /// Creates a new [`Instruction::LocalAndImm32`] from the given `reg` and `offset_hi`.

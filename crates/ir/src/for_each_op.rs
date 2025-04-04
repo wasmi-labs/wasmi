@@ -46,7 +46,7 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Returns two values stored in registers.
-                #[snake_name(return_reg2)]
+                #[snake_name(return_loc2)]
                 ReturnReg2 {
                     /// The returned values.
                     values: [Local; 2],
@@ -56,7 +56,7 @@ macro_rules! for_each_op_grouped {
                 /// # Note
                 ///
                 /// Returns three values stored in registers.
-                #[snake_name(return_reg3)]
+                #[snake_name(return_loc3)]
                 ReturnReg3 {
                     /// The returned values.
                     values: [Local; 3],
@@ -152,7 +152,7 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// Variant of [`Instruction::ReturnNez`] returning two
                 /// [`Local`] value if the `condition` evaluates to `true`.
-                #[snake_name(return_nez_reg2)]
+                #[snake_name(return_nez_loc2)]
                 ReturnNezReg2 {
                     /// The register holding the condition to evaluate against zero.
                     condition: Local,

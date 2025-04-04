@@ -276,7 +276,7 @@ fn two_reg_params_reg() {
             Instruction::call_indirect(results, FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
             Instruction::register2_ext(1, 2),
-            Instruction::return_reg2_ext(3, 4),
+            Instruction::return_loc2_ext(3, 4),
         ])
         .run();
 }
@@ -304,7 +304,7 @@ fn two_reg_params_reg_lhs() {
             Instruction::call_indirect(results, FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
             Instruction::register2_ext(2, 1),
-            Instruction::return_reg2_ext(3, 4),
+            Instruction::return_loc2_ext(3, 4),
         ])
         .run();
 }
@@ -333,7 +333,7 @@ fn two_imm_params_reg() {
                 Instruction::call_indirect(results, FuncType::from(0)),
                 Instruction::call_indirect_params(elem_index, Table::from(0)),
                 Instruction::register2_ext(-1, -2),
-                Instruction::return_reg2_ext(1, 2),
+                Instruction::return_loc2_ext(1, 2),
             ])
             .consts([10_i32, 20_i32]),
         )
@@ -366,7 +366,7 @@ fn two_reg_params_imm16() {
                 Instruction::call_indirect_imm16(results, FuncType::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
                 Instruction::register2_ext(0, 1),
-                Instruction::return_reg2_ext(2, 3),
+                Instruction::return_loc2_ext(2, 3),
             ])
             .run();
     }
@@ -403,7 +403,7 @@ fn two_reg_params_lhs_imm16() {
                 Instruction::call_indirect_imm16(results, FuncType::from(0)),
                 Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
                 Instruction::register2_ext(1, 0),
-                Instruction::return_reg2_ext(2, 3),
+                Instruction::return_loc2_ext(2, 3),
             ])
             .run();
     }
@@ -441,7 +441,7 @@ fn two_imm_params_imm16() {
                     Instruction::call_indirect_imm16(results, FuncType::from(0)),
                     Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
                     Instruction::register2_ext(-1, -2),
-                    Instruction::return_reg2_ext(0, 1),
+                    Instruction::return_loc2_ext(0, 1),
                 ])
                 .consts([10_i32, 20_i32]),
             )
@@ -478,7 +478,7 @@ fn three_reg_params_reg() {
             Instruction::call_indirect(results, FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
             Instruction::register3_ext(1, 2, 3),
-            Instruction::return_reg3_ext(4, 5, 6),
+            Instruction::return_loc3_ext(4, 5, 6),
         ])
         .run();
 }
@@ -507,7 +507,7 @@ fn three_reg_params_reg_lhs() {
             Instruction::call_indirect(results, FuncType::from(0)),
             Instruction::call_indirect_params(elem_index, Table::from(0)),
             Instruction::register3_ext(3, 2, 1),
-            Instruction::return_reg3_ext(4, 5, 6),
+            Instruction::return_loc3_ext(4, 5, 6),
         ])
         .run();
 }
@@ -537,7 +537,7 @@ fn three_imm_params_reg() {
                 Instruction::call_indirect(results, FuncType::from(0)),
                 Instruction::call_indirect_params(elem_index, Table::from(0)),
                 Instruction::register3_ext(-1, -2, -3),
-                Instruction::return_reg3_ext(1, 2, 3),
+                Instruction::return_loc3_ext(1, 2, 3),
             ])
             .consts([10_i32, 20, 30]),
         )
@@ -572,7 +572,7 @@ fn three_imm_params_imm16() {
                     Instruction::call_indirect_imm16(results, FuncType::from(0)),
                     Instruction::call_indirect_params_imm16(elem_index, Table::from(0)),
                     Instruction::register3_ext(-1, -2, -3),
-                    Instruction::return_reg3_ext(0, 1, 2),
+                    Instruction::return_loc3_ext(0, 1, 2),
                 ])
                 .consts([10_i32, 20, 30]),
             )

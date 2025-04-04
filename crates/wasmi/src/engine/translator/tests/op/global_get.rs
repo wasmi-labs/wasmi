@@ -86,8 +86,8 @@ where
     let mut testcase = TranslationTest::new(&wasm);
     let instr = <T as WasmTy>::return_imm_instr(&value);
     match instr {
-        Instruction::ReturnReg { value: register } => {
-            assert!(register.is_const());
+        Instruction::ReturnReg { value: local } => {
+            assert!(local.is_const());
             testcase.expect_func(ExpectedFunc::new([instr]).consts([value]));
         }
         instr => {
@@ -191,7 +191,7 @@ fn test_global_get_as_return_values_0() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::global_get(Local::from(0), Global::from(0)),
-                Instruction::return_reg2_ext(-1, 0),
+                Instruction::return_loc2_ext(-1, 0),
             ])
             .consts([2_i32]),
         )
@@ -216,7 +216,7 @@ fn test_global_get_as_return_values_1() {
         .expect_func(
             ExpectedFunc::new([
                 Instruction::global_get(Local::from(0), Global::from(0)),
-                Instruction::return_reg2_ext(-1, 0),
+                Instruction::return_loc2_ext(-1, 0),
             ])
             .consts([2_i32]),
         )
