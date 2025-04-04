@@ -234,12 +234,12 @@ impl Instruction {
         loc1: impl Into<Local>,
         loc2: impl Into<Local>,
     ) -> Self {
-        Self::register_list([loc0.into(), loc1.into(), loc2.into()])
+        Self::local_list([loc0.into(), loc1.into(), loc2.into()])
     }
 
     /// Creates a new [`Instruction::LocalAndImm32`] from the given `reg` and `offset_hi`.
     pub fn register_and_offset_hi(reg: impl Into<Local>, offset_hi: Offset64Hi) -> Self {
-        Self::register_and_imm32(reg, offset_hi.0)
+        Self::local_and_imm32(reg, offset_hi.0)
     }
 
     /// Returns `Some` [`Local`] and [`Offset64Hi`] if encoded properly.
@@ -260,7 +260,7 @@ impl Instruction {
     where
         LaneType: Into<u8>,
     {
-        Self::register_and_imm32(reg, u32::from(lane.into()))
+        Self::local_and_imm32(reg, u32::from(lane.into()))
     }
 
     /// Returns `Some` [`Local`] and a `lane` index if encoded properly.

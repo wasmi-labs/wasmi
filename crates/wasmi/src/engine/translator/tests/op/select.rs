@@ -300,7 +300,7 @@ fn reg_imm32() {
         let lhs = Local::from(1);
         let expected = [
             Instruction::select_imm32_rhs(result, lhs),
-            Instruction::register_and_imm32(condition, value),
+            Instruction::local_and_imm32(condition, value),
             Instruction::return_reg(result),
         ];
         test_local_imm(kind, value)
@@ -392,7 +392,7 @@ fn reg_i64imm32() {
         let lhs = Local::from(1);
         let expected = [
             Instruction::select_i64imm32_rhs(result, lhs),
-            Instruction::register_and_imm32(condition, i32::try_from(value).unwrap()),
+            Instruction::local_and_imm32(condition, i32::try_from(value).unwrap()),
             Instruction::return_reg(result),
         ];
         test_local_imm(kind, value)
@@ -423,7 +423,7 @@ fn reg_f64imm32() {
         let lhs = Local::from(1);
         let expected = [
             Instruction::select_f64imm32_rhs(result, lhs),
-            Instruction::register_and_imm32(condition, value as f32),
+            Instruction::local_and_imm32(condition, value as f32),
             Instruction::return_reg(result),
         ];
         test_local_imm(kind, value)
@@ -666,7 +666,7 @@ fn both_imm32() {
         let rhs32 = AnyConst32::from(rhs);
         let expected = [
             Instruction::select_imm32(result, lhs32),
-            Instruction::register_and_imm32(condition, rhs32),
+            Instruction::local_and_imm32(condition, rhs32),
             Instruction::return_reg(result),
         ];
         test_both_imm(kind, lhs, rhs)
@@ -747,7 +747,7 @@ fn both_i64imm32() {
         let rhs32 = i64imm32(rhs);
         let expected = [
             Instruction::select_i64imm32(result, lhs32),
-            Instruction::register_and_imm32(condition, rhs32),
+            Instruction::local_and_imm32(condition, rhs32),
             Instruction::return_reg(result),
         ];
         test_both_imm(kind, lhs, rhs)
@@ -778,7 +778,7 @@ fn both_f64imm32() {
         let rhs32 = f64imm32(rhs);
         let expected = [
             Instruction::select_f64imm32(result, lhs32),
-            Instruction::register_and_imm32(condition, rhs32),
+            Instruction::local_and_imm32(condition, rhs32),
             Instruction::return_reg(result),
         ];
         test_both_imm(kind, lhs, rhs)
@@ -823,7 +823,7 @@ fn fuzz_fail_01() {
             Instruction::copy(1, 2),
             Instruction::i32_eq_imm16(2, 0, 0_i16),
             Instruction::select_imm32_rhs(1, 1),
-            Instruction::register_and_imm32(2, 0_i32),
+            Instruction::local_and_imm32(2, 0_i32),
             Instruction::return_reg(1),
         ])
         .run();

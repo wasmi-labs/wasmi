@@ -2512,7 +2512,7 @@ impl FuncTranslator {
                 debug_assert!(matches!(rhs.ty(), ValType::I32 | ValType::F32));
                 (
                     Instruction::select_imm32_rhs(result, lhs),
-                    Instruction::register_and_imm32(condition, u32::from(rhs.untyped())),
+                    Instruction::local_and_imm32(condition, u32::from(rhs.untyped())),
                 )
             }
             (Provider::Const(lhs), Provider::Register(rhs)) => {
@@ -2527,7 +2527,7 @@ impl FuncTranslator {
                 debug_assert!(matches!(rhs.ty(), ValType::I32 | ValType::F32));
                 (
                     Instruction::select_imm32(result, u32::from(lhs.untyped())),
-                    Instruction::register_and_imm32(condition, u32::from(rhs.untyped())),
+                    Instruction::local_and_imm32(condition, u32::from(rhs.untyped())),
                 )
             }
         };
@@ -2564,7 +2564,7 @@ impl FuncTranslator {
             }
             (Provider::Register(lhs), Provider::Const(rhs)) => (
                 Instruction::select_i64imm32_rhs(result, lhs),
-                Instruction::register_and_imm32(condition, rhs),
+                Instruction::local_and_imm32(condition, rhs),
             ),
             (Provider::Const(lhs), Provider::Register(rhs)) => (
                 Instruction::select_i64imm32_lhs(result, lhs),
@@ -2572,7 +2572,7 @@ impl FuncTranslator {
             ),
             (Provider::Const(lhs), Provider::Const(rhs)) => (
                 Instruction::select_i64imm32(result, lhs),
-                Instruction::register_and_imm32(condition, rhs),
+                Instruction::local_and_imm32(condition, rhs),
             ),
         };
         self.push_fueled_instr(instr, FuelCosts::base)?;
@@ -2608,7 +2608,7 @@ impl FuncTranslator {
             }
             (Provider::Register(lhs), Provider::Const(rhs)) => (
                 Instruction::select_f64imm32_rhs(result, lhs),
-                Instruction::register_and_imm32(condition, rhs),
+                Instruction::local_and_imm32(condition, rhs),
             ),
             (Provider::Const(lhs), Provider::Register(rhs)) => (
                 Instruction::select_f64imm32_lhs(result, lhs),
@@ -2616,7 +2616,7 @@ impl FuncTranslator {
             ),
             (Provider::Const(lhs), Provider::Const(rhs)) => (
                 Instruction::select_f64imm32(result, lhs),
-                Instruction::register_and_imm32(condition, rhs),
+                Instruction::local_and_imm32(condition, rhs),
             ),
         };
         self.push_fueled_instr(instr, FuelCosts::base)?;
@@ -3001,7 +3001,7 @@ impl FuncTranslator {
         )?;
         self.alloc
             .instr_encoder
-            .append_instr(Instruction::register_span(values))?;
+            .append_instr(Instruction::local_span(values))?;
         self.apply_providers_buffer(|this, buffer| {
             this.translate_br_table_targets(buffer, |branch_params, branch_offset| {
                 debug_assert_eq!(values.len(), branch_params.len());

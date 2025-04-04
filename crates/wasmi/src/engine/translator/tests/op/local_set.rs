@@ -147,7 +147,7 @@ fn overwrite_select_result_1() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::select_imm32(Local::from(0), 10_i32),
-            Instruction::register_and_imm32(Local::from(0), 20_i32),
+            Instruction::local_and_imm32(Local::from(0), 20_i32),
             Instruction::return_reg(Local::from(0)),
         ])
         .run()

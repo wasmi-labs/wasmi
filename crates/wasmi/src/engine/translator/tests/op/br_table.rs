@@ -619,7 +619,7 @@ fn reg_params_4_span() {
         .expect_func_instrs([
             Instruction::i32_popcnt(Local::from(5), Local::from(0)),
             Instruction::branch_table_span(4, 4_u32),
-            Instruction::register_span(bspan(0, 4)),
+            Instruction::local_span(bspan(0, 4)),
             Instruction::branch_table_target_non_overlapping(
                 LocalSpan::new(Local::from(5)),
                 BranchOffset::from(8),

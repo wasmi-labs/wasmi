@@ -5741,7 +5741,7 @@ macro_rules! for_each_op_grouped {
                     imm32: AnyConst32,
                 },
                 /// An instruction parameter with a [`Local`] and a 32-bit immediate value.
-                #[snake_name(register_and_imm32)]
+                #[snake_name(local_and_imm32)]
                 LocalAndImm32 {
                     /// The [`Local`] parameter value.
                     reg: Local,
@@ -5749,7 +5749,7 @@ macro_rules! for_each_op_grouped {
                     imm: AnyConst32,
                 },
                 /// A bounded [`LocalSpan`] instruction parameter.
-                #[snake_name(register_span)]
+                #[snake_name(local_span)]
                 LocalSpan { span: BoundedLocalSpan },
                 /// A [`Local`] instruction parameter.
                 ///
@@ -5795,7 +5795,7 @@ macro_rules! for_each_op_grouped {
                 /// - [`Instruction::Local`]
                 /// - [`Instruction::Local2`]
                 /// - [`Instruction::Local3`]
-                #[snake_name(register_list)]
+                #[snake_name(local_list)]
                 LocalList {
                     regs: [Local; 3]
                 },
