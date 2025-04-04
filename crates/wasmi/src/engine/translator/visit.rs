@@ -2761,7 +2761,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_fcopysign::<f32>(
             Instruction::f32_copysign,
             Instruction::f32_copysign_imm,
-            TypedVal::f32_copysign,
+            wasm::f32_copysign,
         )
     }
 
@@ -2873,7 +2873,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         self.translate_fcopysign::<f64>(
             Instruction::f64_copysign,
             Instruction::f64_copysign_imm,
-            TypedVal::f64_copysign,
+            wasm::f64_copysign,
         )
     }
 

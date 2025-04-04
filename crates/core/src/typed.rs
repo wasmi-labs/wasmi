@@ -216,11 +216,6 @@ impl TypedVal {
         fn i64_rotl(i64, i64) -> i64;
         fn i64_rotr(i64, i64) -> i64;
 
-        // Float Instructions
-
-        fn f32_copysign(f32, f32) -> f32;
-        fn f64_copysign(f64, f64) -> f64;
-
         // Conversions
 
         #[fallible] fn i32_trunc_f32_s(f32) -> Result<i32, TrapCode>;

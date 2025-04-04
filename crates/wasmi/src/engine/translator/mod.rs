@@ -1646,7 +1646,7 @@ impl FuncTranslator {
         &mut self,
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
         make_instr_imm: fn(result: Reg, lhs: Reg, rhs: Sign<T>) -> Instruction,
-        consteval: fn(TypedVal, TypedVal) -> TypedVal,
+        consteval: fn(T, T) -> T,
     ) -> Result<(), Error>
     where
         T: WasmFloat,
