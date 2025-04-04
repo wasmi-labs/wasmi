@@ -19,7 +19,7 @@ use crate::{
         FuelCosts,
     },
     ir::{
-        BoundedRegSpan,
+        BoundedLocalSpan,
         BranchOffset,
         BranchOffset16,
         Comparator,
@@ -27,7 +27,7 @@ use crate::{
         Const32,
         Instruction,
         Local,
-        RegSpan,
+        LocalSpan,
     },
     module::ModuleHeader,
     Error,
@@ -384,7 +384,7 @@ impl InstrEncoder {
             (result, value, last_value)
         };
 
-        let merged_copy = Instruction::copy2_ext(RegSpan::new(merged_result), value0, value1);
+        let merged_copy = Instruction::copy2_ext(LocalSpan::new(merged_result), value0, value1);
         *self.instrs.get_mut(last_instr) = merged_copy;
         Some(last_instr)
     }
@@ -452,7 +452,7 @@ impl InstrEncoder {
     pub fn encode_copies(
         &mut self,
         stack: &mut ValueStack,
-        mut results: BoundedRegSpan,
+        mut results: BoundedLocalSpan,
         values: &[TypedProvider],
         fuel_info: FuelInfo,
     ) -> Result<Option<Instr>, Error> {
@@ -463,7 +463,7 @@ impl InstrEncoder {
                 // Case: `result` and `value` are equal thus this is a no-op copy which we can avoid.
                 //       Applied recursively we thereby remove all no-op copies at the start of the
                 //       copy sequence until the first actual copy.
-                results = BoundedRegSpan::new(RegSpan::new(result.next()), results.len() - 1);
+                results = BoundedLocalSpan::new(LocalSpan::new(result.next()), results.len() - 1);
                 return self.encode_copies(stack, results, rest, fuel_info);
             }
         }
@@ -494,7 +494,7 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(values) = BoundedRegSpan::from_providers(values) {
+                if let Some(values) = BoundedLocalSpan::from_providers(values) {
                     let make_instr = match Self::has_overlapping_copy_spans(
                         results.span(),
                         values.span(),
@@ -528,8 +528,8 @@ impl InstrEncoder {
     /// - `[ 1 <- 0 ]`: single element never overlaps
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]``: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
-    pub fn has_overlapping_copy_spans(results: RegSpan, values: RegSpan, len: u16) -> bool {
-        RegSpan::has_overlapping_copies(results, values, len)
+    pub fn has_overlapping_copy_spans(results: LocalSpan, values: LocalSpan, len: u16) -> bool {
+        LocalSpan::has_overlapping_copies(results, values, len)
     }
 
     /// Returns `true` if the `copy results <- values` instruction has overlaps.
@@ -541,7 +541,7 @@ impl InstrEncoder {
     ///   is written to in the first copy but read from in the next.
     /// - The sequence `[ 3 <- 1, 4 <- 2, 5 <- 3 ]` has overlapping copies since local `3`
     ///   is written to in the first copy but read from in the third.
-    pub fn has_overlapping_copies(results: BoundedRegSpan, values: &[TypedProvider]) -> bool {
+    pub fn has_overlapping_copies(results: BoundedLocalSpan, values: &[TypedProvider]) -> bool {
         debug_assert_eq!(usize::from(results.len()), values.len());
         if results.is_empty() {
             // Note: An empty set of copies can never have overlapping copies.
@@ -627,7 +627,7 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(span) = BoundedRegSpan::from_providers(values) {
+                if let Some(span) = BoundedLocalSpan::from_providers(values) {
                     self.push_instr(Instruction::return_span(span))?;
                     return Ok(());
                 }
@@ -689,7 +689,7 @@ impl InstrEncoder {
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copies(rest.len() as u64 + 3)
                 })?;
-                if let Some(span) = BoundedRegSpan::from_providers(values) {
+                if let Some(span) = BoundedLocalSpan::from_providers(values) {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
                     return Ok(());
                 }
@@ -1063,7 +1063,7 @@ impl InstrEncoder {
         };
         if matches!(stack.get_register_space(result), RegisterSpace::Local) {
             // We need to filter out instructions that store their result
-            // into a local register slot because they introduce observable behavior
+            // into a local slot because they introduce observable behavior
             // which a fused cmp+branch instruction would remove.
             return Ok(None);
         }
@@ -1211,8 +1211,8 @@ mod tests {
     use super::*;
     use crate::core::TypedVal;
 
-    fn bspan(reg: i16, len: u16) -> BoundedRegSpan {
-        BoundedRegSpan::new(RegSpan::new(Local::from(reg)), len)
+    fn bspan(reg: i16, len: u16) -> BoundedLocalSpan {
+        BoundedLocalSpan::new(LocalSpan::new(Local::from(reg)), len)
     }
 
     #[test]

@@ -2,7 +2,7 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
     engine::utils::unreachable_unchecked,
-    ir::{AnyConst32, Const32, FixedRegSpan, Instruction, Local, RegSpan},
+    ir::{AnyConst32, Const32, FixedLocalSpan, Instruction, Local, LocalSpan},
 };
 use core::slice;
 use smallvec::SmallVec;
@@ -21,13 +21,13 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::Copy2`].
-    pub fn execute_copy_2(&mut self, results: FixedRegSpan<2>, values: [Local; 2]) {
+    pub fn execute_copy_2(&mut self, results: FixedLocalSpan<2>, values: [Local; 2]) {
         self.execute_copy_2_impl(results, values);
         self.next_instr()
     }
 
     /// Internal implementation of [`Instruction::Copy2`] execution.
-    fn execute_copy_2_impl(&mut self, results: FixedRegSpan<2>, values: [Local; 2]) {
+    fn execute_copy_2_impl(&mut self, results: FixedLocalSpan<2>, values: [Local; 2]) {
         let result0 = results.span().head();
         let result1 = result0.next();
         // We need `tmp` in case `results[0] == values[1]` to avoid overwriting `values[1]` before reading it.
@@ -59,13 +59,13 @@ impl Executor<'_> {
     ///   and thus requires a costly temporary buffer to avoid overwriting
     ///   intermediate copy results.
     /// - If `results` and `values` do _not_ overlap [`Instruction::CopySpanNonOverlapping`] is used.
-    pub fn execute_copy_span(&mut self, results: RegSpan, values: RegSpan, len: u16) {
+    pub fn execute_copy_span(&mut self, results: LocalSpan, values: LocalSpan, len: u16) {
         self.execute_copy_span_impl(results, values, len);
         self.next_instr();
     }
 
     /// Internal implementation of [`Instruction::CopySpan`] execution.
-    pub fn execute_copy_span_impl(&mut self, results: RegSpan, values: RegSpan, len: u16) {
+    pub fn execute_copy_span_impl(&mut self, results: LocalSpan, values: LocalSpan, len: u16) {
         let results = results.iter(len);
         let values = values.iter(len);
         let mut tmp = <SmallVec<[UntypedVal; 8]>>::default();
@@ -84,8 +84,8 @@ impl Executor<'_> {
     /// - If `results` and `values` _do_ overlap [`Instruction::CopySpan`] is used.
     pub fn execute_copy_span_non_overlapping(
         &mut self,
-        results: RegSpan,
-        values: RegSpan,
+        results: LocalSpan,
+        values: LocalSpan,
         len: u16,
     ) {
         self.execute_copy_span_non_overlapping_impl(results, values, len);
@@ -95,8 +95,8 @@ impl Executor<'_> {
     /// Internal implementation of [`Instruction::CopySpanNonOverlapping`] execution.
     pub fn execute_copy_span_non_overlapping_impl(
         &mut self,
-        results: RegSpan,
-        values: RegSpan,
+        results: LocalSpan,
+        values: LocalSpan,
         len: u16,
     ) {
         let results = results.iter(len);
@@ -108,7 +108,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CopyMany`].
-    pub fn execute_copy_many(&mut self, results: RegSpan, values: [Local; 2]) {
+    pub fn execute_copy_many(&mut self, results: LocalSpan, values: [Local; 2]) {
         self.ip.add(1);
         self.ip = self.execute_copy_many_impl(self.ip, results, &values);
         self.next_instr()
@@ -118,7 +118,7 @@ impl Executor<'_> {
     pub fn execute_copy_many_impl(
         &mut self,
         ip: InstructionPtr,
-        results: RegSpan,
+        results: LocalSpan,
         values: &[Local],
     ) -> InstructionPtr {
         // We need `tmp` since `values[n]` might be overwritten by previous copies.
@@ -150,7 +150,7 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::CopyManyNonOverlapping`].
-    pub fn execute_copy_many_non_overlapping(&mut self, results: RegSpan, values: [Local; 2]) {
+    pub fn execute_copy_many_non_overlapping(&mut self, results: LocalSpan, values: [Local; 2]) {
         self.ip.add(1);
         self.ip = self.execute_copy_many_non_overlapping_impl(self.ip, results, &values);
         self.next_instr()
@@ -160,7 +160,7 @@ impl Executor<'_> {
     pub fn execute_copy_many_non_overlapping_impl(
         &mut self,
         ip: InstructionPtr,
-        results: RegSpan,
+        results: LocalSpan,
         values: &[Local],
     ) -> InstructionPtr {
         let mut ip = ip;

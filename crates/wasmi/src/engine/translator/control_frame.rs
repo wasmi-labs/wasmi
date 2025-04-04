@@ -5,7 +5,7 @@ use super::LabelRef;
 use super::ValueStack;
 use crate::{
     engine::{BlockType, Instr, TranslationError},
-    ir::{BoundedRegSpan, RegSpan},
+    ir::{BoundedLocalSpan, LocalSpan},
     Engine,
     Error,
 };
@@ -57,7 +57,7 @@ pub struct BlockControlFrame {
     /// These are the locals that store the results of
     /// the [`BlockControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`BlockControlFrame`] exits it.
-    branch_params: RegSpan,
+    branch_params: LocalSpan,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// # Note
@@ -72,7 +72,7 @@ impl BlockControlFrame {
     pub fn new(
         block_type: BlockType,
         end_label: LabelRef,
-        branch_params: RegSpan,
+        branch_params: LocalSpan,
         stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
     ) -> Self {
@@ -102,8 +102,8 @@ impl BlockControlFrame {
     }
 
     /// Returns an iterator over the locals holding the branching parameters of the [`BlockControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
-        BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
+    pub fn branch_params(&self, engine: &Engine) -> BoundedLocalSpan {
+        BoundedLocalSpan::new(self.branch_params, self.block_type().len_results(engine))
     }
 
     /// Returns the label for the branch destination of the [`BlockControlFrame`].
@@ -162,7 +162,7 @@ pub struct LoopControlFrame {
     /// These are the locals that store the inputs of
     /// the [`LoopControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`LoopControlFrame`] re-enters it.
-    branch_params: RegSpan,
+    branch_params: LocalSpan,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// # Note
@@ -177,7 +177,7 @@ impl LoopControlFrame {
         block_type: BlockType,
         head_label: LabelRef,
         stack_height: BlockHeight,
-        branch_params: RegSpan,
+        branch_params: LocalSpan,
         consume_fuel: Option<Instr>,
     ) -> Self {
         Self {
@@ -206,8 +206,8 @@ impl LoopControlFrame {
     }
 
     /// Returns an iterator over the locals holding the branching parameters of the [`LoopControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
-        BoundedRegSpan::new(self.branch_params, self.block_type().len_params(engine))
+    pub fn branch_params(&self, engine: &Engine) -> BoundedLocalSpan {
+        BoundedLocalSpan::new(self.branch_params, self.block_type().len_params(engine))
     }
 
     /// Returns the label for the branch destination of the [`LoopControlFrame`].
@@ -258,7 +258,7 @@ pub struct IfControlFrame {
     /// the [`IfControlFrame`] upon taking a branch to it.
     /// Note that branching to a [`IfControlFrame`] exits it.
     /// The behavior is the same for the `then` and `else` blocks.
-    branch_params: RegSpan,
+    branch_params: LocalSpan,
     /// Instruction to consume fuel upon entering the basic block if fuel metering is enabled.
     ///
     /// This is used for both `then` and `else` branches. When entering the `else`
@@ -331,7 +331,7 @@ impl IfControlFrame {
     pub fn new(
         block_type: BlockType,
         end_label: LabelRef,
-        branch_params: RegSpan,
+        branch_params: LocalSpan,
         stack_height: BlockHeight,
         consume_fuel: Option<Instr>,
         reachability: IfReachability,
@@ -375,8 +375,8 @@ impl IfControlFrame {
     }
 
     /// Returns an iterator over the locals holding the branching parameters of the [`IfControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
-        BoundedRegSpan::new(self.branch_params, self.block_type().len_results(engine))
+    pub fn branch_params(&self, engine: &Engine) -> BoundedLocalSpan {
+        BoundedLocalSpan::new(self.branch_params, self.block_type().len_results(engine))
     }
 
     /// Returns the label for the branch destination of the [`IfControlFrame`].
@@ -595,7 +595,7 @@ impl ControlFrame {
     }
 
     /// Returns an iterator over the locals holding the branch parameters of the [`ControlFrame`].
-    pub fn branch_params(&self, engine: &Engine) -> BoundedRegSpan {
+    pub fn branch_params(&self, engine: &Engine) -> BoundedLocalSpan {
         match self {
             Self::Block(frame) => frame.branch_params(engine),
             Self::Loop(frame) => frame.branch_params(engine),

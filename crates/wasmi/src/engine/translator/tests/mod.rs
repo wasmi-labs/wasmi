@@ -12,7 +12,7 @@ use self::{
 };
 use crate::{
     core::UntypedVal,
-    ir::{AnyConst32, BoundedRegSpan, Const16, Const32, Instruction, Local, RegSpan},
+    ir::{AnyConst32, BoundedLocalSpan, Const16, Const32, Instruction, Local, LocalSpan},
     Config,
     Engine,
     Module,
@@ -70,9 +70,9 @@ where
     testcase.run();
 }
 
-/// Creates a new [`BoundedRegSpan`] starting with `reg` and with `len`.
-fn bspan(reg: impl Into<Local>, len: u16) -> BoundedRegSpan {
-    BoundedRegSpan::new(RegSpan::new(reg.into()), len)
+/// Creates a new [`BoundedLocalSpan`] starting with `reg` and with `len`.
+fn bspan(reg: impl Into<Local>, len: u16) -> BoundedLocalSpan {
+    BoundedLocalSpan::new(LocalSpan::new(reg.into()), len)
 }
 
 /// Identifier for a Wasm operator.

@@ -42,6 +42,6 @@ pub use self::{
         Sign,
     },
     r#enum::Instruction,
-    span::{BoundedRegSpan, FixedRegSpan, RegSpan, RegSpanIter},
+    span::{BoundedLocalSpan, FixedLocalSpan, LocalSpan, LocalSpanIter},
     visit_regs::VisitRegs,
 };

@@ -3,7 +3,7 @@ use crate::{
     collections::HeadVec,
     core::TrapCode,
     engine::executor::InstructionPtr,
-    ir::RegSpan,
+    ir::LocalSpan,
     Instance,
 };
 use alloc::vec::Vec;
@@ -199,7 +199,7 @@ pub struct CallFrame {
     /// Offsets of the [`CallFrame`] into the [`ValueStack`].
     offsets: StackOffsets,
     /// Span of locals were the caller expects them in its [`CallFrame`].
-    results: RegSpan,
+    results: LocalSpan,
     /// Is `true` if this [`CallFrame`] changed the currently used [`Instance`].
     ///
     /// - This flag is an optimization to reduce the amount of accesses on the
@@ -212,7 +212,7 @@ pub struct CallFrame {
 
 impl CallFrame {
     /// Creates a new [`CallFrame`].
-    pub fn new(instr_ptr: InstructionPtr, offsets: StackOffsets, results: RegSpan) -> Self {
+    pub fn new(instr_ptr: InstructionPtr, offsets: StackOffsets, results: LocalSpan) -> Self {
         Self {
             instr_ptr,
             offsets,
@@ -254,13 +254,13 @@ impl CallFrame {
         self.offsets.base
     }
 
-    /// Returns the [`RegSpan`] of the [`CallFrame`].
+    /// Returns the [`LocalSpan`] of the [`CallFrame`].
     ///
     /// # Note
     ///
-    /// The locals yielded by the returned [`RegSpan`]
+    /// The locals yielded by the returned [`LocalSpan`]
     /// refer to the [`CallFrame`] of the caller of this [`CallFrame`].
-    pub fn results(&self) -> RegSpan {
+    pub fn results(&self) -> LocalSpan {
         self.results
     }
 }

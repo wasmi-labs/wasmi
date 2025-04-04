@@ -1,13 +1,13 @@
-use crate::{Local, RegSpan, RegSpanIter};
+use crate::{Local, LocalSpan, LocalSpanIter};
 
 #[test]
 fn has_overlapping_copy_spans_works() {
-    fn span(reg: impl Into<Local>) -> RegSpan {
-        RegSpan::new(reg.into())
+    fn span(reg: impl Into<Local>) -> LocalSpan {
+        LocalSpan::new(reg.into())
     }
 
-    fn has_overlapping_copy_spans(results: RegSpan, values: RegSpan, len: u16) -> bool {
-        RegSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
+    fn has_overlapping_copy_spans(results: LocalSpan, values: LocalSpan, len: u16) -> bool {
+        LocalSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 
     // len == 0

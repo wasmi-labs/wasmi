@@ -13,12 +13,12 @@ impl Instruction {
 pub trait VisitRegs {
     /// Visits a [`Local`] storing the result of an [`Instruction`].
     fn visit_result_reg(&mut self, reg: &mut Local);
-    /// Visits a [`RegSpan`] storing the results of an [`Instruction`].
-    fn visit_result_regs(&mut self, reg: &mut RegSpan, len: Option<u16>);
+    /// Visits a [`LocalSpan`] storing the results of an [`Instruction`].
+    fn visit_result_regs(&mut self, reg: &mut LocalSpan, len: Option<u16>);
     /// Visits a [`Local`] storing an input of an [`Instruction`].
     fn visit_input_reg(&mut self, reg: &mut Local);
-    /// Visits a [`RegSpan`] storing inputs of an [`Instruction`].
-    fn visit_input_regs(&mut self, regs: &mut RegSpan, len: Option<u16>);
+    /// Visits a [`LocalSpan`] storing inputs of an [`Instruction`].
+    fn visit_input_regs(&mut self, regs: &mut LocalSpan, len: Option<u16>);
 }
 
 /// Internal trait used to dispatch to a [`VisitRegs`] visitor.
@@ -41,20 +41,20 @@ impl<const N: usize> HostVisitor for &'_ mut [Local; N] {
     }
 }
 
-impl HostVisitor for &'_ mut RegSpan {
+impl HostVisitor for &'_ mut LocalSpan {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         visitor.visit_input_regs(self, None);
     }
 }
 
-impl HostVisitor for &'_ mut BoundedRegSpan {
+impl HostVisitor for &'_ mut BoundedLocalSpan {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         let len = self.len();
         visitor.visit_input_regs(self.span_mut(), Some(len));
     }
 }
 
-impl<const N: u16> HostVisitor for &'_ mut FixedRegSpan<N> {
+impl<const N: u16> HostVisitor for &'_ mut FixedLocalSpan<N> {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         visitor.visit_input_regs(self.span_mut(), Some(N));
     }
@@ -105,7 +105,7 @@ impl_host_visitor_for!(
 #[cfg(feature = "simd")]
 impl_host_visitor_for!(ImmLaneIdx16, ImmLaneIdx2, ImmLaneIdx4, ImmLaneIdx8,);
 
-/// Type-wrapper to signal that the wrapped [`Local`], [`RegSpan`] (etc.) is a result.
+/// Type-wrapper to signal that the wrapped [`Local`], [`LocalSpan`] (etc.) is a result.
 pub struct Res<T>(T);
 
 impl HostVisitor for Res<&'_ mut Local> {
@@ -121,20 +121,20 @@ impl HostVisitor for Res<&'_ mut [Local; 2]> {
     }
 }
 
-impl HostVisitor for Res<&'_ mut RegSpan> {
+impl HostVisitor for Res<&'_ mut LocalSpan> {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         visitor.visit_result_regs(self.0, None);
     }
 }
 
-impl HostVisitor for Res<&'_ mut BoundedRegSpan> {
+impl HostVisitor for Res<&'_ mut BoundedLocalSpan> {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         let len = self.0.len();
         visitor.visit_result_regs(self.0.span_mut(), Some(len));
     }
 }
 
-impl<const N: u16> HostVisitor for Res<&'_ mut FixedRegSpan<N>> {
+impl<const N: u16> HostVisitor for Res<&'_ mut FixedLocalSpan<N>> {
     fn host_visitor<V: VisitRegs>(self, visitor: &mut V) {
         visitor.visit_result_regs(self.0.span_mut(), Some(N));
     }

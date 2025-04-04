@@ -53,18 +53,18 @@ use crate::{
         Address,
         Address32,
         AnyConst16,
-        BoundedRegSpan,
+        BoundedLocalSpan,
         BranchOffset,
         Const16,
         Const32,
-        FixedRegSpan,
+        FixedLocalSpan,
         Instruction,
         IntoShiftAmount,
         Local,
+        LocalSpan,
         Offset16,
         Offset64,
         Offset64Lo,
-        RegSpan,
         Sign,
     },
     module::{FuncIdx, FuncTypeIdx, MemoryIdx, ModuleHeader, TableIdx},
@@ -796,11 +796,11 @@ impl FuncTranslator {
         let block_type = BlockType::func_type(func_type);
         let end_label = self.alloc.instr_encoder.new_label();
         let consume_fuel = self.make_fuel_instr()?;
-        // Note: we use a dummy `RegSpan` as placeholder.
+        // Note: we use a dummy `LocalSpan` as placeholder.
         //
         // We can do this since the branch parameters of the function enclosing block
         // are never used due to optimizations to directly return to the caller instead.
-        let branch_params = RegSpan::new(Local::from(0));
+        let branch_params = LocalSpan::new(Local::from(0));
         let block_frame = BlockControlFrame::new(
             block_type,
             end_label,
@@ -976,7 +976,7 @@ impl FuncTranslator {
                     error
                 )
             });
-            let results = BoundedRegSpan::new(RegSpan::new(copy_group[0].preserved), len);
+            let results = BoundedLocalSpan::new(LocalSpan::new(copy_group[0].preserved), len);
             let providers = &mut self.alloc.buffer.providers;
             providers.clear();
             providers.extend(
@@ -1011,7 +1011,10 @@ impl FuncTranslator {
     }
 
     /// Convenience function to copy the parameters when branching to a control frame.
-    fn translate_copy_branch_params(&mut self, branch_params: BoundedRegSpan) -> Result<(), Error> {
+    fn translate_copy_branch_params(
+        &mut self,
+        branch_params: BoundedLocalSpan,
+    ) -> Result<(), Error> {
         if branch_params.is_empty() {
             // If the block does not have branch parameters there is no need to copy anything.
             return Ok(());
@@ -1330,7 +1333,7 @@ impl FuncTranslator {
     ///    - Note: All dynamically allocated locals must be contiguous.
     ///    - These locals serve as the locals and to hold the branch
     ///      parameters upon branching to the control flow block and are
-    ///      going to be returned via [`RegSpan`].
+    ///      going to be returned via [`LocalSpan`].
     /// 3. Drop all dynamically allocated branch parameter locals again.
     /// 4. Push the block parameters stored in the `buffer` back onto the stack.
     /// 5. Return the result locals of step 2.
@@ -1350,7 +1353,7 @@ impl FuncTranslator {
         &mut self,
         len_block_params: u16,
         len_branch_params: u16,
-    ) -> Result<RegSpan, Error> {
+    ) -> Result<LocalSpan, Error> {
         let params = &mut self.alloc.buffer.providers;
         // Pop the block parameters off the stack.
         self.alloc
@@ -2834,7 +2837,7 @@ impl FuncTranslator {
     fn translate_br_table_targets(
         &mut self,
         values: &[TypedProvider],
-        make_target: impl Fn(BoundedRegSpan, BranchOffset) -> Instruction,
+        make_target: impl Fn(BoundedLocalSpan, BranchOffset) -> Instruction,
     ) -> Result<(), Error> {
         let engine = self.engine().clone();
         let fuel_info = self.fuel_info();
@@ -2975,17 +2978,17 @@ impl FuncTranslator {
         debug_assert!(len_values > 3);
         let values = &mut self.alloc.buffer.providers;
         self.alloc.stack.pop_n(usize::from(len_values), values);
-        match BoundedRegSpan::from_providers(values) {
+        match BoundedLocalSpan::from_providers(values) {
             Some(span) => self.translate_br_table_span(index, span),
             None => self.translate_br_table_many(index),
         }
     }
 
-    /// Translates a Wasm `br_table` instruction with 4 or more inputs that form a [`RegSpan`].
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs that form a [`LocalSpan`].
     fn translate_br_table_span(
         &mut self,
         index: Local,
-        values: BoundedRegSpan,
+        values: BoundedLocalSpan,
     ) -> Result<(), Error> {
         debug_assert!(values.len() > 3);
         let fuel_info = self.fuel_info();
@@ -3017,7 +3020,7 @@ impl FuncTranslator {
         Ok(())
     }
 
-    /// Translates a Wasm `br_table` instruction with 4 or more inputs that cannot form a [`RegSpan`].
+    /// Translates a Wasm `br_table` instruction with 4 or more inputs that cannot form a [`LocalSpan`].
     fn translate_br_table_many(&mut self, index: Local) -> Result<(), Error> {
         let targets = &mut self.alloc.buffer.br_table_targets;
         let len_targets = targets.len() as u32;
@@ -3096,7 +3099,7 @@ impl FuncTranslator {
     /// Translates a Wasm `i64.mul_wide_sx` instruction from the `wide-arithmetic` proposal.
     fn translate_i64_mul_wide_sx(
         &mut self,
-        make_instr: fn(results: FixedRegSpan<2>, lhs: Local, rhs: Local) -> Instruction,
+        make_instr: fn(results: FixedLocalSpan<2>, lhs: Local, rhs: Local) -> Instruction,
         const_eval: fn(lhs: i64, rhs: i64) -> (i64, i64),
     ) -> Result<(), Error> {
         bail_unreachable!(self);
@@ -3125,7 +3128,7 @@ impl FuncTranslator {
             }
         };
         let results = self.alloc.stack.push_dynamic_n(2)?;
-        let results = <FixedRegSpan<2>>::new(results).unwrap_or_else(|_| {
+        let results = <FixedLocalSpan<2>>::new(results).unwrap_or_else(|_| {
             panic!("`i64.mul_wide_sx` requires 2 results but found: {results:?}")
         });
         self.push_fueled_instr(make_instr(results, lhs, rhs), FuelCosts::base)?;

@@ -3,7 +3,7 @@ use crate::{
     engine::EngineFunc,
     ir::{
         index::{Func, FuncType, Table},
-        RegSpan,
+        LocalSpan,
     },
 };
 
@@ -81,7 +81,7 @@ fn overwrite_call_internal_result_1() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg(Local::from(0))])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
             Instruction::register(0),
             Instruction::return_reg(Local::from(0)),
         ])
@@ -102,7 +102,7 @@ fn overwrite_call_imported_result_1() {
         )"#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::call_imported(RegSpan::new(Local::from(0)), Func::from(0)),
+            Instruction::call_imported(LocalSpan::new(Local::from(0)), Func::from(0)),
             Instruction::register(0),
             Instruction::return_reg(Local::from(0)),
         ])
@@ -124,7 +124,7 @@ fn overwrite_call_indirect_result_1() {
         )"#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::call_indirect(RegSpan::new(Local::from(0)), FuncType::from(0)),
+            Instruction::call_indirect(LocalSpan::new(Local::from(0)), FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
             Instruction::register(1),
             Instruction::return_reg(Local::from(0)),
@@ -460,7 +460,7 @@ fn merge_overwriting_local_set() {
         .expect_func_instrs([
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
-            Instruction::copy2_ext(RegSpan::new(Local::from(0)), 1, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(0)), 1, 1),
             Instruction::return_reg(1),
         ])
         .run()
@@ -489,7 +489,7 @@ fn merge_overwriting_local_set_lhs() {
         .expect_func_instrs([
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
-            Instruction::copy2_ext(RegSpan::new(Local::from(0)), 0, 0),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(0)), 0, 0),
             Instruction::return_reg(0),
         ])
         .run()
@@ -518,7 +518,7 @@ fn merge_overwriting_local_set_3() {
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::copy_imm32(Local::from(2), 30_i32),
-            Instruction::copy2_ext(RegSpan::new(Local::from(0)), 2, 2),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(0)), 2, 2),
             Instruction::return_reg(1),
         ])
         .run()
@@ -547,7 +547,7 @@ fn merge_overwriting_local_set_3_lhs() {
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::copy_imm32(Local::from(2), 30_i32),
-            Instruction::copy2_ext(RegSpan::new(Local::from(0)), 2, 2),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(0)), 2, 2),
             Instruction::return_reg(0),
         ])
         .run()

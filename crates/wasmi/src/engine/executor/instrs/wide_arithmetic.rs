@@ -2,7 +2,7 @@ use super::{Executor, InstructionPtr};
 use crate::{
     core::wasm,
     engine::utils::unreachable_unchecked,
-    ir::{FixedRegSpan, Instruction, Local},
+    ir::{FixedLocalSpan, Instruction, Local},
 };
 
 /// Parameters for the `i64.add128` and `i64.sub128` instructions.
@@ -73,7 +73,7 @@ impl Executor<'_> {
     /// Executes a generic Wasm `i64.mul_wide_sx` instruction.
     fn execute_i64_mul_wide_sx(
         &mut self,
-        results: FixedRegSpan<2>,
+        results: FixedLocalSpan<2>,
         lhs: Local,
         rhs: Local,
         mul_wide: I64MulWideFn,
@@ -88,12 +88,12 @@ impl Executor<'_> {
     }
 
     /// Executes an [`Instruction::I64MulWideS`].
-    pub fn execute_i64_mul_wide_s(&mut self, results: FixedRegSpan<2>, lhs: Local, rhs: Local) {
+    pub fn execute_i64_mul_wide_s(&mut self, results: FixedLocalSpan<2>, lhs: Local, rhs: Local) {
         self.execute_i64_mul_wide_sx(results, lhs, rhs, wasm::i64_mul_wide_s)
     }
 
     /// Executes an [`Instruction::I64MulWideU`].
-    pub fn execute_i64_mul_wide_u(&mut self, results: FixedRegSpan<2>, lhs: Local, rhs: Local) {
+    pub fn execute_i64_mul_wide_u(&mut self, results: FixedLocalSpan<2>, lhs: Local, rhs: Local) {
         self.execute_i64_mul_wide_sx(results, lhs, rhs, wasm::i64_mul_wide_u)
     }
 }

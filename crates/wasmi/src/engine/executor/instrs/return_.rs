@@ -2,7 +2,7 @@ use super::{ControlFlow, Executor, InstructionPtr};
 use crate::{
     core::UntypedVal,
     engine::{executor::stack::FrameRegisters, utils::unreachable_unchecked},
-    ir::{AnyConst32, BoundedRegSpan, Const32, Instruction, Local, RegSpan},
+    ir::{AnyConst32, BoundedLocalSpan, Const32, Instruction, Local, LocalSpan},
     store::StoreInner,
 };
 use core::slice;
@@ -42,10 +42,10 @@ impl Executor<'_> {
         self.return_impl(store)
     }
 
-    /// Returns the [`FrameRegisters`] of the caller and the [`RegSpan`] of the results.
+    /// Returns the [`FrameRegisters`] of the caller and the [`LocalSpan`] of the results.
     ///
-    /// The returned [`FrameRegisters`] is valid for all [`Local`] in the returned [`RegSpan`].
-    fn return_caller_results(&mut self) -> (FrameRegisters, RegSpan) {
+    /// The returned [`FrameRegisters`] is valid for all [`Local`] in the returned [`LocalSpan`].
+    fn return_caller_results(&mut self) -> (FrameRegisters, LocalSpan) {
         let (callee, caller) = self
             .stack
             .calls
@@ -70,7 +70,7 @@ impl Executor<'_> {
                 // In this case we transfer the single return `value` to the root
                 // local span of the entire value stack which is simply its zero index.
                 let dst_sp = self.stack.values.root_stack_ptr();
-                let results = RegSpan::new(Local::from(0));
+                let results = LocalSpan::new(Local::from(0));
                 (dst_sp, results)
             }
         }
@@ -166,7 +166,7 @@ impl Executor<'_> {
     pub fn execute_return_span(
         &mut self,
         store: &mut StoreInner,
-        values: BoundedRegSpan,
+        values: BoundedLocalSpan,
     ) -> ControlFlow {
         let (mut caller_sp, results) = self.return_caller_results();
         let results = results.iter(values.len());
@@ -317,7 +317,7 @@ impl Executor<'_> {
         &mut self,
         store: &mut StoreInner,
         condition: Local,
-        values: BoundedRegSpan,
+        values: BoundedLocalSpan,
     ) -> ControlFlow {
         self.execute_return_nez_impl(store, condition, values, Self::execute_return_span)
     }

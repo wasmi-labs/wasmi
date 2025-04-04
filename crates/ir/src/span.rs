@@ -1,44 +1,44 @@
 use crate::{Error, Local};
 
-/// A [`RegSpan`] of contiguous [`Local`] indices.
+/// A [`LocalSpan`] of contiguous [`Local`] indices.
 ///
 /// # Note
 ///
 /// - Represents an amount of contiguous [`Local`] indices.
 /// - For the sake of space efficiency the actual number of [`Local`]
-///   of the [`RegSpan`] is stored externally and provided in
-///   [`RegSpan::iter`] when there is a need to iterate over
-///   the [`Local`] of the [`RegSpan`].
+///   of the [`LocalSpan`] is stored externally and provided in
+///   [`LocalSpan::iter`] when there is a need to iterate over
+///   the [`Local`] of the [`LocalSpan`].
 ///
 /// The caller is responsible for providing the correct length.
 /// Due to Wasm validation guided bytecode construction we assert
 /// that the externally stored length is valid.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct RegSpan(Local);
+pub struct LocalSpan(Local);
 
-impl RegSpan {
-    /// Creates a new [`RegSpan`] starting with the given `start` [`Local`].
+impl LocalSpan {
+    /// Creates a new [`LocalSpan`] starting with the given `start` [`Local`].
     pub fn new(head: Local) -> Self {
         Self(head)
     }
 
-    /// Returns a [`RegSpanIter`] yielding `len` [`Local`]s.
-    pub fn iter_sized(self, len: usize) -> RegSpanIter {
-        RegSpanIter::new(self.0, len)
+    /// Returns a [`LocalSpanIter`] yielding `len` [`Local`]s.
+    pub fn iter_sized(self, len: usize) -> LocalSpanIter {
+        LocalSpanIter::new(self.0, len)
     }
 
-    /// Returns a [`RegSpanIter`] yielding `len` [`Local`]s.
-    pub fn iter(self, len: u16) -> RegSpanIter {
-        RegSpanIter::new_u16(self.0, len)
+    /// Returns a [`LocalSpanIter`] yielding `len` [`Local`]s.
+    pub fn iter(self, len: u16) -> LocalSpanIter {
+        LocalSpanIter::new_u16(self.0, len)
     }
 
-    /// Returns the head [`Local`] of the [`RegSpan`].
+    /// Returns the head [`Local`] of the [`LocalSpan`].
     pub fn head(self) -> Local {
         self.0
     }
 
-    /// Returns an exclusive reference to the head [`Local`] of the [`RegSpan`].
+    /// Returns an exclusive reference to the head [`Local`] of the [`LocalSpan`].
     pub fn head_mut(&mut self) -> &mut Local {
         &mut self.0
     }
@@ -52,19 +52,19 @@ impl RegSpan {
     /// - `[ 0 <- 1, 1 <- 2, 2 <- 3 ]`: no overlap
     /// - `[ 1 <- 0, 2 <- 1 ]`: overlaps!
     pub fn has_overlapping_copies(results: Self, values: Self, len: u16) -> bool {
-        RegSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
+        LocalSpanIter::has_overlapping_copies(results.iter(len), values.iter(len))
     }
 }
 
-/// A [`RegSpan`] with a statically known number of [`Local`].
+/// A [`LocalSpan`] with a statically known number of [`Local`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct FixedRegSpan<const N: u16> {
-    /// The underlying [`RegSpan`] without the known length.
-    span: RegSpan,
+pub struct FixedLocalSpan<const N: u16> {
+    /// The underlying [`LocalSpan`] without the known length.
+    span: LocalSpan,
 }
 
-impl FixedRegSpan<2> {
+impl FixedLocalSpan<2> {
     /// Returns an array of the results represented by `self`.
     pub fn to_array(self) -> [Local; 2] {
         let span = self.span();
@@ -74,9 +74,9 @@ impl FixedRegSpan<2> {
     }
 }
 
-impl<const N: u16> FixedRegSpan<N> {
-    /// Creates a new [`RegSpan`] starting with the given `start` [`Local`].
-    pub fn new(span: RegSpan) -> Result<Self, Error> {
+impl<const N: u16> FixedLocalSpan<N> {
+    /// Creates a new [`LocalSpan`] starting with the given `start` [`Local`].
+    pub fn new(span: LocalSpan) -> Result<Self, Error> {
         let head = span.head();
         if head >= head.next_n(N) {
             return Err(Error::LocalOutOfBounds);
@@ -84,26 +84,26 @@ impl<const N: u16> FixedRegSpan<N> {
         Ok(Self { span })
     }
 
-    /// Returns a [`RegSpanIter`] yielding `N` [`Local`]s.
-    pub fn iter(&self) -> RegSpanIter {
+    /// Returns a [`LocalSpanIter`] yielding `N` [`Local`]s.
+    pub fn iter(&self) -> LocalSpanIter {
         self.span.iter(self.len())
     }
 
-    /// Creates a new [`BoundedRegSpan`] from `self`.
-    pub fn bounded(self) -> BoundedRegSpan {
-        BoundedRegSpan {
+    /// Creates a new [`BoundedLocalSpan`] from `self`.
+    pub fn bounded(self) -> BoundedLocalSpan {
+        BoundedLocalSpan {
             span: self.span,
             len: N,
         }
     }
 
-    /// Returns the underlying [`RegSpan`] of `self`.
-    pub fn span(self) -> RegSpan {
+    /// Returns the underlying [`LocalSpan`] of `self`.
+    pub fn span(self) -> LocalSpan {
         self.span
     }
 
-    /// Returns an exclusive reference to the underlying [`RegSpan`] of `self`.
-    pub fn span_mut(&mut self) -> &mut RegSpan {
+    /// Returns an exclusive reference to the underlying [`LocalSpan`] of `self`.
+    pub fn span_mut(&mut self) -> &mut LocalSpan {
         &mut self.span
     }
 
@@ -128,51 +128,51 @@ impl<const N: u16> FixedRegSpan<N> {
     }
 }
 
-impl<const N: u16> IntoIterator for &FixedRegSpan<N> {
+impl<const N: u16> IntoIterator for &FixedLocalSpan<N> {
     type Item = Local;
-    type IntoIter = RegSpanIter;
+    type IntoIter = LocalSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl<const N: u16> IntoIterator for FixedRegSpan<N> {
+impl<const N: u16> IntoIterator for FixedLocalSpan<N> {
     type Item = Local;
-    type IntoIter = RegSpanIter;
+    type IntoIter = LocalSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-/// A [`RegSpan`] with a known number of [`Local`].
+/// A [`LocalSpan`] with a known number of [`Local`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct BoundedRegSpan {
+pub struct BoundedLocalSpan {
     /// The first [`Local`] in `self`.
-    span: RegSpan,
+    span: LocalSpan,
     /// The number of [`Local`] in `self`.
     len: u16,
 }
 
-impl BoundedRegSpan {
-    /// Creates a new [`BoundedRegSpan`] from the given `span` and `len`.
-    pub fn new(span: RegSpan, len: u16) -> Self {
+impl BoundedLocalSpan {
+    /// Creates a new [`BoundedLocalSpan`] from the given `span` and `len`.
+    pub fn new(span: LocalSpan, len: u16) -> Self {
         Self { span, len }
     }
 
-    /// Returns a [`RegSpanIter`] yielding `len` [`Local`]s.
-    pub fn iter(&self) -> RegSpanIter {
+    /// Returns a [`LocalSpanIter`] yielding `len` [`Local`]s.
+    pub fn iter(&self) -> LocalSpanIter {
         self.span.iter(self.len())
     }
 
-    /// Returns `self` as unbounded [`RegSpan`].
-    pub fn span(&self) -> RegSpan {
+    /// Returns `self` as unbounded [`LocalSpan`].
+    pub fn span(&self) -> LocalSpan {
         self.span
     }
 
-    /// Returns a mutable reference to the underlying [`RegSpan`].
-    pub fn span_mut(&mut self) -> &mut RegSpan {
+    /// Returns a mutable reference to the underlying [`LocalSpan`].
+    pub fn span_mut(&mut self) -> &mut LocalSpan {
         &mut self.span
     }
 
@@ -197,35 +197,35 @@ impl BoundedRegSpan {
     }
 }
 
-impl IntoIterator for &BoundedRegSpan {
+impl IntoIterator for &BoundedLocalSpan {
     type Item = Local;
-    type IntoIter = RegSpanIter;
+    type IntoIter = LocalSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-impl IntoIterator for BoundedRegSpan {
+impl IntoIterator for BoundedLocalSpan {
     type Item = Local;
-    type IntoIter = RegSpanIter;
+    type IntoIter = LocalSpanIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
 }
 
-/// A [`RegSpanIter`] iterator yielding contiguous [`Local`].
+/// A [`LocalSpanIter`] iterator yielding contiguous [`Local`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct RegSpanIter {
-    /// The next [`Local`] in the [`RegSpanIter`].
+pub struct LocalSpanIter {
+    /// The next [`Local`] in the [`LocalSpanIter`].
     next: Local,
-    /// The last [`Local`] in the [`RegSpanIter`].
+    /// The last [`Local`] in the [`LocalSpanIter`].
     last: Local,
 }
 
-impl RegSpanIter {
-    /// Creates a [`RegSpanIter`] from then given raw `start` and `end` [`Local`].
+impl LocalSpanIter {
+    /// Creates a [`LocalSpanIter`] from then given raw `start` and `end` [`Local`].
     pub fn from_raw_parts(start: Local, end: Local) -> Self {
         debug_assert!(i16::from(start) <= i16::from(end));
         Self {
@@ -234,7 +234,7 @@ impl RegSpanIter {
         }
     }
 
-    /// Creates a new [`RegSpanIter`] for the given `start` [`Local`] and length `len`.
+    /// Creates a new [`LocalSpanIter`] for the given `start` [`Local`] and length `len`.
     ///
     /// # Panics
     ///
@@ -245,7 +245,7 @@ impl RegSpanIter {
         Self::new_u16(start, len)
     }
 
-    /// Creates a new [`RegSpanIter`] for the given `start` [`Local`] and length `len`.
+    /// Creates a new [`LocalSpanIter`] for the given `start` [`Local`] and length `len`.
     ///
     /// # Panics
     ///
@@ -260,12 +260,12 @@ impl RegSpanIter {
         Self::from_raw_parts(next, last)
     }
 
-    /// Creates a [`RegSpan`] from this [`RegSpanIter`].
-    pub fn span(self) -> RegSpan {
-        RegSpan(self.next)
+    /// Creates a [`LocalSpan`] from this [`LocalSpanIter`].
+    pub fn span(self) -> LocalSpan {
+        LocalSpan(self.next)
     }
 
-    /// Returns the remaining number of [`Local`]s yielded by the [`RegSpanIter`].
+    /// Returns the remaining number of [`Local`]s yielded by the [`LocalSpanIter`].
     pub fn len_as_u16(&self) -> u16 {
         self.last.0.abs_diff(self.next.0)
     }
@@ -308,7 +308,7 @@ impl RegSpanIter {
     }
 }
 
-impl Iterator for RegSpanIter {
+impl Iterator for LocalSpanIter {
     type Item = Local;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -321,7 +321,7 @@ impl Iterator for RegSpanIter {
     }
 }
 
-impl DoubleEndedIterator for RegSpanIter {
+impl DoubleEndedIterator for LocalSpanIter {
     fn next_back(&mut self) -> Option<Self::Item> {
         if self.next == self.last {
             return None;
@@ -331,8 +331,8 @@ impl DoubleEndedIterator for RegSpanIter {
     }
 }
 
-impl ExactSizeIterator for RegSpanIter {
+impl ExactSizeIterator for LocalSpanIter {
     fn len(&self) -> usize {
-        usize::from(RegSpanIter::len_as_u16(self))
+        usize::from(LocalSpanIter::len_as_u16(self))
     }
 }

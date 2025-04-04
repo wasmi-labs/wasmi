@@ -95,11 +95,11 @@ macro_rules! for_each_op_grouped {
                 ///
                 /// # Note
                 ///
-                /// Returns values as stored in the bounded [`RegSpan`].
+                /// Returns values as stored in the bounded [`LocalSpan`].
                 #[snake_name(return_span)]
                 ReturnSpan {
-                    /// The [`RegSpan`] that represents the registers that store the returned values.
-                    values: BoundedRegSpan,
+                    /// The [`LocalSpan`] that represents the registers that store the returned values.
+                    values: BoundedLocalSpan,
                 },
                 /// A Wasm `return` instruction.
                 ///
@@ -208,7 +208,7 @@ macro_rules! for_each_op_grouped {
                     /// The register holding the condition to evaluate against zero.
                     condition: Local,
                     /// The returned values.
-                    values: BoundedRegSpan,
+                    values: BoundedLocalSpan,
                 },
                 /// A conditional `return` instruction.
                 ///
@@ -932,7 +932,7 @@ macro_rules! for_each_op_grouped {
                 /// This is a Wasmi utility instruction used to translate Wasm control flow.
                 #[snake_name(copy2)]
                 Copy2 {
-                    @results: FixedRegSpan<2>,
+                    @results: FixedLocalSpan<2>,
                     /// The registers holding the values to copy.
                     values: [Local; 2],
                 },
@@ -974,7 +974,7 @@ macro_rules! for_each_op_grouped {
                     /// The 32-bit encoded `i64` immediate value to copy.
                     value: Const32<f64>,
                 },
-                /// Copies `len` contiguous `values` [`RegSpan`] into `results` [`RegSpan`].
+                /// Copies `len` contiguous `values` [`LocalSpan`] into `results` [`LocalSpan`].
                 ///
                 /// Copies registers: `registers[results..results+len] <- registers[values..values+len]`
                 ///
@@ -984,22 +984,22 @@ macro_rules! for_each_op_grouped {
                 /// to copy whole spans instead of many individual register values bit by bit.
                 #[snake_name(copy_span)]
                 CopySpan {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The contiguous registers holding the inputs of this instruction.
-                    values: RegSpan,
+                    values: LocalSpan,
                     /// The amount of copied registers.
                     len: u16,
                 },
                 /// Variant of [`Instruction::CopySpan`] that assumes that `results` and `values` span do not overlap.
                 #[snake_name(copy_span_non_overlapping)]
                 CopySpanNonOverlapping {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The contiguous registers holding the inputs of this instruction.
-                    values: RegSpan,
+                    values: LocalSpan,
                     /// The amount of copied registers.
                     len: u16,
                 },
-                /// Copies some [`Local`] values into `results` [`RegSpan`].
+                /// Copies some [`Local`] values into `results` [`LocalSpan`].
                 ///
                 /// # Encoding
                 ///
@@ -1012,7 +1012,7 @@ macro_rules! for_each_op_grouped {
                 ///     - [`Instruction::Local3`]
                 #[snake_name(copy_many)]
                 CopyMany {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The first two input registers to copy.
                     values: [Local; 2],
                 },
@@ -1027,7 +1027,7 @@ macro_rules! for_each_op_grouped {
                 ///     - [`Instruction::Local3`]
                 #[snake_name(copy_many_non_overlapping)]
                 CopyManyNonOverlapping {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The first two input registers to copy.
                     values: [Local; 2],
                 },
@@ -1172,7 +1172,7 @@ macro_rules! for_each_op_grouped {
                 /// Used for calling internally compiled Wasm functions without parameters.
                 #[snake_name(call_internal_0)]
                 CallInternal0 {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The called internal function.
                     func: InternalFunc,
                 },
@@ -1193,7 +1193,7 @@ macro_rules! for_each_op_grouped {
                 ///     - [`Instruction::Local3`]
                 #[snake_name(call_internal)]
                 CallInternal {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The called internal function.
                     func: InternalFunc,
                 },
@@ -1205,7 +1205,7 @@ macro_rules! for_each_op_grouped {
                 /// Used for calling imported Wasm functions without parameters.
                 #[snake_name(call_imported_0)]
                 CallImported0 {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The called imported function.
                     func: Func,
                 },
@@ -1226,7 +1226,7 @@ macro_rules! for_each_op_grouped {
                 ///     - [`Instruction::Local3`]
                 #[snake_name(call_imported)]
                 CallImported {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The called imported function.
                     func: Func,
                 },
@@ -1242,7 +1242,7 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by [`Instruction::CallIndirectParams`] encoding `table` and `index`.
                 #[snake_name(call_indirect_0)]
                 CallIndirect0 {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The called internal function.
                     func_type: FuncType,
                 },
@@ -1257,7 +1257,7 @@ macro_rules! for_each_op_grouped {
                 /// Must be followed by [`Instruction::CallIndirectParamsImm16`] encoding `table` and `index`.
                 #[snake_name(call_indirect_0_imm16)]
                 CallIndirect0Imm16 {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The called internal function.
                     func_type: FuncType,
                 },
@@ -1279,7 +1279,7 @@ macro_rules! for_each_op_grouped {
                 ///     - [`Instruction::Local3`]
                 #[snake_name(call_indirect)]
                 CallIndirect {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The called internal function.
                     func_type: FuncType,
                 },
@@ -1301,7 +1301,7 @@ macro_rules! for_each_op_grouped {
                 ///     - [`Instruction::Local3`]
                 #[snake_name(call_indirect_imm16)]
                 CallIndirectImm16 {
-                    @results: RegSpan,
+                    @results: LocalSpan,
                     /// The called internal function.
                     func_type: FuncType,
                 },
@@ -4160,7 +4160,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_add128)]
                 I64Add128 {
                     // Note:
-                    // - We are not using `FixedRegSpan` to be able to change both results independently.
+                    // - We are not using `FixedLocalSpan` to be able to change both results independently.
                     // - This allows for more `local.set` optimizations.
                     @results: [Local; 2],
                     /// The 64 hi-bits of the `lhs` input parameter.
@@ -4178,7 +4178,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(i64_sub128)]
                 I64Sub128 {
                     // Note:
-                    // - We are not using `FixedRegSpan` to be able to change both results independently.
+                    // - We are not using `FixedLocalSpan` to be able to change both results independently.
                     // - This allows for more `local.set` optimizations.
                     @results: [Local; 2],
                     /// The low 64-bits of the `lhs` input parameter.
@@ -4191,7 +4191,7 @@ macro_rules! for_each_op_grouped {
                 /// This instruction is part of the Wasm `wide-arithmetic` proposal.
                 #[snake_name(i64_mul_wide_s)]
                 I64MulWideS {
-                    @results: FixedRegSpan<2>,
+                    @results: FixedLocalSpan<2>,
                     /// The `lhs` input value for the instruction.
                     lhs: Local,
                     /// The `rhs` input value for the instruction.
@@ -4204,7 +4204,7 @@ macro_rules! for_each_op_grouped {
                 /// This instruction is part of the Wasm `wide-arithmetic` proposal.
                 #[snake_name(i64_mul_wide_u)]
                 I64MulWideU {
-                    @results: FixedRegSpan<2>,
+                    @results: FixedLocalSpan<2>,
                     /// The `lhs` input value for the instruction.
                     lhs: Local,
                     /// The `rhs` input value for the instruction.
@@ -5713,7 +5713,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_table_target)]
                 BranchTableTarget {
                     /// The registers where the values are going to be copied.
-                    results: RegSpan,
+                    results: LocalSpan,
                     /// The branching offset of the branch table target.
                     offset: BranchOffset,
                 },
@@ -5728,7 +5728,7 @@ macro_rules! for_each_op_grouped {
                 #[snake_name(branch_table_target_non_overlapping)]
                 BranchTableTargetNonOverlapping {
                     /// The registers where the values are going to be copied.
-                    results: RegSpan,
+                    results: LocalSpan,
                     /// The branching offset of the branch table target.
                     offset: BranchOffset,
                 },
@@ -5748,9 +5748,9 @@ macro_rules! for_each_op_grouped {
                     /// The 32-bit immediate value.
                     imm: AnyConst32,
                 },
-                /// A bounded [`RegSpan`] instruction parameter.
+                /// A bounded [`LocalSpan`] instruction parameter.
                 #[snake_name(register_span)]
-                LocalSpan { span: BoundedRegSpan },
+                LocalSpan { span: BoundedLocalSpan },
                 /// A [`Local`] instruction parameter.
                 ///
                 /// # Note

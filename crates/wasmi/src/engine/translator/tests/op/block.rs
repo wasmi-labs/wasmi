@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     engine::translator::tests::wasm_type::WasmTy,
-    ir::{BranchOffset, BranchOffset16, RegSpan},
+    ir::{BranchOffset, BranchOffset16, LocalSpan},
 };
 use std::fmt::Display;
 
@@ -58,7 +58,7 @@ fn identity_block_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(4)), 0, 1),
             Instruction::return_reg(4),
         ])
         .run()
@@ -97,7 +97,7 @@ fn nested_identity_block_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(4)), 0, 1),
             Instruction::return_reg(4),
         ])
         .run()
@@ -309,8 +309,8 @@ fn branched_block_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
-            Instruction::copy2_ext(RegSpan::new(Local::from(2)), 4, 5),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(4)), 0, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(2)), 4, 5),
             Instruction::branch(BranchOffset::from(1)),
             Instruction::return_reg(Local::from(2)),
         ])
@@ -353,7 +353,7 @@ fn branch_if_block_1() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(3)), 0, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(3)), 0, 1),
             Instruction::branch_i32_eq_imm16(Local::from(4), 0, BranchOffset16::from(3)),
             Instruction::copy(Local::from(2), Local::from(3)),
             Instruction::branch(BranchOffset::from(2)),

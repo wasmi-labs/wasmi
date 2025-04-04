@@ -1,7 +1,7 @@
 use super::*;
 use crate::ir::{
     index::{FuncType, Global, Table},
-    RegSpan,
+    LocalSpan,
 };
 
 #[test]
@@ -19,7 +19,7 @@ fn no_params_reg() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::call_indirect_0(RegSpan::new(Local::from(1)), FuncType::from(0)),
+            Instruction::call_indirect_0(LocalSpan::new(Local::from(1)), FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
             Instruction::Return,
         ])
@@ -44,7 +44,10 @@ fn no_params_imm16() {
         );
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                Instruction::call_indirect_0_imm16(RegSpan::new(Local::from(1)), FuncType::from(0)),
+                Instruction::call_indirect_0_imm16(
+                    LocalSpan::new(Local::from(1)),
+                    FuncType::from(0),
+                ),
                 Instruction::call_indirect_params_imm16(u64imm16(index), Table::from(0)),
                 Instruction::Return,
             ])
@@ -73,7 +76,7 @@ fn one_reg_param_reg() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::call_indirect(RegSpan::new(Local::from(2)), FuncType::from(0)),
+            Instruction::call_indirect(LocalSpan::new(Local::from(2)), FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
             Instruction::register(1),
             Instruction::return_reg(Local::from(2)),
@@ -100,7 +103,7 @@ fn one_reg_param_imm16() {
         );
         TranslationTest::new(&wasm)
             .expect_func_instrs([
-                Instruction::call_indirect_imm16(RegSpan::new(Local::from(2)), FuncType::from(0)),
+                Instruction::call_indirect_imm16(LocalSpan::new(Local::from(2)), FuncType::from(0)),
                 Instruction::call_indirect_params_imm16(u64imm16(index), Table::from(0)),
                 Instruction::register(1),
                 Instruction::return_reg(Local::from(2)),
@@ -134,7 +137,7 @@ fn one_reg_param_imm() {
         TranslationTest::new(&wasm)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::call_indirect(RegSpan::new(Local::from(2)), FuncType::from(0)),
+                    Instruction::call_indirect(LocalSpan::new(Local::from(2)), FuncType::from(0)),
                     Instruction::call_indirect_params(Local::from(-1), Table::from(0)),
                     Instruction::register(1),
                     Instruction::return_reg(Local::from(2)),
@@ -166,7 +169,7 @@ fn one_imm_param_reg() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_indirect(RegSpan::new(Local::from(1)), FuncType::from(0)),
+                Instruction::call_indirect(LocalSpan::new(Local::from(1)), FuncType::from(0)),
                 Instruction::call_indirect_params(Local::from(0), Table::from(0)),
                 Instruction::register(-1),
                 Instruction::return_reg(Local::from(1)),
@@ -197,7 +200,7 @@ fn one_imm_param_imm16() {
             .expect_func(
                 ExpectedFunc::new([
                     Instruction::call_indirect_imm16(
-                        RegSpan::new(Local::from(1)),
+                        LocalSpan::new(Local::from(1)),
                         FuncType::from(0),
                     ),
                     Instruction::call_indirect_params_imm16(u64imm16(index), Table::from(0)),
@@ -235,7 +238,7 @@ fn one_imm_param_imm() {
         TranslationTest::new(&wasm)
             .expect_func(
                 ExpectedFunc::new([
-                    Instruction::call_indirect(RegSpan::new(Local::from(1)), FuncType::from(0)),
+                    Instruction::call_indirect(LocalSpan::new(Local::from(1)), FuncType::from(0)),
                     Instruction::call_indirect_params(Local::from(-1), Table::from(0)),
                     Instruction::register(-2),
                     Instruction::return_reg(Local::from(1)),
@@ -266,7 +269,7 @@ fn two_reg_params_reg() {
         )
     "#;
     let result_reg = Local::from(3);
-    let results = RegSpan::new(result_reg);
+    let results = LocalSpan::new(result_reg);
     let elem_index = Local::from(0);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -294,7 +297,7 @@ fn two_reg_params_reg_lhs() {
         )
     "#;
     let result_reg = Local::from(3);
-    let results = RegSpan::new(result_reg);
+    let results = LocalSpan::new(result_reg);
     let elem_index = Local::from(0);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -322,7 +325,7 @@ fn two_imm_params_reg() {
         )
     "#;
     let result_reg = Local::from(1);
-    let results = RegSpan::new(result_reg);
+    let results = LocalSpan::new(result_reg);
     let elem_index = Local::from(0);
     TranslationTest::new(wasm)
         .expect_func(
@@ -356,7 +359,7 @@ fn two_reg_params_imm16() {
         "#,
         );
         let result_reg = Local::from(2);
-        let results = RegSpan::new(result_reg);
+        let results = LocalSpan::new(result_reg);
         let elem_index = u64imm16(index);
         TranslationTest::new(&wasm)
             .expect_func_instrs([
@@ -393,7 +396,7 @@ fn two_reg_params_lhs_imm16() {
         "#,
         );
         let result_reg = Local::from(2);
-        let results = RegSpan::new(result_reg);
+        let results = LocalSpan::new(result_reg);
         let elem_index = u64imm16(index);
         TranslationTest::new(&wasm)
             .expect_func_instrs([
@@ -430,7 +433,7 @@ fn two_imm_params_imm16() {
         "#,
         );
         let result_reg = Local::from(0);
-        let results = RegSpan::new(result_reg);
+        let results = LocalSpan::new(result_reg);
         let elem_index = u64imm16(index);
         TranslationTest::new(&wasm)
             .expect_func(
@@ -468,7 +471,7 @@ fn three_reg_params_reg() {
         )
     "#;
     let result_reg = Local::from(4);
-    let results = RegSpan::new(result_reg);
+    let results = LocalSpan::new(result_reg);
     let elem_index = Local::from(0);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -497,7 +500,7 @@ fn three_reg_params_reg_lhs() {
         )
     "#;
     let result_reg = Local::from(4);
-    let results = RegSpan::new(result_reg);
+    let results = LocalSpan::new(result_reg);
     let elem_index = Local::from(0);
     TranslationTest::new(wasm)
         .expect_func_instrs([
@@ -526,7 +529,7 @@ fn three_imm_params_reg() {
         )
     "#;
     let result_reg = Local::from(1);
-    let results = RegSpan::new(result_reg);
+    let results = LocalSpan::new(result_reg);
     let elem_index = Local::from(0);
     TranslationTest::new(wasm)
         .expect_func(
@@ -561,7 +564,7 @@ fn three_imm_params_imm16() {
         "#,
         );
         let result_reg = Local::from(0);
-        let results = RegSpan::new(result_reg);
+        let results = LocalSpan::new(result_reg);
         let elem_index = u64imm16(index);
         TranslationTest::new(&wasm)
             .expect_func(
@@ -604,7 +607,7 @@ fn params7_reg_index_local() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::call_indirect(RegSpan::new(Local::from(8)), FuncType::from(0)),
+            Instruction::call_indirect(LocalSpan::new(Local::from(8)), FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
             Instruction::register_list_ext(1, 2, 3),
             Instruction::register_list_ext(4, 5, 6),
@@ -637,7 +640,7 @@ fn params7_imm_index_local() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_indirect(RegSpan::new(Local::from(1)), FuncType::from(0)),
+                Instruction::call_indirect(LocalSpan::new(Local::from(1)), FuncType::from(0)),
                 Instruction::call_indirect_params(Local::from(0), Table::from(0)),
                 Instruction::register_list_ext(-1, -2, -3),
                 Instruction::register_list_ext(-4, -5, -6),
@@ -672,7 +675,7 @@ fn params8_reg_index_local() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::call_indirect(RegSpan::new(Local::from(9)), FuncType::from(0)),
+            Instruction::call_indirect(LocalSpan::new(Local::from(9)), FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
             Instruction::register_list_ext(1, 2, 3),
             Instruction::register_list_ext(4, 5, 6),
@@ -706,7 +709,7 @@ fn params8_imm_index_local() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_indirect(RegSpan::new(Local::from(1)), FuncType::from(0)),
+                Instruction::call_indirect(LocalSpan::new(Local::from(1)), FuncType::from(0)),
                 Instruction::call_indirect_params(Local::from(0), Table::from(0)),
                 Instruction::register_list_ext(-1, -2, -3),
                 Instruction::register_list_ext(-4, -5, -6),
@@ -742,7 +745,7 @@ fn params9_reg_index_local() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::call_indirect(RegSpan::new(Local::from(10)), FuncType::from(0)),
+            Instruction::call_indirect(LocalSpan::new(Local::from(10)), FuncType::from(0)),
             Instruction::call_indirect_params(Local::from(0), Table::from(0)),
             Instruction::register_list_ext(1, 2, 3),
             Instruction::register_list_ext(4, 5, 6),
@@ -777,7 +780,7 @@ fn params9_imm_index_local() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_indirect(RegSpan::new(Local::from(1)), FuncType::from(0)),
+                Instruction::call_indirect(LocalSpan::new(Local::from(1)), FuncType::from(0)),
                 Instruction::call_indirect_params(Local::from(0), Table::from(0)),
                 Instruction::register_list_ext(-1, -2, -3),
                 Instruction::register_list_ext(-4, -5, -6),
@@ -809,7 +812,7 @@ fn test_imm_params_dynamic_index() {
         )
         "#;
     let result = Local::from(0);
-    let results = RegSpan::new(result);
+    let results = LocalSpan::new(result);
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_imm32(0_i32)])
         .expect_func(
@@ -846,7 +849,7 @@ fn regression_issue_768() {
         )
         "#;
     let result = Local::from(0);
-    let results = RegSpan::new(result);
+    let results = LocalSpan::new(result);
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_imm32(0_i32)])
         .expect_func(

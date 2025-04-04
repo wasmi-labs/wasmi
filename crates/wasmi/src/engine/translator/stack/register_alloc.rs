@@ -1,7 +1,7 @@
 use super::{TaggedProvider, TypedProvider};
 use crate::{
     engine::TranslationError,
-    ir::{Local, RegSpan},
+    ir::{Local, LocalSpan},
     Error,
 };
 use alloc::collections::BTreeSet;
@@ -263,14 +263,14 @@ impl RegisterAlloc {
     /// # Panics
     ///
     /// If the current [`AllocPhase`] is not [`AllocPhase::Alloc`].
-    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegSpan, Error> {
-        fn next_dynamic_n(this: &mut RegisterAlloc, n: usize) -> Option<RegSpan> {
+    pub fn push_dynamic_n(&mut self, n: usize) -> Result<LocalSpan, Error> {
+        fn next_dynamic_n(this: &mut RegisterAlloc, n: usize) -> Option<LocalSpan> {
             let n = i16::try_from(n).ok()?;
             let next_dynamic = this.next_dynamic.checked_add(n)?;
             if next_dynamic >= this.min_preserve {
                 return None;
             }
-            let local = RegSpan::new(Local::from(this.next_dynamic));
+            let local = LocalSpan::new(Local::from(this.next_dynamic));
             this.next_dynamic += n;
             this.max_dynamic = max(this.max_dynamic, this.next_dynamic);
             Some(local)

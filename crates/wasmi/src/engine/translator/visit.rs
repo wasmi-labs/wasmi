@@ -23,7 +23,7 @@ use crate::{
     ir::{
         self,
         index::{self, FuncType},
-        BoundedRegSpan,
+        BoundedLocalSpan,
         Const16,
         Instruction,
         Local,
@@ -167,7 +167,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.encode_copies(
             &mut self.alloc.stack,
-            BoundedRegSpan::new(branch_params, len_block_params),
+            BoundedLocalSpan::new(branch_params, len_block_params),
             &self.alloc.buffer.providers[..],
             fuel_info,
         )?;

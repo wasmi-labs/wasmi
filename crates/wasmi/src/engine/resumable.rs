@@ -2,7 +2,7 @@ use super::Func;
 use crate::{
     engine::Stack,
     func::CallResultsTuple,
-    ir::RegSpan,
+    ir::LocalSpan,
     AsContextMut,
     Engine,
     Error,
@@ -89,7 +89,7 @@ pub struct ResumableInvocation {
     /// # Note
     ///
     /// This is only needed for the register-machine Wasmi engine backend.
-    caller_results: RegSpan,
+    caller_results: LocalSpan,
     /// The value and call stack in use by the [`ResumableInvocation`].
     ///
     /// # Note
@@ -124,7 +124,7 @@ impl ResumableInvocation {
         func: Func,
         host_func: Func,
         host_error: Error,
-        caller_results: RegSpan,
+        caller_results: LocalSpan,
         stack: Stack,
     ) -> Self {
         Self {
@@ -147,7 +147,7 @@ impl ResumableInvocation {
     /// # Note
     ///
     /// This should only be called from the register-machine Wasmi engine backend.
-    pub(super) fn update(&mut self, host_func: Func, host_error: Error, caller_results: RegSpan) {
+    pub(super) fn update(&mut self, host_func: Func, host_error: Error, caller_results: LocalSpan) {
         self.host_func = host_func;
         self.host_error = host_error;
         self.caller_results = caller_results;
@@ -183,12 +183,12 @@ impl ResumableInvocation {
         &self.host_error
     }
 
-    /// Returns the caller results [`RegSpan`].
+    /// Returns the caller results [`LocalSpan`].
     ///
     /// # Note
     ///
     /// This is `Some` only for [`ResumableInvocation`] originating from the register-machine Wasmi engine.
-    pub(crate) fn caller_results(&self) -> RegSpan {
+    pub(crate) fn caller_results(&self) -> LocalSpan {
         self.caller_results
     }
 

@@ -16,7 +16,7 @@ use crate::{
         translator::{Provider, UntypedProvider},
         TranslationError,
     },
-    ir::{Local, RegSpan},
+    ir::{Local, LocalSpan},
     Error,
 };
 use alloc::vec::Vec;
@@ -348,7 +348,7 @@ impl ValueStack {
         Ok(())
     }
 
-    /// Returns a [`RegSpan`] of `n` locals as if they were dynamically allocated.
+    /// Returns a [`LocalSpan`] of `n` locals as if they were dynamically allocated.
     ///
     /// # Note
     ///
@@ -360,7 +360,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// If this procedure would allocate more locals than are available.
-    pub fn push_dynamic_n(&mut self, n: usize) -> Result<RegSpan, Error> {
+    pub fn push_dynamic_n(&mut self, n: usize) -> Result<LocalSpan, Error> {
         let locals = self.reg_alloc.push_dynamic_n(n)?;
         for local in locals.iter_sized(n) {
             self.providers.push_dynamic(local);
@@ -368,7 +368,7 @@ impl ValueStack {
         Ok(locals)
     }
 
-    /// Returns a [`RegSpan`] of `n` locals as if they were dynamically allocated.
+    /// Returns a [`LocalSpan`] of `n` locals as if they were dynamically allocated.
     ///
     /// # Note
     ///
@@ -379,7 +379,7 @@ impl ValueStack {
     /// # Errors
     ///
     /// If this procedure would allocate more locals than are available.
-    pub fn peek_dynamic_n(&mut self, n: usize) -> Result<RegSpan, Error> {
+    pub fn peek_dynamic_n(&mut self, n: usize) -> Result<LocalSpan, Error> {
         let locals = self.reg_alloc.push_dynamic_n(n)?;
         self.reg_alloc.pop_dynamic_n(n);
         Ok(locals)

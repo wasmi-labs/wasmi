@@ -1,6 +1,6 @@
 use crate::{
     engine::EngineFunc,
-    ir::{index, Instruction, Local, RegSpan, VisitRegs},
+    ir::{index, Instruction, Local, LocalSpan, VisitRegs},
     module::ModuleHeader,
     Engine,
     Error,
@@ -57,13 +57,13 @@ impl VisitRegs for Visitor {
     }
 
     #[inline(always)]
-    fn visit_result_regs(&mut self, _reg: &mut RegSpan, _len: Option<u16>) {}
+    fn visit_result_regs(&mut self, _reg: &mut LocalSpan, _len: Option<u16>) {}
 
     #[inline(always)]
     fn visit_input_reg(&mut self, _reg: &mut Local) {}
 
     #[inline(always)]
-    fn visit_input_regs(&mut self, _regs: &mut RegSpan, _len: Option<u16>) {}
+    fn visit_input_regs(&mut self, _regs: &mut LocalSpan, _len: Option<u16>) {}
 }
 
 impl RelinkResult for Instruction {
@@ -124,7 +124,7 @@ fn get_engine(module: &ModuleHeader) -> Engine {
 }
 
 fn relink_call_internal(
-    results: &mut RegSpan,
+    results: &mut LocalSpan,
     func: EngineFunc,
     module: &ModuleHeader,
     new_result: Local,
@@ -143,7 +143,7 @@ fn relink_call_internal(
 }
 
 fn relink_call_imported(
-    results: &mut RegSpan,
+    results: &mut LocalSpan,
     func: index::Func,
     module: &ModuleHeader,
     new_result: Local,
@@ -160,7 +160,7 @@ fn relink_call_imported(
 }
 
 fn relink_call_indirect(
-    results: &mut RegSpan,
+    results: &mut LocalSpan,
     func_type: index::FuncType,
     module: &ModuleHeader,
     new_result: Local,

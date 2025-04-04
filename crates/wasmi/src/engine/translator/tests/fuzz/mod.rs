@@ -4,7 +4,7 @@ use super::*;
 use crate::{
     core::TrapCode,
     engine::EngineFunc,
-    ir::{index::Global, Address, Address32, BranchOffset, BranchOffset16, RegSpan},
+    ir::{index::Global, Address, Address32, BranchOffset, BranchOffset16, LocalSpan},
     tests::{AssertResults, AssertTrap, ExecutionTest},
 };
 
@@ -54,8 +54,8 @@ fn fuzz_regression_3() {
     let wasm = include_str!("wat/fuzz_3.wat");
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::call_internal_0(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
-            Instruction::call_internal_0(RegSpan::new(Local::from(3)), EngineFunc::from_u32(0)),
+            Instruction::call_internal_0(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+            Instruction::call_internal_0(LocalSpan::new(Local::from(3)), EngineFunc::from_u32(0)),
             Instruction::return_reg3_ext(2, 3, 4),
         ])
         .run()
@@ -82,10 +82,10 @@ fn fuzz_regression_5() {
     let wasm = include_str!("wat/fuzz_5.wat");
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(1)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(1)), EngineFunc::from_u32(0)),
             Instruction::register(Local::from(0)),
             Instruction::branch_i32_eq_imm16(Local::from(3), 0, BranchOffset16::from(5)),
-            Instruction::call_internal(RegSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
             Instruction::register(Local::from(2)),
             Instruction::branch_i32_eq_imm16(Local::from(4), 0, BranchOffset16::from(1)),
             Instruction::branch(BranchOffset::from(2)),
@@ -292,12 +292,12 @@ fn fuzz_regression_15_01_codegen() {
                 Instruction::branch_table_1(Local::from(1), 3_u32),
                 Instruction::const32(10.0_f32),
                 Instruction::branch_table_target(
-                    RegSpan::new(Local::from(1)),
+                    LocalSpan::new(Local::from(1)),
                     BranchOffset::from(3),
                 ),
                 Instruction::return_imm32(10.0_f32),
                 Instruction::branch_table_target(
-                    RegSpan::new(Local::from(1)),
+                    LocalSpan::new(Local::from(1)),
                     BranchOffset::from(1),
                 ),
                 Instruction::trap(TrapCode::UnreachableCodeReached),
@@ -328,12 +328,12 @@ fn fuzz_regression_15_02() {
                 Instruction::branch_table_2(Local::from(1), 3_u32),
                 Instruction::register2_ext(Local::from(-1), Local::from(-2)),
                 Instruction::branch_table_target(
-                    RegSpan::new(Local::from(1)),
+                    LocalSpan::new(Local::from(1)),
                     BranchOffset::from(3),
                 ),
                 Instruction::return_reg2_ext(Local::from(-1), Local::from(-2)),
                 Instruction::branch_table_target(
-                    RegSpan::new(Local::from(1)),
+                    LocalSpan::new(Local::from(1)),
                     BranchOffset::from(1),
                 ),
                 Instruction::trap(TrapCode::UnreachableCodeReached),
@@ -357,19 +357,19 @@ fn fuzz_regression_15_03() {
                 Instruction::branch_table_2(Local::from(3), 4_u32),
                 Instruction::register2_ext(Local::from(-1), Local::from(-2)),
                 Instruction::branch_table_target(
-                    RegSpan::new(Local::from(3)),
+                    LocalSpan::new(Local::from(3)),
                     BranchOffset::from(4),
                 ),
                 Instruction::branch_table_target(
-                    RegSpan::new(Local::from(2)),
+                    LocalSpan::new(Local::from(2)),
                     BranchOffset::from(5),
                 ),
                 Instruction::branch_table_target(
-                    RegSpan::new(Local::from(3)),
+                    LocalSpan::new(Local::from(3)),
                     BranchOffset::from(2),
                 ),
                 Instruction::branch_table_target(
-                    RegSpan::new(Local::from(1)),
+                    LocalSpan::new(Local::from(1)),
                     BranchOffset::from(5),
                 ),
                 Instruction::i32_add(Local::from(3), Local::from(3), Local::from(4)),
@@ -435,12 +435,15 @@ fn audit_0_codegen() {
         )
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_internal_0(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+                Instruction::call_internal_0(
+                    LocalSpan::new(Local::from(0)),
+                    EngineFunc::from_u32(0),
+                ),
                 Instruction::branch_table_many(Local::from(3), 3_u32),
                 Instruction::register_list_ext(-1, 0, 1),
                 Instruction::register(2),
                 Instruction::branch_table_target(
-                    RegSpan::new(Local::from(0)),
+                    LocalSpan::new(Local::from(0)),
                     BranchOffset::from(3),
                 ),
                 Instruction::Return,
@@ -469,8 +472,8 @@ fn audit_1_codegen() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
-                RegSpan::new(Local::from(6)),
-                RegSpan::new(Local::from(0)),
+                LocalSpan::new(Local::from(6)),
+                LocalSpan::new(Local::from(0)),
                 3_u16,
             ),
             Instruction::trap(TrapCode::IntegerOverflow),

@@ -1,5 +1,5 @@
 use super::*;
-use crate::ir::{BranchOffset, RegSpan};
+use crate::ir::{BranchOffset, LocalSpan};
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -79,8 +79,8 @@ fn identity_loop_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
-            Instruction::copy2_ext(RegSpan::new(Local::from(2)), 4, 5),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(4)), 0, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(2)), 4, 5),
             Instruction::i32_add(Local::from(2), Local::from(2), Local::from(3)),
             Instruction::return_reg(Local::from(2)),
         ])
@@ -103,8 +103,8 @@ fn identity_loop_2_nested() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
-            Instruction::copy2_ext(RegSpan::new(Local::from(2)), 4, 5),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(4)), 0, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(2)), 4, 5),
             Instruction::i32_add(Local::from(2), Local::from(2), Local::from(3)),
             Instruction::return_reg(Local::from(2)),
         ])
@@ -184,8 +184,8 @@ fn identity_loop_4_mixed_1() {
     TranslationTest::new(wasm)
         .expect_func(
             ExpectedFunc::new([
-                Instruction::copy2_ext(RegSpan::new(Local::from(6)), 0, 1),
-                Instruction::copy_many_non_overlapping_ext(RegSpan::new(Local::from(2)), -1, 6),
+                Instruction::copy2_ext(LocalSpan::new(Local::from(6)), 0, 1),
+                Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(2)), -1, 6),
                 Instruction::register2_ext(7, -2),
                 Instruction::return_span(bspan(2, 4)),
             ])
@@ -209,8 +209,8 @@ fn identity_loop_4_mixed_2() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(6)), 0, 1),
-            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Local::from(2)), 6, 6),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(6)), 0, 1),
+            Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(2)), 6, 6),
             Instruction::register2_ext(7, 7),
             Instruction::return_span(bspan(2, 4)),
         ])

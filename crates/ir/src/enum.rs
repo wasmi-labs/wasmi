@@ -98,8 +98,8 @@ impl IntoReg for Local {
     }
 }
 impl IntoReg for [Local; 2] {}
-impl IntoReg for RegSpan {}
-impl<const N: u16> IntoReg for FixedRegSpan<N> {}
+impl IntoReg for LocalSpan {}
+impl<const N: u16> IntoReg for FixedLocalSpan<N> {}
 impl IntoReg for () {}
 
 macro_rules! define_result {
@@ -185,16 +185,20 @@ impl Instruction {
     }
 
     /// Creates a new [`Instruction::Copy2`].
-    pub fn copy2_ext(results: RegSpan, value0: impl Into<Local>, value1: impl Into<Local>) -> Self {
-        let span = FixedRegSpan::new(results).unwrap_or_else(|_| {
-            panic!("encountered invalid `results` `RegSpan` for `Copy2`: {results:?}")
+    pub fn copy2_ext(
+        results: LocalSpan,
+        value0: impl Into<Local>,
+        value1: impl Into<Local>,
+    ) -> Self {
+        let span = FixedLocalSpan::new(results).unwrap_or_else(|_| {
+            panic!("encountered invalid `results` `LocalSpan` for `Copy2`: {results:?}")
         });
         Self::copy2(span, [value0.into(), value1.into()])
     }
 
     /// Creates a new [`Instruction::CopyMany`].
     pub fn copy_many_ext(
-        results: RegSpan,
+        results: LocalSpan,
         head0: impl Into<Local>,
         head1: impl Into<Local>,
     ) -> Self {
@@ -203,7 +207,7 @@ impl Instruction {
 
     /// Creates a new [`Instruction::CopyManyNonOverlapping`].
     pub fn copy_many_non_overlapping_ext(
-        results: RegSpan,
+        results: LocalSpan,
         head0: impl Into<Local>,
         head1: impl Into<Local>,
     ) -> Self {

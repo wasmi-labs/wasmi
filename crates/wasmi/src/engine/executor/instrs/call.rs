@@ -9,7 +9,7 @@ use crate::{
         FuncInOut,
     },
     func::{FuncEntity, HostFuncEntity},
-    ir::{index, Instruction, Local, RegSpan},
+    ir::{index, Instruction, Local, LocalSpan},
     store::{CallHooks, PrunedStore, StoreInner},
     Error,
     Func,
@@ -71,7 +71,7 @@ pub struct ResumableHostError {
     /// The host function that returned the error.
     host_func: Func,
     /// The result locals of the caller of the host function.
-    caller_results: RegSpan,
+    caller_results: LocalSpan,
 }
 
 #[cfg(feature = "std")]
@@ -86,7 +86,7 @@ impl fmt::Display for ResumableHostError {
 impl ResumableHostError {
     /// Creates a new [`ResumableHostError`].
     #[cold]
-    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: RegSpan) -> Self {
+    pub(crate) fn new(host_error: Error, host_func: Func, caller_results: LocalSpan) -> Self {
         Self {
             host_error,
             host_func,
@@ -104,8 +104,8 @@ impl ResumableHostError {
         &self.host_func
     }
 
-    /// Returns the caller results [`RegSpan`] of the [`ResumableHostError`].
-    pub(crate) fn caller_results(&self) -> &RegSpan {
+    /// Returns the caller results [`LocalSpan`] of the [`ResumableHostError`].
+    pub(crate) fn caller_results(&self) -> &LocalSpan {
         &self.caller_results
     }
 }
@@ -227,7 +227,7 @@ impl Executor<'_> {
     #[inline(always)]
     fn dispatch_compiled_func<C: CallContext>(
         &mut self,
-        results: RegSpan,
+        results: LocalSpan,
         func: CompiledFuncRef,
     ) -> Result<CallFrame, Error> {
         // We have to reinstantiate the `self.sp` [`FrameRegisters`] since we just called
@@ -310,7 +310,7 @@ impl Executor<'_> {
     fn prepare_compiled_func_call<C: CallContext>(
         &mut self,
         store: &mut StoreInner,
-        results: RegSpan,
+        results: LocalSpan,
         func: EngineFunc,
         mut instance: Option<Instance>,
     ) -> Result<(), Error> {
@@ -374,7 +374,7 @@ impl Executor<'_> {
         self.prepare_compiled_func_call::<C>(store, results, func, None)
     }
 
-    /// Returns the `results` [`RegSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
+    /// Returns the `results` [`LocalSpan`] of the top-most [`CallFrame`] on the [`CallStack`].
     ///
     /// # Note
     ///
@@ -383,7 +383,7 @@ impl Executor<'_> {
     ///
     /// [`CallStack`]: crate::engine::executor::stack::CallStack
     #[inline(always)]
-    fn caller_results(&self) -> RegSpan {
+    fn caller_results(&self) -> LocalSpan {
         self.stack
             .calls
             .peek()
@@ -396,7 +396,7 @@ impl Executor<'_> {
     pub fn execute_call_internal_0(
         &mut self,
         store: &mut StoreInner,
-        results: RegSpan,
+        results: LocalSpan,
         func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall0>(store, results, func, None)
@@ -407,7 +407,7 @@ impl Executor<'_> {
     pub fn execute_call_internal(
         &mut self,
         store: &mut StoreInner,
-        results: RegSpan,
+        results: LocalSpan,
         func: EngineFunc,
     ) -> Result<(), Error> {
         self.prepare_compiled_func_call::<marker::NestedCall>(store, results, func, None)
@@ -445,7 +445,7 @@ impl Executor<'_> {
     pub fn execute_call_imported_0(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: LocalSpan,
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
@@ -457,7 +457,7 @@ impl Executor<'_> {
     pub fn execute_call_imported(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: LocalSpan,
         func: index::Func,
     ) -> Result<(), Error> {
         let func = self.get_func(func);
@@ -469,7 +469,7 @@ impl Executor<'_> {
     fn execute_call_imported_impl<C: CallContext>(
         &mut self,
         store: &mut PrunedStore,
-        results: Option<RegSpan>,
+        results: Option<LocalSpan>,
         func: &Func,
     ) -> Result<ControlFlow, Error> {
         match store.inner().resolve_func(func) {
@@ -506,7 +506,7 @@ impl Executor<'_> {
     fn execute_host_func<C: CallContext>(
         &mut self,
         store: &mut PrunedStore,
-        results: Option<RegSpan>,
+        results: Option<LocalSpan>,
         func: &Func,
         host_func: HostFuncEntity,
     ) -> Result<ControlFlow, Error> {
@@ -659,7 +659,7 @@ impl Executor<'_> {
     pub fn execute_call_indirect_0(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: LocalSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
@@ -677,7 +677,7 @@ impl Executor<'_> {
     pub fn execute_call_indirect_0_imm16(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: LocalSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
@@ -695,7 +695,7 @@ impl Executor<'_> {
     pub fn execute_call_indirect(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: LocalSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params();
@@ -713,7 +713,7 @@ impl Executor<'_> {
     pub fn execute_call_indirect_imm16(
         &mut self,
         store: &mut PrunedStore,
-        results: RegSpan,
+        results: LocalSpan,
         func_type: index::FuncType,
     ) -> Result<(), Error> {
         let (index, table) = self.pull_call_indirect_params_imm16();
@@ -731,7 +731,7 @@ impl Executor<'_> {
     fn execute_call_indirect_impl<C: CallContext>(
         &mut self,
         store: &mut PrunedStore,
-        results: Option<RegSpan>,
+        results: Option<LocalSpan>,
         func_type: index::FuncType,
         index: u64,
         table: index::Table,

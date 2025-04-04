@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     engine::EngineFunc,
-    ir::{BranchOffset, BranchOffset16, RegSpan},
+    ir::{BranchOffset, BranchOffset16, LocalSpan},
 };
 
 #[test]
@@ -46,7 +46,7 @@ fn simple_block_2() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(3)), 0, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(3)), 0, 1),
             Instruction::branch_i32_ne_imm16(Local::from(2), 0, BranchOffset16::from(3)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
@@ -76,8 +76,8 @@ fn simple_block_3_span() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
-                RegSpan::new(Local::from(4)),
-                RegSpan::new(Local::from(0)),
+                LocalSpan::new(Local::from(4)),
+                LocalSpan::new(Local::from(0)),
                 3_u16,
             ),
             Instruction::branch_i32_ne_imm16(Local::from(3), 0, BranchOffset16::from(4)),
@@ -109,7 +109,7 @@ fn simple_block_3_many() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Local::from(4)), 2, 1),
+            Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(4)), 2, 1),
             Instruction::register(0),
             Instruction::branch_i32_ne_imm16(Local::from(3), 0, BranchOffset16::from(4)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
@@ -143,18 +143,18 @@ fn simple_block_4_params_2() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
-                RegSpan::new(Local::from(7)),
-                RegSpan::new(Local::from(0)),
+                LocalSpan::new(Local::from(7)),
+                LocalSpan::new(Local::from(0)),
                 4_u16,
             ),
             Instruction::branch_i32_eq_imm16(Local::from(4), 0, BranchOffset16::from(3)),
-            Instruction::copy2_ext(RegSpan::new(Local::from(5)), 9, 10),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(5)), 9, 10),
             Instruction::branch(BranchOffset::from(6)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::copy_imm32(Local::from(2), 30_i32),
             Instruction::copy_imm32(Local::from(3), 40_i32),
-            Instruction::copy2_ext(RegSpan::new(Local::from(5)), 9, 10),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(5)), 9, 10),
             Instruction::return_many_ext(7, 8, 5),
             Instruction::register(6),
         ])
@@ -196,7 +196,7 @@ fn simple_block_30() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Local::from(11)), 9, 8),
+            Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(11)), 9, 8),
             Instruction::register_list_ext(7, 6, 5),
             Instruction::register_list_ext(4, 3, 2),
             Instruction::register2_ext(1, 0),
@@ -263,7 +263,7 @@ fn simple_if_2() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(3)), 0, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(3)), 0, 1),
             Instruction::branch_i32_eq_imm16(Local::from(2), 0, BranchOffset16::from(3)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::copy_imm32(Local::from(1), 20_i32),
@@ -294,8 +294,8 @@ fn simple_if_3_span() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
-                RegSpan::new(Local::from(4)),
-                RegSpan::new(Local::from(0)),
+                LocalSpan::new(Local::from(4)),
+                LocalSpan::new(Local::from(0)),
                 3_u16,
             ),
             Instruction::branch_i32_eq_imm16(Local::from(3), 0, BranchOffset16::from(4)),
@@ -328,7 +328,7 @@ fn simple_if_3_many() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy_many_non_overlapping_ext(RegSpan::new(Local::from(4)), 2, 1),
+            Instruction::copy_many_non_overlapping_ext(LocalSpan::new(Local::from(4)), 2, 1),
             Instruction::register(0),
             Instruction::branch_i32_eq_imm16(Local::from(3), 0, BranchOffset16::from(4)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
@@ -363,8 +363,8 @@ fn simple_if_4_params_2() {
     TranslationTest::new(wasm)
         .expect_func_instrs([
             Instruction::copy_span_non_overlapping(
-                RegSpan::new(Local::from(7)),
-                RegSpan::new(Local::from(0)),
+                LocalSpan::new(Local::from(7)),
+                LocalSpan::new(Local::from(0)),
                 4_u16,
             ),
             Instruction::branch_i32_eq_imm16(Local::from(4), 0, BranchOffset16::from(7)),
@@ -372,9 +372,9 @@ fn simple_if_4_params_2() {
             Instruction::copy_imm32(Local::from(1), 20_i32),
             Instruction::copy_imm32(Local::from(2), 30_i32),
             Instruction::copy_imm32(Local::from(3), 40_i32),
-            Instruction::copy2_ext(RegSpan::new(Local::from(5)), 9, 10),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(5)), 9, 10),
             Instruction::branch(BranchOffset::from(2)),
-            Instruction::copy2_ext(RegSpan::new(Local::from(5)), 9, 10),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(5)), 9, 10),
             Instruction::return_many_ext(7, 8, 5),
             Instruction::register(6),
         ])
@@ -402,7 +402,7 @@ fn nested_block() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(4)), 0, 1),
             Instruction::branch_i32_ne_imm16(Local::from(2), 0, BranchOffset16::from(4)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::branch_i32_ne_imm16(Local::from(3), 0, BranchOffset16::from(2)),
@@ -435,7 +435,7 @@ fn nested_if() {
     "#;
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 0, 1),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(4)), 0, 1),
             Instruction::branch_i32_eq_imm16(Local::from(2), 0, BranchOffset16::from(4)),
             Instruction::copy_imm32(Local::from(0), 10_i32),
             Instruction::branch_i32_eq_imm16(Local::from(3), 0, BranchOffset16::from(2)),
@@ -565,7 +565,7 @@ fn invalid_preservation_slot_reuse_2() {
         .expect_func(ExpectedFunc::new([
             Instruction::copy(3, 0),
             Instruction::i32_popcnt(Local::from(0), Local::from(0)),
-            Instruction::call_internal(RegSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
             Instruction::register3_ext(1, 3, 0),
             Instruction::copy(3, 1),
             Instruction::copy(1, 2),

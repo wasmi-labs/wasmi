@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     core::{TrapCode, UntypedVal},
     engine::EngineFunc,
-    ir::{index::Global, BranchOffset, BranchOffset16, RegSpan},
+    ir::{index::Global, BranchOffset, BranchOffset16, LocalSpan},
 };
 
 #[test]
@@ -255,7 +255,7 @@ fn if_then_else_with_params() {
         )";
     TranslationTest::new(wasm)
         .expect_func_instrs([
-            Instruction::copy2_ext(RegSpan::new(Local::from(4)), 1, 2),
+            Instruction::copy2_ext(LocalSpan::new(Local::from(4)), 1, 2),
             Instruction::branch_i32_eq_imm16(Local::from(0), 0, BranchOffset16::from(3)),
             Instruction::i32_add(Local::from(3), Local::from(4), Local::from(5)),
             Instruction::branch(BranchOffset::from(2)),
@@ -519,7 +519,7 @@ fn test_if_without_else_has_result() {
                 .consts([UntypedVal::from(1_i64), UntypedVal::from(0_i32)]),
         )
         .expect_func_instrs([
-            Instruction::call_internal_0(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+            Instruction::call_internal_0(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
             Instruction::branch_i32_eq_imm16(Local::from(1), 0, BranchOffset16::from(3)),
             Instruction::copy_i64imm32(Local::from(0), -1),
             Instruction::branch(BranchOffset::from(1)),

@@ -1,4 +1,4 @@
-use crate::ir::{Instruction, Local, RegSpan, VisitRegs};
+use crate::ir::{Instruction, Local, LocalSpan, VisitRegs};
 
 /// Extension-trait for [`Instruction`] to only visit certain [`Local`]s via closure.
 pub trait VisitInputRegisters {
@@ -16,7 +16,7 @@ impl<F: FnMut(&'_ mut Local)> VisitRegs for Visitor<F> {
     fn visit_result_reg(&mut self, _reg: &mut Local) {}
 
     #[inline(always)]
-    fn visit_result_regs(&mut self, _reg: &mut RegSpan, _len: Option<u16>) {}
+    fn visit_result_regs(&mut self, _reg: &mut LocalSpan, _len: Option<u16>) {}
 
     #[inline]
     fn visit_input_reg(&mut self, reg: &mut Local) {
@@ -24,7 +24,7 @@ impl<F: FnMut(&'_ mut Local)> VisitRegs for Visitor<F> {
     }
 
     #[inline]
-    fn visit_input_regs(&mut self, regs: &mut RegSpan, _len: Option<u16>) {
+    fn visit_input_regs(&mut self, regs: &mut LocalSpan, _len: Option<u16>) {
         (self.f)(regs.head_mut());
     }
 }

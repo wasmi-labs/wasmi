@@ -1,6 +1,6 @@
 use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
-    ir::{BoundedRegSpan, Const16, Const32, Local, RegSpan, Sign},
+    ir::{BoundedLocalSpan, Const16, Const32, Local, LocalSpan, Sign},
     Error,
     IndexType,
 };
@@ -192,9 +192,9 @@ impl TypedProvider {
     }
 }
 
-/// Extension trait to create a [`BoundedRegSpan`] from a slice of [`TypedProvider`]s.
+/// Extension trait to create a [`BoundedLocalSpan`] from a slice of [`TypedProvider`]s.
 pub trait FromProviders: Sized {
-    /// Creates a [`BoundedRegSpan`] from the given slice of [`TypedProvider`] if possible.
+    /// Creates a [`BoundedLocalSpan`] from the given slice of [`TypedProvider`] if possible.
     ///
     /// All [`TypedProvider`] must be [`Local`] and have
     /// contiguous indices for the conversion to succeed.
@@ -203,7 +203,7 @@ pub trait FromProviders: Sized {
     fn from_providers(providers: &[TypedProvider]) -> Option<Self>;
 }
 
-impl FromProviders for BoundedRegSpan {
+impl FromProviders for BoundedLocalSpan {
     fn from_providers(providers: &[TypedProvider]) -> Option<Self> {
         let (first, rest) = providers.split_first()?;
         let first_index = first.register_index()?;
@@ -217,7 +217,7 @@ impl FromProviders for BoundedRegSpan {
         }
         let end_index = prev_index.checked_add(1)?;
         let len = (end_index - first_index) as u16;
-        Some(Self::new(RegSpan::new(Local::from(first_index)), len))
+        Some(Self::new(LocalSpan::new(Local::from(first_index)), len))
     }
 }
 

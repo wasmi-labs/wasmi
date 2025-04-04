@@ -8,7 +8,7 @@ use self::{
 use crate::{
     engine::{CallParams, CallResults, EngineInner, ResumableCallBase, ResumableInvocation},
     func::HostFuncEntity,
-    ir::{Local, RegSpan},
+    ir::{Local, LocalSpan},
     store::CallHooks,
     CallHook,
     Error,
@@ -213,7 +213,7 @@ impl<'engine> EngineExecutor<'engine> {
                     CallFrame::new(
                         InstructionPtr::new(compiled_func.instrs().as_ptr()),
                         offsets,
-                        RegSpan::new(Local::from(0)),
+                        LocalSpan::new(Local::from(0)),
                     ),
                     Some(instance),
                 )?;
@@ -258,7 +258,7 @@ impl<'engine> EngineExecutor<'engine> {
         store: &mut Store<T>,
         _host_func: Func,
         params: impl CallParams,
-        caller_results: RegSpan,
+        caller_results: LocalSpan,
         results: Results,
     ) -> Result<<Results as CallResults>::Results, Error>
     where

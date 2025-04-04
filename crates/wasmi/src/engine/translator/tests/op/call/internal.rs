@@ -1,5 +1,5 @@
 use super::*;
-use crate::{engine::EngineFunc, ir::RegSpan};
+use crate::{engine::EngineFunc, ir::LocalSpan};
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -15,7 +15,7 @@ fn no_params() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::Return])
         .expect_func_instrs([
-            Instruction::call_internal_0(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+            Instruction::call_internal_0(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
             Instruction::Return,
         ])
         .run();
@@ -37,7 +37,7 @@ fn one_param_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg(Local::from(0))])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(1)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(1)), EngineFunc::from_u32(0)),
             Instruction::register(0),
             Instruction::return_reg(Local::from(1)),
         ])
@@ -61,7 +61,7 @@ fn one_param_imm() {
         .expect_func_instrs([Instruction::return_reg(0)])
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_internal(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+                Instruction::call_internal(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
                 Instruction::register(-1),
                 Instruction::return_reg(0),
             ])
@@ -87,7 +87,7 @@ fn two_params_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg2_ext(0, 1)])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
             Instruction::register2_ext(0, 1),
             Instruction::return_reg2_ext(2, 3),
         ])
@@ -111,7 +111,7 @@ fn two_params_reg_lhs() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg2_ext(0, 1)])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(2)), EngineFunc::from_u32(0)),
             Instruction::register2_ext(1, 0),
             Instruction::return_reg2_ext(2, 3),
         ])
@@ -136,7 +136,7 @@ fn two_params_imm() {
         .expect_func_instrs([Instruction::return_reg2_ext(0, 1)])
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_internal(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+                Instruction::call_internal(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
                 Instruction::register2_ext(-1, -2),
                 Instruction::return_reg2_ext(0, 1),
             ])
@@ -163,7 +163,7 @@ fn three_params_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg3_ext(0, 1, 2)])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(3)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(3)), EngineFunc::from_u32(0)),
             Instruction::register3_ext(0, 1, 2),
             Instruction::return_reg3_ext(3, 4, 5),
         ])
@@ -188,7 +188,7 @@ fn three_params_reg_lhs() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_reg3_ext(0, 1, 2)])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(3)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(3)), EngineFunc::from_u32(0)),
             Instruction::register3_ext(2, 1, 0),
             Instruction::return_reg3_ext(3, 4, 5),
         ])
@@ -214,7 +214,7 @@ fn three_params_imm() {
         .expect_func_instrs([Instruction::return_reg3_ext(0, 1, 2)])
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_internal(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+                Instruction::call_internal(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
                 Instruction::register3_ext(-1, -2, -3),
                 Instruction::return_reg3_ext(0, 1, 2),
             ])
@@ -253,7 +253,7 @@ fn params7_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 7))])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(7)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(7)), EngineFunc::from_u32(0)),
             Instruction::register_list_ext(0, 1, 2),
             Instruction::register_list_ext(3, 4, 5),
             Instruction::register(6),
@@ -292,7 +292,7 @@ fn params7_reg_lhs() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 7))])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(7)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(7)), EngineFunc::from_u32(0)),
             Instruction::register_list_ext(6, 5, 4),
             Instruction::register_list_ext(3, 2, 1),
             Instruction::register(0),
@@ -332,7 +332,7 @@ fn params7_imm() {
         .expect_func_instrs([Instruction::return_span(bspan(0, 7))])
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_internal(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+                Instruction::call_internal(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
                 Instruction::register_list_ext(-1, -2, -3),
                 Instruction::register_list_ext(-4, -5, -6),
                 Instruction::register(-7),
@@ -375,7 +375,7 @@ fn params8_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 8))])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(8)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(8)), EngineFunc::from_u32(0)),
             Instruction::register_list_ext(0, 1, 2),
             Instruction::register_list_ext(3, 4, 5),
             Instruction::register2_ext(6, 7),
@@ -416,7 +416,7 @@ fn params8_reg_lhs() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 8))])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(8)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(8)), EngineFunc::from_u32(0)),
             Instruction::register_list_ext(7, 6, 5),
             Instruction::register_list_ext(4, 3, 2),
             Instruction::register2_ext(1, 0),
@@ -458,7 +458,7 @@ fn params8_imm() {
         .expect_func_instrs([Instruction::return_span(bspan(0, 8))])
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_internal(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+                Instruction::call_internal(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
                 Instruction::register_list_ext(-1, -2, -3),
                 Instruction::register_list_ext(-4, -5, -6),
                 Instruction::register2_ext(-7, -8),
@@ -503,7 +503,7 @@ fn params9_reg() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 9))])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(9)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(9)), EngineFunc::from_u32(0)),
             Instruction::register_list_ext(0, 1, 2),
             Instruction::register_list_ext(3, 4, 5),
             Instruction::register3_ext(6, 7, 8),
@@ -546,7 +546,7 @@ fn params9_reg_lhs() {
     TranslationTest::new(wasm)
         .expect_func_instrs([Instruction::return_span(bspan(0, 9))])
         .expect_func_instrs([
-            Instruction::call_internal(RegSpan::new(Local::from(9)), EngineFunc::from_u32(0)),
+            Instruction::call_internal(LocalSpan::new(Local::from(9)), EngineFunc::from_u32(0)),
             Instruction::register_list_ext(8, 7, 6),
             Instruction::register_list_ext(5, 4, 3),
             Instruction::register3_ext(2, 1, 0),
@@ -590,7 +590,7 @@ fn params9_imm() {
         .expect_func_instrs([Instruction::return_span(bspan(0, 9))])
         .expect_func(
             ExpectedFunc::new([
-                Instruction::call_internal(RegSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
+                Instruction::call_internal(LocalSpan::new(Local::from(0)), EngineFunc::from_u32(0)),
                 Instruction::register_list_ext(-1, -2, -3),
                 Instruction::register_list_ext(-4, -5, -6),
                 Instruction::register3_ext(-7, -8, -9),
