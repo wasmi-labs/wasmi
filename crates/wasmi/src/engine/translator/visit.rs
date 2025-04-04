@@ -2978,23 +2978,23 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_extend8_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i32_extend8_s, TypedVal::i32_extend8_s)
+        self.translate_unary::<i32, i32>(Instruction::i32_extend8_s, wasm::i32_extend8_s)
     }
 
     fn visit_i32_extend16_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i32_extend16_s, TypedVal::i32_extend16_s)
+        self.translate_unary::<i32, i32>(Instruction::i32_extend16_s, wasm::i32_extend16_s)
     }
 
     fn visit_i64_extend8_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_extend8_s, TypedVal::i64_extend8_s)
+        self.translate_unary::<i64, i64>(Instruction::i64_extend8_s, wasm::i64_extend8_s)
     }
 
     fn visit_i64_extend16_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_extend16_s, TypedVal::i64_extend16_s)
+        self.translate_unary::<i64, i64>(Instruction::i64_extend16_s, wasm::i64_extend16_s)
     }
 
     fn visit_i64_extend32_s(&mut self) -> Self::Output {
-        self.translate_unary(Instruction::i64_extend32_s, TypedVal::i64_extend32_s)
+        self.translate_unary::<i64, i64>(Instruction::i64_extend32_s, wasm::i64_extend32_s)
     }
 
     fn visit_i32_trunc_sat_f32_s(&mut self) -> Self::Output {
