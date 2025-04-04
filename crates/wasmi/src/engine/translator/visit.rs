@@ -2998,58 +2998,58 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     }
 
     fn visit_i32_trunc_sat_f32_s(&mut self) -> Self::Output {
-        self.translate_unary(
+        self.translate_unary::<f32, i32>(
             Instruction::i32_trunc_sat_f32_s,
-            TypedVal::i32_trunc_sat_f32_s,
+            wasm::i32_trunc_sat_f32_s,
         )
     }
 
     fn visit_i32_trunc_sat_f32_u(&mut self) -> Self::Output {
-        self.translate_unary(
+        self.translate_unary::<f32, u32>(
             Instruction::i32_trunc_sat_f32_u,
-            TypedVal::i32_trunc_sat_f32_u,
+            wasm::i32_trunc_sat_f32_u,
         )
     }
 
     fn visit_i32_trunc_sat_f64_s(&mut self) -> Self::Output {
-        self.translate_unary(
+        self.translate_unary::<f64, i32>(
             Instruction::i32_trunc_sat_f64_s,
-            TypedVal::i32_trunc_sat_f64_s,
+            wasm::i32_trunc_sat_f64_s,
         )
     }
 
     fn visit_i32_trunc_sat_f64_u(&mut self) -> Self::Output {
-        self.translate_unary(
+        self.translate_unary::<f64, u32>(
             Instruction::i32_trunc_sat_f64_u,
-            TypedVal::i32_trunc_sat_f64_u,
+            wasm::i32_trunc_sat_f64_u,
         )
     }
 
     fn visit_i64_trunc_sat_f32_s(&mut self) -> Self::Output {
-        self.translate_unary(
+        self.translate_unary::<f32, i64>(
             Instruction::i64_trunc_sat_f32_s,
-            TypedVal::i64_trunc_sat_f32_s,
+            wasm::i64_trunc_sat_f32_s,
         )
     }
 
     fn visit_i64_trunc_sat_f32_u(&mut self) -> Self::Output {
-        self.translate_unary(
+        self.translate_unary::<f32, u64>(
             Instruction::i64_trunc_sat_f32_u,
-            TypedVal::i64_trunc_sat_f32_u,
+            wasm::i64_trunc_sat_f32_u,
         )
     }
 
     fn visit_i64_trunc_sat_f64_s(&mut self) -> Self::Output {
-        self.translate_unary(
+        self.translate_unary::<f64, i64>(
             Instruction::i64_trunc_sat_f64_s,
-            TypedVal::i64_trunc_sat_f64_s,
+            wasm::i64_trunc_sat_f64_s,
         )
     }
 
     fn visit_i64_trunc_sat_f64_u(&mut self) -> Self::Output {
-        self.translate_unary(
+        self.translate_unary::<f64, u64>(
             Instruction::i64_trunc_sat_f64_u,
-            TypedVal::i64_trunc_sat_f64_u,
+            wasm::i64_trunc_sat_f64_u,
         )
     }
 

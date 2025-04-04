@@ -238,15 +238,6 @@ impl TypedVal {
         #[fallible] fn i64_trunc_f64_s(f64) -> Result<i64, TrapCode>;
         #[fallible] fn i64_trunc_f64_u(f64) -> Result<i64, TrapCode>;
 
-        fn i32_trunc_sat_f32_s(f32) -> i32;
-        fn i32_trunc_sat_f32_u(f32) -> i32;
-        fn i32_trunc_sat_f64_s(f64) -> i32;
-        fn i32_trunc_sat_f64_u(f64) -> i32;
-        fn i64_trunc_sat_f32_s(f32) -> i64;
-        fn i64_trunc_sat_f32_u(f32) -> i64;
-        fn i64_trunc_sat_f64_s(f64) -> i64;
-        fn i64_trunc_sat_f64_u(f64) -> i64;
-
         fn f32_convert_i32_s(i32) -> f32;
         fn f32_convert_i32_u(i32) -> f32;
         fn f32_convert_i64_s(i64) -> f32;
