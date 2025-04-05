@@ -1,3 +1,4 @@
+use crate::core::FuncTypeError as CoreFuncTypeError;
 use core::{fmt, fmt::Display};
 
 /// Errors that can occur upon type checking function signatures.
@@ -13,6 +14,18 @@ pub enum FuncError {
     MismatchingResultType,
     /// Specified an incorrect number of results.
     MismatchingResultLen,
+}
+
+impl From<CoreFuncTypeError> for FuncError {
+    fn from(error: CoreFuncTypeError) -> Self {
+        match error {
+            CoreFuncTypeError::MismatchingParameterType => Self::MismatchingParameterType,
+            CoreFuncTypeError::MismatchingParameterLen => Self::MismatchingParameterLen,
+            CoreFuncTypeError::MismatchingResultType => Self::MismatchingResultType,
+            CoreFuncTypeError::MismatchingResultLen => Self::MismatchingResultLen,
+            error => panic!("unsupported error: {error:?}"),
+        }
+    }
 }
 
 #[cfg(feature = "std")]
