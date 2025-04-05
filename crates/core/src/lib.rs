@@ -32,7 +32,7 @@ extern crate std;
 use self::value::{Float, Integer, SignExtendFrom, TruncateSaturateInto, TryTruncateInto};
 pub use self::{
     float::{F32, F64},
-    func_type::{FuncType, FuncTypeError},
+    func_type::{DynamicallyTyped, FuncType, FuncTypeError},
     host_error::HostError,
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
