@@ -12,6 +12,7 @@
 )]
 
 mod float;
+mod func_type;
 pub mod hint;
 mod host_error;
 mod memory;
@@ -31,6 +32,7 @@ extern crate std;
 use self::value::{Float, Integer, SignExtendFrom, TruncateSaturateInto, TryTruncateInto};
 pub use self::{
     float::{F32, F64},
+    func_type::{FuncType, FuncTypeError},
     host_error::HostError,
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
