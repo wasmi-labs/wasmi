@@ -3,6 +3,9 @@ mod buffer;
 mod error;
 mod ty;
 
+#[cfg(test)]
+mod tests;
+
 pub use self::{
     access::{
         load,
