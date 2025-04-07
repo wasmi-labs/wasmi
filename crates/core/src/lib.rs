@@ -16,6 +16,7 @@ mod fuel;
 mod func_type;
 pub mod hint;
 mod host_error;
+mod index_ty;
 mod limiter;
 mod memory;
 mod trap;
@@ -23,7 +24,6 @@ mod typed;
 mod untyped;
 mod value;
 pub mod wasm;
-mod index_ty;
 
 #[cfg(feature = "simd")]
 pub mod simd;
@@ -38,6 +38,7 @@ pub use self::{
     fuel::{Fuel, FuelCosts, FuelCostsProvider, FuelError},
     func_type::{DynamicallyTyped, FuncType, FuncTypeError},
     host_error::HostError,
+    index_ty::IndexType,
     limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
