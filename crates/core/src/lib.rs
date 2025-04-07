@@ -23,6 +23,7 @@ mod typed;
 mod untyped;
 mod value;
 pub mod wasm;
+mod index_ty;
 
 #[cfg(feature = "simd")]
 pub mod simd;
