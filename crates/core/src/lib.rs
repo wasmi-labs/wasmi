@@ -33,11 +33,11 @@ extern crate std;
 
 use self::value::{Float, Integer, SignExtendFrom, TruncateSaturateInto, TryTruncateInto};
 pub use self::{
-    limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
     float::{F32, F64},
-    fuel::{FuelCosts, FuelCostsProvider},
+    fuel::{Fuel, FuelCosts, FuelCostsProvider, FuelError},
     func_type::{DynamicallyTyped, FuncType, FuncTypeError},
     host_error::HostError,
+    limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, ReadAs, UntypedError, UntypedVal, WriteAs},

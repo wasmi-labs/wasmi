@@ -1,6 +1,11 @@
 use crate::UntypedVal;
 use alloc::boxed::Box;
-use core::{fmt, fmt::Debug, mem, num::NonZeroU64};
+use core::{
+    error::Error,
+    fmt::{self, Debug},
+    mem,
+    num::NonZeroU64,
+};
 
 /// Fuel costs for Wasmi IR instructions.
 pub trait FuelCosts {
@@ -165,5 +170,168 @@ impl FuelCostsProvider {
         };
         self.fuel_for_copying_bytes(len_copies)
             .saturating_mul(size_of_val)
+    }
+}
+
+/// An error that may be encountered when using [`Fuel`].
+#[derive(Debug, Clone)]
+pub enum FuelError {
+    /// Returned by some [`Fuel`] methods when fuel metering is disabled.
+    FuelMeteringDisabled,
+    /// Raised when trying to consume more fuel than is available.
+    OutOfFuel,
+}
+
+impl Error for FuelError {}
+
+impl fmt::Display for FuelError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::FuelMeteringDisabled => write!(f, "fuel metering is disabled"),
+            Self::OutOfFuel => write!(f, "all fuel consumed"),
+        }
+    }
+}
+
+impl FuelError {
+    /// Returns an error indicating that fuel metering has been disabled.
+    ///
+    /// # Note
+    ///
+    /// This method exists to indicate that this execution path is cold.
+    #[cold]
+    pub fn fuel_metering_disabled() -> Self {
+        Self::FuelMeteringDisabled
+    }
+
+    /// Returns an error indicating that too much fuel has been consumed.
+    ///
+    /// # Note
+    ///
+    /// This method exists to indicate that this execution path is cold.
+    #[cold]
+    pub fn out_of_fuel() -> Self {
+        Self::OutOfFuel
+    }
+}
+
+/// The remaining and consumed fuel counters.
+#[derive(Debug)]
+pub struct Fuel {
+    /// The remaining fuel.
+    remaining: u64,
+    /// This is `true` if fuel metering is enabled.
+    enabled: bool,
+    /// The fuel costs.
+    costs: FuelCostsProvider,
+}
+
+impl Fuel {
+    /// Creates a new [`Fuel`].
+    pub fn new(enabled: bool, costs: FuelCostsProvider) -> Self {
+        Self {
+            remaining: 0,
+            enabled,
+            costs,
+        }
+    }
+
+    /// Returns `true` if fuel metering is enabled.
+    fn is_fuel_metering_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    /// Returns `Ok` if fuel metering is enabled.
+    ///
+    /// Returns descriptive [`FuelError`] otherwise.
+    ///
+    /// # Errors
+    ///
+    /// If fuel metering is disabled.
+    fn check_fuel_metering_enabled(&self) -> Result<(), FuelError> {
+        if !self.is_fuel_metering_enabled() {
+            return Err(FuelError::fuel_metering_disabled());
+        }
+        Ok(())
+    }
+
+    /// Sets the remaining fuel to `fuel`.
+    ///
+    /// # Errors
+    ///
+    /// If fuel metering is disabled.
+    pub fn set_fuel(&mut self, fuel: u64) -> Result<(), FuelError> {
+        self.check_fuel_metering_enabled()?;
+        self.remaining = fuel;
+        Ok(())
+    }
+
+    /// Returns the remaining fuel.
+    ///
+    /// # Errors
+    ///
+    /// If fuel metering is disabled.
+    pub fn get_fuel(&self) -> Result<u64, FuelError> {
+        self.check_fuel_metering_enabled()?;
+        Ok(self.remaining)
+    }
+
+    /// Synthetically consumes an amount of [`Fuel`].
+    ///
+    /// Returns the remaining amount of [`Fuel`] after this operation.
+    ///
+    /// # Note
+    ///
+    /// - This does _not_ check if fuel metering is enabled.
+    /// - This API is intended for use cases where it is clear that fuel metering is
+    ///   enabled and where a check would incur unnecessary overhead in a hot path.
+    ///   An example of this is the execution of consume fuel instructions since
+    ///   those only exist if fuel metering is enabled.
+    ///
+    /// # Errors
+    ///
+    /// If out of fuel.
+    pub fn consume_fuel_unchecked(&mut self, delta: u64) -> Result<u64, FuelError> {
+        self.remaining = self
+            .remaining
+            .checked_sub(delta)
+            .ok_or(FuelError::OutOfFuel)?;
+        Ok(self.remaining)
+    }
+
+    /// Consumes an amount of [`Fuel`].
+    ///
+    /// Returns the remaining amount of [`Fuel`] after this operation.
+    ///
+    /// # Errors
+    ///
+    /// - If fuel metering is disabled.
+    /// - If out of fuel.
+    pub fn consume_fuel(
+        &mut self,
+        f: impl FnOnce(&FuelCostsProvider) -> u64,
+    ) -> Result<u64, FuelError> {
+        self.check_fuel_metering_enabled()?;
+        self.consume_fuel_unchecked(f(&self.costs))
+    }
+
+    /// Consumes an amount of [`Fuel`] if fuel metering is enabled.
+    ///
+    /// # Note
+    ///
+    /// This does nothing if fuel metering is disabled.
+    ///
+    /// # Errors
+    ///
+    /// - If out of fuel.
+    pub fn consume_fuel_if(
+        &mut self,
+        f: impl FnOnce(&FuelCostsProvider) -> u64,
+    ) -> Result<(), FuelError> {
+        if self.is_fuel_metering_enabled() {
+            return Ok(());
+        }
+        self.consume_fuel_unchecked(f(&self.costs))?;
+        Ok(())
     }
 }
