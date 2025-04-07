@@ -35,16 +35,19 @@ pub trait ResourceLimiter {
     /// ## Return Value
     ///
     /// If `Ok(true)` is returned from this function then the growth operation
-    /// is allowed. This means that the wasm `memory.grow` instruction will
-    /// return with the `desired` size, in wasm pages. Note that even if
+    /// is allowed. This means that the wasm `memory.grow` or `table.grow` instructions
+    /// will return with the `desired` size, in wasm pages. Note that even if
     /// `Ok(true)` is returned, though, if `desired` exceeds `maximum` then the
     /// growth operation will still fail.
     ///
-    /// If `Ok(false)` is returned then this will cause the `memory.grow`
-    /// instruction in a module to return -1 (failure), or in the case of an
-    /// embedder API calling [`Memory::new`](crate::Memory::new) or
-    /// [`Memory::grow`](crate::Memory::grow) an error will be returned from
-    /// those methods.
+    /// If `Ok(false)` is returned then this will cause the `grow` instruction
+    /// in a module to return -1 (failure), or in the case of an embedder API
+    /// calling any of the below methods an error will be returned.
+    /// 
+    /// - [`Memory::new`]
+    /// - [`Table::new`]
+    /// - [`Memory::grow`]
+    /// - [`Table::grow`]
     ///
     /// # Errors
     ///
@@ -53,6 +56,11 @@ pub trait ResourceLimiter {
     /// compliant with the WebAssembly specification but it can be a handy and
     /// useful tool to get a precise backtrace at "what requested so much memory
     /// to cause a growth failure?".
+    /// 
+    /// [`Memory::new`]: crate::Memory::new
+    /// [`Memory::grow`]: crate::Memory::grow
+    /// [`Table::new`]: crate::Table::new
+    /// [`Table::grow`]: crate::Table::grow
     fn memory_growing(
         &mut self,
         current: usize,
