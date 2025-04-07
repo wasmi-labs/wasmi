@@ -48,8 +48,8 @@ pub trait ResourceLimiter {
     ///
     /// # Errors
     ///
-    /// If `Err(e)` is returned then the `memory.grow` function will behave
-    /// as if a trap has been raised. Note that this is not necessarily
+    /// If `Err(e)` is returned then the `memory.grow` or `table.grow` functions
+    /// will behave as if a trap has been raised. Note that this is not necessarily
     /// compliant with the WebAssembly specification but it can be a handy and
     /// useful tool to get a precise backtrace at "what requested so much memory
     /// to cause a growth failure?".

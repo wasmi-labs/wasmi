@@ -134,7 +134,7 @@ impl FuelCostsProvider {
         }
     }
 
-    /// Returns the fuel costs for `len_copies` register copies in Wasmi IR.
+    /// Returns the fuel costs for `len_bytes` byte copies in Wasmi IR.
     ///
     /// # Note
     ///
@@ -148,7 +148,7 @@ impl FuelCostsProvider {
         len_bytes / self.bytes_per_fuel()
     }
 
-    /// Returns the fuel costs for copying `len_copies` [`UntypedVal`] items.
+    /// Returns the fuel costs for copying `len_values` [`UntypedVal`] items.
     ///
     /// # Note
     ///
@@ -164,11 +164,11 @@ impl FuelCostsProvider {
     ///     - `table.copy` (+ variants)
     ///     - `table.fill` (+ variants)
     ///     - `table.init` (+ variants)
-    pub fn fuel_for_copying_values(&self, len_copies: u64) -> u64 {
+    pub fn fuel_for_copying_values(&self, len_values: u64) -> u64 {
         let Ok(size_of_val) = u64::try_from(mem::size_of::<UntypedVal>()) else {
             return u64::MAX;
         };
-        self.fuel_for_copying_bytes(len_copies)
+        self.fuel_for_copying_bytes(len_values)
             .saturating_mul(size_of_val)
     }
 }
