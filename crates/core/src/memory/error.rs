@@ -33,24 +33,12 @@ impl Display for MemoryError {
             Self::OutOfSystemMemory => {
                 "tried to allocate more virtual memory than available on the system"
             }
-            Self::OutOfBoundsGrowth => {
-                "out of bounds memory growth"
-            }
-            Self::OutOfBoundsAccess => {
-                "out of bounds memory access"
-            }
-            Self::InvalidMemoryType => {
-                "tried to create an invalid linear memory type"
-            }
-            Self::InvalidSubtype => {
-                "memory subtype mismatch"
-            }
-            Self::TooManyMemories => {
-                "too many memories"
-            }
-            Self::InvalidStaticBufferSize => {
-                "tried to use too small static buffer"
-            }
+            Self::OutOfBoundsGrowth => "out of bounds memory growth",
+            Self::OutOfBoundsAccess => "out of bounds memory access",
+            Self::InvalidMemoryType => "tried to create an invalid linear memory type",
+            Self::InvalidSubtype => "memory subtype mismatch",
+            Self::TooManyMemories => "too many memories",
+            Self::InvalidStaticBufferSize => "tried to use too small static buffer",
             Self::ResourceLimiterDeniedAllocation => {
                 "a resource limiter denied to allocate or grow the linear memory"
             }
