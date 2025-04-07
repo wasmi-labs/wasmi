@@ -43,7 +43,7 @@ pub trait ResourceLimiter {
     /// If `Ok(false)` is returned then this will cause the `grow` instruction
     /// in a module to return -1 (failure), or in the case of an embedder API
     /// calling any of the below methods an error will be returned.
-    /// 
+    ///
     /// - [`Memory::new`]
     /// - [`Table::new`]
     /// - [`Memory::grow`]
@@ -56,7 +56,7 @@ pub trait ResourceLimiter {
     /// compliant with the WebAssembly specification but it can be a handy and
     /// useful tool to get a precise backtrace at "what requested so much memory
     /// to cause a growth failure?".
-    /// 
+    ///
     /// [`Memory::new`]: crate::Memory::new
     /// [`Memory::grow`]: crate::Memory::grow
     /// [`Table::new`]: crate::Table::new
