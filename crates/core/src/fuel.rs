@@ -55,15 +55,10 @@ impl FuelCosts for DefaultFuelCosts {
 }
 
 /// Type storing all kinds of fuel costs of instructions.
+#[derive(Default)]
 pub struct FuelCostsProvider {
     /// Optional custom fuel costs.
     custom: Option<Box<dyn FuelCosts>>,
-}
-
-impl Default for FuelCostsProvider {
-    fn default() -> Self {
-        Self { custom: None }
-    }
 }
 
 impl Debug for FuelCostsProvider {
