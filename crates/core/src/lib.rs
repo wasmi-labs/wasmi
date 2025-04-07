@@ -40,6 +40,7 @@ pub use self::{
     host_error::HostError,
     index_ty::IndexType,
     limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
+    memory::{MemoryError, MemoryType, MemoryTypeBuilder},
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, ReadAs, UntypedError, UntypedVal, WriteAs},

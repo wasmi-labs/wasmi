@@ -1,6 +1,7 @@
 mod access;
 mod buffer;
 mod error;
+mod ty;
 
 pub use self::{
     access::{
@@ -15,4 +16,5 @@ pub use self::{
         ExtendInto,
     },
     error::MemoryError,
+    ty::{MemoryType, MemoryTypeBuilder},
 };
