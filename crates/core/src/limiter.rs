@@ -13,19 +13,12 @@ pub enum LimiterError {
 
 /// Used by hosts to limit resource consumption of instances.
 ///
-/// This trait is used in conjunction with the
-/// [`Store::limiter`](crate::Store::limiter) to limit the
-/// allocation of resources within a store. As a store-level limit this means
-/// that all creation of instances, memories, and tables are limited within the
-/// store. Resources limited via this trait are primarily related to memory and
-/// limiting CPU resources needs to be done with something such as
-/// [`Config::consume_fuel`](crate::Config::consume_fuel).
+/// Resources limited via this trait are primarily related to memory.
 ///
-/// Note that this trait does not limit 100% of memory allocated via a
-/// [`Store`](crate::Store). Wasmi will still allocate memory to track data
-/// structures and additionally embedder-specific memory allocations are not
-/// tracked via this trait. This trait only limits resources allocated by a
-/// WebAssembly instance itself.
+/// Note that this trait does not limit 100% of memory allocated.
+/// Implementers might still allocate memory to track data structures
+/// and additionally embedder-specific memory allocations are not
+/// tracked via this trait.
 pub trait ResourceLimiter {
     /// Notifies the resource limiter that an instance's linear memory has been
     /// requested to grow.
