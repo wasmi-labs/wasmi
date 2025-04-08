@@ -1,8 +1,8 @@
 use super::{stack::ValueStack, Provider, TypedProvider, TypedVal};
 use crate::{
+    core::IndexType,
     ir::{BoundedRegSpan, Const16, Const32, Reg, RegSpan, Sign},
     Error,
-    IndexType,
 };
 
 /// Bail out early in case the current code is unreachable.

@@ -5,11 +5,10 @@ pub use self::{
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{TrapCode, UntypedVal, ValType},
+    core::{IndexType, TrapCode, UntypedVal, ValType},
     error::EntityGrowError,
     store::{Fuel, FuelError, ResourceLimiterRef},
     value::WithType,
-    IndexType,
     Val,
 };
 use alloc::vec::Vec;

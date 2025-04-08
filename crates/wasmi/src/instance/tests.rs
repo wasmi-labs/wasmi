@@ -157,7 +157,7 @@ fn instantiate_with_invalid_memory_import() {
     assert!(matches!(
         error.kind(),
         ErrorKind::Instantiation(InstantiationError::Memory(
-            MemoryError::InvalidSubtype { .. }
+            MemoryError::SubtypeMismatch { .. }
         ))
     ));
 }

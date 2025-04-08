@@ -261,7 +261,7 @@ impl MemoryType {
     }
 
     /// Returns the [`IndexType`] used by the [`MemoryType`].
-    pub(crate) fn index_ty(&self) -> IndexType {
+    pub fn index_ty(&self) -> IndexType {
         self.inner.index_type
     }
 

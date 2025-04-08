@@ -1,4 +1,11 @@
-use crate::{core::ValType, FuncType, GlobalType, IndexType, MemoryType, Mutability, TableType};
+use crate::{
+    core::{IndexType, ValType},
+    FuncType,
+    GlobalType,
+    MemoryType,
+    Mutability,
+    TableType,
+};
 use wasmparser::AbstractHeapType;
 
 impl TableType {

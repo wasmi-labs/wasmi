@@ -1,5 +1,8 @@
-use super::MemoryType;
-use core::{fmt, fmt::Display};
+use crate::core::MemoryError as CoreMemoryError;
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 /// An error that may occur upon operating with virtual or linear memory.
 #[derive(Debug)]
@@ -14,12 +17,7 @@ pub enum MemoryError {
     /// Tried to create an invalid linear memory type.
     InvalidMemoryType,
     /// Occurs when `ty` is not a subtype of `other`.
-    InvalidSubtype {
-        /// The [`MemoryType`] which is not a subtype of `other`.
-        ty: MemoryType,
-        /// The [`MemoryType`] which is supposed to be a supertype of `ty`.
-        other: MemoryType,
-    },
+    SubtypeMismatch,
     /// Tried to create too many memories
     TooManyMemories,
     /// Tried to create memory with invalid static buffer size
@@ -30,10 +28,11 @@ pub enum MemoryError {
     MinimumSizeOverflow,
     // The maximum size of the memory type overflows the system index type.
     MaximumSizeOverflow,
+    /// The operation ran out of fuel before completion.
+    OutOfFuel,
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for MemoryError {}
+impl Error for MemoryError {}
 
 impl Display for MemoryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -53,8 +52,8 @@ impl Display for MemoryError {
             Self::InvalidMemoryType => {
                 write!(f, "tried to create an invalid linear memory type")
             }
-            Self::InvalidSubtype { ty, other } => {
-                write!(f, "memory type {ty:?} is not a subtype of {other:?}",)
+            Self::SubtypeMismatch => {
+                write!(f, "memory subtype mismatch",)
             }
             Self::TooManyMemories => {
                 write!(f, "too many memories")
@@ -80,6 +79,30 @@ impl Display for MemoryError {
                     "the maximum size of the memory type overflows the system index type"
                 )
             }
+            Self::OutOfFuel => {
+                write!(f, "out of fuel")
+            }
+        }
+    }
+}
+
+impl From<CoreMemoryError> for MemoryError {
+    fn from(error: CoreMemoryError) -> Self {
+        match error {
+            CoreMemoryError::OutOfSystemMemory => Self::OutOfSystemMemory,
+            CoreMemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
+            CoreMemoryError::OutOfBoundsAccess => Self::OutOfBoundsAccess,
+            CoreMemoryError::InvalidMemoryType => Self::InvalidMemoryType,
+            CoreMemoryError::InvalidSubtype => Self::SubtypeMismatch,
+            CoreMemoryError::TooManyMemories => Self::TooManyMemories,
+            CoreMemoryError::InvalidStaticBufferSize => Self::InvalidStaticBufferSize,
+            CoreMemoryError::ResourceLimiterDeniedAllocation => {
+                Self::ResourceLimiterDeniedAllocation
+            }
+            CoreMemoryError::MinimumSizeOverflow => Self::MinimumSizeOverflow,
+            CoreMemoryError::MaximumSizeOverflow => Self::MaximumSizeOverflow,
+            CoreMemoryError::OutOfFuel => Self::OutOfFuel,
+            CoreMemoryError::UnknownError => panic!("encountered unknown memory error"),
         }
     }
 }
