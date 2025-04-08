@@ -81,9 +81,7 @@ pub trait ResourceLimiter {
     /// calling any of the below methods an error will be returned.
     ///
     /// - [`Memory::new`]
-    /// - [`Table::new`]
     /// - [`Memory::grow`]
-    /// - [`Table::grow`]
     ///
     /// # Errors
     ///
@@ -95,8 +93,6 @@ pub trait ResourceLimiter {
     ///
     /// [`Memory::new`]: crate::Memory::new
     /// [`Memory::grow`]: crate::Memory::grow
-    /// [`Table::new`]: crate::Table::new
-    /// [`Table::grow`]: crate::Table::grow
     fn memory_growing(
         &mut self,
         current: usize,
