@@ -47,9 +47,9 @@ impl Memory {
     }
 
     /// Creates a new static [`Memory`] with the given `memory_type`.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This uses `buffer` to store its bytes and won't perform heap allocations.
     ///
     /// # Errors
