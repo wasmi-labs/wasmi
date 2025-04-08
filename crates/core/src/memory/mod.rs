@@ -34,7 +34,7 @@ pub struct Memory {
 }
 
 impl Memory {
-    /// Creates a new memory entity with the given memory type.
+    /// Creates a new [`Memory`] with the given `memory_type`.
     ///
     /// # Errors
     ///
@@ -46,7 +46,11 @@ impl Memory {
         Self::new_impl(memory_type, limiter, ByteBuffer::new)
     }
 
-    /// Creates a new memory entity with the given memory type.
+    /// Creates a new static [`Memory`] with the given `memory_type`.
+    /// 
+    /// # Note
+    /// 
+    /// This uses `buffer` to store its bytes and won't perform heap allocations.
     ///
     /// # Errors
     ///
@@ -54,10 +58,10 @@ impl Memory {
     pub fn new_static(
         memory_type: MemoryType,
         limiter: &mut ResourceLimiterRef<'_>,
-        buf: &'static mut [u8],
+        buffer: &'static mut [u8],
     ) -> Result<Self, MemoryError> {
         Self::new_impl(memory_type, limiter, |initial_size| {
-            ByteBuffer::new_static(buf, initial_size)
+            ByteBuffer::new_static(buffer, initial_size)
         })
     }
 
@@ -113,11 +117,11 @@ impl Memory {
         self.memory_type
     }
 
-    /// Returns the dynamic [`MemoryType`] of the [`MemoryEntity`].
+    /// Returns the dynamic [`MemoryType`] of the [`Memory`].
     ///
     /// # Note
     ///
-    /// This respects the current size of the [`MemoryEntity`] as
+    /// This respects the current size of the [`Memory`] as
     /// its minimum size and is useful for import subtyping checks.
     pub fn dynamic_ty(&self) -> MemoryType {
         let current_pages = self.size();
