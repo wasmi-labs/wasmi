@@ -1,4 +1,9 @@
-use core::{fmt, fmt::Debug};
+use crate::MemoryError;
+use core::{
+    error::Error,
+    fmt,
+    fmt::{Debug, Display},
+};
 
 /// An error either returned by a [`ResourceLimiter`] or back to one.
 #[derive(Debug, Copy, Clone)]
@@ -9,6 +14,37 @@ pub enum LimiterError {
     OutOfBoundsGrowth,
     /// Returned if a [`ResourceLimiter`] denies allocation or growth.
     ResourceLimiterDeniedAllocation,
+    /// Encountered when an operation ran out of fuel.
+    OutOfFuel,
+    /// An error unknown to limiters. This likely is a bug.
+    UnknownError,
+}
+
+impl Error for LimiterError {}
+
+impl Display for LimiterError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            LimiterError::OutOfSystemMemory => "out of system memory",
+            LimiterError::OutOfBoundsGrowth => "out of bounds growth",
+            LimiterError::ResourceLimiterDeniedAllocation => "resource limiter denied allocation",
+            LimiterError::OutOfFuel => "out of fuel",
+            LimiterError::UnknownError => "unknown error",
+        };
+        write!(f, "{message}")
+    }
+}
+
+impl From<MemoryError> for LimiterError {
+    fn from(error: MemoryError) -> Self {
+        match error {
+            MemoryError::OutOfSystemMemory => Self::OutOfSystemMemory,
+            MemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
+            MemoryError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
+            MemoryError::OutOfFuel => Self::OutOfFuel,
+            _ => Self::UnknownError,
+        }
+    }
 }
 
 /// Used by hosts to limit resource consumption of instances.

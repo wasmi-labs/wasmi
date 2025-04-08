@@ -1,7 +1,8 @@
+use crate::LimiterError;
 use core::{error::Error, fmt, fmt::Display};
 
 /// An error that may occur upon operating with virtual or linear memory.
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum MemoryError {
     /// Tried to allocate more virtual memory than technically possible.
     OutOfSystemMemory,
@@ -19,10 +20,14 @@ pub enum MemoryError {
     InvalidStaticBufferSize,
     /// If a resource limiter denied allocation or growth of a linear memory.
     ResourceLimiterDeniedAllocation,
-    // The minimum size of the memory type overflows the system index type.
+    /// The minimum size of the memory type overflows the system index type.
     MinimumSizeOverflow,
-    // The maximum size of the memory type overflows the system index type.
+    /// The maximum size of the memory type overflows the system index type.
     MaximumSizeOverflow,
+    /// Encountered if a `memory.grow` operation runs out of fuel.
+    OutOfFuel,
+    /// Unknown error. Likely a bug.
+    UnknownError,
 }
 
 impl Error for MemoryError {}
@@ -48,7 +53,21 @@ impl Display for MemoryError {
             Self::MaximumSizeOverflow => {
                 "the maximum size of the memory type overflows the system index type"
             }
+            Self::OutOfFuel => "out of fuel",
+            Self::UnknownError => "unknown error",
         };
         write!(f, "{message}")
+    }
+}
+
+impl From<LimiterError> for MemoryError {
+    fn from(error: LimiterError) -> Self {
+        match error {
+            LimiterError::OutOfSystemMemory => Self::OutOfSystemMemory,
+            LimiterError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
+            LimiterError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
+            LimiterError::OutOfFuel => Self::OutOfFuel,
+            LimiterError::UnknownError => Self::UnknownError,
+        }
     }
 }

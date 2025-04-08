@@ -287,6 +287,22 @@ impl MemoryType {
         self.inner.page_size_log2
     }
 
+    /// Returns the minimum size, in bytes, that the linear memory must have.
+    ///
+    /// # Errors
+    ///
+    /// If the calculation of the minimum size overflows the maximum size.
+    /// This means that the linear memory can't be allocated.
+    /// The caller is responsible to deal with that situation.
+    pub fn minimum_byte_size(self) -> Result<u128, SizeOverflow> {
+        self.inner.minimum_byte_size()
+    }
+
+    /// Returns the absolute maximum size in pages that a linear memory is allowed to have.
+    pub fn absolute_max(&self) -> u128 {
+        self.inner.absolute_max()
+    }
+
     /// Returns `true` if the [`MemoryType`] is a subtype of the `other` [`MemoryType`].
     ///
     /// # Note
