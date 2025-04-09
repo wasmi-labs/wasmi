@@ -17,12 +17,14 @@ pub use self::{
         store_at,
         store_wrap,
         store_wrap_at,
-        ExtendInto,
     },
     error::MemoryError,
     ty::{MemoryType, MemoryTypeBuilder},
 };
 use crate::{Fuel, ResourceLimiterRef};
+
+#[cfg(feature = "simd")]
+pub use self::access::ExtendInto;
 
 /// A Wasm linear memory.
 #[derive(Debug)]
