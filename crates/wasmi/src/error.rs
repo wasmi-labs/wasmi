@@ -303,30 +303,3 @@ impl_from! {
 impl_from! {
     impl From<WatError> for Error::Wat;
 }
-
-/// An error that can occur upon `memory.grow` or `table.grow`.
-#[derive(Copy, Clone)]
-pub enum EntityGrowError {
-    /// Usually a [`TrapCode::OutOfFuel`] trap.
-    TrapCode(TrapCode),
-    /// Encountered when `memory.grow` or `table.grow` fails.
-    InvalidGrow,
-}
-
-impl EntityGrowError {
-    /// The error code returned by `memory.grow` and `table.grow` upon failure.
-    ///
-    /// This is the value used for 32-bit memory or table indices.
-    pub const ERROR_CODE_32: u64 = u32::MAX as u64;
-
-    /// The error code returned by `memory.grow` and `table.grow` upon failure.
-    ///
-    /// This is the value used for 64-bit memory or table indices.
-    pub const ERROR_CODE_64: u64 = u64::MAX;
-}
-
-impl From<TrapCode> for EntityGrowError {
-    fn from(trap_code: TrapCode) -> Self {
-        Self::TrapCode(trap_code)
-    }
-}
