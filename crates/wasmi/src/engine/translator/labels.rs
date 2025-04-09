@@ -61,8 +61,7 @@ pub enum LabelError {
     Unpinned { label: LabelRef },
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for LabelError {}
+impl core::error::Error for LabelError {}
 
 impl Display for LabelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
