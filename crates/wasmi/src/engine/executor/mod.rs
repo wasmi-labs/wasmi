@@ -178,7 +178,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Errors
     ///
     /// - If the given `params` do not match the expected parameters of `func`.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - If the given `results` do not match the length of the expected results of `func`.
     /// - When encountering a Wasm or host trap during the execution of `func`.
     fn execute_root_func<T, Results>(
         &mut self,
@@ -251,7 +251,7 @@ impl<'engine> EngineExecutor<'engine> {
     /// # Errors
     ///
     /// - If the given `params` do not match the expected parameters of `func`.
-    /// - If the given `results` do not match the the length of the expected results of `func`.
+    /// - If the given `results` do not match the length of the expected results of `func`.
     /// - When encountering a Wasm or host trap during the execution of `func`.
     fn resume_func<T, Results>(
         &mut self,

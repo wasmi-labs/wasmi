@@ -101,17 +101,17 @@ impl ModuleHeader {
         &self.inner.funcs[func_idx.into_u32() as usize]
     }
 
-    /// Returns the [`GlobalType`] the the indexed global variable.
+    /// Returns the [`GlobalType`] of the indexed global variable.
     pub fn get_type_of_global(&self, global_idx: GlobalIdx) -> &GlobalType {
         &self.inner.globals[global_idx.into_u32() as usize]
     }
 
-    /// Returns the [`MemoryType`] the the indexed Wasm memory.
+    /// Returns the [`MemoryType`] of the indexed Wasm memory.
     pub fn get_type_of_memory(&self, memory_idx: MemoryIdx) -> &MemoryType {
         &self.inner.memories[memory_idx.into_u32() as usize]
     }
 
-    /// Returns the [`TableType`] the the indexed Wasm table.
+    /// Returns the [`TableType`] of the indexed Wasm table.
     pub fn get_type_of_table(&self, table_idx: TableIdx) -> &TableType {
         &self.inner.tables[table_idx.into_u32() as usize]
     }
