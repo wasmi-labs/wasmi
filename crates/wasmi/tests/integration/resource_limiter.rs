@@ -136,23 +136,23 @@ fn test_memory_traps_on_limited_growth() -> Result<(), Error> {
         .memory_size(0x30_0000)
         .trap_on_grow_failure(true)
         .build();
-    let mut test = Test::new(0x20, 100, limits)?;
+    let mut test = Test::new(32, 100, limits)?;
     // Check memory size is what we expect.
-    assert_eq!(test.memory_size.call(&mut test.store, ())?, 0x20);
+    assert_eq!(test.memory_size.call(&mut test.store, ())?, 32);
     // First memory.grow doesn't hit the limit, so succeeds, returns previous size.
-    assert_eq!(test.memory_grow.call(&mut test.store, (0x10,))?, 0x20);
+    assert_eq!(test.memory_grow.call(&mut test.store, (0x10,))?, 32);
     // Check memory size is what we expect.
-    assert_eq!(test.memory_size.call(&mut test.store, ())?, 0x30);
+    assert_eq!(test.memory_size.call(&mut test.store, ())?, 48);
     // Second call goes past the limit, so fails to grow the memory, and we've configured it to trap.
     assert!(matches!(
         test.memory_grow
-            .call(&mut test.store, (0x10,))
+            .call(&mut test.store, (16,))
             .unwrap_err()
             .as_trap_code(),
         Some(TrapCode::GrowthOperationLimited)
     ));
     // Check memory size is what we expect.
-    assert_eq!(test.memory_size.call(&mut test.store, ())?, 0x30);
+    assert_eq!(test.memory_size.call(&mut test.store, ())?, 48);
     Ok(())
 }
 
