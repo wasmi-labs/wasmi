@@ -1,6 +1,5 @@
 use super::{EnforcedLimits, StackLimits};
-use crate::core::UntypedVal;
-use core::{mem::size_of, num::NonZeroU64};
+use crate::core::FuelCostsProvider;
 use wasmparser::WasmFeatures;
 
 /// The default amount of stacks kept in the cache at most.
@@ -22,116 +21,11 @@ pub struct Config {
     /// Is `true` if Wasmi shall ignore Wasm custom sections when parsing Wasm modules.
     ignore_custom_sections: bool,
     /// The configured fuel costs of all Wasmi bytecode instructions.
-    fuel_costs: FuelCosts,
+    fuel_costs: FuelCostsProvider,
     /// The mode of Wasm to Wasmi bytecode compilation.
     compilation_mode: CompilationMode,
     /// Enforced limits for Wasm module parsing and compilation.
     limits: EnforcedLimits,
-}
-
-/// Type storing all kinds of fuel costs of instructions.
-#[derive(Debug, Copy, Clone)]
-pub struct FuelCosts {
-    /// The base fuel costs for all instructions.
-    base: u64,
-    /// The register copies that can be performed per unit of fuel.
-    copies_per_fuel: NonZeroU64,
-    /// The bytes that can be copied per unit of fuel.
-    bytes_per_fuel: NonZeroU64,
-}
-
-impl FuelCosts {
-    /// Returns the base fuel costs for all Wasmi IR instructions.
-    pub fn base(&self) -> u64 {
-        self.base
-    }
-
-    /// Returns the base fuel costs for all Wasmi IR entity related instructions.
-    pub fn entity(&self) -> u64 {
-        // Note: For simplicity we currently simply use base costs.
-        self.base
-    }
-
-    /// Returns the base fuel costs for all Wasmi IR load instructions.
-    pub fn load(&self) -> u64 {
-        // Note: For simplicity we currently simply use base costs.
-        self.base
-    }
-
-    /// Returns the base fuel costs for all Wasmi IR store instructions.
-    pub fn store(&self) -> u64 {
-        // Note: For simplicity we currently simply use base costs.
-        self.base
-    }
-
-    /// Returns the base fuel costs for all Wasmi IR call instructions.
-    pub fn call(&self) -> u64 {
-        // Note: For simplicity we currently simply use base costs.
-        self.base
-    }
-
-    /// Returns the number of register copies performed per unit of fuel.
-    fn copies_per_fuel(&self) -> NonZeroU64 {
-        self.copies_per_fuel
-    }
-
-    /// Returns the number of byte copies performed per unit of fuel.
-    fn bytes_per_fuel(&self) -> NonZeroU64 {
-        self.bytes_per_fuel
-    }
-
-    /// Returns the fuel costs for `len_copies` register copies in Wasmi IR.
-    ///
-    /// # Note
-    ///
-    /// Registers are copied for the following Wasmi IR instructions:
-    ///
-    /// - calls (parameter passing)
-    /// - `copy_span`
-    /// - `copy_many`
-    /// - `return_span`
-    /// - `return_many`
-    /// - `table.grow` (+ variants)
-    /// - `table.copy` (+ variants)
-    /// - `table.fill` (+ variants)
-    /// - `table.init` (+ variants)
-    pub fn fuel_for_copies(&self, len_copies: u64) -> u64 {
-        Self::costs_per(len_copies, self.copies_per_fuel())
-    }
-
-    /// Returns the fuel costs for `len_copies` register copies in Wasmi IR.
-    ///
-    /// # Note
-    ///
-    /// Registers are copied for the following Wasmi IR instructions:
-    ///
-    /// - `memory.grow`
-    /// - `memory.copy`
-    /// - `memory.fill`
-    /// - `memory.init`
-    pub fn fuel_for_bytes(&self, len_bytes: u64) -> u64 {
-        Self::costs_per(len_bytes, self.bytes_per_fuel())
-    }
-
-    /// Returns the fuel consumption of the amount of items with costs per items.
-    fn costs_per(len_items: u64, items_per_fuel: NonZeroU64) -> u64 {
-        len_items / items_per_fuel
-    }
-}
-
-impl Default for FuelCosts {
-    fn default() -> Self {
-        let bytes_per_fuel = 64;
-        let bytes_per_register = size_of::<UntypedVal>() as u64;
-        let registers_per_fuel = bytes_per_fuel / bytes_per_register;
-        Self {
-            base: 1,
-            copies_per_fuel: NonZeroU64::new(registers_per_fuel)
-                .unwrap_or_else(|| panic!("invalid zero value for copies_per_fuel value")),
-            bytes_per_fuel: NonZeroU64::new(bytes_per_fuel)
-                .unwrap_or_else(|| panic!("invalid zero value for copies_per_fuel value")),
-        }
-    }
 }
 
 /// The chosen mode of Wasm to Wasmi bytecode compilation.
@@ -159,7 +53,7 @@ impl Default for Config {
             features: Self::default_features(),
             consume_fuel: false,
             ignore_custom_sections: false,
-            fuel_costs: FuelCosts::default(),
+            fuel_costs: FuelCostsProvider::default(),
             compilation_mode: CompilationMode::default(),
             limits: EnforcedLimits::default(),
         }
@@ -433,7 +327,7 @@ impl Config {
     }
 
     /// Returns the configured [`FuelCosts`].
-    pub(crate) fn fuel_costs(&self) -> &FuelCosts {
+    pub(crate) fn fuel_costs(&self) -> &FuelCostsProvider {
         &self.fuel_costs
     }
 
