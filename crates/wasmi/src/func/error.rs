@@ -1,5 +1,8 @@
 use crate::core::FuncTypeError as CoreFuncTypeError;
-use core::{error::Error, fmt::{self, Display}};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 /// Errors that can occur upon type checking function signatures.
 #[derive(Debug)]

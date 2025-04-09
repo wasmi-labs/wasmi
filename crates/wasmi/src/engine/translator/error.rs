@@ -1,4 +1,7 @@
-use core::{error::Error, fmt::{self, Display}};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 /// An error that may occur upon parsing, validating and translating Wasm.
 #[derive(Debug)]

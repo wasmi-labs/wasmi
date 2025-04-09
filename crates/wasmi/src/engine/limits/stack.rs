@@ -1,6 +1,8 @@
 use crate::core::UntypedVal;
 use core::{
-    error::Error, fmt::{self, Display}, mem::size_of
+    error::Error,
+    fmt::{self, Display},
+    mem::size_of,
 };
 
 /// Default value for initial value stack height in bytes.

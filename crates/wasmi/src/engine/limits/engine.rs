@@ -1,4 +1,7 @@
-use core::{error::Error, fmt::{self, Display}};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 /// An error that can occur upon parsing or compiling a Wasm module when [`EnforcedLimits`] are set.
 #[derive(Debug, Copy, Clone)]

@@ -29,7 +29,8 @@ use alloc::{
     vec::Vec,
 };
 use core::{
-    fmt::{self, Debug, Display}, marker::PhantomData
+    fmt::{self, Debug, Display},
+    marker::PhantomData,
 };
 
 /// An error that may occur upon operating with [`Linker`] instances.

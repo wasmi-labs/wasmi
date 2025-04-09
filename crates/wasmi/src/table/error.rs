@@ -1,6 +1,9 @@
 use super::TableType;
 use crate::core::ValType;
-use core::{error::Error, fmt::{self, Display}};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 /// Errors that may occur upon operating with table entities.
 #[derive(Debug)]

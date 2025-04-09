@@ -6,7 +6,10 @@ use crate::{
     FuncType,
     Table,
 };
-use core::{error::Error, fmt::{self, Display}};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 /// An error that may occur upon instantiation of a Wasm module.
 #[derive(Debug)]

@@ -1,5 +1,8 @@
 use super::MemoryType;
-use core::{error::Error, fmt::{self, Display}};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 /// An error that may occur upon operating with virtual or linear memory.
 #[derive(Debug)]

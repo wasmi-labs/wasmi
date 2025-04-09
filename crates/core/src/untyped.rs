@@ -1,7 +1,10 @@
 #[cfg(feature = "simd")]
 use crate::V128;
 use crate::{F32, F64};
-use core::{error::Error, fmt::{self, Display}};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 /// An untyped value.
 ///

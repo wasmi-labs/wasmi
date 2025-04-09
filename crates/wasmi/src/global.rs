@@ -5,7 +5,11 @@ use crate::{
     value::WithType,
     Val,
 };
-use core::{error::Error, fmt::{self, Display}, ptr::NonNull};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+    ptr::NonNull,
+};
 
 /// A raw index to a global variable entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

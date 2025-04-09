@@ -1,4 +1,7 @@
-use core::{error::Error, fmt::{self, Display}};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 #[cfg(feature = "std")]
 use std::io;
