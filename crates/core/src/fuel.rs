@@ -328,7 +328,7 @@ impl Fuel {
         &mut self,
         f: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), FuelError> {
-        if self.is_fuel_metering_enabled() {
+        if !self.is_fuel_metering_enabled() {
             return Ok(());
         }
         self.consume_fuel_unchecked(f(&self.costs))?;
