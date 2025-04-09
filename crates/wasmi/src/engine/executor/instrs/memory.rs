@@ -1,8 +1,7 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::TrapCode,
+    core::{ResourceLimiterRef, TrapCode},
     engine::utils::unreachable_unchecked,
-    error::EntityGrowError,
     ir::{
         index::{Data, Memory},
         Const16,
@@ -10,7 +9,8 @@ use crate::{
         Instruction,
         Reg,
     },
-    store::{PrunedStore, ResourceLimiterRef, StoreInner},
+    memory::MemoryError,
+    store::{PrunedStore, StoreInner},
     Error,
 };
 
@@ -121,11 +121,18 @@ impl Executor<'_> {
                 unsafe { self.cache.update_memory(store) };
                 return_value
             }
-            Err(EntityGrowError::InvalidGrow) => match memory.ty().is_64() {
-                true => EntityGrowError::ERROR_CODE_64,
-                false => EntityGrowError::ERROR_CODE_32,
+            Err(
+                MemoryError::OutOfBoundsGrowth
+                | MemoryError::OutOfFuel
+                | MemoryError::OutOfSystemMemory,
+            ) => match memory.ty().is_64() {
+                true => u64::MAX,
+                false => u64::from(u32::MAX),
             },
-            Err(EntityGrowError::TrapCode(trap_code)) => return Err(Error::from(trap_code)),
+            Err(MemoryError::ResourceLimiterDeniedAllocation) => {
+                return Err(Error::from(TrapCode::GrowthOperationLimited))
+            }
+            Err(error) => panic!("encountered an unexpected error: {error}"),
         };
         self.set_register(result, return_value);
         self.try_next_instr_at(2)
@@ -282,7 +289,7 @@ impl Executor<'_> {
             .get_mut(dst_index..)
             .and_then(|memory| memory.get_mut(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))?;
         dst_bytes.copy_from_slice(src_bytes);
         self.try_next_instr_at(3)
     }
@@ -308,7 +315,7 @@ impl Executor<'_> {
             .get(dst_index..)
             .and_then(|memory| memory.get(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))?;
         bytes.copy_within(src_index..src_index.wrapping_add(len), dst_index);
         self.try_next_instr_at(3)
     }
@@ -444,7 +451,7 @@ impl Executor<'_> {
             .get_mut(dst..)
             .and_then(|memory| memory.get_mut(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))?;
         slice.fill(value);
         self.try_next_instr_at(2)
     }
@@ -595,7 +602,7 @@ impl Executor<'_> {
             .get(src_index..)
             .and_then(|data| data.get(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))?;
         memory.copy_from_slice(data);
         self.try_next_instr_at(3)
     }

@@ -1,11 +1,9 @@
-mod buffer;
 mod data;
 mod error;
 
 #[cfg(test)]
 mod tests;
 
-use self::buffer::ByteBuffer;
 pub use self::{
     data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
     error::MemoryError,
@@ -14,19 +12,13 @@ use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
     core::{
-        Fuel as CoreFuel,
-        FuelError as CoreFuelError,
+        Fuel,
         IndexType,
-        LimiterError as CoreLimiterError,
         Memory as CoreMemory,
-        MemoryError as CoreMemoryError,
         MemoryType as CoreMemoryType,
         MemoryTypeBuilder as CoreMemoryTypeBuilder,
-        ResourceLimiterRef as CoreResourceLimiterRef,
-        TrapCode,
+        ResourceLimiterRef,
     },
-    error::EntityGrowError,
-    store::{Fuel, ResourceLimiterRef},
     Error,
 };
 
@@ -218,7 +210,7 @@ impl MemoryType {
     /// # Note
     ///
     /// Returns `false`:
-    /// 
+    ///
     /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `other`.
     /// - If the `maximum` size of `self` is greater than the `maximum` size of `other`.
     ///
@@ -234,9 +226,7 @@ impl MemoryType {
 /// A linear memory entity.
 #[derive(Debug)]
 pub struct MemoryEntity {
-    /// The size of `bytes` will always be a multiple of a page size.
-    bytes: ByteBuffer,
-    memory_type: MemoryType,
+    inner: CoreMemory,
 }
 
 impl MemoryEntity {
@@ -245,71 +235,26 @@ impl MemoryEntity {
         memory_type: MemoryType,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Self, Error> {
-        Self::new_impl(memory_type, limiter, ByteBuffer::new).map_err(Error::from)
+        let inner = CoreMemory::new(memory_type.inner, limiter).map_err(MemoryError::from)?;
+        Ok(Self { inner })
     }
 
     /// Creates a new memory entity with the given memory type.
     pub fn new_static(
         memory_type: MemoryType,
         limiter: &mut ResourceLimiterRef<'_>,
-        buf: &'static mut [u8],
+        buffer: &'static mut [u8],
     ) -> Result<Self, Error> {
-        Self::new_impl(memory_type, limiter, |initial_size| {
-            ByteBuffer::new_static(buf, initial_size)
-        })
-        .map_err(Error::from)
-    }
-
-    fn new_impl(
-        memory_type: MemoryType,
-        limiter: &mut ResourceLimiterRef<'_>,
-        make_buffer: impl FnOnce(usize) -> Result<ByteBuffer, MemoryError>,
-    ) -> Result<Self, MemoryError> {
-        let Ok(min_size) = memory_type.inner.minimum_byte_size() else {
-            return Err(MemoryError::MinimumSizeOverflow);
-        };
-        let Ok(min_size) = usize::try_from(min_size) else {
-            return Err(MemoryError::MinimumSizeOverflow);
-        };
-        let max_size = match memory_type.inner.maximum() {
-            Some(max) => {
-                let max = u128::from(max);
-                if max > memory_type.inner.absolute_max() {
-                    return Err(MemoryError::MaximumSizeOverflow);
-                }
-                // Note: We have to clip `max_size` at `usize::MAX` since we do not want to
-                //       error if the system limits are overflown here. This is because Wasm
-                //       memories grow lazily and thus creation of memories which have a max
-                //       size that overflows system limits are valid as long as they do not
-                //       grow beyond those limits.
-                let max_size =
-                    usize::try_from(max << memory_type.page_size_log2()).unwrap_or(usize::MAX);
-                Some(max_size)
-            }
-            None => None,
-        };
-
-        if let Some(limiter) = limiter.as_resource_limiter() {
-            if !limiter.memory_growing(0, min_size, max_size)? {
-                return Err(MemoryError::ResourceLimiterDeniedAllocation);
-            }
-        }
-
-        let bytes = match make_buffer(min_size) {
-            Ok(buffer) => buffer,
-            Err(error) => {
-                if let Some(limiter) = limiter.as_resource_limiter() {
-                    limiter.memory_grow_failed(&error)
-                }
-                return Err(error);
-            }
-        };
-        Ok(Self { bytes, memory_type })
+        let inner = CoreMemory::new_static(memory_type.inner, limiter, buffer)
+            .map_err(MemoryError::from)?;
+        Ok(Self { inner })
     }
 
     /// Returns the memory type of the linear memory.
     pub fn ty(&self) -> MemoryType {
-        self.memory_type
+        MemoryType {
+            inner: self.inner.ty(),
+        }
     }
 
     /// Returns the dynamic [`MemoryType`] of the [`MemoryEntity`].
@@ -319,48 +264,14 @@ impl MemoryEntity {
     /// This respects the current size of the [`MemoryEntity`] as
     /// its minimum size and is useful for import subtyping checks.
     pub fn dynamic_ty(&self) -> MemoryType {
-        let current_pages = self.size();
-        let maximum_pages = self.ty().maximum();
-        let page_size_log2 = self.ty().page_size_log2();
-        let is_64 = self.ty().is_64();
-        let mut b = MemoryType::builder();
-        b.min(current_pages);
-        b.max(maximum_pages);
-        b.page_size_log2(page_size_log2);
-        b.memory64(is_64);
-        b.build()
-            .expect("must result in valid memory type due to invariants")
+        MemoryType {
+            inner: self.inner.dynamic_ty(),
+        }
     }
 
     /// Returns the size, in WebAssembly pages, of this Wasm linear memory.
     pub fn size(&self) -> u64 {
-        (self.bytes.len() as u64) >> self.memory_type.page_size_log2()
-    }
-
-    /// Returns the size of this Wasm linear memory in bytes.
-    fn size_in_bytes(&self) -> u64 {
-        let pages = self.size();
-        let bytes_per_page = u64::from(self.memory_type.page_size());
-        let Some(bytes) = pages.checked_mul(bytes_per_page) else {
-            panic!(
-                "unexpected out of bounds linear memory size: \
-                (pages = {pages}, bytes_per_page = {bytes_per_page})"
-            )
-        };
-        bytes
-    }
-
-    /// Returns the maximum size of this Wasm linear memory in bytes if any.
-    fn max_size_in_bytes(&self) -> Option<u64> {
-        let max_pages = self.memory_type.maximum()?;
-        let bytes_per_page = u64::from(self.memory_type.page_size());
-        let Some(max_bytes) = max_pages.checked_mul(bytes_per_page) else {
-            panic!(
-                "unexpected out of bounds linear memory maximum size: \
-                (max_pages = {max_pages}, bytes_per_page = {bytes_per_page})"
-            )
-        };
-        Some(max_bytes)
+        self.inner.size()
     }
 
     /// Grows the linear memory by the given amount of new pages.
@@ -376,100 +287,32 @@ impl MemoryEntity {
         additional: u64,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<u64, EntityGrowError> {
-        fn notify_limiter(
-            limiter: &mut ResourceLimiterRef<'_>,
-            err: EntityGrowError,
-        ) -> Result<u64, EntityGrowError> {
-            if let Some(limiter) = limiter.as_resource_limiter() {
-                limiter.memory_grow_failed(&MemoryError::OutOfBoundsGrowth)
-            }
-            Err(err)
-        }
-
-        if additional == 0 {
-            return Ok(self.size());
-        }
-        let current_byte_size = self.size_in_bytes() as usize;
-        let maximum_byte_size = self.max_size_in_bytes().map(|max| max as usize);
-        let current_size = self.size();
-        let Some(desired_size) = current_size.checked_add(additional) else {
-            return Err(EntityGrowError::InvalidGrow);
-        };
-        if u128::from(desired_size) > self.memory_type.inner.absolute_max() {
-            return Err(EntityGrowError::InvalidGrow);
-        }
-        if let Some(maximum_size) = self.memory_type.maximum() {
-            if desired_size > maximum_size {
-                return Err(EntityGrowError::InvalidGrow);
-            }
-        }
-        let bytes_per_page = u64::from(self.memory_type.page_size());
-        let Some(desired_byte_size) = desired_size.checked_mul(bytes_per_page) else {
-            return Err(EntityGrowError::InvalidGrow);
-        };
-        let Ok(desired_byte_size) = usize::try_from(desired_byte_size) else {
-            return Err(EntityGrowError::InvalidGrow);
-        };
-
-        // The `ResourceLimiter` gets first look at the request.
-        if let Some(limiter) = limiter.as_resource_limiter() {
-            match limiter.memory_growing(current_byte_size, desired_byte_size, maximum_byte_size) {
-                Ok(true) => Ok(()),
-                Ok(false) => Err(EntityGrowError::InvalidGrow),
-                Err(_) => Err(EntityGrowError::TrapCode(TrapCode::GrowthOperationLimited)),
-            }?;
-        }
-
-        // Optionally check if there is enough fuel for the operation.
-        //
-        // This is deliberately done right before the actual growth operation in order to
-        // not charge fuel if there is any other deterministic failure preventing the expensive
-        // growth operation.
-        if let Some(fuel) = fuel {
-            let additional_bytes = additional
-                .checked_mul(bytes_per_page)
-                .expect("additional size is within [min, max) page bounds");
-            if fuel
-                .consume_fuel_if(|costs| costs.fuel_for_bytes(additional_bytes))
-                .is_err()
-            {
-                return notify_limiter(limiter, EntityGrowError::TrapCode(TrapCode::OutOfFuel));
-            }
-        }
-        // At this point all checks passed to grow the linear memory:
-        //
-        // 1. The resource limiter validated the memory consumption.
-        // 2. The growth is within bounds.
-        // 3. There is enough fuel for the operation.
-        //
-        // Only the actual growing of the underlying byte buffer may now fail.
-        if self.bytes.grow(desired_byte_size).is_err() {
-            return notify_limiter(limiter, EntityGrowError::InvalidGrow);
-        }
-        Ok(current_size)
+    ) -> Result<u64, MemoryError> {
+        self.inner
+            .grow(additional, fuel, limiter)
+            .map_err(MemoryError::from)
     }
 
     /// Returns a shared slice to the bytes underlying to the byte buffer.
     pub fn data(&self) -> &[u8] {
-        self.bytes.data()
+        self.inner.data()
     }
 
     /// Returns an exclusive slice to the bytes underlying to the byte buffer.
     pub fn data_mut(&mut self) -> &mut [u8] {
-        self.bytes.data_mut()
+        self.inner.data_mut()
     }
 
     /// Returns the base pointer, in the host’s address space, that the [`Memory`] is located at.
     pub fn data_ptr(&self) -> *mut u8 {
-        self.bytes.ptr
+        self.inner.data_ptr()
     }
 
     /// Returns the byte length of this [`Memory`].
     ///
     /// The returned value will be a multiple of the wasm page size, 64k.
     pub fn data_size(&self) -> usize {
-        self.bytes.len
+        self.inner.data_size()
     }
 
     /// Reads `n` bytes from `memory[offset..offset+n]` into `buffer`
@@ -479,13 +322,7 @@ impl MemoryEntity {
     ///
     /// If this operation accesses out of bounds linear memory.
     pub fn read(&self, offset: usize, buffer: &mut [u8]) -> Result<(), MemoryError> {
-        let len_buffer = buffer.len();
-        let slice = self
-            .data()
-            .get(offset..(offset + len_buffer))
-            .ok_or(MemoryError::OutOfBoundsAccess)?;
-        buffer.copy_from_slice(slice);
-        Ok(())
+        self.inner.read(offset, buffer).map_err(MemoryError::from)
     }
 
     /// Writes `n` bytes to `memory[offset..offset+n]` from `buffer`
@@ -495,13 +332,7 @@ impl MemoryEntity {
     ///
     /// If this operation accesses out of bounds linear memory.
     pub fn write(&mut self, offset: usize, buffer: &[u8]) -> Result<(), MemoryError> {
-        let len_buffer = buffer.len();
-        let slice = self
-            .data_mut()
-            .get_mut(offset..(offset + len_buffer))
-            .ok_or(MemoryError::OutOfBoundsAccess)?;
-        slice.copy_from_slice(buffer);
-        Ok(())
+        self.inner.write(offset, buffer).map_err(MemoryError::from)
     }
 }
 
@@ -531,7 +362,6 @@ impl Memory {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
-
         let entity = MemoryEntity::new(ty, &mut resource_limiter)?;
         let memory = inner.alloc_memory(entity);
         Ok(memory)
@@ -552,7 +382,6 @@ impl Memory {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
-
         let entity = MemoryEntity::new_static(ty, &mut resource_limiter, buf)?;
         let memory = inner.alloc_memory(entity);
         Ok(memory)

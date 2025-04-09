@@ -1,4 +1,4 @@
-use crate::core::MemoryError as CoreMemoryError;
+use crate::core::{LimiterError, MemoryError as CoreMemoryError};
 use core::{
     error::Error,
     fmt::{self, Display},
@@ -18,7 +18,7 @@ pub enum MemoryError {
     InvalidMemoryType,
     /// Occurs when `ty` is not a subtype of `other`.
     SubtypeMismatch,
-    /// Tried to create too many memories
+    /// Tried to create too many memories.
     TooManyMemories,
     /// Tried to create memory with invalid static buffer size
     InvalidStaticBufferSize,
@@ -36,53 +36,28 @@ impl Error for MemoryError {}
 
 impl Display for MemoryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
+        let message = match self {
             Self::OutOfSystemMemory => {
-                write!(
-                    f,
-                    "tried to allocate more virtual memory than available on the system"
-                )
+                "tried to allocate more virtual memory than available on the system"
             }
-            Self::OutOfBoundsGrowth => {
-                write!(f, "out of bounds memory growth")
-            }
-            Self::OutOfBoundsAccess => {
-                write!(f, "out of bounds memory access")
-            }
-            Self::InvalidMemoryType => {
-                write!(f, "tried to create an invalid linear memory type")
-            }
-            Self::SubtypeMismatch => {
-                write!(f, "memory subtype mismatch",)
-            }
-            Self::TooManyMemories => {
-                write!(f, "too many memories")
-            }
-            Self::InvalidStaticBufferSize => {
-                write!(f, "tried to use too small static buffer")
-            }
+            Self::OutOfBoundsGrowth => "out of bounds memory growth",
+            Self::OutOfBoundsAccess => "out of bounds memory access",
+            Self::InvalidMemoryType => "tried to create an invalid linear memory type",
+            Self::SubtypeMismatch => "memory subtype mismatch",
+            Self::TooManyMemories => "too many memories",
+            Self::InvalidStaticBufferSize => "tried to use too small static buffer",
             Self::ResourceLimiterDeniedAllocation => {
-                write!(
-                    f,
-                    "a resource limiter denied to allocate or grow the linear memory"
-                )
+                "a resource limiter denied to allocate or grow the linear memory"
             }
             Self::MinimumSizeOverflow => {
-                write!(
-                    f,
-                    "the minimum size of the memory type overflows the system index type"
-                )
+                "the minimum size of the memory type overflows the system index type"
             }
             Self::MaximumSizeOverflow => {
-                write!(
-                    f,
-                    "the maximum size of the memory type overflows the system index type"
-                )
+                "the maximum size of the memory type overflows the system index type"
             }
-            Self::OutOfFuel => {
-                write!(f, "out of fuel")
-            }
-        }
+            Self::OutOfFuel => "out of fuel",
+        };
+        write!(f, "{message}")
     }
 }
 
@@ -103,6 +78,18 @@ impl From<CoreMemoryError> for MemoryError {
             CoreMemoryError::MaximumSizeOverflow => Self::MaximumSizeOverflow,
             CoreMemoryError::OutOfFuel => Self::OutOfFuel,
             CoreMemoryError::UnknownError => panic!("encountered unknown memory error"),
+        }
+    }
+}
+
+impl From<MemoryError> for LimiterError {
+    fn from(error: MemoryError) -> Self {
+        match error {
+            MemoryError::OutOfSystemMemory => Self::OutOfSystemMemory,
+            MemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
+            MemoryError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
+            MemoryError::OutOfFuel => Self::OutOfFuel,
+            _ => Self::UnknownError,
         }
     }
 }
