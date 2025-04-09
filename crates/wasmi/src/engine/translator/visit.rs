@@ -14,11 +14,10 @@ use super::{
     TypedVal,
 };
 use crate::{
-    core::{wasm, TrapCode, ValType, F32, F64},
+    core::{wasm, FuelCostsProvider, TrapCode, ValType, F32, F64},
     engine::{
         translator::{AcquiredTarget, Provider},
         BlockType,
-        FuelCosts,
     },
     ir::{
         self,
@@ -169,7 +168,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             &mut self.alloc.stack,
             BoundedRegSpan::new(branch_params, len_block_params),
             &self.alloc.buffer.providers[..],
-            fuel_info,
+            &fuel_info,
         )?;
         self.alloc.instr_encoder.reset_last_instr();
         // Create loop header label and immediately pin it.
@@ -461,7 +460,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             &mut self.alloc.stack,
             branch_params,
             &self.alloc.buffer.providers[..],
-            fuel_info,
+            &fuel_info,
         )?;
         let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
         self.push_base_instr(Instruction::branch(branch_offset))?;
@@ -481,7 +480,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_call(&mut self, function_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(FuelCosts::call)?;
+        self.bump_fuel_consumption(FuelCostsProvider::call)?;
         let func_idx = FuncIdx::from(function_index);
         let func_type = self.func_type_of(func_idx);
         let (params, results) = func_type.params_results();
@@ -515,7 +514,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(FuelCosts::call)?;
+        self.bump_fuel_consumption(FuelCostsProvider::call)?;
         let type_index = FuncType::from(type_index);
         let func_type = self.func_type_at(type_index);
         let index = self.alloc.stack.pop();
@@ -549,7 +548,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_return_call(&mut self, function_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(FuelCosts::call)?;
+        self.bump_fuel_consumption(FuelCostsProvider::call)?;
         let func_idx = FuncIdx::from(function_index);
         let func_type = self.func_type_of(func_idx);
         let params = func_type.params();
@@ -583,7 +582,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_return_call_indirect(&mut self, type_index: u32, table_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.bump_fuel_consumption(FuelCosts::call)?;
+        self.bump_fuel_consumption(FuelCostsProvider::call)?;
         let type_index = FuncType::from(type_index);
         let func_type = self.func_type_at(type_index);
         let params = func_type.params();
@@ -658,7 +657,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             local,
             value,
             preserved,
-            fuel_info,
+            &fuel_info,
         )?;
         Ok(())
     }
@@ -702,7 +701,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let result = self.alloc.stack.push_dynamic()?;
         self.push_fueled_instr(
             Instruction::global_get(result, global_idx),
-            FuelCosts::entity,
+            FuelCostsProvider::instance,
         )?;
         Ok(())
     }
@@ -712,7 +711,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let global = ir::index::Global::from(global_index);
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
-                self.push_fueled_instr(Instruction::global_set(input, global), FuelCosts::entity)?;
+                self.push_fueled_instr(
+                    Instruction::global_set(input, global),
+                    FuelCostsProvider::instance,
+                )?;
                 Ok(())
             }
             TypedProvider::Const(input) => {
@@ -725,7 +727,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                         if let Ok(value) = Const16::try_from(i32::from(input)) {
                             self.push_fueled_instr(
                                 Instruction::global_set_i32imm16(value, global),
-                                FuelCosts::entity,
+                                FuelCostsProvider::instance,
                             )?;
                             return Ok(());
                         }
@@ -734,7 +736,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                         if let Ok(value) = Const16::try_from(i64::from(input)) {
                             self.push_fueled_instr(
                                 Instruction::global_set_i64imm16(value, global),
-                                FuelCosts::entity,
+                                FuelCostsProvider::instance,
                             )?;
                             return Ok(());
                         }
@@ -742,7 +744,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                     _ => {}
                 };
                 let cref = self.alloc.stack.alloc_const(input)?;
-                self.push_fueled_instr(Instruction::global_set(cref, global), FuelCosts::entity)?;
+                self.push_fueled_instr(
+                    Instruction::global_set(cref, global),
+                    FuelCostsProvider::instance,
+                )?;
                 Ok(())
             }
         }
@@ -980,7 +985,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         bail_unreachable!(self);
         let memory = index::Memory::from(mem);
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(Instruction::memory_size(result, memory), FuelCosts::entity)?;
+        self.push_fueled_instr(
+            Instruction::memory_size(result, memory),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
@@ -1000,7 +1008,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // as `memory.size` instruction instead.
                 self.push_fueled_instr(
                     Instruction::memory_size(result, memory),
-                    FuelCosts::entity,
+                    FuelCostsProvider::instance,
                 )?;
                 return Ok(());
             }
@@ -1009,7 +1017,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Provider::Const(delta) => Instruction::memory_grow_by(result, delta),
             Provider::Register(delta) => Instruction::memory_grow(result, delta),
         };
-        self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::memory_index(memory))?;
@@ -1076,7 +1084,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
         let result = self.alloc.stack.push_dynamic()?;
         self.push_fueled_instr(
             Instruction::ref_func(result, function_index),
-            FuelCosts::entity,
+            FuelCostsProvider::instance,
         )?;
         Ok(())
     }
@@ -3111,7 +3119,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 Instruction::memory_init_from_to_exact(dst, src, len)
             }
         };
-        self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::memory_index(memory))?;
@@ -3123,7 +3131,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_data_drop(&mut self, data_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_fueled_instr(Instruction::data_drop(data_index), FuelCosts::entity)?;
+        self.push_fueled_instr(
+            Instruction::data_drop(data_index),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
@@ -3167,7 +3178,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 Instruction::memory_copy_from_to_exact(dst, src, len)
             }
         };
-        self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::memory_index(dst_memory))?;
@@ -3211,7 +3222,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 Instruction::memory_fill_at_imm_exact(dst, value, len)
             }
         };
-        self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::memory_index(memory))?;
@@ -3251,7 +3262,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 Instruction::table_init_from_to_exact(dst, src, len)
             }
         };
-        self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_index(table))?;
@@ -3263,7 +3274,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
 
     fn visit_elem_drop(&mut self, elem_index: u32) -> Self::Output {
         bail_unreachable!(self);
-        self.push_fueled_instr(Instruction::elem_drop(elem_index), FuelCosts::entity)?;
+        self.push_fueled_instr(
+            Instruction::elem_drop(elem_index),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 
@@ -3302,7 +3316,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 Instruction::table_copy_from_to_exact(dst, src, len)
             }
         };
-        self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_index(dst_table))?;
@@ -3336,7 +3350,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 Instruction::table_fill_at_exact(dst, len, value)
             }
         };
-        self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_index(table))?;
@@ -3353,7 +3367,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Provider::Register(index) => Instruction::table_get(result, index),
             Provider::Const(index) => Instruction::table_get_imm(result, index),
         };
-        self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_index(table))?;
@@ -3373,7 +3387,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Provider::Register(index) => Instruction::table_set(index, value),
             Provider::Const(index) => Instruction::table_set_at(value, index),
         };
-        self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_index(table))?;
@@ -3393,7 +3407,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
                 // operation a `table.grow` with `delta` of 0 can be translated
                 // as `table.size` instruction instead.
                 let result = self.alloc.stack.push_dynamic()?;
-                self.push_fueled_instr(Instruction::table_size(result, table), FuelCosts::entity)?;
+                self.push_fueled_instr(
+                    Instruction::table_size(result, table),
+                    FuelCostsProvider::instance,
+                )?;
                 return Ok(());
             }
         }
@@ -3406,7 +3423,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             Provider::Register(delta) => Instruction::table_grow(result, delta, value),
             Provider::Const(delta) => Instruction::table_grow_imm(result, delta, value),
         };
-        self.push_fueled_instr(instr, FuelCosts::entity)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::instance)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::table_index(table))?;
@@ -3416,7 +3433,10 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
     fn visit_table_size(&mut self, table: u32) -> Self::Output {
         bail_unreachable!(self);
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(Instruction::table_size(result, table), FuelCosts::entity)?;
+        self.push_fueled_instr(
+            Instruction::table_size(result, table),
+            FuelCostsProvider::instance,
+        )?;
         Ok(())
     }
 

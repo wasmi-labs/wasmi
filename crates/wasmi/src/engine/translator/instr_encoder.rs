@@ -13,11 +13,8 @@ use super::{
     TypedProvider,
 };
 use crate::{
-    core::{UntypedVal, ValType},
-    engine::{
-        translator::{stack::RegisterSpace, ValueStack},
-        FuelCosts,
-    },
+    core::{FuelCostsProvider, UntypedVal, ValType},
+    engine::translator::{stack::RegisterSpace, ValueStack},
     ir::{
         BoundedRegSpan,
         BranchOffset,
@@ -323,11 +320,11 @@ impl InstrEncoder {
     pub fn push_fueled_instr<F>(
         &mut self,
         instr: Instruction,
-        fuel_info: FuelInfo,
+        fuel_info: &FuelInfo,
         f: F,
     ) -> Result<Instr, Error>
     where
-        F: FnOnce(&FuelCosts) -> u64,
+        F: FnOnce(&FuelCostsProvider) -> u64,
     {
         self.bump_fuel_consumption(fuel_info, f)?;
         self.push_instr(instr)
@@ -400,7 +397,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         result: Reg,
         value: TypedProvider,
-        fuel_info: FuelInfo,
+        fuel_info: &FuelInfo,
     ) -> Result<Option<Instr>, Error> {
         /// Convenience to create an [`Instruction::Copy`] to copy a constant value.
         fn copy_imm(
@@ -438,7 +435,7 @@ impl InstrEncoder {
                 }
             },
         };
-        self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+        self.bump_fuel_consumption(fuel_info, FuelCostsProvider::base)?;
         let instr = self.push_instr(instr)?;
         Ok(Some(instr))
     }
@@ -454,7 +451,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         mut results: BoundedRegSpan,
         values: &[TypedProvider],
-        fuel_info: FuelInfo,
+        fuel_info: &FuelInfo,
     ) -> Result<Option<Instr>, Error> {
         assert_eq!(usize::from(results.len()), values.len());
         let result = results.span().head();
@@ -481,7 +478,7 @@ impl InstrEncoder {
                 }
                 let reg0 = stack.provider2reg(v0)?;
                 let reg1 = stack.provider2reg(v1)?;
-                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+                self.bump_fuel_consumption(fuel_info, FuelCostsProvider::base)?;
                 let instr = self.push_instr(Instruction::copy2_ext(results.span(), reg0, reg1))?;
                 Ok(Some(instr))
             }
@@ -490,9 +487,9 @@ impl InstrEncoder {
                 // Note: The fuel for copies might result in 0 charges if there aren't
                 //       enough copies to account for at least 1 fuel. Therefore we need
                 //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
-                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+                self.bump_fuel_consumption(fuel_info, FuelCostsProvider::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
-                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                    costs.fuel_for_copying_values(rest.len() as u64 + 3)
                 })?;
                 if let Some(values) = BoundedRegSpan::from_providers(values) {
                     let make_instr = match Self::has_overlapping_copy_spans(
@@ -567,17 +564,17 @@ impl InstrEncoder {
     /// # Errors
     ///
     /// If consumed fuel is out of bounds after this operation.
-    pub fn bump_fuel_consumption<F>(&mut self, fuel_info: FuelInfo, f: F) -> Result<(), Error>
+    pub fn bump_fuel_consumption<F>(&mut self, fuel_info: &FuelInfo, f: F) -> Result<(), Error>
     where
-        F: FnOnce(&FuelCosts) -> u64,
+        F: FnOnce(&FuelCostsProvider) -> u64,
     {
         let FuelInfo::Some { costs, instr } = fuel_info else {
             // Fuel metering is disabled so we can bail out.
             return Ok(());
         };
-        let fuel_consumed = f(&costs);
+        let fuel_consumed = f(costs);
         self.instrs
-            .get_mut(instr)
+            .get_mut(*instr)
             .bump_fuel_consumption(fuel_consumed)?;
         Ok(())
     }
@@ -587,7 +584,7 @@ impl InstrEncoder {
         &mut self,
         stack: &mut ValueStack,
         values: &[TypedProvider],
-        fuel_info: FuelInfo,
+        fuel_info: &FuelInfo,
     ) -> Result<(), Error> {
         let instr = match values {
             [] => Instruction::Return,
@@ -622,10 +619,10 @@ impl InstrEncoder {
                 debug_assert!(!rest.is_empty());
                 // Note: The fuel for return values might result in 0 charges if there aren't
                 //       enough return values to account for at least 1 fuel. Therefore we need
-                //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
-                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+                //       to also bump by `FuelCostsProvider::base` to charge at least 1 fuel.
+                self.bump_fuel_consumption(fuel_info, FuelCostsProvider::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
-                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                    costs.fuel_for_copying_values(rest.len() as u64 + 3)
                 })?;
                 if let Some(span) = BoundedRegSpan::from_providers(values) {
                     self.push_instr(Instruction::return_span(span))?;
@@ -639,7 +636,7 @@ impl InstrEncoder {
                 return Ok(());
             }
         };
-        self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+        self.bump_fuel_consumption(fuel_info, FuelCostsProvider::base)?;
         self.push_instr(instr)?;
         Ok(())
     }
@@ -650,7 +647,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         condition: Reg,
         values: &[TypedProvider],
-        fuel_info: FuelInfo,
+        fuel_info: &FuelInfo,
     ) -> Result<(), Error> {
         // Note: We bump fuel unconditionally even if the conditional return is not taken.
         //       This is very conservative and may lead to more fuel costs than
@@ -685,9 +682,9 @@ impl InstrEncoder {
                 // Note: The fuel for return values might result in 0 charges if there aren't
                 //       enough return values to account for at least 1 fuel. Therefore we need
                 //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
-                self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+                self.bump_fuel_consumption(fuel_info, FuelCostsProvider::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
-                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                    costs.fuel_for_copying_values(rest.len() as u64 + 3)
                 })?;
                 if let Some(span) = BoundedRegSpan::from_providers(values) {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
@@ -700,7 +697,7 @@ impl InstrEncoder {
                 return Ok(());
             }
         };
-        self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+        self.bump_fuel_consumption(fuel_info, FuelCostsProvider::base)?;
         self.push_instr(instr)?;
         Ok(())
     }
@@ -775,7 +772,7 @@ impl InstrEncoder {
         local: Reg,
         value: TypedProvider,
         preserved: Option<Reg>,
-        fuel_info: FuelInfo,
+        fuel_info: &FuelInfo,
     ) -> Result<(), Error> {
         fn fallback_case(
             this: &mut InstrEncoder,
@@ -783,10 +780,10 @@ impl InstrEncoder {
             local: Reg,
             value: TypedProvider,
             preserved: Option<Reg>,
-            fuel_info: FuelInfo,
+            fuel_info: &FuelInfo,
         ) -> Result<(), Error> {
             if let Some(preserved) = preserved {
-                this.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+                this.bump_fuel_consumption(fuel_info, FuelCostsProvider::base)?;
                 let preserve_instr = this.push_instr(Instruction::copy(preserved, local))?;
                 this.notify_preserved_register(preserve_instr);
             }
@@ -851,7 +848,7 @@ impl InstrEncoder {
             // We were able to apply the optimization.
             // Preservation requires the copy to be before the optimized last instruction.
             // Therefore we need to push the preservation `copy` instruction before it.
-            self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
+            self.bump_fuel_consumption(fuel_info, FuelCostsProvider::base)?;
             let shifted_last_instr = self
                 .instrs
                 .push_before(last_instr, Instruction::copy(preserved, local))?;

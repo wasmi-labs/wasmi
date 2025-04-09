@@ -46,8 +46,8 @@ pub use self::{
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{
-    core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
-    engine::{config::FuelCosts, BlockType, EngineFunc},
+    core::{FuelCostsProvider, TrapCode, Typed, TypedVal, UntypedVal, ValType},
+    engine::{BlockType, EngineFunc},
     ir::{
         index,
         Address,
@@ -662,7 +662,7 @@ pub struct FuncTranslator {
     /// Fuel costs for fuel metering.
     ///
     /// `None` if fuel metering is disabled.
-    fuel_costs: Option<FuelCosts>,
+    fuel_costs: Option<FuelCostsProvider>,
     /// The reusable data structures of the [`FuncTranslator`].
     alloc: FuncTranslatorAllocations,
 }
@@ -705,7 +705,7 @@ impl WasmTranslator<'_> for FuncTranslator {
             .instr_encoder
             .update_branch_offsets(&mut self.alloc.stack)?;
         let len_registers = self.alloc.stack.len_registers();
-        if let Some(fuel_costs) = self.fuel_costs() {
+        if let Some(fuel_costs) = self.fuel_costs().cloned() {
             // Note: Fuel metering is enabled so we need to bump the fuel
             //       of the function enclosing Wasm `block` by an amount
             //       that depends on the total number of registers used by
@@ -713,11 +713,11 @@ impl WasmTranslator<'_> for FuncTranslator {
             // Note: The function enclosing block fuel instruction is always
             //       the instruction at the 0th index if fuel metering is enabled.
             let fuel_instr = Instr::from_u32(0);
-            let fuel_info = FuelInfo::some(*fuel_costs, fuel_instr);
+            let fuel_info = FuelInfo::some(fuel_costs, fuel_instr);
             self.alloc
                 .instr_encoder
-                .bump_fuel_consumption(fuel_info, |costs| {
-                    costs.fuel_for_copies(u64::from(len_registers))
+                .bump_fuel_consumption(&fuel_info, |costs| {
+                    costs.fuel_for_copying_values(u64::from(len_registers))
                 })?;
         }
         let func_consts = self.alloc.stack.func_local_consts();
@@ -728,14 +728,14 @@ impl WasmTranslator<'_> for FuncTranslator {
 }
 
 /// Fuel metering information for a certain translation state.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum FuelInfo {
     /// Fuel metering is disabled.
     None,
     /// Fuel metering is enabled with the following information.
     Some {
-        /// The [`FuelCosts`] for the function translation.
-        costs: FuelCosts,
+        /// The [`FuelCostsProvider`] for the function translation.
+        costs: FuelCostsProvider,
         /// Index to the current [`Instruction::ConsumeFuel`] of a parent [`ControlFrame`].
         instr: Instr,
     },
@@ -743,7 +743,7 @@ pub enum FuelInfo {
 
 impl FuelInfo {
     /// Create a new [`FuelInfo`] for enabled fuel metering.
-    pub fn some(costs: FuelCosts, instr: Instr) -> Self {
+    pub fn some(costs: FuelCostsProvider, instr: Instr) -> Self {
         Self::Some { costs, instr }
     }
 }
@@ -765,7 +765,7 @@ impl FuncTranslator {
         let fuel_costs = config
             .get_consume_fuel()
             .then(|| config.fuel_costs())
-            .copied();
+            .cloned();
         Self {
             func,
             engine,
@@ -852,10 +852,10 @@ impl FuncTranslator {
         self.reachable
     }
 
-    /// Returns the configured [`FuelCosts`] of the [`Engine`] if any.
+    /// Returns the configured [`FuelCostsProvider`] of the [`Engine`] if any.
     ///
     /// Returns `None` if fuel metering is disabled.
-    fn fuel_costs(&self) -> Option<&FuelCosts> {
+    fn fuel_costs(&self) -> Option<&FuelCostsProvider> {
         self.fuel_costs.as_ref()
     }
 
@@ -870,14 +870,14 @@ impl FuncTranslator {
     ///
     /// Returns [`FuelInfo::None`] if fuel metering is disabled.
     fn fuel_info(&self) -> FuelInfo {
-        let Some(&fuel_costs) = self.fuel_costs() else {
+        let Some(fuel_costs) = self.fuel_costs() else {
             // Fuel metering is disabled so we can bail out.
             return FuelInfo::None;
         };
         let fuel_instr = self
             .fuel_instr()
             .expect("fuel metering is enabled but there is no Instruction::ConsumeFuel");
-        FuelInfo::some(fuel_costs, fuel_instr)
+        FuelInfo::some(fuel_costs.clone(), fuel_instr)
     }
 
     /// Pushes a [`Instruction::ConsumeFuel`] with base costs if fuel metering is enabled.
@@ -900,12 +900,12 @@ impl FuncTranslator {
     /// Does nothing if gas metering is disabled.
     fn bump_fuel_consumption<F>(&mut self, f: F) -> Result<(), Error>
     where
-        F: FnOnce(&FuelCosts) -> u64,
+        F: FnOnce(&FuelCostsProvider) -> u64,
     {
         let fuel_info = self.fuel_info();
         self.alloc
             .instr_encoder
-            .bump_fuel_consumption(fuel_info, f)?;
+            .bump_fuel_consumption(&fuel_info, f)?;
         Ok(())
     }
 
@@ -916,7 +916,7 @@ impl FuncTranslator {
     /// Fuel metering is only encoded or adjusted if it is enabled.
     fn push_fueled_instr<F>(&mut self, instr: Instruction, f: F) -> Result<Instr, Error>
     where
-        F: FnOnce(&FuelCosts) -> u64,
+        F: FnOnce(&FuelCostsProvider) -> u64,
     {
         self.bump_fuel_consumption(f)?;
         self.alloc.instr_encoder.push_instr(instr)
@@ -934,7 +934,7 @@ impl FuncTranslator {
     ///
     /// Fuel metering is only encoded or adjusted if it is enabled.
     fn push_base_instr(&mut self, instr: Instruction) -> Result<Instr, Error> {
-        self.push_fueled_instr(instr, FuelCosts::base)
+        self.push_fueled_instr(instr, FuelCostsProvider::base)
     }
 
     /// Preserve all locals that are currently on the emulated stack.
@@ -989,7 +989,7 @@ impl FuncTranslator {
                 &mut self.alloc.stack,
                 results,
                 &providers[..],
-                fuel_info,
+                &fuel_info,
             )?;
             if let Some(instr) = instr {
                 self.alloc.instr_encoder.notify_preserved_register(instr)
@@ -1025,7 +1025,7 @@ impl FuncTranslator {
             &mut self.alloc.stack,
             branch_params,
             &self.alloc.buffer.providers[..],
-            fuel_info,
+            &fuel_info,
         )?;
         Ok(())
     }
@@ -1034,17 +1034,17 @@ impl FuncTranslator {
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         if self.alloc.control_stack.is_empty() {
             bail_unreachable!(self);
-            let fuel_info = match self.fuel_costs().copied() {
+            let fuel_info = match self.fuel_costs() {
                 None => FuelInfo::None,
                 Some(fuel_costs) => {
                     let fuel_instr = frame
                         .consume_fuel_instr()
                         .expect("must have fuel instruction if fuel metering is enabled");
-                    FuelInfo::some(fuel_costs, fuel_instr)
+                    FuelInfo::some(fuel_costs.clone(), fuel_instr)
                 }
             };
             // We dropped the Wasm `block` that encloses the function itself so we can return.
-            return self.translate_return_with(fuel_info);
+            return self.translate_return_with(&fuel_info);
         }
         if self.reachable && frame.is_branched_to() {
             // If the end of the `block` is reachable AND
@@ -1375,7 +1375,7 @@ impl FuncTranslator {
         make_instr: fn(result: Reg, lhs: Reg, rhs: Reg) -> Instruction,
     ) -> Result<(), Error> {
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::base)?;
         Ok(())
     }
 
@@ -1398,7 +1398,7 @@ impl FuncTranslator {
         if let Ok(rhs) = rhs.try_into() {
             // Optimization: We can use a compact instruction for small constants.
             let result = self.alloc.stack.push_dynamic()?;
-            self.push_fueled_instr(make_instr_imm16(result, lhs, rhs), FuelCosts::base)?;
+            self.push_fueled_instr(make_instr_imm16(result, lhs, rhs), FuelCostsProvider::base)?;
             return Ok(true);
         }
         Ok(false)
@@ -1417,7 +1417,7 @@ impl FuncTranslator {
         if let Ok(lhs) = lhs.try_into() {
             // Optimization: We can use a compact instruction for small constants.
             let result = self.alloc.stack.push_dynamic()?;
-            self.push_fueled_instr(make_instr_imm16(result, lhs, rhs), FuelCosts::base)?;
+            self.push_fueled_instr(make_instr_imm16(result, lhs, rhs), FuelCostsProvider::base)?;
             return Ok(true);
         }
         Ok(false)
@@ -1457,7 +1457,7 @@ impl FuncTranslator {
     {
         let result = self.alloc.stack.push_dynamic()?;
         let rhs = self.alloc.stack.alloc_const(rhs)?;
-        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::base)?;
         Ok(())
     }
 
@@ -1478,14 +1478,14 @@ impl FuncTranslator {
     {
         let result = self.alloc.stack.push_dynamic()?;
         let lhs = self.alloc.stack.alloc_const(lhs)?;
-        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCosts::base)?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::base)?;
         Ok(())
     }
 
     /// Translates a [`TrapCode`] as [`Instruction`].
     fn translate_trap(&mut self, trap_code: TrapCode) -> Result<(), Error> {
         bail_unreachable!(self);
-        self.push_fueled_instr(Instruction::trap(trap_code), FuelCosts::base)?;
+        self.push_fueled_instr(Instruction::trap(trap_code), FuelCostsProvider::base)?;
         self.reachable = false;
         Ok(())
     }
@@ -1841,7 +1841,7 @@ impl FuncTranslator {
                     return Ok(());
                 };
                 let result = self.alloc.stack.push_dynamic()?;
-                self.push_fueled_instr(make_instr_by(result, lhs, rhs), FuelCosts::base)?;
+                self.push_fueled_instr(make_instr_by(result, lhs, rhs), FuelCostsProvider::base)?;
                 Ok(())
             }
             (TypedProvider::Const(lhs), TypedProvider::Register(rhs)) => {
@@ -1959,7 +1959,7 @@ impl FuncTranslator {
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
                 let result = self.alloc.stack.push_dynamic()?;
-                self.push_fueled_instr(make_instr(result, input), FuelCosts::base)?;
+                self.push_fueled_instr(make_instr(result, input), FuelCostsProvider::base)?;
                 Ok(())
             }
             TypedProvider::Const(input) => {
@@ -1983,7 +1983,7 @@ impl FuncTranslator {
         match self.alloc.stack.pop() {
             TypedProvider::Register(input) => {
                 let result = self.alloc.stack.push_dynamic()?;
-                self.push_fueled_instr(make_instr(result, input), FuelCosts::base)?;
+                self.push_fueled_instr(make_instr(result, input), FuelCostsProvider::base)?;
                 Ok(())
             }
             TypedProvider::Const(input) => match consteval(input.into()) {
@@ -2070,7 +2070,10 @@ impl FuncTranslator {
                 };
                 if let Ok(address) = Address32::try_from(address) {
                     let result = self.alloc.stack.push_dynamic()?;
-                    self.push_fueled_instr(make_instr_at(result, address), FuelCosts::load)?;
+                    self.push_fueled_instr(
+                        make_instr_at(result, address),
+                        FuelCostsProvider::load,
+                    )?;
                     if !memory.is_default() {
                         self.alloc
                             .instr_encoder
@@ -2088,12 +2091,15 @@ impl FuncTranslator {
         let result = self.alloc.stack.push_dynamic()?;
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
-                self.push_fueled_instr(make_instr_offset16(result, ptr, offset), FuelCosts::load)?;
+                self.push_fueled_instr(
+                    make_instr_offset16(result, ptr, offset),
+                    FuelCostsProvider::load,
+                )?;
                 return Ok(());
             }
         }
         let (offset_hi, offset_lo) = Offset64::split(offset);
-        self.push_fueled_instr(make_instr(result, offset_lo), FuelCosts::load)?;
+        self.push_fueled_instr(make_instr(result, offset_lo), FuelCostsProvider::load)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::register_and_offset_hi(ptr, offset_hi))?;
@@ -2250,7 +2256,7 @@ impl FuncTranslator {
                 ),
             },
         };
-        self.push_fueled_instr(instr, FuelCosts::store)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::store)?;
         self.append_instr(param)?;
         if !memory.is_default() {
             self.alloc
@@ -2279,14 +2285,20 @@ impl FuncTranslator {
     {
         match value {
             Provider::Register(value) => {
-                self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
+                self.push_fueled_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
             }
             Provider::Const(value) => {
                 if let Ok(value) = Field::try_from(Src::from(value).wrap()) {
-                    self.push_fueled_instr(make_instr_at_imm(value, address), FuelCosts::store)?;
+                    self.push_fueled_instr(
+                        make_instr_at_imm(value, address),
+                        FuelCostsProvider::store,
+                    )?;
                 } else {
                     let value = self.alloc.stack.alloc_const(value)?;
-                    self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
+                    self.push_fueled_instr(
+                        make_instr_at(value, address),
+                        FuelCostsProvider::store,
+                    )?;
                 }
             }
         }
@@ -2321,19 +2333,20 @@ impl FuncTranslator {
             return Ok(None);
         };
         let instr = match value {
-            Provider::Register(value) => {
-                self.push_fueled_instr(make_instr_offset16(ptr, offset16, value), FuelCosts::store)?
-            }
+            Provider::Register(value) => self.push_fueled_instr(
+                make_instr_offset16(ptr, offset16, value),
+                FuelCostsProvider::store,
+            )?,
             Provider::Const(value) => match Field::try_from(Src::from(value).wrap()) {
                 Ok(value) => self.push_fueled_instr(
                     make_instr_offset16_imm(ptr, offset16, value),
-                    FuelCosts::store,
+                    FuelCostsProvider::store,
                 )?,
                 Err(_) => {
                     let value = self.alloc.stack.alloc_const(value)?;
                     self.push_fueled_instr(
                         make_instr_offset16(ptr, offset16, value),
-                        FuelCosts::store,
+                        FuelCostsProvider::store,
                     )?
                 }
             },
@@ -2380,11 +2393,14 @@ impl FuncTranslator {
         let value = self.alloc.stack.provider2reg(&value)?;
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
-                self.push_fueled_instr(make_instr_offset16(ptr, offset, value), FuelCosts::store)?;
+                self.push_fueled_instr(
+                    make_instr_offset16(ptr, offset, value),
+                    FuelCostsProvider::store,
+                )?;
                 return Ok(());
             }
         }
-        self.push_fueled_instr(make_instr(ptr, offset_lo), FuelCosts::store)?;
+        self.push_fueled_instr(make_instr(ptr, offset_lo), FuelCostsProvider::store)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::register_and_offset_hi(value, offset_hi))?;
@@ -2409,7 +2425,7 @@ impl FuncTranslator {
         make_instr_at: fn(value: Reg, address: Address32) -> Instruction,
     ) -> Result<(), Error> {
         let value = self.alloc.stack.provider2reg(&value)?;
-        self.push_fueled_instr(make_instr_at(value, address), FuelCosts::store)?;
+        self.push_fueled_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
         if !memory.is_default() {
             self.alloc
                 .instr_encoder
@@ -2455,7 +2471,7 @@ impl FuncTranslator {
                             &mut self.alloc.stack,
                             result,
                             selected,
-                            fuel_info,
+                            &fuel_info,
                         )?;
                         return Ok(());
                     }
@@ -2508,7 +2524,7 @@ impl FuncTranslator {
         rhs: Reg,
     ) -> Result<(), Error> {
         debug_assert_ne!(lhs, rhs);
-        self.push_fueled_instr(Instruction::select(result, lhs), FuelCosts::base)?;
+        self.push_fueled_instr(Instruction::select(result, lhs), FuelCostsProvider::base)?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::register2_ext(condition, rhs))?;
@@ -2548,7 +2564,7 @@ impl FuncTranslator {
                 )
             }
         };
-        self.push_fueled_instr(instr, FuelCosts::base)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::base)?;
         self.append_instr(param)?;
         Ok(())
     }
@@ -2592,7 +2608,7 @@ impl FuncTranslator {
                 Instruction::register_and_imm32(condition, rhs),
             ),
         };
-        self.push_fueled_instr(instr, FuelCosts::base)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::base)?;
         self.append_instr(param)?;
         Ok(())
     }
@@ -2636,7 +2652,7 @@ impl FuncTranslator {
                 Instruction::register_and_imm32(condition, rhs),
             ),
         };
-        self.push_fueled_instr(instr, FuelCosts::base)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::base)?;
         self.append_instr(param)?;
         Ok(())
     }
@@ -2700,11 +2716,11 @@ impl FuncTranslator {
     /// Translates an unconditional `return` instruction.
     fn translate_return(&mut self) -> Result<(), Error> {
         let fuel_info = self.fuel_info();
-        self.translate_return_with(fuel_info)
+        self.translate_return_with(&fuel_info)
     }
 
     /// Translates an unconditional `return` instruction given fuel information.
-    fn translate_return_with(&mut self, fuel_info: FuelInfo) -> Result<(), Error> {
+    fn translate_return_with(&mut self, fuel_info: &FuelInfo) -> Result<(), Error> {
         let func_type = self.func_type();
         let results = func_type.results();
         let values = &mut self.alloc.buffer.providers;
@@ -2727,7 +2743,7 @@ impl FuncTranslator {
             &mut self.alloc.stack,
             condition,
             values,
-            fuel_info,
+            &fuel_info,
         )
     }
 
@@ -2861,7 +2877,7 @@ impl FuncTranslator {
                     self.alloc.instr_encoder.encode_return(
                         &mut self.alloc.stack,
                         values,
-                        fuel_info,
+                        &fuel_info,
                     )?;
                 }
                 AcquiredTarget::Branch(frame) => {
@@ -2889,8 +2905,8 @@ impl FuncTranslator {
         let len_targets = targets.len() as u32;
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_0(index, len_targets),
-            self.fuel_info(),
-            FuelCosts::base,
+            &self.fuel_info(),
+            FuelCostsProvider::base,
         )?;
         self.translate_br_table_targets_simple(&[])?;
         self.reachable = false;
@@ -2904,8 +2920,8 @@ impl FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_1(index, len_targets),
-            fuel_info,
-            FuelCosts::base,
+            &fuel_info,
+            FuelCostsProvider::base,
         )?;
         let stack = &mut self.alloc.stack;
         let value = stack.pop();
@@ -2946,8 +2962,8 @@ impl FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_2(index, len_targets),
-            fuel_info,
-            FuelCosts::base,
+            &fuel_info,
+            FuelCostsProvider::base,
         )?;
         let stack = &mut self.alloc.stack;
         let (v0, v1) = stack.pop2();
@@ -2969,8 +2985,8 @@ impl FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_3(index, len_targets),
-            fuel_info,
-            FuelCosts::base,
+            &fuel_info,
+            FuelCostsProvider::base,
         )?;
         let stack = &mut self.alloc.stack;
         let (v0, v1, v2) = stack.pop3();
@@ -3005,8 +3021,8 @@ impl FuncTranslator {
         let len_targets = targets.len() as u32;
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_span(index, len_targets),
-            fuel_info,
-            FuelCosts::base,
+            &fuel_info,
+            FuelCostsProvider::base,
         )?;
         self.alloc
             .instr_encoder
@@ -3036,8 +3052,8 @@ impl FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_many(index, len_targets),
-            fuel_info,
-            FuelCosts::base,
+            &fuel_info,
+            FuelCostsProvider::base,
         )?;
         let stack = &mut self.alloc.stack;
         let values = &self.alloc.buffer.providers[..];
@@ -3098,7 +3114,10 @@ impl FuncTranslator {
         };
         let result_lo = self.alloc.stack.push_dynamic()?;
         let result_hi = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(make_instr([result_lo, result_hi], lhs_lo), FuelCosts::base)?;
+        self.push_fueled_instr(
+            make_instr([result_lo, result_hi], lhs_lo),
+            FuelCostsProvider::base,
+        )?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::register3_ext(lhs_hi, rhs_lo, rhs_hi))?;
@@ -3140,7 +3159,7 @@ impl FuncTranslator {
         let results = <FixedRegSpan<2>>::new(results).unwrap_or_else(|_| {
             panic!("`i64.mul_wide_sx` requires 2 results but found: {results:?}")
         });
-        self.push_fueled_instr(make_instr(results, lhs, rhs), FuelCosts::base)?;
+        self.push_fueled_instr(make_instr(results, lhs, rhs), FuelCostsProvider::base)?;
         Ok(())
     }
 
