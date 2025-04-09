@@ -8,7 +8,7 @@ const DEFAULT_CACHED_STACKS: usize = 2;
 /// Configuration for an [`Engine`].
 ///
 /// [`Engine`]: [`crate::Engine`]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Config {
     /// The limits set on the value stack and call stack.
     stack_limits: StackLimits,
