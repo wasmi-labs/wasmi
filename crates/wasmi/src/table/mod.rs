@@ -5,9 +5,7 @@ pub use self::{
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{IndexType, TrapCode, UntypedVal, ValType},
-    error::EntityGrowError,
-    store::{Fuel, FuelError, ResourceLimiterRef},
+    core::{Fuel, FuelError, IndexType, ResourceLimiterRef, UntypedVal, ValType},
     value::WithType,
     Val,
 };
@@ -131,7 +129,7 @@ impl TableType {
         let expected = self.element();
         let actual = ty;
         if actual != expected {
-            return Err(TableError::ElementTypeMismatch { expected, actual });
+            return Err(TableError::ElementTypeMismatch);
         }
         Ok(())
     }
@@ -220,7 +218,7 @@ impl TableEntity {
         if elements.try_reserve(min_size).is_err() {
             let error = TableError::OutOfSystemMemory;
             if let Some(limiter) = limiter.as_resource_limiter() {
-                limiter.table_grow_failed(&error)
+                limiter.table_grow_failed(&error.into())
             }
             return Err(error);
         };
@@ -275,10 +273,8 @@ impl TableEntity {
         init: Val,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<u64, EntityGrowError> {
-        self.ty()
-            .matches_element_type(init.ty())
-            .map_err(|_| EntityGrowError::InvalidGrow)?;
+    ) -> Result<u64, TableError> {
+        self.ty().matches_element_type(init.ty())?;
         self.grow_untyped(delta, init.into(), fuel, limiter)
     }
 
@@ -301,54 +297,54 @@ impl TableEntity {
         init: UntypedVal,
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<u64, EntityGrowError> {
+    ) -> Result<u64, TableError> {
         let Ok(delta_size) = usize::try_from(delta) else {
-            return Err(EntityGrowError::InvalidGrow);
+            return Err(TableError::GrowOutOfBounds);
         };
         let Some(desired) = self.size().checked_add(delta) else {
-            return Err(EntityGrowError::InvalidGrow);
+            return Err(TableError::GrowOutOfBounds);
         };
         // We need to divide the `max_size` (in bytes) by 8 because each table element requires 8 bytes.
         let max_size = self.ty.index_ty.max_size() / 8;
         if u128::from(desired) > max_size {
-            return Err(EntityGrowError::InvalidGrow);
+            return Err(TableError::GrowOutOfBounds);
         }
         let current = self.elements.len();
         let Ok(desired) = usize::try_from(desired) else {
-            return Err(EntityGrowError::InvalidGrow);
+            return Err(TableError::GrowOutOfBounds);
         };
         let Ok(maximum) = self.ty.maximum().map(usize::try_from).transpose() else {
-            return Err(EntityGrowError::InvalidGrow);
+            return Err(TableError::GrowOutOfBounds);
         };
 
         // ResourceLimiter gets first look at the request.
         if let Some(limiter) = limiter.as_resource_limiter() {
             match limiter.table_growing(current, desired, maximum) {
                 Ok(true) => (),
-                Ok(false) => return Err(EntityGrowError::InvalidGrow),
-                Err(_) => return Err(EntityGrowError::TrapCode(TrapCode::GrowthOperationLimited)),
+                Ok(false) => return Err(TableError::GrowOutOfBounds),
+                Err(_) => return Err(TableError::ResourceLimiterDeniedAllocation),
             }
         }
         let notify_limiter =
-            |limiter: &mut ResourceLimiterRef<'_>| -> Result<u64, EntityGrowError> {
+            |limiter: &mut ResourceLimiterRef<'_>, error: TableError| -> Result<u64, TableError> {
                 if let Some(limiter) = limiter.as_resource_limiter() {
-                    limiter.table_grow_failed(&TableError::OutOfSystemMemory);
+                    limiter.table_grow_failed(&error.into());
                 }
-                Err(EntityGrowError::InvalidGrow)
+                Err(error)
             };
         if let Some(maximum) = maximum {
             if desired > maximum {
-                return notify_limiter(limiter);
+                return notify_limiter(limiter, TableError::GrowOutOfBounds);
             }
         }
         if let Some(fuel) = fuel {
-            match fuel.consume_fuel(|costs| costs.fuel_for_copies(delta)) {
+            match fuel.consume_fuel(|costs| costs.fuel_for_copying_values(delta)) {
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
-                Err(FuelError::OutOfFuel) => return notify_limiter(limiter),
+                Err(FuelError::OutOfFuel) => return notify_limiter(limiter, TableError::OutOfFuel),
             }
         }
         if self.elements.try_reserve(delta_size).is_err() {
-            return notify_limiter(limiter);
+            return notify_limiter(limiter, TableError::OutOfSystemMemory);
         }
         let size_before = self.size();
         self.elements.resize(desired, init);
@@ -398,11 +394,9 @@ impl TableEntity {
     ///
     /// If `index` is out of bounds.
     pub fn set_untyped(&mut self, index: u64, value: UntypedVal) -> Result<(), TableError> {
-        let current = self.size();
-        let untyped = self
-            .elements
-            .get_mut(index as usize)
-            .ok_or(TableError::AccessOutOfBounds { current, index })?;
+        let Some(untyped) = self.elements.get_mut(index as usize) else {
+            return Err(TableError::SetOutOfBounds);
+        };
         *untyped = value;
         Ok(())
     }
@@ -424,44 +418,42 @@ impl TableEntity {
         src_index: u32,
         len: u32,
         fuel: Option<&mut Fuel>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), TableError> {
         let table_type = self.ty();
         assert!(
             table_type.element().is_ref(),
             "table.init currently only works on reftypes"
         );
-        table_type
-            .matches_element_type(element.ty())
-            .map_err(|_| TrapCode::BadSignature)?;
+        table_type.matches_element_type(element.ty())?;
         // Convert parameters to indices.
         let Ok(dst_index) = usize::try_from(dst_index) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::InitOutOfBounds);
         };
         let Ok(src_index) = usize::try_from(src_index) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::InitOutOfBounds);
         };
         let Ok(len_size) = usize::try_from(len) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::InitOutOfBounds);
         };
         // Perform bounds check before anything else.
         let dst_items = self
             .elements
             .get_mut(dst_index..)
             .and_then(|items| items.get_mut(..len_size))
-            .ok_or(TrapCode::TableOutOfBounds)?;
+            .ok_or(TableError::InitOutOfBounds)?;
         let src_items = element
             .items()
             .get(src_index..)
             .and_then(|items| items.get(..len_size))
-            .ok_or(TrapCode::TableOutOfBounds)?;
+            .ok_or(TableError::InitOutOfBounds)?;
         if len == 0 {
             // Bail out early if nothing needs to be initialized.
             // The Wasm spec demands to still perform the bounds check
-            // so we cannot bail out earlie64
+            // so we cannot bail out earlier.
             return Ok(());
         }
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(u64::from(len)))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values(u64::from(len)))?;
         }
         // Perform the actual table initialization.
         dst_items.copy_from_slice(src_items);
@@ -482,30 +474,30 @@ impl TableEntity {
         src_index: u64,
         len: u64,
         fuel: Option<&mut Fuel>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), TableError> {
         // Turn parameters into proper slice indices.
         let Ok(src_index) = usize::try_from(src_index) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::CopyOutOfBounds);
         };
         let Ok(dst_index) = usize::try_from(dst_index) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::CopyOutOfBounds);
         };
         let Ok(len_size) = usize::try_from(len) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::CopyOutOfBounds);
         };
         // Perform bounds check before anything else.
         let dst_items = dst_table
             .elements
             .get_mut(dst_index..)
             .and_then(|items| items.get_mut(..len_size))
-            .ok_or(TrapCode::TableOutOfBounds)?;
+            .ok_or(TableError::CopyOutOfBounds)?;
         let src_items = src_table
             .elements
             .get(src_index..)
             .and_then(|items| items.get(..len_size))
-            .ok_or(TrapCode::TableOutOfBounds)?;
+            .ok_or(TableError::CopyOutOfBounds)?;
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values(len))?;
         }
         // Finally, copy elements in-place for the table.
         dst_items.copy_from_slice(src_items);
@@ -523,25 +515,25 @@ impl TableEntity {
         src_index: u64,
         len: u64,
         fuel: Option<&mut Fuel>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), TableError> {
         // These accesses just perform the bounds checks required by the Wasm spec.
         let max_offset = max(dst_index, src_index);
         max_offset
             .checked_add(len)
             .filter(|&offset| offset <= self.size())
-            .ok_or(TrapCode::TableOutOfBounds)?;
+            .ok_or(TableError::CopyOutOfBounds)?;
         // Turn parameters into proper indices.
         let Ok(src_index) = usize::try_from(src_index) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::CopyOutOfBounds);
         };
         let Ok(dst_index) = usize::try_from(dst_index) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::CopyOutOfBounds);
         };
         let Ok(len_size) = usize::try_from(len) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::CopyOutOfBounds);
         };
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values(len))?;
         }
         // Finally, copy elements in-place for the table.
         self.elements
@@ -568,10 +560,8 @@ impl TableEntity {
         val: Val,
         len: u64,
         fuel: Option<&mut Fuel>,
-    ) -> Result<(), TrapCode> {
-        self.ty()
-            .matches_element_type(val.ty())
-            .map_err(|_| TrapCode::BadSignature)?;
+    ) -> Result<(), TableError> {
+        self.ty().matches_element_type(val.ty())?;
         self.fill_untyped(dst, val.into(), len, fuel)
     }
 
@@ -596,20 +586,20 @@ impl TableEntity {
         val: UntypedVal,
         len: u64,
         fuel: Option<&mut Fuel>,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), TableError> {
         let Ok(dst_index) = usize::try_from(dst) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::FillOutOfBounds);
         };
         let Ok(len_size) = usize::try_from(len) else {
-            return Err(TrapCode::TableOutOfBounds);
+            return Err(TableError::FillOutOfBounds);
         };
         let dst = self
             .elements
             .get_mut(dst_index..)
             .and_then(|elements| elements.get_mut(..len_size))
-            .ok_or(TrapCode::TableOutOfBounds)?;
+            .ok_or(TableError::FillOutOfBounds)?;
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values(len))?;
         }
         dst.fill(val);
         Ok(())
@@ -710,15 +700,7 @@ impl Table {
             .store
             .store_inner_and_resource_limiter_ref();
         let table = inner.resolve_table_mut(self);
-        let current = table.size();
-        let maximum = table.ty().maximum().unwrap_or(u64::MAX);
-        table
-            .grow(delta, init, None, &mut limiter)
-            .map_err(|_| TableError::GrowOutOfBounds {
-                maximum,
-                current,
-                delta,
-            })
+        table.grow(delta, init, None, &mut limiter)
     }
 
     /// Returns the [`Table`] element value at `index`.
@@ -831,7 +813,7 @@ impl Table {
         dst: u64,
         val: Val,
         len: u64,
-    ) -> Result<(), TrapCode> {
+    ) -> Result<(), TableError> {
         ctx.as_context_mut()
             .store
             .inner
