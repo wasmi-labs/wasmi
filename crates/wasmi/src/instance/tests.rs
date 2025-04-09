@@ -156,9 +156,7 @@ fn instantiate_with_invalid_memory_import() {
     let error = Instance::new(&mut store, &module, &externals).unwrap_err();
     assert!(matches!(
         error.kind(),
-        ErrorKind::Instantiation(InstantiationError::Memory(
-            MemoryError::SubtypeMismatch { .. }
-        ))
+        ErrorKind::Instantiation(InstantiationError::Memory(MemoryError::SubtypeMismatch))
     ));
 }
 
