@@ -110,8 +110,8 @@ pub trait ResourceLimiter {
     ///
     /// # Errors
     ///
-    /// See the details on the return values for `memory_growing` for what the
-    /// return values of this function indicates.
+    /// See the details on the return values for [`ResourceLimiter::memory_growing`]
+    /// for what the return values of this function indicates.
     fn table_growing(
         &mut self,
         current: usize,
@@ -120,24 +120,24 @@ pub trait ResourceLimiter {
     ) -> Result<bool, LimiterError>;
 
     /// Notifies the resource limiter that growing a linear memory, permitted by
-    /// the `memory_growing` method, has failed.
+    /// the [`ResourceLimiter::memory_growing`] method, has failed.
     fn memory_grow_failed(&mut self, _error: &LimiterError) {}
 
     /// Notifies the resource limiter that growing a linear memory, permitted by
-    /// the `table_growing` method, has failed.
+    /// the [`ResourceLimiter::table_growing`] method, has failed.
     fn table_grow_failed(&mut self, _error: &LimiterError) {}
 
-    /// The maximum number of instances that can be created for a `Store`.
+    /// The maximum number of instances that can be created for a Wasm store.
     ///
     /// Module instantiation will fail if this limit is exceeded.
     fn instances(&self) -> usize;
 
-    /// The maximum number of tables that can be created for a `Store`.
+    /// The maximum number of tables that can be created for a Wasm store.
     ///
     /// Creation of tables will fail if this limit is exceeded.
     fn tables(&self) -> usize;
 
-    /// The maximum number of linear memories that can be created for a `Store`
+    /// The maximum number of linear memories that can be created for a Wasm store.
     ///
     /// Creation of memories will fail with an error if this limit is exceeded.
     fn memories(&self) -> usize;
