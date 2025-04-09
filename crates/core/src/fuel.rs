@@ -1,5 +1,5 @@
 use crate::UntypedVal;
-use alloc::boxed::Box;
+use alloc::sync::Arc;
 use core::{
     error::Error,
     fmt::{self, Debug},
@@ -60,10 +60,10 @@ impl FuelCosts for DefaultFuelCosts {
 }
 
 /// Type storing all kinds of fuel costs of instructions.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct FuelCostsProvider {
     /// Optional custom fuel costs.
-    custom: Option<Box<dyn FuelCosts>>,
+    custom: Option<Arc<dyn FuelCosts + Send + Sync>>,
 }
 
 impl Debug for FuelCostsProvider {
