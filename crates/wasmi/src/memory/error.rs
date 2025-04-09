@@ -1,5 +1,5 @@
 use super::MemoryType;
-use core::{fmt, fmt::Display};
+use core::{error::Error, fmt::{self, Display}};
 
 /// An error that may occur upon operating with virtual or linear memory.
 #[derive(Debug)]
@@ -32,8 +32,7 @@ pub enum MemoryError {
     MaximumSizeOverflow,
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for MemoryError {}
+impl Error for MemoryError {}
 
 impl Display for MemoryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

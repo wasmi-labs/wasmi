@@ -29,8 +29,7 @@ use alloc::{
     vec::Vec,
 };
 use core::{
-    fmt::{self, Debug, Display},
-    marker::PhantomData,
+    fmt::{self, Debug, Display}, marker::PhantomData
 };
 
 /// An error that may occur upon operating with [`Linker`] instances.
@@ -150,8 +149,7 @@ impl LinkerError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for LinkerError {}
+impl core::error::Error for LinkerError {}
 
 impl Display for LinkerError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

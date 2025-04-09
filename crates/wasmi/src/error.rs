@@ -141,8 +141,7 @@ impl Error {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for Error {}
+impl core::error::Error for Error {}
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -242,8 +241,7 @@ impl ErrorKind {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for ErrorKind {}
+impl core::error::Error for ErrorKind {}
 
 impl Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

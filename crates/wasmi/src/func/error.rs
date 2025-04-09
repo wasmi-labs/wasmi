@@ -1,5 +1,5 @@
 use crate::core::FuncTypeError as CoreFuncTypeError;
-use core::{fmt, fmt::Display};
+use core::{error::Error, fmt::{self, Display}};
 
 /// Errors that can occur upon type checking function signatures.
 #[derive(Debug)]
@@ -28,8 +28,7 @@ impl From<CoreFuncTypeError> for FuncError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for FuncError {}
+impl Error for FuncError {}
 
 impl Display for FuncError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

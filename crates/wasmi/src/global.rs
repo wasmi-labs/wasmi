@@ -5,7 +5,7 @@ use crate::{
     value::WithType,
     Val,
 };
-use core::{fmt, fmt::Display, ptr::NonNull};
+use core::{error::Error, fmt::{self, Display}, ptr::NonNull};
 
 /// A raw index to a global variable entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -46,8 +46,7 @@ pub enum GlobalError {
     },
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for GlobalError {}
+impl Error for GlobalError {}
 
 impl Display for GlobalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

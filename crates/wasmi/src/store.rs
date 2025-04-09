@@ -35,10 +35,7 @@ use crate::{
 };
 use alloc::{boxed::Box, sync::Arc};
 use core::{
-    any::{type_name, TypeId},
-    fmt::{self, Debug},
-    mem,
-    sync::atomic::{AtomicU32, Ordering},
+    any::{type_name, TypeId}, fmt::{self, Debug}, mem, sync::atomic::{AtomicU32, Ordering}
 };
 
 /// A unique store index.
@@ -447,8 +444,7 @@ pub enum FuelError {
     OutOfFuel,
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for FuelError {}
+impl core::error::Error for FuelError {}
 
 impl fmt::Display for FuelError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

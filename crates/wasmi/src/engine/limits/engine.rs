@@ -1,4 +1,4 @@
-use core::fmt::{self, Display};
+use core::{error::Error, fmt::{self, Display}};
 
 /// An error that can occur upon parsing or compiling a Wasm module when [`EnforcedLimits`] are set.
 #[derive(Debug, Copy, Clone)]
@@ -23,8 +23,7 @@ pub enum EnforcedLimitsError {
     MinAvgBytesPerFunction { limit: u32, avg: u32 },
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for EnforcedLimitsError {}
+impl Error for EnforcedLimitsError {}
 
 impl Display for EnforcedLimitsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

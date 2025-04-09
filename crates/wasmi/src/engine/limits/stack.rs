@@ -1,7 +1,6 @@
 use crate::core::UntypedVal;
 use core::{
-    fmt::{self, Display},
-    mem::size_of,
+    error::Error, fmt::{self, Display}, mem::size_of
 };
 
 /// Default value for initial value stack height in bytes.
@@ -31,8 +30,7 @@ pub enum LimitsError {
     InitialValueStackExceedsMaximum,
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for LimitsError {}
+impl Error for LimitsError {}
 
 impl Display for LimitsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

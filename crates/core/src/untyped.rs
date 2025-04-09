@@ -1,7 +1,7 @@
 #[cfg(feature = "simd")]
 use crate::V128;
 use crate::{F32, F64};
-use core::fmt::{self, Display};
+use core::{error::Error, fmt::{self, Display}};
 
 /// An untyped value.
 ///
@@ -300,8 +300,7 @@ impl UntypedError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for UntypedError {}
+impl Error for UntypedError {}
 
 impl Display for UntypedError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
