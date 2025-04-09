@@ -1,7 +1,10 @@
 use super::*;
 
 fn memory_type(minimum: u32, maximum: impl Into<Option<u32>>) -> MemoryType {
-    MemoryType::new(minimum, maximum.into()).unwrap()
+    let mut b = MemoryType::builder();
+    b.min(u64::from(minimum));
+    b.max(maximum.into().map(u64::from));
+    b.build().unwrap()
 }
 
 #[test]
