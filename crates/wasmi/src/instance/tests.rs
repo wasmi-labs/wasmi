@@ -184,7 +184,7 @@ fn instantiate_with_invalid_table_import() {
     let error = Instance::new(&mut store, &module, &externals).unwrap_err();
     assert!(matches!(
         error.kind(),
-        ErrorKind::Instantiation(InstantiationError::Table(TableError::InvalidSubtype { .. }))
+        ErrorKind::Instantiation(InstantiationError::Table(TableError::SubtypeMismatch))
     ));
 }
 

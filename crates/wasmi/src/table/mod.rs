@@ -151,10 +151,7 @@ impl TableType {
     pub(crate) fn is_subtype_or_err(&self, other: &TableType) -> Result<(), TableError> {
         match self.is_subtype_of(other) {
             true => Ok(()),
-            false => Err(TableError::InvalidSubtype {
-                ty: *self,
-                other: *other,
-            }),
+            false => Err(TableError::SubtypeMismatch),
         }
     }
 

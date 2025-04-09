@@ -1,4 +1,3 @@
-use super::TableType;
 use crate::core::{FuelError, LimiterError};
 use core::{fmt, fmt::Display};
 
@@ -27,12 +26,7 @@ pub enum TableError {
     /// Occurs when operating with a [`Table`](crate::Table) and mismatching element types.
     ElementTypeMismatch,
     /// Occurs when `ty` is not a subtype of `other`.
-    InvalidSubtype {
-        /// The [`TableType`] which is not a subtype of `other`.
-        ty: TableType,
-        /// The [`TableType`] which is supposed to be a supertype of `ty`.
-        other: TableType,
-    },
+    SubtypeMismatch,
     /// Tried to create too many tables.
     TooManyTables,
     /// The operation ran out of fuel before completion.
@@ -43,44 +37,26 @@ impl core::error::Error for TableError {}
 
 impl Display for TableError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
+        let message = match self {
             Self::OutOfSystemMemory => {
-                write!(
-                    f,
-                    "tried to allocate more virtual memory than available on the system"
-                )
+                "tried to allocate more virtual memory than available on the system"
             }
-            Self::MinimumSizeOverflow => {
-                write!(f, "the minimum table size overflows the system bounds")
-            }
-            Self::MaximumSizeOverflow => {
-                write!(f, "the maximum table size overflows the system bounds")
-            }
+            Self::MinimumSizeOverflow => "the minimum table size overflows the system bounds",
+            Self::MaximumSizeOverflow => "the maximum table size overflows the system bounds",
             Self::ResourceLimiterDeniedAllocation => {
-                write!(f, "a resource limiter denied to allocate or grow the table")
+                "a resource limiter denied to allocate or grow the table"
             }
-            Self::GrowOutOfBounds => write!(f, "out of bounds table access: `table.growth`"),
-            Self::InitOutOfBounds => write!(f, "out of bounds table access: `table.init`"),
-            Self::FillOutOfBounds => write!(f, "out of bounds table access: `table.fill`"),
-            Self::CopyOutOfBounds => {
-                write!(f, "out of bounds table access: `table.copy`")
-            }
-            Self::SetOutOfBounds => {
-                write!(f, "out of bounds table access: `table.set`")
-            }
-            Self::ElementTypeMismatch => {
-                write!(f, "encountered mismatching table element type")
-            }
-            Self::InvalidSubtype { ty, other } => {
-                write!(f, "table type {ty:?} is not a subtype of {other:?}",)
-            }
-            Self::TooManyTables => {
-                write!(f, "too many tables")
-            }
-            Self::OutOfFuel => {
-                write!(f, "out of fuel")
-            }
-        }
+            Self::GrowOutOfBounds => "out of bounds table access: `table.growth`",
+            Self::InitOutOfBounds => "out of bounds table access: `table.init`",
+            Self::FillOutOfBounds => "out of bounds table access: `table.fill`",
+            Self::CopyOutOfBounds => "out of bounds table access: `table.copy`",
+            Self::SetOutOfBounds => "out of bounds table access: `table.set`",
+            Self::ElementTypeMismatch => "encountered mismatching table element type",
+            Self::SubtypeMismatch => "table sub-type mismatch",
+            Self::TooManyTables => "too many tables",
+            Self::OutOfFuel => "out of fuel",
+        };
+        write!(f, "{message}")
     }
 }
 
