@@ -202,10 +202,25 @@ pub enum ErrorKind {
 impl ErrorKind {
     /// Returns a reference to [`TrapCode`] if [`ErrorKind`] is a [`TrapCode`].
     pub fn as_trap_code(&self) -> Option<TrapCode> {
-        match self {
-            Self::TrapCode(trap_code) => Some(*trap_code),
-            _ => None,
-        }
+        let trap_code = match self {
+            Self::TrapCode(trap_code) => *trap_code,
+            Self::Table(TableError::ElementTypeMismatch) => TrapCode::BadSignature,
+            Self::Fuel(FuelError::OutOfFuel)
+            | Self::Table(TableError::OutOfFuel)
+            | Self::Memory(MemoryError::OutOfFuel) => TrapCode::OutOfFuel,
+            Self::Memory(MemoryError::OutOfBoundsAccess) => TrapCode::MemoryOutOfBounds,
+            Self::Table(TableError::SetOutOfBounds) => TrapCode::TableOutOfBounds,
+            Self::Table(
+                TableError::FillOutOfBounds
+                | TableError::GrowOutOfBounds
+                | TableError::InitOutOfBounds,
+            ) => TrapCode::TableOutOfBounds,
+            Self::Instantiation(InstantiationError::ElementSegmentDoesNotFit { .. }) => {
+                TrapCode::TableOutOfBounds
+            }
+            _ => return None,
+        };
+        Some(trap_code)
     }
 
     /// Returns a [`i32`] if [`ErrorKind`] is an [`ErrorKind::I32ExitStatus`].
