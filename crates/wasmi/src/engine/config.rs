@@ -326,7 +326,7 @@ impl Config {
         self.ignore_custom_sections
     }
 
-    /// Returns the configured [`FuelCosts`].
+    /// Returns the configured [`FuelCostsProvider`].
     pub(crate) fn fuel_costs(&self) -> &FuelCostsProvider {
         &self.fuel_costs
     }
