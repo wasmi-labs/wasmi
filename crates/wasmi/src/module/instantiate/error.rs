@@ -6,7 +6,10 @@ use crate::{
     FuncType,
     Table,
 };
-use core::{fmt, fmt::Display};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 /// An error that may occur upon instantiation of a Wasm module.
 #[derive(Debug)]
@@ -57,8 +60,7 @@ pub enum InstantiationError {
     TooManyInstances,
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for InstantiationError {}
+impl Error for InstantiationError {}
 
 impl Display for InstantiationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

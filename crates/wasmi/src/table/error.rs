@@ -1,6 +1,9 @@
 use super::TableType;
 use crate::core::ValType;
-use core::{fmt, fmt::Display};
+use core::{
+    error::Error,
+    fmt::{self, Display},
+};
 
 /// Errors that may occur upon operating with table entities.
 #[derive(Debug)]
@@ -49,8 +52,7 @@ pub enum TableError {
     TooManyTables,
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for TableError {}
+impl Error for TableError {}
 
 impl Display for TableError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -74,8 +74,7 @@ pub struct ResumableHostError {
     caller_results: RegSpan,
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for ResumableHostError {}
+impl core::error::Error for ResumableHostError {}
 
 impl fmt::Display for ResumableHostError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
