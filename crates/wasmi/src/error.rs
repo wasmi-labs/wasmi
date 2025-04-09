@@ -1,6 +1,5 @@
 use super::errors::{
     EnforcedLimitsError,
-    FuelError,
     FuncError,
     GlobalError,
     InstantiationError,
@@ -10,7 +9,7 @@ use super::errors::{
     TableError,
 };
 use crate::{
-    core::{HostError, TrapCode},
+    core::{FuelError, HostError, TrapCode},
     engine::{ResumableHostError, TranslationError},
     module::ReadError,
 };

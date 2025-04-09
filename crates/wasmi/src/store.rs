@@ -1,13 +1,12 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
-    core::{hint::unlikely, TrapCode},
-    engine::{DedupFuncType, FuelCosts},
+    core::{hint::unlikely, Fuel, ResourceLimiter, ResourceLimiterRef},
+    engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
     memory::{DataSegment, MemoryError},
     module::InstantiationError,
     table::TableError,
-    Config,
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
@@ -28,7 +27,6 @@ use crate::{
     Memory,
     MemoryEntity,
     MemoryIdx,
-    ResourceLimiter,
     Table,
     TableEntity,
     TableIdx,
@@ -74,22 +72,6 @@ impl StoreIdx {
 
 /// A stored entity.
 pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
-
-/// A wrapper around an optional `&mut dyn` [`ResourceLimiter`], that exists
-/// both to make types a little easier to read and to provide a `Debug` impl so
-/// that `#[derive(Debug)]` works on structs that contain it.
-pub struct ResourceLimiterRef<'a>(Option<&'a mut (dyn ResourceLimiter)>);
-impl Debug for ResourceLimiterRef<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ResourceLimiterRef(...)")
-    }
-}
-
-impl<'a> ResourceLimiterRef<'a> {
-    pub fn as_resource_limiter(&mut self) -> &mut Option<&'a mut dyn ResourceLimiter> {
-        &mut self.0
-    }
-}
 
 /// A wrapper around a boxed `dyn FnMut(&mut T)` returning a `&mut dyn`
 /// [`ResourceLimiter`]; in other words a function that one can call to retrieve
@@ -332,7 +314,7 @@ fn pruning_errors() {
 
 #[test]
 fn pruned_store_deref() {
-    let mut config = Config::default();
+    let mut config = crate::Config::default();
     config.consume_fuel(true);
     let engine = Engine::new(&config);
     let mut store = Store::new(&engine, ());
@@ -438,178 +420,13 @@ pub enum CallHook {
     ReturningFromHost,
 }
 
-/// An error that may be encountered when operating on the [`Store`].
-#[derive(Debug, Clone)]
-pub enum FuelError {
-    /// Raised when trying to use any of the `fuel` methods while fuel metering is disabled.
-    FuelMeteringDisabled,
-    /// Raised when trying to consume more fuel than is available in the [`Store`].
-    OutOfFuel,
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for FuelError {}
-
-impl fmt::Display for FuelError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::FuelMeteringDisabled => write!(f, "fuel metering is disabled"),
-            Self::OutOfFuel => write!(f, "all fuel consumed"),
-        }
-    }
-}
-
-impl FuelError {
-    /// Returns an error indicating that fuel metering has been disabled.
-    ///
-    /// # Note
-    ///
-    /// This method exists to indicate that this execution path is cold.
-    #[cold]
-    pub fn fuel_metering_disabled() -> Self {
-        Self::FuelMeteringDisabled
-    }
-
-    /// Returns an error indicating that too much fuel has been consumed.
-    ///
-    /// # Note
-    ///
-    /// This method exists to indicate that this execution path is cold.
-    #[cold]
-    pub fn out_of_fuel() -> Self {
-        Self::OutOfFuel
-    }
-}
-
-/// The remaining and consumed fuel counters.
-#[derive(Debug, Copy, Clone)]
-pub struct Fuel {
-    /// The remaining fuel.
-    remaining: u64,
-    /// This is `true` if fuel metering is enabled for the [`Engine`].
-    enabled: bool,
-    /// The fuel costs provided by the [`Engine`]'s [`Config`].
-    ///
-    /// [`Config`]: crate::Config
-    costs: FuelCosts,
-}
-
-impl Fuel {
-    /// Creates a new [`Fuel`] for the [`Engine`].
-    pub fn new(config: &Config) -> Self {
-        let enabled = config.get_consume_fuel();
-        let costs = *config.fuel_costs();
-        Self {
-            remaining: 0,
-            enabled,
-            costs,
-        }
-    }
-
-    /// Returns `true` if fuel metering is enabled.
-    fn is_fuel_metering_enabled(&self) -> bool {
-        self.enabled
-    }
-
-    /// Returns `Ok` if fuel metering is enabled.
-    ///
-    /// Returns descriptive [`FuelError`] otherwise.
-    ///
-    /// # Errors
-    ///
-    /// If fuel metering is disabled.
-    fn check_fuel_metering_enabled(&self) -> Result<(), FuelError> {
-        if !self.is_fuel_metering_enabled() {
-            return Err(FuelError::fuel_metering_disabled());
-        }
-        Ok(())
-    }
-
-    /// Sets the remaining fuel to `fuel`.
-    ///
-    /// # Errors
-    ///
-    /// If fuel metering is disabled.
-    pub fn set_fuel(&mut self, fuel: u64) -> Result<(), FuelError> {
-        self.check_fuel_metering_enabled()?;
-        self.remaining = fuel;
-        Ok(())
-    }
-
-    /// Returns the remaining fuel.
-    ///
-    /// # Errors
-    ///
-    /// If fuel metering is disabled.
-    pub fn get_fuel(&self) -> Result<u64, FuelError> {
-        self.check_fuel_metering_enabled()?;
-        Ok(self.remaining)
-    }
-
-    /// Synthetically consumes an amount of [`Fuel`] from the [`Store`].
-    ///
-    /// Returns the remaining amount of [`Fuel`] after this operation.
-    ///
-    /// # Note
-    ///
-    /// - This does not check if fuel metering is enabled.
-    /// - This API is intended for use cases where it is clear that fuel metering is
-    ///   enabled and where a check would incur unnecessary overhead in a hot path.
-    ///   An example of this is the execution of consume fuel instructions since
-    ///   those only exist if fuel metering is enabled.
-    ///
-    /// # Errors
-    ///
-    /// If out of fuel.
-    pub(crate) fn consume_fuel_unchecked(&mut self, delta: u64) -> Result<u64, TrapCode> {
-        self.remaining = self
-            .remaining
-            .checked_sub(delta)
-            .ok_or(TrapCode::OutOfFuel)?;
-        Ok(self.remaining)
-    }
-
-    /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
-    ///
-    /// Returns the remaining amount of [`Fuel`] after this operation.
-    ///
-    /// # Errors
-    ///
-    /// - If fuel metering is disabled.
-    /// - If out of fuel.
-    pub(crate) fn consume_fuel(
-        &mut self,
-        f: impl FnOnce(&FuelCosts) -> u64,
-    ) -> Result<u64, FuelError> {
-        self.check_fuel_metering_enabled()?;
-        self.consume_fuel_unchecked(f(&self.costs))
-            .map_err(|_| FuelError::OutOfFuel)
-    }
-
-    /// Synthetically consumes an amount of [`Fuel`] from the [`Store`] if fuel metering is enabled.
-    ///
-    /// # Note
-    ///
-    /// This does nothing if fuel metering is disabled.
-    ///
-    /// # Errors
-    ///
-    /// - If out of fuel.
-    pub(crate) fn consume_fuel_if(
-        &mut self,
-        f: impl FnOnce(&FuelCosts) -> u64,
-    ) -> Result<(), TrapCode> {
-        match self.consume_fuel(f) {
-            Err(FuelError::OutOfFuel) => Err(TrapCode::OutOfFuel),
-            Err(FuelError::FuelMeteringDisabled) | Ok(_) => Ok(()),
-        }
-    }
-}
-
 impl StoreInner {
     /// Creates a new [`StoreInner`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
-        let fuel = Fuel::new(engine.config());
+        let config = engine.config();
+        let fuel_enabled = config.get_consume_fuel();
+        let fuel_costs = config.fuel_costs().clone();
+        let fuel = Fuel::new(fuel_enabled, fuel_costs);
         StoreInner {
             engine: engine.clone(),
             store_idx: StoreIdx::new(),
@@ -1224,10 +1041,13 @@ impl<T> Store<T> {
     pub(crate) fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
-        let resource_limiter = ResourceLimiterRef(match &mut self.typed.limiter {
-            Some(q) => Some(q.0(&mut self.typed.data)),
-            None => None,
-        });
+        let resource_limiter = match &mut self.typed.limiter {
+            Some(query) => {
+                let limiter = query.0(&mut self.typed.data);
+                ResourceLimiterRef::from(limiter)
+            }
+            None => ResourceLimiterRef::default(),
+        };
         (&mut self.inner, resource_limiter)
     }
 

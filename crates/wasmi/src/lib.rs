@@ -131,9 +131,9 @@ pub mod errors {
         linker::LinkerError,
         memory::MemoryError,
         module::{InstantiationError, ReadError},
-        store::FuelError,
         table::TableError,
     };
+    pub use crate::core::FuelError;
 }
 
 pub use self::{
@@ -166,7 +166,7 @@ pub use self::{
     },
     global::{Global, GlobalType, Mutability},
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
-    limits::{ResourceLimiter, StoreLimits, StoreLimitsBuilder},
+    limits::{StoreLimits, StoreLimitsBuilder},
     linker::{state, Linker, LinkerBuilder},
     memory::{Memory, MemoryType, MemoryTypeBuilder},
     module::{
