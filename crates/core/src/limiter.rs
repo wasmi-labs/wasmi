@@ -119,11 +119,11 @@ pub trait ResourceLimiter {
         maximum: Option<usize>,
     ) -> Result<bool, LimiterError>;
 
-    /// Notifies the resource limiter that growing a linear memory, permitted by
+    /// Notifies the resource limiter that growing a memory, permitted by
     /// the [`ResourceLimiter::memory_growing`] method, has failed.
     fn memory_grow_failed(&mut self, _error: &LimiterError) {}
 
-    /// Notifies the resource limiter that growing a linear memory, permitted by
+    /// Notifies the resource limiter that growing a table, permitted by
     /// the [`ResourceLimiter::table_growing`] method, has failed.
     fn table_grow_failed(&mut self, _error: &LimiterError) {}
 
