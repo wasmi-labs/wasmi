@@ -734,7 +734,7 @@ pub enum FuelInfo {
     None,
     /// Fuel metering is enabled with the following information.
     Some {
-        /// The [`FuelCosts`] for the function translation.
+        /// The [`FuelCostsProvider`] for the function translation.
         costs: FuelCostsProvider,
         /// Index to the current [`Instruction::ConsumeFuel`] of a parent [`ControlFrame`].
         instr: Instr,
@@ -852,7 +852,7 @@ impl FuncTranslator {
         self.reachable
     }
 
-    /// Returns the configured [`FuelCosts`] of the [`Engine`] if any.
+    /// Returns the configured [`FuelCostsProvider`] of the [`Engine`] if any.
     ///
     /// Returns `None` if fuel metering is disabled.
     fn fuel_costs(&self) -> Option<&FuelCostsProvider> {
