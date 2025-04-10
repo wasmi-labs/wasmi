@@ -2070,7 +2070,10 @@ impl FuncTranslator {
                 };
                 if let Ok(address) = Address32::try_from(address) {
                     let result = self.alloc.stack.push_dynamic()?;
-                    self.push_fueled_instr(make_instr_at(result, address), FuelCostsProvider::load)?;
+                    self.push_fueled_instr(
+                        make_instr_at(result, address),
+                        FuelCostsProvider::load,
+                    )?;
                     if !memory.is_default() {
                         self.alloc
                             .instr_encoder
@@ -2088,7 +2091,10 @@ impl FuncTranslator {
         let result = self.alloc.stack.push_dynamic()?;
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
-                self.push_fueled_instr(make_instr_offset16(result, ptr, offset), FuelCostsProvider::load)?;
+                self.push_fueled_instr(
+                    make_instr_offset16(result, ptr, offset),
+                    FuelCostsProvider::load,
+                )?;
                 return Ok(());
             }
         }
@@ -2283,10 +2289,16 @@ impl FuncTranslator {
             }
             Provider::Const(value) => {
                 if let Ok(value) = Field::try_from(Src::from(value).wrap()) {
-                    self.push_fueled_instr(make_instr_at_imm(value, address), FuelCostsProvider::store)?;
+                    self.push_fueled_instr(
+                        make_instr_at_imm(value, address),
+                        FuelCostsProvider::store,
+                    )?;
                 } else {
                     let value = self.alloc.stack.alloc_const(value)?;
-                    self.push_fueled_instr(make_instr_at(value, address), FuelCostsProvider::store)?;
+                    self.push_fueled_instr(
+                        make_instr_at(value, address),
+                        FuelCostsProvider::store,
+                    )?;
                 }
             }
         }
@@ -2321,9 +2333,10 @@ impl FuncTranslator {
             return Ok(None);
         };
         let instr = match value {
-            Provider::Register(value) => {
-                self.push_fueled_instr(make_instr_offset16(ptr, offset16, value), FuelCostsProvider::store)?
-            }
+            Provider::Register(value) => self.push_fueled_instr(
+                make_instr_offset16(ptr, offset16, value),
+                FuelCostsProvider::store,
+            )?,
             Provider::Const(value) => match Field::try_from(Src::from(value).wrap()) {
                 Ok(value) => self.push_fueled_instr(
                     make_instr_offset16_imm(ptr, offset16, value),
@@ -2380,7 +2393,10 @@ impl FuncTranslator {
         let value = self.alloc.stack.provider2reg(&value)?;
         if memory.is_default() {
             if let Ok(offset) = Offset16::try_from(offset) {
-                self.push_fueled_instr(make_instr_offset16(ptr, offset, value), FuelCostsProvider::store)?;
+                self.push_fueled_instr(
+                    make_instr_offset16(ptr, offset, value),
+                    FuelCostsProvider::store,
+                )?;
                 return Ok(());
             }
         }
@@ -3098,7 +3114,10 @@ impl FuncTranslator {
         };
         let result_lo = self.alloc.stack.push_dynamic()?;
         let result_hi = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(make_instr([result_lo, result_hi], lhs_lo), FuelCostsProvider::base)?;
+        self.push_fueled_instr(
+            make_instr([result_lo, result_hi], lhs_lo),
+            FuelCostsProvider::base,
+        )?;
         self.alloc
             .instr_encoder
             .append_instr(Instruction::register3_ext(lhs_hi, rhs_lo, rhs_hi))?;
