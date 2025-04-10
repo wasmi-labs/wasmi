@@ -301,6 +301,9 @@ impl Table {
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
+        dst_table
+            .ty()
+            .ensure_element_type_matches(src_table.ty().element())?;
         // Turn parameters into proper slice indices.
         let Ok(src_index) = usize::try_from(src_index) else {
             return Err(TableError::CopyOutOfBounds);
