@@ -641,9 +641,13 @@ impl<T> Linker<T> {
                     .and_then(Extern::into_table)
                     .ok_or_else(invalid_type)?;
                 let found_type = table.dynamic_ty(context);
-                found_type.is_subtype_or_err(expected_type).map_err(|_| {
-                    LinkerError::table_type_mismatch(import_name, expected_type, &found_type)
-                })?;
+                if !found_type.is_subtype_of(expected_type) {
+                    return Err(Error::from(LinkerError::table_type_mismatch(
+                        import_name,
+                        expected_type,
+                        &found_type,
+                    )));
+                };
                 Ok(Extern::Table(table))
             }
             ExternType::Memory(expected_type) => {
@@ -653,9 +657,13 @@ impl<T> Linker<T> {
                     .and_then(Extern::into_memory)
                     .ok_or_else(invalid_type)?;
                 let found_type = memory.dynamic_ty(context);
-                found_type.is_subtype_or_err(expected_type).map_err(|_| {
-                    LinkerError::invalid_memory_subtype(import_name, expected_type, &found_type)
-                })?;
+                if !found_type.is_subtype_of(expected_type) {
+                    return Err(Error::from(LinkerError::invalid_memory_subtype(
+                        import_name,
+                        expected_type,
+                        &found_type,
+                    )));
+                };
                 Ok(Extern::Memory(memory))
             }
             ExternType::Global(expected_type) => {

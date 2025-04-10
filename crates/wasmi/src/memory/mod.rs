@@ -188,18 +188,6 @@ impl MemoryType {
         self.inner.page_size_log2()
     }
 
-    /// Ensures that `self` is a subtype of `other`.
-    ///
-    ///  # Errors
-    ///
-    /// If [`MemoryType::is_subtype_of`] between `self` and `other` returns `false`.
-    pub(crate) fn is_subtype_or_err(&self, other: &MemoryType) -> Result<(), MemoryError> {
-        match self.is_subtype_of(other) {
-            true => Ok(()),
-            false => Err(MemoryError::SubtypeMismatch),
-        }
-    }
-
     /// Returns `true` if the [`MemoryType`] is a subtype of the `other` [`MemoryType`].
     ///
     /// # Note

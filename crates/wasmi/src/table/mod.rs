@@ -113,27 +113,6 @@ impl TableType {
         Ok(())
     }
 
-    /// Checks if `self` is a subtype of `other`.
-    ///
-    /// # Note
-    ///
-    /// This implements the [subtyping rules] according to the WebAssembly spec.
-    ///
-    /// [import subtyping]:
-    /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
-    ///
-    /// # Errors
-    ///
-    /// - If the `element` type of `self` does not match the `element` type of `other`.
-    /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `other`.
-    /// - If the `maximum` size of `self` is greater than the `maximum` size of `other`.
-    pub(crate) fn is_subtype_or_err(&self, other: &TableType) -> Result<(), TableError> {
-        match self.is_subtype_of(other) {
-            true => Ok(()),
-            false => Err(TableError::SubtypeMismatch),
-        }
-    }
-
     /// Returns `true` if the [`TableType`] is a subtype of the `other` [`TableType`].
     ///
     /// # Note
