@@ -2,10 +2,7 @@ use super::*;
 use crate::{
     core::{TrapCode, ValType},
     error::ErrorKind,
-    global::GlobalError,
-    memory::MemoryError,
     module::InstantiationError,
-    table::TableError,
     Caller,
     Engine,
     ExternRef,
@@ -132,9 +129,7 @@ fn instantiate_with_invalid_global_import() {
     let error = Instance::new(&mut store, &module, &externals).unwrap_err();
     assert!(matches!(
         error.kind(),
-        ErrorKind::Instantiation(InstantiationError::Global(
-            GlobalError::UnsatisfyingGlobalType { .. }
-        ))
+        ErrorKind::Instantiation(InstantiationError::GlobalTypeMismatch { .. })
     ));
 }
 
@@ -156,7 +151,7 @@ fn instantiate_with_invalid_memory_import() {
     let error = Instance::new(&mut store, &module, &externals).unwrap_err();
     assert!(matches!(
         error.kind(),
-        ErrorKind::Instantiation(InstantiationError::Memory(MemoryError::SubtypeMismatch))
+        ErrorKind::Instantiation(InstantiationError::MemoryTypeMismatch { .. })
     ));
 }
 
@@ -184,7 +179,7 @@ fn instantiate_with_invalid_table_import() {
     let error = Instance::new(&mut store, &module, &externals).unwrap_err();
     assert!(matches!(
         error.kind(),
-        ErrorKind::Instantiation(InstantiationError::Table(TableError::SubtypeMismatch))
+        ErrorKind::Instantiation(InstantiationError::TableTypeMismatch { .. })
     ));
 }
 

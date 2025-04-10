@@ -14,6 +14,7 @@ use crate::{
         UntypedVal,
         ValType,
     },
+    Error,
     Val,
 };
 
@@ -44,7 +45,7 @@ impl ArenaIndex for TableIdx {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TableType {
     /// The underlying table type.
-    inner: CoreTableType,
+    pub(crate) inner: CoreTableType,
 }
 
 impl TableType {
@@ -420,7 +421,7 @@ impl Table {
     /// # Errors
     ///
     /// If `init` does not match the [`TableType`] element type.
-    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Val) -> Result<Self, TableError> {
+    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Val) -> Result<Self, Error> {
         let (inner, mut resource_limiter) = ctx
             .as_context_mut()
             .store

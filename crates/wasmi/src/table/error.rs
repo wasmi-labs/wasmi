@@ -2,7 +2,7 @@ use crate::core::TableError as CoreTableError;
 use core::{fmt, fmt::Display};
 
 /// Errors that may occur upon operating with table entities.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum TableError {
     /// Tried to allocate more virtual memory than technically possible.

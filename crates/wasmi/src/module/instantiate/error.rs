@@ -1,9 +1,10 @@
 use crate::{
+    core::{MemoryType, TableType},
     errors::{MemoryError, TableError},
-    global::GlobalError,
     Extern,
     ExternType,
     FuncType,
+    GlobalType,
     Table,
 };
 use core::{
@@ -30,19 +31,34 @@ pub enum InstantiationError {
         /// The actually found external value for the module import.
         actual: Extern,
     },
-    /// Caused when a function has a mismatching type.
+    /// Returned when a global has a mismatching type.
+    GlobalTypeMismatch {
+        /// The expected global type of the global import.
+        expected: GlobalType,
+        /// The actual global type of the global import.
+        actual: GlobalType,
+    },
+    /// Returned when a function has a mismatching type.
     FuncTypeMismatch {
-        /// The expected function signature for the function import.
+        /// The expected function type of the function import.
         expected: FuncType,
-        /// The actual function signature for the function import.
+        /// The actual function type of the function import.
         actual: FuncType,
     },
-    /// Occurs when an imported table does not satisfy the required table type.
-    Table(TableError),
-    /// Occurs when an imported memory does not satisfy the required memory type.
-    Memory(MemoryError),
-    /// Occurs when an imported global variable does not satisfy the required global type.
-    Global(GlobalError),
+    /// Returned when a table has a mismatching type.
+    TableTypeMismatch {
+        /// The expected table type of the table import.
+        expected: TableType,
+        /// The actual table type of the table import.
+        actual: TableType,
+    },
+    /// Returned when a linear memory has a mismatching type.
+    MemoryTypeMismatch {
+        /// The expected memory type of the memory import.
+        expected: MemoryType,
+        /// The actual memory type of the memory import.
+        actual: MemoryType,
+    },
     /// Caused when an element segment does not fit into the specified table instance.
     ElementSegmentDoesNotFit {
         /// The table of the element segment.
@@ -59,6 +75,14 @@ pub enum InstantiationError {
     },
     /// When trying to instantiate more instances than supported by Wasmi.
     TooManyInstances,
+    /// When trying to instantiate more tables than supported by Wasmi.
+    TooManyTables,
+    /// When trying to instantiate more linear memories than supported by Wasmi.
+    TooManyMemories,
+    /// Encountered when failing to instantiate a linear memory.
+    FailedToInstantiateMemory(MemoryError),
+    /// Encountered when failing to instantiate a table.
+    FailedToInstantiateTable(TableError),
 }
 
 impl Error for InstantiationError {}
@@ -74,12 +98,10 @@ impl Display for InstantiationError {
                 f,
                 "expected {expected:?} external for import but found {actual:?}",
             ),
-            Self::FuncTypeMismatch { expected, actual } => {
-                write!(
-                    f,
-                    "expected {expected:?} function signature but found {actual:?}",
-                )
-            }
+            Self::GlobalTypeMismatch { expected, actual } => write!(f, "imported global type mismatch. expected {expected:?} but found {actual:?}"),
+            Self::FuncTypeMismatch { expected, actual } => write!(f, "imported function type mismatch. expected {expected:?} but found {actual:?}"),
+            Self::TableTypeMismatch { expected, actual } => write!(f, "imported table type mismatch. expected {expected:?} but found {actual:?}"),
+            Self::MemoryTypeMismatch { expected, actual } => write!(f, "imported memory type mismatch. expected {expected:?} but found {actual:?}"),
             Self::ElementSegmentDoesNotFit {
                 table,
                 table_index: offset,
@@ -91,28 +113,11 @@ impl Display for InstantiationError {
             Self::UnexpectedStartFn { index } => {
                 write!(f, "found an unexpected start function with index {index}")
             }
-            Self::Table(error) => Display::fmt(error, f),
-            Self::Memory(error) => Display::fmt(error, f),
-            Self::Global(error) => Display::fmt(error, f),
-            Self::TooManyInstances => write!(f, "too many instances")
+            Self::TooManyInstances => write!(f, "tried to instantiate too many instances"),
+            Self::TooManyTables => write!(f, "tried to instantiate too many tables"),
+            Self::TooManyMemories => write!(f, "tried to instantiate too many linear memories"),
+            Self::FailedToInstantiateMemory(error) => write!(f, "failed to instantiate memory: {error}"),
+            Self::FailedToInstantiateTable(error) => write!(f, "failed to instantiate table: {error}"),
         }
-    }
-}
-
-impl From<TableError> for InstantiationError {
-    fn from(error: TableError) -> Self {
-        Self::Table(error)
-    }
-}
-
-impl From<MemoryError> for InstantiationError {
-    fn from(error: MemoryError) -> Self {
-        Self::Memory(error)
-    }
-}
-
-impl From<GlobalError> for InstantiationError {
-    fn from(error: GlobalError) -> Self {
-        Self::Global(error)
     }
 }

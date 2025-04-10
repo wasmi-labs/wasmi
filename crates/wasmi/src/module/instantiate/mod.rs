@@ -8,6 +8,7 @@ pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, ConstExpr, InitDataSegment, Module};
 use crate::{
     core::UntypedVal,
+    error::ErrorKind,
     func::WasmFuncEntity,
     memory::DataSegment,
     value::WithType,
@@ -53,23 +54,23 @@ impl Module {
     where
         I: IntoIterator<Item = Extern, IntoIter: ExactSizeIterator>,
     {
-        context
-            .as_context_mut()
-            .store
-            .check_new_instances_limit(1)?;
-        let handle = context.as_context_mut().store.inner.alloc_instance();
+        let mut ctx = context.as_context_mut().store;
+        if !ctx.can_create_more_instances(1) {
+            return Err(Error::from(InstantiationError::TooManyInstances));
+        }
+        let handle = ctx.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
-        self.extract_imports(&context, &mut builder, externals)?;
-        self.extract_functions(&mut context, &mut builder, handle);
-        self.extract_tables(&mut context, &mut builder)?;
-        self.extract_memories(&mut context, &mut builder)?;
-        self.extract_globals(&mut context, &mut builder);
+        self.extract_imports(&ctx, &mut builder, externals)?;
+        self.extract_functions(&mut ctx, &mut builder, handle);
+        self.extract_tables(&mut ctx, &mut builder)?;
+        self.extract_memories(&mut ctx, &mut builder)?;
+        self.extract_globals(&mut ctx, &mut builder);
         self.extract_exports(&mut builder);
         self.extract_start_fn(&mut builder);
 
-        self.initialize_table_elements(&mut context, &mut builder)?;
-        self.initialize_memory_data(&mut context, &mut builder)?;
+        self.initialize_table_elements(&mut ctx, &mut builder)?;
+        self.initialize_memory_data(&mut ctx, &mut builder)?;
 
         // At this point the module instantiation is nearly done.
         // The only thing that is missing is to run the `start` function.
@@ -121,17 +122,33 @@ impl Module {
                 }
                 (ExternType::Table(required), Extern::Table(table)) => {
                     let imported = table.dynamic_ty(&store);
-                    imported.is_subtype_or_err(required)?;
+                    if !imported.is_subtype_of(required) {
+                        return Err(InstantiationError::TableTypeMismatch {
+                            expected: required.inner,
+                            actual: imported.inner,
+                        });
+                    }
                     builder.push_table(table);
                 }
                 (ExternType::Memory(required), Extern::Memory(memory)) => {
                     let imported = memory.dynamic_ty(&store);
-                    imported.is_subtype_or_err(required)?;
+                    if !imported.is_subtype_of(required) {
+                        return Err(InstantiationError::MemoryTypeMismatch {
+                            expected: required.inner,
+                            actual: imported.inner,
+                        });
+                    }
                     builder.push_memory(memory);
                 }
                 (ExternType::Global(required), Extern::Global(global)) => {
                     let imported = global.ty(&store);
-                    required.satisfies(&imported)?;
+                    let required = *required;
+                    if imported != required {
+                        return Err(InstantiationError::GlobalTypeMismatch {
+                            expected: required,
+                            actual: imported,
+                        });
+                    }
                     builder.push_global(global);
                 }
                 (expected_import, actual_extern_val) => {
@@ -178,13 +195,20 @@ impl Module {
         mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), InstantiationError> {
-        context
-            .as_context_mut()
-            .store
-            .check_new_tables_limit(self.len_tables())?;
+        let ctx = context.as_context_mut().store;
+        if !ctx.can_create_more_tables(self.len_tables()) {
+            return Err(InstantiationError::TooManyTables);
+        }
         for table_type in self.internal_tables().copied() {
             let init = Val::default(table_type.element());
-            let table = Table::new(context.as_context_mut(), table_type, init)?;
+            let table =
+                Table::new(context.as_context_mut(), table_type, init).map_err(|error| {
+                    let error = match error.kind() {
+                        ErrorKind::Table(error) => error.clone(),
+                        error => panic!("unexpected error: {error}"),
+                    };
+                    InstantiationError::FailedToInstantiateTable(error)
+                })?;
             builder.push_table(table);
         }
         Ok(())
@@ -199,13 +223,19 @@ impl Module {
         &self,
         mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
-    ) -> Result<(), Error> {
-        context
-            .as_context_mut()
-            .store
-            .check_new_memories_limit(self.len_memories())?;
+    ) -> Result<(), InstantiationError> {
+        let ctx = context.as_context_mut().store;
+        if !ctx.can_create_more_memories(self.len_memories()) {
+            return Err(InstantiationError::TooManyMemories);
+        }
         for memory_type in self.internal_memories().copied() {
-            let memory = Memory::new(context.as_context_mut(), memory_type)?;
+            let memory = Memory::new(context.as_context_mut(), memory_type).map_err(|error| {
+                let error = match error.kind() {
+                    ErrorKind::Memory(error) => error.clone(),
+                    error => panic!("unexpected error: {error}"),
+                };
+                InstantiationError::FailedToInstantiateMemory(error)
+            })?;
             builder.push_memory(memory);
         }
         Ok(())

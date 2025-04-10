@@ -119,7 +119,7 @@ impl MemoryTypeBuilder {
 /// The memory type of a linear memory.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MemoryType {
-    inner: CoreMemoryType,
+    pub(crate) inner: CoreMemoryType,
 }
 
 impl MemoryType {
