@@ -234,7 +234,7 @@ impl TableEntity {
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
         self.inner
-            .grow_untyped(delta, init.into(), fuel, limiter)
+            .grow_untyped(delta, init, fuel, limiter)
             .map_err(TableError::from)
     }
 
