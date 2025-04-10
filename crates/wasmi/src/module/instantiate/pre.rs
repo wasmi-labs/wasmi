@@ -69,7 +69,7 @@ impl InstancePre {
         mut context: impl AsContextMut,
     ) -> Result<Instance, InstantiationError> {
         if let Some(index) = self.start_fn() {
-            return Err(InstantiationError::FoundStartFn { index });
+            return Err(InstantiationError::UnexpectedStartFn { index });
         }
         context
             .as_context_mut()

@@ -53,7 +53,7 @@ pub enum InstantiationError {
         len: u32,
     },
     /// Caused when the `start` function was unexpectedly found in the instantiated module.
-    FoundStartFn {
+    UnexpectedStartFn {
         /// The index of the found `start` function.
         index: u32,
     },
@@ -88,7 +88,7 @@ impl Display for InstantiationError {
                 f,
                 "out of bounds table access: {table:?} does not fit {amount} elements starting from offset {offset}",
             ),
-            Self::FoundStartFn { index } => {
+            Self::UnexpectedStartFn { index } => {
                 write!(f, "found an unexpected start function with index {index}")
             }
             Self::Table(error) => Display::fmt(error, f),
