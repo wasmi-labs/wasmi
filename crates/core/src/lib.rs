@@ -14,6 +14,7 @@
 mod float;
 mod fuel;
 mod func_type;
+mod global;
 pub mod hint;
 mod host_error;
 mod index_ty;
@@ -38,6 +39,7 @@ pub use self::{
     float::{F32, F64},
     fuel::{Fuel, FuelCosts, FuelCostsProvider, FuelError},
     func_type::{DynamicallyTyped, FuncType, FuncTypeError},
+    global::{Global, GlobalError, GlobalType},
     host_error::HostError,
     index_ty::IndexType,
     limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
