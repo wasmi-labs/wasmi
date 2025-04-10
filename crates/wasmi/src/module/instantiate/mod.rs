@@ -204,7 +204,7 @@ impl Module {
             let table =
                 Table::new(context.as_context_mut(), table_type, init).map_err(|error| {
                     let error = match error.kind() {
-                        ErrorKind::Table(error) => error.clone(),
+                        ErrorKind::Table(error) => *error,
                         error => panic!("unexpected error: {error}"),
                     };
                     InstantiationError::FailedToInstantiateTable(error)

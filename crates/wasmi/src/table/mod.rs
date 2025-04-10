@@ -137,7 +137,7 @@ impl TableEntity {
         init: Val,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Self, TableError> {
-        let inner = CoreTable::new(ty.inner, init.into(), limiter).map_err(TableError::from)?;
+        let inner = CoreTable::new(ty.inner, init.into(), limiter)?;
         Ok(Self { inner })
     }
 
@@ -182,9 +182,7 @@ impl TableEntity {
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
-        self.inner
-            .grow(delta, init.into(), fuel, limiter)
-            .map_err(TableError::from)
+        self.inner.grow(delta, init.into(), fuel, limiter)
     }
 
     /// Grows the table by the given amount of elements.
@@ -207,9 +205,7 @@ impl TableEntity {
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, TableError> {
-        self.inner
-            .grow_untyped(delta, init, fuel, limiter)
-            .map_err(TableError::from)
+        self.inner.grow_untyped(delta, init, fuel, limiter)
     }
 
     /// Returns the [`Table`] element value at `index`.
@@ -238,9 +234,7 @@ impl TableEntity {
     /// - If `index` is out of bounds.
     /// - If `value` does not match the [`Table`] element type.
     pub fn set(&mut self, index: u64, value: Val) -> Result<(), TableError> {
-        self.inner
-            .set(index, value.into())
-            .map_err(TableError::from)
+        self.inner.set(index, value.into())
     }
 
     /// Returns the [`UntypedVal`] of the [`Table`] at `index`.
@@ -249,9 +243,7 @@ impl TableEntity {
     ///
     /// If `index` is out of bounds.
     pub fn set_untyped(&mut self, index: u64, value: UntypedVal) -> Result<(), TableError> {
-        self.inner
-            .set_untyped(index, value)
-            .map_err(TableError::from)
+        self.inner.set_untyped(index, value)
     }
 
     /// Initialize `len` elements from `src_element[src_index..]` into `self[dst_index..]`.
@@ -274,7 +266,6 @@ impl TableEntity {
     ) -> Result<(), TableError> {
         self.inner
             .init(element.inner.as_ref(), dst_index, src_index, len, fuel)
-            .map_err(TableError::from)
     }
 
     /// Copy `len` elements from `src_table[src_index..]` into
@@ -300,7 +291,6 @@ impl TableEntity {
             len,
             fuel,
         )
-        .map_err(TableError::from)
     }
 
     /// Copy `len` elements from `self[src_index..]` into `self[dst_index..]`.
@@ -315,9 +305,7 @@ impl TableEntity {
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
-        self.inner
-            .copy_within(dst_index, src_index, len, fuel)
-            .map_err(TableError::from)
+        self.inner.copy_within(dst_index, src_index, len, fuel)
     }
 
     /// Fill `table[dst..(dst + len)]` with the given value.
@@ -340,9 +328,7 @@ impl TableEntity {
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
-        self.inner
-            .fill(dst, val.into(), len, fuel)
-            .map_err(TableError::from)
+        self.inner.fill(dst, val.into(), len, fuel)
     }
 
     /// Fill `table[dst..(dst + len)]` with the given value.
@@ -367,9 +353,7 @@ impl TableEntity {
         len: u64,
         fuel: Option<&mut Fuel>,
     ) -> Result<(), TableError> {
-        self.inner
-            .fill_untyped(dst, val, len, fuel)
-            .map_err(TableError::from)
+        self.inner.fill_untyped(dst, val, len, fuel)
     }
 }
 
