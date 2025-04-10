@@ -3,6 +3,7 @@ use super::{
     export::ExternIdx,
     global::Global,
     import::{FuncTypeIdx, Import},
+    utils::FromWasmparser as _,
     CustomSectionsBuilder,
     ElementSegment,
     FuncIdx,

@@ -1,4 +1,4 @@
-use super::ConstExpr;
+use super::{utils::FromWasmparser as _, ConstExpr};
 use crate::GlobalType;
 
 /// The index of a global variable within a [`Module`].
