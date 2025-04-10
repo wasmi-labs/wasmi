@@ -1,6 +1,6 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
-    core::{hint::unlikely, Fuel, ResourceLimiter, ResourceLimiterRef},
+    core::{hint::unlikely, Fuel, Memory as CoreMemory, ResourceLimiter, ResourceLimiterRef},
     engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
@@ -23,7 +23,6 @@ use crate::{
     InstanceEntity,
     InstanceIdx,
     Memory,
-    MemoryEntity,
     MemoryIdx,
     Table,
     TableEntity,
@@ -369,7 +368,7 @@ pub struct StoreInner {
     /// Stored Wasm or host functions.
     funcs: Arena<FuncIdx, FuncEntity>,
     /// Stored linear memories.
-    memories: Arena<MemoryIdx, MemoryEntity>,
+    memories: Arena<MemoryIdx, CoreMemory>,
     /// Stored tables.
     tables: Arena<TableIdx, TableEntity>,
     /// Stored global variables.
@@ -489,8 +488,8 @@ impl StoreInner {
         Table::from_inner(self.wrap_stored(table))
     }
 
-    /// Allocates a new [`MemoryEntity`] and returns a [`Memory`] reference to it.
-    pub fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
+    /// Allocates a new [`CoreMemory`] and returns a [`Memory`] reference to it.
+    pub fn alloc_memory(&mut self, memory: CoreMemory) -> Memory {
         let memory = self.memories.alloc(memory);
         Memory::from_inner(self.wrap_stored(memory))
     }
@@ -777,37 +776,34 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.elems)
     }
 
-    /// Returns a shared reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// Returns a shared reference to the [`CoreMemory`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory<'a>(&'a self, memory: &Memory) -> &'a MemoryEntity {
+    pub fn resolve_memory<'a>(&'a self, memory: &Memory) -> &'a CoreMemory {
         self.resolve(memory.as_inner(), &self.memories)
     }
 
-    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory_mut<'a>(&'a mut self, memory: &Memory) -> &'a mut MemoryEntity {
+    pub fn resolve_memory_mut<'a>(&'a mut self, memory: &Memory) -> &'a mut CoreMemory {
         let idx = self.unwrap_stored(memory.as_inner());
         Self::resolve_mut(idx, &mut self.memories)
     }
 
-    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory_and_fuel_mut(
-        &mut self,
-        memory: &Memory,
-    ) -> (&mut MemoryEntity, &mut Fuel) {
+    pub fn resolve_memory_and_fuel_mut(&mut self, memory: &Memory) -> (&mut CoreMemory, &mut Fuel) {
         let idx = self.unwrap_stored(memory.as_inner());
         let memory = Self::resolve_mut(idx, &mut self.memories);
         let fuel = &mut self.fuel;
@@ -816,7 +812,7 @@ impl StoreInner {
 
     /// Returns the following data:
     ///
-    /// - An exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// - An exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
     /// - A shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
     /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
     ///
@@ -835,7 +831,7 @@ impl StoreInner {
         &mut self,
         memory: &Memory,
         segment: &DataSegment,
-    ) -> (&mut MemoryEntity, &DataSegmentEntity, &mut Fuel) {
+    ) -> (&mut CoreMemory, &DataSegmentEntity, &mut Fuel) {
         let mem_idx = self.unwrap_stored(memory.as_inner());
         let data_idx = segment.as_inner();
         let data = self.resolve(data_idx, &self.datas);
@@ -844,7 +840,7 @@ impl StoreInner {
         (mem, data, fuel)
     }
 
-    /// Returns an exclusive pair of references to the [`MemoryEntity`] associated to the given [`Memory`]s.
+    /// Returns an exclusive pair of references to the [`CoreMemory`] associated to the given [`Memory`]s.
     ///
     /// # Panics
     ///
@@ -854,7 +850,7 @@ impl StoreInner {
         &mut self,
         fst: &Memory,
         snd: &Memory,
-    ) -> (&mut MemoryEntity, &mut MemoryEntity, &mut Fuel) {
+    ) -> (&mut CoreMemory, &mut CoreMemory, &mut Fuel) {
         let fst = self.unwrap_stored(fst.as_inner());
         let snd = self.unwrap_stored(snd.as_inner());
         let (fst, snd) = self.memories.get_pair_mut(fst, snd).unwrap_or_else(|| {
@@ -1075,7 +1071,7 @@ impl<T> Store<T> {
         Trampoline::from_inner(self.inner.wrap_stored(idx))
     }
 
-    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`]
+    /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`]
     /// and an exclusive reference to the user provided host state.
     ///
     /// # Note
@@ -1090,7 +1086,7 @@ impl<T> Store<T> {
     pub(super) fn resolve_memory_and_state_mut(
         &mut self,
         memory: &Memory,
-    ) -> (&mut MemoryEntity, &mut T) {
+    ) -> (&mut CoreMemory, &mut T) {
         (self.inner.resolve_memory_mut(memory), &mut self.typed.data)
     }
 

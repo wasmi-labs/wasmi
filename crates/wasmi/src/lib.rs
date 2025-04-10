@@ -187,7 +187,7 @@ use self::{
     func::{FuncEntity, FuncIdx},
     global::{GlobalEntity, GlobalIdx},
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
-    memory::{DataSegmentEntity, DataSegmentIdx, MemoryEntity, MemoryIdx},
+    memory::{DataSegmentEntity, DataSegmentIdx, MemoryIdx},
     store::Stored,
     table::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx, TableEntity, TableIdx},
 };

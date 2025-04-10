@@ -1,13 +1,10 @@
 mod data;
 
-#[cfg(test)]
-mod tests;
-
 pub use self::data::{DataSegment, DataSegmentEntity, DataSegmentIdx};
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{Fuel, Memory as CoreMemory, MemoryError, MemoryType, ResourceLimiterRef},
+    core::{Memory as CoreMemory, MemoryError, MemoryType},
     Error,
 };
 
@@ -25,112 +22,6 @@ impl ArenaIndex for MemoryIdx {
             panic!("index {value} is out of bounds as memory index: {error}")
         });
         Self(value)
-    }
-}
-
-/// A linear memory entity.
-#[derive(Debug)]
-pub struct MemoryEntity {
-    inner: CoreMemory,
-}
-
-impl MemoryEntity {
-    /// Creates a new memory entity with the given memory type.
-    pub fn new(
-        memory_type: MemoryType,
-        limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<Self, Error> {
-        let inner = CoreMemory::new(memory_type, limiter)?;
-        Ok(Self { inner })
-    }
-
-    /// Creates a new memory entity with the given memory type.
-    pub fn new_static(
-        memory_type: MemoryType,
-        limiter: &mut ResourceLimiterRef<'_>,
-        buffer: &'static mut [u8],
-    ) -> Result<Self, Error> {
-        let inner = CoreMemory::new_static(memory_type, limiter, buffer)?;
-        Ok(Self { inner })
-    }
-
-    /// Returns the memory type of the linear memory.
-    pub fn ty(&self) -> MemoryType {
-        self.inner.ty()
-    }
-
-    /// Returns the dynamic [`MemoryType`] of the [`MemoryEntity`].
-    ///
-    /// # Note
-    ///
-    /// This respects the current size of the [`MemoryEntity`] as
-    /// its minimum size and is useful for import subtyping checks.
-    pub fn dynamic_ty(&self) -> MemoryType {
-        self.inner.dynamic_ty()
-    }
-
-    /// Returns the size, in WebAssembly pages, of this Wasm linear memory.
-    pub fn size(&self) -> u64 {
-        self.inner.size()
-    }
-
-    /// Grows the linear memory by the given amount of new pages.
-    ///
-    /// Returns the amount of pages before the operation upon success.
-    ///
-    /// # Errors
-    ///
-    /// - If the linear memory cannot be grown to the target size.
-    /// - If the `limiter` denies the growth operation.
-    pub fn grow(
-        &mut self,
-        additional: u64,
-        fuel: Option<&mut Fuel>,
-        limiter: &mut ResourceLimiterRef<'_>,
-    ) -> Result<u64, MemoryError> {
-        self.inner.grow(additional, fuel, limiter)
-    }
-
-    /// Returns a shared slice to the bytes underlying to the byte buffer.
-    pub fn data(&self) -> &[u8] {
-        self.inner.data()
-    }
-
-    /// Returns an exclusive slice to the bytes underlying to the byte buffer.
-    pub fn data_mut(&mut self) -> &mut [u8] {
-        self.inner.data_mut()
-    }
-
-    /// Returns the base pointer, in the host’s address space, that the [`Memory`] is located at.
-    pub fn data_ptr(&self) -> *mut u8 {
-        self.inner.data_ptr()
-    }
-
-    /// Returns the byte length of this [`Memory`].
-    ///
-    /// The returned value will be a multiple of the wasm page size, 64k.
-    pub fn data_size(&self) -> usize {
-        self.inner.data_size()
-    }
-
-    /// Reads `n` bytes from `memory[offset..offset+n]` into `buffer`
-    /// where `n` is the length of `buffer`.
-    ///
-    /// # Errors
-    ///
-    /// If this operation accesses out of bounds linear memory.
-    pub fn read(&self, offset: usize, buffer: &mut [u8]) -> Result<(), MemoryError> {
-        self.inner.read(offset, buffer)
-    }
-
-    /// Writes `n` bytes to `memory[offset..offset+n]` from `buffer`
-    /// where `n` if the length of `buffer`.
-    ///
-    /// # Errors
-    ///
-    /// If this operation accesses out of bounds linear memory.
-    pub fn write(&mut self, offset: usize, buffer: &[u8]) -> Result<(), MemoryError> {
-        self.inner.write(offset, buffer)
     }
 }
 
@@ -160,7 +51,7 @@ impl Memory {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
-        let entity = MemoryEntity::new(ty, &mut resource_limiter)?;
+        let entity = CoreMemory::new(ty, &mut resource_limiter)?;
         let memory = inner.alloc_memory(entity);
         Ok(memory)
     }
@@ -180,7 +71,7 @@ impl Memory {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
-        let entity = MemoryEntity::new_static(ty, &mut resource_limiter, buf)?;
+        let entity = CoreMemory::new_static(ty, &mut resource_limiter, buf)?;
         let memory = inner.alloc_memory(entity);
         Ok(memory)
     }
