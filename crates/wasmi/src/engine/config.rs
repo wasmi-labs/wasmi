@@ -95,7 +95,7 @@ impl FuelCosts {
     /// - `table.copy` (+ variants)
     /// - `table.fill` (+ variants)
     /// - `table.init` (+ variants)
-    pub fn fuel_for_copies(&self, len_copies: u64) -> u64 {
+    pub fn fuel_for_copying_values(&self, len_copies: u64) -> u64 {
         Self::costs_per(len_copies, self.copies_per_fuel())
     }
 

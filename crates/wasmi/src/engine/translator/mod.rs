@@ -717,7 +717,7 @@ impl WasmTranslator<'_> for FuncTranslator {
             self.alloc
                 .instr_encoder
                 .bump_fuel_consumption(fuel_info, |costs| {
-                    costs.fuel_for_copies(u64::from(len_registers))
+                    costs.fuel_for_copying_values(u64::from(len_registers))
                 })?;
         }
         let func_consts = self.alloc.stack.func_local_consts();

@@ -343,7 +343,7 @@ impl TableEntity {
             }
         }
         if let Some(fuel) = fuel {
-            match fuel.consume_fuel(|costs| costs.fuel_for_copies(delta)) {
+            match fuel.consume_fuel(|costs| costs.fuel_for_copying_values(delta)) {
                 Ok(_) | Err(FuelError::FuelMeteringDisabled) => {}
                 Err(FuelError::OutOfFuel) => return notify_limiter(limiter),
             }
@@ -462,7 +462,7 @@ impl TableEntity {
             return Ok(());
         }
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(u64::from(len)))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values(u64::from(len)))?;
         }
         // Perform the actual table initialization.
         dst_items.copy_from_slice(src_items);
@@ -506,7 +506,7 @@ impl TableEntity {
             .and_then(|items| items.get(..len_size))
             .ok_or(TrapCode::TableOutOfBounds)?;
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values(len))?;
         }
         // Finally, copy elements in-place for the table.
         dst_items.copy_from_slice(src_items);
@@ -542,7 +542,7 @@ impl TableEntity {
             return Err(TrapCode::TableOutOfBounds);
         };
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values(len))?;
         }
         // Finally, copy elements in-place for the table.
         self.elements
@@ -610,7 +610,7 @@ impl TableEntity {
             .and_then(|elements| elements.get_mut(..len_size))
             .ok_or(TrapCode::TableOutOfBounds)?;
         if let Some(fuel) = fuel {
-            fuel.consume_fuel_if(|costs| costs.fuel_for_copies(len))?;
+            fuel.consume_fuel_if(|costs| costs.fuel_for_copying_values(len))?;
         }
         dst.fill(val);
         Ok(())

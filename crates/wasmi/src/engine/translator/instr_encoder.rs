@@ -492,7 +492,7 @@ impl InstrEncoder {
                 //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
                 self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
-                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                    costs.fuel_for_copying_values(rest.len() as u64 + 3)
                 })?;
                 if let Some(values) = BoundedRegSpan::from_providers(values) {
                     let make_instr = match Self::has_overlapping_copy_spans(
@@ -625,7 +625,7 @@ impl InstrEncoder {
                 //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
                 self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
-                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                    costs.fuel_for_copying_values(rest.len() as u64 + 3)
                 })?;
                 if let Some(span) = BoundedRegSpan::from_providers(values) {
                     self.push_instr(Instruction::return_span(span))?;
@@ -687,7 +687,7 @@ impl InstrEncoder {
                 //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
                 self.bump_fuel_consumption(fuel_info, FuelCosts::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
-                    costs.fuel_for_copies(rest.len() as u64 + 3)
+                    costs.fuel_for_copying_values(rest.len() as u64 + 3)
                 })?;
                 if let Some(span) = BoundedRegSpan::from_providers(values) {
                     self.push_instr(Instruction::return_nez_span(condition, span))?;
