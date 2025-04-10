@@ -41,13 +41,6 @@ pub enum GlobalError {
         /// The type of the new value that mismatches the type of the global variable.
         encountered: ValType,
     },
-    /// Occurs when a global type does not satisfy the constraints of another.
-    UnsatisfyingGlobalType {
-        /// The unsatisfying [`GlobalType`].
-        unsatisfying: GlobalType,
-        /// The required [`GlobalType`].
-        required: GlobalType,
-    },
 }
 
 impl Error for GlobalError {}
@@ -64,16 +57,6 @@ impl Display for GlobalError {
                     f,
                     "type mismatch upon writing global variable. \
                     expected {expected:?} but encountered {encountered:?}.",
-                )
-            }
-            Self::UnsatisfyingGlobalType {
-                unsatisfying,
-                required,
-            } => {
-                write!(
-                    f,
-                    "global type {unsatisfying:?} does not \
-                    satisfy requirements of {required:?}",
                 )
             }
         }
