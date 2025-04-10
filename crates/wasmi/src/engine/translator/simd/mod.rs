@@ -397,7 +397,7 @@ impl FuncTranslator {
         };
         let (offset_hi, offset_lo) = Offset64::split(offset);
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(make_instr(result, offset_lo), FuelCostsProvider::store)?;
+        self.push_fueled_instr(make_instr(result, offset_lo), FuelCostsProvider::load)?;
         self.append_instr(Instruction::register_and_offset_hi(ptr, offset_hi))?;
         self.append_instr(Instruction::register_and_lane(x, lane))?;
         if !memory.is_default() {
@@ -420,7 +420,7 @@ impl FuncTranslator {
         let result = self.alloc.stack.push_dynamic()?;
         let instr = make_instr_at(result, address);
         let param = Instruction::register_and_lane(x, lane);
-        self.push_fueled_instr(instr, FuelCostsProvider::simd)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::load)?;
         self.append_instr(param)?;
         if !memory.is_default() {
             self.append_instr(Instruction::memory_index(memory))?;
