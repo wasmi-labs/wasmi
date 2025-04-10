@@ -6,9 +6,7 @@ use crate::{
     AsContext,
     AsContextMut,
     Func,
-    FuncRef,
     Global,
-    Val,
 };
 use alloc::boxed::Box;
 
@@ -58,7 +56,22 @@ impl ElementSegment {
     ) -> Self {
         let get_func = |index| get_func(index).into();
         let get_global = |index| get_global(index).get(&ctx);
-        let entity = ElementSegmentEntity::new(elem, get_func, get_global);
+        let items: Box<[UntypedVal]> = match elem.kind() {
+            module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => {
+                elem
+                    .items()
+                    .iter()
+                    .map(|const_expr| {
+                        const_expr.eval_with_context(get_global, get_func).unwrap_or_else(|| {
+                            panic!("unexpected failed initialization of constant expression: {const_expr:?}")
+                        })
+                }).collect()
+            }
+            module::ElementSegmentKind::Declared => Box::from([]),
+        };
+        let entity = ElementSegmentEntity {
+            inner: CoreElementSegmentEntity::new(elem.ty(), items),
+        };
         ctx.as_context_mut()
             .store
             .inner
@@ -89,29 +102,6 @@ pub struct ElementSegmentEntity {
 }
 
 impl ElementSegmentEntity {
-    pub fn new(
-        elem: &'_ module::ElementSegment,
-        get_func: impl Fn(u32) -> FuncRef,
-        get_global: impl Fn(u32) -> Val,
-    ) -> Self {
-        let ty = elem.ty();
-        let items: Box<[UntypedVal]> = match elem.kind() {
-            module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => {
-                elem
-                    .items()
-                    .iter()
-                    .map(|const_expr| {
-                        const_expr.eval_with_context(&get_global, &get_func).unwrap_or_else(|| {
-                            panic!("unexpected failed initialization of constant expression: {const_expr:?}")
-                        })
-                }).collect()
-            }
-            module::ElementSegmentKind::Declared => Box::from([]),
-        };
-        let inner = CoreElementSegmentEntity::new(ty, items);
-        Self { inner }
-    }
-
     /// Returns the [`ValType`] of elements in the [`ElementSegmentEntity`].
     pub fn ty(&self) -> ValType {
         self.inner.ty()
