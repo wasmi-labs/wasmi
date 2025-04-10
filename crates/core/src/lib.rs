@@ -14,6 +14,7 @@
 mod float;
 mod fuel;
 mod func_type;
+mod global;
 pub mod hint;
 mod host_error;
 mod memory;
@@ -35,6 +36,7 @@ pub use self::{
     float::{F32, F64},
     fuel::{Fuel, FuelCosts, FuelCostsProvider, FuelError},
     func_type::{DynamicallyTyped, FuncType, FuncTypeError},
+    global::{Global, GlobalError, GlobalType, Mutability},
     host_error::HostError,
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
