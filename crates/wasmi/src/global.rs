@@ -152,20 +152,8 @@ impl GlobalEntity {
                 encountered: new_value.ty(),
             });
         }
-        self.set_untyped(new_value.into());
+        self.value = new_value.into();
         Ok(())
-    }
-
-    /// Sets a new untyped value for the global variable.
-    ///
-    /// # Note
-    ///
-    /// This is an inherently unsafe API and only exists to allow
-    /// for efficient `global.set` through the interpreter which is
-    /// safe since the interpreter only handles validated Wasm code
-    /// where the checks in [`Global::set`] cannot fail.
-    pub(crate) fn set_untyped(&mut self, new_value: UntypedVal) {
-        self.value = new_value;
     }
 
     /// Returns the current value of the global variable.
