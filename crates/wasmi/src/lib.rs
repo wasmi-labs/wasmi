@@ -131,7 +131,7 @@ pub mod errors {
         module::{InstantiationError, ReadError},
         table::TableError,
     };
-    pub use crate::core::{MemoryError, FuelError};
+    pub use crate::core::{FuelError, MemoryError};
 }
 
 pub use self::{

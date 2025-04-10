@@ -8,10 +8,10 @@ use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
     core::{
-        MemoryError,
         Fuel,
         IndexType,
         Memory as CoreMemory,
+        MemoryError,
         MemoryType as CoreMemoryType,
         MemoryTypeBuilder as CoreMemoryTypeBuilder,
         ResourceLimiterRef,
@@ -108,7 +108,7 @@ impl MemoryTypeBuilder {
     ///
     /// If the chosen configuration for the constructed [`MemoryType`] is invalid.
     pub fn build(self) -> Result<MemoryType, Error> {
-        let inner = self.inner.build().map_err(MemoryError::from)?;
+        let inner = self.inner.build()?;
         Ok(MemoryType { inner })
     }
 }
@@ -127,7 +127,7 @@ impl MemoryType {
     /// - If the `minimum` pages exceeds the `maximum` pages.
     /// - If the `minimum` or `maximum` pages are out of bounds.
     pub fn new(minimum: u32, maximum: Option<u32>) -> Result<Self, Error> {
-        let inner = CoreMemoryType::new(minimum, maximum).map_err(MemoryError::from)?;
+        let inner = CoreMemoryType::new(minimum, maximum)?;
         Ok(Self { inner })
     }
 
@@ -142,7 +142,7 @@ impl MemoryType {
     ///
     /// [Wasm `memory64` proposal]: https://github.com/WebAssembly/memory64
     pub fn new64(minimum: u64, maximum: Option<u64>) -> Result<Self, Error> {
-        let inner = CoreMemoryType::new64(minimum, maximum).map_err(MemoryError::from)?;
+        let inner = CoreMemoryType::new64(minimum, maximum)?;
         Ok(Self { inner })
     }
 
@@ -215,7 +215,7 @@ impl MemoryEntity {
         memory_type: MemoryType,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Self, Error> {
-        let inner = CoreMemory::new(memory_type.inner, limiter).map_err(MemoryError::from)?;
+        let inner = CoreMemory::new(memory_type.inner, limiter)?;
         Ok(Self { inner })
     }
 
@@ -225,8 +225,7 @@ impl MemoryEntity {
         limiter: &mut ResourceLimiterRef<'_>,
         buffer: &'static mut [u8],
     ) -> Result<Self, Error> {
-        let inner = CoreMemory::new_static(memory_type.inner, limiter, buffer)
-            .map_err(MemoryError::from)?;
+        let inner = CoreMemory::new_static(memory_type.inner, limiter, buffer)?;
         Ok(Self { inner })
     }
 
@@ -268,9 +267,7 @@ impl MemoryEntity {
         fuel: Option<&mut Fuel>,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<u64, MemoryError> {
-        self.inner
-            .grow(additional, fuel, limiter)
-            .map_err(MemoryError::from)
+        self.inner.grow(additional, fuel, limiter)
     }
 
     /// Returns a shared slice to the bytes underlying to the byte buffer.
@@ -302,7 +299,7 @@ impl MemoryEntity {
     ///
     /// If this operation accesses out of bounds linear memory.
     pub fn read(&self, offset: usize, buffer: &mut [u8]) -> Result<(), MemoryError> {
-        self.inner.read(offset, buffer).map_err(MemoryError::from)
+        self.inner.read(offset, buffer)
     }
 
     /// Writes `n` bytes to `memory[offset..offset+n]` from `buffer`
@@ -312,7 +309,7 @@ impl MemoryEntity {
     ///
     /// If this operation accesses out of bounds linear memory.
     pub fn write(&mut self, offset: usize, buffer: &[u8]) -> Result<(), MemoryError> {
-        self.inner.write(offset, buffer).map_err(MemoryError::from)
+        self.inner.write(offset, buffer)
     }
 }
 

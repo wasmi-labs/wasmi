@@ -1,6 +1,6 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::{ResourceLimiterRef, TrapCode},
+    core::{MemoryError, ResourceLimiterRef, TrapCode},
     engine::utils::unreachable_unchecked,
     ir::{
         index::{Data, Memory},
@@ -9,7 +9,6 @@ use crate::{
         Instruction,
         Reg,
     },
-    core::MemoryError,
     store::{PrunedStore, StoreInner},
     Error,
 };
