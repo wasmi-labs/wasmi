@@ -4,6 +4,7 @@ use crate::{
         hint::unlikely,
         ElementSegment as CoreElementSegment,
         Fuel,
+        Global as CoreGlobal,
         Memory as CoreMemory,
         ResourceLimiter,
         ResourceLimiterRef,
@@ -24,7 +25,6 @@ use crate::{
     FuncIdx,
     FuncType,
     Global,
-    GlobalEntity,
     GlobalIdx,
     Instance,
     InstanceEntity,
@@ -378,7 +378,7 @@ pub struct StoreInner {
     /// Stored tables.
     tables: Arena<TableIdx, CoreTable>,
     /// Stored global variables.
-    globals: Arena<GlobalIdx, GlobalEntity>,
+    globals: Arena<GlobalIdx, CoreGlobal>,
     /// Stored module instances.
     instances: Arena<InstanceIdx, InstanceEntity>,
     /// Stored data segments.
@@ -482,8 +482,8 @@ impl StoreInner {
         })
     }
 
-    /// Allocates a new [`GlobalEntity`] and returns a [`Global`] reference to it.
-    pub fn alloc_global(&mut self, global: GlobalEntity) -> Global {
+    /// Allocates a new [`CoreGlobal`] and returns a [`Global`] reference to it.
+    pub fn alloc_global(&mut self, global: CoreGlobal) -> Global {
         let global = self.globals.alloc(global);
         Global::from_inner(self.wrap_stored(global))
     }
@@ -624,23 +624,23 @@ impl StoreInner {
         self.engine.resolve_func_type(func_type, f)
     }
 
-    /// Returns a shared reference to the [`GlobalEntity`] associated to the given [`Global`].
+    /// Returns a shared reference to the [`CoreGlobal`] associated to the given [`Global`].
     ///
     /// # Panics
     ///
     /// - If the [`Global`] does not originate from this [`Store`].
     /// - If the [`Global`] cannot be resolved to its entity.
-    pub fn resolve_global(&self, global: &Global) -> &GlobalEntity {
+    pub fn resolve_global(&self, global: &Global) -> &CoreGlobal {
         self.resolve(global.as_inner(), &self.globals)
     }
 
-    /// Returns an exclusive reference to the [`GlobalEntity`] associated to the given [`Global`].
+    /// Returns an exclusive reference to the [`CoreGlobal`] associated to the given [`Global`].
     ///
     /// # Panics
     ///
     /// - If the [`Global`] does not originate from this [`Store`].
     /// - If the [`Global`] cannot be resolved to its entity.
-    pub fn resolve_global_mut(&mut self, global: &Global) -> &mut GlobalEntity {
+    pub fn resolve_global_mut(&mut self, global: &Global) -> &mut CoreGlobal {
         let idx = self.unwrap_stored(global.as_inner());
         Self::resolve_mut(idx, &mut self.globals)
     }

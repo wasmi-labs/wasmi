@@ -39,7 +39,7 @@ pub use self::{
     float::{F32, F64},
     fuel::{Fuel, FuelCosts, FuelCostsProvider, FuelError},
     func_type::{DynamicallyTyped, FuncType, FuncTypeError},
-    global::{Global, GlobalError, GlobalType},
+    global::{Global, GlobalError, GlobalType, Mutability},
     host_error::HostError,
     index_ty::IndexType,
     limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},

@@ -125,16 +125,15 @@ pub mod errors {
         engine::EnforcedLimitsError,
         error::ErrorKind,
         func::FuncError,
-        global::GlobalError,
         ir::Error as IrError,
         linker::LinkerError,
         module::{InstantiationError, ReadError},
     };
-    pub use crate::core::{FuelError, MemoryError, TableError};
+    pub use crate::core::{FuelError, GlobalError, MemoryError, TableError};
 }
 
 pub use self::{
-    core::{MemoryType, MemoryTypeBuilder, TableType},
+    core::{GlobalType, MemoryType, MemoryTypeBuilder, Mutability, TableType},
     engine::{
         CompilationMode,
         Config,
@@ -162,7 +161,7 @@ pub use self::{
         WasmTy,
         WasmTyList,
     },
-    global::{Global, GlobalType, Mutability},
+    global::Global,
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
     limits::{StoreLimits, StoreLimitsBuilder},
     linker::{state, Linker, LinkerBuilder},
@@ -184,7 +183,7 @@ pub use self::{
 };
 use self::{
     func::{FuncEntity, FuncIdx},
-    global::{GlobalEntity, GlobalIdx},
+    global::GlobalIdx,
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{DataSegmentEntity, DataSegmentIdx, MemoryIdx},
     store::Stored,
