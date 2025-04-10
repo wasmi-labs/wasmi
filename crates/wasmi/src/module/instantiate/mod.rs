@@ -134,8 +134,8 @@ impl Module {
                     let imported = memory.dynamic_ty(&store);
                     if !imported.is_subtype_of(required) {
                         return Err(InstantiationError::MemoryTypeMismatch {
-                            expected: required.inner,
-                            actual: imported.inner,
+                            expected: *required,
+                            actual: imported,
                         });
                     }
                     builder.push_memory(memory);

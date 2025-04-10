@@ -1,12 +1,12 @@
 use crate::{
     collections::map::Iter as MapIter,
+    core::MemoryType,
     AsContext,
     Func,
     FuncType,
     Global,
     GlobalType,
     Memory,
-    MemoryType,
     Table,
     TableType,
 };
