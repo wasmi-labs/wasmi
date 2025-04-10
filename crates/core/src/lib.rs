@@ -12,6 +12,7 @@
 )]
 
 mod float;
+mod fuel;
 mod func_type;
 pub mod hint;
 mod host_error;
@@ -32,6 +33,7 @@ extern crate std;
 use self::value::{Float, Integer, SignExtendFrom, TruncateSaturateInto, TryTruncateInto};
 pub use self::{
     float::{F32, F64},
+    fuel::{Fuel, FuelCosts, FuelCostsProvider, FuelError},
     func_type::{DynamicallyTyped, FuncType, FuncTypeError},
     host_error::HostError,
     trap::{Trap, TrapCode},
