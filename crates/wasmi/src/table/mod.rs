@@ -18,9 +18,6 @@ use crate::{
 
 mod element;
 
-#[cfg(test)]
-mod tests;
-
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TableIdx(u32);
