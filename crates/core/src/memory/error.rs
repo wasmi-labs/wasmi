@@ -67,7 +67,6 @@ impl From<LimiterError> for MemoryError {
             LimiterError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
             LimiterError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
             LimiterError::OutOfFuel => Self::OutOfFuel,
-            LimiterError::UnknownError => Self::UnknownError,
         }
     }
 }

@@ -16,8 +16,6 @@ pub enum LimiterError {
     ResourceLimiterDeniedAllocation,
     /// Encountered when an operation ran out of fuel.
     OutOfFuel,
-    /// An error unknown to limiters. This likely is a bug.
-    UnknownError,
 }
 
 impl Error for LimiterError {}
@@ -29,7 +27,6 @@ impl Display for LimiterError {
             LimiterError::OutOfBoundsGrowth => "out of bounds growth",
             LimiterError::ResourceLimiterDeniedAllocation => "resource limiter denied allocation",
             LimiterError::OutOfFuel => "out of fuel",
-            LimiterError::UnknownError => "unknown error",
         };
         write!(f, "{message}")
     }
@@ -42,7 +39,7 @@ impl From<MemoryError> for LimiterError {
             MemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
             MemoryError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
             MemoryError::OutOfFuel => Self::OutOfFuel,
-            _ => Self::UnknownError,
+            error => panic!("unexpected `MemoryError`: {error}"),
         }
     }
 }
@@ -57,7 +54,7 @@ impl From<TableError> for LimiterError {
             | TableError::InitOutOfBounds => Self::OutOfBoundsGrowth,
             TableError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
             TableError::OutOfFuel => Self::OutOfFuel,
-            _ => Self::UnknownError,
+            error => panic!("unexpected `TableError`: {error}"),
         }
     }
 }

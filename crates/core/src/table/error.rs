@@ -64,7 +64,6 @@ impl From<LimiterError> for TableError {
             LimiterError::OutOfBoundsGrowth => Self::GrowOutOfBounds,
             LimiterError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
             LimiterError::OutOfFuel => Self::OutOfFuel,
-            LimiterError::UnknownError => panic!("encountered unexpected error"),
         }
     }
 }
