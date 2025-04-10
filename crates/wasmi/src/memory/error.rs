@@ -16,10 +16,6 @@ pub enum MemoryError {
     OutOfBoundsAccess,
     /// Tried to create an invalid linear memory type.
     InvalidMemoryType,
-    /// Occurs when `ty` is not a subtype of `other`.
-    SubtypeMismatch,
-    /// Tried to create too many memories.
-    TooManyMemories,
     /// Tried to create memory with invalid static buffer size
     InvalidStaticBufferSize,
     /// If a resource limiter denied allocation or growth of a linear memory.
@@ -43,8 +39,6 @@ impl Display for MemoryError {
             Self::OutOfBoundsGrowth => "out of bounds memory growth",
             Self::OutOfBoundsAccess => "out of bounds memory access",
             Self::InvalidMemoryType => "tried to create an invalid linear memory type",
-            Self::SubtypeMismatch => "memory subtype mismatch",
-            Self::TooManyMemories => "too many memories",
             Self::InvalidStaticBufferSize => "tried to use too small static buffer",
             Self::ResourceLimiterDeniedAllocation => {
                 "a resource limiter denied to allocate or grow the linear memory"
@@ -68,8 +62,6 @@ impl From<CoreMemoryError> for MemoryError {
             CoreMemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
             CoreMemoryError::OutOfBoundsAccess => Self::OutOfBoundsAccess,
             CoreMemoryError::InvalidMemoryType => Self::InvalidMemoryType,
-            CoreMemoryError::InvalidSubtype => Self::SubtypeMismatch,
-            CoreMemoryError::TooManyMemories => Self::TooManyMemories,
             CoreMemoryError::InvalidStaticBufferSize => Self::InvalidStaticBufferSize,
             CoreMemoryError::ResourceLimiterDeniedAllocation => {
                 Self::ResourceLimiterDeniedAllocation

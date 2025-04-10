@@ -25,10 +25,6 @@ pub enum TableError {
     CopyOutOfBounds,
     /// Occurs when operating with a [`Table`](crate::Table) and mismatching element types.
     ElementTypeMismatch,
-    /// Occurs when `ty` is not a subtype of `other`.
-    SubtypeMismatch,
-    /// Tried to create too many tables.
-    TooManyTables,
     /// The operation ran out of fuel before completion.
     OutOfFuel,
 }
@@ -52,8 +48,6 @@ impl Display for TableError {
             Self::CopyOutOfBounds => "out of bounds table access: `table.copy`",
             Self::SetOutOfBounds => "out of bounds table access: `table.set`",
             Self::ElementTypeMismatch => "encountered mismatching table element type",
-            Self::SubtypeMismatch => "table sub-type mismatch",
-            Self::TooManyTables => "too many tables",
             Self::OutOfFuel => "out of fuel",
         };
         write!(f, "{message}")
