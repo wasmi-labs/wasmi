@@ -532,9 +532,6 @@ impl Table {
         } else {
             // The `dst_table` and `src_table` are different entities
             // therefore we have to copy from one table to the other.
-            let dst_ty = dst_table.ty(&store);
-            let src_ty = src_table.ty(&store).element();
-            dst_ty.matches_element_type(src_ty)?;
             let (dst_table, src_table, _fuel) = store
                 .as_context_mut()
                 .store
