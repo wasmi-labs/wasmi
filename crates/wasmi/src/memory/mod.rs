@@ -130,10 +130,8 @@ impl MemoryType {
     /// - If the `minimum` pages exceeds the `maximum` pages.
     /// - If the `minimum` or `maximum` pages are out of bounds.
     pub fn new(minimum: u32, maximum: Option<u32>) -> Result<Self, Error> {
-        let mut b = Self::builder();
-        b.min(u64::from(minimum));
-        b.max(maximum.map(u64::from));
-        b.build()
+        let inner = CoreMemoryType::new(minimum, maximum).map_err(MemoryError::from)?;
+        Ok(Self { inner })
     }
 
     /// Creates a new 64-bit memory type with minimum and optional maximum pages.
@@ -147,11 +145,8 @@ impl MemoryType {
     ///
     /// [Wasm `memory64` proposal]: https://github.com/WebAssembly/memory64
     pub fn new64(minimum: u64, maximum: Option<u64>) -> Result<Self, Error> {
-        let mut b = Self::builder();
-        b.memory64(true);
-        b.min(minimum);
-        b.max(maximum);
-        b.build()
+        let inner = CoreMemoryType::new64(minimum, maximum).map_err(MemoryError::from)?;
+        Ok(Self { inner })
     }
 
     /// Returns a [`MemoryTypeBuilder`] to incrementally construct a [`MemoryType`].
