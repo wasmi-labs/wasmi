@@ -5,11 +5,9 @@ use super::errors::{
     InstantiationError,
     IrError,
     LinkerError,
-    MemoryError,
-    TableError,
 };
 use crate::{
-    core::{FuelError, HostError, TrapCode},
+    core::{FuelError, HostError, MemoryError, TableError, TrapCode},
     engine::{ResumableHostError, TranslationError},
     module::ReadError,
 };

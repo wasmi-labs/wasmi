@@ -1,7 +1,4 @@
-pub use self::{
-    element::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx},
-    error::TableError,
-};
+pub use self::element::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx};
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
@@ -10,6 +7,7 @@ use crate::{
         IndexType,
         ResourceLimiterRef,
         Table as CoreTable,
+        TableError,
         TableType as CoreTableType,
         UntypedVal,
         ValType,
@@ -19,7 +17,6 @@ use crate::{
 };
 
 mod element;
-mod error;
 
 #[cfg(test)]
 mod tests;

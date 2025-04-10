@@ -129,9 +129,8 @@ pub mod errors {
         ir::Error as IrError,
         linker::LinkerError,
         module::{InstantiationError, ReadError},
-        table::TableError,
     };
-    pub use crate::core::{FuelError, MemoryError};
+    pub use crate::core::{FuelError, MemoryError, TableError};
 }
 
 pub use self::{

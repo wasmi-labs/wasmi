@@ -1,6 +1,6 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::{ResourceLimiterRef, TrapCode},
+    core::{ResourceLimiterRef, TableError, TrapCode},
     engine::utils::unreachable_unchecked,
     ir::{
         index::{Elem, Table},
@@ -10,7 +10,7 @@ use crate::{
         Reg,
     },
     store::{PrunedStore, StoreInner},
-    table::{TableEntity, TableError},
+    table::TableEntity,
     Error,
 };
 
