@@ -11,6 +11,9 @@ use crate::{Fuel, FuelError, ResourceLimiterRef, TypedVal, UntypedVal};
 use alloc::vec::Vec;
 use core::{cmp, iter};
 
+#[cfg(test)]
+mod tests;
+
 /// A Wasm table entity.
 #[derive(Debug)]
 pub struct Table {
