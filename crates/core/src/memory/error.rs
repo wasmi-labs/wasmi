@@ -26,8 +26,6 @@ pub enum MemoryError {
     MaximumSizeOverflow,
     /// Encountered if a `memory.grow` operation runs out of fuel.
     OutOfFuel,
-    /// Unknown error. Likely a bug.
-    UnknownError,
 }
 
 impl Error for MemoryError {}
@@ -54,7 +52,6 @@ impl Display for MemoryError {
                 "the maximum size of the memory type overflows the system index type"
             }
             Self::OutOfFuel => "out of fuel",
-            Self::UnknownError => "unknown error",
         };
         write!(f, "{message}")
     }

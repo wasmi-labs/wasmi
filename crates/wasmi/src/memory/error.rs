@@ -77,7 +77,6 @@ impl From<CoreMemoryError> for MemoryError {
             CoreMemoryError::MinimumSizeOverflow => Self::MinimumSizeOverflow,
             CoreMemoryError::MaximumSizeOverflow => Self::MaximumSizeOverflow,
             CoreMemoryError::OutOfFuel => Self::OutOfFuel,
-            CoreMemoryError::UnknownError => panic!("encountered unknown memory error"),
         }
     }
 }
