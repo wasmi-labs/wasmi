@@ -1,4 +1,4 @@
-use crate::core::{FuelError, LimiterError, TableError as CoreTableError};
+use crate::core::TableError as CoreTableError;
 use core::{fmt, fmt::Display};
 
 /// Errors that may occur upon operating with table entities.
@@ -77,41 +77,6 @@ impl From<CoreTableError> for TableError {
             CoreTableError::ElementTypeMismatch => Self::ElementTypeMismatch,
             CoreTableError::OutOfFuel => Self::OutOfFuel,
             error => panic!("unknown table error: {error}"),
-        }
-    }
-}
-
-impl From<LimiterError> for TableError {
-    fn from(error: LimiterError) -> Self {
-        match error {
-            LimiterError::OutOfSystemMemory => Self::OutOfSystemMemory,
-            LimiterError::OutOfBoundsGrowth => Self::GrowOutOfBounds,
-            LimiterError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            LimiterError::OutOfFuel => Self::OutOfFuel,
-            LimiterError::UnknownError => panic!("encountered unexpected error"),
-        }
-    }
-}
-
-impl From<TableError> for LimiterError {
-    fn from(error: TableError) -> Self {
-        match error {
-            TableError::OutOfSystemMemory => Self::OutOfSystemMemory,
-            TableError::GrowOutOfBounds => Self::OutOfBoundsGrowth,
-            TableError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            TableError::OutOfFuel => Self::OutOfFuel,
-            _ => Self::UnknownError,
-        }
-    }
-}
-
-impl From<FuelError> for TableError {
-    fn from(error: FuelError) -> Self {
-        match error {
-            FuelError::OutOfFuel => Self::OutOfFuel,
-            FuelError::FuelMeteringDisabled => {
-                panic!("fuel was provided but fuel metering is disabled")
-            }
         }
     }
 }

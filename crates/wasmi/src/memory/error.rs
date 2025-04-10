@@ -1,4 +1,4 @@
-use crate::core::{LimiterError, MemoryError as CoreMemoryError};
+use crate::core::MemoryError as CoreMemoryError;
 use core::{
     error::Error,
     fmt::{self, Display},
@@ -78,18 +78,6 @@ impl From<CoreMemoryError> for MemoryError {
             CoreMemoryError::MaximumSizeOverflow => Self::MaximumSizeOverflow,
             CoreMemoryError::OutOfFuel => Self::OutOfFuel,
             CoreMemoryError::UnknownError => panic!("encountered unknown memory error"),
-        }
-    }
-}
-
-impl From<MemoryError> for LimiterError {
-    fn from(error: MemoryError) -> Self {
-        match error {
-            MemoryError::OutOfSystemMemory => Self::OutOfSystemMemory,
-            MemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
-            MemoryError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
-            MemoryError::OutOfFuel => Self::OutOfFuel,
-            _ => Self::UnknownError,
         }
     }
 }
