@@ -109,7 +109,7 @@ impl FuelCosts {
     /// - `memory.copy`
     /// - `memory.fill`
     /// - `memory.init`
-    pub fn fuel_for_bytes(&self, len_bytes: u64) -> u64 {
+    pub fn fuel_for_copying_bytes(&self, len_bytes: u64) -> u64 {
         Self::costs_per(len_bytes, self.bytes_per_fuel())
     }
 
