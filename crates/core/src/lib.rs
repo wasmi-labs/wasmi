@@ -12,10 +12,15 @@
 )]
 
 mod float;
+mod fuel;
 mod func_type;
+mod global;
 pub mod hint;
 mod host_error;
+mod index_ty;
+mod limiter;
 mod memory;
+mod table;
 mod trap;
 mod typed;
 mod untyped;
@@ -32,8 +37,14 @@ extern crate std;
 use self::value::{Float, Integer, SignExtendFrom, TruncateSaturateInto, TryTruncateInto};
 pub use self::{
     float::{F32, F64},
+    fuel::{Fuel, FuelCosts, FuelCostsProvider, FuelError},
     func_type::{DynamicallyTyped, FuncType, FuncTypeError},
+    global::{Global, GlobalError, GlobalType, Mutability},
     host_error::HostError,
+    index_ty::IndexType,
+    limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
+    memory::{Memory, MemoryError, MemoryType, MemoryTypeBuilder},
+    table::{ElementSegment, ElementSegmentRef, Table, TableError, TableType},
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, ReadAs, UntypedError, UntypedVal, WriteAs},
