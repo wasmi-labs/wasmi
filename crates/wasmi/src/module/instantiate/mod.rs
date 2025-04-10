@@ -112,7 +112,7 @@ impl Module {
                 (ExternType::Func(expected_signature), Extern::Func(func)) => {
                     let actual_signature = func.ty(&store);
                     if &actual_signature != expected_signature {
-                        return Err(InstantiationError::SignatureMismatch {
+                        return Err(InstantiationError::FuncTypeMismatch {
                             actual: actual_signature,
                             expected: expected_signature.clone(),
                         });

@@ -211,6 +211,6 @@ fn instantiate_with_invalid_func_import() {
     let error = Instance::new(&mut store, &module, &externals).unwrap_err();
     assert!(matches!(
         error.kind(),
-        ErrorKind::Instantiation(InstantiationError::SignatureMismatch { .. })
+        ErrorKind::Instantiation(InstantiationError::FuncTypeMismatch { .. })
     ));
 }

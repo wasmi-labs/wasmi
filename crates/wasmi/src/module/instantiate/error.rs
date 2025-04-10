@@ -30,8 +30,8 @@ pub enum InstantiationError {
         /// The actually found external value for the module import.
         actual: Extern,
     },
-    /// Caused when a function has a mismatching signature.
-    SignatureMismatch {
+    /// Caused when a function has a mismatching type.
+    FuncTypeMismatch {
         /// The expected function signature for the function import.
         expected: FuncType,
         /// The actual function signature for the function import.
@@ -73,7 +73,7 @@ impl Display for InstantiationError {
                 f,
                 "expected {expected:?} external for import but found {actual:?}",
             ),
-            Self::SignatureMismatch { expected, actual } => {
+            Self::FuncTypeMismatch { expected, actual } => {
                 write!(
                     f,
                     "expected {expected:?} function signature but found {actual:?}",
