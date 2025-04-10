@@ -17,6 +17,7 @@ mod func_type;
 mod global;
 pub mod hint;
 mod host_error;
+mod limiter;
 mod memory;
 mod trap;
 mod typed;
@@ -38,6 +39,7 @@ pub use self::{
     func_type::{DynamicallyTyped, FuncType, FuncTypeError},
     global::{Global, GlobalError, GlobalType, Mutability},
     host_error::HostError,
+    limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, ReadAs, UntypedError, UntypedVal, WriteAs},
