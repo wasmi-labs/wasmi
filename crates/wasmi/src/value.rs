@@ -217,7 +217,16 @@ impl From<TypedVal> for Val {
             ValType::I64 => Self::I64(untyped.into()),
             ValType::F32 => Self::F32(untyped.into()),
             ValType::F64 => Self::F64(untyped.into()),
-            ValType::V128 => Self::V128(untyped.into()),
+            ValType::V128 => {
+                #[cfg(feature = "simd")]
+                {
+                    Self::V128(untyped.into())
+                }
+                #[cfg(not(feature = "simd"))]
+                {
+                    panic!("`simd` crate feature is disabled")
+                }
+            }
             ValType::FuncRef => Self::FuncRef(untyped.into()),
             ValType::ExternRef => Self::ExternRef(untyped.into()),
         }
