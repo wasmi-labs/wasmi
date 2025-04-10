@@ -88,7 +88,7 @@ impl Table {
     ///
     /// # Note
     ///
-    /// The newly added elements are initialized to the `init` [`Val`].
+    /// The newly added elements are initialized to the `init` [`TypedVal`].
     ///
     /// # Errors
     ///
@@ -113,7 +113,7 @@ impl Table {
     ///
     /// This is an internal API that exists for efficiency purposes.
     ///
-    /// The newly added elements are initialized to the `init` [`Val`].
+    /// The newly added elements are initialized to the `init` [`TypedVal`].
     ///
     /// # Errors
     ///
@@ -200,7 +200,7 @@ impl Table {
         self.elements.get(index).copied()
     }
 
-    /// Sets the [`Val`] of this [`Table`] at `index`.
+    /// Sets the [`TypedVal`] of this [`Table`] at `index`.
     ///
     /// # Errors
     ///

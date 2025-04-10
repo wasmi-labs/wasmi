@@ -1,6 +1,7 @@
-use crate::{IndexType, ValType};
+use crate::{IndexType, TableError, ValType};
 
-use super::TableError;
+#[cfg(doc)]
+use crate::Table;
 
 /// A descriptor for a [`Table`] instance.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
