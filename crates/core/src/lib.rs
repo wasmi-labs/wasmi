@@ -19,6 +19,7 @@ mod host_error;
 mod index_ty;
 mod limiter;
 mod memory;
+mod table;
 mod trap;
 mod typed;
 mod untyped;
@@ -41,6 +42,7 @@ pub use self::{
     index_ty::IndexType,
     limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
     memory::{Memory, MemoryError, MemoryType, MemoryTypeBuilder},
+    table::{ElementSegment, Table, TableError, TableType},
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
     untyped::{DecodeUntypedSlice, EncodeUntypedSlice, ReadAs, UntypedError, UntypedVal, WriteAs},

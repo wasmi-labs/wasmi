@@ -1,4 +1,4 @@
-use crate::MemoryError;
+use crate::{MemoryError, TableError};
 use core::{
     error::Error,
     fmt,
@@ -42,6 +42,21 @@ impl From<MemoryError> for LimiterError {
             MemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
             MemoryError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
             MemoryError::OutOfFuel => Self::OutOfFuel,
+            _ => Self::UnknownError,
+        }
+    }
+}
+
+impl From<TableError> for LimiterError {
+    fn from(error: TableError) -> Self {
+        match error {
+            TableError::OutOfSystemMemory => Self::OutOfSystemMemory,
+            TableError::GrowOutOfBounds
+            | TableError::CopyOutOfBounds
+            | TableError::FillOutOfBounds
+            | TableError::InitOutOfBounds => Self::OutOfBoundsGrowth,
+            TableError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
+            TableError::OutOfFuel => Self::OutOfFuel,
             _ => Self::UnknownError,
         }
     }
