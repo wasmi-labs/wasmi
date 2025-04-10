@@ -1,11 +1,4 @@
-use crate::{
-    core::{IndexType, ValType},
-    FuncType,
-    GlobalType,
-    MemoryType,
-    Mutability,
-    TableType,
-};
+use crate::{core::ValType, FuncType, GlobalType, MemoryType, Mutability, TableType};
 use wasmparser::AbstractHeapType;
 
 impl TableType {
@@ -19,11 +12,18 @@ impl TableType {
         let element = WasmiValueType::from(table_type.element_type).into_inner();
         let minimum: u64 = table_type.initial;
         let maximum: Option<u64> = table_type.maximum;
-        let index_ty = match table_type.table64 {
-            true => IndexType::I64,
-            false => IndexType::I32,
-        };
-        Self::new_impl(element, index_ty, minimum, maximum)
+        match table_type.table64 {
+            true => Self::new64(element, minimum, maximum),
+            false => {
+                let Ok(minimum) = u32::try_from(minimum) else {
+                    panic!("invalid 32-bit table.minimum: {minimum}")
+                };
+                let Ok(maximum) = maximum.map(u32::try_from).transpose() else {
+                    panic!("invalid 32-bit table.maximum: {maximum:?}")
+                };
+                Self::new(element, minimum, maximum)
+            }
+        }
     }
 }
 

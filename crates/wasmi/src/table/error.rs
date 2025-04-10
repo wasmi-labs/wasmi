@@ -1,4 +1,4 @@
-use crate::core::{FuelError, LimiterError};
+use crate::core::{FuelError, LimiterError, TableError as CoreTableError};
 use core::{fmt, fmt::Display};
 
 /// Errors that may occur upon operating with table entities.
@@ -57,6 +57,27 @@ impl Display for TableError {
             Self::OutOfFuel => "out of fuel",
         };
         write!(f, "{message}")
+    }
+}
+
+impl From<CoreTableError> for TableError {
+    fn from(error: CoreTableError) -> Self {
+        match error {
+            CoreTableError::OutOfSystemMemory => Self::OutOfSystemMemory,
+            CoreTableError::MinimumSizeOverflow => Self::MinimumSizeOverflow,
+            CoreTableError::MaximumSizeOverflow => Self::MaximumSizeOverflow,
+            CoreTableError::ResourceLimiterDeniedAllocation => {
+                Self::ResourceLimiterDeniedAllocation
+            }
+            CoreTableError::GrowOutOfBounds => Self::GrowOutOfBounds,
+            CoreTableError::InitOutOfBounds => Self::InitOutOfBounds,
+            CoreTableError::FillOutOfBounds => Self::FillOutOfBounds,
+            CoreTableError::SetOutOfBounds => Self::SetOutOfBounds,
+            CoreTableError::CopyOutOfBounds => Self::CopyOutOfBounds,
+            CoreTableError::ElementTypeMismatch => Self::ElementTypeMismatch,
+            CoreTableError::OutOfFuel => Self::OutOfFuel,
+            error => panic!("unknown table error: {error}"),
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::{
     collections::arena::ArenaIndex,
-    core::{UntypedVal, ValType},
+    core::{ElementSegment as CoreElementSegmentEntity, UntypedVal, ValType},
     module,
     store::Stored,
     AsContext,
@@ -84,10 +84,8 @@ impl ElementSegment {
 /// a need to have an instantiated representation of data segments.
 #[derive(Debug)]
 pub struct ElementSegmentEntity {
-    /// The [`ValType`] of elements of this [`ElementSegmentEntity`].
-    ty: ValType,
-    /// Pre-resolved untyped items of the Wasm element segment.
-    items: Box<[UntypedVal]>,
+    /// The underlying element segment implementation.
+    pub(super) inner: CoreElementSegmentEntity,
 }
 
 impl ElementSegmentEntity {
@@ -97,47 +95,40 @@ impl ElementSegmentEntity {
         get_global: impl Fn(u32) -> Val,
     ) -> Self {
         let ty = elem.ty();
-        match elem.kind() {
+        let items: Box<[UntypedVal]> = match elem.kind() {
             module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => {
-                let items = elem
+                elem
                     .items()
                     .iter()
                     .map(|const_expr| {
                         const_expr.eval_with_context(&get_global, &get_func).unwrap_or_else(|| {
                             panic!("unexpected failed initialization of constant expression: {const_expr:?}")
                         })
-                }).collect::<Box<[_]>>();
-                Self { ty, items }
+                }).collect()
             }
-            module::ElementSegmentKind::Declared => Self::empty(ty),
-        }
-    }
-
-    /// Create an empty [`ElementSegmentEntity`] representing dropped element segments.
-    fn empty(ty: ValType) -> Self {
-        Self {
-            ty,
-            items: [].into(),
-        }
+            module::ElementSegmentKind::Declared => Box::from([]),
+        };
+        let inner = CoreElementSegmentEntity::new(ty, items);
+        Self { inner }
     }
 
     /// Returns the [`ValType`] of elements in the [`ElementSegmentEntity`].
     pub fn ty(&self) -> ValType {
-        self.ty
+        self.inner.ty()
     }
 
     /// Returns the number of items in the [`ElementSegment`].
     pub fn size(&self) -> u32 {
-        self.items().len() as u32
+        self.inner.size()
     }
 
     /// Returns the items of the [`ElementSegmentEntity`].
     pub fn items(&self) -> &[UntypedVal] {
-        &self.items[..]
+        self.inner.items()
     }
 
     /// Drops the items of the [`ElementSegmentEntity`].
     pub fn drop_items(&mut self) {
-        self.items = [].into();
+        self.inner.drop_items();
     }
 }
