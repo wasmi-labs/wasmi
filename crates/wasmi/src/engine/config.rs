@@ -46,8 +46,8 @@ impl FuelCostsProvider {
         self.base
     }
 
-    /// Returns the base fuel costs for all Wasmi IR entity related instructions.
-    pub fn entity(&self) -> u64 {
+    /// Returns the base fuel costs for all Wasmi IR instance related instructions.
+    pub fn instance(&self) -> u64 {
         // Note: For simplicity we currently simply use base costs.
         self.base
     }
