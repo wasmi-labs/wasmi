@@ -17,6 +17,7 @@ mod func_type;
 mod global;
 pub mod hint;
 mod host_error;
+mod index_ty;
 mod limiter;
 mod memory;
 mod trap;
@@ -39,6 +40,7 @@ pub use self::{
     func_type::{DynamicallyTyped, FuncType, FuncTypeError},
     global::{Global, GlobalError, GlobalType, Mutability},
     host_error::HostError,
+    index_ty::IndexType,
     limiter::{LimiterError, ResourceLimiter, ResourceLimiterRef},
     trap::{Trap, TrapCode},
     typed::{Typed, TypedVal},
