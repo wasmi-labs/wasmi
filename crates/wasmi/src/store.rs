@@ -1,7 +1,7 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
     core::{hint::unlikely, TrapCode},
-    engine::{DedupFuncType, FuelCosts},
+    engine::{DedupFuncType, FuelCostsProvider},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
     memory::{DataSegment, MemoryError},
@@ -490,7 +490,7 @@ pub struct Fuel {
     /// The fuel costs provided by the [`Engine`]'s [`Config`].
     ///
     /// [`Config`]: crate::Config
-    costs: FuelCosts,
+    costs: FuelCostsProvider,
 }
 
 impl Fuel {
@@ -578,7 +578,7 @@ impl Fuel {
     /// - If out of fuel.
     pub(crate) fn consume_fuel(
         &mut self,
-        f: impl FnOnce(&FuelCosts) -> u64,
+        f: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<u64, FuelError> {
         self.check_fuel_metering_enabled()?;
         self.consume_fuel_unchecked(f(&self.costs))
@@ -596,7 +596,7 @@ impl Fuel {
     /// - If out of fuel.
     pub(crate) fn consume_fuel_if(
         &mut self,
-        f: impl FnOnce(&FuelCosts) -> u64,
+        f: impl FnOnce(&FuelCostsProvider) -> u64,
     ) -> Result<(), TrapCode> {
         match self.consume_fuel(f) {
             Err(FuelError::OutOfFuel) => Err(TrapCode::OutOfFuel),

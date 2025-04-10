@@ -46,7 +46,7 @@ pub trait FuelCosts {
     fn bytes_per_fuel(&self) -> NonZeroU64;
 }
 
-/// Implementation of default [`FuelCosts`].
+/// Implementation of default [`FuelCostsProvider`].
 struct DefaultFuelCosts;
 
 impl FuelCosts for DefaultFuelCosts {

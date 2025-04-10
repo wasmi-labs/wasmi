@@ -282,7 +282,7 @@ impl Executor<'_> {
             .get_mut(dst_index..)
             .and_then(|memory| memory.get_mut(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))?;
         dst_bytes.copy_from_slice(src_bytes);
         self.try_next_instr_at(3)
     }
@@ -308,7 +308,7 @@ impl Executor<'_> {
             .get(dst_index..)
             .and_then(|memory| memory.get(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))?;
         bytes.copy_within(src_index..src_index.wrapping_add(len), dst_index);
         self.try_next_instr_at(3)
     }
@@ -444,7 +444,7 @@ impl Executor<'_> {
             .get_mut(dst..)
             .and_then(|memory| memory.get_mut(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))?;
         slice.fill(value);
         self.try_next_instr_at(2)
     }
@@ -595,7 +595,7 @@ impl Executor<'_> {
             .get(src_index..)
             .and_then(|data| data.get(..len))
             .ok_or(TrapCode::MemoryOutOfBounds)?;
-        fuel.consume_fuel_if(|costs| costs.fuel_for_bytes(len as u64))?;
+        fuel.consume_fuel_if(|costs| costs.fuel_for_copying_bytes(len as u64))?;
         memory.copy_from_slice(data);
         self.try_next_instr_at(3)
     }

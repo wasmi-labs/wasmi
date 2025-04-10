@@ -5,7 +5,7 @@ use crate::{
     },
     engine::{
         translator::{provider::Provider, FuncTranslator},
-        FuelCosts,
+        FuelCostsProvider,
     },
     ir::{Const32, Instruction, Reg},
 };
@@ -302,7 +302,7 @@ impl VisitSimdOperator<'_> for FuncTranslator {
             .alloc_const(V128::from(u128::from_ne_bytes(lanes)))?;
         self.push_fueled_instr(
             Instruction::i8x16_shuffle(result, lhs, rhs),
-            FuelCosts::base,
+            FuelCostsProvider::simd,
         )?;
         self.append_instr(Instruction::register(selector))?;
         Ok(())

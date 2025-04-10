@@ -573,7 +573,7 @@ impl MemoryEntity {
                 .checked_mul(bytes_per_page)
                 .expect("additional size is within [min, max) page bounds");
             if fuel
-                .consume_fuel_if(|costs| costs.fuel_for_bytes(additional_bytes))
+                .consume_fuel_if(|costs| costs.fuel_for_copying_bytes(additional_bytes))
                 .is_err()
             {
                 return notify_limiter(limiter, EntityGrowError::TrapCode(TrapCode::OutOfFuel));
