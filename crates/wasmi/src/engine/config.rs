@@ -70,6 +70,12 @@ impl FuelCostsProvider {
         self.base
     }
 
+    /// Returns the base fuel costs for all Wasmi IR `simd` instructions.
+    pub fn simd(&self) -> u64 {
+        // Note: For simplicity we currently simply use base costs.
+        self.base
+    }
+
     /// Returns the number of register copies performed per unit of fuel.
     fn copies_per_fuel(&self) -> NonZeroU64 {
         self.copies_per_fuel

@@ -43,7 +43,7 @@ impl FuncTranslator {
             }
         };
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(make_instr(result, value), FuelCostsProvider::base)?;
+        self.push_fueled_instr(make_instr(result, value), FuelCostsProvider::simd)?;
         Ok(())
     }
 
@@ -71,7 +71,7 @@ impl FuncTranslator {
             }
         };
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(make_instr(result, input, lane), FuelCostsProvider::base)?;
+        self.push_fueled_instr(make_instr(result, input, lane), FuelCostsProvider::simd)?;
         Ok(())
     }
 
@@ -96,7 +96,7 @@ impl FuncTranslator {
             }
         };
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(make_instr(result, input), FuelCostsProvider::base)?;
+        self.push_fueled_instr(make_instr(result, input), FuelCostsProvider::simd)?;
         Ok(())
     }
 
@@ -117,7 +117,7 @@ impl FuncTranslator {
         let result = self.alloc.stack.push_dynamic()?;
         let lhs = self.alloc.stack.provider2reg(&lhs)?;
         let rhs = self.alloc.stack.provider2reg(&rhs)?;
-        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::base)?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::simd)?;
         Ok(())
     }
 
@@ -139,7 +139,7 @@ impl FuncTranslator {
         let lhs = self.alloc.stack.provider2reg(&a)?;
         let rhs = self.alloc.stack.provider2reg(&b)?;
         let selector = self.alloc.stack.provider2reg(&c)?;
-        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::base)?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::simd)?;
         self.append_instr(Instruction::register(selector))?;
         Ok(())
     }
@@ -176,12 +176,12 @@ impl FuncTranslator {
                     return Ok(());
                 };
                 let result = self.alloc.stack.push_dynamic()?;
-                self.push_fueled_instr(make_instr_imm(result, lhs, rhs), FuelCostsProvider::base)?;
+                self.push_fueled_instr(make_instr_imm(result, lhs, rhs), FuelCostsProvider::simd)?;
                 return Ok(());
             }
         };
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::base)?;
+        self.push_fueled_instr(make_instr(result, lhs, rhs), FuelCostsProvider::simd)?;
         Ok(())
     }
 
@@ -222,7 +222,7 @@ impl FuncTranslator {
             ),
             Provider::Const(value) => make_instr_imm(self, result, input, lane, value.into())?,
         };
-        self.push_fueled_instr(instr, FuelCostsProvider::base)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::simd)?;
         if let Some(param) = param {
             self.append_instr(param)?;
         }
@@ -397,7 +397,7 @@ impl FuncTranslator {
         };
         let (offset_hi, offset_lo) = Offset64::split(offset);
         let result = self.alloc.stack.push_dynamic()?;
-        self.push_fueled_instr(make_instr(result, offset_lo), FuelCostsProvider::store)?;
+        self.push_fueled_instr(make_instr(result, offset_lo), FuelCostsProvider::load)?;
         self.append_instr(Instruction::register_and_offset_hi(ptr, offset_hi))?;
         self.append_instr(Instruction::register_and_lane(x, lane))?;
         if !memory.is_default() {
@@ -420,7 +420,7 @@ impl FuncTranslator {
         let result = self.alloc.stack.push_dynamic()?;
         let instr = make_instr_at(result, address);
         let param = Instruction::register_and_lane(x, lane);
-        self.push_fueled_instr(instr, FuelCostsProvider::base)?;
+        self.push_fueled_instr(instr, FuelCostsProvider::load)?;
         self.append_instr(param)?;
         if !memory.is_default() {
             self.append_instr(Instruction::memory_index(memory))?;
