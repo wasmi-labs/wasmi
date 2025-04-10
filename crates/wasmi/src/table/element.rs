@@ -85,7 +85,7 @@ impl ElementSegment {
 #[derive(Debug)]
 pub struct ElementSegmentEntity {
     /// The underlying element segment implementation.
-    pub(super) inner: CoreElementSegmentEntity,
+    pub(crate) inner: CoreElementSegmentEntity,
 }
 
 impl ElementSegmentEntity {

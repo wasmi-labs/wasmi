@@ -1,6 +1,13 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
-    core::{hint::unlikely, Fuel, Memory as CoreMemory, ResourceLimiter, ResourceLimiterRef},
+    core::{
+        hint::unlikely,
+        Fuel,
+        Memory as CoreMemory,
+        ResourceLimiter,
+        ResourceLimiterRef,
+        Table as CoreTable,
+    },
     engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
@@ -25,7 +32,6 @@ use crate::{
     Memory,
     MemoryIdx,
     Table,
-    TableEntity,
     TableIdx,
 };
 use alloc::{boxed::Box, sync::Arc};
@@ -370,7 +376,7 @@ pub struct StoreInner {
     /// Stored linear memories.
     memories: Arena<MemoryIdx, CoreMemory>,
     /// Stored tables.
-    tables: Arena<TableIdx, TableEntity>,
+    tables: Arena<TableIdx, CoreTable>,
     /// Stored global variables.
     globals: Arena<GlobalIdx, GlobalEntity>,
     /// Stored module instances.
@@ -482,8 +488,8 @@ impl StoreInner {
         Global::from_inner(self.wrap_stored(global))
     }
 
-    /// Allocates a new [`TableEntity`] and returns a [`Table`] reference to it.
-    pub fn alloc_table(&mut self, table: TableEntity) -> Table {
+    /// Allocates a new [`CoreTable`] and returns a [`Table`] reference to it.
+    pub fn alloc_table(&mut self, table: CoreTable) -> Table {
         let table = self.tables.alloc(table);
         Table::from_inner(self.wrap_stored(table))
     }
@@ -642,28 +648,28 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.globals)
     }
 
-    /// Returns a shared reference to the [`TableEntity`] associated to the given [`Table`].
+    /// Returns a shared reference to the [`CoreTable`] associated to the given [`Table`].
     ///
     /// # Panics
     ///
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table(&self, table: &Table) -> &TableEntity {
+    pub fn resolve_table(&self, table: &Table) -> &CoreTable {
         self.resolve(table.as_inner(), &self.tables)
     }
 
-    /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    /// Returns an exclusive reference to the [`CoreTable`] associated to the given [`Table`].
     ///
     /// # Panics
     ///
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table_mut(&mut self, table: &Table) -> &mut TableEntity {
+    pub fn resolve_table_mut(&mut self, table: &Table) -> &mut CoreTable {
         let idx = self.unwrap_stored(table.as_inner());
         Self::resolve_mut(idx, &mut self.tables)
     }
 
-    /// Returns an exclusive reference to the [`TableEntity`] and [`ElementSegmentEntity`] associated to `table` and `elem`.
+    /// Returns an exclusive reference to the [`CoreTable`] and [`ElementSegmentEntity`] associated to `table` and `elem`.
     ///
     /// # Panics
     ///
@@ -675,7 +681,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
         elem: &ElementSegment,
-    ) -> (&mut TableEntity, &mut ElementSegmentEntity) {
+    ) -> (&mut CoreTable, &mut ElementSegmentEntity) {
         let table_idx = self.unwrap_stored(table.as_inner());
         let elem_idx = self.unwrap_stored(elem.as_inner());
         let table = Self::resolve_mut(table_idx, &mut self.tables);
@@ -685,21 +691,21 @@ impl StoreInner {
 
     /// Returns both
     ///
-    /// - an exclusive reference to the [`TableEntity`] associated to the given [`Table`]
+    /// - an exclusive reference to the [`CoreTable`] associated to the given [`Table`]
     /// - an exclusive reference to the [`Fuel`] of the [`StoreInner`].
     ///
     /// # Panics
     ///
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table_and_fuel_mut(&mut self, table: &Table) -> (&mut TableEntity, &mut Fuel) {
+    pub fn resolve_table_and_fuel_mut(&mut self, table: &Table) -> (&mut CoreTable, &mut Fuel) {
         let idx = self.unwrap_stored(table.as_inner());
         let table = Self::resolve_mut(idx, &mut self.tables);
         let fuel = &mut self.fuel;
         (table, fuel)
     }
 
-    /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    /// Returns an exclusive reference to the [`CoreTable`] associated to the given [`Table`].
     ///
     /// # Panics
     ///
@@ -709,7 +715,7 @@ impl StoreInner {
         &mut self,
         fst: &Table,
         snd: &Table,
-    ) -> (&mut TableEntity, &mut TableEntity, &mut Fuel) {
+    ) -> (&mut CoreTable, &mut CoreTable, &mut Fuel) {
         let fst = self.unwrap_stored(fst.as_inner());
         let snd = self.unwrap_stored(snd.as_inner());
         let (fst, snd) = self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
@@ -722,7 +728,7 @@ impl StoreInner {
     /// Returns the following data:
     ///
     /// - A shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
-    /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    /// - An exclusive reference to the [`CoreTable`] associated to the given [`Table`].
     /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
     /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
     ///
@@ -743,7 +749,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
         segment: &ElementSegment,
-    ) -> (&mut TableEntity, &ElementSegmentEntity, &mut Fuel) {
+    ) -> (&mut CoreTable, &ElementSegmentEntity, &mut Fuel) {
         let mem_idx = self.unwrap_stored(table.as_inner());
         let elem_idx = segment.as_inner();
         let elem = self.resolve(elem_idx, &self.elems);

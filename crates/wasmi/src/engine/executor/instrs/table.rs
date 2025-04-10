@@ -1,6 +1,6 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::{ResourceLimiterRef, TableError, TrapCode},
+    core::{ResourceLimiterRef, Table as CoreTable, TableError, TrapCode},
     engine::utils::unreachable_unchecked,
     ir::{
         index::{Elem, Table},
@@ -10,7 +10,6 @@ use crate::{
         Reg,
     },
     store::{PrunedStore, StoreInner},
-    table::TableEntity,
     Error,
 };
 
@@ -275,7 +274,7 @@ impl Executor<'_> {
             // Copy from one table to another table:
             let (dst_table, src_table, fuel) =
                 store.resolve_table_pair_and_fuel(&dst_table, &src_table);
-            TableEntity::copy(dst_table, dst_index, src_table, src_index, len, Some(fuel))?;
+            CoreTable::copy(dst_table, dst_index, src_table, src_index, len, Some(fuel))?;
         }
         self.try_next_instr_at(3)
     }
@@ -407,7 +406,13 @@ impl Executor<'_> {
             &self.get_table(table_index),
             &self.get_element_segment(element_index),
         );
-        table.init(element, dst_index, src_index, len, Some(fuel))?;
+        table.init(
+            element.inner.as_ref(),
+            dst_index,
+            src_index,
+            len,
+            Some(fuel),
+        )?;
         self.try_next_instr_at(3)
     }
 
