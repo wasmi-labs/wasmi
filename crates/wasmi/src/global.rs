@@ -174,8 +174,8 @@ impl GlobalEntity {
     }
 
     /// Returns the current untyped value of the global variable.
-    pub(crate) fn get_untyped(&self) -> UntypedVal {
-        self.value
+    pub(crate) fn get_untyped(&self) -> &UntypedVal {
+        &self.value
     }
 
     /// Returns a pointer to the untyped value of the global variable.

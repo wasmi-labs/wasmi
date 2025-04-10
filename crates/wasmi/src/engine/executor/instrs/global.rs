@@ -16,7 +16,7 @@ impl Executor<'_> {
             _ => {
                 hint::cold();
                 let global = self.get_global(global);
-                store.resolve_global(&global).get_untyped()
+                *store.resolve_global(&global).get_untyped()
             }
         };
         self.set_register(result, value);
