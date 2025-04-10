@@ -9,7 +9,7 @@ use crate::{
         Instruction,
         Reg,
     },
-    memory::MemoryError,
+    core::MemoryError,
     store::{PrunedStore, StoreInner},
     Error,
 };

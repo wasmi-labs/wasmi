@@ -1,17 +1,14 @@
 mod data;
-mod error;
 
 #[cfg(test)]
 mod tests;
 
-pub use self::{
-    data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
-    error::MemoryError,
-};
+pub use self::data::{DataSegment, DataSegmentEntity, DataSegmentIdx};
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
     core::{
+        MemoryError,
         Fuel,
         IndexType,
         Memory as CoreMemory,

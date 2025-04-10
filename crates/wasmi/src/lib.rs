@@ -128,11 +128,10 @@ pub mod errors {
         global::GlobalError,
         ir::Error as IrError,
         linker::LinkerError,
-        memory::MemoryError,
         module::{InstantiationError, ReadError},
         table::TableError,
     };
-    pub use crate::core::FuelError;
+    pub use crate::core::{MemoryError, FuelError};
 }
 
 pub use self::{
