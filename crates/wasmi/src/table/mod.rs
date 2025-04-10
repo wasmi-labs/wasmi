@@ -1,4 +1,4 @@
-pub use self::element::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx};
+pub use self::element::{ElementSegment, ElementSegmentIdx};
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,

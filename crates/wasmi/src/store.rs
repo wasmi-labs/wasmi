@@ -2,6 +2,7 @@ use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
     core::{
         hint::unlikely,
+        ElementSegment as CoreElementSegment,
         Fuel,
         Memory as CoreMemory,
         ResourceLimiter,
@@ -15,7 +16,6 @@ use crate::{
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
-    ElementSegmentEntity,
     ElementSegmentIdx,
     Engine,
     Error,
@@ -384,7 +384,7 @@ pub struct StoreInner {
     /// Stored data segments.
     datas: Arena<DataSegmentIdx, DataSegmentEntity>,
     /// Stored data segments.
-    elems: Arena<ElementSegmentIdx, ElementSegmentEntity>,
+    elems: Arena<ElementSegmentIdx, CoreElementSegment>,
     /// Stored external objects for [`ExternRef`] types.
     ///
     /// [`ExternRef`]: [`crate::ExternRef`]
@@ -506,11 +506,8 @@ impl StoreInner {
         DataSegment::from_inner(self.wrap_stored(segment))
     }
 
-    /// Allocates a new [`ElementSegmentEntity`] and returns a [`ElementSegment`] reference to it.
-    pub(super) fn alloc_element_segment(
-        &mut self,
-        segment: ElementSegmentEntity,
-    ) -> ElementSegment {
+    /// Allocates a new [`CoreElementSegment`] and returns a [`ElementSegment`] reference to it.
+    pub(super) fn alloc_element_segment(&mut self, segment: CoreElementSegment) -> ElementSegment {
         let segment = self.elems.alloc(segment);
         ElementSegment::from_inner(self.wrap_stored(segment))
     }
@@ -669,7 +666,7 @@ impl StoreInner {
         Self::resolve_mut(idx, &mut self.tables)
     }
 
-    /// Returns an exclusive reference to the [`CoreTable`] and [`ElementSegmentEntity`] associated to `table` and `elem`.
+    /// Returns an exclusive reference to the [`CoreTable`] and [`CoreElementSegment`] associated to `table` and `elem`.
     ///
     /// # Panics
     ///
@@ -681,7 +678,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
         elem: &ElementSegment,
-    ) -> (&mut CoreTable, &mut ElementSegmentEntity) {
+    ) -> (&mut CoreTable, &mut CoreElementSegment) {
         let table_idx = self.unwrap_stored(table.as_inner());
         let elem_idx = self.unwrap_stored(elem.as_inner());
         let table = Self::resolve_mut(table_idx, &mut self.tables);
@@ -729,7 +726,7 @@ impl StoreInner {
     ///
     /// - A shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
     /// - An exclusive reference to the [`CoreTable`] associated to the given [`Table`].
-    /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    /// - A shared reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
     /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
     ///
     /// # Note
@@ -749,7 +746,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
         segment: &ElementSegment,
-    ) -> (&mut CoreTable, &ElementSegmentEntity, &mut Fuel) {
+    ) -> (&mut CoreTable, &CoreElementSegment, &mut Fuel) {
         let mem_idx = self.unwrap_stored(table.as_inner());
         let elem_idx = segment.as_inner();
         let elem = self.resolve(elem_idx, &self.elems);
@@ -758,17 +755,17 @@ impl StoreInner {
         (mem, elem, fuel)
     }
 
-    /// Returns a shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    /// Returns a shared reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
     ///
     /// # Panics
     ///
     /// - If the [`ElementSegment`] does not originate from this [`Store`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub fn resolve_element_segment(&self, segment: &ElementSegment) -> &ElementSegmentEntity {
+    pub fn resolve_element_segment(&self, segment: &ElementSegment) -> &CoreElementSegment {
         self.resolve(segment.as_inner(), &self.elems)
     }
 
-    /// Returns an exclusive reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    /// Returns an exclusive reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
     ///
     /// # Panics
     ///
@@ -777,7 +774,7 @@ impl StoreInner {
     pub fn resolve_element_segment_mut(
         &mut self,
         segment: &ElementSegment,
-    ) -> &mut ElementSegmentEntity {
+    ) -> &mut CoreElementSegment {
         let idx = self.unwrap_stored(segment.as_inner());
         Self::resolve_mut(idx, &mut self.elems)
     }

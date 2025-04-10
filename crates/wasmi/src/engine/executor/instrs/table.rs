@@ -406,13 +406,7 @@ impl Executor<'_> {
             &self.get_table(table_index),
             &self.get_element_segment(element_index),
         );
-        table.init(
-            element.inner.as_ref(),
-            dst_index,
-            src_index,
-            len,
-            Some(fuel),
-        )?;
+        table.init(element.as_ref(), dst_index, src_index, len, Some(fuel))?;
         self.try_next_instr_at(3)
     }
 

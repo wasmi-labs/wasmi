@@ -188,5 +188,5 @@ use self::{
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
     memory::{DataSegmentEntity, DataSegmentIdx, MemoryIdx},
     store::Stored,
-    table::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx, TableIdx},
+    table::{ElementSegment, ElementSegmentIdx, TableIdx},
 };
