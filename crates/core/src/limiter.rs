@@ -1,3 +1,4 @@
+use crate::{MemoryError, TableError};
 use core::{
     error::Error,
     fmt,
@@ -28,6 +29,33 @@ impl Display for LimiterError {
             LimiterError::OutOfFuel => "out of fuel",
         };
         write!(f, "{message}")
+    }
+}
+
+impl From<MemoryError> for LimiterError {
+    fn from(error: MemoryError) -> Self {
+        match error {
+            MemoryError::OutOfSystemMemory => Self::OutOfSystemMemory,
+            MemoryError::OutOfBoundsGrowth => Self::OutOfBoundsGrowth,
+            MemoryError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
+            MemoryError::OutOfFuel => Self::OutOfFuel,
+            error => panic!("unexpected `MemoryError`: {error}"),
+        }
+    }
+}
+
+impl From<TableError> for LimiterError {
+    fn from(error: TableError) -> Self {
+        match error {
+            TableError::OutOfSystemMemory => Self::OutOfSystemMemory,
+            TableError::GrowOutOfBounds
+            | TableError::CopyOutOfBounds
+            | TableError::FillOutOfBounds
+            | TableError::InitOutOfBounds => Self::OutOfBoundsGrowth,
+            TableError::ResourceLimiterDeniedAllocation => Self::ResourceLimiterDeniedAllocation,
+            TableError::OutOfFuel => Self::OutOfFuel,
+            error => panic!("unexpected `TableError`: {error}"),
+        }
     }
 }
 
