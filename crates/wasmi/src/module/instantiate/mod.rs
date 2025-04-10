@@ -124,8 +124,8 @@ impl Module {
                     let imported = table.dynamic_ty(&store);
                     if !imported.is_subtype_of(required) {
                         return Err(InstantiationError::TableTypeMismatch {
-                            expected: required.inner,
-                            actual: imported.inner,
+                            expected: *required,
+                            actual: imported,
                         });
                     }
                     builder.push_table(table);

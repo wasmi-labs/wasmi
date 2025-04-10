@@ -134,7 +134,7 @@ pub mod errors {
 }
 
 pub use self::{
-    core::{MemoryType, MemoryTypeBuilder},
+    core::{MemoryType, MemoryTypeBuilder, TableType},
     engine::{
         CompilationMode,
         Config,
@@ -179,7 +179,7 @@ pub use self::{
         Read,
     },
     store::{AsContext, AsContextMut, CallHook, Store, StoreContext, StoreContextMut},
-    table::{Table, TableType},
+    table::Table,
     value::Val,
 };
 use self::{

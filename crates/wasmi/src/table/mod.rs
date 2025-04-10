@@ -2,16 +2,7 @@ pub use self::element::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx}
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{
-        Fuel,
-        IndexType,
-        ResourceLimiterRef,
-        Table as CoreTable,
-        TableError,
-        TableType as CoreTableType,
-        UntypedVal,
-        ValType,
-    },
+    core::{Fuel, ResourceLimiterRef, Table as CoreTable, TableError, TableType, UntypedVal},
     Error,
     Val,
 };
@@ -35,91 +26,6 @@ impl ArenaIndex for TableIdx {
     }
 }
 
-/// A descriptor for a [`Table`] instance.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct TableType {
-    /// The underlying table type.
-    pub(crate) inner: CoreTableType,
-}
-
-impl TableType {
-    /// Creates a new [`TableType`].
-    ///
-    /// # Panics
-    ///
-    /// If `min` is greater than `max`.
-    pub fn new(element: ValType, min: u32, max: Option<u32>) -> Self {
-        let inner = CoreTableType::new(element, min, max);
-        Self { inner }
-    }
-
-    /// Creates a new [`TableType`] with a 64-bit index type.
-    ///
-    /// # Note
-    ///
-    /// 64-bit tables are part of the [Wasm `memory64` proposal].
-    ///
-    /// [Wasm `memory64` proposal]: https://github.com/WebAssembly/memory64
-    ///
-    /// # Panics
-    ///
-    /// If `min` is greater than `max`.
-    pub fn new64(element: ValType, min: u64, max: Option<u64>) -> Self {
-        let inner = CoreTableType::new64(element, min, max);
-        Self { inner }
-    }
-
-    /// Returns `true` if this is a 64-bit [`TableType`].
-    ///
-    /// 64-bit memories are part of the Wasm `memory64` proposal.
-    pub fn is_64(&self) -> bool {
-        self.inner.is_64()
-    }
-
-    /// Returns the [`IndexType`] used by the [`TableType`].
-    pub(crate) fn index_ty(&self) -> IndexType {
-        self.inner.index_ty()
-    }
-
-    /// Returns the [`ValType`] of elements stored in the [`Table`].
-    pub fn element(&self) -> ValType {
-        self.inner.element()
-    }
-
-    /// Returns minimum number of elements the [`Table`] must have.
-    pub fn minimum(&self) -> u64 {
-        self.inner.minimum()
-    }
-
-    /// The optional maximum number of elements the [`Table`] can have.
-    ///
-    /// If this returns `None` then the [`Table`] is not limited in size.
-    pub fn maximum(&self) -> Option<u64> {
-        self.inner.maximum()
-    }
-
-    // TODO: remove?
-    /// Returns a [`TableError`] if `ty` does not match the [`Table`] element [`ValType`].
-    fn matches_element_type(&self, ty: ValType) -> Result<(), TableError> {
-        if self.element() != ty {
-            return Err(TableError::ElementTypeMismatch);
-        }
-        Ok(())
-    }
-
-    /// Returns `true` if the [`TableType`] is a subtype of the `other` [`TableType`].
-    ///
-    /// # Note
-    ///
-    /// This implements the [subtyping rules] according to the WebAssembly spec.
-    ///
-    /// [import subtyping]:
-    /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
-    pub(crate) fn is_subtype_of(&self, other: &Self) -> bool {
-        self.inner.is_subtype_of(&other.inner)
-    }
-}
-
 /// A Wasm table entity.
 #[derive(Debug)]
 pub struct TableEntity {
@@ -137,14 +43,13 @@ impl TableEntity {
         init: Val,
         limiter: &mut ResourceLimiterRef<'_>,
     ) -> Result<Self, TableError> {
-        let inner = CoreTable::new(ty.inner, init.into(), limiter)?;
+        let inner = CoreTable::new(ty, init.into(), limiter)?;
         Ok(Self { inner })
     }
 
     /// Returns the resizable limits of the table.
     pub fn ty(&self) -> TableType {
-        let inner = self.inner.ty();
-        TableType { inner }
+        self.inner.ty()
     }
 
     /// Returns the dynamic [`TableType`] of the [`TableEntity`].
@@ -154,8 +59,7 @@ impl TableEntity {
     /// This respects the current size of the [`TableEntity`]
     /// as its minimum size and is useful for import subtyping checks.
     pub fn dynamic_ty(&self) -> TableType {
-        let inner = self.inner.dynamic_ty();
-        TableType { inner }
+        self.inner.dynamic_ty()
     }
 
     /// Returns the current size of the [`Table`].
