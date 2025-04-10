@@ -22,7 +22,7 @@ pub struct Config {
     /// Is `true` if Wasmi shall ignore Wasm custom sections when parsing Wasm modules.
     ignore_custom_sections: bool,
     /// The configured fuel costs of all Wasmi bytecode instructions.
-    fuel_costs: FuelCosts,
+    fuel_costs: FuelCostsProvider,
     /// The mode of Wasm to Wasmi bytecode compilation.
     compilation_mode: CompilationMode,
     /// Enforced limits for Wasm module parsing and compilation.
@@ -31,7 +31,7 @@ pub struct Config {
 
 /// Type storing all kinds of fuel costs of instructions.
 #[derive(Debug, Copy, Clone)]
-pub struct FuelCosts {
+pub struct FuelCostsProvider {
     /// The base fuel costs for all instructions.
     base: u64,
     /// The register copies that can be performed per unit of fuel.
@@ -40,7 +40,7 @@ pub struct FuelCosts {
     bytes_per_fuel: NonZeroU64,
 }
 
-impl FuelCosts {
+impl FuelCostsProvider {
     /// Returns the base fuel costs for all Wasmi IR instructions.
     pub fn base(&self) -> u64 {
         self.base
@@ -119,7 +119,7 @@ impl FuelCosts {
     }
 }
 
-impl Default for FuelCosts {
+impl Default for FuelCostsProvider {
     fn default() -> Self {
         let bytes_per_fuel = 64;
         let bytes_per_register = size_of::<UntypedVal>() as u64;
@@ -159,7 +159,7 @@ impl Default for Config {
             features: Self::default_features(),
             consume_fuel: false,
             ignore_custom_sections: false,
-            fuel_costs: FuelCosts::default(),
+            fuel_costs: FuelCostsProvider::default(),
             compilation_mode: CompilationMode::default(),
             limits: EnforcedLimits::default(),
         }
@@ -433,7 +433,7 @@ impl Config {
     }
 
     /// Returns the configured [`FuelCosts`].
-    pub(crate) fn fuel_costs(&self) -> &FuelCosts {
+    pub(crate) fn fuel_costs(&self) -> &FuelCostsProvider {
         &self.fuel_costs
     }
 
