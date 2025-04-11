@@ -705,7 +705,7 @@ impl WasmTranslator<'_> for FuncTranslator {
             .instr_encoder
             .update_branch_offsets(&mut self.alloc.stack)?;
         let len_registers = self.alloc.stack.len_registers();
-        if let Some(fuel_costs) = self.fuel_costs().cloned() {
+        if let Some(fuel_costs) = self.fuel_costs() {
             // Note: Fuel metering is enabled so we need to bump the fuel
             //       of the function enclosing Wasm `block` by an amount
             //       that depends on the total number of registers used by
@@ -713,7 +713,7 @@ impl WasmTranslator<'_> for FuncTranslator {
             // Note: The function enclosing block fuel instruction is always
             //       the instruction at the 0th index if fuel metering is enabled.
             let fuel_instr = Instr::from_u32(0);
-            let fuel_info = FuelInfo::some(fuel_costs, fuel_instr);
+            let fuel_info = FuelInfo::some(fuel_costs.clone(), fuel_instr);
             self.alloc
                 .instr_encoder
                 .bump_fuel_consumption(&fuel_info, |costs| {
