@@ -54,23 +54,23 @@ impl Module {
     where
         I: IntoIterator<Item = Extern, IntoIter: ExactSizeIterator>,
     {
-        let mut ctx = context.as_context_mut().store;
-        if !ctx.can_create_more_instances(1) {
+        let mut context = context.as_context_mut().store;
+        if !context.can_create_more_instances(1) {
             return Err(Error::from(InstantiationError::TooManyInstances));
         }
-        let handle = ctx.as_context_mut().store.inner.alloc_instance();
+        let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
-        self.extract_imports(&ctx, &mut builder, externals)?;
-        self.extract_functions(&mut ctx, &mut builder, handle);
-        self.extract_tables(&mut ctx, &mut builder)?;
-        self.extract_memories(&mut ctx, &mut builder)?;
-        self.extract_globals(&mut ctx, &mut builder);
+        self.extract_imports(&context, &mut builder, externals)?;
+        self.extract_functions(&mut context, &mut builder, handle);
+        self.extract_tables(&mut context, &mut builder)?;
+        self.extract_memories(&mut context, &mut builder)?;
+        self.extract_globals(&mut context, &mut builder);
         self.extract_exports(&mut builder);
         self.extract_start_fn(&mut builder);
 
-        self.initialize_table_elements(&mut ctx, &mut builder)?;
-        self.initialize_memory_data(&mut ctx, &mut builder)?;
+        self.initialize_table_elements(&mut context, &mut builder)?;
+        self.initialize_memory_data(&mut context, &mut builder)?;
 
         // At this point the module instantiation is nearly done.
         // The only thing that is missing is to run the `start` function.
@@ -204,7 +204,7 @@ impl Module {
             let table =
                 Table::new(context.as_context_mut(), table_type, init).map_err(|error| {
                     let error = match error.kind() {
-                        ErrorKind::Table(error) => *error,
+                        ErrorKind::Table(error) => error.clone(),
                         error => panic!("unexpected error: {error}"),
                     };
                     InstantiationError::FailedToInstantiateTable(error)
@@ -231,7 +231,7 @@ impl Module {
         for memory_type in self.internal_memories().copied() {
             let memory = Memory::new(context.as_context_mut(), memory_type).map_err(|error| {
                 let error = match error.kind() {
-                    ErrorKind::Memory(error) => *error,
+                    ErrorKind::Memory(error) => error.clone(),
                     error => panic!("unexpected error: {error}"),
                 };
                 InstantiationError::FailedToInstantiateMemory(error)
