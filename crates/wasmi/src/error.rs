@@ -200,21 +200,17 @@ impl ErrorKind {
     /// Returns a reference to [`TrapCode`] if [`ErrorKind`] is a [`TrapCode`].
     pub fn as_trap_code(&self) -> Option<TrapCode> {
         let trap_code = match self {
-            Self::TrapCode(trap_code) => *trap_code,
-            Self::Table(TableError::ElementTypeMismatch) => TrapCode::BadSignature,
-            Self::Fuel(FuelError::OutOfFuel)
+            | Self::TrapCode(trap_code) => *trap_code,
+            | Self::Fuel(FuelError::OutOfFuel)
             | Self::Table(TableError::OutOfFuel)
             | Self::Memory(MemoryError::OutOfFuel) => TrapCode::OutOfFuel,
-            Self::Memory(MemoryError::OutOfBoundsAccess) => TrapCode::MemoryOutOfBounds,
-            Self::Table(TableError::SetOutOfBounds) => TrapCode::TableOutOfBounds,
-            Self::Table(
-                TableError::FillOutOfBounds
-                | TableError::GrowOutOfBounds
-                | TableError::InitOutOfBounds,
-            ) => TrapCode::TableOutOfBounds,
-            Self::Instantiation(InstantiationError::ElementSegmentDoesNotFit { .. }) => {
-                TrapCode::TableOutOfBounds
-            }
+            | Self::Memory(MemoryError::OutOfBoundsAccess)
+            | Self::Memory(MemoryError::OutOfBoundsGrowth) => TrapCode::MemoryOutOfBounds,
+            | Self::Table(TableError::ElementTypeMismatch) => TrapCode::BadSignature,
+            | Self::Table(TableError::SetOutOfBounds)
+            | Self::Table(TableError::FillOutOfBounds)
+            | Self::Table(TableError::GrowOutOfBounds)
+            | Self::Table(TableError::InitOutOfBounds) => TrapCode::TableOutOfBounds,
             _ => return None,
         };
         Some(trap_code)
