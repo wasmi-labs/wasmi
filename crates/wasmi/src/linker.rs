@@ -14,13 +14,10 @@ use crate::{
     ExternType,
     Func,
     FuncType,
-    GlobalType,
     Instance,
     InstancePre,
     IntoFunc,
-    MemoryType,
     Module,
-    TableType,
     Val,
 };
 use alloc::{
@@ -57,42 +54,6 @@ pub enum LinkerError {
         /// The found definition type.
         found: ExternType,
     },
-    /// Encountered when a [`FuncType`] does not match the expected [`FuncType`].
-    FuncTypeMismatch {
-        /// The name of the import with the mismatched type.
-        name: ImportName,
-        /// The expected [`FuncType`].
-        expected: FuncType,
-        /// The mismatching [`FuncType`] found.
-        found: FuncType,
-    },
-    /// Encountered when a [`TableType`] does not match the expected [`TableType`].
-    InvalidTableSubtype {
-        /// The name of the import with the invalid [`TableType`].
-        name: ImportName,
-        /// The [`TableType`] that is supposed to be a subtype of `other`.
-        ty: TableType,
-        /// The [`TableType`] this is supposed to be a supertype of `ty`.
-        other: TableType,
-    },
-    /// Encountered when a [`MemoryType`] does not match the expected [`MemoryType`].
-    InvalidMemorySubtype {
-        /// The name of the import with the invalid [`MemoryType`].
-        name: ImportName,
-        /// The [`MemoryType`] that is supposed to be a subtype of `other`.
-        ty: MemoryType,
-        /// The [`MemoryType`] this is supposed to be a supertype of `ty`.
-        other: MemoryType,
-    },
-    /// Encountered when a [`GlobalType`] does not match the expected [`GlobalType`].
-    GlobalTypeMismatch {
-        /// The name of the import with the mismatched type.
-        name: ImportName,
-        /// The expected [`GlobalType`].
-        expected: GlobalType,
-        /// The mismatching [`GlobalType`] found.
-        found: GlobalType,
-    },
 }
 
 impl LinkerError {
@@ -110,42 +71,6 @@ impl LinkerError {
             name: import.import_name().clone(),
             expected: import.ty().clone(),
             found: found.clone(),
-        }
-    }
-
-    /// Create a new [`LinkerError`] for when a [`FuncType`] mismatched.
-    fn func_type_mismatch(name: &ImportName, expected: &FuncType, found: &FuncType) -> Self {
-        Self::FuncTypeMismatch {
-            name: name.clone(),
-            expected: expected.clone(),
-            found: found.clone(),
-        }
-    }
-
-    /// Create a new [`LinkerError`] for when a [`TableType`] `ty` unexpectedly is not a subtype of `other`.
-    fn table_type_mismatch(name: &ImportName, ty: &TableType, other: &TableType) -> Self {
-        Self::InvalidTableSubtype {
-            name: name.clone(),
-            ty: *ty,
-            other: *other,
-        }
-    }
-
-    /// Create a new [`LinkerError`] for when a [`MemoryType`] `ty` unexpectedly is not a subtype of `other`.
-    fn invalid_memory_subtype(name: &ImportName, ty: &MemoryType, other: &MemoryType) -> Self {
-        Self::InvalidMemorySubtype {
-            name: name.clone(),
-            ty: *ty,
-            other: *other,
-        }
-    }
-
-    /// Create a new [`LinkerError`] for when a [`GlobalType`] mismatched.
-    fn global_type_mismatch(name: &ImportName, expected: &GlobalType, found: &GlobalType) -> Self {
-        Self::GlobalTypeMismatch {
-            name: name.clone(),
-            expected: *expected,
-            found: *found,
         }
     }
 }
@@ -173,40 +98,6 @@ impl Display for LinkerError {
                 found,
             } => {
                 write!(f, "found definition for import {name} with type {expected:?} but found type {found:?}")
-            }
-            Self::FuncTypeMismatch {
-                name,
-                expected,
-                found,
-            } => {
-                write!(
-                    f,
-                    "function type mismatch for import {name}: \
-                    expected {expected:?} but found {found:?}",
-                )
-            }
-            Self::InvalidTableSubtype { name, ty, other } => {
-                write!(
-                    f,
-                    "import {name}: table type {ty:?} is not a subtype of {other:?}"
-                )
-            }
-            Self::InvalidMemorySubtype { name, ty, other } => {
-                write!(
-                    f,
-                    "import {name}: memory type {ty:?} is not a subtype of {other:?}"
-                )
-            }
-            Self::GlobalTypeMismatch {
-                name,
-                expected,
-                found,
-            } => {
-                write!(
-                    f,
-                    "global variable type mismatch for import {name}: \
-                    expected {expected:?} but found {found:?}",
-                )
             }
         }
     }
@@ -608,70 +499,42 @@ impl<T> Linker<T> {
         import: ImportType,
     ) -> Result<Extern, Error> {
         assert!(Engine::same(self.engine(), context.as_context().engine()));
-        let import_name = import.import_name();
         let module_name = import.module();
         let field_name = import.name();
         let resolved = self
             .get_definition(context.as_context(), module_name, field_name)
             .ok_or_else(|| LinkerError::missing_definition(&import))?;
-        let invalid_type = || LinkerError::invalid_type_definition(&import, &resolved.ty(&context));
+        let invalid_type =
+            |context| LinkerError::invalid_type_definition(&import, &resolved.ty(context));
         match import.ty() {
-            ExternType::Func(expected_type) => {
-                let found_type = resolved
-                    .ty(&context)
-                    .func()
-                    .cloned()
-                    .ok_or_else(invalid_type)?;
-                if &found_type != expected_type {
-                    return Err(Error::from(LinkerError::func_type_mismatch(
-                        import_name,
-                        expected_type,
-                        &found_type,
-                    )));
-                }
+            ExternType::Func(_expected) => {
                 let func = resolved
                     .as_func(&mut context)
-                    .expect("already asserted that `resolved` is a function");
+                    .ok_or_else(|| invalid_type(context))?;
                 Ok(Extern::Func(func))
             }
-            ExternType::Table(expected_type) => {
+            ExternType::Table(_expected) => {
                 let table = resolved
                     .as_extern()
                     .copied()
                     .and_then(Extern::into_table)
-                    .ok_or_else(invalid_type)?;
-                let found_type = table.dynamic_ty(context);
-                found_type.is_subtype_or_err(expected_type).map_err(|_| {
-                    LinkerError::table_type_mismatch(import_name, expected_type, &found_type)
-                })?;
+                    .ok_or_else(|| invalid_type(context))?;
                 Ok(Extern::Table(table))
             }
-            ExternType::Memory(expected_type) => {
+            ExternType::Memory(_expected) => {
                 let memory = resolved
                     .as_extern()
                     .copied()
                     .and_then(Extern::into_memory)
-                    .ok_or_else(invalid_type)?;
-                let found_type = memory.dynamic_ty(context);
-                found_type.is_subtype_or_err(expected_type).map_err(|_| {
-                    LinkerError::invalid_memory_subtype(import_name, expected_type, &found_type)
-                })?;
+                    .ok_or_else(|| invalid_type(context))?;
                 Ok(Extern::Memory(memory))
             }
-            ExternType::Global(expected_type) => {
+            ExternType::Global(_expected) => {
                 let global = resolved
                     .as_extern()
                     .copied()
                     .and_then(Extern::into_global)
-                    .ok_or_else(invalid_type)?;
-                let found_type = global.ty(context);
-                if &found_type != expected_type {
-                    return Err(Error::from(LinkerError::global_type_mismatch(
-                        import_name,
-                        expected_type,
-                        &found_type,
-                    )));
-                }
+                    .ok_or_else(|| invalid_type(context))?;
                 Ok(Extern::Global(global))
             }
         }

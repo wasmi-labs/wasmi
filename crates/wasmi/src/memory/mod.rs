@@ -324,29 +324,6 @@ impl MemoryType {
         self.inner.page_size_log2
     }
 
-    /// Checks if `self` is a subtype of `other`.
-    ///
-    /// # Note
-    ///
-    /// This implements the [subtyping rules] according to the WebAssembly spec.
-    ///
-    /// [import subtyping]:
-    /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
-    ///
-    /// # Errors
-    ///
-    /// - If the `minimum` size of `self` is less than or equal to the `minimum` size of `other`.
-    /// - If the `maximum` size of `self` is greater than the `maximum` size of `other`.
-    pub(crate) fn is_subtype_or_err(&self, other: &MemoryType) -> Result<(), MemoryError> {
-        match self.is_subtype_of(other) {
-            true => Ok(()),
-            false => Err(MemoryError::InvalidSubtype {
-                ty: *self,
-                other: *other,
-            }),
-        }
-    }
-
     /// Returns `true` if the [`MemoryType`] is a subtype of the `other` [`MemoryType`].
     ///
     /// # Note
