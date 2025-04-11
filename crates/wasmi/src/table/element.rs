@@ -6,9 +6,7 @@ use crate::{
     AsContext,
     AsContextMut,
     Func,
-    FuncRef,
     Global,
-    Val,
 };
 use alloc::boxed::Box;
 
@@ -58,7 +56,20 @@ impl ElementSegment {
     ) -> Self {
         let get_func = |index| get_func(index).into();
         let get_global = |index| get_global(index).get(&ctx);
-        let entity = ElementSegmentEntity::new(elem, get_func, get_global);
+        let items: Box<[UntypedVal]> = match elem.kind() {
+            module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => {
+                elem
+                    .items()
+                    .iter()
+                    .map(|const_expr| {
+                        const_expr.eval_with_context(get_global, get_func).unwrap_or_else(|| {
+                            panic!("unexpected failed initialization of constant expression: {const_expr:?}")
+                        })
+                }).collect()
+            }
+            module::ElementSegmentKind::Declared => Box::from([]),
+        };
+        let entity = ElementSegmentEntity::new(elem.ty(), items);
         ctx.as_context_mut()
             .store
             .inner
@@ -91,34 +102,13 @@ pub struct ElementSegmentEntity {
 }
 
 impl ElementSegmentEntity {
-    pub fn new(
-        elem: &'_ module::ElementSegment,
-        get_func: impl Fn(u32) -> FuncRef,
-        get_global: impl Fn(u32) -> Val,
-    ) -> Self {
-        let ty = elem.ty();
-        match elem.kind() {
-            module::ElementSegmentKind::Passive | module::ElementSegmentKind::Active(_) => {
-                let items = elem
-                    .items()
-                    .iter()
-                    .map(|const_expr| {
-                        const_expr.eval_with_context(&get_global, &get_func).unwrap_or_else(|| {
-                            panic!("unexpected failed initialization of constant expression: {const_expr:?}")
-                        })
-                }).collect::<Box<[_]>>();
-                Self { ty, items }
-            }
-            module::ElementSegmentKind::Declared => Self::empty(ty),
-        }
-    }
-
-    /// Create an empty [`ElementSegmentEntity`] representing dropped element segments.
-    fn empty(ty: ValType) -> Self {
-        Self {
-            ty,
-            items: [].into(),
-        }
+    /// Creates a new [`ElementSegmentEntity`].
+    pub fn new<I>(ty: ValType, items: I) -> Self
+    where
+        I: IntoIterator<Item = UntypedVal>,
+    {
+        let items = items.into_iter().collect();
+        Self { ty, items }
     }
 
     /// Returns the [`ValType`] of elements in the [`ElementSegmentEntity`].
