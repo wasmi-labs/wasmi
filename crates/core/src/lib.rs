@@ -38,7 +38,7 @@ use self::value::{Float, Integer, SignExtendFrom, TruncateSaturateInto, TryTrunc
 pub use self::{
     float::{F32, F64},
     fuel::{Fuel, FuelCosts, FuelCostsProvider, FuelError},
-    func_type::{DynamicallyTyped, FuncType, FuncTypeError},
+    func_type::{FuncType, FuncTypeError},
     global::{Global, GlobalError, GlobalType, Mutability},
     host_error::HostError,
     index_ty::IndexType,

@@ -5,14 +5,6 @@ use core::{fmt, fmt::Display};
 /// Errors that can occur upon type checking function signatures.
 #[derive(Debug, Copy, Clone)]
 pub enum FuncTypeError {
-    /// A function parameter did not match the required type.
-    MismatchingParameterType,
-    /// Specified an incorrect number of parameters.
-    MismatchingParameterLen,
-    /// A function result did not match the required type.
-    MismatchingResultType,
-    /// Specified an incorrect number of results.
-    MismatchingResultLen,
     /// Too many function parameters.
     TooManyFunctionParams,
     /// Too many function results.
@@ -24,18 +16,6 @@ impl core::error::Error for FuncTypeError {}
 impl Display for FuncTypeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            FuncTypeError::MismatchingParameterType => {
-                write!(f, "encountered incorrect function parameter type")
-            }
-            FuncTypeError::MismatchingParameterLen => {
-                write!(f, "encountered an incorrect number of parameters")
-            }
-            FuncTypeError::MismatchingResultType => {
-                write!(f, "encountered incorrect function result type")
-            }
-            FuncTypeError::MismatchingResultLen => {
-                write!(f, "encountered an incorrect number of results")
-            }
             FuncTypeError::TooManyFunctionParams => {
                 write!(f, "encountered a function with too many parameters")
             }
@@ -312,71 +292,6 @@ impl FuncType {
     /// Returns the pair of parameter and result types of the function type.
     pub fn params_results(&self) -> (&[ValType], &[ValType]) {
         self.inner.params_results()
-    }
-
-    /// Returns `Ok` if the number and types of items in `params` matches as expected by the [`FuncType`].
-    ///
-    /// # Errors
-    ///
-    /// - If the number of items in `params` does not match the number of parameters of the function type.
-    /// - If any type of an item in `params` does not match the expected type of the function type.
-    pub fn match_params<T>(&self, params: &[T]) -> Result<(), FuncTypeError>
-    where
-        T: DynamicallyTyped,
-    {
-        if self.params().len() != params.len() {
-            return Err(FuncTypeError::MismatchingParameterLen);
-        }
-        if self
-            .params()
-            .iter()
-            .copied()
-            .ne(params.iter().map(<T as DynamicallyTyped>::ty))
-        {
-            return Err(FuncTypeError::MismatchingParameterType);
-        }
-        Ok(())
-    }
-
-    /// Returns `Ok` if the number and types of items in `results` matches as expected by the [`FuncType`].
-    ///
-    /// # Note
-    ///
-    /// Only checks types if `check_type` is set to `true`.
-    ///
-    /// # Errors
-    ///
-    /// - If the number of items in `results` does not match the number of results of the function type.
-    /// - If any type of an item in `results` does not match the expected type of the function type.
-    pub fn match_results<T>(&self, results: &[T], check_type: bool) -> Result<(), FuncTypeError>
-    where
-        T: DynamicallyTyped,
-    {
-        if self.results().len() != results.len() {
-            return Err(FuncTypeError::MismatchingResultLen);
-        }
-        if check_type
-            && self
-                .results()
-                .iter()
-                .copied()
-                .ne(results.iter().map(<T as DynamicallyTyped>::ty))
-        {
-            return Err(FuncTypeError::MismatchingResultType);
-        }
-        Ok(())
-    }
-}
-
-/// Types that are dynamically typed, such as [`ValType`].
-pub trait DynamicallyTyped {
-    /// Returns the [`ValType`] of `self`.
-    fn ty(&self) -> ValType;
-}
-
-impl DynamicallyTyped for ValType {
-    fn ty(&self) -> ValType {
-        *self
     }
 }
 
