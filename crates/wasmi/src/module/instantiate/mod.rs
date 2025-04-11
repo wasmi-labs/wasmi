@@ -121,17 +121,33 @@ impl Module {
                 }
                 (ExternType::Table(required), Extern::Table(table)) => {
                     let imported = table.dynamic_ty(&store);
-                    imported.is_subtype_or_err(required)?;
+                    if !imported.is_subtype_of(required) {
+                        return Err(InstantiationError::TableTypeMismatch {
+                            expected: *required,
+                            actual: imported,
+                        });
+                    }
                     builder.push_table(table);
                 }
                 (ExternType::Memory(required), Extern::Memory(memory)) => {
                     let imported = memory.dynamic_ty(&store);
-                    imported.is_subtype_or_err(required)?;
+                    if !imported.is_subtype_of(required) {
+                        return Err(InstantiationError::MemoryTypeMismatch {
+                            expected: *required,
+                            actual: imported,
+                        });
+                    }
                     builder.push_memory(memory);
                 }
                 (ExternType::Global(required), Extern::Global(global)) => {
                     let imported = global.ty(&store);
-                    required.satisfies(&imported)?;
+                    let required = *required;
+                    if imported != required {
+                        return Err(InstantiationError::GlobalTypeMismatch {
+                            expected: required,
+                            actual: imported,
+                        });
+                    }
                     builder.push_global(global);
                 }
                 (expected_import, actual_extern_val) => {
