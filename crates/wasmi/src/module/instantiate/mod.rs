@@ -54,10 +54,6 @@ impl Module {
     where
         I: IntoIterator<Item = Extern, IntoIter: ExactSizeIterator>,
     {
-        context
-            .as_context_mut()
-            .store
-            .check_new_instances_limit(1)?;
         let mut context = context.as_context_mut().store;
         if !context.can_create_more_instances(1) {
             return Err(Error::from(InstantiationError::TooManyInstances));
