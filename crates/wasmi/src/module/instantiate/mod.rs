@@ -8,6 +8,7 @@ pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, ConstExpr, InitDataSegment, Module};
 use crate::{
     core::UntypedVal,
+    error::ErrorKind,
     func::WasmFuncEntity,
     memory::DataSegment,
     value::WithType,
@@ -204,7 +205,14 @@ impl Module {
         }
         for table_type in self.internal_tables().copied() {
             let init = Val::default(table_type.element());
-            let table = Table::new(context.as_context_mut(), table_type, init)?;
+            let table =
+                Table::new(context.as_context_mut(), table_type, init).map_err(|error| {
+                    let error = match error.kind() {
+                        ErrorKind::Table(error) => error.clone(),
+                        error => panic!("unexpected error: {error}"),
+                    };
+                    InstantiationError::FailedToInstantiateTable(error)
+                })?;
             builder.push_table(table);
         }
         Ok(())
@@ -225,7 +233,13 @@ impl Module {
             return Err(InstantiationError::TooManyMemories);
         }
         for memory_type in self.internal_memories().copied() {
-            let memory = Memory::new(context.as_context_mut(), memory_type)?;
+            let memory = Memory::new(context.as_context_mut(), memory_type).map_err(|error| {
+                let error = match error.kind() {
+                    ErrorKind::Memory(error) => error.clone(),
+                    error => panic!("unexpected error: {error}"),
+                };
+                InstantiationError::FailedToInstantiateMemory(error)
+            })?;
             builder.push_memory(memory);
         }
         Ok(())
