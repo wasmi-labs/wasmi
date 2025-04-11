@@ -8,6 +8,7 @@ pub use self::{error::InstantiationError, pre::InstancePre};
 use super::{element::ElementSegmentKind, export, ConstExpr, InitDataSegment, Module};
 use crate::{
     core::UntypedVal,
+    error::ErrorKind,
     func::WasmFuncEntity,
     memory::DataSegment,
     value::WithType,
@@ -57,6 +58,10 @@ impl Module {
             .as_context_mut()
             .store
             .check_new_instances_limit(1)?;
+        let mut context = context.as_context_mut().store;
+        if !context.can_create_more_instances(1) {
+            return Err(Error::from(InstantiationError::TooManyInstances));
+        }
         let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
@@ -112,7 +117,7 @@ impl Module {
                 (ExternType::Func(expected_signature), Extern::Func(func)) => {
                     let actual_signature = func.ty(&store);
                     if &actual_signature != expected_signature {
-                        return Err(InstantiationError::SignatureMismatch {
+                        return Err(InstantiationError::FuncTypeMismatch {
                             actual: actual_signature,
                             expected: expected_signature.clone(),
                         });
@@ -121,17 +126,33 @@ impl Module {
                 }
                 (ExternType::Table(required), Extern::Table(table)) => {
                     let imported = table.dynamic_ty(&store);
-                    imported.is_subtype_or_err(required)?;
+                    if !imported.is_subtype_of(required) {
+                        return Err(InstantiationError::TableTypeMismatch {
+                            expected: *required,
+                            actual: imported,
+                        });
+                    }
                     builder.push_table(table);
                 }
                 (ExternType::Memory(required), Extern::Memory(memory)) => {
                     let imported = memory.dynamic_ty(&store);
-                    imported.is_subtype_or_err(required)?;
+                    if !imported.is_subtype_of(required) {
+                        return Err(InstantiationError::MemoryTypeMismatch {
+                            expected: *required,
+                            actual: imported,
+                        });
+                    }
                     builder.push_memory(memory);
                 }
                 (ExternType::Global(required), Extern::Global(global)) => {
                     let imported = global.ty(&store);
-                    required.satisfies(&imported)?;
+                    let required = *required;
+                    if imported != required {
+                        return Err(InstantiationError::GlobalTypeMismatch {
+                            expected: required,
+                            actual: imported,
+                        });
+                    }
                     builder.push_global(global);
                 }
                 (expected_import, actual_extern_val) => {
@@ -178,13 +199,20 @@ impl Module {
         mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), InstantiationError> {
-        context
-            .as_context_mut()
-            .store
-            .check_new_tables_limit(self.len_tables())?;
+        let ctx = context.as_context_mut().store;
+        if !ctx.can_create_more_tables(self.len_tables()) {
+            return Err(InstantiationError::TooManyTables);
+        }
         for table_type in self.internal_tables().copied() {
             let init = Val::default(table_type.element());
-            let table = Table::new(context.as_context_mut(), table_type, init)?;
+            let table =
+                Table::new(context.as_context_mut(), table_type, init).map_err(|error| {
+                    let error = match error.kind() {
+                        ErrorKind::Table(error) => error.clone(),
+                        error => panic!("unexpected error: {error}"),
+                    };
+                    InstantiationError::FailedToInstantiateTable(error)
+                })?;
             builder.push_table(table);
         }
         Ok(())
@@ -199,13 +227,19 @@ impl Module {
         &self,
         mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
-    ) -> Result<(), Error> {
-        context
-            .as_context_mut()
-            .store
-            .check_new_memories_limit(self.len_memories())?;
+    ) -> Result<(), InstantiationError> {
+        let ctx = context.as_context_mut().store;
+        if !ctx.can_create_more_memories(self.len_memories()) {
+            return Err(InstantiationError::TooManyMemories);
+        }
         for memory_type in self.internal_memories().copied() {
-            let memory = Memory::new(context.as_context_mut(), memory_type)?;
+            let memory = Memory::new(context.as_context_mut(), memory_type).map_err(|error| {
+                let error = match error.kind() {
+                    ErrorKind::Memory(error) => error.clone(),
+                    error => panic!("unexpected error: {error}"),
+                };
+                InstantiationError::FailedToInstantiateMemory(error)
+            })?;
             builder.push_memory(memory);
         }
         Ok(())

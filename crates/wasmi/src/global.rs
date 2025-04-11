@@ -128,22 +128,6 @@ impl GlobalType {
     pub fn mutability(&self) -> Mutability {
         self.mutability
     }
-
-    /// Checks if `self` satisfies the given `GlobalType`.
-    ///
-    /// # Errors
-    ///
-    /// - If the initial limits of the `required` [`GlobalType`] are greater than `self`.
-    /// - If the maximum limits of the `required` [`GlobalType`] are greater than `self`.
-    pub(crate) fn satisfies(&self, required: &GlobalType) -> Result<(), GlobalError> {
-        if self != required {
-            return Err(GlobalError::UnsatisfyingGlobalType {
-                unsatisfying: *self,
-                required: *required,
-            });
-        }
-        Ok(())
-    }
 }
 
 /// A global variable entity.

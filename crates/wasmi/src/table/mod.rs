@@ -9,6 +9,7 @@ use crate::{
     error::EntityGrowError,
     store::{Fuel, FuelError, ResourceLimiterRef},
     value::WithType,
+    Error,
     IndexType,
     Val,
 };
@@ -638,7 +639,7 @@ impl Table {
     /// # Errors
     ///
     /// If `init` does not match the [`TableType`] element type.
-    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Val) -> Result<Self, TableError> {
+    pub fn new(mut ctx: impl AsContextMut, ty: TableType, init: Val) -> Result<Self, Error> {
         let (inner, mut resource_limiter) = ctx
             .as_context_mut()
             .store
