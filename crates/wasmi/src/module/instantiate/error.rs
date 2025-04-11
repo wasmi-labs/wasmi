@@ -30,11 +30,11 @@ pub enum InstantiationError {
         /// The actually found external value for the module import.
         actual: Extern,
     },
-    /// Caused when a function has a mismatching signature.
-    SignatureMismatch {
-        /// The expected function signature for the function import.
+    /// Caused when a function has a mismatching type.
+    FuncTypeMismatch {
+        /// The expected function type for the function import.
         expected: FuncType,
-        /// The actual function signature for the function import.
+        /// The actual function type of the function import.
         actual: FuncType,
     },
     /// Occurs when an imported table does not satisfy the required table type.
@@ -73,7 +73,7 @@ impl Display for InstantiationError {
                 f,
                 "expected {expected:?} external for import but found {actual:?}",
             ),
-            Self::SignatureMismatch { expected, actual } => {
+            Self::FuncTypeMismatch { expected, actual } => {
                 write!(
                     f,
                     "expected {expected:?} function signature but found {actual:?}",
