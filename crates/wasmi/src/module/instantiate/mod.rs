@@ -57,6 +57,10 @@ impl Module {
             .as_context_mut()
             .store
             .check_new_instances_limit(1)?;
+        let mut context = context.as_context_mut().store;
+        if !context.can_create_more_instances(1) {
+            return Err(Error::from(InstantiationError::TooManyInstances));
+        }
         let handle = context.as_context_mut().store.inner.alloc_instance();
         let mut builder = InstanceEntity::build(self);
 
@@ -194,10 +198,10 @@ impl Module {
         mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
     ) -> Result<(), InstantiationError> {
-        context
-            .as_context_mut()
-            .store
-            .check_new_tables_limit(self.len_tables())?;
+        let ctx = context.as_context_mut().store;
+        if !ctx.can_create_more_tables(self.len_tables()) {
+            return Err(InstantiationError::TooManyTables);
+        }
         for table_type in self.internal_tables().copied() {
             let init = Val::default(table_type.element());
             let table = Table::new(context.as_context_mut(), table_type, init)?;
@@ -215,11 +219,11 @@ impl Module {
         &self,
         mut context: impl AsContextMut,
         builder: &mut InstanceEntityBuilder,
-    ) -> Result<(), Error> {
-        context
-            .as_context_mut()
-            .store
-            .check_new_memories_limit(self.len_memories())?;
+    ) -> Result<(), InstantiationError> {
+        let ctx = context.as_context_mut().store;
+        if !ctx.can_create_more_memories(self.len_memories()) {
+            return Err(InstantiationError::TooManyMemories);
+        }
         for memory_type in self.internal_memories().copied() {
             let memory = Memory::new(context.as_context_mut(), memory_type)?;
             builder.push_memory(memory);
