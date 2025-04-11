@@ -481,7 +481,7 @@ impl FuelError {
 }
 
 /// The remaining and consumed fuel counters.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Fuel {
     /// The remaining fuel.
     remaining: u64,
@@ -497,7 +497,7 @@ impl Fuel {
     /// Creates a new [`Fuel`] for the [`Engine`].
     pub fn new(config: &Config) -> Self {
         let enabled = config.get_consume_fuel();
-        let costs = *config.fuel_costs();
+        let costs = config.fuel_costs().clone();
         Self {
             remaining: 0,
             enabled,
