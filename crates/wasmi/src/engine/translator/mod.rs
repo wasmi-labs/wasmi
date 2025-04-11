@@ -713,7 +713,7 @@ impl WasmTranslator<'_> for FuncTranslator {
             // Note: The function enclosing block fuel instruction is always
             //       the instruction at the 0th index if fuel metering is enabled.
             let fuel_instr = Instr::from_u32(0);
-            let fuel_info = FuelInfo::some(*fuel_costs, fuel_instr);
+            let fuel_info = FuelInfo::some(fuel_costs.clone(), fuel_instr);
             self.alloc
                 .instr_encoder
                 .bump_fuel_consumption(fuel_info, |costs| {
@@ -728,7 +728,7 @@ impl WasmTranslator<'_> for FuncTranslator {
 }
 
 /// Fuel metering information for a certain translation state.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum FuelInfo {
     /// Fuel metering is disabled.
     None,
@@ -765,7 +765,7 @@ impl FuncTranslator {
         let fuel_costs = config
             .get_consume_fuel()
             .then(|| config.fuel_costs())
-            .copied();
+            .cloned();
         Self {
             func,
             engine,
@@ -870,14 +870,14 @@ impl FuncTranslator {
     ///
     /// Returns [`FuelInfo::None`] if fuel metering is disabled.
     fn fuel_info(&self) -> FuelInfo {
-        let Some(&fuel_costs) = self.fuel_costs() else {
+        let Some(fuel_costs) = self.fuel_costs() else {
             // Fuel metering is disabled so we can bail out.
             return FuelInfo::None;
         };
         let fuel_instr = self
             .fuel_instr()
             .expect("fuel metering is enabled but there is no Instruction::ConsumeFuel");
-        FuelInfo::some(fuel_costs, fuel_instr)
+        FuelInfo::some(fuel_costs.clone(), fuel_instr)
     }
 
     /// Pushes a [`Instruction::ConsumeFuel`] with base costs if fuel metering is enabled.
@@ -1034,7 +1034,7 @@ impl FuncTranslator {
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         if self.alloc.control_stack.is_empty() {
             bail_unreachable!(self);
-            let fuel_info = match self.fuel_costs().copied() {
+            let fuel_info = match self.fuel_costs().cloned() {
                 None => FuelInfo::None,
                 Some(fuel_costs) => {
                     let fuel_instr = frame

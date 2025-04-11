@@ -30,7 +30,7 @@ pub struct Config {
 }
 
 /// Type storing all kinds of fuel costs of instructions.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct FuelCostsProvider {
     /// The base fuel costs for all instructions.
     base: u64,
