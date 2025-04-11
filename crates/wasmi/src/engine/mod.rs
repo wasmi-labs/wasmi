@@ -510,7 +510,7 @@ impl EngineInner {
     fn new(config: &Config) -> Self {
         let engine_idx = EngineIdx::new();
         Self {
-            config: *config,
+            config: config.clone(),
             code_map: CodeMap::new(config),
             func_types: RwLock::new(FuncTypeRegistry::new(engine_idx)),
             allocs: Mutex::new(ReusableAllocationStack::default()),

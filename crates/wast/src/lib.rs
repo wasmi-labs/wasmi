@@ -32,7 +32,7 @@ use wast::{
 };
 
 /// The configuration for the test runner.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct RunnerConfig {
     /// The Wasmi configuration used for all tests.
     pub config: Config,
