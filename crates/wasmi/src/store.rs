@@ -5,7 +5,6 @@ use crate::{
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
     memory::DataSegment,
-    module::InstantiationError,
     Config,
     DataSegmentEntity,
     DataSegmentIdx,
@@ -1210,19 +1209,6 @@ impl<T> Store<T> {
             }
         }
         true
-    }
-
-    pub(crate) fn check_new_instances_limit(
-        &mut self,
-        num_new_instances: usize,
-    ) -> Result<(), InstantiationError> {
-        let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
-        if let Some(limiter) = limiter.as_resource_limiter() {
-            if inner.instances.len().saturating_add(num_new_instances) > limiter.instances() {
-                return Err(InstantiationError::TooManyInstances);
-            }
-        }
-        Ok(())
     }
 
     pub(crate) fn store_inner_and_resource_limiter_ref(
