@@ -57,6 +57,7 @@ pub enum InstantiationError {
         /// The index of the found `start` function.
         index: u32,
     },
+    /// When trying to instantiate more instances than supported by Wasmi.
     TooManyInstances,
 }
 
