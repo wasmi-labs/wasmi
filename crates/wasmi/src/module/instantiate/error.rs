@@ -1,6 +1,5 @@
 use crate::{
     errors::{MemoryError, TableError},
-    global::GlobalError,
     Extern,
     ExternType,
     FuncType,
@@ -61,12 +60,6 @@ pub enum InstantiationError {
         /// The actual memory type of the memory import.
         actual: MemoryType,
     },
-    /// Occurs when an imported table does not satisfy the required table type.
-    Table(TableError),
-    /// Occurs when an imported memory does not satisfy the required memory type.
-    Memory(MemoryError),
-    /// Occurs when an imported global variable does not satisfy the required global type.
-    Global(GlobalError),
     /// Caused when an element segment does not fit into the specified table instance.
     ElementSegmentDoesNotFit {
         /// The table of the element segment.
@@ -121,32 +114,11 @@ impl Display for InstantiationError {
             Self::UnexpectedStartFn { index } => {
                 write!(f, "found an unexpected start function with index {index}")
             }
-            Self::Table(error) => Display::fmt(error, f),
-            Self::Memory(error) => Display::fmt(error, f),
-            Self::Global(error) => Display::fmt(error, f),
             Self::TooManyInstances => write!(f, "tried to instantiate too many instances"),
             Self::TooManyTables => write!(f, "tried to instantiate too many tables"),
             Self::TooManyMemories => write!(f, "tried to instantiate too many linear memories"),
             Self::FailedToInstantiateMemory(error) => write!(f, "failed to instantiate memory: {error}"),
             Self::FailedToInstantiateTable(error) => write!(f, "failed to instantiate table: {error}"),
         }
-    }
-}
-
-impl From<TableError> for InstantiationError {
-    fn from(error: TableError) -> Self {
-        Self::Table(error)
-    }
-}
-
-impl From<MemoryError> for InstantiationError {
-    fn from(error: MemoryError) -> Self {
-        Self::Memory(error)
-    }
-}
-
-impl From<GlobalError> for InstantiationError {
-    fn from(error: GlobalError) -> Self {
-        Self::Global(error)
     }
 }
