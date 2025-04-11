@@ -4,9 +4,8 @@ use crate::{
     engine::{DedupFuncType, FuelCostsProvider},
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
-    memory::{DataSegment, MemoryError},
+    memory::DataSegment,
     module::InstantiationError,
-    table::TableError,
     Config,
     DataSegmentEntity,
     DataSegmentIdx,
@@ -1221,32 +1220,6 @@ impl<T> Store<T> {
         if let Some(limiter) = limiter.as_resource_limiter() {
             if inner.instances.len().saturating_add(num_new_instances) > limiter.instances() {
                 return Err(InstantiationError::TooManyInstances);
-            }
-        }
-        Ok(())
-    }
-
-    pub(crate) fn check_new_memories_limit(
-        &mut self,
-        num_new_memories: usize,
-    ) -> Result<(), MemoryError> {
-        let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
-        if let Some(limiter) = limiter.as_resource_limiter() {
-            if inner.memories.len().saturating_add(num_new_memories) > limiter.memories() {
-                return Err(MemoryError::TooManyMemories);
-            }
-        }
-        Ok(())
-    }
-
-    pub(crate) fn check_new_tables_limit(
-        &mut self,
-        num_new_tables: usize,
-    ) -> Result<(), TableError> {
-        let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
-        if let Some(limiter) = limiter.as_resource_limiter() {
-            if inner.tables.len().saturating_add(num_new_tables) > limiter.tables() {
-                return Err(TableError::TooManyTables);
             }
         }
         Ok(())
