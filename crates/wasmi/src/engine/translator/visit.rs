@@ -169,7 +169,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             &mut self.alloc.stack,
             BoundedRegSpan::new(branch_params, len_block_params),
             &self.alloc.buffer.providers[..],
-            fuel_info,
+            &fuel_info,
         )?;
         self.alloc.instr_encoder.reset_last_instr();
         // Create loop header label and immediately pin it.
@@ -461,7 +461,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             &mut self.alloc.stack,
             branch_params,
             &self.alloc.buffer.providers[..],
-            fuel_info,
+            &fuel_info,
         )?;
         let branch_offset = self.alloc.instr_encoder.try_resolve_label(branch_dst)?;
         self.push_base_instr(Instruction::branch(branch_offset))?;

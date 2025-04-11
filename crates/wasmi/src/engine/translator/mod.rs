@@ -713,10 +713,10 @@ impl WasmTranslator<'_> for FuncTranslator {
             // Note: The function enclosing block fuel instruction is always
             //       the instruction at the 0th index if fuel metering is enabled.
             let fuel_instr = Instr::from_u32(0);
-            let fuel_info = FuelInfo::some(*fuel_costs, fuel_instr);
+            let fuel_info = FuelInfo::some(fuel_costs.clone(), fuel_instr);
             self.alloc
                 .instr_encoder
-                .bump_fuel_consumption(fuel_info, |costs| {
+                .bump_fuel_consumption(&fuel_info, |costs| {
                     costs.fuel_for_copying_values(u64::from(len_registers))
                 })?;
         }
@@ -728,7 +728,7 @@ impl WasmTranslator<'_> for FuncTranslator {
 }
 
 /// Fuel metering information for a certain translation state.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum FuelInfo {
     /// Fuel metering is disabled.
     None,
@@ -765,7 +765,7 @@ impl FuncTranslator {
         let fuel_costs = config
             .get_consume_fuel()
             .then(|| config.fuel_costs())
-            .copied();
+            .cloned();
         Self {
             func,
             engine,
@@ -870,14 +870,14 @@ impl FuncTranslator {
     ///
     /// Returns [`FuelInfo::None`] if fuel metering is disabled.
     fn fuel_info(&self) -> FuelInfo {
-        let Some(&fuel_costs) = self.fuel_costs() else {
+        let Some(fuel_costs) = self.fuel_costs() else {
             // Fuel metering is disabled so we can bail out.
             return FuelInfo::None;
         };
         let fuel_instr = self
             .fuel_instr()
             .expect("fuel metering is enabled but there is no Instruction::ConsumeFuel");
-        FuelInfo::some(fuel_costs, fuel_instr)
+        FuelInfo::some(fuel_costs.clone(), fuel_instr)
     }
 
     /// Pushes a [`Instruction::ConsumeFuel`] with base costs if fuel metering is enabled.
@@ -905,7 +905,7 @@ impl FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc
             .instr_encoder
-            .bump_fuel_consumption(fuel_info, f)?;
+            .bump_fuel_consumption(&fuel_info, f)?;
         Ok(())
     }
 
@@ -989,7 +989,7 @@ impl FuncTranslator {
                 &mut self.alloc.stack,
                 results,
                 &providers[..],
-                fuel_info,
+                &fuel_info,
             )?;
             if let Some(instr) = instr {
                 self.alloc.instr_encoder.notify_preserved_register(instr)
@@ -1025,7 +1025,7 @@ impl FuncTranslator {
             &mut self.alloc.stack,
             branch_params,
             &self.alloc.buffer.providers[..],
-            fuel_info,
+            &fuel_info,
         )?;
         Ok(())
     }
@@ -1034,7 +1034,7 @@ impl FuncTranslator {
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         if self.alloc.control_stack.is_empty() {
             bail_unreachable!(self);
-            let fuel_info = match self.fuel_costs().copied() {
+            let fuel_info = match self.fuel_costs().cloned() {
                 None => FuelInfo::None,
                 Some(fuel_costs) => {
                     let fuel_instr = frame
@@ -1044,7 +1044,7 @@ impl FuncTranslator {
                 }
             };
             // We dropped the Wasm `block` that encloses the function itself so we can return.
-            return self.translate_return_with(fuel_info);
+            return self.translate_return_with(&fuel_info);
         }
         if self.reachable && frame.is_branched_to() {
             // If the end of the `block` is reachable AND
@@ -2471,7 +2471,7 @@ impl FuncTranslator {
                             &mut self.alloc.stack,
                             result,
                             selected,
-                            fuel_info,
+                            &fuel_info,
                         )?;
                         return Ok(());
                     }
@@ -2716,11 +2716,11 @@ impl FuncTranslator {
     /// Translates an unconditional `return` instruction.
     fn translate_return(&mut self) -> Result<(), Error> {
         let fuel_info = self.fuel_info();
-        self.translate_return_with(fuel_info)
+        self.translate_return_with(&fuel_info)
     }
 
     /// Translates an unconditional `return` instruction given fuel information.
-    fn translate_return_with(&mut self, fuel_info: FuelInfo) -> Result<(), Error> {
+    fn translate_return_with(&mut self, fuel_info: &FuelInfo) -> Result<(), Error> {
         let func_type = self.func_type();
         let results = func_type.results();
         let values = &mut self.alloc.buffer.providers;
@@ -2877,7 +2877,7 @@ impl FuncTranslator {
                     self.alloc.instr_encoder.encode_return(
                         &mut self.alloc.stack,
                         values,
-                        fuel_info,
+                        &fuel_info,
                     )?;
                 }
                 AcquiredTarget::Branch(frame) => {
@@ -2905,7 +2905,7 @@ impl FuncTranslator {
         let len_targets = targets.len() as u32;
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_0(index, len_targets),
-            self.fuel_info(),
+            &self.fuel_info(),
             FuelCostsProvider::base,
         )?;
         self.translate_br_table_targets_simple(&[])?;
@@ -2920,7 +2920,7 @@ impl FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_1(index, len_targets),
-            fuel_info,
+            &fuel_info,
             FuelCostsProvider::base,
         )?;
         let stack = &mut self.alloc.stack;
@@ -2962,7 +2962,7 @@ impl FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_2(index, len_targets),
-            fuel_info,
+            &fuel_info,
             FuelCostsProvider::base,
         )?;
         let stack = &mut self.alloc.stack;
@@ -2985,7 +2985,7 @@ impl FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_3(index, len_targets),
-            fuel_info,
+            &fuel_info,
             FuelCostsProvider::base,
         )?;
         let stack = &mut self.alloc.stack;
@@ -3021,7 +3021,7 @@ impl FuncTranslator {
         let len_targets = targets.len() as u32;
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_span(index, len_targets),
-            fuel_info,
+            &fuel_info,
             FuelCostsProvider::base,
         )?;
         self.alloc
@@ -3052,7 +3052,7 @@ impl FuncTranslator {
         let fuel_info = self.fuel_info();
         self.alloc.instr_encoder.push_fueled_instr(
             Instruction::branch_table_many(index, len_targets),
-            fuel_info,
+            &fuel_info,
             FuelCostsProvider::base,
         )?;
         let stack = &mut self.alloc.stack;

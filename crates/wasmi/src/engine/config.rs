@@ -9,7 +9,7 @@ const DEFAULT_CACHED_STACKS: usize = 2;
 /// Configuration for an [`Engine`].
 ///
 /// [`Engine`]: [`crate::Engine`]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Config {
     /// The limits set on the value stack and call stack.
     stack_limits: StackLimits,
@@ -30,7 +30,7 @@ pub struct Config {
 }
 
 /// Type storing all kinds of fuel costs of instructions.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct FuelCostsProvider {
     /// The base fuel costs for all instructions.
     base: u64,
