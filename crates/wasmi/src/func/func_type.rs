@@ -47,6 +47,18 @@ trait FuncTypeExt {
     fn match_results<T>(&self, results: &[T], check_type: bool) -> Result<(), FuncError>
     where
         T: DynamicallyTyped;
+
+    /// Initializes the values in `outputs` to match the types expected by the [`FuncType`].
+    ///
+    /// # Note
+    ///
+    /// This is required by an implementation detail of how function result passing is current
+    /// implemented in the Wasmi execution engine and might change in the future.
+    ///
+    /// # Panics
+    ///
+    /// If the number of items in `outputs` does not match the number of results of the [`FuncType`].
+    fn prepare_outputs(&self, outputs: &mut [Val]);
 }
 
 impl FuncTypeExt for CoreFuncType {
@@ -85,6 +97,19 @@ impl FuncTypeExt for CoreFuncType {
             return Err(FuncError::MismatchingResultType);
         }
         Ok(())
+    }
+
+    fn prepare_outputs(&self, outputs: &mut [Val]) {
+        assert_eq!(
+            self.results().len(),
+            outputs.len(),
+            "must have the same number of items in outputs as results of the function type"
+        );
+        let init_values = self.results().iter().copied().map(Val::default);
+        outputs
+            .iter_mut()
+            .zip(init_values)
+            .for_each(|(output, init)| *output = init);
     }
 }
 
