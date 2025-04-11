@@ -6,7 +6,7 @@ use core::{
 };
 
 /// Errors that may occur upon operating with table entities.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum TableError {
     /// Tried to allocate more virtual memory than technically possible.

@@ -5,7 +5,7 @@ use core::{
 };
 
 /// An error that may occur upon operating with virtual or linear memory.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum MemoryError {
     /// Tried to allocate more virtual memory than technically possible.
