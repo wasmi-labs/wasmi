@@ -5,7 +5,6 @@ use crate::{
     FuncType,
     GlobalType,
     Table,
-    TableType,
 };
 use core::{
     error::Error,
