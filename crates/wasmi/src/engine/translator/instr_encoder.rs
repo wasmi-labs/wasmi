@@ -647,7 +647,7 @@ impl InstrEncoder {
         stack: &mut ValueStack,
         condition: Reg,
         values: &[TypedProvider],
-        fuel_info: &FuelInfo,
+        fuel_info: FuelInfo,
     ) -> Result<(), Error> {
         // Note: We bump fuel unconditionally even if the conditional return is not taken.
         //       This is very conservative and may lead to more fuel costs than
@@ -772,7 +772,7 @@ impl InstrEncoder {
         local: Reg,
         value: TypedProvider,
         preserved: Option<Reg>,
-        fuel_info: &FuelInfo,
+        fuel_info: FuelInfo,
     ) -> Result<(), Error> {
         fn fallback_case(
             this: &mut InstrEncoder,
@@ -780,7 +780,7 @@ impl InstrEncoder {
             local: Reg,
             value: TypedProvider,
             preserved: Option<Reg>,
-            fuel_info: &FuelInfo,
+            fuel_info: FuelInfo,
         ) -> Result<(), Error> {
             if let Some(preserved) = preserved {
                 this.bump_fuel_consumption(&fuel_info, FuelCostsProvider::base)?;

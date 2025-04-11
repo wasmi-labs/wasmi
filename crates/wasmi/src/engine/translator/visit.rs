@@ -657,7 +657,7 @@ impl<'a> VisitOperator<'a> for FuncTranslator {
             local,
             value,
             preserved,
-            &fuel_info,
+            fuel_info,
         )?;
         Ok(())
     }

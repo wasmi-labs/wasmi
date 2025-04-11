@@ -1034,13 +1034,13 @@ impl FuncTranslator {
     fn translate_end_block(&mut self, frame: BlockControlFrame) -> Result<(), Error> {
         if self.alloc.control_stack.is_empty() {
             bail_unreachable!(self);
-            let fuel_info = match self.fuel_costs() {
+            let fuel_info = match self.fuel_costs().cloned() {
                 None => FuelInfo::None,
                 Some(fuel_costs) => {
                     let fuel_instr = frame
                         .consume_fuel_instr()
                         .expect("must have fuel instruction if fuel metering is enabled");
-                    FuelInfo::some(fuel_costs.clone(), fuel_instr)
+                    FuelInfo::some(fuel_costs, fuel_instr)
                 }
             };
             // We dropped the Wasm `block` that encloses the function itself so we can return.
@@ -2743,7 +2743,7 @@ impl FuncTranslator {
             &mut self.alloc.stack,
             condition,
             values,
-            &fuel_info,
+            fuel_info,
         )
     }
 
