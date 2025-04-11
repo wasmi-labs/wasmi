@@ -98,7 +98,6 @@ mod error;
 mod externref;
 mod func;
 mod global;
-mod index_ty;
 mod instance;
 mod limits;
 mod linker;
@@ -126,17 +125,15 @@ pub mod errors {
         engine::EnforcedLimitsError,
         error::ErrorKind,
         func::FuncError,
-        global::GlobalError,
         ir::Error as IrError,
         linker::LinkerError,
-        memory::MemoryError,
         module::{InstantiationError, ReadError},
-        store::FuelError,
-        table::TableError,
     };
+    pub use crate::core::{FuelError, GlobalError, MemoryError, TableError};
 }
 
 pub use self::{
+    core::{GlobalType, MemoryType, MemoryTypeBuilder, Mutability, TableType},
     engine::{
         CompilationMode,
         Config,
@@ -164,11 +161,11 @@ pub use self::{
         WasmTy,
         WasmTyList,
     },
-    global::{Global, GlobalType, Mutability},
+    global::Global,
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
-    limits::{ResourceLimiter, StoreLimits, StoreLimitsBuilder},
+    limits::{StoreLimits, StoreLimitsBuilder},
     linker::{state, Linker, LinkerBuilder},
-    memory::{Memory, MemoryType, MemoryTypeBuilder},
+    memory::Memory,
     module::{
         CustomSection,
         CustomSectionsIter,
@@ -181,15 +178,14 @@ pub use self::{
         Read,
     },
     store::{AsContext, AsContextMut, CallHook, Store, StoreContext, StoreContextMut},
-    table::{Table, TableType},
+    table::Table,
     value::Val,
 };
 use self::{
     func::{FuncEntity, FuncIdx},
-    global::{GlobalEntity, GlobalIdx},
-    index_ty::IndexType,
+    global::GlobalIdx,
     instance::{InstanceEntity, InstanceEntityBuilder, InstanceIdx},
-    memory::{DataSegmentEntity, DataSegmentIdx, MemoryEntity, MemoryIdx},
+    memory::{DataSegmentEntity, DataSegmentIdx, MemoryIdx},
     store::Stored,
-    table::{ElementSegment, ElementSegmentEntity, ElementSegmentIdx, TableEntity, TableIdx},
+    table::{ElementSegment, ElementSegmentIdx, TableIdx},
 };

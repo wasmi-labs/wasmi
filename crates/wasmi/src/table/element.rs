@@ -1,6 +1,6 @@
 use crate::{
     collections::arena::ArenaIndex,
-    core::{UntypedVal, ValType},
+    core::{ElementSegment as CoreElementSegment, UntypedVal},
     module,
     store::Stored,
     AsContext,
@@ -69,7 +69,7 @@ impl ElementSegment {
             }
             module::ElementSegmentKind::Declared => Box::from([]),
         };
-        let entity = ElementSegmentEntity::new(elem.ty(), items);
+        let entity = CoreElementSegment::new(elem.ty(), items);
         ctx.as_context_mut()
             .store
             .inner
@@ -83,51 +83,5 @@ impl ElementSegment {
             .inner
             .resolve_element_segment(self)
             .size()
-    }
-}
-
-/// An instantiated [`ElementSegmentEntity`].
-///
-/// # Note
-///
-/// With the `bulk-memory` Wasm proposal it is possible to interact
-/// with element segments at runtime. Therefore Wasm instances now have
-/// a need to have an instantiated representation of data segments.
-#[derive(Debug)]
-pub struct ElementSegmentEntity {
-    /// The [`ValType`] of elements of this [`ElementSegmentEntity`].
-    ty: ValType,
-    /// Pre-resolved untyped items of the Wasm element segment.
-    items: Box<[UntypedVal]>,
-}
-
-impl ElementSegmentEntity {
-    /// Creates a new [`ElementSegmentEntity`].
-    pub fn new<I>(ty: ValType, items: I) -> Self
-    where
-        I: IntoIterator<Item = UntypedVal>,
-    {
-        let items = items.into_iter().collect();
-        Self { ty, items }
-    }
-
-    /// Returns the [`ValType`] of elements in the [`ElementSegmentEntity`].
-    pub fn ty(&self) -> ValType {
-        self.ty
-    }
-
-    /// Returns the number of items in the [`ElementSegment`].
-    pub fn size(&self) -> u32 {
-        self.items().len() as u32
-    }
-
-    /// Returns the items of the [`ElementSegmentEntity`].
-    pub fn items(&self) -> &[UntypedVal] {
-        &self.items[..]
-    }
-
-    /// Drops the items of the [`ElementSegmentEntity`].
-    pub fn drop_items(&mut self) {
-        self.items = [].into();
     }
 }

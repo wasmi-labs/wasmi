@@ -1,16 +1,13 @@
 use super::errors::{
     EnforcedLimitsError,
-    FuelError,
     FuncError,
     GlobalError,
     InstantiationError,
     IrError,
     LinkerError,
-    MemoryError,
-    TableError,
 };
 use crate::{
-    core::{HostError, TrapCode},
+    core::{FuelError, HostError, MemoryError, TableError, TrapCode},
     engine::{ResumableHostError, TranslationError},
     module::ReadError,
 };
@@ -202,10 +199,21 @@ pub enum ErrorKind {
 impl ErrorKind {
     /// Returns a reference to [`TrapCode`] if [`ErrorKind`] is a [`TrapCode`].
     pub fn as_trap_code(&self) -> Option<TrapCode> {
-        match self {
-            Self::TrapCode(trap_code) => Some(*trap_code),
-            _ => None,
-        }
+        let trap_code = match self {
+            | Self::TrapCode(trap_code) => *trap_code,
+            | Self::Fuel(FuelError::OutOfFuel)
+            | Self::Table(TableError::OutOfFuel)
+            | Self::Memory(MemoryError::OutOfFuel) => TrapCode::OutOfFuel,
+            | Self::Memory(MemoryError::OutOfBoundsAccess)
+            | Self::Memory(MemoryError::OutOfBoundsGrowth) => TrapCode::MemoryOutOfBounds,
+            | Self::Table(TableError::ElementTypeMismatch) => TrapCode::BadSignature,
+            | Self::Table(TableError::SetOutOfBounds)
+            | Self::Table(TableError::FillOutOfBounds)
+            | Self::Table(TableError::GrowOutOfBounds)
+            | Self::Table(TableError::InitOutOfBounds) => TrapCode::TableOutOfBounds,
+            _ => return None,
+        };
+        Some(trap_code)
     }
 
     /// Returns a [`i32`] if [`ErrorKind`] is an [`ErrorKind::I32ExitStatus`].
@@ -301,31 +309,4 @@ impl_from! {
 #[cfg(feature = "wat")]
 impl_from! {
     impl From<WatError> for Error::Wat;
-}
-
-/// An error that can occur upon `memory.grow` or `table.grow`.
-#[derive(Copy, Clone)]
-pub enum EntityGrowError {
-    /// Usually a [`TrapCode::OutOfFuel`] trap.
-    TrapCode(TrapCode),
-    /// Encountered when `memory.grow` or `table.grow` fails.
-    InvalidGrow,
-}
-
-impl EntityGrowError {
-    /// The error code returned by `memory.grow` and `table.grow` upon failure.
-    ///
-    /// This is the value used for 32-bit memory or table indices.
-    pub const ERROR_CODE_32: u64 = u32::MAX as u64;
-
-    /// The error code returned by `memory.grow` and `table.grow` upon failure.
-    ///
-    /// This is the value used for 64-bit memory or table indices.
-    pub const ERROR_CODE_64: u64 = u64::MAX;
-}
-
-impl From<TrapCode> for EntityGrowError {
-    fn from(trap_code: TrapCode) -> Self {
-        Self::TrapCode(trap_code)
-    }
 }

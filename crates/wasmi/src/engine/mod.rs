@@ -16,7 +16,6 @@ mod tests;
 
 pub(crate) use self::{
     block_type::BlockType,
-    config::FuelCostsProvider,
     executor::Stack,
     func_types::DedupFuncType,
     translator::{

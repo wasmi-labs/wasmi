@@ -1,8 +1,7 @@
 use super::{Executor, InstructionPtr};
 use crate::{
-    core::TrapCode,
+    core::{MemoryError, ResourceLimiterRef, TrapCode},
     engine::utils::unreachable_unchecked,
-    error::EntityGrowError,
     ir::{
         index::{Data, Memory},
         Const16,
@@ -10,7 +9,7 @@ use crate::{
         Instruction,
         Reg,
     },
-    store::{PrunedStore, ResourceLimiterRef, StoreInner},
+    store::{PrunedStore, StoreInner},
     Error,
 };
 
@@ -121,11 +120,18 @@ impl Executor<'_> {
                 unsafe { self.cache.update_memory(store) };
                 return_value
             }
-            Err(EntityGrowError::InvalidGrow) => match memory.ty().is_64() {
-                true => EntityGrowError::ERROR_CODE_64,
-                false => EntityGrowError::ERROR_CODE_32,
+            Err(
+                MemoryError::OutOfBoundsGrowth
+                | MemoryError::OutOfFuel
+                | MemoryError::OutOfSystemMemory,
+            ) => match memory.ty().is_64() {
+                true => u64::MAX,
+                false => u64::from(u32::MAX),
             },
-            Err(EntityGrowError::TrapCode(trap_code)) => return Err(Error::from(trap_code)),
+            Err(MemoryError::ResourceLimiterDeniedAllocation) => {
+                return Err(Error::from(TrapCode::GrowthOperationLimited))
+            }
+            Err(error) => panic!("encountered an unexpected error: {error}"),
         };
         self.set_register(result, return_value);
         self.try_next_instr_at(2)

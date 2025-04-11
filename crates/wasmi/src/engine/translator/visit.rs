@@ -14,11 +14,10 @@ use super::{
     TypedVal,
 };
 use crate::{
-    core::{wasm, TrapCode, ValType, F32, F64},
+    core::{wasm, FuelCostsProvider, TrapCode, ValType, F32, F64},
     engine::{
         translator::{AcquiredTarget, Provider},
         BlockType,
-        FuelCostsProvider,
     },
     ir::{
         self,

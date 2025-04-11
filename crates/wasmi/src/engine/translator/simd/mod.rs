@@ -2,8 +2,8 @@ mod visit;
 
 use super::{utils::Wrap, FuncTranslator, Instr, TypedProvider};
 use crate::{
-    core::{simd::IntoLaneIdx, TrapCode, TypedVal, V128},
-    engine::{translator::Provider, FuelCostsProvider},
+    core::{simd::IntoLaneIdx, FuelCostsProvider, TrapCode, TypedVal, V128},
+    engine::translator::Provider,
     ir::{
         index,
         index::Memory,

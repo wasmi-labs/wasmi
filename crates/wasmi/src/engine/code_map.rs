@@ -5,20 +5,13 @@
 //! This is the data structure specialized to handle compiled
 //! register machine based bytecode functions.
 
-use super::{
-    FuelCostsProvider,
-    FuncTranslationDriver,
-    FuncTranslator,
-    TranslationError,
-    ValidatingFuncTranslator,
-};
+use super::{FuncTranslationDriver, FuncTranslator, TranslationError, ValidatingFuncTranslator};
 use crate::{
     collections::arena::{Arena, ArenaIndex},
-    core::{TrapCode, UntypedVal},
+    core::{Fuel, FuelCostsProvider, FuelError, TrapCode, UntypedVal},
     engine::utils::unreachable_unchecked,
     ir::{index::InternalFunc, Instruction},
     module::{FuncIdx, ModuleHeader},
-    store::{Fuel, FuelError},
     Config,
     Error,
 };

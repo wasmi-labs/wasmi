@@ -1,15 +1,22 @@
 use crate::{
     collections::arena::{Arena, ArenaIndex, GuardedEntity},
-    core::{hint::unlikely, TrapCode},
-    engine::{DedupFuncType, FuelCostsProvider},
+    core::{
+        hint::unlikely,
+        ElementSegment as CoreElementSegment,
+        Fuel,
+        Global as CoreGlobal,
+        Memory as CoreMemory,
+        ResourceLimiter,
+        ResourceLimiterRef,
+        Table as CoreTable,
+    },
+    engine::DedupFuncType,
     externref::{ExternObject, ExternObjectEntity, ExternObjectIdx},
     func::{FuncInOut, HostFuncEntity, Trampoline, TrampolineEntity, TrampolineIdx},
     memory::DataSegment,
-    Config,
     DataSegmentEntity,
     DataSegmentIdx,
     ElementSegment,
-    ElementSegmentEntity,
     ElementSegmentIdx,
     Engine,
     Error,
@@ -18,17 +25,13 @@ use crate::{
     FuncIdx,
     FuncType,
     Global,
-    GlobalEntity,
     GlobalIdx,
     Instance,
     InstanceEntity,
     InstanceIdx,
     Memory,
-    MemoryEntity,
     MemoryIdx,
-    ResourceLimiter,
     Table,
-    TableEntity,
     TableIdx,
 };
 use alloc::{boxed::Box, sync::Arc};
@@ -72,22 +75,6 @@ impl StoreIdx {
 
 /// A stored entity.
 pub type Stored<Idx> = GuardedEntity<StoreIdx, Idx>;
-
-/// A wrapper around an optional `&mut dyn` [`ResourceLimiter`], that exists
-/// both to make types a little easier to read and to provide a `Debug` impl so
-/// that `#[derive(Debug)]` works on structs that contain it.
-pub struct ResourceLimiterRef<'a>(Option<&'a mut (dyn ResourceLimiter)>);
-impl Debug for ResourceLimiterRef<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ResourceLimiterRef(...)")
-    }
-}
-
-impl<'a> ResourceLimiterRef<'a> {
-    pub fn as_resource_limiter(&mut self) -> &mut Option<&'a mut dyn ResourceLimiter> {
-        &mut self.0
-    }
-}
 
 /// A wrapper around a boxed `dyn FnMut(&mut T)` returning a `&mut dyn`
 /// [`ResourceLimiter`]; in other words a function that one can call to retrieve
@@ -330,7 +317,7 @@ fn pruning_errors() {
 
 #[test]
 fn pruned_store_deref() {
-    let mut config = Config::default();
+    let mut config = crate::Config::default();
     config.consume_fuel(true);
     let engine = Engine::new(&config);
     let mut store = Store::new(&engine, ());
@@ -387,17 +374,17 @@ pub struct StoreInner {
     /// Stored Wasm or host functions.
     funcs: Arena<FuncIdx, FuncEntity>,
     /// Stored linear memories.
-    memories: Arena<MemoryIdx, MemoryEntity>,
+    memories: Arena<MemoryIdx, CoreMemory>,
     /// Stored tables.
-    tables: Arena<TableIdx, TableEntity>,
+    tables: Arena<TableIdx, CoreTable>,
     /// Stored global variables.
-    globals: Arena<GlobalIdx, GlobalEntity>,
+    globals: Arena<GlobalIdx, CoreGlobal>,
     /// Stored module instances.
     instances: Arena<InstanceIdx, InstanceEntity>,
     /// Stored data segments.
     datas: Arena<DataSegmentIdx, DataSegmentEntity>,
     /// Stored data segments.
-    elems: Arena<ElementSegmentIdx, ElementSegmentEntity>,
+    elems: Arena<ElementSegmentIdx, CoreElementSegment>,
     /// Stored external objects for [`ExternRef`] types.
     ///
     /// [`ExternRef`]: [`crate::ExternRef`]
@@ -436,177 +423,13 @@ pub enum CallHook {
     ReturningFromHost,
 }
 
-/// An error that may be encountered when operating on the [`Store`].
-#[derive(Debug, Clone)]
-pub enum FuelError {
-    /// Raised when trying to use any of the `fuel` methods while fuel metering is disabled.
-    FuelMeteringDisabled,
-    /// Raised when trying to consume more fuel than is available in the [`Store`].
-    OutOfFuel,
-}
-
-impl core::error::Error for FuelError {}
-
-impl fmt::Display for FuelError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::FuelMeteringDisabled => write!(f, "fuel metering is disabled"),
-            Self::OutOfFuel => write!(f, "all fuel consumed"),
-        }
-    }
-}
-
-impl FuelError {
-    /// Returns an error indicating that fuel metering has been disabled.
-    ///
-    /// # Note
-    ///
-    /// This method exists to indicate that this execution path is cold.
-    #[cold]
-    pub fn fuel_metering_disabled() -> Self {
-        Self::FuelMeteringDisabled
-    }
-
-    /// Returns an error indicating that too much fuel has been consumed.
-    ///
-    /// # Note
-    ///
-    /// This method exists to indicate that this execution path is cold.
-    #[cold]
-    pub fn out_of_fuel() -> Self {
-        Self::OutOfFuel
-    }
-}
-
-/// The remaining and consumed fuel counters.
-#[derive(Debug, Clone)]
-pub struct Fuel {
-    /// The remaining fuel.
-    remaining: u64,
-    /// This is `true` if fuel metering is enabled for the [`Engine`].
-    enabled: bool,
-    /// The fuel costs provided by the [`Engine`]'s [`Config`].
-    ///
-    /// [`Config`]: crate::Config
-    costs: FuelCostsProvider,
-}
-
-impl Fuel {
-    /// Creates a new [`Fuel`] for the [`Engine`].
-    pub fn new(config: &Config) -> Self {
-        let enabled = config.get_consume_fuel();
-        let costs = config.fuel_costs().clone();
-        Self {
-            remaining: 0,
-            enabled,
-            costs,
-        }
-    }
-
-    /// Returns `true` if fuel metering is enabled.
-    fn is_fuel_metering_enabled(&self) -> bool {
-        self.enabled
-    }
-
-    /// Returns `Ok` if fuel metering is enabled.
-    ///
-    /// Returns descriptive [`FuelError`] otherwise.
-    ///
-    /// # Errors
-    ///
-    /// If fuel metering is disabled.
-    fn check_fuel_metering_enabled(&self) -> Result<(), FuelError> {
-        if !self.is_fuel_metering_enabled() {
-            return Err(FuelError::fuel_metering_disabled());
-        }
-        Ok(())
-    }
-
-    /// Sets the remaining fuel to `fuel`.
-    ///
-    /// # Errors
-    ///
-    /// If fuel metering is disabled.
-    pub fn set_fuel(&mut self, fuel: u64) -> Result<(), FuelError> {
-        self.check_fuel_metering_enabled()?;
-        self.remaining = fuel;
-        Ok(())
-    }
-
-    /// Returns the remaining fuel.
-    ///
-    /// # Errors
-    ///
-    /// If fuel metering is disabled.
-    pub fn get_fuel(&self) -> Result<u64, FuelError> {
-        self.check_fuel_metering_enabled()?;
-        Ok(self.remaining)
-    }
-
-    /// Synthetically consumes an amount of [`Fuel`] from the [`Store`].
-    ///
-    /// Returns the remaining amount of [`Fuel`] after this operation.
-    ///
-    /// # Note
-    ///
-    /// - This does not check if fuel metering is enabled.
-    /// - This API is intended for use cases where it is clear that fuel metering is
-    ///   enabled and where a check would incur unnecessary overhead in a hot path.
-    ///   An example of this is the execution of consume fuel instructions since
-    ///   those only exist if fuel metering is enabled.
-    ///
-    /// # Errors
-    ///
-    /// If out of fuel.
-    pub(crate) fn consume_fuel_unchecked(&mut self, delta: u64) -> Result<u64, TrapCode> {
-        self.remaining = self
-            .remaining
-            .checked_sub(delta)
-            .ok_or(TrapCode::OutOfFuel)?;
-        Ok(self.remaining)
-    }
-
-    /// Synthetically consumes an amount of [`Fuel`] for the [`Store`].
-    ///
-    /// Returns the remaining amount of [`Fuel`] after this operation.
-    ///
-    /// # Errors
-    ///
-    /// - If fuel metering is disabled.
-    /// - If out of fuel.
-    pub(crate) fn consume_fuel(
-        &mut self,
-        f: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<u64, FuelError> {
-        self.check_fuel_metering_enabled()?;
-        self.consume_fuel_unchecked(f(&self.costs))
-            .map_err(|_| FuelError::OutOfFuel)
-    }
-
-    /// Synthetically consumes an amount of [`Fuel`] from the [`Store`] if fuel metering is enabled.
-    ///
-    /// # Note
-    ///
-    /// This does nothing if fuel metering is disabled.
-    ///
-    /// # Errors
-    ///
-    /// - If out of fuel.
-    pub(crate) fn consume_fuel_if(
-        &mut self,
-        f: impl FnOnce(&FuelCostsProvider) -> u64,
-    ) -> Result<(), TrapCode> {
-        match self.consume_fuel(f) {
-            Err(FuelError::OutOfFuel) => Err(TrapCode::OutOfFuel),
-            Err(FuelError::FuelMeteringDisabled) | Ok(_) => Ok(()),
-        }
-    }
-}
-
 impl StoreInner {
     /// Creates a new [`StoreInner`] for the given [`Engine`].
     pub fn new(engine: &Engine) -> Self {
-        let fuel = Fuel::new(engine.config());
+        let config = engine.config();
+        let fuel_enabled = config.get_consume_fuel();
+        let fuel_costs = config.fuel_costs().clone();
+        let fuel = Fuel::new(fuel_enabled, fuel_costs);
         StoreInner {
             engine: engine.clone(),
             store_idx: StoreIdx::new(),
@@ -659,20 +482,20 @@ impl StoreInner {
         })
     }
 
-    /// Allocates a new [`GlobalEntity`] and returns a [`Global`] reference to it.
-    pub fn alloc_global(&mut self, global: GlobalEntity) -> Global {
+    /// Allocates a new [`CoreGlobal`] and returns a [`Global`] reference to it.
+    pub fn alloc_global(&mut self, global: CoreGlobal) -> Global {
         let global = self.globals.alloc(global);
         Global::from_inner(self.wrap_stored(global))
     }
 
-    /// Allocates a new [`TableEntity`] and returns a [`Table`] reference to it.
-    pub fn alloc_table(&mut self, table: TableEntity) -> Table {
+    /// Allocates a new [`CoreTable`] and returns a [`Table`] reference to it.
+    pub fn alloc_table(&mut self, table: CoreTable) -> Table {
         let table = self.tables.alloc(table);
         Table::from_inner(self.wrap_stored(table))
     }
 
-    /// Allocates a new [`MemoryEntity`] and returns a [`Memory`] reference to it.
-    pub fn alloc_memory(&mut self, memory: MemoryEntity) -> Memory {
+    /// Allocates a new [`CoreMemory`] and returns a [`Memory`] reference to it.
+    pub fn alloc_memory(&mut self, memory: CoreMemory) -> Memory {
         let memory = self.memories.alloc(memory);
         Memory::from_inner(self.wrap_stored(memory))
     }
@@ -683,11 +506,8 @@ impl StoreInner {
         DataSegment::from_inner(self.wrap_stored(segment))
     }
 
-    /// Allocates a new [`ElementSegmentEntity`] and returns a [`ElementSegment`] reference to it.
-    pub(super) fn alloc_element_segment(
-        &mut self,
-        segment: ElementSegmentEntity,
-    ) -> ElementSegment {
+    /// Allocates a new [`CoreElementSegment`] and returns a [`ElementSegment`] reference to it.
+    pub(super) fn alloc_element_segment(&mut self, segment: CoreElementSegment) -> ElementSegment {
         let segment = self.elems.alloc(segment);
         ElementSegment::from_inner(self.wrap_stored(segment))
     }
@@ -804,49 +624,49 @@ impl StoreInner {
         self.engine.resolve_func_type(func_type, f)
     }
 
-    /// Returns a shared reference to the [`GlobalEntity`] associated to the given [`Global`].
+    /// Returns a shared reference to the [`CoreGlobal`] associated to the given [`Global`].
     ///
     /// # Panics
     ///
     /// - If the [`Global`] does not originate from this [`Store`].
     /// - If the [`Global`] cannot be resolved to its entity.
-    pub fn resolve_global(&self, global: &Global) -> &GlobalEntity {
+    pub fn resolve_global(&self, global: &Global) -> &CoreGlobal {
         self.resolve(global.as_inner(), &self.globals)
     }
 
-    /// Returns an exclusive reference to the [`GlobalEntity`] associated to the given [`Global`].
+    /// Returns an exclusive reference to the [`CoreGlobal`] associated to the given [`Global`].
     ///
     /// # Panics
     ///
     /// - If the [`Global`] does not originate from this [`Store`].
     /// - If the [`Global`] cannot be resolved to its entity.
-    pub fn resolve_global_mut(&mut self, global: &Global) -> &mut GlobalEntity {
+    pub fn resolve_global_mut(&mut self, global: &Global) -> &mut CoreGlobal {
         let idx = self.unwrap_stored(global.as_inner());
         Self::resolve_mut(idx, &mut self.globals)
     }
 
-    /// Returns a shared reference to the [`TableEntity`] associated to the given [`Table`].
+    /// Returns a shared reference to the [`CoreTable`] associated to the given [`Table`].
     ///
     /// # Panics
     ///
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table(&self, table: &Table) -> &TableEntity {
+    pub fn resolve_table(&self, table: &Table) -> &CoreTable {
         self.resolve(table.as_inner(), &self.tables)
     }
 
-    /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    /// Returns an exclusive reference to the [`CoreTable`] associated to the given [`Table`].
     ///
     /// # Panics
     ///
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table_mut(&mut self, table: &Table) -> &mut TableEntity {
+    pub fn resolve_table_mut(&mut self, table: &Table) -> &mut CoreTable {
         let idx = self.unwrap_stored(table.as_inner());
         Self::resolve_mut(idx, &mut self.tables)
     }
 
-    /// Returns an exclusive reference to the [`TableEntity`] and [`ElementSegmentEntity`] associated to `table` and `elem`.
+    /// Returns an exclusive reference to the [`CoreTable`] and [`CoreElementSegment`] associated to `table` and `elem`.
     ///
     /// # Panics
     ///
@@ -858,7 +678,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
         elem: &ElementSegment,
-    ) -> (&mut TableEntity, &mut ElementSegmentEntity) {
+    ) -> (&mut CoreTable, &mut CoreElementSegment) {
         let table_idx = self.unwrap_stored(table.as_inner());
         let elem_idx = self.unwrap_stored(elem.as_inner());
         let table = Self::resolve_mut(table_idx, &mut self.tables);
@@ -868,21 +688,21 @@ impl StoreInner {
 
     /// Returns both
     ///
-    /// - an exclusive reference to the [`TableEntity`] associated to the given [`Table`]
+    /// - an exclusive reference to the [`CoreTable`] associated to the given [`Table`]
     /// - an exclusive reference to the [`Fuel`] of the [`StoreInner`].
     ///
     /// # Panics
     ///
     /// - If the [`Table`] does not originate from this [`Store`].
     /// - If the [`Table`] cannot be resolved to its entity.
-    pub fn resolve_table_and_fuel_mut(&mut self, table: &Table) -> (&mut TableEntity, &mut Fuel) {
+    pub fn resolve_table_and_fuel_mut(&mut self, table: &Table) -> (&mut CoreTable, &mut Fuel) {
         let idx = self.unwrap_stored(table.as_inner());
         let table = Self::resolve_mut(idx, &mut self.tables);
         let fuel = &mut self.fuel;
         (table, fuel)
     }
 
-    /// Returns an exclusive reference to the [`TableEntity`] associated to the given [`Table`].
+    /// Returns an exclusive reference to the [`CoreTable`] associated to the given [`Table`].
     ///
     /// # Panics
     ///
@@ -892,7 +712,7 @@ impl StoreInner {
         &mut self,
         fst: &Table,
         snd: &Table,
-    ) -> (&mut TableEntity, &mut TableEntity, &mut Fuel) {
+    ) -> (&mut CoreTable, &mut CoreTable, &mut Fuel) {
         let fst = self.unwrap_stored(fst.as_inner());
         let snd = self.unwrap_stored(snd.as_inner());
         let (fst, snd) = self.tables.get_pair_mut(fst, snd).unwrap_or_else(|| {
@@ -905,8 +725,8 @@ impl StoreInner {
     /// Returns the following data:
     ///
     /// - A shared reference to the [`InstanceEntity`] associated to the given [`Instance`].
-    /// - An exclusive reference to the [`TableEntity`] associated to the given [`Table`].
-    /// - A shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    /// - An exclusive reference to the [`CoreTable`] associated to the given [`Table`].
+    /// - A shared reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
     /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
     ///
     /// # Note
@@ -926,7 +746,7 @@ impl StoreInner {
         &mut self,
         table: &Table,
         segment: &ElementSegment,
-    ) -> (&mut TableEntity, &ElementSegmentEntity, &mut Fuel) {
+    ) -> (&mut CoreTable, &CoreElementSegment, &mut Fuel) {
         let mem_idx = self.unwrap_stored(table.as_inner());
         let elem_idx = segment.as_inner();
         let elem = self.resolve(elem_idx, &self.elems);
@@ -935,17 +755,17 @@ impl StoreInner {
         (mem, elem, fuel)
     }
 
-    /// Returns a shared reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    /// Returns a shared reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
     ///
     /// # Panics
     ///
     /// - If the [`ElementSegment`] does not originate from this [`Store`].
     /// - If the [`ElementSegment`] cannot be resolved to its entity.
-    pub fn resolve_element_segment(&self, segment: &ElementSegment) -> &ElementSegmentEntity {
+    pub fn resolve_element_segment(&self, segment: &ElementSegment) -> &CoreElementSegment {
         self.resolve(segment.as_inner(), &self.elems)
     }
 
-    /// Returns an exclusive reference to the [`ElementSegmentEntity`] associated to the given [`ElementSegment`].
+    /// Returns an exclusive reference to the [`CoreElementSegment`] associated to the given [`ElementSegment`].
     ///
     /// # Panics
     ///
@@ -954,42 +774,39 @@ impl StoreInner {
     pub fn resolve_element_segment_mut(
         &mut self,
         segment: &ElementSegment,
-    ) -> &mut ElementSegmentEntity {
+    ) -> &mut CoreElementSegment {
         let idx = self.unwrap_stored(segment.as_inner());
         Self::resolve_mut(idx, &mut self.elems)
     }
 
-    /// Returns a shared reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// Returns a shared reference to the [`CoreMemory`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory<'a>(&'a self, memory: &Memory) -> &'a MemoryEntity {
+    pub fn resolve_memory<'a>(&'a self, memory: &Memory) -> &'a CoreMemory {
         self.resolve(memory.as_inner(), &self.memories)
     }
 
-    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory_mut<'a>(&'a mut self, memory: &Memory) -> &'a mut MemoryEntity {
+    pub fn resolve_memory_mut<'a>(&'a mut self, memory: &Memory) -> &'a mut CoreMemory {
         let idx = self.unwrap_stored(memory.as_inner());
         Self::resolve_mut(idx, &mut self.memories)
     }
 
-    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
     ///
     /// # Panics
     ///
     /// - If the [`Memory`] does not originate from this [`Store`].
     /// - If the [`Memory`] cannot be resolved to its entity.
-    pub fn resolve_memory_and_fuel_mut(
-        &mut self,
-        memory: &Memory,
-    ) -> (&mut MemoryEntity, &mut Fuel) {
+    pub fn resolve_memory_and_fuel_mut(&mut self, memory: &Memory) -> (&mut CoreMemory, &mut Fuel) {
         let idx = self.unwrap_stored(memory.as_inner());
         let memory = Self::resolve_mut(idx, &mut self.memories);
         let fuel = &mut self.fuel;
@@ -998,7 +815,7 @@ impl StoreInner {
 
     /// Returns the following data:
     ///
-    /// - An exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`].
+    /// - An exclusive reference to the [`CoreMemory`] associated to the given [`Memory`].
     /// - A shared reference to the [`DataSegmentEntity`] associated to the given [`DataSegment`].
     /// - An exclusive reference to the [`Fuel`] of the [`StoreInner`].
     ///
@@ -1017,7 +834,7 @@ impl StoreInner {
         &mut self,
         memory: &Memory,
         segment: &DataSegment,
-    ) -> (&mut MemoryEntity, &DataSegmentEntity, &mut Fuel) {
+    ) -> (&mut CoreMemory, &DataSegmentEntity, &mut Fuel) {
         let mem_idx = self.unwrap_stored(memory.as_inner());
         let data_idx = segment.as_inner();
         let data = self.resolve(data_idx, &self.datas);
@@ -1026,7 +843,7 @@ impl StoreInner {
         (mem, data, fuel)
     }
 
-    /// Returns an exclusive pair of references to the [`MemoryEntity`] associated to the given [`Memory`]s.
+    /// Returns an exclusive pair of references to the [`CoreMemory`] associated to the given [`Memory`]s.
     ///
     /// # Panics
     ///
@@ -1036,7 +853,7 @@ impl StoreInner {
         &mut self,
         fst: &Memory,
         snd: &Memory,
-    ) -> (&mut MemoryEntity, &mut MemoryEntity, &mut Fuel) {
+    ) -> (&mut CoreMemory, &mut CoreMemory, &mut Fuel) {
         let fst = self.unwrap_stored(fst.as_inner());
         let snd = self.unwrap_stored(snd.as_inner());
         let (fst, snd) = self.memories.get_pair_mut(fst, snd).unwrap_or_else(|| {
@@ -1178,6 +995,7 @@ impl<T> Store<T> {
         trampoline.call(self, instance, params_results)?;
         Ok(())
     }
+
     /// Returns `true` if it is possible to create `additional` more instances in the [`Store`].
     pub(crate) fn can_create_more_instances(&mut self, additional: usize) -> bool {
         let (inner, mut limiter) = self.store_inner_and_resource_limiter_ref();
@@ -1214,10 +1032,13 @@ impl<T> Store<T> {
     pub(crate) fn store_inner_and_resource_limiter_ref(
         &mut self,
     ) -> (&mut StoreInner, ResourceLimiterRef) {
-        let resource_limiter = ResourceLimiterRef(match &mut self.typed.limiter {
-            Some(q) => Some(q.0(&mut self.typed.data)),
-            None => None,
-        });
+        let resource_limiter = match &mut self.typed.limiter {
+            Some(query) => {
+                let limiter = query.0(&mut self.typed.data);
+                ResourceLimiterRef::from(limiter)
+            }
+            None => ResourceLimiterRef::default(),
+        };
         (&mut self.inner, resource_limiter)
     }
 
@@ -1253,7 +1074,7 @@ impl<T> Store<T> {
         Trampoline::from_inner(self.inner.wrap_stored(idx))
     }
 
-    /// Returns an exclusive reference to the [`MemoryEntity`] associated to the given [`Memory`]
+    /// Returns an exclusive reference to the [`CoreMemory`] associated to the given [`Memory`]
     /// and an exclusive reference to the user provided host state.
     ///
     /// # Note
@@ -1268,7 +1089,7 @@ impl<T> Store<T> {
     pub(super) fn resolve_memory_and_state_mut(
         &mut self,
         memory: &Memory,
-    ) -> (&mut MemoryEntity, &mut T) {
+    ) -> (&mut CoreMemory, &mut T) {
         (self.inner.resolve_memory_mut(memory), &mut self.typed.data)
     }
 

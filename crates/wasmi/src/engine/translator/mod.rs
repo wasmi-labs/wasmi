@@ -46,8 +46,8 @@ pub use self::{
 };
 use super::code_map::CompiledFuncEntity;
 use crate::{
-    core::{TrapCode, Typed, TypedVal, UntypedVal, ValType},
-    engine::{config::FuelCostsProvider, BlockType, EngineFunc},
+    core::{FuelCostsProvider, TrapCode, Typed, TypedVal, UntypedVal, ValType},
+    engine::{BlockType, EngineFunc},
     ir::{
         index,
         Address,

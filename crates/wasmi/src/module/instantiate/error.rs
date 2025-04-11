@@ -1,12 +1,10 @@
 use crate::{
-    errors::{MemoryError, TableError},
+    core::{MemoryError, MemoryType, TableError, TableType},
     Extern,
     ExternType,
     FuncType,
     GlobalType,
-    MemoryType,
     Table,
-    TableType,
 };
 use core::{
     error::Error,
@@ -39,9 +37,9 @@ pub enum InstantiationError {
         /// The actual global type of the global import.
         actual: GlobalType,
     },
-    /// Caused when a function has a mismatching type.
+    /// Returned when a function has a mismatching type.
     FuncTypeMismatch {
-        /// The expected function type for the function import.
+        /// The expected function type of the function import.
         expected: FuncType,
         /// The actual function type of the function import.
         actual: FuncType,

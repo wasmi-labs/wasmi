@@ -13,11 +13,8 @@ use super::{
     TypedProvider,
 };
 use crate::{
-    core::{UntypedVal, ValType},
-    engine::{
-        translator::{stack::RegisterSpace, ValueStack},
-        FuelCostsProvider,
-    },
+    core::{FuelCostsProvider, UntypedVal, ValType},
+    engine::translator::{stack::RegisterSpace, ValueStack},
     ir::{
         BoundedRegSpan,
         BranchOffset,
@@ -622,7 +619,7 @@ impl InstrEncoder {
                 debug_assert!(!rest.is_empty());
                 // Note: The fuel for return values might result in 0 charges if there aren't
                 //       enough return values to account for at least 1 fuel. Therefore we need
-                //       to also bump by `FuelCosts::base` to charge at least 1 fuel.
+                //       to also bump by `FuelCostsProvider::base` to charge at least 1 fuel.
                 self.bump_fuel_consumption(fuel_info, FuelCostsProvider::base)?;
                 self.bump_fuel_consumption(fuel_info, |costs| {
                     costs.fuel_for_copying_values(rest.len() as u64 + 3)
