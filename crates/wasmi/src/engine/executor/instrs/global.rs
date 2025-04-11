@@ -16,7 +16,7 @@ impl Executor<'_> {
             _ => {
                 hint::cold();
                 let global = self.get_global(global);
-                store.resolve_global(&global).get_untyped()
+                *store.resolve_global(&global).get_untyped()
             }
         };
         self.set_register(result, value);
@@ -68,7 +68,13 @@ impl Executor<'_> {
             _ => {
                 hint::cold();
                 let global = self.get_global(global);
-                store.resolve_global_mut(&global).set_untyped(new_value)
+                let mut ptr = store.resolve_global_mut(&global).get_untyped_ptr();
+                // Safety:
+                // - Wasmi translation won't create `global.set` instructions for immutable globals.
+                // - Wasm validation ensures that values with matching types are written to globals.
+                unsafe {
+                    *ptr.as_mut() = new_value;
+                }
             }
         };
         self.next_instr()
