@@ -3,7 +3,7 @@ use crate::{IndexType, TableError, ValType};
 #[cfg(doc)]
 use crate::Table;
 
-/// A descriptor for a [`Table`] instance.
+/// A Wasm table descriptor.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TableType {
     /// The type of values stored in the [`Table`].
@@ -75,19 +75,19 @@ impl TableType {
         self.index_ty
     }
 
-    /// Returns the [`ValType`] of elements stored in the [`Table`].
+    /// Returns the [`ValType`] of elements stored in the table.
     pub fn element(&self) -> ValType {
         self.element
     }
 
-    /// Returns minimum number of elements the [`Table`] must have.
+    /// Returns minimum number of elements the table must have.
     pub fn minimum(&self) -> u64 {
         self.min
     }
 
-    /// The optional maximum number of elements the [`Table`] can have.
+    /// The optional maximum number of elements the table can have.
     ///
-    /// If this returns `None` then the [`Table`] is not limited in size.
+    /// If this returns `None` then the table is not limited in size.
     pub fn maximum(&self) -> Option<u64> {
         self.max
     }
