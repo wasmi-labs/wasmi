@@ -107,19 +107,18 @@ impl FuncType {
     ///
     /// - If the number of items in `results` does not match the number of results of the function type.
     /// - If any type of an item in `results` does not match the expected type of the function type.
-    pub(crate) fn match_results<T>(&self, results: &[T], check_type: bool) -> Result<(), FuncError>
+    pub(crate) fn match_results<T>(&self, results: &[T]) -> Result<(), FuncError>
     where
         T: DynamicallyTyped,
     {
         if self.results().len() != results.len() {
             return Err(FuncError::MismatchingResultLen);
         }
-        if check_type
-            && self
-                .results()
-                .iter()
-                .copied()
-                .ne(results.iter().map(<T as DynamicallyTyped>::ty))
+        if self
+            .results()
+            .iter()
+            .copied()
+            .ne(results.iter().map(<T as DynamicallyTyped>::ty))
         {
             return Err(FuncError::MismatchingResultType);
         }

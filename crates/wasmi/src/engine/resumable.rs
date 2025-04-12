@@ -215,7 +215,7 @@ impl ResumableInvocation {
     ) -> Result<ResumableCall, Error> {
         self.engine
             .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
-                func_type.match_results(inputs, true)
+                func_type.match_results(inputs)
             })?;
         self.engine.resolve_func_type(
             self.func.ty_dedup(ctx.as_context()),
@@ -295,7 +295,7 @@ impl<Results> TypedResumableInvocation<Results> {
     {
         self.engine
             .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
-                func_type.match_results(inputs, true)
+                func_type.match_results(inputs)
             })?;
         self.engine
             .clone()
