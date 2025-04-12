@@ -23,7 +23,19 @@ impl DynamicallyTyped for Val {
 }
 
 /// Extension methods for [`FuncType`].
-trait FuncTypeExt {
+pub trait FuncTypeExt {
+    /// Creates a new [`FuncTypeInner`].
+    ///
+    /// # Panics
+    ///
+    /// If an out of bounds number of parameters or results are given.
+    fn new_or_panic<P, R>(params: P, results: R) -> Self
+    where
+        P: IntoIterator,
+        R: IntoIterator,
+        <P as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
+        <R as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator;
+
     /// Returns `Ok` if the number and types of items in `params` matches as expected by the [`FuncType`].
     ///
     /// # Errors
@@ -62,6 +74,19 @@ trait FuncTypeExt {
 }
 
 impl FuncTypeExt for CoreFuncType {
+    fn new_or_panic<P, R>(params: P, results: R) -> Self
+    where
+        P: IntoIterator,
+        R: IntoIterator,
+        <P as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
+        <R as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
+    {
+        match Self::new(params, results) {
+            Ok(func_type) => func_type,
+            Err(error) => panic!("failed to create function type: {error}"),
+        }
+    }
+
     fn match_params<T>(&self, params: &[T]) -> Result<(), FuncError>
     where
         T: DynamicallyTyped,
