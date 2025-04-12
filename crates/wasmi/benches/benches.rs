@@ -619,8 +619,7 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
             .define(
                 "env",
                 "memory",
-                wasmi::Memory::new(&mut store, wasmi::MemoryType::new(2, Some(16)).unwrap())
-                    .unwrap(),
+                wasmi::Memory::new(&mut store, wasmi::MemoryType::new(2, Some(16))).unwrap(),
             )
             .unwrap();
         linker

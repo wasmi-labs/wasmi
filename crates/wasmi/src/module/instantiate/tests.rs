@@ -29,7 +29,7 @@ fn try_instantiate_from_wat(wasm: &str) -> Result<(Store<()>, Instance), Error> 
     let mut store = Store::new(&engine, ());
     let mut linker = <Linker<()>>::new(&engine);
     // Define one memory that can be used by the tests as import.
-    let memory_type = MemoryType::new(4, None)?;
+    let memory_type = MemoryType::new(4, None);
     let memory = Memory::new(&mut store, memory_type)?;
     linker.define("env", "memory", memory)?;
     // Define one table that can be used by the tests as import.

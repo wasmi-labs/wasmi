@@ -86,7 +86,7 @@ fn instantiate_with_imports_and_start() {
     let data: i32 = 0;
     let mut store = Store::new(&engine, data);
     let g = Global::new(&mut store, Val::I32(0), Mutability::Var);
-    let m = Memory::new(&mut store, MemoryType::new(1, None).unwrap()).unwrap();
+    let m = Memory::new(&mut store, MemoryType::new(1, None)).unwrap();
     let t = Table::new(
         &mut store,
         TableType::new(ValType::FuncRef, 1, None),
@@ -146,7 +146,7 @@ fn instantiate_with_invalid_memory_import() {
     let engine = Engine::default();
     let module = Module::new(&engine, wasm).unwrap();
     let mut store = Store::new(&engine, ());
-    let m = Memory::new(&mut store, MemoryType::new(0, Some(1)).unwrap()).unwrap();
+    let m = Memory::new(&mut store, MemoryType::new(0, Some(1))).unwrap();
     let externals = [Extern::from(m)].map(Extern::from);
     let error = Instance::new(&mut store, &module, &externals).unwrap_err();
     assert!(matches!(

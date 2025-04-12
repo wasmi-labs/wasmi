@@ -90,7 +90,7 @@ impl WastRunner {
     /// Sets up the Wasm spec testsuite module for `self`.
     pub fn register_spectest(&mut self) -> Result<(), wasmi::Error> {
         let Self { store, .. } = self;
-        let default_memory = Memory::new(&mut *store, MemoryType::new(1, Some(2))?)?;
+        let default_memory = Memory::new(&mut *store, MemoryType::new(1, Some(2)))?;
         let default_table = Table::new(
             &mut *store,
             TableType::new(ValType::FuncRef, 10, Some(20)),

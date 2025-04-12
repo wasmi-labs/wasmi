@@ -1069,7 +1069,7 @@ mod tests {
         let engine = Engine::default();
         let mut linker = <Linker<()>>::new(&engine);
         let mut store = Store::new(&engine, ());
-        let memory = Memory::new(&mut store, MemoryType::new(1, Some(4096)).unwrap()).unwrap();
+        let memory = Memory::new(&mut store, MemoryType::new(1, Some(4096))).unwrap();
         let module = Module::new(&engine, wasm).unwrap();
         linker.define("env", "memory", memory).unwrap();
         let func = Func::new(
