@@ -1,13 +1,17 @@
-pub use self::element::{ElementSegment, ElementSegmentIdx};
+pub use self::{
+    element::{ElementSegment, ElementSegmentIdx},
+    ty::TableType,
+};
 use super::{AsContext, AsContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{Table as CoreTable, TableError, TableType},
+    core::{Table as CoreTable, TableError},
     Error,
     Val,
 };
 
 mod element;
+mod ty;
 
 /// A raw index to a table entity.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -52,7 +56,7 @@ impl Table {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
-        let entity = CoreTable::new(ty, init.into(), &mut resource_limiter)?;
+        let entity = CoreTable::new(ty.core, init.into(), &mut resource_limiter)?;
         let table = inner.alloc_table(entity);
         Ok(table)
     }
@@ -63,7 +67,8 @@ impl Table {
     ///
     /// Panics if `ctx` does not own this [`Table`].
     pub fn ty(&self, ctx: impl AsContext) -> TableType {
-        ctx.as_context().store.inner.resolve_table(self).ty()
+        let core = ctx.as_context().store.inner.resolve_table(self).ty();
+        TableType { core }
     }
 
     /// Returns the dynamic [`TableType`] of the [`Table`].
@@ -77,11 +82,13 @@ impl Table {
     ///
     /// Panics if `ctx` does not own this [`Table`].
     pub(crate) fn dynamic_ty(&self, ctx: impl AsContext) -> TableType {
-        ctx.as_context()
+        let core = ctx
+            .as_context()
             .store
             .inner
             .resolve_table(self)
-            .dynamic_ty()
+            .dynamic_ty();
+        TableType { core }
     }
 
     /// Returns the current size of the [`Table`].

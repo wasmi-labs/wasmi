@@ -7,9 +7,8 @@
 //! instances with more than 1 memory (or table) if the Wasm module imported
 //! those entities.
 
-use crate::core::ValType;
-
 use crate::{
+    core::ValType,
     instance::InstanceEntity,
     Engine,
     Error,

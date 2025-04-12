@@ -1,10 +1,11 @@
 use crate::{
-    core::{MemoryError, MemoryType, TableError, TableType},
+    core::{MemoryError, MemoryType, TableError},
     Extern,
     ExternType,
     FuncType,
     GlobalType,
     Table,
+    TableType,
 };
 use core::{
     error::Error,

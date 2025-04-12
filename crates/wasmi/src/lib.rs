@@ -133,7 +133,7 @@ pub mod errors {
 }
 
 pub use self::{
-    core::{FuncType, GlobalType, MemoryType, MemoryTypeBuilder, Mutability, TableType},
+    core::{FuncType, GlobalType, MemoryType, MemoryTypeBuilder, Mutability},
     engine::{
         CompilationMode,
         Config,
@@ -177,7 +177,7 @@ pub use self::{
         Read,
     },
     store::{AsContext, AsContextMut, CallHook, Store, StoreContext, StoreContextMut},
-    table::Table,
+    table::{Table, TableType},
     value::Val,
 };
 use self::{
