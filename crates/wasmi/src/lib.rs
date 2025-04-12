@@ -93,6 +93,7 @@ mod foreach_tuple;
 #[cfg(test)]
 pub mod tests;
 
+mod coredump;
 mod engine;
 mod error;
 mod externref;
