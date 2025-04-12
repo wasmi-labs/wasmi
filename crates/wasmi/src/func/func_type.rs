@@ -1,8 +1,4 @@
-use crate::{
-    core::{FuncType as CoreFuncType, ValType},
-    func::FuncError,
-    Val,
-};
+use crate::{core::ValType, func::FuncError, FuncType, Val};
 
 /// Types that are dynamically typed, such as [`ValType`].
 pub trait DynamicallyTyped {
@@ -24,7 +20,7 @@ impl DynamicallyTyped for Val {
 
 /// Extension methods for [`FuncType`].
 pub trait FuncTypeExt {
-    /// Creates a new [`FuncTypeInner`].
+    /// Creates a new [`FuncType`].
     ///
     /// # Panics
     ///
@@ -73,7 +69,7 @@ pub trait FuncTypeExt {
     fn prepare_outputs(&self, outputs: &mut [Val]);
 }
 
-impl FuncTypeExt for CoreFuncType {
+impl FuncTypeExt for FuncType {
     fn new_or_panic<P, R>(params: P, results: R) -> Self
     where
         P: IntoIterator,
