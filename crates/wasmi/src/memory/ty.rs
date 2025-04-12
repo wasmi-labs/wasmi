@@ -85,7 +85,7 @@ impl MemoryType {
     ///
     /// [import subtyping]:
     /// https://webassembly.github.io/spec/core/valid/types.html#import-subtyping
-    pub fn is_subtype_of(&self, other: &Self) -> bool {
+    pub(crate) fn is_subtype_of(&self, other: &Self) -> bool {
         self.core.is_subtype_of(&other.core)
     }
 }
