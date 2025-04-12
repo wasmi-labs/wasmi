@@ -533,8 +533,7 @@ fn generate_unique_host_functions(count: usize) -> Vec<(String, FuncType)> {
             let func_type = FuncType::new(
                 vec![chosen_type; len_params],
                 vec![chosen_type; len_results],
-            )
-            .unwrap();
+            );
             (func_name, func_type)
         })
         .collect()

@@ -72,7 +72,7 @@ macro_rules! impl_into_func {
 
             #[allow(non_snake_case)]
             fn into_func(self) -> (FuncType, TrampolineEntity<T>) {
-                let func_type = FuncType::new_or_panic(
+                let func_type = FuncType::new(
                     <Self::Params as WasmTyList>::types(),
                     <Self::Results as WasmTyList>::types(),
                 );

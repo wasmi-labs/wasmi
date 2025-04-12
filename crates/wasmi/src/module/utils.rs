@@ -99,7 +99,7 @@ impl FromWasmparser<&wasmparser::FuncType> for FuncType {
         }
         let params = func_type.params().iter().map(extract_value_type);
         let results = func_type.results().iter().map(extract_value_type);
-        Self::new_or_panic(params, results)
+        Self::new(params, results)
     }
 }
 

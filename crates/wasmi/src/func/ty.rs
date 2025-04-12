@@ -1,5 +1,5 @@
 use crate::{
-    core::{FuncType as CoreFuncType, FuncTypeError, ValType},
+    core::{FuncType as CoreFuncType, ValType},
     errors::FuncError,
     Val,
 };
@@ -34,15 +34,18 @@ impl FuncType {
     /// # Errors
     ///
     /// If an out of bounds number of parameters or results are given.
-    pub fn new<P, R>(params: P, results: R) -> Result<Self, FuncTypeError>
+    pub fn new<P, R>(params: P, results: R) -> Self
     where
         P: IntoIterator,
         R: IntoIterator,
         <P as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
         <R as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
     {
-        let core = CoreFuncType::new(params, results)?;
-        Ok(Self { core })
+        let core = match CoreFuncType::new(params, results) {
+            Ok(func_type) => func_type,
+            Err(error) => panic!("failed to create function type: {error}"),
+        };
+        Self { core }
     }
 
     /// Returns the parameter types of the function type.
@@ -68,24 +71,6 @@ impl FuncType {
     /// Returns the pair of parameter and result types of the function type.
     pub(crate) fn params_results(&self) -> (&[ValType], &[ValType]) {
         self.core.params_results()
-    }
-
-    /// Creates a new [`FuncType`].
-    ///
-    /// # Panics
-    ///
-    /// If an out of bounds number of parameters or results are given.
-    pub(crate) fn new_or_panic<P, R>(params: P, results: R) -> Self
-    where
-        P: IntoIterator,
-        R: IntoIterator,
-        <P as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
-        <R as IntoIterator>::IntoIter: Iterator<Item = ValType> + ExactSizeIterator,
-    {
-        match Self::new(params, results) {
-            Ok(func_type) => func_type,
-            Err(error) => panic!("failed to create function type: {error}"),
-        }
     }
 
     /// Returns `Ok` if the number and types of items in `params` matches as expected by the [`FuncType`].
