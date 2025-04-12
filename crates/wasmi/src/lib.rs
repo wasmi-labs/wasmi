@@ -133,7 +133,7 @@ pub mod errors {
 }
 
 pub use self::{
-    core::{FuncType, GlobalType, MemoryType, MemoryTypeBuilder, Mutability},
+    core::{FuncType, GlobalType, Mutability},
     engine::{
         CompilationMode,
         Config,
@@ -164,7 +164,7 @@ pub use self::{
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
     limits::{StoreLimits, StoreLimitsBuilder},
     linker::{state, Linker, LinkerBuilder},
-    memory::Memory,
+    memory::{Memory, MemoryType, MemoryTypeBuilder},
     module::{
         CustomSection,
         CustomSectionsIter,

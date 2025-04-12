@@ -1,10 +1,14 @@
 mod data;
+mod ty;
 
-pub use self::data::{DataSegment, DataSegmentEntity, DataSegmentIdx};
+pub use self::{
+    data::{DataSegment, DataSegmentEntity, DataSegmentIdx},
+    ty::{MemoryType, MemoryTypeBuilder},
+};
 use super::{AsContext, AsContextMut, StoreContext, StoreContextMut, Stored};
 use crate::{
     collections::arena::ArenaIndex,
-    core::{Memory as CoreMemory, MemoryError, MemoryType},
+    core::{Memory as CoreMemory, MemoryError},
     Error,
 };
 
@@ -51,7 +55,7 @@ impl Memory {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
-        let entity = CoreMemory::new(ty, &mut resource_limiter)?;
+        let entity = CoreMemory::new(ty.core, &mut resource_limiter)?;
         let memory = inner.alloc_memory(entity);
         Ok(memory)
     }
@@ -71,7 +75,7 @@ impl Memory {
             .as_context_mut()
             .store
             .store_inner_and_resource_limiter_ref();
-        let entity = CoreMemory::new_static(ty, &mut resource_limiter, buf)?;
+        let entity = CoreMemory::new_static(ty.core, &mut resource_limiter, buf)?;
         let memory = inner.alloc_memory(entity);
         Ok(memory)
     }
@@ -82,7 +86,8 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub fn ty(&self, ctx: impl AsContext) -> MemoryType {
-        ctx.as_context().store.inner.resolve_memory(self).ty()
+        let core = ctx.as_context().store.inner.resolve_memory(self).ty();
+        MemoryType { core }
     }
 
     /// Returns the dynamic [`MemoryType`] of the [`Memory`].
@@ -96,11 +101,13 @@ impl Memory {
     ///
     /// Panics if `ctx` does not own this [`Memory`].
     pub(crate) fn dynamic_ty(&self, ctx: impl AsContext) -> MemoryType {
-        ctx.as_context()
+        let core = ctx
+            .as_context()
             .store
             .inner
             .resolve_memory(self)
-            .dynamic_ty()
+            .dynamic_ty();
+        MemoryType { core }
     }
 
     /// Returns the size, in WebAssembly pages, of this Wasm linear memory.
