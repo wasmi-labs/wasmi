@@ -5,6 +5,7 @@ use crate::core::{
     MemoryTypeBuilder as CoreMemoryTypeBuilder,
 };
 
+/// A Wasm memory descriptor.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MemoryType {
     pub(crate) core: CoreMemoryType,
