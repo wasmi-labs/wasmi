@@ -1,4 +1,4 @@
-use super::{into_func::WasmTyList, Func};
+use super::{into_func::WasmTyList, Func, FuncTypeExt as _};
 use crate::{
     core::UntypedVal,
     engine::{CallParams, CallResults},

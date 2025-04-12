@@ -1,8 +1,7 @@
 //! Tests for the `Func` type in Wasmi.
 
-use core::slice;
-
 use assert_matches::assert_matches;
+use core::slice;
 use wasmi::{
     errors::{ErrorKind, FuncError},
     Engine,
@@ -37,7 +36,7 @@ fn setup_add2() -> (Store<()>, Func, Func) {
     let add2 = Func::wrap(&mut store, |lhs: i32, rhs: i32| lhs + rhs);
     let add2_dyn = Func::new(
         &mut store,
-        FuncType::new([ValType::I32, ValType::I32], [ValType::I32]),
+        FuncType::new([ValType::I32, ValType::I32], [ValType::I32]).unwrap(),
         |_caller, inputs: &[Val], results: &mut [Val]| {
             assert_eq!(inputs.len(), 2);
             assert_eq!(results.len(), 1);
@@ -92,7 +91,7 @@ fn setup_add3() -> (Store<()>, Func, Func) {
     let add3 = Func::wrap(&mut store, |v0: i32, v1: i32, v2: i32| v0 + v1 + v2);
     let add3_dyn = Func::new(
         &mut store,
-        FuncType::new([ValType::I32, ValType::I32, ValType::I32], [ValType::I32]),
+        FuncType::new([ValType::I32, ValType::I32, ValType::I32], [ValType::I32]).unwrap(),
         |_caller, inputs: &[Val], results: &mut [Val]| {
             assert_eq!(inputs.len(), 3);
             assert_eq!(results.len(), 1);
@@ -153,7 +152,7 @@ fn setup_duplicate() -> (Store<()>, Func, Func) {
     let duplicate = Func::wrap(&mut store, |value: i32| (value, value));
     let duplicate_dyn = Func::new(
         &mut store,
-        FuncType::new([ValType::I32], [ValType::I32, ValType::I32]),
+        FuncType::new([ValType::I32], [ValType::I32, ValType::I32]).unwrap(),
         |_caller, inputs: &[Val], results: &mut [Val]| {
             assert_eq!(inputs.len(), 1);
             assert_eq!(results.len(), 2);

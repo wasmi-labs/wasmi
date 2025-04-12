@@ -1,4 +1,12 @@
-use crate::{core::ValType, FuncType, GlobalType, MemoryType, Mutability, TableType};
+use crate::{
+    core::ValType,
+    func::FuncTypeExt as _,
+    FuncType,
+    GlobalType,
+    MemoryType,
+    Mutability,
+    TableType,
+};
 use wasmparser::AbstractHeapType;
 
 /// Types that can be created from `wasmparser` definitions.
@@ -99,7 +107,7 @@ impl FromWasmparser<&wasmparser::FuncType> for FuncType {
         }
         let params = func_type.params().iter().map(extract_value_type);
         let results = func_type.results().iter().map(extract_value_type);
-        Self::new(params, results)
+        Self::new_or_panic(params, results)
     }
 }
 
