@@ -137,15 +137,9 @@ impl FuncType {
     ///
     /// If the number of items in `outputs` does not match the number of results of the [`FuncType`].
     pub(crate) fn prepare_outputs(&self, outputs: &mut [Val]) {
-        assert_eq!(
-            self.results().len(),
-            outputs.len(),
-            "must have the same number of items in outputs as results of the function type"
-        );
-        let init_values = self.results().iter().copied().map(Val::default);
-        outputs
-            .iter_mut()
-            .zip(init_values)
-            .for_each(|(output, init)| *output = init);
+        assert_eq!(self.results().len(), outputs.len(),);
+        for (output, init) in outputs.iter_mut().zip(self.results()) {
+            *output = Val::default(*init);
+        }
     }
 }
