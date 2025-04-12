@@ -113,15 +113,6 @@ impl Default for MemoryTypeBuilder {
 }
 
 impl MemoryTypeBuilder {
-    /// Create a new builder for a [`MemoryType`]` with the default settings:
-    ///
-    /// - The minimum memory size is 0 pages.
-    /// - The maximum memory size is unspecified.
-    /// - The page size is 64KiB.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     /// Set whether this is a 64-bit memory type or not.
     ///
     /// By default a memory is a 32-bit, a.k.a. `false`.
@@ -216,37 +207,6 @@ impl MemoryTypeBuilder {
 impl MemoryType {
     /// The default memory page size in KiB.
     const DEFAULT_PAGE_SIZE_LOG2: u8 = 16; // 2^16 KiB = 64 KiB
-
-    /// Creates a new memory type with minimum and optional maximum pages.
-    ///
-    /// # Errors
-    ///
-    /// - If the `minimum` pages exceeds the `maximum` pages.
-    /// - If the `minimum` or `maximum` pages are out of bounds.
-    pub fn new(minimum: u32, maximum: Option<u32>) -> Result<Self, MemoryError> {
-        let mut b = Self::builder();
-        b.min(u64::from(minimum));
-        b.max(maximum.map(u64::from));
-        b.build()
-    }
-
-    /// Creates a new 64-bit memory type with minimum and optional maximum pages.
-    ///
-    /// # Errors
-    ///
-    /// - If the `minimum` pages exceeds the `maximum` pages.
-    /// - If the `minimum` or `maximum` pages are out of bounds.
-    ///
-    /// 64-bit memories are part of the [Wasm `memory64` proposal].
-    ///
-    /// [Wasm `memory64` proposal]: https://github.com/WebAssembly/memory64
-    pub fn new64(minimum: u64, maximum: Option<u64>) -> Result<Self, MemoryError> {
-        let mut b = Self::builder();
-        b.memory64(true);
-        b.min(minimum);
-        b.max(maximum);
-        b.build()
-    }
 
     /// Returns a [`MemoryTypeBuilder`] to incrementally construct a [`MemoryType`].
     pub fn builder() -> MemoryTypeBuilder {
