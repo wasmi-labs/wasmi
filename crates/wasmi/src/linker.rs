@@ -3,7 +3,6 @@ use crate::{
         string_interner::{InternHint, Sym as Symbol},
         StringInterner,
     },
-    core::FuncType,
     func::{FuncEntity, HostFuncEntity, HostFuncTrampolineEntity},
     module::{ImportName, ImportType},
     AsContext,
@@ -14,6 +13,7 @@ use crate::{
     Extern,
     ExternType,
     Func,
+    FuncType,
     Instance,
     InstancePre,
     IntoFunc,
@@ -858,7 +858,7 @@ impl<T> LinkerInner<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{core::ValType, func::FuncTypeExt as _, Store};
+    use crate::{core::ValType, Store};
 
     struct HostState {
         a: i32,

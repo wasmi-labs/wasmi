@@ -1,12 +1,4 @@
-use crate::{
-    core::ValType,
-    func::FuncTypeExt as _,
-    FuncType,
-    GlobalType,
-    MemoryType,
-    Mutability,
-    TableType,
-};
+use crate::{core::ValType, FuncType, GlobalType, MemoryType, Mutability, TableType};
 use wasmparser::AbstractHeapType;
 
 /// Types that can be created from `wasmparser` definitions.

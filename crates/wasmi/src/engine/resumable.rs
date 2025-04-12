@@ -1,7 +1,7 @@
 use super::Func;
 use crate::{
     engine::Stack,
-    func::{CallResultsTuple, FuncTypeExt as _},
+    func::CallResultsTuple,
     ir::RegSpan,
     AsContextMut,
     Engine,

@@ -1,14 +1,14 @@
 use super::{
     func_inout::{FuncFinished, FuncInOut, FuncResults},
-    FuncTypeExt as _,
     TrampolineEntity,
 };
 use crate::{
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, FuncType, UntypedVal, ValType, F32, F64},
+    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal, ValType, F32, F64},
     Caller,
     Error,
     ExternRef,
     FuncRef,
+    FuncType,
 };
 use core::{array, iter::FusedIterator};
 
