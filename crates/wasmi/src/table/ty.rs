@@ -45,19 +45,19 @@ impl TableType {
         self.core.index_ty()
     }
 
-    /// Returns the [`ValType`] of elements stored in the [`Table`].
+    /// Returns the [`ValType`] of elements stored in the table.
     pub fn element(&self) -> ValType {
         self.core.element()
     }
 
-    /// Returns minimum number of elements the [`Table`] must have.
+    /// Returns minimum number of elements the a table with this type must have.
     pub fn minimum(&self) -> u64 {
         self.core.minimum()
     }
 
-    /// The optional maximum number of elements the [`Table`] can have.
+    /// The optional maximum number of elements a table with this type can have.
     ///
-    /// If this returns `None` then the [`Table`] is not limited in size.
+    /// If this returns `None` then tables with this type are not limited in size.
     pub fn maximum(&self) -> Option<u64> {
         self.core.maximum()
     }
