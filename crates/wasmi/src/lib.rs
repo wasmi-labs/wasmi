@@ -133,7 +133,7 @@ pub mod errors {
 }
 
 pub use self::{
-    core::{FuncType, GlobalType, MemoryType, MemoryTypeBuilder, Mutability, TableType},
+    core::{GlobalType, Mutability},
     engine::{
         CompilationMode,
         Config,
@@ -152,6 +152,7 @@ pub use self::{
         Caller,
         Func,
         FuncRef,
+        FuncType,
         IntoFunc,
         TypedFunc,
         WasmParams,
@@ -164,7 +165,7 @@ pub use self::{
     instance::{Export, ExportsIter, Extern, ExternType, Instance},
     limits::{StoreLimits, StoreLimitsBuilder},
     linker::{state, Linker, LinkerBuilder},
-    memory::Memory,
+    memory::{Memory, MemoryType, MemoryTypeBuilder},
     module::{
         CustomSection,
         CustomSectionsIter,
@@ -177,7 +178,7 @@ pub use self::{
         Read,
     },
     store::{AsContext, AsContextMut, CallHook, Store, StoreContext, StoreContextMut},
-    table::Table,
+    table::{Table, TableType},
     value::Val,
 };
 use self::{

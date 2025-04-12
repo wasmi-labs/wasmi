@@ -1,4 +1,4 @@
-use super::{into_func::WasmTyList, Func, FuncTypeExt as _};
+use super::{into_func::WasmTyList, Func};
 use crate::{
     core::UntypedVal,
     engine::{CallParams, CallResults},
@@ -72,7 +72,7 @@ where
             <Results as WasmTyList>::types(),
         );
         func_type.match_params(actual_params.as_ref())?;
-        func_type.match_results(actual_results.as_ref(), true)?;
+        func_type.match_results(actual_results.as_ref())?;
         Ok(Self {
             signature: PhantomData,
             func,

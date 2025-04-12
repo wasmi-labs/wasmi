@@ -11,7 +11,7 @@ fn assert_display(func_type: impl Borrow<FuncType>, expected: &str) {
 
 macro_rules! func_ty {
     ($params:expr, $results:expr $(,)?) => {{
-        FuncType::new($params, $results).unwrap()
+        FuncType::new($params, $results)
     }};
 }
 

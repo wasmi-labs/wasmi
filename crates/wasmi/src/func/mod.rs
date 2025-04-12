@@ -1,21 +1,22 @@
 mod caller;
 mod error;
 mod func_inout;
-mod func_type;
 mod funcref;
 mod into_func;
+mod ty;
 mod typed_func;
 
 use self::func_inout::FuncFinished;
+pub(crate) use self::typed_func::CallResultsTuple;
 pub use self::{
     caller::Caller,
     error::FuncError,
     func_inout::FuncInOut,
     funcref::FuncRef,
     into_func::{IntoFunc, WasmRet, WasmTy, WasmTyList},
+    ty::FuncType,
     typed_func::{TypedFunc, WasmParams, WasmResults},
 };
-pub(crate) use self::{func_type::FuncTypeExt, typed_func::CallResultsTuple};
 use super::{
     engine::{DedupFuncType, EngineFunc},
     AsContext,
@@ -24,14 +25,7 @@ use super::{
     StoreContext,
     Stored,
 };
-use crate::{
-    collections::arena::ArenaIndex,
-    core::FuncType,
-    engine::ResumableCall,
-    Engine,
-    Error,
-    Val,
-};
+use crate::{collections::arena::ArenaIndex, engine::ResumableCall, Engine, Error, Val};
 use alloc::{boxed::Box, sync::Arc};
 use core::{fmt, fmt::Debug, num::NonZeroU32};
 
@@ -500,8 +494,7 @@ impl Func {
             .inner
             .resolve_func_type_with(fn_type, |func_type| {
                 func_type.match_params(inputs)?;
-                func_type.match_results(outputs, false)?;
-                func_type.prepare_outputs(outputs);
+                func_type.prepare_outputs(outputs)?;
                 Ok(())
             })
     }

@@ -533,8 +533,7 @@ fn generate_unique_host_functions(count: usize) -> Vec<(String, FuncType)> {
             let func_type = FuncType::new(
                 vec![chosen_type; len_params],
                 vec![chosen_type; len_results],
-            )
-            .unwrap();
+            );
             (func_name, func_type)
         })
         .collect()
@@ -619,8 +618,7 @@ fn bench_instantiate_contract(c: &mut Criterion, name: &str, path: &str) {
             .define(
                 "env",
                 "memory",
-                wasmi::Memory::new(&mut store, wasmi::MemoryType::new(2, Some(16)).unwrap())
-                    .unwrap(),
+                wasmi::Memory::new(&mut store, wasmi::MemoryType::new(2, Some(16))).unwrap(),
             )
             .unwrap();
         linker

@@ -1,7 +1,7 @@
 use super::Func;
 use crate::{
     engine::Stack,
-    func::{CallResultsTuple, FuncTypeExt as _},
+    func::CallResultsTuple,
     ir::RegSpan,
     AsContextMut,
     Engine,
@@ -215,13 +215,12 @@ impl ResumableInvocation {
     ) -> Result<ResumableCall, Error> {
         self.engine
             .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
-                func_type.match_results(inputs, true)
+                func_type.match_results(inputs)
             })?;
         self.engine.resolve_func_type(
             self.func.ty_dedup(ctx.as_context()),
             |func_type| -> Result<(), Error> {
-                func_type.match_results(outputs, false)?;
-                func_type.prepare_outputs(outputs);
+                func_type.prepare_outputs(outputs)?;
                 Ok(())
             },
         )?;
@@ -296,7 +295,7 @@ impl<Results> TypedResumableInvocation<Results> {
     {
         self.engine
             .resolve_func_type(self.host_func().ty_dedup(ctx.as_context()), |func_type| {
-                func_type.match_results(inputs, true)
+                func_type.match_results(inputs)
             })?;
         self.engine
             .clone()

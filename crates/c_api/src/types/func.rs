@@ -92,7 +92,7 @@ pub extern "C" fn wasm_functype_new(
         .into_vec()
         .into_iter()
         .map(|ty| ty.unwrap().ty);
-    let functype = FuncType::new(params, results).unwrap();
+    let functype = FuncType::new(params, results);
     Box::new(wasm_functype_t::new(functype))
 }
 

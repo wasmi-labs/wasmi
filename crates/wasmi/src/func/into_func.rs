@@ -1,14 +1,14 @@
 use super::{
     func_inout::{FuncFinished, FuncInOut, FuncResults},
-    FuncTypeExt as _,
     TrampolineEntity,
 };
 use crate::{
-    core::{DecodeUntypedSlice, EncodeUntypedSlice, FuncType, UntypedVal, ValType, F32, F64},
+    core::{DecodeUntypedSlice, EncodeUntypedSlice, UntypedVal, ValType, F32, F64},
     Caller,
     Error,
     ExternRef,
     FuncRef,
+    FuncType,
 };
 use core::{array, iter::FusedIterator};
 
@@ -72,7 +72,7 @@ macro_rules! impl_into_func {
 
             #[allow(non_snake_case)]
             fn into_func(self) -> (FuncType, TrampolineEntity<T>) {
-                let func_type = FuncType::new_or_panic(
+                let func_type = FuncType::new(
                     <Self::Params as WasmTyList>::types(),
                     <Self::Results as WasmTyList>::types(),
                 );
