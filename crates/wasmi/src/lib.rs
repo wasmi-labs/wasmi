@@ -133,7 +133,7 @@ pub mod errors {
 }
 
 pub use self::{
-    core::{GlobalType, MemoryType, MemoryTypeBuilder, Mutability, TableType},
+    core::{FuncType, GlobalType, MemoryType, MemoryTypeBuilder, Mutability, TableType},
     engine::{
         CompilationMode,
         Config,
@@ -152,7 +152,6 @@ pub use self::{
         Caller,
         Func,
         FuncRef,
-        FuncType,
         IntoFunc,
         TypedFunc,
         WasmParams,

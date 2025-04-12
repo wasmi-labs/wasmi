@@ -3,6 +3,7 @@ use crate::{
         string_interner::{InternHint, Sym as Symbol},
         StringInterner,
     },
+    core::FuncType,
     func::{FuncEntity, HostFuncEntity, HostFuncTrampolineEntity},
     module::{ImportName, ImportType},
     AsContext,
@@ -13,7 +14,6 @@ use crate::{
     Extern,
     ExternType,
     Func,
-    FuncType,
     Instance,
     InstancePre,
     IntoFunc,
@@ -857,10 +857,8 @@ impl<T> LinkerInner<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::ValType;
-
     use super::*;
-    use crate::Store;
+    use crate::{core::ValType, func::FuncTypeExt as _, Store};
 
     struct HostState {
         a: i32,
@@ -875,7 +873,7 @@ mod tests {
             .func_new(
                 "host",
                 "get_a",
-                FuncType::new([], [ValType::I32]),
+                FuncType::new_or_panic([], [ValType::I32]),
                 |ctx: Caller<HostState>, _params: &[Val], results: &mut [Val]| {
                     results[0] = Val::from(ctx.data().a);
                     Ok(())
@@ -886,7 +884,7 @@ mod tests {
             .func_new(
                 "host",
                 "set_a",
-                FuncType::new([ValType::I32], []),
+                FuncType::new_or_panic([ValType::I32], []),
                 |mut ctx: Caller<HostState>, params: &[Val], _results: &mut [Val]| {
                     ctx.data_mut().a = params[0].i32().unwrap();
                     Ok(())
@@ -971,7 +969,7 @@ mod tests {
             .func_new(
                 "env",
                 "bar",
-                FuncType::new([], []),
+                FuncType::new_or_panic([], []),
                 |_caller, _params, _results| {
                     std::println!("called bar");
                     Ok(())
@@ -1076,7 +1074,7 @@ mod tests {
         linker.define("env", "memory", memory).unwrap();
         let func = Func::new(
             &mut store,
-            FuncType::new([ValType::I32], [ValType::I32]),
+            FuncType::new_or_panic([ValType::I32], [ValType::I32]),
             |_caller, _params, _results| todo!(),
         );
         linker.define("host", "hello", func).unwrap();
