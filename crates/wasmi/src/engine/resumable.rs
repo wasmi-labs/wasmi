@@ -220,8 +220,7 @@ impl ResumableInvocation {
         self.engine.resolve_func_type(
             self.func.ty_dedup(ctx.as_context()),
             |func_type| -> Result<(), Error> {
-                func_type.match_results(outputs, false)?;
-                func_type.prepare_outputs(outputs);
+                func_type.prepare_outputs(outputs)?;
                 Ok(())
             },
         )?;

@@ -494,8 +494,7 @@ impl Func {
             .inner
             .resolve_func_type_with(fn_type, |func_type| {
                 func_type.match_params(inputs)?;
-                func_type.match_results(outputs, false)?;
-                func_type.prepare_outputs(outputs);
+                func_type.prepare_outputs(outputs)?;
                 Ok(())
             })
     }

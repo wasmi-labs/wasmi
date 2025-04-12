@@ -136,10 +136,13 @@ impl FuncType {
     /// # Panics
     ///
     /// If the number of items in `outputs` does not match the number of results of the [`FuncType`].
-    pub(crate) fn prepare_outputs(&self, outputs: &mut [Val]) {
-        assert_eq!(self.results().len(), outputs.len(),);
-        for (output, init) in outputs.iter_mut().zip(self.results()) {
-            *output = Val::default(*init);
+    pub(crate) fn prepare_outputs(&self, outputs: &mut [Val]) -> Result<(), FuncError> {
+        if self.results().len() != outputs.len() {
+            return Err(FuncError::MismatchingResultLen);
         }
+        for (output, result_ty) in outputs.iter_mut().zip(self.results()) {
+            *output = Val::default(*result_ty);
+        }
+        Ok(())
     }
 }
