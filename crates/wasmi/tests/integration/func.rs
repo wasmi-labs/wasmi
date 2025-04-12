@@ -1,8 +1,7 @@
 //! Tests for the `Func` type in Wasmi.
 
-use core::slice;
-
 use assert_matches::assert_matches;
+use core::slice;
 use wasmi::{
     errors::{ErrorKind, FuncError},
     Engine,
