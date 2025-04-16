@@ -6816,7 +6816,7 @@ impl crate::GetOpCode for OpCode {
     }
 }
 pub mod op {
-use crate::*;
+    use crate::*;
     #[repr(C, packed)]
     pub struct Copy1_S {
         pub result: Stack,

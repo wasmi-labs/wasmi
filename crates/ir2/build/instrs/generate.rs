@@ -77,8 +77,8 @@ impl Display for DisplayOpMod<'_> {
         let display_instrs = DisplayOpModInstrs::new(self.ctx.instrs(), indent.inc());
         emit!(f, indent =>
             "pub mod op {"
-                "use crate::*;"
-                display_instrs
+            "    use crate::*;"
+                 display_instrs
             "}"
         );
         Ok(())
