@@ -67,11 +67,45 @@ impl<'a> DisplayOpCodeEnum<'a> {
 impl Display for DisplayOpCodeEnum<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        writeln!(f, "{indent}pub enum OpCode {{")?;
-        for instr in self.ctx.instrs() {
-            DisplayOpCodeEnumVariant::new(instr, indent.inc()).fmt(f)?;
+        let display_variants = DisplayOpCodeEnumVariants::new(self.ctx.instrs(), indent.inc());
+        emit!(f, indent =>
+            "#[repr(u16)]"
+            "pub enum OpCode {"
+                display_variants
+            "}"
+
+            "impl Copy for OpCode {}"
+            "impl Clone for OpCode {"
+            "    fn clone(&self) -> Self {"
+            "        *self"
+            "    }"
+            "}"
+        );
+        Ok(())
+    }
+}
+
+pub struct DisplayOpCodeEnumVariants<'a> {
+    instrs: &'a [Instr],
+    indent: DisplayIndent,
+}
+
+impl<'a> DisplayOpCodeEnumVariants<'a> {
+    fn new(instrs: &'a [Instr], indent: DisplayIndent) -> Self {
+        Self { instrs, indent }
+    }
+}
+
+impl Display for DisplayOpCodeEnumVariants<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Some((first, rest)) = self.instrs.split_first() else {
+            return Ok(());
+        };
+        DisplayOpCodeEnumVariant::new(first, self.indent).fmt(f)?;
+        for instr in rest {
+            writeln!(f)?;
+            DisplayOpCodeEnumVariant::new(instr, self.indent).fmt(f)?;
         }
-        writeln!(f, "{indent}}}")?;
         Ok(())
     }
 }
@@ -91,7 +125,7 @@ impl Display for DisplayOpCodeEnumVariant<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
         let name = self.instr.name();
-        writeln!(f, "{indent}{name},")?;
+        write!(f, "{indent}{name},")?;
         Ok(())
     }
 }
@@ -110,11 +144,37 @@ impl<'a> DisplayOpEnum<'a> {
 impl Display for DisplayOpEnum<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        writeln!(f, "{indent}pub enum Op {{")?;
-        for instr in self.ctx.instrs() {
-            DisplayOpEnumVariant::new(instr, indent.inc()).fmt(f)?;
+        let variants = DisplayOpEnumVariants::new(self.ctx.instrs(), indent.inc());
+        emit!(f, indent =>
+            "pub enum Op {"
+                variants
+            "}"
+        );
+        Ok(())
+    }
+}
+
+pub struct DisplayOpEnumVariants<'a> {
+    instrs: &'a [Instr],
+    indent: DisplayIndent,
+}
+
+impl<'a> DisplayOpEnumVariants<'a> {
+    fn new(instrs: &'a [Instr], indent: DisplayIndent) -> Self {
+        Self { instrs, indent }
+    }
+}
+
+impl Display for DisplayOpEnumVariants<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Some((first, rest)) = self.instrs.split_first() else {
+            return Ok(());
+        };
+        DisplayOpEnumVariant::new(first, self.indent).fmt(f)?;
+        for instr in rest {
+            writeln!(f)?;
+            DisplayOpEnumVariant::new(instr, self.indent).fmt(f)?;
         }
-        writeln!(f, "{indent}}}")?;
         Ok(())
     }
 }
@@ -144,7 +204,7 @@ impl Display for DisplayOpEnumVariant<'_> {
             let field_ty = field.ty;
             writeln!(f, "{field_indent}{field_name}: {field_ty},")?;
         }
-        writeln!(f, "{indent}}},")?;
+        write!(f, "{indent}}},")?;
         Ok(())
     }
 }

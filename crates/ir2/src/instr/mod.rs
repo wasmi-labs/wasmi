@@ -38,6 +38,7 @@ pub enum Op {
         value: f64,
     },
     Return0,
+
     Return1_S {
         value: Stack,
     },
@@ -5638,6 +5639,7 @@ pub enum Op {
         len_results: usize,
     },
 }
+#[repr(u16)]
 pub enum OpCode {
     Copy1_S,
     Copy,
@@ -6795,4 +6797,10 @@ pub enum OpCode {
     ReturnCallIndirect_R,
     ReturnCallIndirect_S,
     ReturnCallIndirect_I,
+}
+impl Copy for OpCode {}
+impl Clone for OpCode {
+    fn clone(&self) -> Self {
+        *self
+    }
 }
