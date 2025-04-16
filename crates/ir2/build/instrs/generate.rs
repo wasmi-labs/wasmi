@@ -1,5 +1,11 @@
 use super::{Context, FieldName, FieldTy, Instr};
-use std::fmt::{self, Display};
+use std::fmt::{self, Display, Write as _};
+
+pub fn generate_instrs(ctx: &Context) {
+    let mut code = String::new();
+    std::write!(code, "{}", ctx).unwrap();
+    std::fs::write("src/instr/mod.rs", code).unwrap();
+}
 
 impl Display for Context {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
