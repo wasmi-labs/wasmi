@@ -11,6 +11,17 @@ pub fn generate_instrs(ctx: &Context) {
     std::fs::write("src/instr/mod.rs", code).unwrap();
 }
 
+macro_rules! emit {
+    (
+        $f:expr, $indent:expr =>
+        $( $line:expr )*
+    ) => {{
+        $(
+            write!($f, "{}{}\n", $indent, $line)?;
+        )*
+    }};
+}
+
 impl Display for Context {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = DisplayIndent(0);
