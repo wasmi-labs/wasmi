@@ -31,6 +31,7 @@ impl Display for Context {
         );
         DisplayOpEnum::new(self, indent).fmt(f)?;
         DisplayOpCodeEnum::new(self, indent).fmt(f)?;
+        DisplayOpMod::new(self, indent).fmt(f)?;
         Ok(())
     }
 }
@@ -49,6 +50,94 @@ impl Display for DisplayIndent {
         for _ in 0..self.0 {
             write!(f, "    ")?;
         }
+        Ok(())
+    }
+}
+
+pub struct DisplayOpMod<'a> {
+    ctx: &'a Context,
+    indent: DisplayIndent,
+}
+
+impl<'a> DisplayOpMod<'a> {
+    fn new(ctx: &'a Context, indent: DisplayIndent) -> Self {
+        Self { ctx, indent }
+    }
+}
+
+impl Display for DisplayOpMod<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent = self.indent;
+        let display_instrs = DisplayOpModInstrs::new(self.ctx.instrs(), indent.inc());
+        emit!(f, indent =>
+            "pub mod op {"
+                "use crate::*;"
+                display_instrs
+            "}"
+        );
+        Ok(())
+    }
+}
+
+pub struct DisplayOpModInstrs<'a> {
+    instrs: &'a [Instr],
+    indent: DisplayIndent,
+}
+
+impl<'a> DisplayOpModInstrs<'a> {
+    fn new(instrs: &'a [Instr], indent: DisplayIndent) -> Self {
+        Self { instrs, indent }
+    }
+}
+
+impl Display for DisplayOpModInstrs<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Some((first, rest)) = self.instrs.split_first() else {
+            return Ok(());
+        };
+        DisplayOpModInstr::new(first, self.indent).fmt(f)?;
+        for instr in rest {
+            writeln!(f)?;
+            DisplayOpModInstr::new(instr, self.indent).fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
+pub struct DisplayOpModInstr<'a> {
+    instr: &'a Instr,
+    indent: DisplayIndent,
+}
+
+impl<'a> DisplayOpModInstr<'a> {
+    fn new(instr: &'a Instr, indent: DisplayIndent) -> Self {
+        Self { instr, indent }
+    }
+}
+
+impl Display for DisplayOpModInstr<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent = self.indent;
+        let fields = DisplayFields::new(self.instr.fields(), indent.inc(), Visibility::Pub);
+        let name = self.instr.name();
+        if self.instr.fields().is_empty() {
+            return writeln!(f, "{indent}pub struct {name};");
+        }
+        write!(
+            f,
+            "\
+            {indent}#[repr(C, packed)]\n\
+            {indent}pub struct {name} {{\n\
+            {fields}\n\
+            {indent}}}\n\
+            {indent}impl ::core::marker::Copy for {name} {{}}\n\
+            {indent}impl ::core::clone::Clone for {name} {{\n\
+            {indent}    fn clone(&self) -> Self {{\n\
+            {indent}        *self\n\
+            {indent}    }}\n\
+            {indent}}}\n\
+            "
+        )?;
         Ok(())
     }
 }
