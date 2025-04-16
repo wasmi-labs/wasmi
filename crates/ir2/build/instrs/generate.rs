@@ -25,6 +25,10 @@ macro_rules! emit {
 impl Display for Context {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = DisplayIndent(0);
+        emit!(f, indent =>
+            "use super::*;"
+            ""
+        );
         DisplayOpEnum::new(self, indent).fmt(f)?;
         DisplayOpCodeEnum::new(self, indent).fmt(f)?;
         Ok(())
@@ -106,8 +110,6 @@ impl<'a> DisplayOpEnum<'a> {
 impl Display for DisplayOpEnum<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        writeln!(f, "{indent}use super::*;")?;
-        writeln!(f)?;
         writeln!(f, "{indent}pub enum Op {{")?;
         for instr in self.ctx.instrs() {
             DisplayOpEnumVariant::new(instr, indent.inc()).fmt(f)?;
