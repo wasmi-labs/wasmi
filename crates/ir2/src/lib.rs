@@ -12,7 +12,7 @@ use self::utils::RefAccess;
 pub use self::{
     decode::{Decode, Decoder},
     encode::{CheckedEncoder, CopyDecoder, CopyEncoder, Encode, Encoder, EncoderError},
-    instr::{op, Op, OpCode, utils::GetOpCode},
+    instr::{op, utils::GetOpCode, Op, OpCode},
 };
 
 /// Address to load from or store to memory.
