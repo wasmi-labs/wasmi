@@ -5,6 +5,7 @@ extern crate alloc;
 
 mod decode;
 mod encode;
+#[rustfmt::skip]
 mod instr;
 mod utils;
 
