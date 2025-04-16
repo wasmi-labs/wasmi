@@ -6810,6 +6810,24 @@ impl ::core::clone::Clone for OpCode {
         *self
     }
 }
+impl ::core::cmp::PartialEq for OpCode {
+    fn eq(&self, other: &Self) -> bool {
+        (*self as ::core::primitive::u16) == (*other as ::core::primitive::u16)
+    }
+}
+impl ::core::cmp::Ord for OpCode {
+    fn cmp(&self, other: &Self) -> ::core::cmp::Ordering {
+        (*self as ::core::primitive::u16).cmp(&(*other as ::core::primitive::u16))
+    }
+}
+impl ::core::cmp::PartialOrd for OpCode {
+    fn partial_cmp(&self, other: &Self) -> ::core::option::Option<::core::cmp::Ordering> {
+        ::core::option::Option::Some(
+            <Self as ::core::cmp::Ord>::cmp(self, other)
+        )
+    }
+}
+impl ::core::cmp::Eq for OpCode {}
 impl crate::GetOpCode for OpCode {
     fn op_code(&self) -> Self {
         *self
