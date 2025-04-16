@@ -1,0 +1,154 @@
+use super::FieldTy;
+use std::fmt::{self, Display};
+
+#[derive(Debug, Copy, Clone)]
+pub enum ImmediateTy {
+    U32,
+    U64,
+    Usize,
+    I32,
+    I64,
+    Isize,
+    F32,
+    F64,
+    Global,
+    Func,
+    WasmFunc,
+    Memory,
+    Table,
+    Data,
+    Elem,
+    Address,
+    Offset,
+    BranchOffset,
+}
+
+impl Display for ImmediateTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            Self::U32 => "u32",
+            Self::U64 => "u64",
+            Self::Usize => "usize",
+            Self::I32 => "i32",
+            Self::I64 => "i64",
+            Self::Isize => "isize",
+            Self::F32 => "f32",
+            Self::F64 => "f64",
+            Self::Global => "Global",
+            Self::Func => "Func",
+            Self::WasmFunc => "WasmFunc",
+            Self::Memory => "Memory",
+            Self::Table => "Table",
+            Self::Data => "Data",
+            Self::Elem => "Elem",
+            Self::Address => "Address",
+            Self::Offset => "Offset",
+            Self::BranchOffset => "BranchOffset",
+        };
+        write!(f, "{str}")
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Operand {
+    Reg,
+    Stack,
+    Immediate,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum OperandId {
+    Reg,
+    Stack,
+    Immediate,
+}
+
+impl Display for OperandId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let repr = match self {
+            OperandId::Reg => 'R',
+            OperandId::Stack => 'S',
+            OperandId::Immediate => 'I',
+        };
+        write!(f, "{repr}")
+    }
+}
+
+impl Operand {
+    pub fn id(&self) -> OperandId {
+        match self {
+            Self::Reg => OperandId::Reg,
+            Self::Stack => OperandId::Stack,
+            Self::Immediate => OperandId::Immediate,
+        }
+    }
+
+    pub fn ty(&self, type_: impl Into<Option<ValTy>>) -> FieldTy {
+        match self {
+            Operand::Reg => FieldTy::Reg,
+            Operand::Stack => FieldTy::Stack,
+            Operand::Immediate => {
+                let imm_ty = match type_.into().unwrap() {
+                    ValTy::I32 => ImmediateTy::I32,
+                    ValTy::I64 => ImmediateTy::I64,
+                    ValTy::F32 => ImmediateTy::F32,
+                    ValTy::F64 => ImmediateTy::F64,
+                };
+                FieldTy::Immediate(imm_ty)
+            }
+        }
+    }
+
+    pub fn is_reg(&self) -> bool {
+        matches!(self, Self::Reg)
+    }
+
+    pub fn is_stack(&self) -> bool {
+        matches!(self, Self::Stack)
+    }
+
+    pub fn is_imm(&self) -> bool {
+        matches!(self, Self::Immediate)
+    }
+}
+
+#[derive(Copy, Clone)]
+pub enum ValTy {
+    I32,
+    I64,
+    F32,
+    F64,
+}
+
+impl Display for ValTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            Self::I32 => "I32",
+            Self::I64 => "I64",
+            Self::F32 => "F32",
+            Self::F64 => "F64",
+        };
+        write!(f, "{str}")
+    }
+}
+
+#[macro_export]
+macro_rules! instr {
+    (
+        name: $name:literal,
+        fields: [
+            $(
+                $field_name:ident: $field_ty:expr
+            ),*
+            $(,)?
+        ]
+        $(,)?
+    ) => {{
+        #[allow(unused_mut)]
+        let mut instr = Instr::new(std::format!($name));
+        $(
+            instr.push_field(ident_to_field_name!($field_name), $field_ty);
+        )*
+        instr
+    }};
+}
