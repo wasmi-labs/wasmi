@@ -1,4 +1,4 @@
-use super::{Context, FieldName, FieldTy, ImmediateTy, Instr};
+use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Instr};
 use std::{
     fmt::{self, Display, Write as _},
     write,
@@ -193,18 +193,65 @@ impl<'a> DisplayOpEnumVariant<'a> {
 impl Display for DisplayOpEnumVariant<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let field_indent = indent.inc();
+        let fields = DisplayOpEnumVariantFields::new(self.instr.fields(), indent.inc());
         let name = self.instr.name();
         if self.instr.fields().is_empty() {
             return writeln!(f, "{indent}{name},");
         }
-        writeln!(f, "{indent}{name} {{")?;
-        for field in self.instr.fields() {
-            let field_name = field.name;
-            let field_ty = field.ty;
-            writeln!(f, "{field_indent}{field_name}: {field_ty},")?;
+        write!(
+            f,
+            "\
+            {indent}{name} {{\n\
+            {fields}\n\
+            {indent}}},\
+            "
+        )?;
+        Ok(())
+    }
+}
+
+pub struct DisplayOpEnumVariantFields<'a> {
+    fields: &'a [Field],
+    indent: DisplayIndent,
+}
+
+impl<'a> DisplayOpEnumVariantFields<'a> {
+    fn new(fields: &'a [Field], indent: DisplayIndent) -> Self {
+        Self { fields, indent }
+    }
+}
+
+impl Display for DisplayOpEnumVariantFields<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Some((first, rest)) = self.fields.split_first() else {
+            return Ok(());
+        };
+        DisplayOpEnumVariantField::new(first, self.indent).fmt(f)?;
+        for field in rest {
+            writeln!(f)?;
+            DisplayOpEnumVariantField::new(field, self.indent).fmt(f)?;
         }
-        write!(f, "{indent}}},")?;
+        Ok(())
+    }
+}
+
+pub struct DisplayOpEnumVariantField<'a> {
+    field: &'a Field,
+    indent: DisplayIndent,
+}
+
+impl<'a> DisplayOpEnumVariantField<'a> {
+    fn new(field: &'a Field, indent: DisplayIndent) -> Self {
+        Self { field, indent }
+    }
+}
+
+impl Display for DisplayOpEnumVariantField<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent = self.indent;
+        let field_name = self.field.name;
+        let field_ty = self.field.ty;
+        write!(f, "{indent}{field_name}: {field_ty},")?;
         Ok(())
     }
 }
