@@ -4,5645 +4,5643 @@
 
 pub mod utils;
 
-use crate::*;
-
 pub enum Op {
     Copy1_S {
-        result: Stack,
-        value: Stack,
+        result: crate::Stack,
+        value: crate::Stack,
     },
     Copy {
-        result: Stack,
-        len_values: usize,
+        result: crate::Stack,
+        len_values: ::core::primitive::usize,
     },
     Copy1I32_I {
-        result: Stack,
-        value: i32,
+        result: crate::Stack,
+        value: ::core::primitive::i32,
     },
     Copy1I64_R {
-        result: Stack,
-        value: Reg,
+        result: crate::Stack,
+        value: crate::Reg,
     },
     Copy1I64_I {
-        result: Stack,
-        value: i64,
+        result: crate::Stack,
+        value: ::core::primitive::i64,
     },
     Copy1F32_R {
-        result: Stack,
-        value: Reg,
+        result: crate::Stack,
+        value: crate::Reg,
     },
     Copy1F32_I {
-        result: Stack,
-        value: f32,
+        result: crate::Stack,
+        value: ::core::primitive::f32,
     },
     Copy1F64_R {
-        result: Stack,
-        value: Reg,
+        result: crate::Stack,
+        value: crate::Reg,
     },
     Copy1F64_I {
-        result: Stack,
-        value: f64,
+        result: crate::Stack,
+        value: ::core::primitive::f64,
     },
     Return0,
 
     Return1_S {
-        value: Stack,
+        value: crate::Stack,
     },
     Return {
-        len_values: usize,
+        len_values: ::core::primitive::usize,
     },
     Return1I32_R {
-        value: Reg,
+        value: crate::Reg,
     },
     Return1I64_R {
-        value: Reg,
+        value: crate::Reg,
     },
     Return1F32_R {
-        value: Reg,
+        value: crate::Reg,
     },
     Return1F64_R {
-        value: Reg,
+        value: crate::Reg,
     },
     Return1I32_I {
-        value: i32,
+        value: ::core::primitive::i32,
     },
     Return1I64_I {
-        value: i64,
+        value: ::core::primitive::i64,
     },
     Return1F32_I {
-        value: f32,
+        value: ::core::primitive::f32,
     },
     Return1F64_I {
-        value: f64,
+        value: ::core::primitive::f64,
     },
     GlobalGet_S {
-        result: Stack,
-        global: Global,
+        result: crate::Stack,
+        global: crate::Global,
     },
     GlobalGetI32_R {
-        result: Reg,
-        global: Global,
+        result: crate::Reg,
+        global: crate::Global,
     },
     GlobalGetI64_R {
-        result: Reg,
-        global: Global,
+        result: crate::Reg,
+        global: crate::Global,
     },
     GlobalGetF32_R {
-        result: Reg,
-        global: Global,
+        result: crate::Reg,
+        global: crate::Global,
     },
     GlobalGetF64_R {
-        result: Reg,
-        global: Global,
+        result: crate::Reg,
+        global: crate::Global,
     },
     GlobalSet_S {
-        global: Global,
-        value: Stack,
+        global: crate::Global,
+        value: crate::Stack,
     },
     GlobalSetI32_R {
-        global: Global,
-        value: Reg,
+        global: crate::Global,
+        value: crate::Reg,
     },
     GlobalSetI64_R {
-        global: Global,
-        value: Reg,
+        global: crate::Global,
+        value: crate::Reg,
     },
     GlobalSetF32_R {
-        global: Global,
-        value: Reg,
+        global: crate::Global,
+        value: crate::Reg,
     },
     GlobalSetF64_R {
-        global: Global,
-        value: Reg,
+        global: crate::Global,
+        value: crate::Reg,
     },
     GlobalSetI32_I {
-        global: Global,
-        value: i32,
+        global: crate::Global,
+        value: ::core::primitive::i32,
     },
     GlobalSetI64_I {
-        global: Global,
-        value: i64,
+        global: crate::Global,
+        value: ::core::primitive::i64,
     },
     GlobalSetF32_I {
-        global: Global,
-        value: f32,
+        global: crate::Global,
+        value: ::core::primitive::f32,
     },
     GlobalSetF64_I {
-        global: Global,
-        value: f64,
+        global: crate::Global,
+        value: ::core::primitive::f64,
     },
     BranchTable0_R {
-        index: Reg,
-        len_targets: u32,
+        index: crate::Reg,
+        len_targets: ::core::primitive::u32,
     },
     BranchTable_R {
-        index: Reg,
-        len_targets: u32,
+        index: crate::Reg,
+        len_targets: ::core::primitive::u32,
     },
     BranchTable0_S {
-        index: Stack,
-        len_targets: u32,
+        index: crate::Stack,
+        len_targets: ::core::primitive::u32,
     },
     BranchTable_S {
-        index: Stack,
-        len_targets: u32,
+        index: crate::Stack,
+        len_targets: ::core::primitive::u32,
     },
     I32EqBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32EqBranch_RI {
-        lhs: Reg,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I32EqBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32EqBranch_SI {
-        lhs: Stack,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I64EqBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64EqBranch_RI {
-        lhs: Reg,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     I64EqBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64EqBranch_SI {
-        lhs: Stack,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     F32EqBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F32EqBranch_RI {
-        lhs: Reg,
-        rhs: f32,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
+        offset: crate::BranchOffset,
     },
     F32EqBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F32EqBranch_SI {
-        lhs: Stack,
-        rhs: f32,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
+        offset: crate::BranchOffset,
     },
     F64EqBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F64EqBranch_RI {
-        lhs: Reg,
-        rhs: f64,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
+        offset: crate::BranchOffset,
     },
     F64EqBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F64EqBranch_SI {
-        lhs: Stack,
-        rhs: f64,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
+        offset: crate::BranchOffset,
     },
     I32NeBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32NeBranch_RI {
-        lhs: Reg,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I32NeBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32NeBranch_SI {
-        lhs: Stack,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I64NeBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64NeBranch_RI {
-        lhs: Reg,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     I64NeBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64NeBranch_SI {
-        lhs: Stack,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     F32NeBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F32NeBranch_RI {
-        lhs: Reg,
-        rhs: f32,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
+        offset: crate::BranchOffset,
     },
     F32NeBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F32NeBranch_SI {
-        lhs: Stack,
-        rhs: f32,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
+        offset: crate::BranchOffset,
     },
     F64NeBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F64NeBranch_RI {
-        lhs: Reg,
-        rhs: f64,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
+        offset: crate::BranchOffset,
     },
     F64NeBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F64NeBranch_SI {
-        lhs: Stack,
-        rhs: f64,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
+        offset: crate::BranchOffset,
     },
     I32LtSBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LtSBranch_RI {
-        lhs: Reg,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I32LtSBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I32LtSBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LtSBranch_SI {
-        lhs: Stack,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I32LtSBranch_IR {
-        lhs: i32,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I32LtSBranch_IS {
-        lhs: i32,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LtSBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LtSBranch_RI {
-        lhs: Reg,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     I64LtSBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I64LtSBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LtSBranch_SI {
-        lhs: Stack,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     I64LtSBranch_IR {
-        lhs: i64,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I64LtSBranch_IS {
-        lhs: i64,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LtUBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LtUBranch_RI {
-        lhs: Reg,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I32LtUBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I32LtUBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LtUBranch_SI {
-        lhs: Stack,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I32LtUBranch_IR {
-        lhs: i32,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I32LtUBranch_IS {
-        lhs: i32,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LtUBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LtUBranch_RI {
-        lhs: Reg,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     I64LtUBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I64LtUBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LtUBranch_SI {
-        lhs: Stack,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     I64LtUBranch_IR {
-        lhs: i64,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I64LtUBranch_IS {
-        lhs: i64,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LeSBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LeSBranch_RI {
-        lhs: Reg,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I32LeSBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I32LeSBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LeSBranch_SI {
-        lhs: Stack,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I32LeSBranch_IR {
-        lhs: i32,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I32LeSBranch_IS {
-        lhs: i32,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LeSBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LeSBranch_RI {
-        lhs: Reg,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     I64LeSBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I64LeSBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LeSBranch_SI {
-        lhs: Stack,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     I64LeSBranch_IR {
-        lhs: i64,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I64LeSBranch_IS {
-        lhs: i64,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LeUBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LeUBranch_RI {
-        lhs: Reg,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I32LeUBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I32LeUBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32LeUBranch_SI {
-        lhs: Stack,
-        rhs: i32,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
+        offset: crate::BranchOffset,
     },
     I32LeUBranch_IR {
-        lhs: i32,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I32LeUBranch_IS {
-        lhs: i32,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LeUBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LeUBranch_RI {
-        lhs: Reg,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     I64LeUBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I64LeUBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I64LeUBranch_SI {
-        lhs: Stack,
-        rhs: i64,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
+        offset: crate::BranchOffset,
     },
     I64LeUBranch_IR {
-        lhs: i64,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     I64LeUBranch_IS {
-        lhs: i64,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F32LtBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F32LtBranch_RI {
-        lhs: Reg,
-        rhs: f32,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
+        offset: crate::BranchOffset,
     },
     F32LtBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     F32LtBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F32LtBranch_SI {
-        lhs: Stack,
-        rhs: f32,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
+        offset: crate::BranchOffset,
     },
     F32LtBranch_IR {
-        lhs: f32,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     F32LtBranch_IS {
-        lhs: f32,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F64LtBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F64LtBranch_RI {
-        lhs: Reg,
-        rhs: f64,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
+        offset: crate::BranchOffset,
     },
     F64LtBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     F64LtBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F64LtBranch_SI {
-        lhs: Stack,
-        rhs: f64,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
+        offset: crate::BranchOffset,
     },
     F64LtBranch_IR {
-        lhs: f64,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     F64LtBranch_IS {
-        lhs: f64,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F32LeBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F32LeBranch_RI {
-        lhs: Reg,
-        rhs: f32,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
+        offset: crate::BranchOffset,
     },
     F32LeBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     F32LeBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F32LeBranch_SI {
-        lhs: Stack,
-        rhs: f32,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
+        offset: crate::BranchOffset,
     },
     F32LeBranch_IR {
-        lhs: f32,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     F32LeBranch_IS {
-        lhs: f32,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F64LeBranch_RS {
-        lhs: Reg,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F64LeBranch_RI {
-        lhs: Reg,
-        rhs: f64,
-        offset: BranchOffset,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
+        offset: crate::BranchOffset,
     },
     F64LeBranch_SR {
-        lhs: Stack,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     F64LeBranch_SS {
-        lhs: Stack,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     F64LeBranch_SI {
-        lhs: Stack,
-        rhs: f64,
-        offset: BranchOffset,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
+        offset: crate::BranchOffset,
     },
     F64LeBranch_IR {
-        lhs: f64,
-        rhs: Reg,
-        offset: BranchOffset,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Reg,
+        offset: crate::BranchOffset,
     },
     F64LeBranch_IS {
-        lhs: f64,
-        rhs: Stack,
-        offset: BranchOffset,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Stack,
+        offset: crate::BranchOffset,
     },
     I32Popcnt_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32Popcnt_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32Popcnt_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32Popcnt_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64Popcnt_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64Popcnt_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64Popcnt_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64Popcnt_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32Clz_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32Clz_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32Clz_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32Clz_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64Clz_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64Clz_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64Clz_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64Clz_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32Ctz_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32Ctz_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32Ctz_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32Ctz_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64Ctz_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64Ctz_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64Ctz_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64Ctz_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32Abs_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32Abs_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32Abs_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32Abs_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64Abs_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64Abs_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64Abs_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64Abs_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32Neg_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32Neg_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32Neg_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32Neg_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64Neg_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64Neg_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64Neg_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64Neg_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32Ceil_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32Ceil_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32Ceil_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32Ceil_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64Ceil_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64Ceil_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64Ceil_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64Ceil_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32Floor_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32Floor_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32Floor_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32Floor_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64Floor_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64Floor_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64Floor_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64Floor_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32Trunc_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32Trunc_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32Trunc_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32Trunc_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64Trunc_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64Trunc_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64Trunc_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64Trunc_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32Nearest_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32Nearest_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32Nearest_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32Nearest_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64Nearest_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64Nearest_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64Nearest_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64Nearest_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32Sqrt_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32Sqrt_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32Sqrt_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32Sqrt_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64Sqrt_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64Sqrt_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64Sqrt_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64Sqrt_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32Demote_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32Demote_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32Demote_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32Demote_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64Promote_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64Promote_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64Promote_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64Promote_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32ConvertI32S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32ConvertI32S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32ConvertI32S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32ConvertI32S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32ConvertI32U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32ConvertI32U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32ConvertI32U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32ConvertI32U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32ConvertI64S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32ConvertI64S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32ConvertI64S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32ConvertI64S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F32ConvertI64U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F32ConvertI64U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F32ConvertI64U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F32ConvertI64U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64ConvertI32S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64ConvertI32S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64ConvertI32S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64ConvertI32S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64ConvertI32U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64ConvertI32U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64ConvertI32U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64ConvertI32U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64ConvertI64S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64ConvertI64S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64ConvertI64S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64ConvertI64S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     F64ConvertI64U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     F64ConvertI64U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     F64ConvertI64U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     F64ConvertI64U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32TruncF32S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32TruncF32S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32TruncF32S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32TruncF32S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32TruncF32U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32TruncF32U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32TruncF32U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32TruncF32U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32TruncF64S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32TruncF64S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32TruncF64S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32TruncF64S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32TruncF64U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32TruncF64U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32TruncF64U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32TruncF64U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64TruncF32S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64TruncF32S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64TruncF32S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64TruncF32S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64TruncF32U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64TruncF32U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64TruncF32U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64TruncF32U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64TruncF64S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64TruncF64S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64TruncF64S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64TruncF64S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64TruncF64U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64TruncF64U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64TruncF64U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64TruncF64U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32TruncSatF32S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32TruncSatF32S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32TruncSatF32S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32TruncSatF32S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32TruncSatF32U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32TruncSatF32U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32TruncSatF32U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32TruncSatF32U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32TruncSatF64S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32TruncSatF64S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32TruncSatF64S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32TruncSatF64S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32TruncSatF64U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32TruncSatF64U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32TruncSatF64U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32TruncSatF64U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64TruncSatF32S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64TruncSatF32S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64TruncSatF32S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64TruncSatF32S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64TruncSatF32U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64TruncSatF32U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64TruncSatF32U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64TruncSatF32U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64TruncSatF64S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64TruncSatF64S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64TruncSatF64S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64TruncSatF64S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64TruncSatF64U_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64TruncSatF64U_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64TruncSatF64U_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64TruncSatF64U_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32Extend8S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32Extend8S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32Extend8S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32Extend8S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32Extend16S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32Extend16S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32Extend16S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32Extend16S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64Extend8S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64Extend8S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64Extend8S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64Extend8S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64Extend16S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64Extend16S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64Extend16S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64Extend16S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I64Extend32S_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I64Extend32S_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I64Extend32S_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I64Extend32S_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32WrapI64_RR {
-        result: Reg,
-        input: Reg,
+        result: crate::Reg,
+        input: crate::Reg,
     },
     I32WrapI64_RS {
-        result: Reg,
-        input: Stack,
+        result: crate::Reg,
+        input: crate::Stack,
     },
     I32WrapI64_SR {
-        result: Stack,
-        input: Reg,
+        result: crate::Stack,
+        input: crate::Reg,
     },
     I32WrapI64_SS {
-        result: Stack,
-        input: Stack,
+        result: crate::Stack,
+        input: crate::Stack,
     },
     I32Add_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Add_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Add_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Add_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32Add_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Add_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Add_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Add_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I64Add_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Add_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Add_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Add_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64Add_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Add_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Add_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Add_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I32Mul_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Mul_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Mul_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Mul_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32Mul_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Mul_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Mul_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Mul_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I64Mul_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Mul_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Mul_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Mul_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64Mul_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Mul_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Mul_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Mul_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I32And_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32And_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32And_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32And_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32And_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32And_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32And_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32And_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I64And_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64And_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64And_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64And_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64And_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64And_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64And_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64And_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I32Or_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Or_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Or_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Or_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32Or_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Or_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Or_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Or_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I64Or_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Or_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Or_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Or_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64Or_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Or_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Or_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Or_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I32Xor_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Xor_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Xor_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Xor_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32Xor_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Xor_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Xor_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Xor_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I64Xor_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Xor_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Xor_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Xor_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64Xor_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Xor_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Xor_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Xor_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I32Eq_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Eq_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Eq_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Eq_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32Eq_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Eq_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Eq_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Eq_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I64Eq_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Eq_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Eq_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Eq_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64Eq_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Eq_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Eq_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Eq_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I32Ne_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Ne_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Ne_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Ne_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32Ne_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Ne_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Ne_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Ne_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I64Ne_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Ne_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Ne_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Ne_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64Ne_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Ne_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Ne_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Ne_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     F32Add_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Add_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Add_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Add_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F32Add_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Add_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Add_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Add_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F64Add_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Add_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Add_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Add_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F64Add_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Add_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Add_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Add_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F32Mul_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Mul_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Mul_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Mul_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F32Mul_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Mul_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Mul_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Mul_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F64Mul_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Mul_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Mul_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Mul_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F64Mul_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Mul_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Mul_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Mul_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F32Eq_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Eq_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Eq_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Eq_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F32Eq_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Eq_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Eq_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Eq_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F64Eq_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Eq_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Eq_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Eq_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F64Eq_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Eq_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Eq_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Eq_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F32Ne_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Ne_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Ne_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Ne_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F32Ne_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Ne_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Ne_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Ne_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F64Ne_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Ne_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Ne_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Ne_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F64Ne_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Ne_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Ne_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Ne_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F32Min_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Min_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Min_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Min_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F32Min_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Min_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Min_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Min_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F64Min_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Min_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Min_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Min_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F64Min_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Min_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Min_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Min_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F32Max_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Max_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Max_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Max_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F32Max_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Max_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Max_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Max_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F64Max_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Max_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Max_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Max_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F64Max_SRS {
-        result: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Max_SRI {
-        result: Stack,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Max_SSS {
-        result: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Max_SSI {
-        result: Stack,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     I32Sub_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Sub_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Sub_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32Sub_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Sub_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32Sub_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32Sub_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64Sub_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Sub_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Sub_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64Sub_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Sub_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64Sub_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64Sub_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32LtS_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32LtS_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32LtS_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32LtS_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32LtS_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32LtS_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32LtS_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64LtS_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64LtS_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64LtS_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64LtS_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64LtS_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64LtS_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64LtS_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32LtU_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32LtU_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32LtU_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32LtU_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32LtU_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32LtU_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32LtU_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64LtU_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64LtU_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64LtU_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64LtU_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64LtU_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64LtU_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64LtU_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32LeS_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32LeS_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32LeS_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32LeS_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32LeS_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32LeS_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32LeS_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64LeS_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64LeS_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64LeS_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64LeS_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64LeS_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64LeS_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64LeS_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32LeU_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32LeU_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32LeU_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32LeU_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32LeU_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32LeU_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32LeU_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64LeU_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64LeU_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64LeU_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64LeU_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64LeU_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64LeU_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64LeU_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32DivS_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32DivS_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32DivS_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32DivS_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32DivS_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32DivS_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32DivS_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64DivS_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64DivS_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64DivS_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64DivS_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64DivS_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64DivS_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64DivS_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32DivU_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32DivU_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32DivU_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32DivU_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32DivU_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32DivU_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32DivU_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64DivU_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64DivU_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64DivU_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64DivU_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64DivU_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64DivU_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64DivU_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32RemS_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32RemS_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32RemS_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32RemS_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32RemS_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32RemS_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32RemS_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64RemS_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64RemS_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64RemS_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64RemS_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64RemS_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64RemS_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64RemS_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32RemU_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32RemU_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32RemU_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32RemU_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32RemU_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32RemU_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32RemU_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64RemU_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64RemU_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64RemU_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64RemU_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64RemU_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64RemU_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64RemU_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32Shl_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Shl_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Shl_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32Shl_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Shl_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32Shl_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32Shl_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64Shl_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Shl_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Shl_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64Shl_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Shl_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64Shl_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64Shl_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32ShrS_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32ShrS_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32ShrS_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32ShrS_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32ShrS_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32ShrS_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32ShrS_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64ShrS_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64ShrS_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64ShrS_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64ShrS_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64ShrS_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64ShrS_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64ShrS_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32ShrU_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32ShrU_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32ShrU_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32ShrU_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32ShrU_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32ShrU_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32ShrU_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64ShrU_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64ShrU_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64ShrU_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64ShrU_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64ShrU_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64ShrU_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64ShrU_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32Rotl_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Rotl_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Rotl_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32Rotl_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Rotl_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32Rotl_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32Rotl_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64Rotl_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Rotl_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Rotl_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64Rotl_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Rotl_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64Rotl_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64Rotl_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     I32Rotr_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I32Rotr_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
     },
     I32Rotr_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I32Rotr_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I32Rotr_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     I32Rotr_RIR {
-        result: Reg,
-        lhs: i32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
     },
     I32Rotr_RIS {
-        result: Reg,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     I64Rotr_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     I64Rotr_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     I64Rotr_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     I64Rotr_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     I64Rotr_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     I64Rotr_RIR {
-        result: Reg,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     I64Rotr_RIS {
-        result: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     F32Sub_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Sub_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Sub_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     F32Sub_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Sub_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F32Sub_RIR {
-        result: Reg,
-        lhs: f32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Reg,
     },
     F32Sub_RIS {
-        result: Reg,
-        lhs: f32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Stack,
     },
     F64Sub_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Sub_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Sub_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     F64Sub_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Sub_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F64Sub_RIR {
-        result: Reg,
-        lhs: f64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Reg,
     },
     F64Sub_RIS {
-        result: Reg,
-        lhs: f64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Stack,
     },
     F32Div_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Div_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Div_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     F32Div_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Div_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F32Div_RIR {
-        result: Reg,
-        lhs: f32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Reg,
     },
     F32Div_RIS {
-        result: Reg,
-        lhs: f32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Stack,
     },
     F64Div_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Div_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Div_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     F64Div_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Div_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F64Div_RIR {
-        result: Reg,
-        lhs: f64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Reg,
     },
     F64Div_RIS {
-        result: Reg,
-        lhs: f64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Stack,
     },
     F32Copysign_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F32Copysign_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     F32Copysign_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     F32Copysign_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F32Copysign_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     F32Copysign_RIR {
-        result: Reg,
-        lhs: f32,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Reg,
     },
     F32Copysign_RIS {
-        result: Reg,
-        lhs: f32,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Stack,
     },
     F64Copysign_RRS {
-        result: Reg,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     F64Copysign_RRI {
-        result: Reg,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     F64Copysign_RSR {
-        result: Reg,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     F64Copysign_RSS {
-        result: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     F64Copysign_RSI {
-        result: Reg,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     F64Copysign_RIR {
-        result: Reg,
-        lhs: f64,
-        rhs: Reg,
+        result: crate::Reg,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Reg,
     },
     F64Copysign_RIS {
-        result: Reg,
-        lhs: f64,
-        rhs: Stack,
+        result: crate::Reg,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Stack,
     },
     I32Load_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32LoadMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I32LoadMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I32LoadMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I32LoadMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I32LoadMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I32LoadMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64LoadMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64LoadMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64LoadMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64LoadMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64LoadMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64LoadMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     F32Load_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F32Load_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F32Load_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F32LoadMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     F32LoadMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     F32LoadMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     F32LoadMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     F32LoadMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     F32LoadMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     F64Load_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F64Load_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F64Load_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F64LoadMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     F64LoadMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     F64LoadMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     F64LoadMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     F64LoadMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     F64LoadMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I32Load8S_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load8S_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load8S_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load8SMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I32Load8SMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I32Load8SMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I32Load8SMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I32Load8SMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I32Load8SMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load8S_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load8S_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load8S_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load8SMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load8SMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load8SMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load8SMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load8SMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load8SMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I32Load8U_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load8U_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load8U_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load8UMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I32Load8UMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I32Load8UMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I32Load8UMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I32Load8UMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I32Load8UMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load8U_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load8U_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load8U_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load8UMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load8UMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load8UMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load8UMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load8UMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load8UMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I32Load16S_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load16S_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load16S_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load16SMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I32Load16SMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I32Load16SMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I32Load16SMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I32Load16SMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I32Load16SMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load16S_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load16S_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load16S_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load16SMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load16SMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load16SMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load16SMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load16SMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load16SMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I32Load16U_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load16U_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load16U_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Load16UMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I32Load16UMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I32Load16UMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I32Load16UMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I32Load16UMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I32Load16UMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load16U_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load16U_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load16U_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load16UMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load16UMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load16UMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load16UMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load16UMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load16UMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load32S_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load32S_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load32S_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load32SMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load32SMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load32SMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load32SMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load32SMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load32SMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load32U_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load32U_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load32U_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
-        memory: Memory,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Load32UMem0_RR {
-        result: Reg,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load32UMem0_RS {
-        result: Reg,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load32UMem0_RI {
-        result: Reg,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Reg,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Load32UMem0_SR {
-        result: Stack,
-        ptr: Reg,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Reg,
+        offset: crate::Offset,
     },
     I64Load32UMem0_SS {
-        result: Stack,
-        ptr: Stack,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: crate::Stack,
+        offset: crate::Offset,
     },
     I64Load32UMem0_SI {
-        result: Stack,
-        ptr: i64,
-        offset: Offset,
+        result: crate::Stack,
+        ptr: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I32Store_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store_RI {
-        ptr: Reg,
-        value: i32,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store_SI {
-        ptr: Stack,
-        value: i32,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store_IR {
-        address: Address,
-        value: Reg,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Reg,
+        memory: crate::Memory,
     },
     I32Store_IS {
-        address: Address,
-        value: Stack,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Stack,
+        memory: crate::Memory,
     },
     I32Store_II {
-        address: Address,
-        value: i32,
-        memory: Memory,
+        address: crate::Address,
+        value: ::core::primitive::i32,
+        memory: crate::Memory,
     },
     I32StoreMem0_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I32StoreMem0_RI {
-        ptr: Reg,
-        value: i32,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
     },
     I32StoreMem0_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     I32StoreMem0_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I32StoreMem0_SI {
-        ptr: Stack,
-        value: i32,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
     },
     I32StoreMem0_IR {
-        address: Address,
-        value: Reg,
+        address: crate::Address,
+        value: crate::Reg,
     },
     I32StoreMem0_IS {
-        address: Address,
-        value: Stack,
+        address: crate::Address,
+        value: crate::Stack,
     },
     I32StoreMem0_II {
-        address: Address,
-        value: i32,
+        address: crate::Address,
+        value: ::core::primitive::i32,
     },
     I64Store_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store_RI {
-        ptr: Reg,
-        value: i64,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store_SI {
-        ptr: Stack,
-        value: i64,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store_IR {
-        address: Address,
-        value: Reg,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Reg,
+        memory: crate::Memory,
     },
     I64Store_IS {
-        address: Address,
-        value: Stack,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Stack,
+        memory: crate::Memory,
     },
     I64Store_II {
-        address: Address,
-        value: i64,
-        memory: Memory,
+        address: crate::Address,
+        value: ::core::primitive::i64,
+        memory: crate::Memory,
     },
     I64StoreMem0_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I64StoreMem0_RI {
-        ptr: Reg,
-        value: i64,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64StoreMem0_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     I64StoreMem0_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I64StoreMem0_SI {
-        ptr: Stack,
-        value: i64,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64StoreMem0_IR {
-        address: Address,
-        value: Reg,
+        address: crate::Address,
+        value: crate::Reg,
     },
     I64StoreMem0_IS {
-        address: Address,
-        value: Stack,
+        address: crate::Address,
+        value: crate::Stack,
     },
     I64StoreMem0_II {
-        address: Address,
-        value: i64,
+        address: crate::Address,
+        value: ::core::primitive::i64,
     },
     F32Store_RR {
-        ptr: Reg,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F32Store_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F32Store_RI {
-        ptr: Reg,
-        value: f32,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: ::core::primitive::f32,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F32Store_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F32Store_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F32Store_SI {
-        ptr: Stack,
-        value: f32,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: ::core::primitive::f32,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F32Store_IR {
-        address: Address,
-        value: Reg,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Reg,
+        memory: crate::Memory,
     },
     F32Store_IS {
-        address: Address,
-        value: Stack,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Stack,
+        memory: crate::Memory,
     },
     F32Store_II {
-        address: Address,
-        value: f32,
-        memory: Memory,
+        address: crate::Address,
+        value: ::core::primitive::f32,
+        memory: crate::Memory,
     },
     F32StoreMem0_RR {
-        ptr: Reg,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     F32StoreMem0_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     F32StoreMem0_RI {
-        ptr: Reg,
-        value: f32,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: ::core::primitive::f32,
+        offset: crate::Offset,
     },
     F32StoreMem0_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     F32StoreMem0_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     F32StoreMem0_SI {
-        ptr: Stack,
-        value: f32,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: ::core::primitive::f32,
+        offset: crate::Offset,
     },
     F32StoreMem0_IR {
-        address: Address,
-        value: Reg,
+        address: crate::Address,
+        value: crate::Reg,
     },
     F32StoreMem0_IS {
-        address: Address,
-        value: Stack,
+        address: crate::Address,
+        value: crate::Stack,
     },
     F32StoreMem0_II {
-        address: Address,
-        value: f32,
+        address: crate::Address,
+        value: ::core::primitive::f32,
     },
     F64Store_RR {
-        ptr: Reg,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F64Store_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F64Store_RI {
-        ptr: Reg,
-        value: f64,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: ::core::primitive::f64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F64Store_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F64Store_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F64Store_SI {
-        ptr: Stack,
-        value: f64,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: ::core::primitive::f64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     F64Store_IR {
-        address: Address,
-        value: Reg,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Reg,
+        memory: crate::Memory,
     },
     F64Store_IS {
-        address: Address,
-        value: Stack,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Stack,
+        memory: crate::Memory,
     },
     F64Store_II {
-        address: Address,
-        value: f64,
-        memory: Memory,
+        address: crate::Address,
+        value: ::core::primitive::f64,
+        memory: crate::Memory,
     },
     F64StoreMem0_RR {
-        ptr: Reg,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     F64StoreMem0_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     F64StoreMem0_RI {
-        ptr: Reg,
-        value: f64,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: ::core::primitive::f64,
+        offset: crate::Offset,
     },
     F64StoreMem0_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     F64StoreMem0_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     F64StoreMem0_SI {
-        ptr: Stack,
-        value: f64,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: ::core::primitive::f64,
+        offset: crate::Offset,
     },
     F64StoreMem0_IR {
-        address: Address,
-        value: Reg,
+        address: crate::Address,
+        value: crate::Reg,
     },
     F64StoreMem0_IS {
-        address: Address,
-        value: Stack,
+        address: crate::Address,
+        value: crate::Stack,
     },
     F64StoreMem0_II {
-        address: Address,
-        value: f64,
+        address: crate::Address,
+        value: ::core::primitive::f64,
     },
     I32Store8_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store8_RI {
-        ptr: Reg,
-        value: i32,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store8_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store8_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store8_SI {
-        ptr: Stack,
-        value: i32,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store8_IR {
-        address: Address,
-        value: Reg,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Reg,
+        memory: crate::Memory,
     },
     I32Store8_IS {
-        address: Address,
-        value: Stack,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Stack,
+        memory: crate::Memory,
     },
     I32Store8_II {
-        address: Address,
-        value: i32,
-        memory: Memory,
+        address: crate::Address,
+        value: ::core::primitive::i32,
+        memory: crate::Memory,
     },
     I32Store8Mem0_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I32Store8Mem0_RI {
-        ptr: Reg,
-        value: i32,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
     },
     I32Store8Mem0_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     I32Store8Mem0_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I32Store8Mem0_SI {
-        ptr: Stack,
-        value: i32,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
     },
     I32Store8Mem0_IR {
-        address: Address,
-        value: Reg,
+        address: crate::Address,
+        value: crate::Reg,
     },
     I32Store8Mem0_IS {
-        address: Address,
-        value: Stack,
+        address: crate::Address,
+        value: crate::Stack,
     },
     I32Store8Mem0_II {
-        address: Address,
-        value: i32,
+        address: crate::Address,
+        value: ::core::primitive::i32,
     },
     I64Store8_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store8_RI {
-        ptr: Reg,
-        value: i64,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store8_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store8_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store8_SI {
-        ptr: Stack,
-        value: i64,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store8_IR {
-        address: Address,
-        value: Reg,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Reg,
+        memory: crate::Memory,
     },
     I64Store8_IS {
-        address: Address,
-        value: Stack,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Stack,
+        memory: crate::Memory,
     },
     I64Store8_II {
-        address: Address,
-        value: i64,
-        memory: Memory,
+        address: crate::Address,
+        value: ::core::primitive::i64,
+        memory: crate::Memory,
     },
     I64Store8Mem0_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I64Store8Mem0_RI {
-        ptr: Reg,
-        value: i64,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Store8Mem0_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     I64Store8Mem0_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I64Store8Mem0_SI {
-        ptr: Stack,
-        value: i64,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Store8Mem0_IR {
-        address: Address,
-        value: Reg,
+        address: crate::Address,
+        value: crate::Reg,
     },
     I64Store8Mem0_IS {
-        address: Address,
-        value: Stack,
+        address: crate::Address,
+        value: crate::Stack,
     },
     I64Store8Mem0_II {
-        address: Address,
-        value: i64,
+        address: crate::Address,
+        value: ::core::primitive::i64,
     },
     I32Store16_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store16_RI {
-        ptr: Reg,
-        value: i32,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store16_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store16_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store16_SI {
-        ptr: Stack,
-        value: i32,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I32Store16_IR {
-        address: Address,
-        value: Reg,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Reg,
+        memory: crate::Memory,
     },
     I32Store16_IS {
-        address: Address,
-        value: Stack,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Stack,
+        memory: crate::Memory,
     },
     I32Store16_II {
-        address: Address,
-        value: i32,
-        memory: Memory,
+        address: crate::Address,
+        value: ::core::primitive::i32,
+        memory: crate::Memory,
     },
     I32Store16Mem0_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I32Store16Mem0_RI {
-        ptr: Reg,
-        value: i32,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
     },
     I32Store16Mem0_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     I32Store16Mem0_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I32Store16Mem0_SI {
-        ptr: Stack,
-        value: i32,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: ::core::primitive::i32,
+        offset: crate::Offset,
     },
     I32Store16Mem0_IR {
-        address: Address,
-        value: Reg,
+        address: crate::Address,
+        value: crate::Reg,
     },
     I32Store16Mem0_IS {
-        address: Address,
-        value: Stack,
+        address: crate::Address,
+        value: crate::Stack,
     },
     I32Store16Mem0_II {
-        address: Address,
-        value: i32,
+        address: crate::Address,
+        value: ::core::primitive::i32,
     },
     I64Store16_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store16_RI {
-        ptr: Reg,
-        value: i64,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store16_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store16_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store16_SI {
-        ptr: Stack,
-        value: i64,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store16_IR {
-        address: Address,
-        value: Reg,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Reg,
+        memory: crate::Memory,
     },
     I64Store16_IS {
-        address: Address,
-        value: Stack,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Stack,
+        memory: crate::Memory,
     },
     I64Store16_II {
-        address: Address,
-        value: i64,
-        memory: Memory,
+        address: crate::Address,
+        value: ::core::primitive::i64,
+        memory: crate::Memory,
     },
     I64Store16Mem0_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I64Store16Mem0_RI {
-        ptr: Reg,
-        value: i64,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Store16Mem0_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     I64Store16Mem0_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I64Store16Mem0_SI {
-        ptr: Stack,
-        value: i64,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Store16Mem0_IR {
-        address: Address,
-        value: Reg,
+        address: crate::Address,
+        value: crate::Reg,
     },
     I64Store16Mem0_IS {
-        address: Address,
-        value: Stack,
+        address: crate::Address,
+        value: crate::Stack,
     },
     I64Store16Mem0_II {
-        address: Address,
-        value: i64,
+        address: crate::Address,
+        value: ::core::primitive::i64,
     },
     I64Store32_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store32_RI {
-        ptr: Reg,
-        value: i64,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Reg,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store32_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store32_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store32_SI {
-        ptr: Stack,
-        value: i64,
-        offset: Offset,
-        memory: Memory,
+        ptr: crate::Stack,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
+        memory: crate::Memory,
     },
     I64Store32_IR {
-        address: Address,
-        value: Reg,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Reg,
+        memory: crate::Memory,
     },
     I64Store32_IS {
-        address: Address,
-        value: Stack,
-        memory: Memory,
+        address: crate::Address,
+        value: crate::Stack,
+        memory: crate::Memory,
     },
     I64Store32_II {
-        address: Address,
-        value: i64,
-        memory: Memory,
+        address: crate::Address,
+        value: ::core::primitive::i64,
+        memory: crate::Memory,
     },
     I64Store32Mem0_RS {
-        ptr: Reg,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I64Store32Mem0_RI {
-        ptr: Reg,
-        value: i64,
-        offset: Offset,
+        ptr: crate::Reg,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Store32Mem0_SR {
-        ptr: Stack,
-        value: Reg,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Reg,
+        offset: crate::Offset,
     },
     I64Store32Mem0_SS {
-        ptr: Stack,
-        value: Stack,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: crate::Stack,
+        offset: crate::Offset,
     },
     I64Store32Mem0_SI {
-        ptr: Stack,
-        value: i64,
-        offset: Offset,
+        ptr: crate::Stack,
+        value: ::core::primitive::i64,
+        offset: crate::Offset,
     },
     I64Store32Mem0_IR {
-        address: Address,
-        value: Reg,
+        address: crate::Address,
+        value: crate::Reg,
     },
     I64Store32Mem0_IS {
-        address: Address,
-        value: Stack,
+        address: crate::Address,
+        value: crate::Stack,
     },
     I64Store32Mem0_II {
-        address: Address,
-        value: i64,
+        address: crate::Address,
+        value: ::core::primitive::i64,
     },
     Select {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     SelectI32_RSSS {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     SelectI32_RSSI {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: i32,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
     },
     SelectI32_RSIS {
-        result: Reg,
-        condition: Stack,
-        lhs: i32,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
     },
     SelectI32_RSII {
-        result: Reg,
-        condition: Stack,
-        lhs: i32,
-        rhs: i32,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::i32,
+        rhs: ::core::primitive::i32,
     },
     SelectI64_RRSS {
-        result: Reg,
-        condition: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     SelectI64_RRSI {
-        result: Reg,
-        condition: Reg,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     SelectI64_RRIS {
-        result: Reg,
-        condition: Reg,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     SelectI64_RRII {
-        result: Reg,
-        condition: Reg,
-        lhs: i64,
-        rhs: i64,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: ::core::primitive::i64,
+        rhs: ::core::primitive::i64,
     },
     SelectI64_RSRS {
-        result: Reg,
-        condition: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     SelectI64_RSRI {
-        result: Reg,
-        condition: Stack,
-        lhs: Reg,
-        rhs: i64,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
     },
     SelectI64_RSSR {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     SelectI64_RSSS {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     SelectI64_RSSI {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: i64,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i64,
     },
     SelectI64_RSIR {
-        result: Reg,
-        condition: Stack,
-        lhs: i64,
-        rhs: Reg,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Reg,
     },
     SelectI64_RSIS {
-        result: Reg,
-        condition: Stack,
-        lhs: i64,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::i64,
+        rhs: crate::Stack,
     },
     SelectI64_RSII {
-        result: Reg,
-        condition: Stack,
-        lhs: i64,
-        rhs: i64,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::i64,
+        rhs: ::core::primitive::i64,
     },
     SelectF32_RRSS {
-        result: Reg,
-        condition: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     SelectF32_RRSI {
-        result: Reg,
-        condition: Reg,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     SelectF32_RRIS {
-        result: Reg,
-        condition: Reg,
-        lhs: f32,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Stack,
     },
     SelectF32_RRII {
-        result: Reg,
-        condition: Reg,
-        lhs: f32,
-        rhs: f32,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: ::core::primitive::f32,
+        rhs: ::core::primitive::f32,
     },
     SelectF32_RSRS {
-        result: Reg,
-        condition: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     SelectF32_RSRI {
-        result: Reg,
-        condition: Stack,
-        lhs: Reg,
-        rhs: f32,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     },
     SelectF32_RSSR {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     SelectF32_RSSS {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     SelectF32_RSSI {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: f32,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
     },
     SelectF32_RSIR {
-        result: Reg,
-        condition: Stack,
-        lhs: f32,
-        rhs: Reg,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Reg,
     },
     SelectF32_RSIS {
-        result: Reg,
-        condition: Stack,
-        lhs: f32,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::f32,
+        rhs: crate::Stack,
     },
     SelectF32_RSII {
-        result: Reg,
-        condition: Stack,
-        lhs: f32,
-        rhs: f32,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::f32,
+        rhs: ::core::primitive::f32,
     },
     SelectF64_RRSS {
-        result: Reg,
-        condition: Reg,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     SelectF64_RRSI {
-        result: Reg,
-        condition: Reg,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     SelectF64_RRIS {
-        result: Reg,
-        condition: Reg,
-        lhs: f64,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Stack,
     },
     SelectF64_RRII {
-        result: Reg,
-        condition: Reg,
-        lhs: f64,
-        rhs: f64,
+        result: crate::Reg,
+        condition: crate::Reg,
+        lhs: ::core::primitive::f64,
+        rhs: ::core::primitive::f64,
     },
     SelectF64_RSRS {
-        result: Reg,
-        condition: Stack,
-        lhs: Reg,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     },
     SelectF64_RSRI {
-        result: Reg,
-        condition: Stack,
-        lhs: Reg,
-        rhs: f64,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     },
     SelectF64_RSSR {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: Reg,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
     },
     SelectF64_RSSS {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
     },
     SelectF64_RSSI {
-        result: Reg,
-        condition: Stack,
-        lhs: Stack,
-        rhs: f64,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
     },
     SelectF64_RSIR {
-        result: Reg,
-        condition: Stack,
-        lhs: f64,
-        rhs: Reg,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Reg,
     },
     SelectF64_RSIS {
-        result: Reg,
-        condition: Stack,
-        lhs: f64,
-        rhs: Stack,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::f64,
+        rhs: crate::Stack,
     },
     SelectF64_RSII {
-        result: Reg,
-        condition: Stack,
-        lhs: f64,
-        rhs: f64,
+        result: crate::Reg,
+        condition: crate::Stack,
+        lhs: ::core::primitive::f64,
+        rhs: ::core::primitive::f64,
     },
     TableSize_R {
-        result: Reg,
-        table: Table,
+        result: crate::Reg,
+        table: crate::Table,
     },
     TableSize_S {
-        result: Stack,
-        table: Table,
+        result: crate::Stack,
+        table: crate::Table,
     },
     TableGet_RR {
-        result: Reg,
-        index: Reg,
-        table: Table,
+        result: crate::Reg,
+        index: crate::Reg,
+        table: crate::Table,
     },
     TableGet_RS {
-        result: Reg,
-        index: Stack,
-        table: Table,
+        result: crate::Reg,
+        index: crate::Stack,
+        table: crate::Table,
     },
     TableGet_RI {
-        result: Reg,
-        index: i64,
-        table: Table,
+        result: crate::Reg,
+        index: ::core::primitive::i64,
+        table: crate::Table,
     },
     TableSet_RS {
-        index: Reg,
-        value: Stack,
-        table: Table,
+        index: crate::Reg,
+        value: crate::Stack,
+        table: crate::Table,
     },
     TableSet_RI {
-        index: Reg,
-        value: i32,
-        table: Table,
+        index: crate::Reg,
+        value: ::core::primitive::i32,
+        table: crate::Table,
     },
     TableSet_SR {
-        index: Stack,
-        value: Reg,
-        table: Table,
+        index: crate::Stack,
+        value: crate::Reg,
+        table: crate::Table,
     },
     TableSet_SS {
-        index: Stack,
-        value: Stack,
-        table: Table,
+        index: crate::Stack,
+        value: crate::Stack,
+        table: crate::Table,
     },
     TableSet_SI {
-        index: Stack,
-        value: i32,
-        table: Table,
+        index: crate::Stack,
+        value: ::core::primitive::i32,
+        table: crate::Table,
     },
     TableSet_IR {
-        index: i64,
-        value: Reg,
-        table: Table,
+        index: ::core::primitive::i64,
+        value: crate::Reg,
+        table: crate::Table,
     },
     TableSet_IS {
-        index: i64,
-        value: Stack,
-        table: Table,
+        index: ::core::primitive::i64,
+        value: crate::Stack,
+        table: crate::Table,
     },
     TableSet_II {
-        index: i64,
-        value: i32,
-        table: Table,
+        index: ::core::primitive::i64,
+        value: ::core::primitive::i32,
+        table: crate::Table,
     },
     TableGrow {
-        result: Stack,
-        delta: Stack,
-        table: Table,
+        result: crate::Stack,
+        delta: crate::Stack,
+        table: crate::Table,
     },
     TableCopy {
-        dst_index: Stack,
-        src_index: Stack,
-        len: Stack,
-        dst_table: Table,
-        src_table: Table,
+        dst_index: crate::Stack,
+        src_index: crate::Stack,
+        len: crate::Stack,
+        dst_table: crate::Table,
+        src_table: crate::Table,
     },
     TableFill {
-        dst_index: Stack,
-        value: Stack,
-        len: Stack,
-        table: Table,
+        dst_index: crate::Stack,
+        value: crate::Stack,
+        len: crate::Stack,
+        table: crate::Table,
     },
     TableInit {
-        dst_index: Stack,
-        src_index: Stack,
-        len: Stack,
-        table: Table,
-        elem: Elem,
+        dst_index: crate::Stack,
+        src_index: crate::Stack,
+        len: crate::Stack,
+        table: crate::Table,
+        elem: crate::Elem,
     },
     MemorySize_R {
-        result: Reg,
-        memory: Memory,
+        result: crate::Reg,
+        memory: crate::Memory,
     },
     MemorySize_S {
-        result: Stack,
-        memory: Memory,
+        result: crate::Stack,
+        memory: crate::Memory,
     },
     MemoryGrow {
-        result: Reg,
-        delta: Stack,
-        memory: Memory,
+        result: crate::Reg,
+        delta: crate::Stack,
+        memory: crate::Memory,
     },
     MemoryCopy {
-        dst_index: Stack,
-        src_index: Stack,
-        len: Stack,
-        dst_memory: Memory,
-        src_memory: Memory,
+        dst_index: crate::Stack,
+        src_index: crate::Stack,
+        len: crate::Stack,
+        dst_memory: crate::Memory,
+        src_memory: crate::Memory,
     },
     MemoryFill {
-        dst_index: Stack,
-        value: Stack,
-        len: Stack,
-        memory: Memory,
+        dst_index: crate::Stack,
+        value: crate::Stack,
+        len: crate::Stack,
+        memory: crate::Memory,
     },
     MemoryInit {
-        dst_index: Stack,
-        src_index: Stack,
-        len: Stack,
-        memory: Memory,
-        data: Data,
+        dst_index: crate::Stack,
+        src_index: crate::Stack,
+        len: crate::Stack,
+        memory: crate::Memory,
+        data: crate::Data,
     },
     CallInternal {
-        func: WasmFunc,
-        len_params: usize,
-        len_results: usize,
+        func: crate::WasmFunc,
+        len_params: ::core::primitive::usize,
+        len_results: ::core::primitive::usize,
     },
     ReturnCallInternal {
-        func: WasmFunc,
-        len_params: usize,
-        len_results: usize,
+        func: crate::WasmFunc,
+        len_params: ::core::primitive::usize,
+        len_results: ::core::primitive::usize,
     },
     CallImported {
-        func: Func,
-        len_params: usize,
-        len_results: usize,
+        func: crate::Func,
+        len_params: ::core::primitive::usize,
+        len_results: ::core::primitive::usize,
     },
     ReturnCallImported {
-        func: Func,
-        len_params: usize,
-        len_results: usize,
+        func: crate::Func,
+        len_params: ::core::primitive::usize,
+        len_results: ::core::primitive::usize,
     },
     CallIndirect_R {
-        table: Table,
-        index: Reg,
-        len_params: usize,
-        len_results: usize,
+        table: crate::Table,
+        index: crate::Reg,
+        len_params: ::core::primitive::usize,
+        len_results: ::core::primitive::usize,
     },
     CallIndirect_S {
-        table: Table,
-        index: Stack,
-        len_params: usize,
-        len_results: usize,
+        table: crate::Table,
+        index: crate::Stack,
+        len_params: ::core::primitive::usize,
+        len_results: ::core::primitive::usize,
     },
     CallIndirect_I {
-        table: Table,
-        index: i64,
-        len_params: usize,
-        len_results: usize,
+        table: crate::Table,
+        index: ::core::primitive::i64,
+        len_params: ::core::primitive::usize,
+        len_results: ::core::primitive::usize,
     },
     ReturnCallIndirect_R {
-        table: Table,
-        index: Reg,
-        len_params: usize,
-        len_results: usize,
+        table: crate::Table,
+        index: crate::Reg,
+        len_params: ::core::primitive::usize,
+        len_results: ::core::primitive::usize,
     },
     ReturnCallIndirect_S {
-        table: Table,
-        index: Stack,
-        len_params: usize,
-        len_results: usize,
+        table: crate::Table,
+        index: crate::Stack,
+        len_params: ::core::primitive::usize,
+        len_results: ::core::primitive::usize,
     },
     ReturnCallIndirect_I {
-        table: Table,
-        index: i64,
-        len_params: usize,
-        len_results: usize,
+        table: crate::Table,
+        index: ::core::primitive::i64,
+        len_params: ::core::primitive::usize,
+        len_results: ::core::primitive::usize,
     },
 }
 #[repr(u16)]
@@ -6834,11 +6832,10 @@ impl crate::GetOpCode for OpCode {
     }
 }
 pub mod op {
-    use crate::*;
     #[repr(C, packed)]
     pub struct Copy1_S {
-        pub result: Stack,
-        pub value: Stack,
+        pub result: crate::Stack,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for Copy1_S {}
     impl ::core::clone::Clone for Copy1_S {
@@ -6861,8 +6858,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Copy {
-        pub result: Stack,
-        pub len_values: usize,
+        pub result: crate::Stack,
+        pub len_values: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for Copy {}
     impl ::core::clone::Clone for Copy {
@@ -6885,8 +6882,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Copy1I32_I {
-        pub result: Stack,
-        pub value: i32,
+        pub result: crate::Stack,
+        pub value: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for Copy1I32_I {}
     impl ::core::clone::Clone for Copy1I32_I {
@@ -6909,8 +6906,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Copy1I64_R {
-        pub result: Stack,
-        pub value: Reg,
+        pub result: crate::Stack,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for Copy1I64_R {}
     impl ::core::clone::Clone for Copy1I64_R {
@@ -6933,8 +6930,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Copy1I64_I {
-        pub result: Stack,
-        pub value: i64,
+        pub result: crate::Stack,
+        pub value: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for Copy1I64_I {}
     impl ::core::clone::Clone for Copy1I64_I {
@@ -6957,8 +6954,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Copy1F32_R {
-        pub result: Stack,
-        pub value: Reg,
+        pub result: crate::Stack,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for Copy1F32_R {}
     impl ::core::clone::Clone for Copy1F32_R {
@@ -6981,8 +6978,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Copy1F32_I {
-        pub result: Stack,
-        pub value: f32,
+        pub result: crate::Stack,
+        pub value: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for Copy1F32_I {}
     impl ::core::clone::Clone for Copy1F32_I {
@@ -7005,8 +7002,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Copy1F64_R {
-        pub result: Stack,
-        pub value: Reg,
+        pub result: crate::Stack,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for Copy1F64_R {}
     impl ::core::clone::Clone for Copy1F64_R {
@@ -7029,8 +7026,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Copy1F64_I {
-        pub result: Stack,
-        pub value: f64,
+        pub result: crate::Stack,
+        pub value: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for Copy1F64_I {}
     impl ::core::clone::Clone for Copy1F64_I {
@@ -7055,7 +7052,7 @@ pub mod op {
 
     #[repr(C, packed)]
     pub struct Return1_S {
-        pub value: Stack,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for Return1_S {}
     impl ::core::clone::Clone for Return1_S {
@@ -7077,7 +7074,7 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Return {
-        pub len_values: usize,
+        pub len_values: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for Return {}
     impl ::core::clone::Clone for Return {
@@ -7099,7 +7096,7 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Return1I32_R {
-        pub value: Reg,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for Return1I32_R {}
     impl ::core::clone::Clone for Return1I32_R {
@@ -7121,7 +7118,7 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Return1I64_R {
-        pub value: Reg,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for Return1I64_R {}
     impl ::core::clone::Clone for Return1I64_R {
@@ -7143,7 +7140,7 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Return1F32_R {
-        pub value: Reg,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for Return1F32_R {}
     impl ::core::clone::Clone for Return1F32_R {
@@ -7165,7 +7162,7 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Return1F64_R {
-        pub value: Reg,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for Return1F64_R {}
     impl ::core::clone::Clone for Return1F64_R {
@@ -7187,7 +7184,7 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Return1I32_I {
-        pub value: i32,
+        pub value: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for Return1I32_I {}
     impl ::core::clone::Clone for Return1I32_I {
@@ -7209,7 +7206,7 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Return1I64_I {
-        pub value: i64,
+        pub value: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for Return1I64_I {}
     impl ::core::clone::Clone for Return1I64_I {
@@ -7231,7 +7228,7 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Return1F32_I {
-        pub value: f32,
+        pub value: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for Return1F32_I {}
     impl ::core::clone::Clone for Return1F32_I {
@@ -7253,7 +7250,7 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Return1F64_I {
-        pub value: f64,
+        pub value: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for Return1F64_I {}
     impl ::core::clone::Clone for Return1F64_I {
@@ -7275,8 +7272,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalGet_S {
-        pub result: Stack,
-        pub global: Global,
+        pub result: crate::Stack,
+        pub global: crate::Global,
     }
     impl ::core::marker::Copy for GlobalGet_S {}
     impl ::core::clone::Clone for GlobalGet_S {
@@ -7299,8 +7296,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalGetI32_R {
-        pub result: Reg,
-        pub global: Global,
+        pub result: crate::Reg,
+        pub global: crate::Global,
     }
     impl ::core::marker::Copy for GlobalGetI32_R {}
     impl ::core::clone::Clone for GlobalGetI32_R {
@@ -7323,8 +7320,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalGetI64_R {
-        pub result: Reg,
-        pub global: Global,
+        pub result: crate::Reg,
+        pub global: crate::Global,
     }
     impl ::core::marker::Copy for GlobalGetI64_R {}
     impl ::core::clone::Clone for GlobalGetI64_R {
@@ -7347,8 +7344,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalGetF32_R {
-        pub result: Reg,
-        pub global: Global,
+        pub result: crate::Reg,
+        pub global: crate::Global,
     }
     impl ::core::marker::Copy for GlobalGetF32_R {}
     impl ::core::clone::Clone for GlobalGetF32_R {
@@ -7371,8 +7368,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalGetF64_R {
-        pub result: Reg,
-        pub global: Global,
+        pub result: crate::Reg,
+        pub global: crate::Global,
     }
     impl ::core::marker::Copy for GlobalGetF64_R {}
     impl ::core::clone::Clone for GlobalGetF64_R {
@@ -7395,8 +7392,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalSet_S {
-        pub global: Global,
-        pub value: Stack,
+        pub global: crate::Global,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for GlobalSet_S {}
     impl ::core::clone::Clone for GlobalSet_S {
@@ -7419,8 +7416,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalSetI32_R {
-        pub global: Global,
-        pub value: Reg,
+        pub global: crate::Global,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for GlobalSetI32_R {}
     impl ::core::clone::Clone for GlobalSetI32_R {
@@ -7443,8 +7440,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalSetI64_R {
-        pub global: Global,
-        pub value: Reg,
+        pub global: crate::Global,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for GlobalSetI64_R {}
     impl ::core::clone::Clone for GlobalSetI64_R {
@@ -7467,8 +7464,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalSetF32_R {
-        pub global: Global,
-        pub value: Reg,
+        pub global: crate::Global,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for GlobalSetF32_R {}
     impl ::core::clone::Clone for GlobalSetF32_R {
@@ -7491,8 +7488,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalSetF64_R {
-        pub global: Global,
-        pub value: Reg,
+        pub global: crate::Global,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for GlobalSetF64_R {}
     impl ::core::clone::Clone for GlobalSetF64_R {
@@ -7515,8 +7512,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalSetI32_I {
-        pub global: Global,
-        pub value: i32,
+        pub global: crate::Global,
+        pub value: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for GlobalSetI32_I {}
     impl ::core::clone::Clone for GlobalSetI32_I {
@@ -7539,8 +7536,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalSetI64_I {
-        pub global: Global,
-        pub value: i64,
+        pub global: crate::Global,
+        pub value: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for GlobalSetI64_I {}
     impl ::core::clone::Clone for GlobalSetI64_I {
@@ -7563,8 +7560,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalSetF32_I {
-        pub global: Global,
-        pub value: f32,
+        pub global: crate::Global,
+        pub value: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for GlobalSetF32_I {}
     impl ::core::clone::Clone for GlobalSetF32_I {
@@ -7587,8 +7584,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct GlobalSetF64_I {
-        pub global: Global,
-        pub value: f64,
+        pub global: crate::Global,
+        pub value: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for GlobalSetF64_I {}
     impl ::core::clone::Clone for GlobalSetF64_I {
@@ -7611,8 +7608,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct BranchTable0_R {
-        pub index: Reg,
-        pub len_targets: u32,
+        pub index: crate::Reg,
+        pub len_targets: ::core::primitive::u32,
     }
     impl ::core::marker::Copy for BranchTable0_R {}
     impl ::core::clone::Clone for BranchTable0_R {
@@ -7635,8 +7632,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct BranchTable_R {
-        pub index: Reg,
-        pub len_targets: u32,
+        pub index: crate::Reg,
+        pub len_targets: ::core::primitive::u32,
     }
     impl ::core::marker::Copy for BranchTable_R {}
     impl ::core::clone::Clone for BranchTable_R {
@@ -7659,8 +7656,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct BranchTable0_S {
-        pub index: Stack,
-        pub len_targets: u32,
+        pub index: crate::Stack,
+        pub len_targets: ::core::primitive::u32,
     }
     impl ::core::marker::Copy for BranchTable0_S {}
     impl ::core::clone::Clone for BranchTable0_S {
@@ -7683,8 +7680,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct BranchTable_S {
-        pub index: Stack,
-        pub len_targets: u32,
+        pub index: crate::Stack,
+        pub len_targets: ::core::primitive::u32,
     }
     impl ::core::marker::Copy for BranchTable_S {}
     impl ::core::clone::Clone for BranchTable_S {
@@ -7707,9 +7704,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32EqBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32EqBranch_RS {}
     impl ::core::clone::Clone for I32EqBranch_RS {
@@ -7733,9 +7730,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32EqBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32EqBranch_RI {}
     impl ::core::clone::Clone for I32EqBranch_RI {
@@ -7759,9 +7756,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32EqBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32EqBranch_SS {}
     impl ::core::clone::Clone for I32EqBranch_SS {
@@ -7785,9 +7782,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32EqBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32EqBranch_SI {}
     impl ::core::clone::Clone for I32EqBranch_SI {
@@ -7811,9 +7808,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64EqBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64EqBranch_RS {}
     impl ::core::clone::Clone for I64EqBranch_RS {
@@ -7837,9 +7834,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64EqBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64EqBranch_RI {}
     impl ::core::clone::Clone for I64EqBranch_RI {
@@ -7863,9 +7860,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64EqBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64EqBranch_SS {}
     impl ::core::clone::Clone for I64EqBranch_SS {
@@ -7889,9 +7886,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64EqBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64EqBranch_SI {}
     impl ::core::clone::Clone for I64EqBranch_SI {
@@ -7915,9 +7912,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32EqBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32EqBranch_RS {}
     impl ::core::clone::Clone for F32EqBranch_RS {
@@ -7941,9 +7938,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32EqBranch_RI {
-        pub lhs: Reg,
-        pub rhs: f32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32EqBranch_RI {}
     impl ::core::clone::Clone for F32EqBranch_RI {
@@ -7967,9 +7964,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32EqBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32EqBranch_SS {}
     impl ::core::clone::Clone for F32EqBranch_SS {
@@ -7993,9 +7990,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32EqBranch_SI {
-        pub lhs: Stack,
-        pub rhs: f32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32EqBranch_SI {}
     impl ::core::clone::Clone for F32EqBranch_SI {
@@ -8019,9 +8016,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64EqBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64EqBranch_RS {}
     impl ::core::clone::Clone for F64EqBranch_RS {
@@ -8045,9 +8042,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64EqBranch_RI {
-        pub lhs: Reg,
-        pub rhs: f64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64EqBranch_RI {}
     impl ::core::clone::Clone for F64EqBranch_RI {
@@ -8071,9 +8068,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64EqBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64EqBranch_SS {}
     impl ::core::clone::Clone for F64EqBranch_SS {
@@ -8097,9 +8094,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64EqBranch_SI {
-        pub lhs: Stack,
-        pub rhs: f64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64EqBranch_SI {}
     impl ::core::clone::Clone for F64EqBranch_SI {
@@ -8123,9 +8120,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32NeBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32NeBranch_RS {}
     impl ::core::clone::Clone for I32NeBranch_RS {
@@ -8149,9 +8146,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32NeBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32NeBranch_RI {}
     impl ::core::clone::Clone for I32NeBranch_RI {
@@ -8175,9 +8172,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32NeBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32NeBranch_SS {}
     impl ::core::clone::Clone for I32NeBranch_SS {
@@ -8201,9 +8198,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32NeBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32NeBranch_SI {}
     impl ::core::clone::Clone for I32NeBranch_SI {
@@ -8227,9 +8224,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64NeBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64NeBranch_RS {}
     impl ::core::clone::Clone for I64NeBranch_RS {
@@ -8253,9 +8250,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64NeBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64NeBranch_RI {}
     impl ::core::clone::Clone for I64NeBranch_RI {
@@ -8279,9 +8276,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64NeBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64NeBranch_SS {}
     impl ::core::clone::Clone for I64NeBranch_SS {
@@ -8305,9 +8302,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64NeBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64NeBranch_SI {}
     impl ::core::clone::Clone for I64NeBranch_SI {
@@ -8331,9 +8328,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32NeBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32NeBranch_RS {}
     impl ::core::clone::Clone for F32NeBranch_RS {
@@ -8357,9 +8354,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32NeBranch_RI {
-        pub lhs: Reg,
-        pub rhs: f32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32NeBranch_RI {}
     impl ::core::clone::Clone for F32NeBranch_RI {
@@ -8383,9 +8380,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32NeBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32NeBranch_SS {}
     impl ::core::clone::Clone for F32NeBranch_SS {
@@ -8409,9 +8406,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32NeBranch_SI {
-        pub lhs: Stack,
-        pub rhs: f32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32NeBranch_SI {}
     impl ::core::clone::Clone for F32NeBranch_SI {
@@ -8435,9 +8432,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64NeBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64NeBranch_RS {}
     impl ::core::clone::Clone for F64NeBranch_RS {
@@ -8461,9 +8458,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64NeBranch_RI {
-        pub lhs: Reg,
-        pub rhs: f64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64NeBranch_RI {}
     impl ::core::clone::Clone for F64NeBranch_RI {
@@ -8487,9 +8484,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64NeBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64NeBranch_SS {}
     impl ::core::clone::Clone for F64NeBranch_SS {
@@ -8513,9 +8510,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64NeBranch_SI {
-        pub lhs: Stack,
-        pub rhs: f64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64NeBranch_SI {}
     impl ::core::clone::Clone for F64NeBranch_SI {
@@ -8539,9 +8536,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtSBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtSBranch_RS {}
     impl ::core::clone::Clone for I32LtSBranch_RS {
@@ -8565,9 +8562,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtSBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtSBranch_RI {}
     impl ::core::clone::Clone for I32LtSBranch_RI {
@@ -8591,9 +8588,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtSBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtSBranch_SR {}
     impl ::core::clone::Clone for I32LtSBranch_SR {
@@ -8617,9 +8614,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtSBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtSBranch_SS {}
     impl ::core::clone::Clone for I32LtSBranch_SS {
@@ -8643,9 +8640,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtSBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtSBranch_SI {}
     impl ::core::clone::Clone for I32LtSBranch_SI {
@@ -8669,9 +8666,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtSBranch_IR {
-        pub lhs: i32,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtSBranch_IR {}
     impl ::core::clone::Clone for I32LtSBranch_IR {
@@ -8695,9 +8692,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtSBranch_IS {
-        pub lhs: i32,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtSBranch_IS {}
     impl ::core::clone::Clone for I32LtSBranch_IS {
@@ -8721,9 +8718,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtSBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtSBranch_RS {}
     impl ::core::clone::Clone for I64LtSBranch_RS {
@@ -8747,9 +8744,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtSBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtSBranch_RI {}
     impl ::core::clone::Clone for I64LtSBranch_RI {
@@ -8773,9 +8770,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtSBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtSBranch_SR {}
     impl ::core::clone::Clone for I64LtSBranch_SR {
@@ -8799,9 +8796,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtSBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtSBranch_SS {}
     impl ::core::clone::Clone for I64LtSBranch_SS {
@@ -8825,9 +8822,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtSBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtSBranch_SI {}
     impl ::core::clone::Clone for I64LtSBranch_SI {
@@ -8851,9 +8848,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtSBranch_IR {
-        pub lhs: i64,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtSBranch_IR {}
     impl ::core::clone::Clone for I64LtSBranch_IR {
@@ -8877,9 +8874,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtSBranch_IS {
-        pub lhs: i64,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtSBranch_IS {}
     impl ::core::clone::Clone for I64LtSBranch_IS {
@@ -8903,9 +8900,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtUBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtUBranch_RS {}
     impl ::core::clone::Clone for I32LtUBranch_RS {
@@ -8929,9 +8926,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtUBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtUBranch_RI {}
     impl ::core::clone::Clone for I32LtUBranch_RI {
@@ -8955,9 +8952,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtUBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtUBranch_SR {}
     impl ::core::clone::Clone for I32LtUBranch_SR {
@@ -8981,9 +8978,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtUBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtUBranch_SS {}
     impl ::core::clone::Clone for I32LtUBranch_SS {
@@ -9007,9 +9004,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtUBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtUBranch_SI {}
     impl ::core::clone::Clone for I32LtUBranch_SI {
@@ -9033,9 +9030,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtUBranch_IR {
-        pub lhs: i32,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtUBranch_IR {}
     impl ::core::clone::Clone for I32LtUBranch_IR {
@@ -9059,9 +9056,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtUBranch_IS {
-        pub lhs: i32,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LtUBranch_IS {}
     impl ::core::clone::Clone for I32LtUBranch_IS {
@@ -9085,9 +9082,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtUBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtUBranch_RS {}
     impl ::core::clone::Clone for I64LtUBranch_RS {
@@ -9111,9 +9108,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtUBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtUBranch_RI {}
     impl ::core::clone::Clone for I64LtUBranch_RI {
@@ -9137,9 +9134,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtUBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtUBranch_SR {}
     impl ::core::clone::Clone for I64LtUBranch_SR {
@@ -9163,9 +9160,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtUBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtUBranch_SS {}
     impl ::core::clone::Clone for I64LtUBranch_SS {
@@ -9189,9 +9186,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtUBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtUBranch_SI {}
     impl ::core::clone::Clone for I64LtUBranch_SI {
@@ -9215,9 +9212,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtUBranch_IR {
-        pub lhs: i64,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtUBranch_IR {}
     impl ::core::clone::Clone for I64LtUBranch_IR {
@@ -9241,9 +9238,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtUBranch_IS {
-        pub lhs: i64,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LtUBranch_IS {}
     impl ::core::clone::Clone for I64LtUBranch_IS {
@@ -9267,9 +9264,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeSBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeSBranch_RS {}
     impl ::core::clone::Clone for I32LeSBranch_RS {
@@ -9293,9 +9290,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeSBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeSBranch_RI {}
     impl ::core::clone::Clone for I32LeSBranch_RI {
@@ -9319,9 +9316,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeSBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeSBranch_SR {}
     impl ::core::clone::Clone for I32LeSBranch_SR {
@@ -9345,9 +9342,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeSBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeSBranch_SS {}
     impl ::core::clone::Clone for I32LeSBranch_SS {
@@ -9371,9 +9368,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeSBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeSBranch_SI {}
     impl ::core::clone::Clone for I32LeSBranch_SI {
@@ -9397,9 +9394,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeSBranch_IR {
-        pub lhs: i32,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeSBranch_IR {}
     impl ::core::clone::Clone for I32LeSBranch_IR {
@@ -9423,9 +9420,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeSBranch_IS {
-        pub lhs: i32,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeSBranch_IS {}
     impl ::core::clone::Clone for I32LeSBranch_IS {
@@ -9449,9 +9446,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeSBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeSBranch_RS {}
     impl ::core::clone::Clone for I64LeSBranch_RS {
@@ -9475,9 +9472,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeSBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeSBranch_RI {}
     impl ::core::clone::Clone for I64LeSBranch_RI {
@@ -9501,9 +9498,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeSBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeSBranch_SR {}
     impl ::core::clone::Clone for I64LeSBranch_SR {
@@ -9527,9 +9524,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeSBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeSBranch_SS {}
     impl ::core::clone::Clone for I64LeSBranch_SS {
@@ -9553,9 +9550,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeSBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeSBranch_SI {}
     impl ::core::clone::Clone for I64LeSBranch_SI {
@@ -9579,9 +9576,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeSBranch_IR {
-        pub lhs: i64,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeSBranch_IR {}
     impl ::core::clone::Clone for I64LeSBranch_IR {
@@ -9605,9 +9602,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeSBranch_IS {
-        pub lhs: i64,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeSBranch_IS {}
     impl ::core::clone::Clone for I64LeSBranch_IS {
@@ -9631,9 +9628,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeUBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeUBranch_RS {}
     impl ::core::clone::Clone for I32LeUBranch_RS {
@@ -9657,9 +9654,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeUBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeUBranch_RI {}
     impl ::core::clone::Clone for I32LeUBranch_RI {
@@ -9683,9 +9680,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeUBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeUBranch_SR {}
     impl ::core::clone::Clone for I32LeUBranch_SR {
@@ -9709,9 +9706,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeUBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeUBranch_SS {}
     impl ::core::clone::Clone for I32LeUBranch_SS {
@@ -9735,9 +9732,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeUBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeUBranch_SI {}
     impl ::core::clone::Clone for I32LeUBranch_SI {
@@ -9761,9 +9758,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeUBranch_IR {
-        pub lhs: i32,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeUBranch_IR {}
     impl ::core::clone::Clone for I32LeUBranch_IR {
@@ -9787,9 +9784,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeUBranch_IS {
-        pub lhs: i32,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I32LeUBranch_IS {}
     impl ::core::clone::Clone for I32LeUBranch_IS {
@@ -9813,9 +9810,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeUBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeUBranch_RS {}
     impl ::core::clone::Clone for I64LeUBranch_RS {
@@ -9839,9 +9836,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeUBranch_RI {
-        pub lhs: Reg,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeUBranch_RI {}
     impl ::core::clone::Clone for I64LeUBranch_RI {
@@ -9865,9 +9862,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeUBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeUBranch_SR {}
     impl ::core::clone::Clone for I64LeUBranch_SR {
@@ -9891,9 +9888,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeUBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeUBranch_SS {}
     impl ::core::clone::Clone for I64LeUBranch_SS {
@@ -9917,9 +9914,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeUBranch_SI {
-        pub lhs: Stack,
-        pub rhs: i64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeUBranch_SI {}
     impl ::core::clone::Clone for I64LeUBranch_SI {
@@ -9943,9 +9940,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeUBranch_IR {
-        pub lhs: i64,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeUBranch_IR {}
     impl ::core::clone::Clone for I64LeUBranch_IR {
@@ -9969,9 +9966,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeUBranch_IS {
-        pub lhs: i64,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for I64LeUBranch_IS {}
     impl ::core::clone::Clone for I64LeUBranch_IS {
@@ -9995,9 +9992,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LtBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LtBranch_RS {}
     impl ::core::clone::Clone for F32LtBranch_RS {
@@ -10021,9 +10018,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LtBranch_RI {
-        pub lhs: Reg,
-        pub rhs: f32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LtBranch_RI {}
     impl ::core::clone::Clone for F32LtBranch_RI {
@@ -10047,9 +10044,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LtBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LtBranch_SR {}
     impl ::core::clone::Clone for F32LtBranch_SR {
@@ -10073,9 +10070,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LtBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LtBranch_SS {}
     impl ::core::clone::Clone for F32LtBranch_SS {
@@ -10099,9 +10096,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LtBranch_SI {
-        pub lhs: Stack,
-        pub rhs: f32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LtBranch_SI {}
     impl ::core::clone::Clone for F32LtBranch_SI {
@@ -10125,9 +10122,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LtBranch_IR {
-        pub lhs: f32,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LtBranch_IR {}
     impl ::core::clone::Clone for F32LtBranch_IR {
@@ -10151,9 +10148,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LtBranch_IS {
-        pub lhs: f32,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LtBranch_IS {}
     impl ::core::clone::Clone for F32LtBranch_IS {
@@ -10177,9 +10174,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LtBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LtBranch_RS {}
     impl ::core::clone::Clone for F64LtBranch_RS {
@@ -10203,9 +10200,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LtBranch_RI {
-        pub lhs: Reg,
-        pub rhs: f64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LtBranch_RI {}
     impl ::core::clone::Clone for F64LtBranch_RI {
@@ -10229,9 +10226,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LtBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LtBranch_SR {}
     impl ::core::clone::Clone for F64LtBranch_SR {
@@ -10255,9 +10252,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LtBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LtBranch_SS {}
     impl ::core::clone::Clone for F64LtBranch_SS {
@@ -10281,9 +10278,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LtBranch_SI {
-        pub lhs: Stack,
-        pub rhs: f64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LtBranch_SI {}
     impl ::core::clone::Clone for F64LtBranch_SI {
@@ -10307,9 +10304,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LtBranch_IR {
-        pub lhs: f64,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LtBranch_IR {}
     impl ::core::clone::Clone for F64LtBranch_IR {
@@ -10333,9 +10330,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LtBranch_IS {
-        pub lhs: f64,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LtBranch_IS {}
     impl ::core::clone::Clone for F64LtBranch_IS {
@@ -10359,9 +10356,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LeBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LeBranch_RS {}
     impl ::core::clone::Clone for F32LeBranch_RS {
@@ -10385,9 +10382,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LeBranch_RI {
-        pub lhs: Reg,
-        pub rhs: f32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LeBranch_RI {}
     impl ::core::clone::Clone for F32LeBranch_RI {
@@ -10411,9 +10408,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LeBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LeBranch_SR {}
     impl ::core::clone::Clone for F32LeBranch_SR {
@@ -10437,9 +10434,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LeBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LeBranch_SS {}
     impl ::core::clone::Clone for F32LeBranch_SS {
@@ -10463,9 +10460,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LeBranch_SI {
-        pub lhs: Stack,
-        pub rhs: f32,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LeBranch_SI {}
     impl ::core::clone::Clone for F32LeBranch_SI {
@@ -10489,9 +10486,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LeBranch_IR {
-        pub lhs: f32,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LeBranch_IR {}
     impl ::core::clone::Clone for F32LeBranch_IR {
@@ -10515,9 +10512,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LeBranch_IS {
-        pub lhs: f32,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F32LeBranch_IS {}
     impl ::core::clone::Clone for F32LeBranch_IS {
@@ -10541,9 +10538,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LeBranch_RS {
-        pub lhs: Reg,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LeBranch_RS {}
     impl ::core::clone::Clone for F64LeBranch_RS {
@@ -10567,9 +10564,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LeBranch_RI {
-        pub lhs: Reg,
-        pub rhs: f64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LeBranch_RI {}
     impl ::core::clone::Clone for F64LeBranch_RI {
@@ -10593,9 +10590,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LeBranch_SR {
-        pub lhs: Stack,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LeBranch_SR {}
     impl ::core::clone::Clone for F64LeBranch_SR {
@@ -10619,9 +10616,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LeBranch_SS {
-        pub lhs: Stack,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LeBranch_SS {}
     impl ::core::clone::Clone for F64LeBranch_SS {
@@ -10645,9 +10642,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LeBranch_SI {
-        pub lhs: Stack,
-        pub rhs: f64,
-        pub offset: BranchOffset,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LeBranch_SI {}
     impl ::core::clone::Clone for F64LeBranch_SI {
@@ -10671,9 +10668,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LeBranch_IR {
-        pub lhs: f64,
-        pub rhs: Reg,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Reg,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LeBranch_IR {}
     impl ::core::clone::Clone for F64LeBranch_IR {
@@ -10697,9 +10694,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LeBranch_IS {
-        pub lhs: f64,
-        pub rhs: Stack,
-        pub offset: BranchOffset,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Stack,
+        pub offset: crate::BranchOffset,
     }
     impl ::core::marker::Copy for F64LeBranch_IS {}
     impl ::core::clone::Clone for F64LeBranch_IS {
@@ -10723,8 +10720,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Popcnt_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32Popcnt_RR {}
     impl ::core::clone::Clone for I32Popcnt_RR {
@@ -10747,8 +10744,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Popcnt_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32Popcnt_RS {}
     impl ::core::clone::Clone for I32Popcnt_RS {
@@ -10771,8 +10768,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Popcnt_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32Popcnt_SR {}
     impl ::core::clone::Clone for I32Popcnt_SR {
@@ -10795,8 +10792,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Popcnt_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32Popcnt_SS {}
     impl ::core::clone::Clone for I32Popcnt_SS {
@@ -10819,8 +10816,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Popcnt_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Popcnt_RR {}
     impl ::core::clone::Clone for I64Popcnt_RR {
@@ -10843,8 +10840,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Popcnt_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Popcnt_RS {}
     impl ::core::clone::Clone for I64Popcnt_RS {
@@ -10867,8 +10864,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Popcnt_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Popcnt_SR {}
     impl ::core::clone::Clone for I64Popcnt_SR {
@@ -10891,8 +10888,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Popcnt_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Popcnt_SS {}
     impl ::core::clone::Clone for I64Popcnt_SS {
@@ -10915,8 +10912,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Clz_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32Clz_RR {}
     impl ::core::clone::Clone for I32Clz_RR {
@@ -10939,8 +10936,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Clz_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32Clz_RS {}
     impl ::core::clone::Clone for I32Clz_RS {
@@ -10963,8 +10960,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Clz_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32Clz_SR {}
     impl ::core::clone::Clone for I32Clz_SR {
@@ -10987,8 +10984,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Clz_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32Clz_SS {}
     impl ::core::clone::Clone for I32Clz_SS {
@@ -11011,8 +11008,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Clz_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Clz_RR {}
     impl ::core::clone::Clone for I64Clz_RR {
@@ -11035,8 +11032,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Clz_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Clz_RS {}
     impl ::core::clone::Clone for I64Clz_RS {
@@ -11059,8 +11056,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Clz_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Clz_SR {}
     impl ::core::clone::Clone for I64Clz_SR {
@@ -11083,8 +11080,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Clz_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Clz_SS {}
     impl ::core::clone::Clone for I64Clz_SS {
@@ -11107,8 +11104,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ctz_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32Ctz_RR {}
     impl ::core::clone::Clone for I32Ctz_RR {
@@ -11131,8 +11128,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ctz_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32Ctz_RS {}
     impl ::core::clone::Clone for I32Ctz_RS {
@@ -11155,8 +11152,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ctz_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32Ctz_SR {}
     impl ::core::clone::Clone for I32Ctz_SR {
@@ -11179,8 +11176,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ctz_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32Ctz_SS {}
     impl ::core::clone::Clone for I32Ctz_SS {
@@ -11203,8 +11200,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ctz_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Ctz_RR {}
     impl ::core::clone::Clone for I64Ctz_RR {
@@ -11227,8 +11224,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ctz_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Ctz_RS {}
     impl ::core::clone::Clone for I64Ctz_RS {
@@ -11251,8 +11248,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ctz_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Ctz_SR {}
     impl ::core::clone::Clone for I64Ctz_SR {
@@ -11275,8 +11272,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ctz_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Ctz_SS {}
     impl ::core::clone::Clone for I64Ctz_SS {
@@ -11299,8 +11296,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Abs_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Abs_RR {}
     impl ::core::clone::Clone for F32Abs_RR {
@@ -11323,8 +11320,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Abs_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Abs_RS {}
     impl ::core::clone::Clone for F32Abs_RS {
@@ -11347,8 +11344,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Abs_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Abs_SR {}
     impl ::core::clone::Clone for F32Abs_SR {
@@ -11371,8 +11368,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Abs_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Abs_SS {}
     impl ::core::clone::Clone for F32Abs_SS {
@@ -11395,8 +11392,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Abs_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Abs_RR {}
     impl ::core::clone::Clone for F64Abs_RR {
@@ -11419,8 +11416,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Abs_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Abs_RS {}
     impl ::core::clone::Clone for F64Abs_RS {
@@ -11443,8 +11440,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Abs_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Abs_SR {}
     impl ::core::clone::Clone for F64Abs_SR {
@@ -11467,8 +11464,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Abs_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Abs_SS {}
     impl ::core::clone::Clone for F64Abs_SS {
@@ -11491,8 +11488,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Neg_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Neg_RR {}
     impl ::core::clone::Clone for F32Neg_RR {
@@ -11515,8 +11512,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Neg_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Neg_RS {}
     impl ::core::clone::Clone for F32Neg_RS {
@@ -11539,8 +11536,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Neg_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Neg_SR {}
     impl ::core::clone::Clone for F32Neg_SR {
@@ -11563,8 +11560,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Neg_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Neg_SS {}
     impl ::core::clone::Clone for F32Neg_SS {
@@ -11587,8 +11584,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Neg_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Neg_RR {}
     impl ::core::clone::Clone for F64Neg_RR {
@@ -11611,8 +11608,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Neg_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Neg_RS {}
     impl ::core::clone::Clone for F64Neg_RS {
@@ -11635,8 +11632,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Neg_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Neg_SR {}
     impl ::core::clone::Clone for F64Neg_SR {
@@ -11659,8 +11656,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Neg_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Neg_SS {}
     impl ::core::clone::Clone for F64Neg_SS {
@@ -11683,8 +11680,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ceil_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Ceil_RR {}
     impl ::core::clone::Clone for F32Ceil_RR {
@@ -11707,8 +11704,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ceil_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Ceil_RS {}
     impl ::core::clone::Clone for F32Ceil_RS {
@@ -11731,8 +11728,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ceil_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Ceil_SR {}
     impl ::core::clone::Clone for F32Ceil_SR {
@@ -11755,8 +11752,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ceil_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Ceil_SS {}
     impl ::core::clone::Clone for F32Ceil_SS {
@@ -11779,8 +11776,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ceil_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Ceil_RR {}
     impl ::core::clone::Clone for F64Ceil_RR {
@@ -11803,8 +11800,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ceil_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Ceil_RS {}
     impl ::core::clone::Clone for F64Ceil_RS {
@@ -11827,8 +11824,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ceil_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Ceil_SR {}
     impl ::core::clone::Clone for F64Ceil_SR {
@@ -11851,8 +11848,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ceil_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Ceil_SS {}
     impl ::core::clone::Clone for F64Ceil_SS {
@@ -11875,8 +11872,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Floor_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Floor_RR {}
     impl ::core::clone::Clone for F32Floor_RR {
@@ -11899,8 +11896,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Floor_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Floor_RS {}
     impl ::core::clone::Clone for F32Floor_RS {
@@ -11923,8 +11920,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Floor_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Floor_SR {}
     impl ::core::clone::Clone for F32Floor_SR {
@@ -11947,8 +11944,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Floor_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Floor_SS {}
     impl ::core::clone::Clone for F32Floor_SS {
@@ -11971,8 +11968,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Floor_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Floor_RR {}
     impl ::core::clone::Clone for F64Floor_RR {
@@ -11995,8 +11992,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Floor_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Floor_RS {}
     impl ::core::clone::Clone for F64Floor_RS {
@@ -12019,8 +12016,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Floor_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Floor_SR {}
     impl ::core::clone::Clone for F64Floor_SR {
@@ -12043,8 +12040,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Floor_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Floor_SS {}
     impl ::core::clone::Clone for F64Floor_SS {
@@ -12067,8 +12064,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Trunc_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Trunc_RR {}
     impl ::core::clone::Clone for F32Trunc_RR {
@@ -12091,8 +12088,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Trunc_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Trunc_RS {}
     impl ::core::clone::Clone for F32Trunc_RS {
@@ -12115,8 +12112,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Trunc_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Trunc_SR {}
     impl ::core::clone::Clone for F32Trunc_SR {
@@ -12139,8 +12136,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Trunc_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Trunc_SS {}
     impl ::core::clone::Clone for F32Trunc_SS {
@@ -12163,8 +12160,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Trunc_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Trunc_RR {}
     impl ::core::clone::Clone for F64Trunc_RR {
@@ -12187,8 +12184,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Trunc_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Trunc_RS {}
     impl ::core::clone::Clone for F64Trunc_RS {
@@ -12211,8 +12208,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Trunc_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Trunc_SR {}
     impl ::core::clone::Clone for F64Trunc_SR {
@@ -12235,8 +12232,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Trunc_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Trunc_SS {}
     impl ::core::clone::Clone for F64Trunc_SS {
@@ -12259,8 +12256,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Nearest_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Nearest_RR {}
     impl ::core::clone::Clone for F32Nearest_RR {
@@ -12283,8 +12280,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Nearest_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Nearest_RS {}
     impl ::core::clone::Clone for F32Nearest_RS {
@@ -12307,8 +12304,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Nearest_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Nearest_SR {}
     impl ::core::clone::Clone for F32Nearest_SR {
@@ -12331,8 +12328,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Nearest_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Nearest_SS {}
     impl ::core::clone::Clone for F32Nearest_SS {
@@ -12355,8 +12352,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Nearest_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Nearest_RR {}
     impl ::core::clone::Clone for F64Nearest_RR {
@@ -12379,8 +12376,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Nearest_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Nearest_RS {}
     impl ::core::clone::Clone for F64Nearest_RS {
@@ -12403,8 +12400,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Nearest_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Nearest_SR {}
     impl ::core::clone::Clone for F64Nearest_SR {
@@ -12427,8 +12424,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Nearest_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Nearest_SS {}
     impl ::core::clone::Clone for F64Nearest_SS {
@@ -12451,8 +12448,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sqrt_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Sqrt_RR {}
     impl ::core::clone::Clone for F32Sqrt_RR {
@@ -12475,8 +12472,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sqrt_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Sqrt_RS {}
     impl ::core::clone::Clone for F32Sqrt_RS {
@@ -12499,8 +12496,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sqrt_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Sqrt_SR {}
     impl ::core::clone::Clone for F32Sqrt_SR {
@@ -12523,8 +12520,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sqrt_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Sqrt_SS {}
     impl ::core::clone::Clone for F32Sqrt_SS {
@@ -12547,8 +12544,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sqrt_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Sqrt_RR {}
     impl ::core::clone::Clone for F64Sqrt_RR {
@@ -12571,8 +12568,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sqrt_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Sqrt_RS {}
     impl ::core::clone::Clone for F64Sqrt_RS {
@@ -12595,8 +12592,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sqrt_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Sqrt_SR {}
     impl ::core::clone::Clone for F64Sqrt_SR {
@@ -12619,8 +12616,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sqrt_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Sqrt_SS {}
     impl ::core::clone::Clone for F64Sqrt_SS {
@@ -12643,8 +12640,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Demote_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Demote_RR {}
     impl ::core::clone::Clone for F32Demote_RR {
@@ -12667,8 +12664,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Demote_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Demote_RS {}
     impl ::core::clone::Clone for F32Demote_RS {
@@ -12691,8 +12688,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Demote_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32Demote_SR {}
     impl ::core::clone::Clone for F32Demote_SR {
@@ -12715,8 +12712,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Demote_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32Demote_SS {}
     impl ::core::clone::Clone for F32Demote_SS {
@@ -12739,8 +12736,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Promote_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Promote_RR {}
     impl ::core::clone::Clone for F64Promote_RR {
@@ -12763,8 +12760,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Promote_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Promote_RS {}
     impl ::core::clone::Clone for F64Promote_RS {
@@ -12787,8 +12784,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Promote_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64Promote_SR {}
     impl ::core::clone::Clone for F64Promote_SR {
@@ -12811,8 +12808,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Promote_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64Promote_SS {}
     impl ::core::clone::Clone for F64Promote_SS {
@@ -12835,8 +12832,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI32S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32ConvertI32S_RR {}
     impl ::core::clone::Clone for F32ConvertI32S_RR {
@@ -12859,8 +12856,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI32S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32ConvertI32S_RS {}
     impl ::core::clone::Clone for F32ConvertI32S_RS {
@@ -12883,8 +12880,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI32S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32ConvertI32S_SR {}
     impl ::core::clone::Clone for F32ConvertI32S_SR {
@@ -12907,8 +12904,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI32S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32ConvertI32S_SS {}
     impl ::core::clone::Clone for F32ConvertI32S_SS {
@@ -12931,8 +12928,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI32U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32ConvertI32U_RR {}
     impl ::core::clone::Clone for F32ConvertI32U_RR {
@@ -12955,8 +12952,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI32U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32ConvertI32U_RS {}
     impl ::core::clone::Clone for F32ConvertI32U_RS {
@@ -12979,8 +12976,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI32U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32ConvertI32U_SR {}
     impl ::core::clone::Clone for F32ConvertI32U_SR {
@@ -13003,8 +13000,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI32U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32ConvertI32U_SS {}
     impl ::core::clone::Clone for F32ConvertI32U_SS {
@@ -13027,8 +13024,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI64S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32ConvertI64S_RR {}
     impl ::core::clone::Clone for F32ConvertI64S_RR {
@@ -13051,8 +13048,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI64S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32ConvertI64S_RS {}
     impl ::core::clone::Clone for F32ConvertI64S_RS {
@@ -13075,8 +13072,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI64S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32ConvertI64S_SR {}
     impl ::core::clone::Clone for F32ConvertI64S_SR {
@@ -13099,8 +13096,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI64S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32ConvertI64S_SS {}
     impl ::core::clone::Clone for F32ConvertI64S_SS {
@@ -13123,8 +13120,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI64U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32ConvertI64U_RR {}
     impl ::core::clone::Clone for F32ConvertI64U_RR {
@@ -13147,8 +13144,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI64U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32ConvertI64U_RS {}
     impl ::core::clone::Clone for F32ConvertI64U_RS {
@@ -13171,8 +13168,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI64U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F32ConvertI64U_SR {}
     impl ::core::clone::Clone for F32ConvertI64U_SR {
@@ -13195,8 +13192,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32ConvertI64U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F32ConvertI64U_SS {}
     impl ::core::clone::Clone for F32ConvertI64U_SS {
@@ -13219,8 +13216,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI32S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64ConvertI32S_RR {}
     impl ::core::clone::Clone for F64ConvertI32S_RR {
@@ -13243,8 +13240,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI32S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64ConvertI32S_RS {}
     impl ::core::clone::Clone for F64ConvertI32S_RS {
@@ -13267,8 +13264,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI32S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64ConvertI32S_SR {}
     impl ::core::clone::Clone for F64ConvertI32S_SR {
@@ -13291,8 +13288,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI32S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64ConvertI32S_SS {}
     impl ::core::clone::Clone for F64ConvertI32S_SS {
@@ -13315,8 +13312,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI32U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64ConvertI32U_RR {}
     impl ::core::clone::Clone for F64ConvertI32U_RR {
@@ -13339,8 +13336,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI32U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64ConvertI32U_RS {}
     impl ::core::clone::Clone for F64ConvertI32U_RS {
@@ -13363,8 +13360,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI32U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64ConvertI32U_SR {}
     impl ::core::clone::Clone for F64ConvertI32U_SR {
@@ -13387,8 +13384,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI32U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64ConvertI32U_SS {}
     impl ::core::clone::Clone for F64ConvertI32U_SS {
@@ -13411,8 +13408,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI64S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64ConvertI64S_RR {}
     impl ::core::clone::Clone for F64ConvertI64S_RR {
@@ -13435,8 +13432,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI64S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64ConvertI64S_RS {}
     impl ::core::clone::Clone for F64ConvertI64S_RS {
@@ -13459,8 +13456,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI64S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64ConvertI64S_SR {}
     impl ::core::clone::Clone for F64ConvertI64S_SR {
@@ -13483,8 +13480,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI64S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64ConvertI64S_SS {}
     impl ::core::clone::Clone for F64ConvertI64S_SS {
@@ -13507,8 +13504,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI64U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64ConvertI64U_RR {}
     impl ::core::clone::Clone for F64ConvertI64U_RR {
@@ -13531,8 +13528,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI64U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64ConvertI64U_RS {}
     impl ::core::clone::Clone for F64ConvertI64U_RS {
@@ -13555,8 +13552,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI64U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for F64ConvertI64U_SR {}
     impl ::core::clone::Clone for F64ConvertI64U_SR {
@@ -13579,8 +13576,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64ConvertI64U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for F64ConvertI64U_SS {}
     impl ::core::clone::Clone for F64ConvertI64U_SS {
@@ -13603,8 +13600,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF32S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncF32S_RR {}
     impl ::core::clone::Clone for I32TruncF32S_RR {
@@ -13627,8 +13624,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF32S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncF32S_RS {}
     impl ::core::clone::Clone for I32TruncF32S_RS {
@@ -13651,8 +13648,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF32S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncF32S_SR {}
     impl ::core::clone::Clone for I32TruncF32S_SR {
@@ -13675,8 +13672,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF32S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncF32S_SS {}
     impl ::core::clone::Clone for I32TruncF32S_SS {
@@ -13699,8 +13696,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF32U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncF32U_RR {}
     impl ::core::clone::Clone for I32TruncF32U_RR {
@@ -13723,8 +13720,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF32U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncF32U_RS {}
     impl ::core::clone::Clone for I32TruncF32U_RS {
@@ -13747,8 +13744,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF32U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncF32U_SR {}
     impl ::core::clone::Clone for I32TruncF32U_SR {
@@ -13771,8 +13768,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF32U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncF32U_SS {}
     impl ::core::clone::Clone for I32TruncF32U_SS {
@@ -13795,8 +13792,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF64S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncF64S_RR {}
     impl ::core::clone::Clone for I32TruncF64S_RR {
@@ -13819,8 +13816,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF64S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncF64S_RS {}
     impl ::core::clone::Clone for I32TruncF64S_RS {
@@ -13843,8 +13840,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF64S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncF64S_SR {}
     impl ::core::clone::Clone for I32TruncF64S_SR {
@@ -13867,8 +13864,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF64S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncF64S_SS {}
     impl ::core::clone::Clone for I32TruncF64S_SS {
@@ -13891,8 +13888,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF64U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncF64U_RR {}
     impl ::core::clone::Clone for I32TruncF64U_RR {
@@ -13915,8 +13912,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF64U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncF64U_RS {}
     impl ::core::clone::Clone for I32TruncF64U_RS {
@@ -13939,8 +13936,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF64U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncF64U_SR {}
     impl ::core::clone::Clone for I32TruncF64U_SR {
@@ -13963,8 +13960,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncF64U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncF64U_SS {}
     impl ::core::clone::Clone for I32TruncF64U_SS {
@@ -13987,8 +13984,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF32S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncF32S_RR {}
     impl ::core::clone::Clone for I64TruncF32S_RR {
@@ -14011,8 +14008,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF32S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncF32S_RS {}
     impl ::core::clone::Clone for I64TruncF32S_RS {
@@ -14035,8 +14032,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF32S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncF32S_SR {}
     impl ::core::clone::Clone for I64TruncF32S_SR {
@@ -14059,8 +14056,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF32S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncF32S_SS {}
     impl ::core::clone::Clone for I64TruncF32S_SS {
@@ -14083,8 +14080,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF32U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncF32U_RR {}
     impl ::core::clone::Clone for I64TruncF32U_RR {
@@ -14107,8 +14104,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF32U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncF32U_RS {}
     impl ::core::clone::Clone for I64TruncF32U_RS {
@@ -14131,8 +14128,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF32U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncF32U_SR {}
     impl ::core::clone::Clone for I64TruncF32U_SR {
@@ -14155,8 +14152,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF32U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncF32U_SS {}
     impl ::core::clone::Clone for I64TruncF32U_SS {
@@ -14179,8 +14176,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF64S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncF64S_RR {}
     impl ::core::clone::Clone for I64TruncF64S_RR {
@@ -14203,8 +14200,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF64S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncF64S_RS {}
     impl ::core::clone::Clone for I64TruncF64S_RS {
@@ -14227,8 +14224,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF64S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncF64S_SR {}
     impl ::core::clone::Clone for I64TruncF64S_SR {
@@ -14251,8 +14248,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF64S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncF64S_SS {}
     impl ::core::clone::Clone for I64TruncF64S_SS {
@@ -14275,8 +14272,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF64U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncF64U_RR {}
     impl ::core::clone::Clone for I64TruncF64U_RR {
@@ -14299,8 +14296,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF64U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncF64U_RS {}
     impl ::core::clone::Clone for I64TruncF64U_RS {
@@ -14323,8 +14320,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF64U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncF64U_SR {}
     impl ::core::clone::Clone for I64TruncF64U_SR {
@@ -14347,8 +14344,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncF64U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncF64U_SS {}
     impl ::core::clone::Clone for I64TruncF64U_SS {
@@ -14371,8 +14368,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF32S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncSatF32S_RR {}
     impl ::core::clone::Clone for I32TruncSatF32S_RR {
@@ -14395,8 +14392,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF32S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncSatF32S_RS {}
     impl ::core::clone::Clone for I32TruncSatF32S_RS {
@@ -14419,8 +14416,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF32S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncSatF32S_SR {}
     impl ::core::clone::Clone for I32TruncSatF32S_SR {
@@ -14443,8 +14440,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF32S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncSatF32S_SS {}
     impl ::core::clone::Clone for I32TruncSatF32S_SS {
@@ -14467,8 +14464,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF32U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncSatF32U_RR {}
     impl ::core::clone::Clone for I32TruncSatF32U_RR {
@@ -14491,8 +14488,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF32U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncSatF32U_RS {}
     impl ::core::clone::Clone for I32TruncSatF32U_RS {
@@ -14515,8 +14512,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF32U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncSatF32U_SR {}
     impl ::core::clone::Clone for I32TruncSatF32U_SR {
@@ -14539,8 +14536,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF32U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncSatF32U_SS {}
     impl ::core::clone::Clone for I32TruncSatF32U_SS {
@@ -14563,8 +14560,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF64S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncSatF64S_RR {}
     impl ::core::clone::Clone for I32TruncSatF64S_RR {
@@ -14587,8 +14584,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF64S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncSatF64S_RS {}
     impl ::core::clone::Clone for I32TruncSatF64S_RS {
@@ -14611,8 +14608,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF64S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncSatF64S_SR {}
     impl ::core::clone::Clone for I32TruncSatF64S_SR {
@@ -14635,8 +14632,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF64S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncSatF64S_SS {}
     impl ::core::clone::Clone for I32TruncSatF64S_SS {
@@ -14659,8 +14656,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF64U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncSatF64U_RR {}
     impl ::core::clone::Clone for I32TruncSatF64U_RR {
@@ -14683,8 +14680,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF64U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncSatF64U_RS {}
     impl ::core::clone::Clone for I32TruncSatF64U_RS {
@@ -14707,8 +14704,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF64U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32TruncSatF64U_SR {}
     impl ::core::clone::Clone for I32TruncSatF64U_SR {
@@ -14731,8 +14728,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32TruncSatF64U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32TruncSatF64U_SS {}
     impl ::core::clone::Clone for I32TruncSatF64U_SS {
@@ -14755,8 +14752,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF32S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncSatF32S_RR {}
     impl ::core::clone::Clone for I64TruncSatF32S_RR {
@@ -14779,8 +14776,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF32S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncSatF32S_RS {}
     impl ::core::clone::Clone for I64TruncSatF32S_RS {
@@ -14803,8 +14800,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF32S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncSatF32S_SR {}
     impl ::core::clone::Clone for I64TruncSatF32S_SR {
@@ -14827,8 +14824,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF32S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncSatF32S_SS {}
     impl ::core::clone::Clone for I64TruncSatF32S_SS {
@@ -14851,8 +14848,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF32U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncSatF32U_RR {}
     impl ::core::clone::Clone for I64TruncSatF32U_RR {
@@ -14875,8 +14872,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF32U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncSatF32U_RS {}
     impl ::core::clone::Clone for I64TruncSatF32U_RS {
@@ -14899,8 +14896,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF32U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncSatF32U_SR {}
     impl ::core::clone::Clone for I64TruncSatF32U_SR {
@@ -14923,8 +14920,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF32U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncSatF32U_SS {}
     impl ::core::clone::Clone for I64TruncSatF32U_SS {
@@ -14947,8 +14944,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF64S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncSatF64S_RR {}
     impl ::core::clone::Clone for I64TruncSatF64S_RR {
@@ -14971,8 +14968,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF64S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncSatF64S_RS {}
     impl ::core::clone::Clone for I64TruncSatF64S_RS {
@@ -14995,8 +14992,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF64S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncSatF64S_SR {}
     impl ::core::clone::Clone for I64TruncSatF64S_SR {
@@ -15019,8 +15016,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF64S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncSatF64S_SS {}
     impl ::core::clone::Clone for I64TruncSatF64S_SS {
@@ -15043,8 +15040,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF64U_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncSatF64U_RR {}
     impl ::core::clone::Clone for I64TruncSatF64U_RR {
@@ -15067,8 +15064,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF64U_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncSatF64U_RS {}
     impl ::core::clone::Clone for I64TruncSatF64U_RS {
@@ -15091,8 +15088,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF64U_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64TruncSatF64U_SR {}
     impl ::core::clone::Clone for I64TruncSatF64U_SR {
@@ -15115,8 +15112,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64TruncSatF64U_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64TruncSatF64U_SS {}
     impl ::core::clone::Clone for I64TruncSatF64U_SS {
@@ -15139,8 +15136,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Extend8S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32Extend8S_RR {}
     impl ::core::clone::Clone for I32Extend8S_RR {
@@ -15163,8 +15160,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Extend8S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32Extend8S_RS {}
     impl ::core::clone::Clone for I32Extend8S_RS {
@@ -15187,8 +15184,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Extend8S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32Extend8S_SR {}
     impl ::core::clone::Clone for I32Extend8S_SR {
@@ -15211,8 +15208,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Extend8S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32Extend8S_SS {}
     impl ::core::clone::Clone for I32Extend8S_SS {
@@ -15235,8 +15232,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Extend16S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32Extend16S_RR {}
     impl ::core::clone::Clone for I32Extend16S_RR {
@@ -15259,8 +15256,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Extend16S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32Extend16S_RS {}
     impl ::core::clone::Clone for I32Extend16S_RS {
@@ -15283,8 +15280,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Extend16S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32Extend16S_SR {}
     impl ::core::clone::Clone for I32Extend16S_SR {
@@ -15307,8 +15304,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Extend16S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32Extend16S_SS {}
     impl ::core::clone::Clone for I32Extend16S_SS {
@@ -15331,8 +15328,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend8S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Extend8S_RR {}
     impl ::core::clone::Clone for I64Extend8S_RR {
@@ -15355,8 +15352,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend8S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Extend8S_RS {}
     impl ::core::clone::Clone for I64Extend8S_RS {
@@ -15379,8 +15376,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend8S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Extend8S_SR {}
     impl ::core::clone::Clone for I64Extend8S_SR {
@@ -15403,8 +15400,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend8S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Extend8S_SS {}
     impl ::core::clone::Clone for I64Extend8S_SS {
@@ -15427,8 +15424,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend16S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Extend16S_RR {}
     impl ::core::clone::Clone for I64Extend16S_RR {
@@ -15451,8 +15448,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend16S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Extend16S_RS {}
     impl ::core::clone::Clone for I64Extend16S_RS {
@@ -15475,8 +15472,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend16S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Extend16S_SR {}
     impl ::core::clone::Clone for I64Extend16S_SR {
@@ -15499,8 +15496,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend16S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Extend16S_SS {}
     impl ::core::clone::Clone for I64Extend16S_SS {
@@ -15523,8 +15520,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend32S_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Extend32S_RR {}
     impl ::core::clone::Clone for I64Extend32S_RR {
@@ -15547,8 +15544,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend32S_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Extend32S_RS {}
     impl ::core::clone::Clone for I64Extend32S_RS {
@@ -15571,8 +15568,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend32S_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I64Extend32S_SR {}
     impl ::core::clone::Clone for I64Extend32S_SR {
@@ -15595,8 +15592,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Extend32S_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I64Extend32S_SS {}
     impl ::core::clone::Clone for I64Extend32S_SS {
@@ -15619,8 +15616,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32WrapI64_RR {
-        pub result: Reg,
-        pub input: Reg,
+        pub result: crate::Reg,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32WrapI64_RR {}
     impl ::core::clone::Clone for I32WrapI64_RR {
@@ -15643,8 +15640,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32WrapI64_RS {
-        pub result: Reg,
-        pub input: Stack,
+        pub result: crate::Reg,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32WrapI64_RS {}
     impl ::core::clone::Clone for I32WrapI64_RS {
@@ -15667,8 +15664,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32WrapI64_SR {
-        pub result: Stack,
-        pub input: Reg,
+        pub result: crate::Stack,
+        pub input: crate::Reg,
     }
     impl ::core::marker::Copy for I32WrapI64_SR {}
     impl ::core::clone::Clone for I32WrapI64_SR {
@@ -15691,8 +15688,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32WrapI64_SS {
-        pub result: Stack,
-        pub input: Stack,
+        pub result: crate::Stack,
+        pub input: crate::Stack,
     }
     impl ::core::marker::Copy for I32WrapI64_SS {}
     impl ::core::clone::Clone for I32WrapI64_SS {
@@ -15715,9 +15712,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Add_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Add_RRS {}
     impl ::core::clone::Clone for I32Add_RRS {
@@ -15741,9 +15738,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Add_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Add_RRI {}
     impl ::core::clone::Clone for I32Add_RRI {
@@ -15767,9 +15764,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Add_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Add_RSS {}
     impl ::core::clone::Clone for I32Add_RSS {
@@ -15793,9 +15790,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Add_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Add_RSI {}
     impl ::core::clone::Clone for I32Add_RSI {
@@ -15819,9 +15816,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Add_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Add_SRS {}
     impl ::core::clone::Clone for I32Add_SRS {
@@ -15845,9 +15842,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Add_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Add_SRI {}
     impl ::core::clone::Clone for I32Add_SRI {
@@ -15871,9 +15868,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Add_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Add_SSS {}
     impl ::core::clone::Clone for I32Add_SSS {
@@ -15897,9 +15894,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Add_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Add_SSI {}
     impl ::core::clone::Clone for I32Add_SSI {
@@ -15923,9 +15920,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Add_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Add_RRS {}
     impl ::core::clone::Clone for I64Add_RRS {
@@ -15949,9 +15946,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Add_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Add_RRI {}
     impl ::core::clone::Clone for I64Add_RRI {
@@ -15975,9 +15972,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Add_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Add_RSS {}
     impl ::core::clone::Clone for I64Add_RSS {
@@ -16001,9 +15998,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Add_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Add_RSI {}
     impl ::core::clone::Clone for I64Add_RSI {
@@ -16027,9 +16024,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Add_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Add_SRS {}
     impl ::core::clone::Clone for I64Add_SRS {
@@ -16053,9 +16050,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Add_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Add_SRI {}
     impl ::core::clone::Clone for I64Add_SRI {
@@ -16079,9 +16076,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Add_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Add_SSS {}
     impl ::core::clone::Clone for I64Add_SSS {
@@ -16105,9 +16102,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Add_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Add_SSI {}
     impl ::core::clone::Clone for I64Add_SSI {
@@ -16131,9 +16128,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Mul_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Mul_RRS {}
     impl ::core::clone::Clone for I32Mul_RRS {
@@ -16157,9 +16154,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Mul_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Mul_RRI {}
     impl ::core::clone::Clone for I32Mul_RRI {
@@ -16183,9 +16180,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Mul_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Mul_RSS {}
     impl ::core::clone::Clone for I32Mul_RSS {
@@ -16209,9 +16206,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Mul_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Mul_RSI {}
     impl ::core::clone::Clone for I32Mul_RSI {
@@ -16235,9 +16232,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Mul_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Mul_SRS {}
     impl ::core::clone::Clone for I32Mul_SRS {
@@ -16261,9 +16258,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Mul_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Mul_SRI {}
     impl ::core::clone::Clone for I32Mul_SRI {
@@ -16287,9 +16284,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Mul_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Mul_SSS {}
     impl ::core::clone::Clone for I32Mul_SSS {
@@ -16313,9 +16310,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Mul_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Mul_SSI {}
     impl ::core::clone::Clone for I32Mul_SSI {
@@ -16339,9 +16336,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Mul_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Mul_RRS {}
     impl ::core::clone::Clone for I64Mul_RRS {
@@ -16365,9 +16362,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Mul_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Mul_RRI {}
     impl ::core::clone::Clone for I64Mul_RRI {
@@ -16391,9 +16388,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Mul_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Mul_RSS {}
     impl ::core::clone::Clone for I64Mul_RSS {
@@ -16417,9 +16414,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Mul_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Mul_RSI {}
     impl ::core::clone::Clone for I64Mul_RSI {
@@ -16443,9 +16440,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Mul_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Mul_SRS {}
     impl ::core::clone::Clone for I64Mul_SRS {
@@ -16469,9 +16466,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Mul_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Mul_SRI {}
     impl ::core::clone::Clone for I64Mul_SRI {
@@ -16495,9 +16492,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Mul_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Mul_SSS {}
     impl ::core::clone::Clone for I64Mul_SSS {
@@ -16521,9 +16518,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Mul_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Mul_SSI {}
     impl ::core::clone::Clone for I64Mul_SSI {
@@ -16547,9 +16544,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32And_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32And_RRS {}
     impl ::core::clone::Clone for I32And_RRS {
@@ -16573,9 +16570,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32And_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32And_RRI {}
     impl ::core::clone::Clone for I32And_RRI {
@@ -16599,9 +16596,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32And_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32And_RSS {}
     impl ::core::clone::Clone for I32And_RSS {
@@ -16625,9 +16622,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32And_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32And_RSI {}
     impl ::core::clone::Clone for I32And_RSI {
@@ -16651,9 +16648,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32And_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32And_SRS {}
     impl ::core::clone::Clone for I32And_SRS {
@@ -16677,9 +16674,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32And_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32And_SRI {}
     impl ::core::clone::Clone for I32And_SRI {
@@ -16703,9 +16700,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32And_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32And_SSS {}
     impl ::core::clone::Clone for I32And_SSS {
@@ -16729,9 +16726,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32And_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32And_SSI {}
     impl ::core::clone::Clone for I32And_SSI {
@@ -16755,9 +16752,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64And_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64And_RRS {}
     impl ::core::clone::Clone for I64And_RRS {
@@ -16781,9 +16778,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64And_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64And_RRI {}
     impl ::core::clone::Clone for I64And_RRI {
@@ -16807,9 +16804,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64And_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64And_RSS {}
     impl ::core::clone::Clone for I64And_RSS {
@@ -16833,9 +16830,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64And_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64And_RSI {}
     impl ::core::clone::Clone for I64And_RSI {
@@ -16859,9 +16856,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64And_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64And_SRS {}
     impl ::core::clone::Clone for I64And_SRS {
@@ -16885,9 +16882,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64And_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64And_SRI {}
     impl ::core::clone::Clone for I64And_SRI {
@@ -16911,9 +16908,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64And_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64And_SSS {}
     impl ::core::clone::Clone for I64And_SSS {
@@ -16937,9 +16934,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64And_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64And_SSI {}
     impl ::core::clone::Clone for I64And_SSI {
@@ -16963,9 +16960,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Or_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Or_RRS {}
     impl ::core::clone::Clone for I32Or_RRS {
@@ -16989,9 +16986,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Or_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Or_RRI {}
     impl ::core::clone::Clone for I32Or_RRI {
@@ -17015,9 +17012,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Or_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Or_RSS {}
     impl ::core::clone::Clone for I32Or_RSS {
@@ -17041,9 +17038,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Or_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Or_RSI {}
     impl ::core::clone::Clone for I32Or_RSI {
@@ -17067,9 +17064,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Or_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Or_SRS {}
     impl ::core::clone::Clone for I32Or_SRS {
@@ -17093,9 +17090,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Or_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Or_SRI {}
     impl ::core::clone::Clone for I32Or_SRI {
@@ -17119,9 +17116,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Or_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Or_SSS {}
     impl ::core::clone::Clone for I32Or_SSS {
@@ -17145,9 +17142,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Or_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Or_SSI {}
     impl ::core::clone::Clone for I32Or_SSI {
@@ -17171,9 +17168,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Or_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Or_RRS {}
     impl ::core::clone::Clone for I64Or_RRS {
@@ -17197,9 +17194,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Or_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Or_RRI {}
     impl ::core::clone::Clone for I64Or_RRI {
@@ -17223,9 +17220,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Or_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Or_RSS {}
     impl ::core::clone::Clone for I64Or_RSS {
@@ -17249,9 +17246,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Or_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Or_RSI {}
     impl ::core::clone::Clone for I64Or_RSI {
@@ -17275,9 +17272,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Or_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Or_SRS {}
     impl ::core::clone::Clone for I64Or_SRS {
@@ -17301,9 +17298,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Or_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Or_SRI {}
     impl ::core::clone::Clone for I64Or_SRI {
@@ -17327,9 +17324,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Or_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Or_SSS {}
     impl ::core::clone::Clone for I64Or_SSS {
@@ -17353,9 +17350,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Or_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Or_SSI {}
     impl ::core::clone::Clone for I64Or_SSI {
@@ -17379,9 +17376,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Xor_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Xor_RRS {}
     impl ::core::clone::Clone for I32Xor_RRS {
@@ -17405,9 +17402,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Xor_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Xor_RRI {}
     impl ::core::clone::Clone for I32Xor_RRI {
@@ -17431,9 +17428,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Xor_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Xor_RSS {}
     impl ::core::clone::Clone for I32Xor_RSS {
@@ -17457,9 +17454,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Xor_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Xor_RSI {}
     impl ::core::clone::Clone for I32Xor_RSI {
@@ -17483,9 +17480,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Xor_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Xor_SRS {}
     impl ::core::clone::Clone for I32Xor_SRS {
@@ -17509,9 +17506,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Xor_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Xor_SRI {}
     impl ::core::clone::Clone for I32Xor_SRI {
@@ -17535,9 +17532,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Xor_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Xor_SSS {}
     impl ::core::clone::Clone for I32Xor_SSS {
@@ -17561,9 +17558,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Xor_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Xor_SSI {}
     impl ::core::clone::Clone for I32Xor_SSI {
@@ -17587,9 +17584,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Xor_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Xor_RRS {}
     impl ::core::clone::Clone for I64Xor_RRS {
@@ -17613,9 +17610,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Xor_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Xor_RRI {}
     impl ::core::clone::Clone for I64Xor_RRI {
@@ -17639,9 +17636,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Xor_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Xor_RSS {}
     impl ::core::clone::Clone for I64Xor_RSS {
@@ -17665,9 +17662,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Xor_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Xor_RSI {}
     impl ::core::clone::Clone for I64Xor_RSI {
@@ -17691,9 +17688,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Xor_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Xor_SRS {}
     impl ::core::clone::Clone for I64Xor_SRS {
@@ -17717,9 +17714,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Xor_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Xor_SRI {}
     impl ::core::clone::Clone for I64Xor_SRI {
@@ -17743,9 +17740,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Xor_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Xor_SSS {}
     impl ::core::clone::Clone for I64Xor_SSS {
@@ -17769,9 +17766,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Xor_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Xor_SSI {}
     impl ::core::clone::Clone for I64Xor_SSI {
@@ -17795,9 +17792,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Eq_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Eq_RRS {}
     impl ::core::clone::Clone for I32Eq_RRS {
@@ -17821,9 +17818,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Eq_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Eq_RRI {}
     impl ::core::clone::Clone for I32Eq_RRI {
@@ -17847,9 +17844,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Eq_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Eq_RSS {}
     impl ::core::clone::Clone for I32Eq_RSS {
@@ -17873,9 +17870,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Eq_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Eq_RSI {}
     impl ::core::clone::Clone for I32Eq_RSI {
@@ -17899,9 +17896,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Eq_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Eq_SRS {}
     impl ::core::clone::Clone for I32Eq_SRS {
@@ -17925,9 +17922,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Eq_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Eq_SRI {}
     impl ::core::clone::Clone for I32Eq_SRI {
@@ -17951,9 +17948,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Eq_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Eq_SSS {}
     impl ::core::clone::Clone for I32Eq_SSS {
@@ -17977,9 +17974,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Eq_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Eq_SSI {}
     impl ::core::clone::Clone for I32Eq_SSI {
@@ -18003,9 +18000,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Eq_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Eq_RRS {}
     impl ::core::clone::Clone for I64Eq_RRS {
@@ -18029,9 +18026,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Eq_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Eq_RRI {}
     impl ::core::clone::Clone for I64Eq_RRI {
@@ -18055,9 +18052,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Eq_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Eq_RSS {}
     impl ::core::clone::Clone for I64Eq_RSS {
@@ -18081,9 +18078,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Eq_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Eq_RSI {}
     impl ::core::clone::Clone for I64Eq_RSI {
@@ -18107,9 +18104,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Eq_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Eq_SRS {}
     impl ::core::clone::Clone for I64Eq_SRS {
@@ -18133,9 +18130,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Eq_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Eq_SRI {}
     impl ::core::clone::Clone for I64Eq_SRI {
@@ -18159,9 +18156,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Eq_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Eq_SSS {}
     impl ::core::clone::Clone for I64Eq_SSS {
@@ -18185,9 +18182,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Eq_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Eq_SSI {}
     impl ::core::clone::Clone for I64Eq_SSI {
@@ -18211,9 +18208,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ne_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Ne_RRS {}
     impl ::core::clone::Clone for I32Ne_RRS {
@@ -18237,9 +18234,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ne_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Ne_RRI {}
     impl ::core::clone::Clone for I32Ne_RRI {
@@ -18263,9 +18260,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ne_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Ne_RSS {}
     impl ::core::clone::Clone for I32Ne_RSS {
@@ -18289,9 +18286,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ne_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Ne_RSI {}
     impl ::core::clone::Clone for I32Ne_RSI {
@@ -18315,9 +18312,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ne_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Ne_SRS {}
     impl ::core::clone::Clone for I32Ne_SRS {
@@ -18341,9 +18338,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ne_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Ne_SRI {}
     impl ::core::clone::Clone for I32Ne_SRI {
@@ -18367,9 +18364,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ne_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Ne_SSS {}
     impl ::core::clone::Clone for I32Ne_SSS {
@@ -18393,9 +18390,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Ne_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Ne_SSI {}
     impl ::core::clone::Clone for I32Ne_SSI {
@@ -18419,9 +18416,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ne_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Ne_RRS {}
     impl ::core::clone::Clone for I64Ne_RRS {
@@ -18445,9 +18442,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ne_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Ne_RRI {}
     impl ::core::clone::Clone for I64Ne_RRI {
@@ -18471,9 +18468,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ne_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Ne_RSS {}
     impl ::core::clone::Clone for I64Ne_RSS {
@@ -18497,9 +18494,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ne_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Ne_RSI {}
     impl ::core::clone::Clone for I64Ne_RSI {
@@ -18523,9 +18520,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ne_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Ne_SRS {}
     impl ::core::clone::Clone for I64Ne_SRS {
@@ -18549,9 +18546,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ne_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Ne_SRI {}
     impl ::core::clone::Clone for I64Ne_SRI {
@@ -18575,9 +18572,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ne_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Ne_SSS {}
     impl ::core::clone::Clone for I64Ne_SSS {
@@ -18601,9 +18598,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Ne_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Ne_SSI {}
     impl ::core::clone::Clone for I64Ne_SSI {
@@ -18627,9 +18624,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Add_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Add_RRS {}
     impl ::core::clone::Clone for F32Add_RRS {
@@ -18653,9 +18650,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Add_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Add_RRI {}
     impl ::core::clone::Clone for F32Add_RRI {
@@ -18679,9 +18676,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Add_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Add_RSS {}
     impl ::core::clone::Clone for F32Add_RSS {
@@ -18705,9 +18702,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Add_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Add_RSI {}
     impl ::core::clone::Clone for F32Add_RSI {
@@ -18731,9 +18728,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Add_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Add_SRS {}
     impl ::core::clone::Clone for F32Add_SRS {
@@ -18757,9 +18754,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Add_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Add_SRI {}
     impl ::core::clone::Clone for F32Add_SRI {
@@ -18783,9 +18780,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Add_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Add_SSS {}
     impl ::core::clone::Clone for F32Add_SSS {
@@ -18809,9 +18806,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Add_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Add_SSI {}
     impl ::core::clone::Clone for F32Add_SSI {
@@ -18835,9 +18832,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Add_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Add_RRS {}
     impl ::core::clone::Clone for F64Add_RRS {
@@ -18861,9 +18858,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Add_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Add_RRI {}
     impl ::core::clone::Clone for F64Add_RRI {
@@ -18887,9 +18884,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Add_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Add_RSS {}
     impl ::core::clone::Clone for F64Add_RSS {
@@ -18913,9 +18910,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Add_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Add_RSI {}
     impl ::core::clone::Clone for F64Add_RSI {
@@ -18939,9 +18936,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Add_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Add_SRS {}
     impl ::core::clone::Clone for F64Add_SRS {
@@ -18965,9 +18962,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Add_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Add_SRI {}
     impl ::core::clone::Clone for F64Add_SRI {
@@ -18991,9 +18988,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Add_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Add_SSS {}
     impl ::core::clone::Clone for F64Add_SSS {
@@ -19017,9 +19014,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Add_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Add_SSI {}
     impl ::core::clone::Clone for F64Add_SSI {
@@ -19043,9 +19040,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Mul_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Mul_RRS {}
     impl ::core::clone::Clone for F32Mul_RRS {
@@ -19069,9 +19066,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Mul_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Mul_RRI {}
     impl ::core::clone::Clone for F32Mul_RRI {
@@ -19095,9 +19092,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Mul_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Mul_RSS {}
     impl ::core::clone::Clone for F32Mul_RSS {
@@ -19121,9 +19118,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Mul_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Mul_RSI {}
     impl ::core::clone::Clone for F32Mul_RSI {
@@ -19147,9 +19144,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Mul_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Mul_SRS {}
     impl ::core::clone::Clone for F32Mul_SRS {
@@ -19173,9 +19170,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Mul_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Mul_SRI {}
     impl ::core::clone::Clone for F32Mul_SRI {
@@ -19199,9 +19196,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Mul_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Mul_SSS {}
     impl ::core::clone::Clone for F32Mul_SSS {
@@ -19225,9 +19222,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Mul_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Mul_SSI {}
     impl ::core::clone::Clone for F32Mul_SSI {
@@ -19251,9 +19248,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Mul_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Mul_RRS {}
     impl ::core::clone::Clone for F64Mul_RRS {
@@ -19277,9 +19274,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Mul_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Mul_RRI {}
     impl ::core::clone::Clone for F64Mul_RRI {
@@ -19303,9 +19300,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Mul_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Mul_RSS {}
     impl ::core::clone::Clone for F64Mul_RSS {
@@ -19329,9 +19326,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Mul_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Mul_RSI {}
     impl ::core::clone::Clone for F64Mul_RSI {
@@ -19355,9 +19352,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Mul_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Mul_SRS {}
     impl ::core::clone::Clone for F64Mul_SRS {
@@ -19381,9 +19378,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Mul_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Mul_SRI {}
     impl ::core::clone::Clone for F64Mul_SRI {
@@ -19407,9 +19404,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Mul_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Mul_SSS {}
     impl ::core::clone::Clone for F64Mul_SSS {
@@ -19433,9 +19430,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Mul_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Mul_SSI {}
     impl ::core::clone::Clone for F64Mul_SSI {
@@ -19459,9 +19456,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Eq_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Eq_RRS {}
     impl ::core::clone::Clone for F32Eq_RRS {
@@ -19485,9 +19482,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Eq_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Eq_RRI {}
     impl ::core::clone::Clone for F32Eq_RRI {
@@ -19511,9 +19508,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Eq_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Eq_RSS {}
     impl ::core::clone::Clone for F32Eq_RSS {
@@ -19537,9 +19534,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Eq_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Eq_RSI {}
     impl ::core::clone::Clone for F32Eq_RSI {
@@ -19563,9 +19560,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Eq_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Eq_SRS {}
     impl ::core::clone::Clone for F32Eq_SRS {
@@ -19589,9 +19586,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Eq_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Eq_SRI {}
     impl ::core::clone::Clone for F32Eq_SRI {
@@ -19615,9 +19612,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Eq_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Eq_SSS {}
     impl ::core::clone::Clone for F32Eq_SSS {
@@ -19641,9 +19638,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Eq_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Eq_SSI {}
     impl ::core::clone::Clone for F32Eq_SSI {
@@ -19667,9 +19664,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Eq_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Eq_RRS {}
     impl ::core::clone::Clone for F64Eq_RRS {
@@ -19693,9 +19690,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Eq_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Eq_RRI {}
     impl ::core::clone::Clone for F64Eq_RRI {
@@ -19719,9 +19716,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Eq_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Eq_RSS {}
     impl ::core::clone::Clone for F64Eq_RSS {
@@ -19745,9 +19742,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Eq_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Eq_RSI {}
     impl ::core::clone::Clone for F64Eq_RSI {
@@ -19771,9 +19768,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Eq_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Eq_SRS {}
     impl ::core::clone::Clone for F64Eq_SRS {
@@ -19797,9 +19794,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Eq_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Eq_SRI {}
     impl ::core::clone::Clone for F64Eq_SRI {
@@ -19823,9 +19820,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Eq_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Eq_SSS {}
     impl ::core::clone::Clone for F64Eq_SSS {
@@ -19849,9 +19846,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Eq_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Eq_SSI {}
     impl ::core::clone::Clone for F64Eq_SSI {
@@ -19875,9 +19872,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ne_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Ne_RRS {}
     impl ::core::clone::Clone for F32Ne_RRS {
@@ -19901,9 +19898,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ne_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Ne_RRI {}
     impl ::core::clone::Clone for F32Ne_RRI {
@@ -19927,9 +19924,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ne_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Ne_RSS {}
     impl ::core::clone::Clone for F32Ne_RSS {
@@ -19953,9 +19950,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ne_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Ne_RSI {}
     impl ::core::clone::Clone for F32Ne_RSI {
@@ -19979,9 +19976,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ne_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Ne_SRS {}
     impl ::core::clone::Clone for F32Ne_SRS {
@@ -20005,9 +20002,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ne_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Ne_SRI {}
     impl ::core::clone::Clone for F32Ne_SRI {
@@ -20031,9 +20028,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ne_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Ne_SSS {}
     impl ::core::clone::Clone for F32Ne_SSS {
@@ -20057,9 +20054,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Ne_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Ne_SSI {}
     impl ::core::clone::Clone for F32Ne_SSI {
@@ -20083,9 +20080,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ne_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Ne_RRS {}
     impl ::core::clone::Clone for F64Ne_RRS {
@@ -20109,9 +20106,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ne_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Ne_RRI {}
     impl ::core::clone::Clone for F64Ne_RRI {
@@ -20135,9 +20132,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ne_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Ne_RSS {}
     impl ::core::clone::Clone for F64Ne_RSS {
@@ -20161,9 +20158,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ne_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Ne_RSI {}
     impl ::core::clone::Clone for F64Ne_RSI {
@@ -20187,9 +20184,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ne_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Ne_SRS {}
     impl ::core::clone::Clone for F64Ne_SRS {
@@ -20213,9 +20210,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ne_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Ne_SRI {}
     impl ::core::clone::Clone for F64Ne_SRI {
@@ -20239,9 +20236,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ne_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Ne_SSS {}
     impl ::core::clone::Clone for F64Ne_SSS {
@@ -20265,9 +20262,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Ne_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Ne_SSI {}
     impl ::core::clone::Clone for F64Ne_SSI {
@@ -20291,9 +20288,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Min_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Min_RRS {}
     impl ::core::clone::Clone for F32Min_RRS {
@@ -20317,9 +20314,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Min_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Min_RRI {}
     impl ::core::clone::Clone for F32Min_RRI {
@@ -20343,9 +20340,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Min_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Min_RSS {}
     impl ::core::clone::Clone for F32Min_RSS {
@@ -20369,9 +20366,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Min_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Min_RSI {}
     impl ::core::clone::Clone for F32Min_RSI {
@@ -20395,9 +20392,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Min_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Min_SRS {}
     impl ::core::clone::Clone for F32Min_SRS {
@@ -20421,9 +20418,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Min_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Min_SRI {}
     impl ::core::clone::Clone for F32Min_SRI {
@@ -20447,9 +20444,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Min_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Min_SSS {}
     impl ::core::clone::Clone for F32Min_SSS {
@@ -20473,9 +20470,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Min_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Min_SSI {}
     impl ::core::clone::Clone for F32Min_SSI {
@@ -20499,9 +20496,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Min_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Min_RRS {}
     impl ::core::clone::Clone for F64Min_RRS {
@@ -20525,9 +20522,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Min_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Min_RRI {}
     impl ::core::clone::Clone for F64Min_RRI {
@@ -20551,9 +20548,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Min_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Min_RSS {}
     impl ::core::clone::Clone for F64Min_RSS {
@@ -20577,9 +20574,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Min_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Min_RSI {}
     impl ::core::clone::Clone for F64Min_RSI {
@@ -20603,9 +20600,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Min_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Min_SRS {}
     impl ::core::clone::Clone for F64Min_SRS {
@@ -20629,9 +20626,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Min_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Min_SRI {}
     impl ::core::clone::Clone for F64Min_SRI {
@@ -20655,9 +20652,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Min_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Min_SSS {}
     impl ::core::clone::Clone for F64Min_SSS {
@@ -20681,9 +20678,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Min_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Min_SSI {}
     impl ::core::clone::Clone for F64Min_SSI {
@@ -20707,9 +20704,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Max_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Max_RRS {}
     impl ::core::clone::Clone for F32Max_RRS {
@@ -20733,9 +20730,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Max_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Max_RRI {}
     impl ::core::clone::Clone for F32Max_RRI {
@@ -20759,9 +20756,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Max_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Max_RSS {}
     impl ::core::clone::Clone for F32Max_RSS {
@@ -20785,9 +20782,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Max_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Max_RSI {}
     impl ::core::clone::Clone for F32Max_RSI {
@@ -20811,9 +20808,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Max_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Max_SRS {}
     impl ::core::clone::Clone for F32Max_SRS {
@@ -20837,9 +20834,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Max_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Max_SRI {}
     impl ::core::clone::Clone for F32Max_SRI {
@@ -20863,9 +20860,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Max_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Max_SSS {}
     impl ::core::clone::Clone for F32Max_SSS {
@@ -20889,9 +20886,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Max_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Max_SSI {}
     impl ::core::clone::Clone for F32Max_SSI {
@@ -20915,9 +20912,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Max_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Max_RRS {}
     impl ::core::clone::Clone for F64Max_RRS {
@@ -20941,9 +20938,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Max_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Max_RRI {}
     impl ::core::clone::Clone for F64Max_RRI {
@@ -20967,9 +20964,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Max_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Max_RSS {}
     impl ::core::clone::Clone for F64Max_RSS {
@@ -20993,9 +20990,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Max_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Max_RSI {}
     impl ::core::clone::Clone for F64Max_RSI {
@@ -21019,9 +21016,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Max_SRS {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Max_SRS {}
     impl ::core::clone::Clone for F64Max_SRS {
@@ -21045,9 +21042,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Max_SRI {
-        pub result: Stack,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Max_SRI {}
     impl ::core::clone::Clone for F64Max_SRI {
@@ -21071,9 +21068,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Max_SSS {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Max_SSS {}
     impl ::core::clone::Clone for F64Max_SSS {
@@ -21097,9 +21094,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Max_SSI {
-        pub result: Stack,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Max_SSI {}
     impl ::core::clone::Clone for F64Max_SSI {
@@ -21123,9 +21120,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Sub_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Sub_RRS {}
     impl ::core::clone::Clone for I32Sub_RRS {
@@ -21149,9 +21146,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Sub_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Sub_RRI {}
     impl ::core::clone::Clone for I32Sub_RRI {
@@ -21175,9 +21172,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Sub_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32Sub_RSR {}
     impl ::core::clone::Clone for I32Sub_RSR {
@@ -21201,9 +21198,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Sub_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Sub_RSS {}
     impl ::core::clone::Clone for I32Sub_RSS {
@@ -21227,9 +21224,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Sub_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Sub_RSI {}
     impl ::core::clone::Clone for I32Sub_RSI {
@@ -21253,9 +21250,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Sub_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32Sub_RIR {}
     impl ::core::clone::Clone for I32Sub_RIR {
@@ -21279,9 +21276,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Sub_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Sub_RIS {}
     impl ::core::clone::Clone for I32Sub_RIS {
@@ -21305,9 +21302,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Sub_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Sub_RRS {}
     impl ::core::clone::Clone for I64Sub_RRS {
@@ -21331,9 +21328,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Sub_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Sub_RRI {}
     impl ::core::clone::Clone for I64Sub_RRI {
@@ -21357,9 +21354,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Sub_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64Sub_RSR {}
     impl ::core::clone::Clone for I64Sub_RSR {
@@ -21383,9 +21380,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Sub_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Sub_RSS {}
     impl ::core::clone::Clone for I64Sub_RSS {
@@ -21409,9 +21406,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Sub_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Sub_RSI {}
     impl ::core::clone::Clone for I64Sub_RSI {
@@ -21435,9 +21432,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Sub_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64Sub_RIR {}
     impl ::core::clone::Clone for I64Sub_RIR {
@@ -21461,9 +21458,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Sub_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Sub_RIS {}
     impl ::core::clone::Clone for I64Sub_RIS {
@@ -21487,9 +21484,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtS_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LtS_RRS {}
     impl ::core::clone::Clone for I32LtS_RRS {
@@ -21513,9 +21510,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtS_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32LtS_RRI {}
     impl ::core::clone::Clone for I32LtS_RRI {
@@ -21539,9 +21536,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtS_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32LtS_RSR {}
     impl ::core::clone::Clone for I32LtS_RSR {
@@ -21565,9 +21562,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtS_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LtS_RSS {}
     impl ::core::clone::Clone for I32LtS_RSS {
@@ -21591,9 +21588,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtS_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32LtS_RSI {}
     impl ::core::clone::Clone for I32LtS_RSI {
@@ -21617,9 +21614,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtS_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32LtS_RIR {}
     impl ::core::clone::Clone for I32LtS_RIR {
@@ -21643,9 +21640,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtS_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LtS_RIS {}
     impl ::core::clone::Clone for I32LtS_RIS {
@@ -21669,9 +21666,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtS_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LtS_RRS {}
     impl ::core::clone::Clone for I64LtS_RRS {
@@ -21695,9 +21692,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtS_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64LtS_RRI {}
     impl ::core::clone::Clone for I64LtS_RRI {
@@ -21721,9 +21718,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtS_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64LtS_RSR {}
     impl ::core::clone::Clone for I64LtS_RSR {
@@ -21747,9 +21744,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtS_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LtS_RSS {}
     impl ::core::clone::Clone for I64LtS_RSS {
@@ -21773,9 +21770,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtS_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64LtS_RSI {}
     impl ::core::clone::Clone for I64LtS_RSI {
@@ -21799,9 +21796,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtS_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64LtS_RIR {}
     impl ::core::clone::Clone for I64LtS_RIR {
@@ -21825,9 +21822,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtS_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LtS_RIS {}
     impl ::core::clone::Clone for I64LtS_RIS {
@@ -21851,9 +21848,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtU_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LtU_RRS {}
     impl ::core::clone::Clone for I32LtU_RRS {
@@ -21877,9 +21874,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtU_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32LtU_RRI {}
     impl ::core::clone::Clone for I32LtU_RRI {
@@ -21903,9 +21900,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtU_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32LtU_RSR {}
     impl ::core::clone::Clone for I32LtU_RSR {
@@ -21929,9 +21926,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtU_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LtU_RSS {}
     impl ::core::clone::Clone for I32LtU_RSS {
@@ -21955,9 +21952,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtU_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32LtU_RSI {}
     impl ::core::clone::Clone for I32LtU_RSI {
@@ -21981,9 +21978,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtU_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32LtU_RIR {}
     impl ::core::clone::Clone for I32LtU_RIR {
@@ -22007,9 +22004,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LtU_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LtU_RIS {}
     impl ::core::clone::Clone for I32LtU_RIS {
@@ -22033,9 +22030,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtU_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LtU_RRS {}
     impl ::core::clone::Clone for I64LtU_RRS {
@@ -22059,9 +22056,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtU_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64LtU_RRI {}
     impl ::core::clone::Clone for I64LtU_RRI {
@@ -22085,9 +22082,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtU_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64LtU_RSR {}
     impl ::core::clone::Clone for I64LtU_RSR {
@@ -22111,9 +22108,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtU_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LtU_RSS {}
     impl ::core::clone::Clone for I64LtU_RSS {
@@ -22137,9 +22134,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtU_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64LtU_RSI {}
     impl ::core::clone::Clone for I64LtU_RSI {
@@ -22163,9 +22160,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtU_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64LtU_RIR {}
     impl ::core::clone::Clone for I64LtU_RIR {
@@ -22189,9 +22186,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LtU_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LtU_RIS {}
     impl ::core::clone::Clone for I64LtU_RIS {
@@ -22215,9 +22212,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeS_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LeS_RRS {}
     impl ::core::clone::Clone for I32LeS_RRS {
@@ -22241,9 +22238,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeS_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32LeS_RRI {}
     impl ::core::clone::Clone for I32LeS_RRI {
@@ -22267,9 +22264,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeS_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32LeS_RSR {}
     impl ::core::clone::Clone for I32LeS_RSR {
@@ -22293,9 +22290,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeS_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LeS_RSS {}
     impl ::core::clone::Clone for I32LeS_RSS {
@@ -22319,9 +22316,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeS_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32LeS_RSI {}
     impl ::core::clone::Clone for I32LeS_RSI {
@@ -22345,9 +22342,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeS_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32LeS_RIR {}
     impl ::core::clone::Clone for I32LeS_RIR {
@@ -22371,9 +22368,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeS_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LeS_RIS {}
     impl ::core::clone::Clone for I32LeS_RIS {
@@ -22397,9 +22394,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeS_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LeS_RRS {}
     impl ::core::clone::Clone for I64LeS_RRS {
@@ -22423,9 +22420,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeS_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64LeS_RRI {}
     impl ::core::clone::Clone for I64LeS_RRI {
@@ -22449,9 +22446,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeS_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64LeS_RSR {}
     impl ::core::clone::Clone for I64LeS_RSR {
@@ -22475,9 +22472,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeS_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LeS_RSS {}
     impl ::core::clone::Clone for I64LeS_RSS {
@@ -22501,9 +22498,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeS_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64LeS_RSI {}
     impl ::core::clone::Clone for I64LeS_RSI {
@@ -22527,9 +22524,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeS_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64LeS_RIR {}
     impl ::core::clone::Clone for I64LeS_RIR {
@@ -22553,9 +22550,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeS_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LeS_RIS {}
     impl ::core::clone::Clone for I64LeS_RIS {
@@ -22579,9 +22576,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeU_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LeU_RRS {}
     impl ::core::clone::Clone for I32LeU_RRS {
@@ -22605,9 +22602,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeU_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32LeU_RRI {}
     impl ::core::clone::Clone for I32LeU_RRI {
@@ -22631,9 +22628,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeU_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32LeU_RSR {}
     impl ::core::clone::Clone for I32LeU_RSR {
@@ -22657,9 +22654,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeU_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LeU_RSS {}
     impl ::core::clone::Clone for I32LeU_RSS {
@@ -22683,9 +22680,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeU_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32LeU_RSI {}
     impl ::core::clone::Clone for I32LeU_RSI {
@@ -22709,9 +22706,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeU_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32LeU_RIR {}
     impl ::core::clone::Clone for I32LeU_RIR {
@@ -22735,9 +22732,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LeU_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32LeU_RIS {}
     impl ::core::clone::Clone for I32LeU_RIS {
@@ -22761,9 +22758,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeU_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LeU_RRS {}
     impl ::core::clone::Clone for I64LeU_RRS {
@@ -22787,9 +22784,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeU_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64LeU_RRI {}
     impl ::core::clone::Clone for I64LeU_RRI {
@@ -22813,9 +22810,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeU_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64LeU_RSR {}
     impl ::core::clone::Clone for I64LeU_RSR {
@@ -22839,9 +22836,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeU_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LeU_RSS {}
     impl ::core::clone::Clone for I64LeU_RSS {
@@ -22865,9 +22862,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeU_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64LeU_RSI {}
     impl ::core::clone::Clone for I64LeU_RSI {
@@ -22891,9 +22888,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeU_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64LeU_RIR {}
     impl ::core::clone::Clone for I64LeU_RIR {
@@ -22917,9 +22914,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LeU_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64LeU_RIS {}
     impl ::core::clone::Clone for I64LeU_RIS {
@@ -22943,9 +22940,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivS_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32DivS_RRS {}
     impl ::core::clone::Clone for I32DivS_RRS {
@@ -22969,9 +22966,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivS_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32DivS_RRI {}
     impl ::core::clone::Clone for I32DivS_RRI {
@@ -22995,9 +22992,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivS_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32DivS_RSR {}
     impl ::core::clone::Clone for I32DivS_RSR {
@@ -23021,9 +23018,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivS_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32DivS_RSS {}
     impl ::core::clone::Clone for I32DivS_RSS {
@@ -23047,9 +23044,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivS_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32DivS_RSI {}
     impl ::core::clone::Clone for I32DivS_RSI {
@@ -23073,9 +23070,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivS_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32DivS_RIR {}
     impl ::core::clone::Clone for I32DivS_RIR {
@@ -23099,9 +23096,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivS_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32DivS_RIS {}
     impl ::core::clone::Clone for I32DivS_RIS {
@@ -23125,9 +23122,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivS_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64DivS_RRS {}
     impl ::core::clone::Clone for I64DivS_RRS {
@@ -23151,9 +23148,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivS_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64DivS_RRI {}
     impl ::core::clone::Clone for I64DivS_RRI {
@@ -23177,9 +23174,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivS_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64DivS_RSR {}
     impl ::core::clone::Clone for I64DivS_RSR {
@@ -23203,9 +23200,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivS_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64DivS_RSS {}
     impl ::core::clone::Clone for I64DivS_RSS {
@@ -23229,9 +23226,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivS_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64DivS_RSI {}
     impl ::core::clone::Clone for I64DivS_RSI {
@@ -23255,9 +23252,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivS_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64DivS_RIR {}
     impl ::core::clone::Clone for I64DivS_RIR {
@@ -23281,9 +23278,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivS_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64DivS_RIS {}
     impl ::core::clone::Clone for I64DivS_RIS {
@@ -23307,9 +23304,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivU_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32DivU_RRS {}
     impl ::core::clone::Clone for I32DivU_RRS {
@@ -23333,9 +23330,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivU_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32DivU_RRI {}
     impl ::core::clone::Clone for I32DivU_RRI {
@@ -23359,9 +23356,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivU_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32DivU_RSR {}
     impl ::core::clone::Clone for I32DivU_RSR {
@@ -23385,9 +23382,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivU_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32DivU_RSS {}
     impl ::core::clone::Clone for I32DivU_RSS {
@@ -23411,9 +23408,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivU_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32DivU_RSI {}
     impl ::core::clone::Clone for I32DivU_RSI {
@@ -23437,9 +23434,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivU_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32DivU_RIR {}
     impl ::core::clone::Clone for I32DivU_RIR {
@@ -23463,9 +23460,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32DivU_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32DivU_RIS {}
     impl ::core::clone::Clone for I32DivU_RIS {
@@ -23489,9 +23486,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivU_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64DivU_RRS {}
     impl ::core::clone::Clone for I64DivU_RRS {
@@ -23515,9 +23512,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivU_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64DivU_RRI {}
     impl ::core::clone::Clone for I64DivU_RRI {
@@ -23541,9 +23538,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivU_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64DivU_RSR {}
     impl ::core::clone::Clone for I64DivU_RSR {
@@ -23567,9 +23564,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivU_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64DivU_RSS {}
     impl ::core::clone::Clone for I64DivU_RSS {
@@ -23593,9 +23590,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivU_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64DivU_RSI {}
     impl ::core::clone::Clone for I64DivU_RSI {
@@ -23619,9 +23616,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivU_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64DivU_RIR {}
     impl ::core::clone::Clone for I64DivU_RIR {
@@ -23645,9 +23642,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64DivU_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64DivU_RIS {}
     impl ::core::clone::Clone for I64DivU_RIS {
@@ -23671,9 +23668,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemS_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32RemS_RRS {}
     impl ::core::clone::Clone for I32RemS_RRS {
@@ -23697,9 +23694,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemS_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32RemS_RRI {}
     impl ::core::clone::Clone for I32RemS_RRI {
@@ -23723,9 +23720,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemS_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32RemS_RSR {}
     impl ::core::clone::Clone for I32RemS_RSR {
@@ -23749,9 +23746,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemS_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32RemS_RSS {}
     impl ::core::clone::Clone for I32RemS_RSS {
@@ -23775,9 +23772,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemS_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32RemS_RSI {}
     impl ::core::clone::Clone for I32RemS_RSI {
@@ -23801,9 +23798,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemS_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32RemS_RIR {}
     impl ::core::clone::Clone for I32RemS_RIR {
@@ -23827,9 +23824,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemS_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32RemS_RIS {}
     impl ::core::clone::Clone for I32RemS_RIS {
@@ -23853,9 +23850,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemS_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64RemS_RRS {}
     impl ::core::clone::Clone for I64RemS_RRS {
@@ -23879,9 +23876,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemS_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64RemS_RRI {}
     impl ::core::clone::Clone for I64RemS_RRI {
@@ -23905,9 +23902,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemS_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64RemS_RSR {}
     impl ::core::clone::Clone for I64RemS_RSR {
@@ -23931,9 +23928,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemS_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64RemS_RSS {}
     impl ::core::clone::Clone for I64RemS_RSS {
@@ -23957,9 +23954,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemS_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64RemS_RSI {}
     impl ::core::clone::Clone for I64RemS_RSI {
@@ -23983,9 +23980,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemS_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64RemS_RIR {}
     impl ::core::clone::Clone for I64RemS_RIR {
@@ -24009,9 +24006,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemS_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64RemS_RIS {}
     impl ::core::clone::Clone for I64RemS_RIS {
@@ -24035,9 +24032,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemU_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32RemU_RRS {}
     impl ::core::clone::Clone for I32RemU_RRS {
@@ -24061,9 +24058,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemU_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32RemU_RRI {}
     impl ::core::clone::Clone for I32RemU_RRI {
@@ -24087,9 +24084,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemU_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32RemU_RSR {}
     impl ::core::clone::Clone for I32RemU_RSR {
@@ -24113,9 +24110,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemU_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32RemU_RSS {}
     impl ::core::clone::Clone for I32RemU_RSS {
@@ -24139,9 +24136,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemU_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32RemU_RSI {}
     impl ::core::clone::Clone for I32RemU_RSI {
@@ -24165,9 +24162,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemU_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32RemU_RIR {}
     impl ::core::clone::Clone for I32RemU_RIR {
@@ -24191,9 +24188,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32RemU_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32RemU_RIS {}
     impl ::core::clone::Clone for I32RemU_RIS {
@@ -24217,9 +24214,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemU_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64RemU_RRS {}
     impl ::core::clone::Clone for I64RemU_RRS {
@@ -24243,9 +24240,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemU_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64RemU_RRI {}
     impl ::core::clone::Clone for I64RemU_RRI {
@@ -24269,9 +24266,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemU_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64RemU_RSR {}
     impl ::core::clone::Clone for I64RemU_RSR {
@@ -24295,9 +24292,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemU_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64RemU_RSS {}
     impl ::core::clone::Clone for I64RemU_RSS {
@@ -24321,9 +24318,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemU_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64RemU_RSI {}
     impl ::core::clone::Clone for I64RemU_RSI {
@@ -24347,9 +24344,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemU_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64RemU_RIR {}
     impl ::core::clone::Clone for I64RemU_RIR {
@@ -24373,9 +24370,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64RemU_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64RemU_RIS {}
     impl ::core::clone::Clone for I64RemU_RIS {
@@ -24399,9 +24396,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Shl_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Shl_RRS {}
     impl ::core::clone::Clone for I32Shl_RRS {
@@ -24425,9 +24422,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Shl_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Shl_RRI {}
     impl ::core::clone::Clone for I32Shl_RRI {
@@ -24451,9 +24448,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Shl_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32Shl_RSR {}
     impl ::core::clone::Clone for I32Shl_RSR {
@@ -24477,9 +24474,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Shl_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Shl_RSS {}
     impl ::core::clone::Clone for I32Shl_RSS {
@@ -24503,9 +24500,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Shl_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Shl_RSI {}
     impl ::core::clone::Clone for I32Shl_RSI {
@@ -24529,9 +24526,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Shl_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32Shl_RIR {}
     impl ::core::clone::Clone for I32Shl_RIR {
@@ -24555,9 +24552,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Shl_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Shl_RIS {}
     impl ::core::clone::Clone for I32Shl_RIS {
@@ -24581,9 +24578,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Shl_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Shl_RRS {}
     impl ::core::clone::Clone for I64Shl_RRS {
@@ -24607,9 +24604,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Shl_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Shl_RRI {}
     impl ::core::clone::Clone for I64Shl_RRI {
@@ -24633,9 +24630,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Shl_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64Shl_RSR {}
     impl ::core::clone::Clone for I64Shl_RSR {
@@ -24659,9 +24656,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Shl_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Shl_RSS {}
     impl ::core::clone::Clone for I64Shl_RSS {
@@ -24685,9 +24682,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Shl_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Shl_RSI {}
     impl ::core::clone::Clone for I64Shl_RSI {
@@ -24711,9 +24708,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Shl_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64Shl_RIR {}
     impl ::core::clone::Clone for I64Shl_RIR {
@@ -24737,9 +24734,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Shl_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Shl_RIS {}
     impl ::core::clone::Clone for I64Shl_RIS {
@@ -24763,9 +24760,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrS_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32ShrS_RRS {}
     impl ::core::clone::Clone for I32ShrS_RRS {
@@ -24789,9 +24786,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrS_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32ShrS_RRI {}
     impl ::core::clone::Clone for I32ShrS_RRI {
@@ -24815,9 +24812,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrS_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32ShrS_RSR {}
     impl ::core::clone::Clone for I32ShrS_RSR {
@@ -24841,9 +24838,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrS_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32ShrS_RSS {}
     impl ::core::clone::Clone for I32ShrS_RSS {
@@ -24867,9 +24864,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrS_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32ShrS_RSI {}
     impl ::core::clone::Clone for I32ShrS_RSI {
@@ -24893,9 +24890,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrS_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32ShrS_RIR {}
     impl ::core::clone::Clone for I32ShrS_RIR {
@@ -24919,9 +24916,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrS_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32ShrS_RIS {}
     impl ::core::clone::Clone for I32ShrS_RIS {
@@ -24945,9 +24942,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrS_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64ShrS_RRS {}
     impl ::core::clone::Clone for I64ShrS_RRS {
@@ -24971,9 +24968,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrS_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64ShrS_RRI {}
     impl ::core::clone::Clone for I64ShrS_RRI {
@@ -24997,9 +24994,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrS_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64ShrS_RSR {}
     impl ::core::clone::Clone for I64ShrS_RSR {
@@ -25023,9 +25020,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrS_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64ShrS_RSS {}
     impl ::core::clone::Clone for I64ShrS_RSS {
@@ -25049,9 +25046,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrS_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64ShrS_RSI {}
     impl ::core::clone::Clone for I64ShrS_RSI {
@@ -25075,9 +25072,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrS_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64ShrS_RIR {}
     impl ::core::clone::Clone for I64ShrS_RIR {
@@ -25101,9 +25098,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrS_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64ShrS_RIS {}
     impl ::core::clone::Clone for I64ShrS_RIS {
@@ -25127,9 +25124,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrU_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32ShrU_RRS {}
     impl ::core::clone::Clone for I32ShrU_RRS {
@@ -25153,9 +25150,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrU_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32ShrU_RRI {}
     impl ::core::clone::Clone for I32ShrU_RRI {
@@ -25179,9 +25176,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrU_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32ShrU_RSR {}
     impl ::core::clone::Clone for I32ShrU_RSR {
@@ -25205,9 +25202,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrU_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32ShrU_RSS {}
     impl ::core::clone::Clone for I32ShrU_RSS {
@@ -25231,9 +25228,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrU_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32ShrU_RSI {}
     impl ::core::clone::Clone for I32ShrU_RSI {
@@ -25257,9 +25254,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrU_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32ShrU_RIR {}
     impl ::core::clone::Clone for I32ShrU_RIR {
@@ -25283,9 +25280,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32ShrU_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32ShrU_RIS {}
     impl ::core::clone::Clone for I32ShrU_RIS {
@@ -25309,9 +25306,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrU_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64ShrU_RRS {}
     impl ::core::clone::Clone for I64ShrU_RRS {
@@ -25335,9 +25332,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrU_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64ShrU_RRI {}
     impl ::core::clone::Clone for I64ShrU_RRI {
@@ -25361,9 +25358,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrU_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64ShrU_RSR {}
     impl ::core::clone::Clone for I64ShrU_RSR {
@@ -25387,9 +25384,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrU_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64ShrU_RSS {}
     impl ::core::clone::Clone for I64ShrU_RSS {
@@ -25413,9 +25410,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrU_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64ShrU_RSI {}
     impl ::core::clone::Clone for I64ShrU_RSI {
@@ -25439,9 +25436,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrU_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64ShrU_RIR {}
     impl ::core::clone::Clone for I64ShrU_RIR {
@@ -25465,9 +25462,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64ShrU_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64ShrU_RIS {}
     impl ::core::clone::Clone for I64ShrU_RIS {
@@ -25491,9 +25488,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotl_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Rotl_RRS {}
     impl ::core::clone::Clone for I32Rotl_RRS {
@@ -25517,9 +25514,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotl_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Rotl_RRI {}
     impl ::core::clone::Clone for I32Rotl_RRI {
@@ -25543,9 +25540,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotl_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32Rotl_RSR {}
     impl ::core::clone::Clone for I32Rotl_RSR {
@@ -25569,9 +25566,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotl_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Rotl_RSS {}
     impl ::core::clone::Clone for I32Rotl_RSS {
@@ -25595,9 +25592,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotl_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Rotl_RSI {}
     impl ::core::clone::Clone for I32Rotl_RSI {
@@ -25621,9 +25618,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotl_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32Rotl_RIR {}
     impl ::core::clone::Clone for I32Rotl_RIR {
@@ -25647,9 +25644,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotl_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Rotl_RIS {}
     impl ::core::clone::Clone for I32Rotl_RIS {
@@ -25673,9 +25670,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotl_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Rotl_RRS {}
     impl ::core::clone::Clone for I64Rotl_RRS {
@@ -25699,9 +25696,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotl_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Rotl_RRI {}
     impl ::core::clone::Clone for I64Rotl_RRI {
@@ -25725,9 +25722,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotl_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64Rotl_RSR {}
     impl ::core::clone::Clone for I64Rotl_RSR {
@@ -25751,9 +25748,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotl_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Rotl_RSS {}
     impl ::core::clone::Clone for I64Rotl_RSS {
@@ -25777,9 +25774,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotl_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Rotl_RSI {}
     impl ::core::clone::Clone for I64Rotl_RSI {
@@ -25803,9 +25800,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotl_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64Rotl_RIR {}
     impl ::core::clone::Clone for I64Rotl_RIR {
@@ -25829,9 +25826,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotl_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Rotl_RIS {}
     impl ::core::clone::Clone for I64Rotl_RIS {
@@ -25855,9 +25852,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotr_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Rotr_RRS {}
     impl ::core::clone::Clone for I32Rotr_RRS {
@@ -25881,9 +25878,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotr_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Rotr_RRI {}
     impl ::core::clone::Clone for I32Rotr_RRI {
@@ -25907,9 +25904,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotr_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32Rotr_RSR {}
     impl ::core::clone::Clone for I32Rotr_RSR {
@@ -25933,9 +25930,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotr_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Rotr_RSS {}
     impl ::core::clone::Clone for I32Rotr_RSS {
@@ -25959,9 +25956,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotr_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Rotr_RSI {}
     impl ::core::clone::Clone for I32Rotr_RSI {
@@ -25985,9 +25982,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotr_RIR {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I32Rotr_RIR {}
     impl ::core::clone::Clone for I32Rotr_RIR {
@@ -26011,9 +26008,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Rotr_RIS {
-        pub result: Reg,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I32Rotr_RIS {}
     impl ::core::clone::Clone for I32Rotr_RIS {
@@ -26037,9 +26034,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotr_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Rotr_RRS {}
     impl ::core::clone::Clone for I64Rotr_RRS {
@@ -26063,9 +26060,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotr_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Rotr_RRI {}
     impl ::core::clone::Clone for I64Rotr_RRI {
@@ -26089,9 +26086,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotr_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64Rotr_RSR {}
     impl ::core::clone::Clone for I64Rotr_RSR {
@@ -26115,9 +26112,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotr_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Rotr_RSS {}
     impl ::core::clone::Clone for I64Rotr_RSS {
@@ -26141,9 +26138,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotr_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Rotr_RSI {}
     impl ::core::clone::Clone for I64Rotr_RSI {
@@ -26167,9 +26164,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotr_RIR {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for I64Rotr_RIR {}
     impl ::core::clone::Clone for I64Rotr_RIR {
@@ -26193,9 +26190,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Rotr_RIS {
-        pub result: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for I64Rotr_RIS {}
     impl ::core::clone::Clone for I64Rotr_RIS {
@@ -26219,9 +26216,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sub_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Sub_RRS {}
     impl ::core::clone::Clone for F32Sub_RRS {
@@ -26245,9 +26242,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sub_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Sub_RRI {}
     impl ::core::clone::Clone for F32Sub_RRI {
@@ -26271,9 +26268,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sub_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F32Sub_RSR {}
     impl ::core::clone::Clone for F32Sub_RSR {
@@ -26297,9 +26294,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sub_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Sub_RSS {}
     impl ::core::clone::Clone for F32Sub_RSS {
@@ -26323,9 +26320,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sub_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Sub_RSI {}
     impl ::core::clone::Clone for F32Sub_RSI {
@@ -26349,9 +26346,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sub_RIR {
-        pub result: Reg,
-        pub lhs: f32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F32Sub_RIR {}
     impl ::core::clone::Clone for F32Sub_RIR {
@@ -26375,9 +26372,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Sub_RIS {
-        pub result: Reg,
-        pub lhs: f32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Sub_RIS {}
     impl ::core::clone::Clone for F32Sub_RIS {
@@ -26401,9 +26398,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sub_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Sub_RRS {}
     impl ::core::clone::Clone for F64Sub_RRS {
@@ -26427,9 +26424,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sub_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Sub_RRI {}
     impl ::core::clone::Clone for F64Sub_RRI {
@@ -26453,9 +26450,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sub_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F64Sub_RSR {}
     impl ::core::clone::Clone for F64Sub_RSR {
@@ -26479,9 +26476,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sub_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Sub_RSS {}
     impl ::core::clone::Clone for F64Sub_RSS {
@@ -26505,9 +26502,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sub_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Sub_RSI {}
     impl ::core::clone::Clone for F64Sub_RSI {
@@ -26531,9 +26528,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sub_RIR {
-        pub result: Reg,
-        pub lhs: f64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F64Sub_RIR {}
     impl ::core::clone::Clone for F64Sub_RIR {
@@ -26557,9 +26554,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Sub_RIS {
-        pub result: Reg,
-        pub lhs: f64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Sub_RIS {}
     impl ::core::clone::Clone for F64Sub_RIS {
@@ -26583,9 +26580,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Div_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Div_RRS {}
     impl ::core::clone::Clone for F32Div_RRS {
@@ -26609,9 +26606,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Div_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Div_RRI {}
     impl ::core::clone::Clone for F32Div_RRI {
@@ -26635,9 +26632,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Div_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F32Div_RSR {}
     impl ::core::clone::Clone for F32Div_RSR {
@@ -26661,9 +26658,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Div_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Div_RSS {}
     impl ::core::clone::Clone for F32Div_RSS {
@@ -26687,9 +26684,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Div_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Div_RSI {}
     impl ::core::clone::Clone for F32Div_RSI {
@@ -26713,9 +26710,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Div_RIR {
-        pub result: Reg,
-        pub lhs: f32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F32Div_RIR {}
     impl ::core::clone::Clone for F32Div_RIR {
@@ -26739,9 +26736,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Div_RIS {
-        pub result: Reg,
-        pub lhs: f32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Div_RIS {}
     impl ::core::clone::Clone for F32Div_RIS {
@@ -26765,9 +26762,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Div_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Div_RRS {}
     impl ::core::clone::Clone for F64Div_RRS {
@@ -26791,9 +26788,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Div_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Div_RRI {}
     impl ::core::clone::Clone for F64Div_RRI {
@@ -26817,9 +26814,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Div_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F64Div_RSR {}
     impl ::core::clone::Clone for F64Div_RSR {
@@ -26843,9 +26840,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Div_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Div_RSS {}
     impl ::core::clone::Clone for F64Div_RSS {
@@ -26869,9 +26866,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Div_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Div_RSI {}
     impl ::core::clone::Clone for F64Div_RSI {
@@ -26895,9 +26892,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Div_RIR {
-        pub result: Reg,
-        pub lhs: f64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F64Div_RIR {}
     impl ::core::clone::Clone for F64Div_RIR {
@@ -26921,9 +26918,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Div_RIS {
-        pub result: Reg,
-        pub lhs: f64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Div_RIS {}
     impl ::core::clone::Clone for F64Div_RIS {
@@ -26947,9 +26944,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Copysign_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Copysign_RRS {}
     impl ::core::clone::Clone for F32Copysign_RRS {
@@ -26973,9 +26970,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Copysign_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Copysign_RRI {}
     impl ::core::clone::Clone for F32Copysign_RRI {
@@ -26999,9 +26996,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Copysign_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F32Copysign_RSR {}
     impl ::core::clone::Clone for F32Copysign_RSR {
@@ -27025,9 +27022,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Copysign_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Copysign_RSS {}
     impl ::core::clone::Clone for F32Copysign_RSS {
@@ -27051,9 +27048,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Copysign_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32Copysign_RSI {}
     impl ::core::clone::Clone for F32Copysign_RSI {
@@ -27077,9 +27074,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Copysign_RIR {
-        pub result: Reg,
-        pub lhs: f32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F32Copysign_RIR {}
     impl ::core::clone::Clone for F32Copysign_RIR {
@@ -27103,9 +27100,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Copysign_RIS {
-        pub result: Reg,
-        pub lhs: f32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F32Copysign_RIS {}
     impl ::core::clone::Clone for F32Copysign_RIS {
@@ -27129,9 +27126,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Copysign_RRS {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Copysign_RRS {}
     impl ::core::clone::Clone for F64Copysign_RRS {
@@ -27155,9 +27152,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Copysign_RRI {
-        pub result: Reg,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Copysign_RRI {}
     impl ::core::clone::Clone for F64Copysign_RRI {
@@ -27181,9 +27178,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Copysign_RSR {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F64Copysign_RSR {}
     impl ::core::clone::Clone for F64Copysign_RSR {
@@ -27207,9 +27204,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Copysign_RSS {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Copysign_RSS {}
     impl ::core::clone::Clone for F64Copysign_RSS {
@@ -27233,9 +27230,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Copysign_RSI {
-        pub result: Reg,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64Copysign_RSI {}
     impl ::core::clone::Clone for F64Copysign_RSI {
@@ -27259,9 +27256,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Copysign_RIR {
-        pub result: Reg,
-        pub lhs: f64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for F64Copysign_RIR {}
     impl ::core::clone::Clone for F64Copysign_RIR {
@@ -27285,9 +27282,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Copysign_RIS {
-        pub result: Reg,
-        pub lhs: f64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for F64Copysign_RIS {}
     impl ::core::clone::Clone for F64Copysign_RIS {
@@ -27311,10 +27308,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load_RR {}
     impl ::core::clone::Clone for I32Load_RR {
@@ -27339,10 +27336,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load_RS {}
     impl ::core::clone::Clone for I32Load_RS {
@@ -27367,10 +27364,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load_RI {}
     impl ::core::clone::Clone for I32Load_RI {
@@ -27395,9 +27392,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LoadMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32LoadMem0_RR {}
     impl ::core::clone::Clone for I32LoadMem0_RR {
@@ -27421,9 +27418,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LoadMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32LoadMem0_RS {}
     impl ::core::clone::Clone for I32LoadMem0_RS {
@@ -27447,9 +27444,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LoadMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32LoadMem0_RI {}
     impl ::core::clone::Clone for I32LoadMem0_RI {
@@ -27473,9 +27470,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LoadMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32LoadMem0_SR {}
     impl ::core::clone::Clone for I32LoadMem0_SR {
@@ -27499,9 +27496,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LoadMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32LoadMem0_SS {}
     impl ::core::clone::Clone for I32LoadMem0_SS {
@@ -27525,9 +27522,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32LoadMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32LoadMem0_SI {}
     impl ::core::clone::Clone for I32LoadMem0_SI {
@@ -27551,10 +27548,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load_RR {}
     impl ::core::clone::Clone for I64Load_RR {
@@ -27579,10 +27576,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load_RS {}
     impl ::core::clone::Clone for I64Load_RS {
@@ -27607,10 +27604,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load_RI {}
     impl ::core::clone::Clone for I64Load_RI {
@@ -27635,9 +27632,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LoadMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64LoadMem0_RR {}
     impl ::core::clone::Clone for I64LoadMem0_RR {
@@ -27661,9 +27658,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LoadMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64LoadMem0_RS {}
     impl ::core::clone::Clone for I64LoadMem0_RS {
@@ -27687,9 +27684,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LoadMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64LoadMem0_RI {}
     impl ::core::clone::Clone for I64LoadMem0_RI {
@@ -27713,9 +27710,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LoadMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64LoadMem0_SR {}
     impl ::core::clone::Clone for I64LoadMem0_SR {
@@ -27739,9 +27736,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LoadMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64LoadMem0_SS {}
     impl ::core::clone::Clone for I64LoadMem0_SS {
@@ -27765,9 +27762,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64LoadMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64LoadMem0_SI {}
     impl ::core::clone::Clone for I64LoadMem0_SI {
@@ -27791,10 +27788,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Load_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Load_RR {}
     impl ::core::clone::Clone for F32Load_RR {
@@ -27819,10 +27816,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Load_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Load_RS {}
     impl ::core::clone::Clone for F32Load_RS {
@@ -27847,10 +27844,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Load_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Load_RI {}
     impl ::core::clone::Clone for F32Load_RI {
@@ -27875,9 +27872,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LoadMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32LoadMem0_RR {}
     impl ::core::clone::Clone for F32LoadMem0_RR {
@@ -27901,9 +27898,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LoadMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32LoadMem0_RS {}
     impl ::core::clone::Clone for F32LoadMem0_RS {
@@ -27927,9 +27924,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LoadMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32LoadMem0_RI {}
     impl ::core::clone::Clone for F32LoadMem0_RI {
@@ -27953,9 +27950,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LoadMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32LoadMem0_SR {}
     impl ::core::clone::Clone for F32LoadMem0_SR {
@@ -27979,9 +27976,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LoadMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32LoadMem0_SS {}
     impl ::core::clone::Clone for F32LoadMem0_SS {
@@ -28005,9 +28002,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32LoadMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32LoadMem0_SI {}
     impl ::core::clone::Clone for F32LoadMem0_SI {
@@ -28031,10 +28028,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Load_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Load_RR {}
     impl ::core::clone::Clone for F64Load_RR {
@@ -28059,10 +28056,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Load_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Load_RS {}
     impl ::core::clone::Clone for F64Load_RS {
@@ -28087,10 +28084,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Load_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Load_RI {}
     impl ::core::clone::Clone for F64Load_RI {
@@ -28115,9 +28112,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LoadMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64LoadMem0_RR {}
     impl ::core::clone::Clone for F64LoadMem0_RR {
@@ -28141,9 +28138,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LoadMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64LoadMem0_RS {}
     impl ::core::clone::Clone for F64LoadMem0_RS {
@@ -28167,9 +28164,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LoadMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64LoadMem0_RI {}
     impl ::core::clone::Clone for F64LoadMem0_RI {
@@ -28193,9 +28190,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LoadMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64LoadMem0_SR {}
     impl ::core::clone::Clone for F64LoadMem0_SR {
@@ -28219,9 +28216,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LoadMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64LoadMem0_SS {}
     impl ::core::clone::Clone for F64LoadMem0_SS {
@@ -28245,9 +28242,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64LoadMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64LoadMem0_SI {}
     impl ::core::clone::Clone for F64LoadMem0_SI {
@@ -28271,10 +28268,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8S_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load8S_RR {}
     impl ::core::clone::Clone for I32Load8S_RR {
@@ -28299,10 +28296,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8S_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load8S_RS {}
     impl ::core::clone::Clone for I32Load8S_RS {
@@ -28327,10 +28324,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8S_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load8S_RI {}
     impl ::core::clone::Clone for I32Load8S_RI {
@@ -28355,9 +28352,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8SMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8SMem0_RR {}
     impl ::core::clone::Clone for I32Load8SMem0_RR {
@@ -28381,9 +28378,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8SMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8SMem0_RS {}
     impl ::core::clone::Clone for I32Load8SMem0_RS {
@@ -28407,9 +28404,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8SMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8SMem0_RI {}
     impl ::core::clone::Clone for I32Load8SMem0_RI {
@@ -28433,9 +28430,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8SMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8SMem0_SR {}
     impl ::core::clone::Clone for I32Load8SMem0_SR {
@@ -28459,9 +28456,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8SMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8SMem0_SS {}
     impl ::core::clone::Clone for I32Load8SMem0_SS {
@@ -28485,9 +28482,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8SMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8SMem0_SI {}
     impl ::core::clone::Clone for I32Load8SMem0_SI {
@@ -28511,10 +28508,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8S_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load8S_RR {}
     impl ::core::clone::Clone for I64Load8S_RR {
@@ -28539,10 +28536,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8S_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load8S_RS {}
     impl ::core::clone::Clone for I64Load8S_RS {
@@ -28567,10 +28564,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8S_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load8S_RI {}
     impl ::core::clone::Clone for I64Load8S_RI {
@@ -28595,9 +28592,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8SMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8SMem0_RR {}
     impl ::core::clone::Clone for I64Load8SMem0_RR {
@@ -28621,9 +28618,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8SMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8SMem0_RS {}
     impl ::core::clone::Clone for I64Load8SMem0_RS {
@@ -28647,9 +28644,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8SMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8SMem0_RI {}
     impl ::core::clone::Clone for I64Load8SMem0_RI {
@@ -28673,9 +28670,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8SMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8SMem0_SR {}
     impl ::core::clone::Clone for I64Load8SMem0_SR {
@@ -28699,9 +28696,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8SMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8SMem0_SS {}
     impl ::core::clone::Clone for I64Load8SMem0_SS {
@@ -28725,9 +28722,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8SMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8SMem0_SI {}
     impl ::core::clone::Clone for I64Load8SMem0_SI {
@@ -28751,10 +28748,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8U_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load8U_RR {}
     impl ::core::clone::Clone for I32Load8U_RR {
@@ -28779,10 +28776,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8U_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load8U_RS {}
     impl ::core::clone::Clone for I32Load8U_RS {
@@ -28807,10 +28804,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8U_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load8U_RI {}
     impl ::core::clone::Clone for I32Load8U_RI {
@@ -28835,9 +28832,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8UMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8UMem0_RR {}
     impl ::core::clone::Clone for I32Load8UMem0_RR {
@@ -28861,9 +28858,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8UMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8UMem0_RS {}
     impl ::core::clone::Clone for I32Load8UMem0_RS {
@@ -28887,9 +28884,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8UMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8UMem0_RI {}
     impl ::core::clone::Clone for I32Load8UMem0_RI {
@@ -28913,9 +28910,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8UMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8UMem0_SR {}
     impl ::core::clone::Clone for I32Load8UMem0_SR {
@@ -28939,9 +28936,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8UMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8UMem0_SS {}
     impl ::core::clone::Clone for I32Load8UMem0_SS {
@@ -28965,9 +28962,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load8UMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load8UMem0_SI {}
     impl ::core::clone::Clone for I32Load8UMem0_SI {
@@ -28991,10 +28988,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8U_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load8U_RR {}
     impl ::core::clone::Clone for I64Load8U_RR {
@@ -29019,10 +29016,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8U_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load8U_RS {}
     impl ::core::clone::Clone for I64Load8U_RS {
@@ -29047,10 +29044,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8U_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load8U_RI {}
     impl ::core::clone::Clone for I64Load8U_RI {
@@ -29075,9 +29072,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8UMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8UMem0_RR {}
     impl ::core::clone::Clone for I64Load8UMem0_RR {
@@ -29101,9 +29098,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8UMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8UMem0_RS {}
     impl ::core::clone::Clone for I64Load8UMem0_RS {
@@ -29127,9 +29124,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8UMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8UMem0_RI {}
     impl ::core::clone::Clone for I64Load8UMem0_RI {
@@ -29153,9 +29150,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8UMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8UMem0_SR {}
     impl ::core::clone::Clone for I64Load8UMem0_SR {
@@ -29179,9 +29176,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8UMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8UMem0_SS {}
     impl ::core::clone::Clone for I64Load8UMem0_SS {
@@ -29205,9 +29202,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load8UMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load8UMem0_SI {}
     impl ::core::clone::Clone for I64Load8UMem0_SI {
@@ -29231,10 +29228,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16S_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load16S_RR {}
     impl ::core::clone::Clone for I32Load16S_RR {
@@ -29259,10 +29256,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16S_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load16S_RS {}
     impl ::core::clone::Clone for I32Load16S_RS {
@@ -29287,10 +29284,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16S_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load16S_RI {}
     impl ::core::clone::Clone for I32Load16S_RI {
@@ -29315,9 +29312,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16SMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16SMem0_RR {}
     impl ::core::clone::Clone for I32Load16SMem0_RR {
@@ -29341,9 +29338,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16SMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16SMem0_RS {}
     impl ::core::clone::Clone for I32Load16SMem0_RS {
@@ -29367,9 +29364,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16SMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16SMem0_RI {}
     impl ::core::clone::Clone for I32Load16SMem0_RI {
@@ -29393,9 +29390,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16SMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16SMem0_SR {}
     impl ::core::clone::Clone for I32Load16SMem0_SR {
@@ -29419,9 +29416,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16SMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16SMem0_SS {}
     impl ::core::clone::Clone for I32Load16SMem0_SS {
@@ -29445,9 +29442,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16SMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16SMem0_SI {}
     impl ::core::clone::Clone for I32Load16SMem0_SI {
@@ -29471,10 +29468,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16S_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load16S_RR {}
     impl ::core::clone::Clone for I64Load16S_RR {
@@ -29499,10 +29496,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16S_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load16S_RS {}
     impl ::core::clone::Clone for I64Load16S_RS {
@@ -29527,10 +29524,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16S_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load16S_RI {}
     impl ::core::clone::Clone for I64Load16S_RI {
@@ -29555,9 +29552,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16SMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16SMem0_RR {}
     impl ::core::clone::Clone for I64Load16SMem0_RR {
@@ -29581,9 +29578,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16SMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16SMem0_RS {}
     impl ::core::clone::Clone for I64Load16SMem0_RS {
@@ -29607,9 +29604,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16SMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16SMem0_RI {}
     impl ::core::clone::Clone for I64Load16SMem0_RI {
@@ -29633,9 +29630,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16SMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16SMem0_SR {}
     impl ::core::clone::Clone for I64Load16SMem0_SR {
@@ -29659,9 +29656,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16SMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16SMem0_SS {}
     impl ::core::clone::Clone for I64Load16SMem0_SS {
@@ -29685,9 +29682,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16SMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16SMem0_SI {}
     impl ::core::clone::Clone for I64Load16SMem0_SI {
@@ -29711,10 +29708,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16U_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load16U_RR {}
     impl ::core::clone::Clone for I32Load16U_RR {
@@ -29739,10 +29736,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16U_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load16U_RS {}
     impl ::core::clone::Clone for I32Load16U_RS {
@@ -29767,10 +29764,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16U_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Load16U_RI {}
     impl ::core::clone::Clone for I32Load16U_RI {
@@ -29795,9 +29792,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16UMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16UMem0_RR {}
     impl ::core::clone::Clone for I32Load16UMem0_RR {
@@ -29821,9 +29818,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16UMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16UMem0_RS {}
     impl ::core::clone::Clone for I32Load16UMem0_RS {
@@ -29847,9 +29844,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16UMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16UMem0_RI {}
     impl ::core::clone::Clone for I32Load16UMem0_RI {
@@ -29873,9 +29870,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16UMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16UMem0_SR {}
     impl ::core::clone::Clone for I32Load16UMem0_SR {
@@ -29899,9 +29896,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16UMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16UMem0_SS {}
     impl ::core::clone::Clone for I32Load16UMem0_SS {
@@ -29925,9 +29922,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Load16UMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Load16UMem0_SI {}
     impl ::core::clone::Clone for I32Load16UMem0_SI {
@@ -29951,10 +29948,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16U_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load16U_RR {}
     impl ::core::clone::Clone for I64Load16U_RR {
@@ -29979,10 +29976,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16U_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load16U_RS {}
     impl ::core::clone::Clone for I64Load16U_RS {
@@ -30007,10 +30004,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16U_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load16U_RI {}
     impl ::core::clone::Clone for I64Load16U_RI {
@@ -30035,9 +30032,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16UMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16UMem0_RR {}
     impl ::core::clone::Clone for I64Load16UMem0_RR {
@@ -30061,9 +30058,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16UMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16UMem0_RS {}
     impl ::core::clone::Clone for I64Load16UMem0_RS {
@@ -30087,9 +30084,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16UMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16UMem0_RI {}
     impl ::core::clone::Clone for I64Load16UMem0_RI {
@@ -30113,9 +30110,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16UMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16UMem0_SR {}
     impl ::core::clone::Clone for I64Load16UMem0_SR {
@@ -30139,9 +30136,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16UMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16UMem0_SS {}
     impl ::core::clone::Clone for I64Load16UMem0_SS {
@@ -30165,9 +30162,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load16UMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load16UMem0_SI {}
     impl ::core::clone::Clone for I64Load16UMem0_SI {
@@ -30191,10 +30188,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32S_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load32S_RR {}
     impl ::core::clone::Clone for I64Load32S_RR {
@@ -30219,10 +30216,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32S_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load32S_RS {}
     impl ::core::clone::Clone for I64Load32S_RS {
@@ -30247,10 +30244,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32S_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load32S_RI {}
     impl ::core::clone::Clone for I64Load32S_RI {
@@ -30275,9 +30272,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32SMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32SMem0_RR {}
     impl ::core::clone::Clone for I64Load32SMem0_RR {
@@ -30301,9 +30298,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32SMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32SMem0_RS {}
     impl ::core::clone::Clone for I64Load32SMem0_RS {
@@ -30327,9 +30324,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32SMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32SMem0_RI {}
     impl ::core::clone::Clone for I64Load32SMem0_RI {
@@ -30353,9 +30350,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32SMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32SMem0_SR {}
     impl ::core::clone::Clone for I64Load32SMem0_SR {
@@ -30379,9 +30376,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32SMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32SMem0_SS {}
     impl ::core::clone::Clone for I64Load32SMem0_SS {
@@ -30405,9 +30402,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32SMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32SMem0_SI {}
     impl ::core::clone::Clone for I64Load32SMem0_SI {
@@ -30431,10 +30428,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32U_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load32U_RR {}
     impl ::core::clone::Clone for I64Load32U_RR {
@@ -30459,10 +30456,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32U_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load32U_RS {}
     impl ::core::clone::Clone for I64Load32U_RS {
@@ -30487,10 +30484,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32U_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Load32U_RI {}
     impl ::core::clone::Clone for I64Load32U_RI {
@@ -30515,9 +30512,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32UMem0_RR {
-        pub result: Reg,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32UMem0_RR {}
     impl ::core::clone::Clone for I64Load32UMem0_RR {
@@ -30541,9 +30538,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32UMem0_RS {
-        pub result: Reg,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32UMem0_RS {}
     impl ::core::clone::Clone for I64Load32UMem0_RS {
@@ -30567,9 +30564,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32UMem0_RI {
-        pub result: Reg,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Reg,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32UMem0_RI {}
     impl ::core::clone::Clone for I64Load32UMem0_RI {
@@ -30593,9 +30590,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32UMem0_SR {
-        pub result: Stack,
-        pub ptr: Reg,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32UMem0_SR {}
     impl ::core::clone::Clone for I64Load32UMem0_SR {
@@ -30619,9 +30616,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32UMem0_SS {
-        pub result: Stack,
-        pub ptr: Stack,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32UMem0_SS {}
     impl ::core::clone::Clone for I64Load32UMem0_SS {
@@ -30645,9 +30642,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Load32UMem0_SI {
-        pub result: Stack,
-        pub ptr: i64,
-        pub offset: Offset,
+        pub result: crate::Stack,
+        pub ptr: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Load32UMem0_SI {}
     impl ::core::clone::Clone for I64Load32UMem0_SI {
@@ -30671,10 +30668,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store_RS {}
     impl ::core::clone::Clone for I32Store_RS {
@@ -30699,10 +30696,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store_RI {
-        pub ptr: Reg,
-        pub value: i32,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store_RI {}
     impl ::core::clone::Clone for I32Store_RI {
@@ -30727,10 +30724,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store_SR {}
     impl ::core::clone::Clone for I32Store_SR {
@@ -30755,10 +30752,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store_SS {}
     impl ::core::clone::Clone for I32Store_SS {
@@ -30783,10 +30780,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store_SI {
-        pub ptr: Stack,
-        pub value: i32,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store_SI {}
     impl ::core::clone::Clone for I32Store_SI {
@@ -30811,9 +30808,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store_IR {
-        pub address: Address,
-        pub value: Reg,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Reg,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store_IR {}
     impl ::core::clone::Clone for I32Store_IR {
@@ -30837,9 +30834,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store_IS {
-        pub address: Address,
-        pub value: Stack,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store_IS {}
     impl ::core::clone::Clone for I32Store_IS {
@@ -30863,9 +30860,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store_II {
-        pub address: Address,
-        pub value: i32,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i32,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store_II {}
     impl ::core::clone::Clone for I32Store_II {
@@ -30889,9 +30886,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32StoreMem0_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32StoreMem0_RS {}
     impl ::core::clone::Clone for I32StoreMem0_RS {
@@ -30915,9 +30912,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32StoreMem0_RI {
-        pub ptr: Reg,
-        pub value: i32,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32StoreMem0_RI {}
     impl ::core::clone::Clone for I32StoreMem0_RI {
@@ -30941,9 +30938,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32StoreMem0_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32StoreMem0_SR {}
     impl ::core::clone::Clone for I32StoreMem0_SR {
@@ -30967,9 +30964,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32StoreMem0_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32StoreMem0_SS {}
     impl ::core::clone::Clone for I32StoreMem0_SS {
@@ -30993,9 +30990,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32StoreMem0_SI {
-        pub ptr: Stack,
-        pub value: i32,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32StoreMem0_SI {}
     impl ::core::clone::Clone for I32StoreMem0_SI {
@@ -31019,8 +31016,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32StoreMem0_IR {
-        pub address: Address,
-        pub value: Reg,
+        pub address: crate::Address,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for I32StoreMem0_IR {}
     impl ::core::clone::Clone for I32StoreMem0_IR {
@@ -31043,8 +31040,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32StoreMem0_IS {
-        pub address: Address,
-        pub value: Stack,
+        pub address: crate::Address,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for I32StoreMem0_IS {}
     impl ::core::clone::Clone for I32StoreMem0_IS {
@@ -31067,8 +31064,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32StoreMem0_II {
-        pub address: Address,
-        pub value: i32,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32StoreMem0_II {}
     impl ::core::clone::Clone for I32StoreMem0_II {
@@ -31091,10 +31088,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store_RS {}
     impl ::core::clone::Clone for I64Store_RS {
@@ -31119,10 +31116,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store_RI {
-        pub ptr: Reg,
-        pub value: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store_RI {}
     impl ::core::clone::Clone for I64Store_RI {
@@ -31147,10 +31144,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store_SR {}
     impl ::core::clone::Clone for I64Store_SR {
@@ -31175,10 +31172,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store_SS {}
     impl ::core::clone::Clone for I64Store_SS {
@@ -31203,10 +31200,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store_SI {
-        pub ptr: Stack,
-        pub value: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store_SI {}
     impl ::core::clone::Clone for I64Store_SI {
@@ -31231,9 +31228,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store_IR {
-        pub address: Address,
-        pub value: Reg,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Reg,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store_IR {}
     impl ::core::clone::Clone for I64Store_IR {
@@ -31257,9 +31254,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store_IS {
-        pub address: Address,
-        pub value: Stack,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store_IS {}
     impl ::core::clone::Clone for I64Store_IS {
@@ -31283,9 +31280,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store_II {
-        pub address: Address,
-        pub value: i64,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i64,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store_II {}
     impl ::core::clone::Clone for I64Store_II {
@@ -31309,9 +31306,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64StoreMem0_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64StoreMem0_RS {}
     impl ::core::clone::Clone for I64StoreMem0_RS {
@@ -31335,9 +31332,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64StoreMem0_RI {
-        pub ptr: Reg,
-        pub value: i64,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64StoreMem0_RI {}
     impl ::core::clone::Clone for I64StoreMem0_RI {
@@ -31361,9 +31358,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64StoreMem0_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64StoreMem0_SR {}
     impl ::core::clone::Clone for I64StoreMem0_SR {
@@ -31387,9 +31384,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64StoreMem0_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64StoreMem0_SS {}
     impl ::core::clone::Clone for I64StoreMem0_SS {
@@ -31413,9 +31410,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64StoreMem0_SI {
-        pub ptr: Stack,
-        pub value: i64,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64StoreMem0_SI {}
     impl ::core::clone::Clone for I64StoreMem0_SI {
@@ -31439,8 +31436,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64StoreMem0_IR {
-        pub address: Address,
-        pub value: Reg,
+        pub address: crate::Address,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for I64StoreMem0_IR {}
     impl ::core::clone::Clone for I64StoreMem0_IR {
@@ -31463,8 +31460,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64StoreMem0_IS {
-        pub address: Address,
-        pub value: Stack,
+        pub address: crate::Address,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for I64StoreMem0_IS {}
     impl ::core::clone::Clone for I64StoreMem0_IS {
@@ -31487,8 +31484,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64StoreMem0_II {
-        pub address: Address,
-        pub value: i64,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64StoreMem0_II {}
     impl ::core::clone::Clone for I64StoreMem0_II {
@@ -31511,10 +31508,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Store_RR {
-        pub ptr: Reg,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Store_RR {}
     impl ::core::clone::Clone for F32Store_RR {
@@ -31539,10 +31536,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Store_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Store_RS {}
     impl ::core::clone::Clone for F32Store_RS {
@@ -31567,10 +31564,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Store_RI {
-        pub ptr: Reg,
-        pub value: f32,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::f32,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Store_RI {}
     impl ::core::clone::Clone for F32Store_RI {
@@ -31595,10 +31592,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Store_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Store_SR {}
     impl ::core::clone::Clone for F32Store_SR {
@@ -31623,10 +31620,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Store_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Store_SS {}
     impl ::core::clone::Clone for F32Store_SS {
@@ -31651,10 +31648,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Store_SI {
-        pub ptr: Stack,
-        pub value: f32,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::f32,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Store_SI {}
     impl ::core::clone::Clone for F32Store_SI {
@@ -31679,9 +31676,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Store_IR {
-        pub address: Address,
-        pub value: Reg,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Reg,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Store_IR {}
     impl ::core::clone::Clone for F32Store_IR {
@@ -31705,9 +31702,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Store_IS {
-        pub address: Address,
-        pub value: Stack,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Store_IS {}
     impl ::core::clone::Clone for F32Store_IS {
@@ -31731,9 +31728,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32Store_II {
-        pub address: Address,
-        pub value: f32,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: ::core::primitive::f32,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F32Store_II {}
     impl ::core::clone::Clone for F32Store_II {
@@ -31757,9 +31754,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32StoreMem0_RR {
-        pub ptr: Reg,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32StoreMem0_RR {}
     impl ::core::clone::Clone for F32StoreMem0_RR {
@@ -31783,9 +31780,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32StoreMem0_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32StoreMem0_RS {}
     impl ::core::clone::Clone for F32StoreMem0_RS {
@@ -31809,9 +31806,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32StoreMem0_RI {
-        pub ptr: Reg,
-        pub value: f32,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::f32,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32StoreMem0_RI {}
     impl ::core::clone::Clone for F32StoreMem0_RI {
@@ -31835,9 +31832,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32StoreMem0_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32StoreMem0_SR {}
     impl ::core::clone::Clone for F32StoreMem0_SR {
@@ -31861,9 +31858,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32StoreMem0_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32StoreMem0_SS {}
     impl ::core::clone::Clone for F32StoreMem0_SS {
@@ -31887,9 +31884,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32StoreMem0_SI {
-        pub ptr: Stack,
-        pub value: f32,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::f32,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F32StoreMem0_SI {}
     impl ::core::clone::Clone for F32StoreMem0_SI {
@@ -31913,8 +31910,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32StoreMem0_IR {
-        pub address: Address,
-        pub value: Reg,
+        pub address: crate::Address,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for F32StoreMem0_IR {}
     impl ::core::clone::Clone for F32StoreMem0_IR {
@@ -31937,8 +31934,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32StoreMem0_IS {
-        pub address: Address,
-        pub value: Stack,
+        pub address: crate::Address,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for F32StoreMem0_IS {}
     impl ::core::clone::Clone for F32StoreMem0_IS {
@@ -31961,8 +31958,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F32StoreMem0_II {
-        pub address: Address,
-        pub value: f32,
+        pub address: crate::Address,
+        pub value: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for F32StoreMem0_II {}
     impl ::core::clone::Clone for F32StoreMem0_II {
@@ -31985,10 +31982,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Store_RR {
-        pub ptr: Reg,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Store_RR {}
     impl ::core::clone::Clone for F64Store_RR {
@@ -32013,10 +32010,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Store_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Store_RS {}
     impl ::core::clone::Clone for F64Store_RS {
@@ -32041,10 +32038,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Store_RI {
-        pub ptr: Reg,
-        pub value: f64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::f64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Store_RI {}
     impl ::core::clone::Clone for F64Store_RI {
@@ -32069,10 +32066,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Store_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Store_SR {}
     impl ::core::clone::Clone for F64Store_SR {
@@ -32097,10 +32094,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Store_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Store_SS {}
     impl ::core::clone::Clone for F64Store_SS {
@@ -32125,10 +32122,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Store_SI {
-        pub ptr: Stack,
-        pub value: f64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::f64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Store_SI {}
     impl ::core::clone::Clone for F64Store_SI {
@@ -32153,9 +32150,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Store_IR {
-        pub address: Address,
-        pub value: Reg,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Reg,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Store_IR {}
     impl ::core::clone::Clone for F64Store_IR {
@@ -32179,9 +32176,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Store_IS {
-        pub address: Address,
-        pub value: Stack,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Store_IS {}
     impl ::core::clone::Clone for F64Store_IS {
@@ -32205,9 +32202,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64Store_II {
-        pub address: Address,
-        pub value: f64,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: ::core::primitive::f64,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for F64Store_II {}
     impl ::core::clone::Clone for F64Store_II {
@@ -32231,9 +32228,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64StoreMem0_RR {
-        pub ptr: Reg,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64StoreMem0_RR {}
     impl ::core::clone::Clone for F64StoreMem0_RR {
@@ -32257,9 +32254,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64StoreMem0_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64StoreMem0_RS {}
     impl ::core::clone::Clone for F64StoreMem0_RS {
@@ -32283,9 +32280,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64StoreMem0_RI {
-        pub ptr: Reg,
-        pub value: f64,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::f64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64StoreMem0_RI {}
     impl ::core::clone::Clone for F64StoreMem0_RI {
@@ -32309,9 +32306,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64StoreMem0_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64StoreMem0_SR {}
     impl ::core::clone::Clone for F64StoreMem0_SR {
@@ -32335,9 +32332,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64StoreMem0_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64StoreMem0_SS {}
     impl ::core::clone::Clone for F64StoreMem0_SS {
@@ -32361,9 +32358,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64StoreMem0_SI {
-        pub ptr: Stack,
-        pub value: f64,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::f64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for F64StoreMem0_SI {}
     impl ::core::clone::Clone for F64StoreMem0_SI {
@@ -32387,8 +32384,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64StoreMem0_IR {
-        pub address: Address,
-        pub value: Reg,
+        pub address: crate::Address,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for F64StoreMem0_IR {}
     impl ::core::clone::Clone for F64StoreMem0_IR {
@@ -32411,8 +32408,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64StoreMem0_IS {
-        pub address: Address,
-        pub value: Stack,
+        pub address: crate::Address,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for F64StoreMem0_IS {}
     impl ::core::clone::Clone for F64StoreMem0_IS {
@@ -32435,8 +32432,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct F64StoreMem0_II {
-        pub address: Address,
-        pub value: f64,
+        pub address: crate::Address,
+        pub value: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for F64StoreMem0_II {}
     impl ::core::clone::Clone for F64StoreMem0_II {
@@ -32459,10 +32456,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store8_RS {}
     impl ::core::clone::Clone for I32Store8_RS {
@@ -32487,10 +32484,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8_RI {
-        pub ptr: Reg,
-        pub value: i32,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store8_RI {}
     impl ::core::clone::Clone for I32Store8_RI {
@@ -32515,10 +32512,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store8_SR {}
     impl ::core::clone::Clone for I32Store8_SR {
@@ -32543,10 +32540,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store8_SS {}
     impl ::core::clone::Clone for I32Store8_SS {
@@ -32571,10 +32568,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8_SI {
-        pub ptr: Stack,
-        pub value: i32,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store8_SI {}
     impl ::core::clone::Clone for I32Store8_SI {
@@ -32599,9 +32596,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8_IR {
-        pub address: Address,
-        pub value: Reg,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Reg,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store8_IR {}
     impl ::core::clone::Clone for I32Store8_IR {
@@ -32625,9 +32622,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8_IS {
-        pub address: Address,
-        pub value: Stack,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store8_IS {}
     impl ::core::clone::Clone for I32Store8_IS {
@@ -32651,9 +32648,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8_II {
-        pub address: Address,
-        pub value: i32,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i32,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store8_II {}
     impl ::core::clone::Clone for I32Store8_II {
@@ -32677,9 +32674,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8Mem0_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Store8Mem0_RS {}
     impl ::core::clone::Clone for I32Store8Mem0_RS {
@@ -32703,9 +32700,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8Mem0_RI {
-        pub ptr: Reg,
-        pub value: i32,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Store8Mem0_RI {}
     impl ::core::clone::Clone for I32Store8Mem0_RI {
@@ -32729,9 +32726,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8Mem0_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Store8Mem0_SR {}
     impl ::core::clone::Clone for I32Store8Mem0_SR {
@@ -32755,9 +32752,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8Mem0_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Store8Mem0_SS {}
     impl ::core::clone::Clone for I32Store8Mem0_SS {
@@ -32781,9 +32778,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8Mem0_SI {
-        pub ptr: Stack,
-        pub value: i32,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Store8Mem0_SI {}
     impl ::core::clone::Clone for I32Store8Mem0_SI {
@@ -32807,8 +32804,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8Mem0_IR {
-        pub address: Address,
-        pub value: Reg,
+        pub address: crate::Address,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for I32Store8Mem0_IR {}
     impl ::core::clone::Clone for I32Store8Mem0_IR {
@@ -32831,8 +32828,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8Mem0_IS {
-        pub address: Address,
-        pub value: Stack,
+        pub address: crate::Address,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for I32Store8Mem0_IS {}
     impl ::core::clone::Clone for I32Store8Mem0_IS {
@@ -32855,8 +32852,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store8Mem0_II {
-        pub address: Address,
-        pub value: i32,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Store8Mem0_II {}
     impl ::core::clone::Clone for I32Store8Mem0_II {
@@ -32879,10 +32876,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store8_RS {}
     impl ::core::clone::Clone for I64Store8_RS {
@@ -32907,10 +32904,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8_RI {
-        pub ptr: Reg,
-        pub value: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store8_RI {}
     impl ::core::clone::Clone for I64Store8_RI {
@@ -32935,10 +32932,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store8_SR {}
     impl ::core::clone::Clone for I64Store8_SR {
@@ -32963,10 +32960,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store8_SS {}
     impl ::core::clone::Clone for I64Store8_SS {
@@ -32991,10 +32988,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8_SI {
-        pub ptr: Stack,
-        pub value: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store8_SI {}
     impl ::core::clone::Clone for I64Store8_SI {
@@ -33019,9 +33016,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8_IR {
-        pub address: Address,
-        pub value: Reg,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Reg,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store8_IR {}
     impl ::core::clone::Clone for I64Store8_IR {
@@ -33045,9 +33042,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8_IS {
-        pub address: Address,
-        pub value: Stack,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store8_IS {}
     impl ::core::clone::Clone for I64Store8_IS {
@@ -33071,9 +33068,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8_II {
-        pub address: Address,
-        pub value: i64,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i64,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store8_II {}
     impl ::core::clone::Clone for I64Store8_II {
@@ -33097,9 +33094,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8Mem0_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store8Mem0_RS {}
     impl ::core::clone::Clone for I64Store8Mem0_RS {
@@ -33123,9 +33120,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8Mem0_RI {
-        pub ptr: Reg,
-        pub value: i64,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store8Mem0_RI {}
     impl ::core::clone::Clone for I64Store8Mem0_RI {
@@ -33149,9 +33146,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8Mem0_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store8Mem0_SR {}
     impl ::core::clone::Clone for I64Store8Mem0_SR {
@@ -33175,9 +33172,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8Mem0_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store8Mem0_SS {}
     impl ::core::clone::Clone for I64Store8Mem0_SS {
@@ -33201,9 +33198,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8Mem0_SI {
-        pub ptr: Stack,
-        pub value: i64,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store8Mem0_SI {}
     impl ::core::clone::Clone for I64Store8Mem0_SI {
@@ -33227,8 +33224,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8Mem0_IR {
-        pub address: Address,
-        pub value: Reg,
+        pub address: crate::Address,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for I64Store8Mem0_IR {}
     impl ::core::clone::Clone for I64Store8Mem0_IR {
@@ -33251,8 +33248,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8Mem0_IS {
-        pub address: Address,
-        pub value: Stack,
+        pub address: crate::Address,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for I64Store8Mem0_IS {}
     impl ::core::clone::Clone for I64Store8Mem0_IS {
@@ -33275,8 +33272,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store8Mem0_II {
-        pub address: Address,
-        pub value: i64,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Store8Mem0_II {}
     impl ::core::clone::Clone for I64Store8Mem0_II {
@@ -33299,10 +33296,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store16_RS {}
     impl ::core::clone::Clone for I32Store16_RS {
@@ -33327,10 +33324,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16_RI {
-        pub ptr: Reg,
-        pub value: i32,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store16_RI {}
     impl ::core::clone::Clone for I32Store16_RI {
@@ -33355,10 +33352,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store16_SR {}
     impl ::core::clone::Clone for I32Store16_SR {
@@ -33383,10 +33380,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store16_SS {}
     impl ::core::clone::Clone for I32Store16_SS {
@@ -33411,10 +33408,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16_SI {
-        pub ptr: Stack,
-        pub value: i32,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store16_SI {}
     impl ::core::clone::Clone for I32Store16_SI {
@@ -33439,9 +33436,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16_IR {
-        pub address: Address,
-        pub value: Reg,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Reg,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store16_IR {}
     impl ::core::clone::Clone for I32Store16_IR {
@@ -33465,9 +33462,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16_IS {
-        pub address: Address,
-        pub value: Stack,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store16_IS {}
     impl ::core::clone::Clone for I32Store16_IS {
@@ -33491,9 +33488,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16_II {
-        pub address: Address,
-        pub value: i32,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i32,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I32Store16_II {}
     impl ::core::clone::Clone for I32Store16_II {
@@ -33517,9 +33514,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16Mem0_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Store16Mem0_RS {}
     impl ::core::clone::Clone for I32Store16Mem0_RS {
@@ -33543,9 +33540,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16Mem0_RI {
-        pub ptr: Reg,
-        pub value: i32,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Store16Mem0_RI {}
     impl ::core::clone::Clone for I32Store16Mem0_RI {
@@ -33569,9 +33566,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16Mem0_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Store16Mem0_SR {}
     impl ::core::clone::Clone for I32Store16Mem0_SR {
@@ -33595,9 +33592,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16Mem0_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Store16Mem0_SS {}
     impl ::core::clone::Clone for I32Store16Mem0_SS {
@@ -33621,9 +33618,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16Mem0_SI {
-        pub ptr: Stack,
-        pub value: i32,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i32,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I32Store16Mem0_SI {}
     impl ::core::clone::Clone for I32Store16Mem0_SI {
@@ -33647,8 +33644,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16Mem0_IR {
-        pub address: Address,
-        pub value: Reg,
+        pub address: crate::Address,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for I32Store16Mem0_IR {}
     impl ::core::clone::Clone for I32Store16Mem0_IR {
@@ -33671,8 +33668,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16Mem0_IS {
-        pub address: Address,
-        pub value: Stack,
+        pub address: crate::Address,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for I32Store16Mem0_IS {}
     impl ::core::clone::Clone for I32Store16Mem0_IS {
@@ -33695,8 +33692,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I32Store16Mem0_II {
-        pub address: Address,
-        pub value: i32,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for I32Store16Mem0_II {}
     impl ::core::clone::Clone for I32Store16Mem0_II {
@@ -33719,10 +33716,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store16_RS {}
     impl ::core::clone::Clone for I64Store16_RS {
@@ -33747,10 +33744,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16_RI {
-        pub ptr: Reg,
-        pub value: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store16_RI {}
     impl ::core::clone::Clone for I64Store16_RI {
@@ -33775,10 +33772,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store16_SR {}
     impl ::core::clone::Clone for I64Store16_SR {
@@ -33803,10 +33800,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store16_SS {}
     impl ::core::clone::Clone for I64Store16_SS {
@@ -33831,10 +33828,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16_SI {
-        pub ptr: Stack,
-        pub value: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store16_SI {}
     impl ::core::clone::Clone for I64Store16_SI {
@@ -33859,9 +33856,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16_IR {
-        pub address: Address,
-        pub value: Reg,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Reg,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store16_IR {}
     impl ::core::clone::Clone for I64Store16_IR {
@@ -33885,9 +33882,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16_IS {
-        pub address: Address,
-        pub value: Stack,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store16_IS {}
     impl ::core::clone::Clone for I64Store16_IS {
@@ -33911,9 +33908,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16_II {
-        pub address: Address,
-        pub value: i64,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i64,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store16_II {}
     impl ::core::clone::Clone for I64Store16_II {
@@ -33937,9 +33934,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16Mem0_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store16Mem0_RS {}
     impl ::core::clone::Clone for I64Store16Mem0_RS {
@@ -33963,9 +33960,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16Mem0_RI {
-        pub ptr: Reg,
-        pub value: i64,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store16Mem0_RI {}
     impl ::core::clone::Clone for I64Store16Mem0_RI {
@@ -33989,9 +33986,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16Mem0_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store16Mem0_SR {}
     impl ::core::clone::Clone for I64Store16Mem0_SR {
@@ -34015,9 +34012,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16Mem0_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store16Mem0_SS {}
     impl ::core::clone::Clone for I64Store16Mem0_SS {
@@ -34041,9 +34038,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16Mem0_SI {
-        pub ptr: Stack,
-        pub value: i64,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store16Mem0_SI {}
     impl ::core::clone::Clone for I64Store16Mem0_SI {
@@ -34067,8 +34064,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16Mem0_IR {
-        pub address: Address,
-        pub value: Reg,
+        pub address: crate::Address,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for I64Store16Mem0_IR {}
     impl ::core::clone::Clone for I64Store16Mem0_IR {
@@ -34091,8 +34088,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16Mem0_IS {
-        pub address: Address,
-        pub value: Stack,
+        pub address: crate::Address,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for I64Store16Mem0_IS {}
     impl ::core::clone::Clone for I64Store16Mem0_IS {
@@ -34115,8 +34112,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store16Mem0_II {
-        pub address: Address,
-        pub value: i64,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Store16Mem0_II {}
     impl ::core::clone::Clone for I64Store16Mem0_II {
@@ -34139,10 +34136,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store32_RS {}
     impl ::core::clone::Clone for I64Store32_RS {
@@ -34167,10 +34164,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32_RI {
-        pub ptr: Reg,
-        pub value: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store32_RI {}
     impl ::core::clone::Clone for I64Store32_RI {
@@ -34195,10 +34192,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store32_SR {}
     impl ::core::clone::Clone for I64Store32_SR {
@@ -34223,10 +34220,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store32_SS {}
     impl ::core::clone::Clone for I64Store32_SS {
@@ -34251,10 +34248,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32_SI {
-        pub ptr: Stack,
-        pub value: i64,
-        pub offset: Offset,
-        pub memory: Memory,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store32_SI {}
     impl ::core::clone::Clone for I64Store32_SI {
@@ -34279,9 +34276,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32_IR {
-        pub address: Address,
-        pub value: Reg,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Reg,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store32_IR {}
     impl ::core::clone::Clone for I64Store32_IR {
@@ -34305,9 +34302,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32_IS {
-        pub address: Address,
-        pub value: Stack,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store32_IS {}
     impl ::core::clone::Clone for I64Store32_IS {
@@ -34331,9 +34328,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32_II {
-        pub address: Address,
-        pub value: i64,
-        pub memory: Memory,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i64,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for I64Store32_II {}
     impl ::core::clone::Clone for I64Store32_II {
@@ -34357,9 +34354,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32Mem0_RS {
-        pub ptr: Reg,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store32Mem0_RS {}
     impl ::core::clone::Clone for I64Store32Mem0_RS {
@@ -34383,9 +34380,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32Mem0_RI {
-        pub ptr: Reg,
-        pub value: i64,
-        pub offset: Offset,
+        pub ptr: crate::Reg,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store32Mem0_RI {}
     impl ::core::clone::Clone for I64Store32Mem0_RI {
@@ -34409,9 +34406,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32Mem0_SR {
-        pub ptr: Stack,
-        pub value: Reg,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Reg,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store32Mem0_SR {}
     impl ::core::clone::Clone for I64Store32Mem0_SR {
@@ -34435,9 +34432,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32Mem0_SS {
-        pub ptr: Stack,
-        pub value: Stack,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: crate::Stack,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store32Mem0_SS {}
     impl ::core::clone::Clone for I64Store32Mem0_SS {
@@ -34461,9 +34458,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32Mem0_SI {
-        pub ptr: Stack,
-        pub value: i64,
-        pub offset: Offset,
+        pub ptr: crate::Stack,
+        pub value: ::core::primitive::i64,
+        pub offset: crate::Offset,
     }
     impl ::core::marker::Copy for I64Store32Mem0_SI {}
     impl ::core::clone::Clone for I64Store32Mem0_SI {
@@ -34487,8 +34484,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32Mem0_IR {
-        pub address: Address,
-        pub value: Reg,
+        pub address: crate::Address,
+        pub value: crate::Reg,
     }
     impl ::core::marker::Copy for I64Store32Mem0_IR {}
     impl ::core::clone::Clone for I64Store32Mem0_IR {
@@ -34511,8 +34508,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32Mem0_IS {
-        pub address: Address,
-        pub value: Stack,
+        pub address: crate::Address,
+        pub value: crate::Stack,
     }
     impl ::core::marker::Copy for I64Store32Mem0_IS {}
     impl ::core::clone::Clone for I64Store32Mem0_IS {
@@ -34535,8 +34532,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct I64Store32Mem0_II {
-        pub address: Address,
-        pub value: i64,
+        pub address: crate::Address,
+        pub value: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for I64Store32Mem0_II {}
     impl ::core::clone::Clone for I64Store32Mem0_II {
@@ -34559,10 +34556,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct Select {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for Select {}
     impl ::core::clone::Clone for Select {
@@ -34587,10 +34584,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI32_RSSS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectI32_RSSS {}
     impl ::core::clone::Clone for SelectI32_RSSS {
@@ -34615,10 +34612,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI32_RSSI {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for SelectI32_RSSI {}
     impl ::core::clone::Clone for SelectI32_RSSI {
@@ -34643,10 +34640,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI32_RSIS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: i32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectI32_RSIS {}
     impl ::core::clone::Clone for SelectI32_RSIS {
@@ -34671,10 +34668,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI32_RSII {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: i32,
-        pub rhs: i32,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::i32,
+        pub rhs: ::core::primitive::i32,
     }
     impl ::core::marker::Copy for SelectI32_RSII {}
     impl ::core::clone::Clone for SelectI32_RSII {
@@ -34699,10 +34696,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RRSS {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectI64_RRSS {}
     impl ::core::clone::Clone for SelectI64_RRSS {
@@ -34727,10 +34724,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RRSI {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for SelectI64_RRSI {}
     impl ::core::clone::Clone for SelectI64_RRSI {
@@ -34755,10 +34752,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RRIS {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectI64_RRIS {}
     impl ::core::clone::Clone for SelectI64_RRIS {
@@ -34783,10 +34780,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RRII {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: i64,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for SelectI64_RRII {}
     impl ::core::clone::Clone for SelectI64_RRII {
@@ -34811,10 +34808,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RSRS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectI64_RSRS {}
     impl ::core::clone::Clone for SelectI64_RSRS {
@@ -34839,10 +34836,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RSRI {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Reg,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for SelectI64_RSRI {}
     impl ::core::clone::Clone for SelectI64_RSRI {
@@ -34867,10 +34864,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RSSR {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for SelectI64_RSSR {}
     impl ::core::clone::Clone for SelectI64_RSSR {
@@ -34895,10 +34892,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RSSS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectI64_RSSS {}
     impl ::core::clone::Clone for SelectI64_RSSS {
@@ -34923,10 +34920,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RSSI {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for SelectI64_RSSI {}
     impl ::core::clone::Clone for SelectI64_RSSI {
@@ -34951,10 +34948,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RSIR {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: i64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for SelectI64_RSIR {}
     impl ::core::clone::Clone for SelectI64_RSIR {
@@ -34979,10 +34976,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RSIS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: i64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectI64_RSIS {}
     impl ::core::clone::Clone for SelectI64_RSIS {
@@ -35007,10 +35004,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectI64_RSII {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: i64,
-        pub rhs: i64,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::i64,
+        pub rhs: ::core::primitive::i64,
     }
     impl ::core::marker::Copy for SelectI64_RSII {}
     impl ::core::clone::Clone for SelectI64_RSII {
@@ -35035,10 +35032,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RRSS {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectF32_RRSS {}
     impl ::core::clone::Clone for SelectF32_RRSS {
@@ -35063,10 +35060,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RRSI {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for SelectF32_RRSI {}
     impl ::core::clone::Clone for SelectF32_RRSI {
@@ -35091,10 +35088,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RRIS {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: f32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectF32_RRIS {}
     impl ::core::clone::Clone for SelectF32_RRIS {
@@ -35119,10 +35116,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RRII {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: f32,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for SelectF32_RRII {}
     impl ::core::clone::Clone for SelectF32_RRII {
@@ -35147,10 +35144,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RSRS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectF32_RSRS {}
     impl ::core::clone::Clone for SelectF32_RSRS {
@@ -35175,10 +35172,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RSRI {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Reg,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for SelectF32_RSRI {}
     impl ::core::clone::Clone for SelectF32_RSRI {
@@ -35203,10 +35200,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RSSR {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for SelectF32_RSSR {}
     impl ::core::clone::Clone for SelectF32_RSSR {
@@ -35231,10 +35228,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RSSS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectF32_RSSS {}
     impl ::core::clone::Clone for SelectF32_RSSS {
@@ -35259,10 +35256,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RSSI {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for SelectF32_RSSI {}
     impl ::core::clone::Clone for SelectF32_RSSI {
@@ -35287,10 +35284,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RSIR {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: f32,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for SelectF32_RSIR {}
     impl ::core::clone::Clone for SelectF32_RSIR {
@@ -35315,10 +35312,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RSIS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: f32,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectF32_RSIS {}
     impl ::core::clone::Clone for SelectF32_RSIS {
@@ -35343,10 +35340,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF32_RSII {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: f32,
-        pub rhs: f32,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::f32,
+        pub rhs: ::core::primitive::f32,
     }
     impl ::core::marker::Copy for SelectF32_RSII {}
     impl ::core::clone::Clone for SelectF32_RSII {
@@ -35371,10 +35368,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RRSS {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectF64_RRSS {}
     impl ::core::clone::Clone for SelectF64_RRSS {
@@ -35399,10 +35396,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RRSI {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for SelectF64_RRSI {}
     impl ::core::clone::Clone for SelectF64_RRSI {
@@ -35427,10 +35424,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RRIS {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: f64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectF64_RRIS {}
     impl ::core::clone::Clone for SelectF64_RRIS {
@@ -35455,10 +35452,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RRII {
-        pub result: Reg,
-        pub condition: Reg,
-        pub lhs: f64,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub condition: crate::Reg,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for SelectF64_RRII {}
     impl ::core::clone::Clone for SelectF64_RRII {
@@ -35483,10 +35480,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RSRS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Reg,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectF64_RSRS {}
     impl ::core::clone::Clone for SelectF64_RSRS {
@@ -35511,10 +35508,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RSRI {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Reg,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Reg,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for SelectF64_RSRI {}
     impl ::core::clone::Clone for SelectF64_RSRI {
@@ -35539,10 +35536,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RSSR {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for SelectF64_RSSR {}
     impl ::core::clone::Clone for SelectF64_RSSR {
@@ -35567,10 +35564,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RSSS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectF64_RSSS {}
     impl ::core::clone::Clone for SelectF64_RSSS {
@@ -35595,10 +35592,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RSSI {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: Stack,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: crate::Stack,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for SelectF64_RSSI {}
     impl ::core::clone::Clone for SelectF64_RSSI {
@@ -35623,10 +35620,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RSIR {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: f64,
-        pub rhs: Reg,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Reg,
     }
     impl ::core::marker::Copy for SelectF64_RSIR {}
     impl ::core::clone::Clone for SelectF64_RSIR {
@@ -35651,10 +35648,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RSIS {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: f64,
-        pub rhs: Stack,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: crate::Stack,
     }
     impl ::core::marker::Copy for SelectF64_RSIS {}
     impl ::core::clone::Clone for SelectF64_RSIS {
@@ -35679,10 +35676,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct SelectF64_RSII {
-        pub result: Reg,
-        pub condition: Stack,
-        pub lhs: f64,
-        pub rhs: f64,
+        pub result: crate::Reg,
+        pub condition: crate::Stack,
+        pub lhs: ::core::primitive::f64,
+        pub rhs: ::core::primitive::f64,
     }
     impl ::core::marker::Copy for SelectF64_RSII {}
     impl ::core::clone::Clone for SelectF64_RSII {
@@ -35707,8 +35704,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableSize_R {
-        pub result: Reg,
-        pub table: Table,
+        pub result: crate::Reg,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableSize_R {}
     impl ::core::clone::Clone for TableSize_R {
@@ -35731,8 +35728,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableSize_S {
-        pub result: Stack,
-        pub table: Table,
+        pub result: crate::Stack,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableSize_S {}
     impl ::core::clone::Clone for TableSize_S {
@@ -35755,9 +35752,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableGet_RR {
-        pub result: Reg,
-        pub index: Reg,
-        pub table: Table,
+        pub result: crate::Reg,
+        pub index: crate::Reg,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableGet_RR {}
     impl ::core::clone::Clone for TableGet_RR {
@@ -35781,9 +35778,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableGet_RS {
-        pub result: Reg,
-        pub index: Stack,
-        pub table: Table,
+        pub result: crate::Reg,
+        pub index: crate::Stack,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableGet_RS {}
     impl ::core::clone::Clone for TableGet_RS {
@@ -35807,9 +35804,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableGet_RI {
-        pub result: Reg,
-        pub index: i64,
-        pub table: Table,
+        pub result: crate::Reg,
+        pub index: ::core::primitive::i64,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableGet_RI {}
     impl ::core::clone::Clone for TableGet_RI {
@@ -35833,9 +35830,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableSet_RS {
-        pub index: Reg,
-        pub value: Stack,
-        pub table: Table,
+        pub index: crate::Reg,
+        pub value: crate::Stack,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableSet_RS {}
     impl ::core::clone::Clone for TableSet_RS {
@@ -35859,9 +35856,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableSet_RI {
-        pub index: Reg,
-        pub value: i32,
-        pub table: Table,
+        pub index: crate::Reg,
+        pub value: ::core::primitive::i32,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableSet_RI {}
     impl ::core::clone::Clone for TableSet_RI {
@@ -35885,9 +35882,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableSet_SR {
-        pub index: Stack,
-        pub value: Reg,
-        pub table: Table,
+        pub index: crate::Stack,
+        pub value: crate::Reg,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableSet_SR {}
     impl ::core::clone::Clone for TableSet_SR {
@@ -35911,9 +35908,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableSet_SS {
-        pub index: Stack,
-        pub value: Stack,
-        pub table: Table,
+        pub index: crate::Stack,
+        pub value: crate::Stack,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableSet_SS {}
     impl ::core::clone::Clone for TableSet_SS {
@@ -35937,9 +35934,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableSet_SI {
-        pub index: Stack,
-        pub value: i32,
-        pub table: Table,
+        pub index: crate::Stack,
+        pub value: ::core::primitive::i32,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableSet_SI {}
     impl ::core::clone::Clone for TableSet_SI {
@@ -35963,9 +35960,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableSet_IR {
-        pub index: i64,
-        pub value: Reg,
-        pub table: Table,
+        pub index: ::core::primitive::i64,
+        pub value: crate::Reg,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableSet_IR {}
     impl ::core::clone::Clone for TableSet_IR {
@@ -35989,9 +35986,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableSet_IS {
-        pub index: i64,
-        pub value: Stack,
-        pub table: Table,
+        pub index: ::core::primitive::i64,
+        pub value: crate::Stack,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableSet_IS {}
     impl ::core::clone::Clone for TableSet_IS {
@@ -36015,9 +36012,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableSet_II {
-        pub index: i64,
-        pub value: i32,
-        pub table: Table,
+        pub index: ::core::primitive::i64,
+        pub value: ::core::primitive::i32,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableSet_II {}
     impl ::core::clone::Clone for TableSet_II {
@@ -36041,9 +36038,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableGrow {
-        pub result: Stack,
-        pub delta: Stack,
-        pub table: Table,
+        pub result: crate::Stack,
+        pub delta: crate::Stack,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableGrow {}
     impl ::core::clone::Clone for TableGrow {
@@ -36067,11 +36064,11 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableCopy {
-        pub dst_index: Stack,
-        pub src_index: Stack,
-        pub len: Stack,
-        pub dst_table: Table,
-        pub src_table: Table,
+        pub dst_index: crate::Stack,
+        pub src_index: crate::Stack,
+        pub len: crate::Stack,
+        pub dst_table: crate::Table,
+        pub src_table: crate::Table,
     }
     impl ::core::marker::Copy for TableCopy {}
     impl ::core::clone::Clone for TableCopy {
@@ -36097,10 +36094,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableFill {
-        pub dst_index: Stack,
-        pub value: Stack,
-        pub len: Stack,
-        pub table: Table,
+        pub dst_index: crate::Stack,
+        pub value: crate::Stack,
+        pub len: crate::Stack,
+        pub table: crate::Table,
     }
     impl ::core::marker::Copy for TableFill {}
     impl ::core::clone::Clone for TableFill {
@@ -36125,11 +36122,11 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct TableInit {
-        pub dst_index: Stack,
-        pub src_index: Stack,
-        pub len: Stack,
-        pub table: Table,
-        pub elem: Elem,
+        pub dst_index: crate::Stack,
+        pub src_index: crate::Stack,
+        pub len: crate::Stack,
+        pub table: crate::Table,
+        pub elem: crate::Elem,
     }
     impl ::core::marker::Copy for TableInit {}
     impl ::core::clone::Clone for TableInit {
@@ -36155,8 +36152,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct MemorySize_R {
-        pub result: Reg,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for MemorySize_R {}
     impl ::core::clone::Clone for MemorySize_R {
@@ -36179,8 +36176,8 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct MemorySize_S {
-        pub result: Stack,
-        pub memory: Memory,
+        pub result: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for MemorySize_S {}
     impl ::core::clone::Clone for MemorySize_S {
@@ -36203,9 +36200,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct MemoryGrow {
-        pub result: Reg,
-        pub delta: Stack,
-        pub memory: Memory,
+        pub result: crate::Reg,
+        pub delta: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for MemoryGrow {}
     impl ::core::clone::Clone for MemoryGrow {
@@ -36229,11 +36226,11 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct MemoryCopy {
-        pub dst_index: Stack,
-        pub src_index: Stack,
-        pub len: Stack,
-        pub dst_memory: Memory,
-        pub src_memory: Memory,
+        pub dst_index: crate::Stack,
+        pub src_index: crate::Stack,
+        pub len: crate::Stack,
+        pub dst_memory: crate::Memory,
+        pub src_memory: crate::Memory,
     }
     impl ::core::marker::Copy for MemoryCopy {}
     impl ::core::clone::Clone for MemoryCopy {
@@ -36259,10 +36256,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct MemoryFill {
-        pub dst_index: Stack,
-        pub value: Stack,
-        pub len: Stack,
-        pub memory: Memory,
+        pub dst_index: crate::Stack,
+        pub value: crate::Stack,
+        pub len: crate::Stack,
+        pub memory: crate::Memory,
     }
     impl ::core::marker::Copy for MemoryFill {}
     impl ::core::clone::Clone for MemoryFill {
@@ -36287,11 +36284,11 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct MemoryInit {
-        pub dst_index: Stack,
-        pub src_index: Stack,
-        pub len: Stack,
-        pub memory: Memory,
-        pub data: Data,
+        pub dst_index: crate::Stack,
+        pub src_index: crate::Stack,
+        pub len: crate::Stack,
+        pub memory: crate::Memory,
+        pub data: crate::Data,
     }
     impl ::core::marker::Copy for MemoryInit {}
     impl ::core::clone::Clone for MemoryInit {
@@ -36317,9 +36314,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct CallInternal {
-        pub func: WasmFunc,
-        pub len_params: usize,
-        pub len_results: usize,
+        pub func: crate::WasmFunc,
+        pub len_params: ::core::primitive::usize,
+        pub len_results: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for CallInternal {}
     impl ::core::clone::Clone for CallInternal {
@@ -36343,9 +36340,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct ReturnCallInternal {
-        pub func: WasmFunc,
-        pub len_params: usize,
-        pub len_results: usize,
+        pub func: crate::WasmFunc,
+        pub len_params: ::core::primitive::usize,
+        pub len_results: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for ReturnCallInternal {}
     impl ::core::clone::Clone for ReturnCallInternal {
@@ -36369,9 +36366,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct CallImported {
-        pub func: Func,
-        pub len_params: usize,
-        pub len_results: usize,
+        pub func: crate::Func,
+        pub len_params: ::core::primitive::usize,
+        pub len_results: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for CallImported {}
     impl ::core::clone::Clone for CallImported {
@@ -36395,9 +36392,9 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct ReturnCallImported {
-        pub func: Func,
-        pub len_params: usize,
-        pub len_results: usize,
+        pub func: crate::Func,
+        pub len_params: ::core::primitive::usize,
+        pub len_results: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for ReturnCallImported {}
     impl ::core::clone::Clone for ReturnCallImported {
@@ -36421,10 +36418,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct CallIndirect_R {
-        pub table: Table,
-        pub index: Reg,
-        pub len_params: usize,
-        pub len_results: usize,
+        pub table: crate::Table,
+        pub index: crate::Reg,
+        pub len_params: ::core::primitive::usize,
+        pub len_results: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for CallIndirect_R {}
     impl ::core::clone::Clone for CallIndirect_R {
@@ -36449,10 +36446,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct CallIndirect_S {
-        pub table: Table,
-        pub index: Stack,
-        pub len_params: usize,
-        pub len_results: usize,
+        pub table: crate::Table,
+        pub index: crate::Stack,
+        pub len_params: ::core::primitive::usize,
+        pub len_results: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for CallIndirect_S {}
     impl ::core::clone::Clone for CallIndirect_S {
@@ -36477,10 +36474,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct CallIndirect_I {
-        pub table: Table,
-        pub index: i64,
-        pub len_params: usize,
-        pub len_results: usize,
+        pub table: crate::Table,
+        pub index: ::core::primitive::i64,
+        pub len_params: ::core::primitive::usize,
+        pub len_results: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for CallIndirect_I {}
     impl ::core::clone::Clone for CallIndirect_I {
@@ -36505,10 +36502,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct ReturnCallIndirect_R {
-        pub table: Table,
-        pub index: Reg,
-        pub len_params: usize,
-        pub len_results: usize,
+        pub table: crate::Table,
+        pub index: crate::Reg,
+        pub len_params: ::core::primitive::usize,
+        pub len_results: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for ReturnCallIndirect_R {}
     impl ::core::clone::Clone for ReturnCallIndirect_R {
@@ -36533,10 +36530,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct ReturnCallIndirect_S {
-        pub table: Table,
-        pub index: Stack,
-        pub len_params: usize,
-        pub len_results: usize,
+        pub table: crate::Table,
+        pub index: crate::Stack,
+        pub len_params: ::core::primitive::usize,
+        pub len_results: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for ReturnCallIndirect_S {}
     impl ::core::clone::Clone for ReturnCallIndirect_S {
@@ -36561,10 +36558,10 @@ pub mod op {
     }
     #[repr(C, packed)]
     pub struct ReturnCallIndirect_I {
-        pub table: Table,
-        pub index: i64,
-        pub len_params: usize,
-        pub len_results: usize,
+        pub table: crate::Table,
+        pub index: ::core::primitive::i64,
+        pub len_params: ::core::primitive::usize,
+        pub len_results: ::core::primitive::usize,
     }
     impl ::core::marker::Copy for ReturnCallIndirect_I {}
     impl ::core::clone::Clone for ReturnCallIndirect_I {
