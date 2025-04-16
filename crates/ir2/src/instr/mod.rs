@@ -2,6 +2,8 @@
 //!
 //! Do _not_ edit this file directly but change `build.rs` script logic instead.
 
+pub mod utils;
+
 use crate::*;
 
 pub enum Op {
