@@ -2,6 +2,7 @@ use super::FieldTy;
 use std::fmt::{self, Display};
 
 #[derive(Debug, Copy, Clone)]
+#[expect(dead_code)] // TODO: remove
 pub enum ImmediateTy {
     U32,
     U64,

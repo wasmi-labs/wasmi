@@ -1,5 +1,3 @@
-#![expect(dead_code)] // TODO: remove
-
 #[macro_use]
 mod context;
 #[macro_use]
