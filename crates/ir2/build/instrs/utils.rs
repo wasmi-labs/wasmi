@@ -24,32 +24,6 @@ pub enum ImmediateTy {
     BranchOffset,
 }
 
-impl Display for ImmediateTy {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let str = match self {
-            Self::U32 => "u32",
-            Self::U64 => "u64",
-            Self::Usize => "usize",
-            Self::I32 => "i32",
-            Self::I64 => "i64",
-            Self::Isize => "isize",
-            Self::F32 => "f32",
-            Self::F64 => "f64",
-            Self::Global => "Global",
-            Self::Func => "Func",
-            Self::WasmFunc => "WasmFunc",
-            Self::Memory => "Memory",
-            Self::Table => "Table",
-            Self::Data => "Data",
-            Self::Elem => "Elem",
-            Self::Address => "Address",
-            Self::Offset => "Offset",
-            Self::BranchOffset => "BranchOffset",
-        };
-        write!(f, "{str}")
-    }
-}
-
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Operand {
     Reg,
