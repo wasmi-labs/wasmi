@@ -6810,6 +6810,11 @@ impl ::core::clone::Clone for OpCode {
         *self
     }
 }
+impl crate::GetOpCode for OpCode {
+    fn op_code(&self) -> Self {
+        *self
+    }
+}
 pub mod op {
 use crate::*;
     #[repr(C, packed)]

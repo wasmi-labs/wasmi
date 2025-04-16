@@ -257,6 +257,11 @@ impl Display for DisplayOpCodeEnum<'_> {
             "        *self"
             "    }"
             "}"
+            "impl crate::GetOpCode for OpCode {"
+            "    fn op_code(&self) -> Self {"
+            "        *self"
+            "    }"
+            "}"
         );
         Ok(())
     }
