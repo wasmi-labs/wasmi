@@ -31,8 +31,6 @@ impl Display for Context {
             ""
             "pub mod utils;"
             ""
-            "use crate::*;"
-            ""
         );
         DisplayOpEnum::new(self, indent).fmt(f)?;
         DisplayOpCodeEnum::new(self, indent).fmt(f)?;
