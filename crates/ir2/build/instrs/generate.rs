@@ -1,9 +1,13 @@
-use super::{Context, FieldName, FieldTy, Instr};
-use std::fmt::{self, Display, Write as _};
+use super::{Context, FieldName, FieldTy, ImmediateTy, Instr};
+use std::{
+    fmt::{self, Display, Write as _},
+    write,
+    writeln,
+};
 
 pub fn generate_instrs(ctx: &Context) {
     let mut code = String::new();
-    std::write!(code, "{}", ctx).unwrap();
+    write!(code, "{}", ctx).unwrap();
     std::fs::write("src/instr/mod.rs", code).unwrap();
 }
 
@@ -48,11 +52,11 @@ impl<'a> DisplayOpCodeEnum<'a> {
 impl Display for DisplayOpCodeEnum<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        std::writeln!(f, "{indent}pub enum OpCode {{")?;
+        writeln!(f, "{indent}pub enum OpCode {{")?;
         for instr in self.ctx.instrs() {
             DisplayOpCodeEnumVariant::new(instr, indent.inc()).fmt(f)?;
         }
-        std::writeln!(f, "{indent}}}")?;
+        writeln!(f, "{indent}}}")?;
         Ok(())
     }
 }
@@ -91,13 +95,13 @@ impl<'a> DisplayOpEnum<'a> {
 impl Display for DisplayOpEnum<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        std::writeln!(f, "{indent}use super::*;")?;
-        std::writeln!(f)?;
-        std::writeln!(f, "{indent}pub enum Op {{")?;
+        writeln!(f, "{indent}use super::*;")?;
+        writeln!(f)?;
+        writeln!(f, "{indent}pub enum Op {{")?;
         for instr in self.ctx.instrs() {
             DisplayOpEnumVariant::new(instr, indent.inc()).fmt(f)?;
         }
-        std::writeln!(f, "{indent}}}")?;
+        writeln!(f, "{indent}}}")?;
         Ok(())
     }
 }
@@ -119,15 +123,15 @@ impl Display for DisplayOpEnumVariant<'_> {
         let field_indent = indent.inc();
         let name = self.instr.name();
         if self.instr.fields().is_empty() {
-            return std::writeln!(f, "{indent}{name},");
+            return writeln!(f, "{indent}{name},");
         }
-        std::writeln!(f, "{indent}{name} {{")?;
+        writeln!(f, "{indent}{name} {{")?;
         for field in self.instr.fields() {
             let field_name = field.name;
             let field_ty = field.ty;
-            std::writeln!(f, "{field_indent}{field_name}: {field_ty},")?;
+            writeln!(f, "{field_indent}{field_name}: {field_ty},")?;
         }
-        std::writeln!(f, "{indent}}},")?;
+        writeln!(f, "{indent}}},")?;
         Ok(())
     }
 }
