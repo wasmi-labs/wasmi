@@ -193,7 +193,7 @@ impl<'a> DisplayOpEnumVariant<'a> {
 impl Display for DisplayOpEnumVariant<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let fields = DisplayOpEnumVariantFields::new(self.instr.fields(), indent.inc());
+        let fields = DisplayFields::new(self.instr.fields(), indent.inc(), Visibility::Default);
         let name = self.instr.name();
         if self.instr.fields().is_empty() {
             return writeln!(f, "{indent}{name},");
@@ -210,48 +210,70 @@ impl Display for DisplayOpEnumVariant<'_> {
     }
 }
 
-pub struct DisplayOpEnumVariantFields<'a> {
-    fields: &'a [Field],
-    indent: DisplayIndent,
+#[derive(Debug, Copy, Clone)]
+enum Visibility {
+    Default,
+    Pub,
 }
 
-impl<'a> DisplayOpEnumVariantFields<'a> {
-    fn new(fields: &'a [Field], indent: DisplayIndent) -> Self {
-        Self { fields, indent }
+impl Display for Visibility {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Visibility::Pub => write!(f, "pub "),
+            Visibility::Default => Ok(()),
+        }
     }
 }
 
-impl Display for DisplayOpEnumVariantFields<'_> {
+pub struct DisplayFields<'a> {
+    fields: &'a [Field],
+    indent: DisplayIndent,
+    vis_fields: Visibility,
+}
+
+impl<'a> DisplayFields<'a> {
+    fn new(fields: &'a [Field], indent: DisplayIndent, vis_fields: Visibility) -> Self {
+        Self {
+            fields,
+            indent,
+            vis_fields,
+        }
+    }
+}
+
+impl Display for DisplayFields<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Some((first, rest)) = self.fields.split_first() else {
             return Ok(());
         };
-        DisplayOpEnumVariantField::new(first, self.indent).fmt(f)?;
+        DisplayField::new(first, self.indent, self.vis_fields).fmt(f)?;
         for field in rest {
             writeln!(f)?;
-            DisplayOpEnumVariantField::new(field, self.indent).fmt(f)?;
+            DisplayField::new(field, self.indent, self.vis_fields).fmt(f)?;
         }
         Ok(())
     }
 }
 
-pub struct DisplayOpEnumVariantField<'a> {
+pub struct DisplayField<'a> {
     field: &'a Field,
     indent: DisplayIndent,
+    vis: Visibility,
 }
 
-impl<'a> DisplayOpEnumVariantField<'a> {
-    fn new(field: &'a Field, indent: DisplayIndent) -> Self {
-        Self { field, indent }
+impl<'a> DisplayField<'a> {
+    fn new(field: &'a Field, indent: DisplayIndent, vis: Visibility) -> Self {
+        Self { field, indent, vis }
     }
 }
 
-impl Display for DisplayOpEnumVariantField<'_> {
+impl Display for DisplayField<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
         let field_name = self.field.name;
+        let vis = self.vis;
         let field_ty = self.field.ty;
-        write!(f, "{indent}{field_name}: {field_ty},")?;
+        write!(f, "{indent}{vis}{field_name}: {field_ty},")?;
         Ok(())
     }
 }
