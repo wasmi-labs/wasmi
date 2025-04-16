@@ -9,22 +9,22 @@ fn main() {
 }
 
 fn watch_dir_recursively(path: &Path) {
-    if path.is_dir() {
-        let entries = match fs::read_dir(path) {
-            Ok(entries) => entries,
-            Err(error) => panic!("failed to read directory: {error}"),
+    if !path.is_dir() {
+        return;
+    }
+    let entries = match fs::read_dir(path) {
+        Ok(entries) => entries,
+        Err(error) => panic!("failed to read directory: {error}"),
+    };
+    for entry in entries {
+        let entry = match entry {
+            Ok(entry) => entry,
+            Err(error) => panic!("failed to read directory entry: {error}"),
         };
-        for entry in entries {
-            let entry = match entry {
-                Ok(entry) => entry,
-                Err(error) => panic!("failed to read directory entry: {error}"),
-            };
-            let path = entry.path();
-            if path.is_file() {
-                println!("cargo:rerun-if-changed={}", path.display());
-            } else if path.is_dir() {
-                watch_dir_recursively(&path);
-            }
+        let path = entry.path();
+        if path.is_file() {
+            println!("cargo:rerun-if-changed={}", path.display());
         }
+        watch_dir_recursively(&path);
     }
 }
