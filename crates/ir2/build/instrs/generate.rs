@@ -26,7 +26,7 @@ impl Display for Context {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = DisplayIndent(0);
         emit!(f, indent =>
-            "use super::*;"
+            "use crate::*;"
             ""
         );
         DisplayOpEnum::new(self, indent).fmt(f)?;
