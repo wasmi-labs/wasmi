@@ -74,8 +74,8 @@ impl Display for DisplayOpCodeEnum<'_> {
                 display_variants
             "}"
 
-            "impl Copy for OpCode {}"
-            "impl Clone for OpCode {"
+            "impl ::core::marker::Copy for OpCode {}"
+            "impl ::core::clone::Clone for OpCode {"
             "    fn clone(&self) -> Self {"
             "        *self"
             "    }"
