@@ -137,8 +137,8 @@ impl Display for FieldName {
 impl Display for FieldTy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let str = match self {
-            Self::Reg => "Reg",
-            Self::Stack => "Stack",
+            Self::Reg => "crate::Reg",
+            Self::Stack => "crate::Stack",
             Self::Immediate(imm) => return imm.fmt(f),
         };
         write!(f, "{str}")
@@ -148,24 +148,24 @@ impl Display for FieldTy {
 impl Display for ImmediateTy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let str = match self {
-            Self::U32 => "u32",
-            Self::U64 => "u64",
-            Self::Usize => "usize",
-            Self::I32 => "i32",
-            Self::I64 => "i64",
-            Self::Isize => "isize",
-            Self::F32 => "f32",
-            Self::F64 => "f64",
-            Self::Global => "Global",
-            Self::Func => "Func",
-            Self::WasmFunc => "WasmFunc",
-            Self::Memory => "Memory",
-            Self::Table => "Table",
-            Self::Data => "Data",
-            Self::Elem => "Elem",
-            Self::Address => "Address",
-            Self::Offset => "Offset",
-            Self::BranchOffset => "BranchOffset",
+            Self::U32 => "::core::primitive::u32",
+            Self::U64 => "::core::primitive::u64",
+            Self::Usize => "::core::primitive::usize",
+            Self::I32 => "::core::primitive::i32",
+            Self::I64 => "::core::primitive::i64",
+            Self::Isize => "::core::primitive::isize",
+            Self::F32 => "::core::primitive::f32",
+            Self::F64 => "::core::primitive::f64",
+            Self::Global => "crate::Global",
+            Self::Func => "crate::Func",
+            Self::WasmFunc => "crate::WasmFunc",
+            Self::Memory => "crate::Memory",
+            Self::Table => "crate::Table",
+            Self::Data => "crate::Data",
+            Self::Elem => "crate::Elem",
+            Self::Address => "crate::Address",
+            Self::Offset => "crate::Offset",
+            Self::BranchOffset => "crate::BranchOffset",
         };
         write!(f, "{str}")
     }
