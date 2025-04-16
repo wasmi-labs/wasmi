@@ -1,0 +1,172 @@
+use super::{Field, FieldName, FieldTy, ImmediateTy};
+use core::{fmt, fmt::Display};
+
+macro_rules! emit {
+    (
+        $f:expr, $indent:expr =>
+        $( $line:expr )*
+    ) => {{
+        $(
+            write!($f, "{}{}\n", $indent, $line)?;
+        )*
+    }};
+}
+
+#[derive(Debug, Default, Copy, Clone)]
+pub struct DisplayIndent(usize);
+
+impl DisplayIndent {
+    pub fn inc(self) -> Self {
+        Self(self.0 + 1)
+    }
+}
+
+impl Display for DisplayIndent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for _ in 0..self.0 {
+            write!(f, "    ")?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum Visibility {
+    Default,
+    Pub,
+}
+
+impl Display for Visibility {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Visibility::Pub => write!(f, "pub "),
+            Visibility::Default => Ok(()),
+        }
+    }
+}
+
+pub struct DisplayFields<'a> {
+    fields: &'a [Field],
+    indent: DisplayIndent,
+    vis_fields: Visibility,
+}
+
+impl<'a> DisplayFields<'a> {
+    pub fn new(fields: &'a [Field], indent: DisplayIndent, vis_fields: Visibility) -> Self {
+        Self {
+            fields,
+            indent,
+            vis_fields,
+        }
+    }
+}
+
+impl Display for DisplayFields<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Some((first, rest)) = self.fields.split_first() else {
+            return Ok(());
+        };
+        DisplayField::new(first, self.indent, self.vis_fields).fmt(f)?;
+        for field in rest {
+            writeln!(f)?;
+            DisplayField::new(field, self.indent, self.vis_fields).fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
+pub struct DisplayField<'a> {
+    field: &'a Field,
+    indent: DisplayIndent,
+    vis: Visibility,
+}
+
+impl<'a> DisplayField<'a> {
+    fn new(field: &'a Field, indent: DisplayIndent, vis: Visibility) -> Self {
+        Self { field, indent, vis }
+    }
+}
+
+impl Display for DisplayField<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent = self.indent;
+        let field_name = self.field.name;
+        let vis = self.vis;
+        let field_ty = self.field.ty;
+        write!(f, "{indent}{vis}{field_name}: {field_ty},")?;
+        Ok(())
+    }
+}
+
+impl Display for FieldName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            Self::Result => "result",
+            Self::Condition => "condition",
+            Self::Value => "value",
+            Self::Lhs => "lhs",
+            Self::Rhs => "rhs",
+            Self::Ptr => "ptr",
+            Self::Offset => "offset",
+            Self::Input => "input",
+            Self::Index => "index",
+            Self::DstIndex => "dst_index",
+            Self::SrcIndex => "src_index",
+            Self::DstTable => "dst_table",
+            Self::SrcTable => "src_table",
+            Self::DstMemory => "dst_memory",
+            Self::SrcMemory => "src_memory",
+            Self::Len => "len",
+            Self::LenTargets => "len_targets",
+            Self::LenValues => "len_values",
+            Self::LenParams => "len_params",
+            Self::LenResults => "len_results",
+            Self::Delta => "delta",
+            Self::Address => "address",
+            Self::Memory => "memory",
+            Self::Table => "table",
+            Self::Global => "global",
+            Self::Func => "func",
+            Self::Data => "data",
+            Self::Elem => "elem",
+        };
+        write!(f, "{str}")
+    }
+}
+
+impl Display for FieldTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            Self::Reg => "Reg",
+            Self::Stack => "Stack",
+            Self::Immediate(imm) => return imm.fmt(f),
+        };
+        write!(f, "{str}")
+    }
+}
+
+impl Display for ImmediateTy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = match self {
+            Self::U32 => "u32",
+            Self::U64 => "u64",
+            Self::Usize => "usize",
+            Self::I32 => "i32",
+            Self::I64 => "i64",
+            Self::Isize => "isize",
+            Self::F32 => "f32",
+            Self::F64 => "f64",
+            Self::Global => "Global",
+            Self::Func => "Func",
+            Self::WasmFunc => "WasmFunc",
+            Self::Memory => "Memory",
+            Self::Table => "Table",
+            Self::Data => "Data",
+            Self::Elem => "Elem",
+            Self::Address => "Address",
+            Self::Offset => "Offset",
+            Self::BranchOffset => "BranchOffset",
+        };
+        write!(f, "{str}")
+    }
+}
