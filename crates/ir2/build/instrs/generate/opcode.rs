@@ -1,4 +1,5 @@
-use super::*;
+use super::{Context, DisplayIndent, Op};
+use std::fmt::{self, Display};
 
 pub struct DisplayOpCodeEnum<'a> {
     ctx: &'a Context,

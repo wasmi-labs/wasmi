@@ -11,13 +11,7 @@ use self::{
     utils::{DisplayFields, DisplayFieldsPattern, DisplayIndent, Visibility},
 };
 use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op};
-use std::{
-    fmt::{self, Display},
-    fs,
-    io,
-    write,
-    writeln,
-};
+use std::{fmt::Display, fs, io};
 
 pub fn generate_instrs(ctx: &Context) -> Result<(), io::Error> {
     let indent = DisplayIndent::default();
