@@ -82,7 +82,7 @@ impl Display for DisplayOpModInstr<'_> {
             {indent}        *self\n\
             {indent}    }}\n\
             {indent}}}\n\
-            {indent}impl crate::GetOpCode for {name} {{\n\
+            {indent}impl crate::OperatorCode for {name} {{\n\
             {indent}    fn op_code(&self) -> crate::OpCode {{\n\
             {indent}        crate::OpCode::{name}\n\
             {indent}    }}\n\

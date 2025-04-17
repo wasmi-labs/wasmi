@@ -45,7 +45,7 @@ impl Display for DisplayOpCodeEnum<'_> {
             "    }"
             "}"
             "impl ::core::cmp::Eq for OpCode {}"
-            "impl crate::GetOpCode for OpCode {"
+            "impl crate::OperatorCode for OpCode {"
             "    fn op_code(&self) -> Self {"
             "        *self"
             "    }"
