@@ -15,8 +15,10 @@ impl Display for DisplayOpEnum<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
         let variants = DisplayOpEnumVariants::new(self.ctx.instrs(), indent.inc());
-        let impl_encode_for_variants =
+        let impl_encode =
             DisplayOpEnumImplEncodeForVariants::new(self.ctx.instrs(), indent.inc().inc().inc());
+        let impl_operator_code =
+            DisplayOpEnumImplOperatorCode::new(self.ctx.instrs(), indent.inc().inc().inc());
         emit!(f, indent =>
             "pub enum Op {"
                 variants
@@ -25,6 +27,13 @@ impl Display for DisplayOpEnum<'_> {
             "impl ::core::clone::Clone for Op {"
             "    fn clone(&self) -> Self {"
             "        *self"
+            "    }"
+            "}"
+            "impl crate::OperatorCode for Op {"
+            "    fn op_code(&self) -> crate::OpCode {"
+            "        match self {"
+                        impl_operator_code
+            "        }"
             "    }"
             "}"
             "impl Op {"
@@ -37,7 +46,7 @@ impl Display for DisplayOpEnum<'_> {
             "        f: impl ::core::ops::Fn(crate::OpCode) -> T"
             "    ) -> ::core::result::Result<(), crate::EncoderError> {"
             "        match *self {"
-                        impl_encode_for_variants
+                        impl_encode
             "        }"
             "    }"
             "}"
@@ -158,6 +167,51 @@ impl Display for DisplayOpEnumImplEncodeForVariant<'_> {
             {indent}}}\
             "
         )?;
+        Ok(())
+    }
+}
+
+pub struct DisplayOpEnumImplOperatorCode<'a> {
+    ops: &'a [Op],
+    indent: DisplayIndent,
+}
+
+impl<'a> DisplayOpEnumImplOperatorCode<'a> {
+    fn new(ops: &'a [Op], indent: DisplayIndent) -> Self {
+        Self { ops, indent }
+    }
+}
+
+impl Display for DisplayOpEnumImplOperatorCode<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Some((first, rest)) = self.ops.split_first() else {
+            return Ok(());
+        };
+        DisplayOpEnumImplOperatorCodeForVariant::new(first, self.indent).fmt(f)?;
+        for instr in rest {
+            writeln!(f)?;
+            DisplayOpEnumImplOperatorCodeForVariant::new(instr, self.indent).fmt(f)?;
+        }
+        Ok(())
+    }
+}
+
+pub struct DisplayOpEnumImplOperatorCodeForVariant<'a> {
+    op: &'a Op,
+    indent: DisplayIndent,
+}
+
+impl<'a> DisplayOpEnumImplOperatorCodeForVariant<'a> {
+    fn new(op: &'a Op, indent: DisplayIndent) -> Self {
+        Self { op, indent }
+    }
+}
+
+impl Display for DisplayOpEnumImplOperatorCodeForVariant<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let indent = self.indent;
+        let name = self.op.name();
+        write!(f, "{indent}Self::{name} {{ .. }} => crate::OpCode::{name},")?;
         Ok(())
     }
 }
