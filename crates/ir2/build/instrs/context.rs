@@ -7,7 +7,7 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn push_instr(&mut self, op: Op) {
+    pub fn push_op(&mut self, op: Op) {
         self.ops.push(op);
     }
 
