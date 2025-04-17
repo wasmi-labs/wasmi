@@ -21,6 +21,8 @@ impl Display for DisplayOpMod<'_> {
             "//!"
             "//! Do _not_ edit this file directly but change `build.rs` script logic instead."
             ""
+            "#![allow(unused_variables)]"
+            ""
             display_instrs
         );
         Ok(())
