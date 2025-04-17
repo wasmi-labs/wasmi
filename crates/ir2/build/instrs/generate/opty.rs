@@ -145,12 +145,6 @@ impl Display for DisplayOpEnumImplEncodeForVariant<'_> {
         let indent = self.indent;
         let fields = DisplayFieldsPattern::new(self.op.fields());
         let name = self.op.name();
-        if self.op.fields().is_empty() {
-            return writeln!(
-                f,
-                "{indent}Self::{name} => {{ encoder.encode(f(crate::OpCode::{name})) }} "
-            );
-        }
         write!(
             f,
             "\
