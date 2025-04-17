@@ -2,6 +2,7 @@
 //!
 //! Do _not_ edit this file directly but change `build.rs` script logic instead.
 
+#[repr(u16)]
 pub enum Op {
     Copy1_S {
         result: crate::Stack,
