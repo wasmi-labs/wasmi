@@ -21,6 +21,12 @@ impl Display for DisplayOpEnum<'_> {
             "pub enum Op {"
                 variants
             "}"
+            "impl ::core::marker::Copy for Op {}"
+            "impl ::core::clone::Clone for Op {"
+            "    fn clone(&self) -> Self {"
+            "        *self"
+            "    }"
+            "}"
             "impl Op {"
             "    /// Encodes [`Op`] allowing customization of its [`OpCode`] encoding."
             "    ///"

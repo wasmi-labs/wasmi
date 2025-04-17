@@ -5643,6 +5643,12 @@ pub enum Op {
         len_results: ::core::primitive::usize,
     },
 }
+impl ::core::marker::Copy for Op {}
+impl ::core::clone::Clone for Op {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
 impl Op {
     /// Encodes [`Op`] allowing customization of its [`OpCode`] encoding.
     ///
