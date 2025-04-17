@@ -171,7 +171,7 @@ impl<'a> DisplayOpModImplOperatorCode<'a> {
         Self { ops, indent }
     }
 
-    fn emit(&self, f: &mut fmt::Formatter, op: &Op) -> fmt::Result {
+    fn emit_op(&self, f: &mut fmt::Formatter, op: &Op) -> fmt::Result {
         let indent = self.indent;
         let name = op.name();
         write!(
@@ -192,10 +192,10 @@ impl Display for DisplayOpModImplOperatorCode<'_> {
         let Some((first, rest)) = self.ops.split_first() else {
             return Ok(());
         };
-        self.emit(f, first)?;
-        for instr in rest {
+        self.emit_op(f, first)?;
+        for op in rest {
             writeln!(f)?;
-            self.emit(f, instr)?;
+            self.emit_op(f, op)?;
         }
         Ok(())
     }

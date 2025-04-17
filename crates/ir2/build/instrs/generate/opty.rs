@@ -114,38 +114,11 @@ impl<'a> DisplayOpEnumImplEncodeForVariants<'a> {
     fn new(ops: &'a [Op], indent: DisplayIndent) -> Self {
         Self { ops, indent }
     }
-}
 
-impl Display for DisplayOpEnumImplEncodeForVariants<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Some((first, rest)) = self.ops.split_first() else {
-            return Ok(());
-        };
-        DisplayOpEnumImplEncodeForVariant::new(first, self.indent).fmt(f)?;
-        for instr in rest {
-            writeln!(f)?;
-            DisplayOpEnumImplEncodeForVariant::new(instr, self.indent).fmt(f)?;
-        }
-        Ok(())
-    }
-}
-
-pub struct DisplayOpEnumImplEncodeForVariant<'a> {
-    op: &'a Op,
-    indent: DisplayIndent,
-}
-
-impl<'a> DisplayOpEnumImplEncodeForVariant<'a> {
-    fn new(op: &'a Op, indent: DisplayIndent) -> Self {
-        Self { op, indent }
-    }
-}
-
-impl Display for DisplayOpEnumImplEncodeForVariant<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn emit_op(&self, f: &mut fmt::Formatter, op: &Op) -> fmt::Result {
         let indent = self.indent;
-        let fields = DisplayFieldsPattern::new(self.op.fields());
-        let name = self.op.name();
+        let fields = DisplayFieldsPattern::new(op.fields());
+        let name = op.name();
         write!(
             f,
             "\
@@ -154,6 +127,20 @@ impl Display for DisplayOpEnumImplEncodeForVariant<'_> {
             {indent}}}\
             "
         )?;
+        Ok(())
+    }
+}
+
+impl Display for DisplayOpEnumImplEncodeForVariants<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Some((first, rest)) = self.ops.split_first() else {
+            return Ok(());
+        };
+        self.emit_op(f, first)?;
+        for op in rest {
+            writeln!(f)?;
+            self.emit_op(f, op)?;
+        }
         Ok(())
     }
 }
