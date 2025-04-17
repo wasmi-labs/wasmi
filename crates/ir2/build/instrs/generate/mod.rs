@@ -1,13 +1,13 @@
 #[macro_use]
 mod utils;
 mod opcode;
-mod openum;
 mod opmod;
+mod opty;
 
 use self::{
     opcode::DisplayOpCodeEnum,
-    openum::DisplayOpEnum,
     opmod::DisplayOpMod,
+    opty::DisplayOpEnum,
     utils::{DisplayFields, DisplayIndent, Visibility},
 };
 use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op};
