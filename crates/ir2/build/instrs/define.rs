@@ -1,4 +1,5 @@
 use super::*;
+use std::format;
 
 pub fn define_instrs(ctx: &mut Context) {
     define_copy_instrs(ctx);
@@ -27,14 +28,14 @@ fn define_br_table_instrs(ctx: &mut Context) {
         let index_id = index.id();
         let index_ty = index.ty(ValTy::I32);
         ctx.push_instr(instr!(
-            name: "BranchTable0_{index_id}",
+            name: format!("BranchTable0_{index_id}"),
             fields: [
                 index: index_ty,
                 len_targets: ImmediateTy::U32,
             ],
         ));
         ctx.push_instr(instr!(
-            name: "BranchTable_{index_id}",
+            name: format!("BranchTable_{index_id}"),
             fields: [
                 index: index_ty,
                 len_targets: ImmediateTy::U32,
@@ -51,7 +52,7 @@ fn define_fused_cmp_branch_instrs_impl(
     let lhs_in = [Operand::Reg, Operand::Stack, Operand::Immediate];
     let rhs_in = [Operand::Reg, Operand::Stack, Operand::Immediate];
     for (op, ty) in ops_and_tys {
-        let op = std::format!("{ty}{op}");
+        let op = format!("{ty}{op}");
         for lhs in &lhs_in {
             for rhs in &rhs_in {
                 if lhs.is_imm() && rhs.is_imm() {
@@ -66,7 +67,7 @@ fn define_fused_cmp_branch_instrs_impl(
                 let lhs_id = lhs.id();
                 let rhs_id = rhs.id();
                 ctx.push_instr(instr! {
-                    name: "{op}Branch_{lhs_id}{rhs_id}",
+                    name: format!("{op}Branch_{lhs_id}{rhs_id}"),
                     fields: [
                         lhs: lhs.ty(ty),
                         rhs: rhs.ty(ty),
@@ -123,13 +124,13 @@ fn define_unop_instrs(
 ) {
     for op in ops {
         for ty in tys.clone() {
-            let op = std::format!("{ty}{op}");
+            let op = format!("{ty}{op}");
             for result in [Operand::Reg, Operand::Stack] {
                 for input in [Operand::Reg, Operand::Stack] {
                     let result_id = result.id();
                     let input_id = input.id();
                     ctx.push_instr(instr! {
-                        name: "{op}_{result_id}{input_id}",
+                        name: format!("{op}_{result_id}{input_id}"),
                         fields: [
                             result: result.ty(ty),
                             input: input.ty(ty),
@@ -189,13 +190,13 @@ fn define_conversion_instrs(ctx: &mut Context) {
         ("WrapI64", ValTy::I32, ValTy::I64),
     ];
     for (op, result_ty, input_ty) in ops {
-        let op = std::format!("{result_ty}{op}");
+        let op = format!("{result_ty}{op}");
         for result in [Operand::Reg, Operand::Stack] {
             for input in [Operand::Reg, Operand::Stack] {
                 let result_id = result.id();
                 let input_id = input.id();
                 ctx.push_instr(instr! {
-                    name: "{op}_{result_id}{input_id}",
+                    name: format!("{op}_{result_id}{input_id}"),
                     fields: [
                         result: result.ty(result_ty),
                         input: input.ty(input_ty),
@@ -231,7 +232,7 @@ fn define_load_instrs(ctx: &mut Context) {
                 true => "Mem0",
                 false => "",
             };
-            let op = std::format!("{ty}{op}{mem0_str}");
+            let op = format!("{ty}{op}{mem0_str}");
             for result in results {
                 if !mem0 && result.is_stack() {
                     continue;
@@ -241,7 +242,7 @@ fn define_load_instrs(ctx: &mut Context) {
                     let ptr_id = ptr.id();
                     let instr = match mem0 {
                         true => instr! {
-                            name: "{op}_{result_id}{ptr_id}",
+                            name: format!("{op}_{result_id}{ptr_id}"),
                             fields: [
                                 result: result.ty(ty),
                                 ptr: ptr.ty(ValTy::I64),
@@ -249,7 +250,7 @@ fn define_load_instrs(ctx: &mut Context) {
                             ],
                         },
                         false => instr! {
-                            name: "{op}_{result_id}{ptr_id}",
+                            name: format!("{op}_{result_id}{ptr_id}"),
                             fields: [
                                 result: result.ty(ty),
                                 ptr: ptr.ty(ValTy::I64),
@@ -285,7 +286,7 @@ fn define_store_instrs(ctx: &mut Context) {
                 true => "Mem0",
                 false => "",
             };
-            let op = std::format!("{ty}{op}{mem0_id}");
+            let op = format!("{ty}{op}{mem0_id}");
             for ptr in &ptrs {
                 for value in &values {
                     if matches!(ty, ValTy::I32 | ValTy::I64) && ptr.is_reg() && value.is_reg() {
@@ -296,7 +297,7 @@ fn define_store_instrs(ctx: &mut Context) {
                     let instr = match (ptr, mem0) {
                         (Operand::Immediate, true) => {
                             instr! {
-                                name: "{op}_{ptr_id}{value_id}",
+                                name: format!("{op}_{ptr_id}{value_id}"),
                                 fields: [
                                     address: ImmediateTy::Address,
                                     value: value.ty(ty),
@@ -305,7 +306,7 @@ fn define_store_instrs(ctx: &mut Context) {
                         }
                         (Operand::Immediate, false) => {
                             instr! {
-                                name: "{op}_{ptr_id}{value_id}",
+                                name: format!("{op}_{ptr_id}{value_id}"),
                                 fields: [
                                     address: ImmediateTy::Address,
                                     value: value.ty(ty),
@@ -315,7 +316,7 @@ fn define_store_instrs(ctx: &mut Context) {
                         }
                         (_, true) => {
                             instr! {
-                                name: "{op}_{ptr_id}{value_id}",
+                                name: format!("{op}_{ptr_id}{value_id}"),
                                 fields: [
                                     ptr: ptr.ty(ValTy::I64),
                                     value: value.ty(ty),
@@ -325,7 +326,7 @@ fn define_store_instrs(ctx: &mut Context) {
                         }
                         (_, false) => {
                             instr! {
-                                name: "{op}_{ptr_id}{value_id}",
+                                name: format!("{op}_{ptr_id}{value_id}"),
                                 fields: [
                                     ptr: ptr.ty(ValTy::I64),
                                     value: value.ty(ty),
@@ -356,7 +357,7 @@ fn define_binop_instrs(
     let rhs_in = [Operand::Reg, Operand::Stack, Operand::Immediate];
     for op in ops {
         for ty in tys.clone() {
-            let op = std::format!("{ty}{op}");
+            let op = format!("{ty}{op}");
             for result in results {
                 for lhs in lhs_in {
                     for rhs in rhs_in {
@@ -373,7 +374,7 @@ fn define_binop_instrs(
                         let lhs_id = lhs.id();
                         let rhs_id = rhs.id();
                         ctx.push_instr(instr! {
-                            name: "{op}_{result_id}{lhs_id}{rhs_id}",
+                            name: format!("{op}_{result_id}{lhs_id}{rhs_id}"),
                             fields: [
                                 result: result.ty(ty),
                                 lhs: lhs.ty(ty),
@@ -429,7 +430,7 @@ fn define_fbinop_instrs(ctx: &mut Context) {
 fn define_copy_instrs(ctx: &mut Context) {
     let stack_id = Operand::Stack.id();
     ctx.push_instr(instr! {
-        name: "Copy1_{stack_id}",
+        name: format!("Copy1_{stack_id}"),
         fields: [
             result: FieldTy::Stack,
             value: FieldTy::Stack,
@@ -447,10 +448,10 @@ fn define_copy_instrs(ctx: &mut Context) {
             if matches!(ty, ValTy::I32) && value.is_reg() {
                 continue;
             }
-            let op = std::format!("Copy1{ty}");
+            let op = format!("Copy1{ty}");
             let value_id = value.id();
             ctx.push_instr(instr! {
-                name: "{op}_{value_id}",
+                name: format!("{op}_{value_id}"),
                 fields: [
                     result: FieldTy::Stack,
                     value: value.ty(ty),
@@ -468,7 +469,7 @@ fn define_global_instrs(ctx: &mut Context) {
 fn define_global_get_instrs(ctx: &mut Context) {
     let stack_id = Operand::Stack.id();
     ctx.push_instr(instr! {
-        name: "GlobalGet_{stack_id}",
+        name: format!("GlobalGet_{stack_id}"),
         fields: [
             result: FieldTy::Stack,
             global: ImmediateTy::Global,
@@ -477,7 +478,7 @@ fn define_global_get_instrs(ctx: &mut Context) {
     for ty in [ValTy::I32, ValTy::I64, ValTy::F32, ValTy::F64] {
         let result_id = Operand::Reg.id();
         ctx.push_instr(instr! {
-            name: "GlobalGet{ty}_{result_id}",
+            name: format!("GlobalGet{ty}_{result_id}"),
             fields: [
                 result: Operand::Reg.ty(ty),
                 global: ImmediateTy::Global,
@@ -489,7 +490,7 @@ fn define_global_get_instrs(ctx: &mut Context) {
 fn define_global_set_instrs(ctx: &mut Context) {
     let stack_id = Operand::Stack.id();
     ctx.push_instr(instr! {
-        name: "GlobalSet_{stack_id}",
+        name: format!("GlobalSet_{stack_id}"),
         fields: [
             global: ImmediateTy::Global,
             value: FieldTy::Stack,
@@ -499,7 +500,7 @@ fn define_global_set_instrs(ctx: &mut Context) {
         for ty in [ValTy::I32, ValTy::I64, ValTy::F32, ValTy::F64] {
             let value_id = value.id();
             ctx.push_instr(instr! {
-                name: "GlobalSet{ty}_{value_id}",
+                name: format!("GlobalSet{ty}_{value_id}"),
                 fields: [
                     global: ImmediateTy::Global,
                     value: value.ty(ty),
@@ -519,7 +520,7 @@ fn define_return_instrs(ctx: &mut Context) {
     {
         let stack_id = Operand::Stack.id();
         ctx.push_instr(instr! {
-            name: "Return1_{stack_id}",
+            name: format!("Return1_{stack_id}"),
             fields: [
                 value: FieldTy::Stack,
             ],
@@ -537,7 +538,7 @@ fn define_return_instrs(ctx: &mut Context) {
         for ty in [ValTy::I32, ValTy::I64, ValTy::F32, ValTy::F64] {
             let value_id = value.id();
             ctx.push_instr(instr! {
-                name: "Return1{ty}_{value_id}",
+                name: format!("Return1{ty}_{value_id}"),
                 fields: [
                     value: value.ty(ty),
                 ],
@@ -595,7 +596,7 @@ fn define_select_instrs(ctx: &mut Context) {
                         let rhs_id = rhs.id();
                         let rhs_ty = rhs.ty(ty);
                         ctx.push_instr(instr! {
-                            name: "Select{ty}_{result_id}{condition_id}{lhs_id}{rhs_id}",
+                            name: format!("Select{ty}_{result_id}{condition_id}{lhs_id}{rhs_id}"),
                             fields: [
                                 result: result_ty,
                                 condition: condition_ty,
@@ -624,7 +625,7 @@ fn define_table_size_instrs(ctx: &mut Context) {
     for result in [Operand::Reg, Operand::Stack] {
         let result_id = result.id();
         ctx.push_instr(instr! {
-            name: "TableSize_{result_id}",
+            name: format!("TableSize_{result_id}"),
             fields: [
                 result: result.ty(ValTy::I64),
                 table: ImmediateTy::Table,
@@ -639,7 +640,7 @@ fn define_table_get_instrs(ctx: &mut Context) {
     for index in [Operand::Reg, Operand::Stack, Operand::Immediate] {
         let index_id = index.id();
         ctx.push_instr(instr! {
-            name: "TableGet_{result_id}{index_id}",
+            name: format!("TableGet_{result_id}{index_id}"),
             fields: [
                 result: result_ty,
                 index: index.ty(ValTy::I64),
@@ -660,7 +661,7 @@ fn define_table_set_instrs(ctx: &mut Context) {
             let value_id = value.id();
             let value_ty = value.ty(ValTy::I32);
             ctx.push_instr(instr! {
-                name: "TableSet_{index_id}{value_id}",
+                name: format!("TableSet_{index_id}{value_id}"),
                 fields: [
                     index: index_ty,
                     value: value_ty,
@@ -732,7 +733,7 @@ fn define_memory_size_instrs(ctx: &mut Context) {
     for result in [Operand::Reg, Operand::Stack] {
         let result_id = result.id();
         ctx.push_instr(instr! {
-            name: "MemorySize_{result_id}",
+            name: format!("MemorySize_{result_id}"),
             fields: [
                 result: result.ty(ValTy::I64),
                 memory: ImmediateTy::Memory,
@@ -799,7 +800,7 @@ fn define_call_instrs(ctx: &mut Context) {
 fn define_call_internal_instrs(ctx: &mut Context) {
     for op in ["Call", "ReturnCall"] {
         ctx.push_instr(instr! {
-            name: "{op}Internal",
+            name: format!("{op}Internal"),
             fields: [
                 func: ImmediateTy::WasmFunc,
                 len_params: ImmediateTy::Usize,
@@ -812,7 +813,7 @@ fn define_call_internal_instrs(ctx: &mut Context) {
 fn define_call_imported_instrs(ctx: &mut Context) {
     for op in ["Call", "ReturnCall"] {
         ctx.push_instr(instr! {
-            name: "{op}Imported",
+            name: format!("{op}Imported"),
             fields: [
                 func: ImmediateTy::Func,
                 len_params: ImmediateTy::Usize,
@@ -827,7 +828,7 @@ fn define_call_indirect_instrs(ctx: &mut Context) {
         for index in [Operand::Reg, Operand::Stack, Operand::Immediate] {
             let index_id = index.id();
             ctx.push_instr(instr! {
-                name: "{op}Indirect_{index_id}",
+                name: format!("{op}Indirect_{index_id}"),
                 fields: [
                     table: ImmediateTy::Table,
                     index: index.ty(ValTy::I64),

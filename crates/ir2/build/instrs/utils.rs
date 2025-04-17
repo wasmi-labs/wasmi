@@ -110,7 +110,7 @@ impl Display for ValTy {
 #[macro_export]
 macro_rules! instr {
     (
-        name: $name:literal,
+        name: $name:expr,
         fields: [
             $(
                 $field_name:ident: $field_ty:expr
@@ -120,7 +120,7 @@ macro_rules! instr {
         $(,)?
     ) => {{
         #[allow(unused_mut)]
-        let mut instr = Op::new(std::format!($name));
+        let mut instr = Op::new($name);
         $(
             instr.push_field(ident_to_field_name!($field_name), $field_ty);
         )*
