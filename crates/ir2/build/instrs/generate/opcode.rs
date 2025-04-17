@@ -14,7 +14,7 @@ impl<'a> DisplayOpCodeEnum<'a> {
 impl Display for DisplayOpCodeEnum<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let display_variants = DisplayOpCodeEnumVariants::new(self.ctx.instrs(), indent.inc());
+        let display_variants = DisplayOpCodeEnumVariants::new(self.ctx.ops(), indent.inc());
         emit!(f, indent =>
             "#[repr(u16)]"
             "pub enum OpCode {"

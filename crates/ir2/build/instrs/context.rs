@@ -11,7 +11,7 @@ impl Context {
         self.ops.push(op);
     }
 
-    pub fn instrs(&self) -> &[Op] {
+    pub fn ops(&self) -> &[Op] {
         &self.ops[..]
     }
 }

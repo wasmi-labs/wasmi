@@ -14,11 +14,10 @@ impl<'a> DisplayOpEnum<'a> {
 impl Display for DisplayOpEnum<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let variants = DisplayOpEnumVariants::new(self.ctx.instrs(), indent.inc());
-        let impl_encode =
-            DisplayOpEnumImplEncodeForVariants::new(self.ctx.instrs(), indent.inc_by(3));
+        let variants = DisplayOpEnumVariants::new(self.ctx.ops(), indent.inc());
+        let impl_encode = DisplayOpEnumImplEncodeForVariants::new(self.ctx.ops(), indent.inc_by(3));
         let impl_operator_code =
-            DisplayOpEnumImplOperatorCode::new(self.ctx.instrs(), indent.inc_by(3));
+            DisplayOpEnumImplOperatorCode::new(self.ctx.ops(), indent.inc_by(3));
         emit!(f, indent =>
             "pub enum Op {"
                 variants

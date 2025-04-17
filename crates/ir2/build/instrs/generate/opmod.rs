@@ -14,7 +14,7 @@ impl<'a> DisplayOpMod<'a> {
 impl Display for DisplayOpMod<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let display_instrs = DisplayOpModInstrs::new(self.ctx.instrs(), indent.inc());
+        let display_instrs = DisplayOpModInstrs::new(self.ctx.ops(), indent.inc());
         emit!(f, indent =>
             "pub mod op {"
                  display_instrs
