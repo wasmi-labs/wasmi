@@ -10,7 +10,7 @@ use self::{
     opmod::DisplayOpMod,
     utils::{DisplayFields, DisplayIndent, Visibility},
 };
-use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Instr};
+use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op};
 use std::{
     fmt::{self, Display},
     write,

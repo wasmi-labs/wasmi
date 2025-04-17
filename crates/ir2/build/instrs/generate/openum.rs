@@ -25,19 +25,19 @@ impl Display for DisplayOpEnum<'_> {
 }
 
 pub struct DisplayOpEnumVariants<'a> {
-    instrs: &'a [Instr],
+    ops: &'a [Op],
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayOpEnumVariants<'a> {
-    fn new(instrs: &'a [Instr], indent: DisplayIndent) -> Self {
-        Self { instrs, indent }
+    fn new(ops: &'a [Op], indent: DisplayIndent) -> Self {
+        Self { ops, indent }
     }
 }
 
 impl Display for DisplayOpEnumVariants<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Some((first, rest)) = self.instrs.split_first() else {
+        let Some((first, rest)) = self.ops.split_first() else {
             return Ok(());
         };
         DisplayOpEnumVariant::new(first, self.indent).fmt(f)?;
@@ -50,22 +50,22 @@ impl Display for DisplayOpEnumVariants<'_> {
 }
 
 pub struct DisplayOpEnumVariant<'a> {
-    instr: &'a Instr,
+    op: &'a Op,
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayOpEnumVariant<'a> {
-    fn new(instr: &'a Instr, indent: DisplayIndent) -> Self {
-        Self { instr, indent }
+    fn new(op: &'a Op, indent: DisplayIndent) -> Self {
+        Self { op, indent }
     }
 }
 
 impl Display for DisplayOpEnumVariant<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let fields = DisplayFields::new(self.instr.fields(), indent.inc(), Visibility::Default);
-        let name = self.instr.name();
-        if self.instr.fields().is_empty() {
+        let fields = DisplayFields::new(self.op.fields(), indent.inc(), Visibility::Default);
+        let name = self.op.name();
+        if self.op.fields().is_empty() {
             return writeln!(f, "{indent}{name},");
         }
         write!(

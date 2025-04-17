@@ -120,7 +120,7 @@ macro_rules! instr {
         $(,)?
     ) => {{
         #[allow(unused_mut)]
-        let mut instr = Instr::new(std::format!($name));
+        let mut instr = Op::new(std::format!($name));
         $(
             instr.push_field(ident_to_field_name!($field_name), $field_ty);
         )*

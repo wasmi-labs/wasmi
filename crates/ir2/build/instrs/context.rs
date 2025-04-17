@@ -3,26 +3,26 @@ use std::{boxed::Box, vec::Vec};
 
 #[derive(Default)]
 pub struct Context {
-    instrs: Vec<Instr>,
+    ops: Vec<Op>,
 }
 
 impl Context {
-    pub fn push_instr(&mut self, instr: Instr) {
-        self.instrs.push(instr);
+    pub fn push_instr(&mut self, op: Op) {
+        self.ops.push(op);
     }
 
-    pub fn instrs(&self) -> &[Instr] {
-        &self.instrs[..]
+    pub fn instrs(&self) -> &[Op] {
+        &self.ops[..]
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Instr {
+pub struct Op {
     name: Box<str>,
     fields: Vec<Field>,
 }
 
-impl Instr {
+impl Op {
     pub fn new(name: impl AsRef<str>) -> Self {
         Self {
             name: name.as_ref().into(),

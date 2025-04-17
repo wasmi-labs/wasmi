@@ -25,19 +25,19 @@ impl Display for DisplayOpMod<'_> {
 }
 
 pub struct DisplayOpModInstrs<'a> {
-    instrs: &'a [Instr],
+    ops: &'a [Op],
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayOpModInstrs<'a> {
-    fn new(instrs: &'a [Instr], indent: DisplayIndent) -> Self {
-        Self { instrs, indent }
+    fn new(ops: &'a [Op], indent: DisplayIndent) -> Self {
+        Self { ops, indent }
     }
 }
 
 impl Display for DisplayOpModInstrs<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Some((first, rest)) = self.instrs.split_first() else {
+        let Some((first, rest)) = self.ops.split_first() else {
             return Ok(());
         };
         DisplayOpModInstr::new(first, self.indent).fmt(f)?;
@@ -50,23 +50,23 @@ impl Display for DisplayOpModInstrs<'_> {
 }
 
 pub struct DisplayOpModInstr<'a> {
-    instr: &'a Instr,
+    op: &'a Op,
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayOpModInstr<'a> {
-    fn new(instr: &'a Instr, indent: DisplayIndent) -> Self {
-        Self { instr, indent }
+    fn new(op: &'a Op, indent: DisplayIndent) -> Self {
+        Self { op, indent }
     }
 }
 
 impl Display for DisplayOpModInstr<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let fields = DisplayFields::new(self.instr.fields(), indent.inc(), Visibility::Pub);
-        let from_impl = DisplayOpModFromImpl::new(self.instr, indent);
-        let name = self.instr.name();
-        if self.instr.fields().is_empty() {
+        let fields = DisplayFields::new(self.op.fields(), indent.inc(), Visibility::Pub);
+        let from_impl = DisplayOpModFromImpl::new(self.op, indent);
+        let name = self.op.name();
+        if self.op.fields().is_empty() {
             return writeln!(f, "{indent}pub struct {name};");
         }
         write!(
@@ -95,22 +95,22 @@ impl Display for DisplayOpModInstr<'_> {
 }
 
 pub struct DisplayOpModFromImpl<'a> {
-    instr: &'a Instr,
+    op: &'a Op,
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayOpModFromImpl<'a> {
-    fn new(instr: &'a Instr, indent: DisplayIndent) -> Self {
-        Self { instr, indent }
+    fn new(op: &'a Op, indent: DisplayIndent) -> Self {
+        Self { op, indent }
     }
 }
 
 impl Display for DisplayOpModFromImpl<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let fields = DisplayOpModFromImplFields::new(self.instr.fields(), indent.inc().inc().inc());
-        let name = self.instr.name();
-        if self.instr.fields().is_empty() {
+        let fields = DisplayOpModFromImplFields::new(self.op.fields(), indent.inc().inc().inc());
+        let name = self.op.name();
+        if self.op.fields().is_empty() {
             return writeln!(f, "{indent}pub struct {name};");
         }
         write!(

@@ -56,19 +56,19 @@ impl Display for DisplayOpCodeEnum<'_> {
 }
 
 pub struct DisplayOpCodeEnumVariants<'a> {
-    instrs: &'a [Instr],
+    ops: &'a [Op],
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayOpCodeEnumVariants<'a> {
-    fn new(instrs: &'a [Instr], indent: DisplayIndent) -> Self {
-        Self { instrs, indent }
+    fn new(ops: &'a [Op], indent: DisplayIndent) -> Self {
+        Self { ops, indent }
     }
 }
 
 impl Display for DisplayOpCodeEnumVariants<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Some((first, rest)) = self.instrs.split_first() else {
+        let Some((first, rest)) = self.ops.split_first() else {
             return Ok(());
         };
         DisplayOpCodeEnumVariant::new(first, self.indent).fmt(f)?;
@@ -81,20 +81,20 @@ impl Display for DisplayOpCodeEnumVariants<'_> {
 }
 
 pub struct DisplayOpCodeEnumVariant<'a> {
-    instr: &'a Instr,
+    op: &'a Op,
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayOpCodeEnumVariant<'a> {
-    fn new(instr: &'a Instr, indent: DisplayIndent) -> Self {
-        Self { instr, indent }
+    fn new(op: &'a Op, indent: DisplayIndent) -> Self {
+        Self { op, indent }
     }
 }
 
 impl Display for DisplayOpCodeEnumVariant<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let name = self.instr.name();
+        let name = self.op.name();
         write!(f, "{indent}{name},")?;
         Ok(())
     }
