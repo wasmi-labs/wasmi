@@ -1,4 +1,4 @@
-use super::*;
+use super::{Context, FieldName, FieldTy, ImmediateTy, Op, Operand, ValTy};
 use std::format;
 
 pub fn define_instrs(ctx: &mut Context) {
