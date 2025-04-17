@@ -27,6 +27,7 @@ impl<T> Deref for RefAccess<T> {
 ///
 /// Implemented by [`Op`] and all operators found in the [`crate::Op`] module.
 pub trait OperatorCode {
+    /// Returns the [`OpCode`] associated to `self`.
     fn op_code(&self) -> crate::OpCode;
 }
 
