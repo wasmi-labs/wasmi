@@ -17,7 +17,10 @@ pub struct DisplayIndent(usize);
 
 impl DisplayIndent {
     pub fn inc(self) -> Self {
-        Self(self.0 + 1)
+        self.inc_by(1)
+    }
+    pub fn inc_by(self, delta: usize) -> Self {
+        Self(self.0 + delta)
     }
 }
 

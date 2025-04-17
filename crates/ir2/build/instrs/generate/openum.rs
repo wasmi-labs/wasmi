@@ -16,9 +16,9 @@ impl Display for DisplayOpEnum<'_> {
         let indent = self.indent;
         let variants = DisplayOpEnumVariants::new(self.ctx.instrs(), indent.inc());
         let impl_encode =
-            DisplayOpEnumImplEncodeForVariants::new(self.ctx.instrs(), indent.inc().inc().inc());
+            DisplayOpEnumImplEncodeForVariants::new(self.ctx.instrs(), indent.inc_by(3));
         let impl_operator_code =
-            DisplayOpEnumImplOperatorCode::new(self.ctx.instrs(), indent.inc().inc().inc());
+            DisplayOpEnumImplOperatorCode::new(self.ctx.instrs(), indent.inc_by(3));
         emit!(f, indent =>
             "pub enum Op {"
                 variants

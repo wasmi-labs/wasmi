@@ -108,7 +108,7 @@ impl<'a> DisplayOpModFromImpl<'a> {
 impl Display for DisplayOpModFromImpl<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
-        let fields = DisplayOpModFromImplFields::new(self.op.fields(), indent.inc().inc().inc());
+        let fields = DisplayOpModFromImplFields::new(self.op.fields(), indent.inc_by(3));
         let name = self.op.name();
         if self.op.fields().is_empty() {
             return writeln!(f, "{indent}pub struct {name};");
