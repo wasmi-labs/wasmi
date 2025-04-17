@@ -11,9 +11,11 @@ use self::{
     generate::generate_instrs,
     utils::{ImmediateTy, Operand, ValTy},
 };
+use std::io::Error as IoError;
 
-pub fn generate() {
+pub fn generate() -> Result<(), IoError> {
     let mut ctx = Context::default();
     define_instrs(&mut ctx);
-    generate_instrs(&ctx);
+    generate_instrs(&ctx)?;
+    Ok(())
 }

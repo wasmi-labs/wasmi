@@ -5,7 +5,7 @@ mod instrs;
 
 fn main() {
     watch_dir_recursively(Path::new("build"));
-    instrs::generate();
+    instrs::generate().unwrap()
 }
 
 fn watch_dir_recursively(path: &Path) {
