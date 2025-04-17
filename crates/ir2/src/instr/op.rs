@@ -13,11 +13,6 @@ impl ::core::clone::Clone for Copy1_S {
         *self
     }
 }
-impl crate::OperatorCode for Copy1_S {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Copy1_S
-    }
-}
 impl ::core::convert::From<Copy1_S> for crate::Op {
     fn from(op: Copy1_S) -> Self {
         Self::Copy1_S {
@@ -35,11 +30,6 @@ impl ::core::marker::Copy for Copy {}
 impl ::core::clone::Clone for Copy {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for Copy {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Copy
     }
 }
 impl ::core::convert::From<Copy> for crate::Op {
@@ -61,11 +51,6 @@ impl ::core::clone::Clone for Copy1I32_I {
         *self
     }
 }
-impl crate::OperatorCode for Copy1I32_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Copy1I32_I
-    }
-}
 impl ::core::convert::From<Copy1I32_I> for crate::Op {
     fn from(op: Copy1I32_I) -> Self {
         Self::Copy1I32_I {
@@ -83,11 +68,6 @@ impl ::core::marker::Copy for Copy1I64_R {}
 impl ::core::clone::Clone for Copy1I64_R {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for Copy1I64_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Copy1I64_R
     }
 }
 impl ::core::convert::From<Copy1I64_R> for crate::Op {
@@ -109,11 +89,6 @@ impl ::core::clone::Clone for Copy1I64_I {
         *self
     }
 }
-impl crate::OperatorCode for Copy1I64_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Copy1I64_I
-    }
-}
 impl ::core::convert::From<Copy1I64_I> for crate::Op {
     fn from(op: Copy1I64_I) -> Self {
         Self::Copy1I64_I {
@@ -131,11 +106,6 @@ impl ::core::marker::Copy for Copy1F32_R {}
 impl ::core::clone::Clone for Copy1F32_R {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for Copy1F32_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Copy1F32_R
     }
 }
 impl ::core::convert::From<Copy1F32_R> for crate::Op {
@@ -157,11 +127,6 @@ impl ::core::clone::Clone for Copy1F32_I {
         *self
     }
 }
-impl crate::OperatorCode for Copy1F32_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Copy1F32_I
-    }
-}
 impl ::core::convert::From<Copy1F32_I> for crate::Op {
     fn from(op: Copy1F32_I) -> Self {
         Self::Copy1F32_I {
@@ -181,11 +146,6 @@ impl ::core::clone::Clone for Copy1F64_R {
         *self
     }
 }
-impl crate::OperatorCode for Copy1F64_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Copy1F64_R
-    }
-}
 impl ::core::convert::From<Copy1F64_R> for crate::Op {
     fn from(op: Copy1F64_R) -> Self {
         Self::Copy1F64_R {
@@ -203,11 +163,6 @@ impl ::core::marker::Copy for Copy1F64_I {}
 impl ::core::clone::Clone for Copy1F64_I {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for Copy1F64_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Copy1F64_I
     }
 }
 impl ::core::convert::From<Copy1F64_I> for crate::Op {
@@ -230,11 +185,6 @@ impl ::core::clone::Clone for Return1_S {
         *self
     }
 }
-impl crate::OperatorCode for Return1_S {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Return1_S
-    }
-}
 impl ::core::convert::From<Return1_S> for crate::Op {
     fn from(op: Return1_S) -> Self {
         Self::Return1_S {
@@ -250,11 +200,6 @@ impl ::core::marker::Copy for Return {}
 impl ::core::clone::Clone for Return {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for Return {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Return
     }
 }
 impl ::core::convert::From<Return> for crate::Op {
@@ -274,11 +219,6 @@ impl ::core::clone::Clone for Return1I32_R {
         *self
     }
 }
-impl crate::OperatorCode for Return1I32_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Return1I32_R
-    }
-}
 impl ::core::convert::From<Return1I32_R> for crate::Op {
     fn from(op: Return1I32_R) -> Self {
         Self::Return1I32_R {
@@ -294,11 +234,6 @@ impl ::core::marker::Copy for Return1I64_R {}
 impl ::core::clone::Clone for Return1I64_R {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for Return1I64_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Return1I64_R
     }
 }
 impl ::core::convert::From<Return1I64_R> for crate::Op {
@@ -318,11 +253,6 @@ impl ::core::clone::Clone for Return1F32_R {
         *self
     }
 }
-impl crate::OperatorCode for Return1F32_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Return1F32_R
-    }
-}
 impl ::core::convert::From<Return1F32_R> for crate::Op {
     fn from(op: Return1F32_R) -> Self {
         Self::Return1F32_R {
@@ -338,11 +268,6 @@ impl ::core::marker::Copy for Return1F64_R {}
 impl ::core::clone::Clone for Return1F64_R {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for Return1F64_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Return1F64_R
     }
 }
 impl ::core::convert::From<Return1F64_R> for crate::Op {
@@ -362,11 +287,6 @@ impl ::core::clone::Clone for Return1I32_I {
         *self
     }
 }
-impl crate::OperatorCode for Return1I32_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Return1I32_I
-    }
-}
 impl ::core::convert::From<Return1I32_I> for crate::Op {
     fn from(op: Return1I32_I) -> Self {
         Self::Return1I32_I {
@@ -382,11 +302,6 @@ impl ::core::marker::Copy for Return1I64_I {}
 impl ::core::clone::Clone for Return1I64_I {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for Return1I64_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Return1I64_I
     }
 }
 impl ::core::convert::From<Return1I64_I> for crate::Op {
@@ -406,11 +321,6 @@ impl ::core::clone::Clone for Return1F32_I {
         *self
     }
 }
-impl crate::OperatorCode for Return1F32_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Return1F32_I
-    }
-}
 impl ::core::convert::From<Return1F32_I> for crate::Op {
     fn from(op: Return1F32_I) -> Self {
         Self::Return1F32_I {
@@ -426,11 +336,6 @@ impl ::core::marker::Copy for Return1F64_I {}
 impl ::core::clone::Clone for Return1F64_I {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for Return1F64_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Return1F64_I
     }
 }
 impl ::core::convert::From<Return1F64_I> for crate::Op {
@@ -449,11 +354,6 @@ impl ::core::marker::Copy for GlobalGet_S {}
 impl ::core::clone::Clone for GlobalGet_S {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for GlobalGet_S {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalGet_S
     }
 }
 impl ::core::convert::From<GlobalGet_S> for crate::Op {
@@ -475,11 +375,6 @@ impl ::core::clone::Clone for GlobalGetI32_R {
         *self
     }
 }
-impl crate::OperatorCode for GlobalGetI32_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalGetI32_R
-    }
-}
 impl ::core::convert::From<GlobalGetI32_R> for crate::Op {
     fn from(op: GlobalGetI32_R) -> Self {
         Self::GlobalGetI32_R {
@@ -497,11 +392,6 @@ impl ::core::marker::Copy for GlobalGetI64_R {}
 impl ::core::clone::Clone for GlobalGetI64_R {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for GlobalGetI64_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalGetI64_R
     }
 }
 impl ::core::convert::From<GlobalGetI64_R> for crate::Op {
@@ -523,11 +413,6 @@ impl ::core::clone::Clone for GlobalGetF32_R {
         *self
     }
 }
-impl crate::OperatorCode for GlobalGetF32_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalGetF32_R
-    }
-}
 impl ::core::convert::From<GlobalGetF32_R> for crate::Op {
     fn from(op: GlobalGetF32_R) -> Self {
         Self::GlobalGetF32_R {
@@ -545,11 +430,6 @@ impl ::core::marker::Copy for GlobalGetF64_R {}
 impl ::core::clone::Clone for GlobalGetF64_R {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for GlobalGetF64_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalGetF64_R
     }
 }
 impl ::core::convert::From<GlobalGetF64_R> for crate::Op {
@@ -571,11 +451,6 @@ impl ::core::clone::Clone for GlobalSet_S {
         *self
     }
 }
-impl crate::OperatorCode for GlobalSet_S {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalSet_S
-    }
-}
 impl ::core::convert::From<GlobalSet_S> for crate::Op {
     fn from(op: GlobalSet_S) -> Self {
         Self::GlobalSet_S {
@@ -593,11 +468,6 @@ impl ::core::marker::Copy for GlobalSetI32_R {}
 impl ::core::clone::Clone for GlobalSetI32_R {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for GlobalSetI32_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalSetI32_R
     }
 }
 impl ::core::convert::From<GlobalSetI32_R> for crate::Op {
@@ -619,11 +489,6 @@ impl ::core::clone::Clone for GlobalSetI64_R {
         *self
     }
 }
-impl crate::OperatorCode for GlobalSetI64_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalSetI64_R
-    }
-}
 impl ::core::convert::From<GlobalSetI64_R> for crate::Op {
     fn from(op: GlobalSetI64_R) -> Self {
         Self::GlobalSetI64_R {
@@ -641,11 +506,6 @@ impl ::core::marker::Copy for GlobalSetF32_R {}
 impl ::core::clone::Clone for GlobalSetF32_R {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for GlobalSetF32_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalSetF32_R
     }
 }
 impl ::core::convert::From<GlobalSetF32_R> for crate::Op {
@@ -667,11 +527,6 @@ impl ::core::clone::Clone for GlobalSetF64_R {
         *self
     }
 }
-impl crate::OperatorCode for GlobalSetF64_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalSetF64_R
-    }
-}
 impl ::core::convert::From<GlobalSetF64_R> for crate::Op {
     fn from(op: GlobalSetF64_R) -> Self {
         Self::GlobalSetF64_R {
@@ -689,11 +544,6 @@ impl ::core::marker::Copy for GlobalSetI32_I {}
 impl ::core::clone::Clone for GlobalSetI32_I {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for GlobalSetI32_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalSetI32_I
     }
 }
 impl ::core::convert::From<GlobalSetI32_I> for crate::Op {
@@ -715,11 +565,6 @@ impl ::core::clone::Clone for GlobalSetI64_I {
         *self
     }
 }
-impl crate::OperatorCode for GlobalSetI64_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalSetI64_I
-    }
-}
 impl ::core::convert::From<GlobalSetI64_I> for crate::Op {
     fn from(op: GlobalSetI64_I) -> Self {
         Self::GlobalSetI64_I {
@@ -737,11 +582,6 @@ impl ::core::marker::Copy for GlobalSetF32_I {}
 impl ::core::clone::Clone for GlobalSetF32_I {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for GlobalSetF32_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalSetF32_I
     }
 }
 impl ::core::convert::From<GlobalSetF32_I> for crate::Op {
@@ -763,11 +603,6 @@ impl ::core::clone::Clone for GlobalSetF64_I {
         *self
     }
 }
-impl crate::OperatorCode for GlobalSetF64_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::GlobalSetF64_I
-    }
-}
 impl ::core::convert::From<GlobalSetF64_I> for crate::Op {
     fn from(op: GlobalSetF64_I) -> Self {
         Self::GlobalSetF64_I {
@@ -785,11 +620,6 @@ impl ::core::marker::Copy for BranchTable0_R {}
 impl ::core::clone::Clone for BranchTable0_R {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for BranchTable0_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::BranchTable0_R
     }
 }
 impl ::core::convert::From<BranchTable0_R> for crate::Op {
@@ -811,11 +641,6 @@ impl ::core::clone::Clone for BranchTable_R {
         *self
     }
 }
-impl crate::OperatorCode for BranchTable_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::BranchTable_R
-    }
-}
 impl ::core::convert::From<BranchTable_R> for crate::Op {
     fn from(op: BranchTable_R) -> Self {
         Self::BranchTable_R {
@@ -833,11 +658,6 @@ impl ::core::marker::Copy for BranchTable0_S {}
 impl ::core::clone::Clone for BranchTable0_S {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for BranchTable0_S {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::BranchTable0_S
     }
 }
 impl ::core::convert::From<BranchTable0_S> for crate::Op {
@@ -859,11 +679,6 @@ impl ::core::clone::Clone for BranchTable_S {
         *self
     }
 }
-impl crate::OperatorCode for BranchTable_S {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::BranchTable_S
-    }
-}
 impl ::core::convert::From<BranchTable_S> for crate::Op {
     fn from(op: BranchTable_S) -> Self {
         Self::BranchTable_S {
@@ -882,11 +697,6 @@ impl ::core::marker::Copy for I32EqBranch_RS {}
 impl ::core::clone::Clone for I32EqBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32EqBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32EqBranch_RS
     }
 }
 impl ::core::convert::From<I32EqBranch_RS> for crate::Op {
@@ -910,11 +720,6 @@ impl ::core::clone::Clone for I32EqBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32EqBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32EqBranch_RI
-    }
-}
 impl ::core::convert::From<I32EqBranch_RI> for crate::Op {
     fn from(op: I32EqBranch_RI) -> Self {
         Self::I32EqBranch_RI {
@@ -934,11 +739,6 @@ impl ::core::marker::Copy for I32EqBranch_SS {}
 impl ::core::clone::Clone for I32EqBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32EqBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32EqBranch_SS
     }
 }
 impl ::core::convert::From<I32EqBranch_SS> for crate::Op {
@@ -962,11 +762,6 @@ impl ::core::clone::Clone for I32EqBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for I32EqBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32EqBranch_SI
-    }
-}
 impl ::core::convert::From<I32EqBranch_SI> for crate::Op {
     fn from(op: I32EqBranch_SI) -> Self {
         Self::I32EqBranch_SI {
@@ -986,11 +781,6 @@ impl ::core::marker::Copy for I64EqBranch_RS {}
 impl ::core::clone::Clone for I64EqBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64EqBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64EqBranch_RS
     }
 }
 impl ::core::convert::From<I64EqBranch_RS> for crate::Op {
@@ -1014,11 +804,6 @@ impl ::core::clone::Clone for I64EqBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64EqBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64EqBranch_RI
-    }
-}
 impl ::core::convert::From<I64EqBranch_RI> for crate::Op {
     fn from(op: I64EqBranch_RI) -> Self {
         Self::I64EqBranch_RI {
@@ -1038,11 +823,6 @@ impl ::core::marker::Copy for I64EqBranch_SS {}
 impl ::core::clone::Clone for I64EqBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64EqBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64EqBranch_SS
     }
 }
 impl ::core::convert::From<I64EqBranch_SS> for crate::Op {
@@ -1066,11 +846,6 @@ impl ::core::clone::Clone for I64EqBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for I64EqBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64EqBranch_SI
-    }
-}
 impl ::core::convert::From<I64EqBranch_SI> for crate::Op {
     fn from(op: I64EqBranch_SI) -> Self {
         Self::I64EqBranch_SI {
@@ -1090,11 +865,6 @@ impl ::core::marker::Copy for F32EqBranch_RS {}
 impl ::core::clone::Clone for F32EqBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32EqBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32EqBranch_RS
     }
 }
 impl ::core::convert::From<F32EqBranch_RS> for crate::Op {
@@ -1118,11 +888,6 @@ impl ::core::clone::Clone for F32EqBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for F32EqBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32EqBranch_RI
-    }
-}
 impl ::core::convert::From<F32EqBranch_RI> for crate::Op {
     fn from(op: F32EqBranch_RI) -> Self {
         Self::F32EqBranch_RI {
@@ -1142,11 +907,6 @@ impl ::core::marker::Copy for F32EqBranch_SS {}
 impl ::core::clone::Clone for F32EqBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32EqBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32EqBranch_SS
     }
 }
 impl ::core::convert::From<F32EqBranch_SS> for crate::Op {
@@ -1170,11 +930,6 @@ impl ::core::clone::Clone for F32EqBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for F32EqBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32EqBranch_SI
-    }
-}
 impl ::core::convert::From<F32EqBranch_SI> for crate::Op {
     fn from(op: F32EqBranch_SI) -> Self {
         Self::F32EqBranch_SI {
@@ -1194,11 +949,6 @@ impl ::core::marker::Copy for F64EqBranch_RS {}
 impl ::core::clone::Clone for F64EqBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64EqBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64EqBranch_RS
     }
 }
 impl ::core::convert::From<F64EqBranch_RS> for crate::Op {
@@ -1222,11 +972,6 @@ impl ::core::clone::Clone for F64EqBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for F64EqBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64EqBranch_RI
-    }
-}
 impl ::core::convert::From<F64EqBranch_RI> for crate::Op {
     fn from(op: F64EqBranch_RI) -> Self {
         Self::F64EqBranch_RI {
@@ -1246,11 +991,6 @@ impl ::core::marker::Copy for F64EqBranch_SS {}
 impl ::core::clone::Clone for F64EqBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64EqBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64EqBranch_SS
     }
 }
 impl ::core::convert::From<F64EqBranch_SS> for crate::Op {
@@ -1274,11 +1014,6 @@ impl ::core::clone::Clone for F64EqBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for F64EqBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64EqBranch_SI
-    }
-}
 impl ::core::convert::From<F64EqBranch_SI> for crate::Op {
     fn from(op: F64EqBranch_SI) -> Self {
         Self::F64EqBranch_SI {
@@ -1298,11 +1033,6 @@ impl ::core::marker::Copy for I32NeBranch_RS {}
 impl ::core::clone::Clone for I32NeBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32NeBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32NeBranch_RS
     }
 }
 impl ::core::convert::From<I32NeBranch_RS> for crate::Op {
@@ -1326,11 +1056,6 @@ impl ::core::clone::Clone for I32NeBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32NeBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32NeBranch_RI
-    }
-}
 impl ::core::convert::From<I32NeBranch_RI> for crate::Op {
     fn from(op: I32NeBranch_RI) -> Self {
         Self::I32NeBranch_RI {
@@ -1350,11 +1075,6 @@ impl ::core::marker::Copy for I32NeBranch_SS {}
 impl ::core::clone::Clone for I32NeBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32NeBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32NeBranch_SS
     }
 }
 impl ::core::convert::From<I32NeBranch_SS> for crate::Op {
@@ -1378,11 +1098,6 @@ impl ::core::clone::Clone for I32NeBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for I32NeBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32NeBranch_SI
-    }
-}
 impl ::core::convert::From<I32NeBranch_SI> for crate::Op {
     fn from(op: I32NeBranch_SI) -> Self {
         Self::I32NeBranch_SI {
@@ -1402,11 +1117,6 @@ impl ::core::marker::Copy for I64NeBranch_RS {}
 impl ::core::clone::Clone for I64NeBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64NeBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64NeBranch_RS
     }
 }
 impl ::core::convert::From<I64NeBranch_RS> for crate::Op {
@@ -1430,11 +1140,6 @@ impl ::core::clone::Clone for I64NeBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64NeBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64NeBranch_RI
-    }
-}
 impl ::core::convert::From<I64NeBranch_RI> for crate::Op {
     fn from(op: I64NeBranch_RI) -> Self {
         Self::I64NeBranch_RI {
@@ -1454,11 +1159,6 @@ impl ::core::marker::Copy for I64NeBranch_SS {}
 impl ::core::clone::Clone for I64NeBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64NeBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64NeBranch_SS
     }
 }
 impl ::core::convert::From<I64NeBranch_SS> for crate::Op {
@@ -1482,11 +1182,6 @@ impl ::core::clone::Clone for I64NeBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for I64NeBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64NeBranch_SI
-    }
-}
 impl ::core::convert::From<I64NeBranch_SI> for crate::Op {
     fn from(op: I64NeBranch_SI) -> Self {
         Self::I64NeBranch_SI {
@@ -1506,11 +1201,6 @@ impl ::core::marker::Copy for F32NeBranch_RS {}
 impl ::core::clone::Clone for F32NeBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32NeBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32NeBranch_RS
     }
 }
 impl ::core::convert::From<F32NeBranch_RS> for crate::Op {
@@ -1534,11 +1224,6 @@ impl ::core::clone::Clone for F32NeBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for F32NeBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32NeBranch_RI
-    }
-}
 impl ::core::convert::From<F32NeBranch_RI> for crate::Op {
     fn from(op: F32NeBranch_RI) -> Self {
         Self::F32NeBranch_RI {
@@ -1558,11 +1243,6 @@ impl ::core::marker::Copy for F32NeBranch_SS {}
 impl ::core::clone::Clone for F32NeBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32NeBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32NeBranch_SS
     }
 }
 impl ::core::convert::From<F32NeBranch_SS> for crate::Op {
@@ -1586,11 +1266,6 @@ impl ::core::clone::Clone for F32NeBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for F32NeBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32NeBranch_SI
-    }
-}
 impl ::core::convert::From<F32NeBranch_SI> for crate::Op {
     fn from(op: F32NeBranch_SI) -> Self {
         Self::F32NeBranch_SI {
@@ -1610,11 +1285,6 @@ impl ::core::marker::Copy for F64NeBranch_RS {}
 impl ::core::clone::Clone for F64NeBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64NeBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64NeBranch_RS
     }
 }
 impl ::core::convert::From<F64NeBranch_RS> for crate::Op {
@@ -1638,11 +1308,6 @@ impl ::core::clone::Clone for F64NeBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for F64NeBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64NeBranch_RI
-    }
-}
 impl ::core::convert::From<F64NeBranch_RI> for crate::Op {
     fn from(op: F64NeBranch_RI) -> Self {
         Self::F64NeBranch_RI {
@@ -1662,11 +1327,6 @@ impl ::core::marker::Copy for F64NeBranch_SS {}
 impl ::core::clone::Clone for F64NeBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64NeBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64NeBranch_SS
     }
 }
 impl ::core::convert::From<F64NeBranch_SS> for crate::Op {
@@ -1690,11 +1350,6 @@ impl ::core::clone::Clone for F64NeBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for F64NeBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64NeBranch_SI
-    }
-}
 impl ::core::convert::From<F64NeBranch_SI> for crate::Op {
     fn from(op: F64NeBranch_SI) -> Self {
         Self::F64NeBranch_SI {
@@ -1714,11 +1369,6 @@ impl ::core::marker::Copy for I32LtSBranch_RS {}
 impl ::core::clone::Clone for I32LtSBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtSBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtSBranch_RS
     }
 }
 impl ::core::convert::From<I32LtSBranch_RS> for crate::Op {
@@ -1742,11 +1392,6 @@ impl ::core::clone::Clone for I32LtSBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32LtSBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtSBranch_RI
-    }
-}
 impl ::core::convert::From<I32LtSBranch_RI> for crate::Op {
     fn from(op: I32LtSBranch_RI) -> Self {
         Self::I32LtSBranch_RI {
@@ -1766,11 +1411,6 @@ impl ::core::marker::Copy for I32LtSBranch_SR {}
 impl ::core::clone::Clone for I32LtSBranch_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtSBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtSBranch_SR
     }
 }
 impl ::core::convert::From<I32LtSBranch_SR> for crate::Op {
@@ -1794,11 +1434,6 @@ impl ::core::clone::Clone for I32LtSBranch_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32LtSBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtSBranch_SS
-    }
-}
 impl ::core::convert::From<I32LtSBranch_SS> for crate::Op {
     fn from(op: I32LtSBranch_SS) -> Self {
         Self::I32LtSBranch_SS {
@@ -1818,11 +1453,6 @@ impl ::core::marker::Copy for I32LtSBranch_SI {}
 impl ::core::clone::Clone for I32LtSBranch_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtSBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtSBranch_SI
     }
 }
 impl ::core::convert::From<I32LtSBranch_SI> for crate::Op {
@@ -1846,11 +1476,6 @@ impl ::core::clone::Clone for I32LtSBranch_IR {
         *self
     }
 }
-impl crate::OperatorCode for I32LtSBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtSBranch_IR
-    }
-}
 impl ::core::convert::From<I32LtSBranch_IR> for crate::Op {
     fn from(op: I32LtSBranch_IR) -> Self {
         Self::I32LtSBranch_IR {
@@ -1870,11 +1495,6 @@ impl ::core::marker::Copy for I32LtSBranch_IS {}
 impl ::core::clone::Clone for I32LtSBranch_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtSBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtSBranch_IS
     }
 }
 impl ::core::convert::From<I32LtSBranch_IS> for crate::Op {
@@ -1898,11 +1518,6 @@ impl ::core::clone::Clone for I64LtSBranch_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64LtSBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtSBranch_RS
-    }
-}
 impl ::core::convert::From<I64LtSBranch_RS> for crate::Op {
     fn from(op: I64LtSBranch_RS) -> Self {
         Self::I64LtSBranch_RS {
@@ -1922,11 +1537,6 @@ impl ::core::marker::Copy for I64LtSBranch_RI {}
 impl ::core::clone::Clone for I64LtSBranch_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtSBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtSBranch_RI
     }
 }
 impl ::core::convert::From<I64LtSBranch_RI> for crate::Op {
@@ -1950,11 +1560,6 @@ impl ::core::clone::Clone for I64LtSBranch_SR {
         *self
     }
 }
-impl crate::OperatorCode for I64LtSBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtSBranch_SR
-    }
-}
 impl ::core::convert::From<I64LtSBranch_SR> for crate::Op {
     fn from(op: I64LtSBranch_SR) -> Self {
         Self::I64LtSBranch_SR {
@@ -1974,11 +1579,6 @@ impl ::core::marker::Copy for I64LtSBranch_SS {}
 impl ::core::clone::Clone for I64LtSBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtSBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtSBranch_SS
     }
 }
 impl ::core::convert::From<I64LtSBranch_SS> for crate::Op {
@@ -2002,11 +1602,6 @@ impl ::core::clone::Clone for I64LtSBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for I64LtSBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtSBranch_SI
-    }
-}
 impl ::core::convert::From<I64LtSBranch_SI> for crate::Op {
     fn from(op: I64LtSBranch_SI) -> Self {
         Self::I64LtSBranch_SI {
@@ -2026,11 +1621,6 @@ impl ::core::marker::Copy for I64LtSBranch_IR {}
 impl ::core::clone::Clone for I64LtSBranch_IR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtSBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtSBranch_IR
     }
 }
 impl ::core::convert::From<I64LtSBranch_IR> for crate::Op {
@@ -2054,11 +1644,6 @@ impl ::core::clone::Clone for I64LtSBranch_IS {
         *self
     }
 }
-impl crate::OperatorCode for I64LtSBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtSBranch_IS
-    }
-}
 impl ::core::convert::From<I64LtSBranch_IS> for crate::Op {
     fn from(op: I64LtSBranch_IS) -> Self {
         Self::I64LtSBranch_IS {
@@ -2078,11 +1663,6 @@ impl ::core::marker::Copy for I32LtUBranch_RS {}
 impl ::core::clone::Clone for I32LtUBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtUBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtUBranch_RS
     }
 }
 impl ::core::convert::From<I32LtUBranch_RS> for crate::Op {
@@ -2106,11 +1686,6 @@ impl ::core::clone::Clone for I32LtUBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32LtUBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtUBranch_RI
-    }
-}
 impl ::core::convert::From<I32LtUBranch_RI> for crate::Op {
     fn from(op: I32LtUBranch_RI) -> Self {
         Self::I32LtUBranch_RI {
@@ -2130,11 +1705,6 @@ impl ::core::marker::Copy for I32LtUBranch_SR {}
 impl ::core::clone::Clone for I32LtUBranch_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtUBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtUBranch_SR
     }
 }
 impl ::core::convert::From<I32LtUBranch_SR> for crate::Op {
@@ -2158,11 +1728,6 @@ impl ::core::clone::Clone for I32LtUBranch_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32LtUBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtUBranch_SS
-    }
-}
 impl ::core::convert::From<I32LtUBranch_SS> for crate::Op {
     fn from(op: I32LtUBranch_SS) -> Self {
         Self::I32LtUBranch_SS {
@@ -2182,11 +1747,6 @@ impl ::core::marker::Copy for I32LtUBranch_SI {}
 impl ::core::clone::Clone for I32LtUBranch_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtUBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtUBranch_SI
     }
 }
 impl ::core::convert::From<I32LtUBranch_SI> for crate::Op {
@@ -2210,11 +1770,6 @@ impl ::core::clone::Clone for I32LtUBranch_IR {
         *self
     }
 }
-impl crate::OperatorCode for I32LtUBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtUBranch_IR
-    }
-}
 impl ::core::convert::From<I32LtUBranch_IR> for crate::Op {
     fn from(op: I32LtUBranch_IR) -> Self {
         Self::I32LtUBranch_IR {
@@ -2234,11 +1789,6 @@ impl ::core::marker::Copy for I32LtUBranch_IS {}
 impl ::core::clone::Clone for I32LtUBranch_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtUBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtUBranch_IS
     }
 }
 impl ::core::convert::From<I32LtUBranch_IS> for crate::Op {
@@ -2262,11 +1812,6 @@ impl ::core::clone::Clone for I64LtUBranch_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64LtUBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtUBranch_RS
-    }
-}
 impl ::core::convert::From<I64LtUBranch_RS> for crate::Op {
     fn from(op: I64LtUBranch_RS) -> Self {
         Self::I64LtUBranch_RS {
@@ -2286,11 +1831,6 @@ impl ::core::marker::Copy for I64LtUBranch_RI {}
 impl ::core::clone::Clone for I64LtUBranch_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtUBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtUBranch_RI
     }
 }
 impl ::core::convert::From<I64LtUBranch_RI> for crate::Op {
@@ -2314,11 +1854,6 @@ impl ::core::clone::Clone for I64LtUBranch_SR {
         *self
     }
 }
-impl crate::OperatorCode for I64LtUBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtUBranch_SR
-    }
-}
 impl ::core::convert::From<I64LtUBranch_SR> for crate::Op {
     fn from(op: I64LtUBranch_SR) -> Self {
         Self::I64LtUBranch_SR {
@@ -2338,11 +1873,6 @@ impl ::core::marker::Copy for I64LtUBranch_SS {}
 impl ::core::clone::Clone for I64LtUBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtUBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtUBranch_SS
     }
 }
 impl ::core::convert::From<I64LtUBranch_SS> for crate::Op {
@@ -2366,11 +1896,6 @@ impl ::core::clone::Clone for I64LtUBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for I64LtUBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtUBranch_SI
-    }
-}
 impl ::core::convert::From<I64LtUBranch_SI> for crate::Op {
     fn from(op: I64LtUBranch_SI) -> Self {
         Self::I64LtUBranch_SI {
@@ -2390,11 +1915,6 @@ impl ::core::marker::Copy for I64LtUBranch_IR {}
 impl ::core::clone::Clone for I64LtUBranch_IR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtUBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtUBranch_IR
     }
 }
 impl ::core::convert::From<I64LtUBranch_IR> for crate::Op {
@@ -2418,11 +1938,6 @@ impl ::core::clone::Clone for I64LtUBranch_IS {
         *self
     }
 }
-impl crate::OperatorCode for I64LtUBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtUBranch_IS
-    }
-}
 impl ::core::convert::From<I64LtUBranch_IS> for crate::Op {
     fn from(op: I64LtUBranch_IS) -> Self {
         Self::I64LtUBranch_IS {
@@ -2442,11 +1957,6 @@ impl ::core::marker::Copy for I32LeSBranch_RS {}
 impl ::core::clone::Clone for I32LeSBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeSBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeSBranch_RS
     }
 }
 impl ::core::convert::From<I32LeSBranch_RS> for crate::Op {
@@ -2470,11 +1980,6 @@ impl ::core::clone::Clone for I32LeSBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32LeSBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeSBranch_RI
-    }
-}
 impl ::core::convert::From<I32LeSBranch_RI> for crate::Op {
     fn from(op: I32LeSBranch_RI) -> Self {
         Self::I32LeSBranch_RI {
@@ -2494,11 +1999,6 @@ impl ::core::marker::Copy for I32LeSBranch_SR {}
 impl ::core::clone::Clone for I32LeSBranch_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeSBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeSBranch_SR
     }
 }
 impl ::core::convert::From<I32LeSBranch_SR> for crate::Op {
@@ -2522,11 +2022,6 @@ impl ::core::clone::Clone for I32LeSBranch_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32LeSBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeSBranch_SS
-    }
-}
 impl ::core::convert::From<I32LeSBranch_SS> for crate::Op {
     fn from(op: I32LeSBranch_SS) -> Self {
         Self::I32LeSBranch_SS {
@@ -2546,11 +2041,6 @@ impl ::core::marker::Copy for I32LeSBranch_SI {}
 impl ::core::clone::Clone for I32LeSBranch_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeSBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeSBranch_SI
     }
 }
 impl ::core::convert::From<I32LeSBranch_SI> for crate::Op {
@@ -2574,11 +2064,6 @@ impl ::core::clone::Clone for I32LeSBranch_IR {
         *self
     }
 }
-impl crate::OperatorCode for I32LeSBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeSBranch_IR
-    }
-}
 impl ::core::convert::From<I32LeSBranch_IR> for crate::Op {
     fn from(op: I32LeSBranch_IR) -> Self {
         Self::I32LeSBranch_IR {
@@ -2598,11 +2083,6 @@ impl ::core::marker::Copy for I32LeSBranch_IS {}
 impl ::core::clone::Clone for I32LeSBranch_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeSBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeSBranch_IS
     }
 }
 impl ::core::convert::From<I32LeSBranch_IS> for crate::Op {
@@ -2626,11 +2106,6 @@ impl ::core::clone::Clone for I64LeSBranch_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64LeSBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeSBranch_RS
-    }
-}
 impl ::core::convert::From<I64LeSBranch_RS> for crate::Op {
     fn from(op: I64LeSBranch_RS) -> Self {
         Self::I64LeSBranch_RS {
@@ -2650,11 +2125,6 @@ impl ::core::marker::Copy for I64LeSBranch_RI {}
 impl ::core::clone::Clone for I64LeSBranch_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeSBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeSBranch_RI
     }
 }
 impl ::core::convert::From<I64LeSBranch_RI> for crate::Op {
@@ -2678,11 +2148,6 @@ impl ::core::clone::Clone for I64LeSBranch_SR {
         *self
     }
 }
-impl crate::OperatorCode for I64LeSBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeSBranch_SR
-    }
-}
 impl ::core::convert::From<I64LeSBranch_SR> for crate::Op {
     fn from(op: I64LeSBranch_SR) -> Self {
         Self::I64LeSBranch_SR {
@@ -2702,11 +2167,6 @@ impl ::core::marker::Copy for I64LeSBranch_SS {}
 impl ::core::clone::Clone for I64LeSBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeSBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeSBranch_SS
     }
 }
 impl ::core::convert::From<I64LeSBranch_SS> for crate::Op {
@@ -2730,11 +2190,6 @@ impl ::core::clone::Clone for I64LeSBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for I64LeSBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeSBranch_SI
-    }
-}
 impl ::core::convert::From<I64LeSBranch_SI> for crate::Op {
     fn from(op: I64LeSBranch_SI) -> Self {
         Self::I64LeSBranch_SI {
@@ -2754,11 +2209,6 @@ impl ::core::marker::Copy for I64LeSBranch_IR {}
 impl ::core::clone::Clone for I64LeSBranch_IR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeSBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeSBranch_IR
     }
 }
 impl ::core::convert::From<I64LeSBranch_IR> for crate::Op {
@@ -2782,11 +2232,6 @@ impl ::core::clone::Clone for I64LeSBranch_IS {
         *self
     }
 }
-impl crate::OperatorCode for I64LeSBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeSBranch_IS
-    }
-}
 impl ::core::convert::From<I64LeSBranch_IS> for crate::Op {
     fn from(op: I64LeSBranch_IS) -> Self {
         Self::I64LeSBranch_IS {
@@ -2806,11 +2251,6 @@ impl ::core::marker::Copy for I32LeUBranch_RS {}
 impl ::core::clone::Clone for I32LeUBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeUBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeUBranch_RS
     }
 }
 impl ::core::convert::From<I32LeUBranch_RS> for crate::Op {
@@ -2834,11 +2274,6 @@ impl ::core::clone::Clone for I32LeUBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32LeUBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeUBranch_RI
-    }
-}
 impl ::core::convert::From<I32LeUBranch_RI> for crate::Op {
     fn from(op: I32LeUBranch_RI) -> Self {
         Self::I32LeUBranch_RI {
@@ -2858,11 +2293,6 @@ impl ::core::marker::Copy for I32LeUBranch_SR {}
 impl ::core::clone::Clone for I32LeUBranch_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeUBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeUBranch_SR
     }
 }
 impl ::core::convert::From<I32LeUBranch_SR> for crate::Op {
@@ -2886,11 +2316,6 @@ impl ::core::clone::Clone for I32LeUBranch_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32LeUBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeUBranch_SS
-    }
-}
 impl ::core::convert::From<I32LeUBranch_SS> for crate::Op {
     fn from(op: I32LeUBranch_SS) -> Self {
         Self::I32LeUBranch_SS {
@@ -2910,11 +2335,6 @@ impl ::core::marker::Copy for I32LeUBranch_SI {}
 impl ::core::clone::Clone for I32LeUBranch_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeUBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeUBranch_SI
     }
 }
 impl ::core::convert::From<I32LeUBranch_SI> for crate::Op {
@@ -2938,11 +2358,6 @@ impl ::core::clone::Clone for I32LeUBranch_IR {
         *self
     }
 }
-impl crate::OperatorCode for I32LeUBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeUBranch_IR
-    }
-}
 impl ::core::convert::From<I32LeUBranch_IR> for crate::Op {
     fn from(op: I32LeUBranch_IR) -> Self {
         Self::I32LeUBranch_IR {
@@ -2962,11 +2377,6 @@ impl ::core::marker::Copy for I32LeUBranch_IS {}
 impl ::core::clone::Clone for I32LeUBranch_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeUBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeUBranch_IS
     }
 }
 impl ::core::convert::From<I32LeUBranch_IS> for crate::Op {
@@ -2990,11 +2400,6 @@ impl ::core::clone::Clone for I64LeUBranch_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64LeUBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeUBranch_RS
-    }
-}
 impl ::core::convert::From<I64LeUBranch_RS> for crate::Op {
     fn from(op: I64LeUBranch_RS) -> Self {
         Self::I64LeUBranch_RS {
@@ -3014,11 +2419,6 @@ impl ::core::marker::Copy for I64LeUBranch_RI {}
 impl ::core::clone::Clone for I64LeUBranch_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeUBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeUBranch_RI
     }
 }
 impl ::core::convert::From<I64LeUBranch_RI> for crate::Op {
@@ -3042,11 +2442,6 @@ impl ::core::clone::Clone for I64LeUBranch_SR {
         *self
     }
 }
-impl crate::OperatorCode for I64LeUBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeUBranch_SR
-    }
-}
 impl ::core::convert::From<I64LeUBranch_SR> for crate::Op {
     fn from(op: I64LeUBranch_SR) -> Self {
         Self::I64LeUBranch_SR {
@@ -3066,11 +2461,6 @@ impl ::core::marker::Copy for I64LeUBranch_SS {}
 impl ::core::clone::Clone for I64LeUBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeUBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeUBranch_SS
     }
 }
 impl ::core::convert::From<I64LeUBranch_SS> for crate::Op {
@@ -3094,11 +2484,6 @@ impl ::core::clone::Clone for I64LeUBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for I64LeUBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeUBranch_SI
-    }
-}
 impl ::core::convert::From<I64LeUBranch_SI> for crate::Op {
     fn from(op: I64LeUBranch_SI) -> Self {
         Self::I64LeUBranch_SI {
@@ -3118,11 +2503,6 @@ impl ::core::marker::Copy for I64LeUBranch_IR {}
 impl ::core::clone::Clone for I64LeUBranch_IR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeUBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeUBranch_IR
     }
 }
 impl ::core::convert::From<I64LeUBranch_IR> for crate::Op {
@@ -3146,11 +2526,6 @@ impl ::core::clone::Clone for I64LeUBranch_IS {
         *self
     }
 }
-impl crate::OperatorCode for I64LeUBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeUBranch_IS
-    }
-}
 impl ::core::convert::From<I64LeUBranch_IS> for crate::Op {
     fn from(op: I64LeUBranch_IS) -> Self {
         Self::I64LeUBranch_IS {
@@ -3170,11 +2545,6 @@ impl ::core::marker::Copy for F32LtBranch_RS {}
 impl ::core::clone::Clone for F32LtBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LtBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LtBranch_RS
     }
 }
 impl ::core::convert::From<F32LtBranch_RS> for crate::Op {
@@ -3198,11 +2568,6 @@ impl ::core::clone::Clone for F32LtBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for F32LtBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LtBranch_RI
-    }
-}
 impl ::core::convert::From<F32LtBranch_RI> for crate::Op {
     fn from(op: F32LtBranch_RI) -> Self {
         Self::F32LtBranch_RI {
@@ -3222,11 +2587,6 @@ impl ::core::marker::Copy for F32LtBranch_SR {}
 impl ::core::clone::Clone for F32LtBranch_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LtBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LtBranch_SR
     }
 }
 impl ::core::convert::From<F32LtBranch_SR> for crate::Op {
@@ -3250,11 +2610,6 @@ impl ::core::clone::Clone for F32LtBranch_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32LtBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LtBranch_SS
-    }
-}
 impl ::core::convert::From<F32LtBranch_SS> for crate::Op {
     fn from(op: F32LtBranch_SS) -> Self {
         Self::F32LtBranch_SS {
@@ -3274,11 +2629,6 @@ impl ::core::marker::Copy for F32LtBranch_SI {}
 impl ::core::clone::Clone for F32LtBranch_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LtBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LtBranch_SI
     }
 }
 impl ::core::convert::From<F32LtBranch_SI> for crate::Op {
@@ -3302,11 +2652,6 @@ impl ::core::clone::Clone for F32LtBranch_IR {
         *self
     }
 }
-impl crate::OperatorCode for F32LtBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LtBranch_IR
-    }
-}
 impl ::core::convert::From<F32LtBranch_IR> for crate::Op {
     fn from(op: F32LtBranch_IR) -> Self {
         Self::F32LtBranch_IR {
@@ -3326,11 +2671,6 @@ impl ::core::marker::Copy for F32LtBranch_IS {}
 impl ::core::clone::Clone for F32LtBranch_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LtBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LtBranch_IS
     }
 }
 impl ::core::convert::From<F32LtBranch_IS> for crate::Op {
@@ -3354,11 +2694,6 @@ impl ::core::clone::Clone for F64LtBranch_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64LtBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LtBranch_RS
-    }
-}
 impl ::core::convert::From<F64LtBranch_RS> for crate::Op {
     fn from(op: F64LtBranch_RS) -> Self {
         Self::F64LtBranch_RS {
@@ -3378,11 +2713,6 @@ impl ::core::marker::Copy for F64LtBranch_RI {}
 impl ::core::clone::Clone for F64LtBranch_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64LtBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LtBranch_RI
     }
 }
 impl ::core::convert::From<F64LtBranch_RI> for crate::Op {
@@ -3406,11 +2736,6 @@ impl ::core::clone::Clone for F64LtBranch_SR {
         *self
     }
 }
-impl crate::OperatorCode for F64LtBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LtBranch_SR
-    }
-}
 impl ::core::convert::From<F64LtBranch_SR> for crate::Op {
     fn from(op: F64LtBranch_SR) -> Self {
         Self::F64LtBranch_SR {
@@ -3430,11 +2755,6 @@ impl ::core::marker::Copy for F64LtBranch_SS {}
 impl ::core::clone::Clone for F64LtBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64LtBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LtBranch_SS
     }
 }
 impl ::core::convert::From<F64LtBranch_SS> for crate::Op {
@@ -3458,11 +2778,6 @@ impl ::core::clone::Clone for F64LtBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for F64LtBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LtBranch_SI
-    }
-}
 impl ::core::convert::From<F64LtBranch_SI> for crate::Op {
     fn from(op: F64LtBranch_SI) -> Self {
         Self::F64LtBranch_SI {
@@ -3482,11 +2797,6 @@ impl ::core::marker::Copy for F64LtBranch_IR {}
 impl ::core::clone::Clone for F64LtBranch_IR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64LtBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LtBranch_IR
     }
 }
 impl ::core::convert::From<F64LtBranch_IR> for crate::Op {
@@ -3510,11 +2820,6 @@ impl ::core::clone::Clone for F64LtBranch_IS {
         *self
     }
 }
-impl crate::OperatorCode for F64LtBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LtBranch_IS
-    }
-}
 impl ::core::convert::From<F64LtBranch_IS> for crate::Op {
     fn from(op: F64LtBranch_IS) -> Self {
         Self::F64LtBranch_IS {
@@ -3534,11 +2839,6 @@ impl ::core::marker::Copy for F32LeBranch_RS {}
 impl ::core::clone::Clone for F32LeBranch_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LeBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LeBranch_RS
     }
 }
 impl ::core::convert::From<F32LeBranch_RS> for crate::Op {
@@ -3562,11 +2862,6 @@ impl ::core::clone::Clone for F32LeBranch_RI {
         *self
     }
 }
-impl crate::OperatorCode for F32LeBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LeBranch_RI
-    }
-}
 impl ::core::convert::From<F32LeBranch_RI> for crate::Op {
     fn from(op: F32LeBranch_RI) -> Self {
         Self::F32LeBranch_RI {
@@ -3586,11 +2881,6 @@ impl ::core::marker::Copy for F32LeBranch_SR {}
 impl ::core::clone::Clone for F32LeBranch_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LeBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LeBranch_SR
     }
 }
 impl ::core::convert::From<F32LeBranch_SR> for crate::Op {
@@ -3614,11 +2904,6 @@ impl ::core::clone::Clone for F32LeBranch_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32LeBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LeBranch_SS
-    }
-}
 impl ::core::convert::From<F32LeBranch_SS> for crate::Op {
     fn from(op: F32LeBranch_SS) -> Self {
         Self::F32LeBranch_SS {
@@ -3638,11 +2923,6 @@ impl ::core::marker::Copy for F32LeBranch_SI {}
 impl ::core::clone::Clone for F32LeBranch_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LeBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LeBranch_SI
     }
 }
 impl ::core::convert::From<F32LeBranch_SI> for crate::Op {
@@ -3666,11 +2946,6 @@ impl ::core::clone::Clone for F32LeBranch_IR {
         *self
     }
 }
-impl crate::OperatorCode for F32LeBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LeBranch_IR
-    }
-}
 impl ::core::convert::From<F32LeBranch_IR> for crate::Op {
     fn from(op: F32LeBranch_IR) -> Self {
         Self::F32LeBranch_IR {
@@ -3690,11 +2965,6 @@ impl ::core::marker::Copy for F32LeBranch_IS {}
 impl ::core::clone::Clone for F32LeBranch_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LeBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LeBranch_IS
     }
 }
 impl ::core::convert::From<F32LeBranch_IS> for crate::Op {
@@ -3718,11 +2988,6 @@ impl ::core::clone::Clone for F64LeBranch_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64LeBranch_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LeBranch_RS
-    }
-}
 impl ::core::convert::From<F64LeBranch_RS> for crate::Op {
     fn from(op: F64LeBranch_RS) -> Self {
         Self::F64LeBranch_RS {
@@ -3742,11 +3007,6 @@ impl ::core::marker::Copy for F64LeBranch_RI {}
 impl ::core::clone::Clone for F64LeBranch_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64LeBranch_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LeBranch_RI
     }
 }
 impl ::core::convert::From<F64LeBranch_RI> for crate::Op {
@@ -3770,11 +3030,6 @@ impl ::core::clone::Clone for F64LeBranch_SR {
         *self
     }
 }
-impl crate::OperatorCode for F64LeBranch_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LeBranch_SR
-    }
-}
 impl ::core::convert::From<F64LeBranch_SR> for crate::Op {
     fn from(op: F64LeBranch_SR) -> Self {
         Self::F64LeBranch_SR {
@@ -3794,11 +3049,6 @@ impl ::core::marker::Copy for F64LeBranch_SS {}
 impl ::core::clone::Clone for F64LeBranch_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64LeBranch_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LeBranch_SS
     }
 }
 impl ::core::convert::From<F64LeBranch_SS> for crate::Op {
@@ -3822,11 +3072,6 @@ impl ::core::clone::Clone for F64LeBranch_SI {
         *self
     }
 }
-impl crate::OperatorCode for F64LeBranch_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LeBranch_SI
-    }
-}
 impl ::core::convert::From<F64LeBranch_SI> for crate::Op {
     fn from(op: F64LeBranch_SI) -> Self {
         Self::F64LeBranch_SI {
@@ -3846,11 +3091,6 @@ impl ::core::marker::Copy for F64LeBranch_IR {}
 impl ::core::clone::Clone for F64LeBranch_IR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64LeBranch_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LeBranch_IR
     }
 }
 impl ::core::convert::From<F64LeBranch_IR> for crate::Op {
@@ -3874,11 +3114,6 @@ impl ::core::clone::Clone for F64LeBranch_IS {
         *self
     }
 }
-impl crate::OperatorCode for F64LeBranch_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LeBranch_IS
-    }
-}
 impl ::core::convert::From<F64LeBranch_IS> for crate::Op {
     fn from(op: F64LeBranch_IS) -> Self {
         Self::F64LeBranch_IS {
@@ -3897,11 +3132,6 @@ impl ::core::marker::Copy for I32Popcnt_RR {}
 impl ::core::clone::Clone for I32Popcnt_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Popcnt_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Popcnt_RR
     }
 }
 impl ::core::convert::From<I32Popcnt_RR> for crate::Op {
@@ -3923,11 +3153,6 @@ impl ::core::clone::Clone for I32Popcnt_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32Popcnt_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Popcnt_RS
-    }
-}
 impl ::core::convert::From<I32Popcnt_RS> for crate::Op {
     fn from(op: I32Popcnt_RS) -> Self {
         Self::I32Popcnt_RS {
@@ -3945,11 +3170,6 @@ impl ::core::marker::Copy for I32Popcnt_SR {}
 impl ::core::clone::Clone for I32Popcnt_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Popcnt_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Popcnt_SR
     }
 }
 impl ::core::convert::From<I32Popcnt_SR> for crate::Op {
@@ -3971,11 +3191,6 @@ impl ::core::clone::Clone for I32Popcnt_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Popcnt_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Popcnt_SS
-    }
-}
 impl ::core::convert::From<I32Popcnt_SS> for crate::Op {
     fn from(op: I32Popcnt_SS) -> Self {
         Self::I32Popcnt_SS {
@@ -3993,11 +3208,6 @@ impl ::core::marker::Copy for I64Popcnt_RR {}
 impl ::core::clone::Clone for I64Popcnt_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Popcnt_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Popcnt_RR
     }
 }
 impl ::core::convert::From<I64Popcnt_RR> for crate::Op {
@@ -4019,11 +3229,6 @@ impl ::core::clone::Clone for I64Popcnt_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Popcnt_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Popcnt_RS
-    }
-}
 impl ::core::convert::From<I64Popcnt_RS> for crate::Op {
     fn from(op: I64Popcnt_RS) -> Self {
         Self::I64Popcnt_RS {
@@ -4041,11 +3246,6 @@ impl ::core::marker::Copy for I64Popcnt_SR {}
 impl ::core::clone::Clone for I64Popcnt_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Popcnt_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Popcnt_SR
     }
 }
 impl ::core::convert::From<I64Popcnt_SR> for crate::Op {
@@ -4067,11 +3267,6 @@ impl ::core::clone::Clone for I64Popcnt_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Popcnt_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Popcnt_SS
-    }
-}
 impl ::core::convert::From<I64Popcnt_SS> for crate::Op {
     fn from(op: I64Popcnt_SS) -> Self {
         Self::I64Popcnt_SS {
@@ -4089,11 +3284,6 @@ impl ::core::marker::Copy for I32Clz_RR {}
 impl ::core::clone::Clone for I32Clz_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Clz_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Clz_RR
     }
 }
 impl ::core::convert::From<I32Clz_RR> for crate::Op {
@@ -4115,11 +3305,6 @@ impl ::core::clone::Clone for I32Clz_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32Clz_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Clz_RS
-    }
-}
 impl ::core::convert::From<I32Clz_RS> for crate::Op {
     fn from(op: I32Clz_RS) -> Self {
         Self::I32Clz_RS {
@@ -4137,11 +3322,6 @@ impl ::core::marker::Copy for I32Clz_SR {}
 impl ::core::clone::Clone for I32Clz_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Clz_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Clz_SR
     }
 }
 impl ::core::convert::From<I32Clz_SR> for crate::Op {
@@ -4163,11 +3343,6 @@ impl ::core::clone::Clone for I32Clz_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Clz_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Clz_SS
-    }
-}
 impl ::core::convert::From<I32Clz_SS> for crate::Op {
     fn from(op: I32Clz_SS) -> Self {
         Self::I32Clz_SS {
@@ -4185,11 +3360,6 @@ impl ::core::marker::Copy for I64Clz_RR {}
 impl ::core::clone::Clone for I64Clz_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Clz_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Clz_RR
     }
 }
 impl ::core::convert::From<I64Clz_RR> for crate::Op {
@@ -4211,11 +3381,6 @@ impl ::core::clone::Clone for I64Clz_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Clz_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Clz_RS
-    }
-}
 impl ::core::convert::From<I64Clz_RS> for crate::Op {
     fn from(op: I64Clz_RS) -> Self {
         Self::I64Clz_RS {
@@ -4233,11 +3398,6 @@ impl ::core::marker::Copy for I64Clz_SR {}
 impl ::core::clone::Clone for I64Clz_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Clz_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Clz_SR
     }
 }
 impl ::core::convert::From<I64Clz_SR> for crate::Op {
@@ -4259,11 +3419,6 @@ impl ::core::clone::Clone for I64Clz_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Clz_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Clz_SS
-    }
-}
 impl ::core::convert::From<I64Clz_SS> for crate::Op {
     fn from(op: I64Clz_SS) -> Self {
         Self::I64Clz_SS {
@@ -4281,11 +3436,6 @@ impl ::core::marker::Copy for I32Ctz_RR {}
 impl ::core::clone::Clone for I32Ctz_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Ctz_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ctz_RR
     }
 }
 impl ::core::convert::From<I32Ctz_RR> for crate::Op {
@@ -4307,11 +3457,6 @@ impl ::core::clone::Clone for I32Ctz_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32Ctz_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ctz_RS
-    }
-}
 impl ::core::convert::From<I32Ctz_RS> for crate::Op {
     fn from(op: I32Ctz_RS) -> Self {
         Self::I32Ctz_RS {
@@ -4329,11 +3474,6 @@ impl ::core::marker::Copy for I32Ctz_SR {}
 impl ::core::clone::Clone for I32Ctz_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Ctz_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ctz_SR
     }
 }
 impl ::core::convert::From<I32Ctz_SR> for crate::Op {
@@ -4355,11 +3495,6 @@ impl ::core::clone::Clone for I32Ctz_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Ctz_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ctz_SS
-    }
-}
 impl ::core::convert::From<I32Ctz_SS> for crate::Op {
     fn from(op: I32Ctz_SS) -> Self {
         Self::I32Ctz_SS {
@@ -4377,11 +3512,6 @@ impl ::core::marker::Copy for I64Ctz_RR {}
 impl ::core::clone::Clone for I64Ctz_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Ctz_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ctz_RR
     }
 }
 impl ::core::convert::From<I64Ctz_RR> for crate::Op {
@@ -4403,11 +3533,6 @@ impl ::core::clone::Clone for I64Ctz_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Ctz_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ctz_RS
-    }
-}
 impl ::core::convert::From<I64Ctz_RS> for crate::Op {
     fn from(op: I64Ctz_RS) -> Self {
         Self::I64Ctz_RS {
@@ -4425,11 +3550,6 @@ impl ::core::marker::Copy for I64Ctz_SR {}
 impl ::core::clone::Clone for I64Ctz_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Ctz_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ctz_SR
     }
 }
 impl ::core::convert::From<I64Ctz_SR> for crate::Op {
@@ -4451,11 +3571,6 @@ impl ::core::clone::Clone for I64Ctz_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Ctz_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ctz_SS
-    }
-}
 impl ::core::convert::From<I64Ctz_SS> for crate::Op {
     fn from(op: I64Ctz_SS) -> Self {
         Self::I64Ctz_SS {
@@ -4473,11 +3588,6 @@ impl ::core::marker::Copy for F32Abs_RR {}
 impl ::core::clone::Clone for F32Abs_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Abs_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Abs_RR
     }
 }
 impl ::core::convert::From<F32Abs_RR> for crate::Op {
@@ -4499,11 +3609,6 @@ impl ::core::clone::Clone for F32Abs_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32Abs_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Abs_RS
-    }
-}
 impl ::core::convert::From<F32Abs_RS> for crate::Op {
     fn from(op: F32Abs_RS) -> Self {
         Self::F32Abs_RS {
@@ -4521,11 +3626,6 @@ impl ::core::marker::Copy for F32Abs_SR {}
 impl ::core::clone::Clone for F32Abs_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Abs_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Abs_SR
     }
 }
 impl ::core::convert::From<F32Abs_SR> for crate::Op {
@@ -4547,11 +3647,6 @@ impl ::core::clone::Clone for F32Abs_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32Abs_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Abs_SS
-    }
-}
 impl ::core::convert::From<F32Abs_SS> for crate::Op {
     fn from(op: F32Abs_SS) -> Self {
         Self::F32Abs_SS {
@@ -4569,11 +3664,6 @@ impl ::core::marker::Copy for F64Abs_RR {}
 impl ::core::clone::Clone for F64Abs_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Abs_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Abs_RR
     }
 }
 impl ::core::convert::From<F64Abs_RR> for crate::Op {
@@ -4595,11 +3685,6 @@ impl ::core::clone::Clone for F64Abs_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64Abs_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Abs_RS
-    }
-}
 impl ::core::convert::From<F64Abs_RS> for crate::Op {
     fn from(op: F64Abs_RS) -> Self {
         Self::F64Abs_RS {
@@ -4617,11 +3702,6 @@ impl ::core::marker::Copy for F64Abs_SR {}
 impl ::core::clone::Clone for F64Abs_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Abs_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Abs_SR
     }
 }
 impl ::core::convert::From<F64Abs_SR> for crate::Op {
@@ -4643,11 +3723,6 @@ impl ::core::clone::Clone for F64Abs_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64Abs_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Abs_SS
-    }
-}
 impl ::core::convert::From<F64Abs_SS> for crate::Op {
     fn from(op: F64Abs_SS) -> Self {
         Self::F64Abs_SS {
@@ -4665,11 +3740,6 @@ impl ::core::marker::Copy for F32Neg_RR {}
 impl ::core::clone::Clone for F32Neg_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Neg_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Neg_RR
     }
 }
 impl ::core::convert::From<F32Neg_RR> for crate::Op {
@@ -4691,11 +3761,6 @@ impl ::core::clone::Clone for F32Neg_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32Neg_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Neg_RS
-    }
-}
 impl ::core::convert::From<F32Neg_RS> for crate::Op {
     fn from(op: F32Neg_RS) -> Self {
         Self::F32Neg_RS {
@@ -4713,11 +3778,6 @@ impl ::core::marker::Copy for F32Neg_SR {}
 impl ::core::clone::Clone for F32Neg_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Neg_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Neg_SR
     }
 }
 impl ::core::convert::From<F32Neg_SR> for crate::Op {
@@ -4739,11 +3799,6 @@ impl ::core::clone::Clone for F32Neg_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32Neg_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Neg_SS
-    }
-}
 impl ::core::convert::From<F32Neg_SS> for crate::Op {
     fn from(op: F32Neg_SS) -> Self {
         Self::F32Neg_SS {
@@ -4761,11 +3816,6 @@ impl ::core::marker::Copy for F64Neg_RR {}
 impl ::core::clone::Clone for F64Neg_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Neg_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Neg_RR
     }
 }
 impl ::core::convert::From<F64Neg_RR> for crate::Op {
@@ -4787,11 +3837,6 @@ impl ::core::clone::Clone for F64Neg_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64Neg_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Neg_RS
-    }
-}
 impl ::core::convert::From<F64Neg_RS> for crate::Op {
     fn from(op: F64Neg_RS) -> Self {
         Self::F64Neg_RS {
@@ -4809,11 +3854,6 @@ impl ::core::marker::Copy for F64Neg_SR {}
 impl ::core::clone::Clone for F64Neg_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Neg_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Neg_SR
     }
 }
 impl ::core::convert::From<F64Neg_SR> for crate::Op {
@@ -4835,11 +3875,6 @@ impl ::core::clone::Clone for F64Neg_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64Neg_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Neg_SS
-    }
-}
 impl ::core::convert::From<F64Neg_SS> for crate::Op {
     fn from(op: F64Neg_SS) -> Self {
         Self::F64Neg_SS {
@@ -4857,11 +3892,6 @@ impl ::core::marker::Copy for F32Ceil_RR {}
 impl ::core::clone::Clone for F32Ceil_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Ceil_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ceil_RR
     }
 }
 impl ::core::convert::From<F32Ceil_RR> for crate::Op {
@@ -4883,11 +3913,6 @@ impl ::core::clone::Clone for F32Ceil_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32Ceil_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ceil_RS
-    }
-}
 impl ::core::convert::From<F32Ceil_RS> for crate::Op {
     fn from(op: F32Ceil_RS) -> Self {
         Self::F32Ceil_RS {
@@ -4905,11 +3930,6 @@ impl ::core::marker::Copy for F32Ceil_SR {}
 impl ::core::clone::Clone for F32Ceil_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Ceil_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ceil_SR
     }
 }
 impl ::core::convert::From<F32Ceil_SR> for crate::Op {
@@ -4931,11 +3951,6 @@ impl ::core::clone::Clone for F32Ceil_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32Ceil_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ceil_SS
-    }
-}
 impl ::core::convert::From<F32Ceil_SS> for crate::Op {
     fn from(op: F32Ceil_SS) -> Self {
         Self::F32Ceil_SS {
@@ -4953,11 +3968,6 @@ impl ::core::marker::Copy for F64Ceil_RR {}
 impl ::core::clone::Clone for F64Ceil_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Ceil_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ceil_RR
     }
 }
 impl ::core::convert::From<F64Ceil_RR> for crate::Op {
@@ -4979,11 +3989,6 @@ impl ::core::clone::Clone for F64Ceil_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64Ceil_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ceil_RS
-    }
-}
 impl ::core::convert::From<F64Ceil_RS> for crate::Op {
     fn from(op: F64Ceil_RS) -> Self {
         Self::F64Ceil_RS {
@@ -5001,11 +4006,6 @@ impl ::core::marker::Copy for F64Ceil_SR {}
 impl ::core::clone::Clone for F64Ceil_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Ceil_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ceil_SR
     }
 }
 impl ::core::convert::From<F64Ceil_SR> for crate::Op {
@@ -5027,11 +4027,6 @@ impl ::core::clone::Clone for F64Ceil_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64Ceil_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ceil_SS
-    }
-}
 impl ::core::convert::From<F64Ceil_SS> for crate::Op {
     fn from(op: F64Ceil_SS) -> Self {
         Self::F64Ceil_SS {
@@ -5049,11 +4044,6 @@ impl ::core::marker::Copy for F32Floor_RR {}
 impl ::core::clone::Clone for F32Floor_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Floor_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Floor_RR
     }
 }
 impl ::core::convert::From<F32Floor_RR> for crate::Op {
@@ -5075,11 +4065,6 @@ impl ::core::clone::Clone for F32Floor_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32Floor_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Floor_RS
-    }
-}
 impl ::core::convert::From<F32Floor_RS> for crate::Op {
     fn from(op: F32Floor_RS) -> Self {
         Self::F32Floor_RS {
@@ -5097,11 +4082,6 @@ impl ::core::marker::Copy for F32Floor_SR {}
 impl ::core::clone::Clone for F32Floor_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Floor_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Floor_SR
     }
 }
 impl ::core::convert::From<F32Floor_SR> for crate::Op {
@@ -5123,11 +4103,6 @@ impl ::core::clone::Clone for F32Floor_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32Floor_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Floor_SS
-    }
-}
 impl ::core::convert::From<F32Floor_SS> for crate::Op {
     fn from(op: F32Floor_SS) -> Self {
         Self::F32Floor_SS {
@@ -5145,11 +4120,6 @@ impl ::core::marker::Copy for F64Floor_RR {}
 impl ::core::clone::Clone for F64Floor_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Floor_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Floor_RR
     }
 }
 impl ::core::convert::From<F64Floor_RR> for crate::Op {
@@ -5171,11 +4141,6 @@ impl ::core::clone::Clone for F64Floor_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64Floor_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Floor_RS
-    }
-}
 impl ::core::convert::From<F64Floor_RS> for crate::Op {
     fn from(op: F64Floor_RS) -> Self {
         Self::F64Floor_RS {
@@ -5193,11 +4158,6 @@ impl ::core::marker::Copy for F64Floor_SR {}
 impl ::core::clone::Clone for F64Floor_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Floor_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Floor_SR
     }
 }
 impl ::core::convert::From<F64Floor_SR> for crate::Op {
@@ -5219,11 +4179,6 @@ impl ::core::clone::Clone for F64Floor_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64Floor_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Floor_SS
-    }
-}
 impl ::core::convert::From<F64Floor_SS> for crate::Op {
     fn from(op: F64Floor_SS) -> Self {
         Self::F64Floor_SS {
@@ -5241,11 +4196,6 @@ impl ::core::marker::Copy for F32Trunc_RR {}
 impl ::core::clone::Clone for F32Trunc_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Trunc_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Trunc_RR
     }
 }
 impl ::core::convert::From<F32Trunc_RR> for crate::Op {
@@ -5267,11 +4217,6 @@ impl ::core::clone::Clone for F32Trunc_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32Trunc_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Trunc_RS
-    }
-}
 impl ::core::convert::From<F32Trunc_RS> for crate::Op {
     fn from(op: F32Trunc_RS) -> Self {
         Self::F32Trunc_RS {
@@ -5289,11 +4234,6 @@ impl ::core::marker::Copy for F32Trunc_SR {}
 impl ::core::clone::Clone for F32Trunc_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Trunc_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Trunc_SR
     }
 }
 impl ::core::convert::From<F32Trunc_SR> for crate::Op {
@@ -5315,11 +4255,6 @@ impl ::core::clone::Clone for F32Trunc_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32Trunc_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Trunc_SS
-    }
-}
 impl ::core::convert::From<F32Trunc_SS> for crate::Op {
     fn from(op: F32Trunc_SS) -> Self {
         Self::F32Trunc_SS {
@@ -5337,11 +4272,6 @@ impl ::core::marker::Copy for F64Trunc_RR {}
 impl ::core::clone::Clone for F64Trunc_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Trunc_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Trunc_RR
     }
 }
 impl ::core::convert::From<F64Trunc_RR> for crate::Op {
@@ -5363,11 +4293,6 @@ impl ::core::clone::Clone for F64Trunc_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64Trunc_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Trunc_RS
-    }
-}
 impl ::core::convert::From<F64Trunc_RS> for crate::Op {
     fn from(op: F64Trunc_RS) -> Self {
         Self::F64Trunc_RS {
@@ -5385,11 +4310,6 @@ impl ::core::marker::Copy for F64Trunc_SR {}
 impl ::core::clone::Clone for F64Trunc_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Trunc_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Trunc_SR
     }
 }
 impl ::core::convert::From<F64Trunc_SR> for crate::Op {
@@ -5411,11 +4331,6 @@ impl ::core::clone::Clone for F64Trunc_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64Trunc_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Trunc_SS
-    }
-}
 impl ::core::convert::From<F64Trunc_SS> for crate::Op {
     fn from(op: F64Trunc_SS) -> Self {
         Self::F64Trunc_SS {
@@ -5433,11 +4348,6 @@ impl ::core::marker::Copy for F32Nearest_RR {}
 impl ::core::clone::Clone for F32Nearest_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Nearest_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Nearest_RR
     }
 }
 impl ::core::convert::From<F32Nearest_RR> for crate::Op {
@@ -5459,11 +4369,6 @@ impl ::core::clone::Clone for F32Nearest_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32Nearest_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Nearest_RS
-    }
-}
 impl ::core::convert::From<F32Nearest_RS> for crate::Op {
     fn from(op: F32Nearest_RS) -> Self {
         Self::F32Nearest_RS {
@@ -5481,11 +4386,6 @@ impl ::core::marker::Copy for F32Nearest_SR {}
 impl ::core::clone::Clone for F32Nearest_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Nearest_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Nearest_SR
     }
 }
 impl ::core::convert::From<F32Nearest_SR> for crate::Op {
@@ -5507,11 +4407,6 @@ impl ::core::clone::Clone for F32Nearest_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32Nearest_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Nearest_SS
-    }
-}
 impl ::core::convert::From<F32Nearest_SS> for crate::Op {
     fn from(op: F32Nearest_SS) -> Self {
         Self::F32Nearest_SS {
@@ -5529,11 +4424,6 @@ impl ::core::marker::Copy for F64Nearest_RR {}
 impl ::core::clone::Clone for F64Nearest_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Nearest_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Nearest_RR
     }
 }
 impl ::core::convert::From<F64Nearest_RR> for crate::Op {
@@ -5555,11 +4445,6 @@ impl ::core::clone::Clone for F64Nearest_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64Nearest_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Nearest_RS
-    }
-}
 impl ::core::convert::From<F64Nearest_RS> for crate::Op {
     fn from(op: F64Nearest_RS) -> Self {
         Self::F64Nearest_RS {
@@ -5577,11 +4462,6 @@ impl ::core::marker::Copy for F64Nearest_SR {}
 impl ::core::clone::Clone for F64Nearest_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Nearest_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Nearest_SR
     }
 }
 impl ::core::convert::From<F64Nearest_SR> for crate::Op {
@@ -5603,11 +4483,6 @@ impl ::core::clone::Clone for F64Nearest_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64Nearest_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Nearest_SS
-    }
-}
 impl ::core::convert::From<F64Nearest_SS> for crate::Op {
     fn from(op: F64Nearest_SS) -> Self {
         Self::F64Nearest_SS {
@@ -5625,11 +4500,6 @@ impl ::core::marker::Copy for F32Sqrt_RR {}
 impl ::core::clone::Clone for F32Sqrt_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Sqrt_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sqrt_RR
     }
 }
 impl ::core::convert::From<F32Sqrt_RR> for crate::Op {
@@ -5651,11 +4521,6 @@ impl ::core::clone::Clone for F32Sqrt_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32Sqrt_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sqrt_RS
-    }
-}
 impl ::core::convert::From<F32Sqrt_RS> for crate::Op {
     fn from(op: F32Sqrt_RS) -> Self {
         Self::F32Sqrt_RS {
@@ -5673,11 +4538,6 @@ impl ::core::marker::Copy for F32Sqrt_SR {}
 impl ::core::clone::Clone for F32Sqrt_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Sqrt_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sqrt_SR
     }
 }
 impl ::core::convert::From<F32Sqrt_SR> for crate::Op {
@@ -5699,11 +4559,6 @@ impl ::core::clone::Clone for F32Sqrt_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32Sqrt_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sqrt_SS
-    }
-}
 impl ::core::convert::From<F32Sqrt_SS> for crate::Op {
     fn from(op: F32Sqrt_SS) -> Self {
         Self::F32Sqrt_SS {
@@ -5721,11 +4576,6 @@ impl ::core::marker::Copy for F64Sqrt_RR {}
 impl ::core::clone::Clone for F64Sqrt_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Sqrt_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sqrt_RR
     }
 }
 impl ::core::convert::From<F64Sqrt_RR> for crate::Op {
@@ -5747,11 +4597,6 @@ impl ::core::clone::Clone for F64Sqrt_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64Sqrt_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sqrt_RS
-    }
-}
 impl ::core::convert::From<F64Sqrt_RS> for crate::Op {
     fn from(op: F64Sqrt_RS) -> Self {
         Self::F64Sqrt_RS {
@@ -5769,11 +4614,6 @@ impl ::core::marker::Copy for F64Sqrt_SR {}
 impl ::core::clone::Clone for F64Sqrt_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Sqrt_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sqrt_SR
     }
 }
 impl ::core::convert::From<F64Sqrt_SR> for crate::Op {
@@ -5795,11 +4635,6 @@ impl ::core::clone::Clone for F64Sqrt_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64Sqrt_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sqrt_SS
-    }
-}
 impl ::core::convert::From<F64Sqrt_SS> for crate::Op {
     fn from(op: F64Sqrt_SS) -> Self {
         Self::F64Sqrt_SS {
@@ -5817,11 +4652,6 @@ impl ::core::marker::Copy for F32Demote_RR {}
 impl ::core::clone::Clone for F32Demote_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Demote_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Demote_RR
     }
 }
 impl ::core::convert::From<F32Demote_RR> for crate::Op {
@@ -5843,11 +4673,6 @@ impl ::core::clone::Clone for F32Demote_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32Demote_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Demote_RS
-    }
-}
 impl ::core::convert::From<F32Demote_RS> for crate::Op {
     fn from(op: F32Demote_RS) -> Self {
         Self::F32Demote_RS {
@@ -5865,11 +4690,6 @@ impl ::core::marker::Copy for F32Demote_SR {}
 impl ::core::clone::Clone for F32Demote_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Demote_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Demote_SR
     }
 }
 impl ::core::convert::From<F32Demote_SR> for crate::Op {
@@ -5891,11 +4711,6 @@ impl ::core::clone::Clone for F32Demote_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32Demote_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Demote_SS
-    }
-}
 impl ::core::convert::From<F32Demote_SS> for crate::Op {
     fn from(op: F32Demote_SS) -> Self {
         Self::F32Demote_SS {
@@ -5913,11 +4728,6 @@ impl ::core::marker::Copy for F64Promote_RR {}
 impl ::core::clone::Clone for F64Promote_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Promote_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Promote_RR
     }
 }
 impl ::core::convert::From<F64Promote_RR> for crate::Op {
@@ -5939,11 +4749,6 @@ impl ::core::clone::Clone for F64Promote_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64Promote_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Promote_RS
-    }
-}
 impl ::core::convert::From<F64Promote_RS> for crate::Op {
     fn from(op: F64Promote_RS) -> Self {
         Self::F64Promote_RS {
@@ -5961,11 +4766,6 @@ impl ::core::marker::Copy for F64Promote_SR {}
 impl ::core::clone::Clone for F64Promote_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Promote_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Promote_SR
     }
 }
 impl ::core::convert::From<F64Promote_SR> for crate::Op {
@@ -5987,11 +4787,6 @@ impl ::core::clone::Clone for F64Promote_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64Promote_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Promote_SS
-    }
-}
 impl ::core::convert::From<F64Promote_SS> for crate::Op {
     fn from(op: F64Promote_SS) -> Self {
         Self::F64Promote_SS {
@@ -6009,11 +4804,6 @@ impl ::core::marker::Copy for F32ConvertI32S_RR {}
 impl ::core::clone::Clone for F32ConvertI32S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32ConvertI32S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI32S_RR
     }
 }
 impl ::core::convert::From<F32ConvertI32S_RR> for crate::Op {
@@ -6035,11 +4825,6 @@ impl ::core::clone::Clone for F32ConvertI32S_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32ConvertI32S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI32S_RS
-    }
-}
 impl ::core::convert::From<F32ConvertI32S_RS> for crate::Op {
     fn from(op: F32ConvertI32S_RS) -> Self {
         Self::F32ConvertI32S_RS {
@@ -6057,11 +4842,6 @@ impl ::core::marker::Copy for F32ConvertI32S_SR {}
 impl ::core::clone::Clone for F32ConvertI32S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32ConvertI32S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI32S_SR
     }
 }
 impl ::core::convert::From<F32ConvertI32S_SR> for crate::Op {
@@ -6083,11 +4863,6 @@ impl ::core::clone::Clone for F32ConvertI32S_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32ConvertI32S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI32S_SS
-    }
-}
 impl ::core::convert::From<F32ConvertI32S_SS> for crate::Op {
     fn from(op: F32ConvertI32S_SS) -> Self {
         Self::F32ConvertI32S_SS {
@@ -6105,11 +4880,6 @@ impl ::core::marker::Copy for F32ConvertI32U_RR {}
 impl ::core::clone::Clone for F32ConvertI32U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32ConvertI32U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI32U_RR
     }
 }
 impl ::core::convert::From<F32ConvertI32U_RR> for crate::Op {
@@ -6131,11 +4901,6 @@ impl ::core::clone::Clone for F32ConvertI32U_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32ConvertI32U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI32U_RS
-    }
-}
 impl ::core::convert::From<F32ConvertI32U_RS> for crate::Op {
     fn from(op: F32ConvertI32U_RS) -> Self {
         Self::F32ConvertI32U_RS {
@@ -6153,11 +4918,6 @@ impl ::core::marker::Copy for F32ConvertI32U_SR {}
 impl ::core::clone::Clone for F32ConvertI32U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32ConvertI32U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI32U_SR
     }
 }
 impl ::core::convert::From<F32ConvertI32U_SR> for crate::Op {
@@ -6179,11 +4939,6 @@ impl ::core::clone::Clone for F32ConvertI32U_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32ConvertI32U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI32U_SS
-    }
-}
 impl ::core::convert::From<F32ConvertI32U_SS> for crate::Op {
     fn from(op: F32ConvertI32U_SS) -> Self {
         Self::F32ConvertI32U_SS {
@@ -6201,11 +4956,6 @@ impl ::core::marker::Copy for F32ConvertI64S_RR {}
 impl ::core::clone::Clone for F32ConvertI64S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32ConvertI64S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI64S_RR
     }
 }
 impl ::core::convert::From<F32ConvertI64S_RR> for crate::Op {
@@ -6227,11 +4977,6 @@ impl ::core::clone::Clone for F32ConvertI64S_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32ConvertI64S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI64S_RS
-    }
-}
 impl ::core::convert::From<F32ConvertI64S_RS> for crate::Op {
     fn from(op: F32ConvertI64S_RS) -> Self {
         Self::F32ConvertI64S_RS {
@@ -6249,11 +4994,6 @@ impl ::core::marker::Copy for F32ConvertI64S_SR {}
 impl ::core::clone::Clone for F32ConvertI64S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32ConvertI64S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI64S_SR
     }
 }
 impl ::core::convert::From<F32ConvertI64S_SR> for crate::Op {
@@ -6275,11 +5015,6 @@ impl ::core::clone::Clone for F32ConvertI64S_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32ConvertI64S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI64S_SS
-    }
-}
 impl ::core::convert::From<F32ConvertI64S_SS> for crate::Op {
     fn from(op: F32ConvertI64S_SS) -> Self {
         Self::F32ConvertI64S_SS {
@@ -6297,11 +5032,6 @@ impl ::core::marker::Copy for F32ConvertI64U_RR {}
 impl ::core::clone::Clone for F32ConvertI64U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32ConvertI64U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI64U_RR
     }
 }
 impl ::core::convert::From<F32ConvertI64U_RR> for crate::Op {
@@ -6323,11 +5053,6 @@ impl ::core::clone::Clone for F32ConvertI64U_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32ConvertI64U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI64U_RS
-    }
-}
 impl ::core::convert::From<F32ConvertI64U_RS> for crate::Op {
     fn from(op: F32ConvertI64U_RS) -> Self {
         Self::F32ConvertI64U_RS {
@@ -6345,11 +5070,6 @@ impl ::core::marker::Copy for F32ConvertI64U_SR {}
 impl ::core::clone::Clone for F32ConvertI64U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32ConvertI64U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI64U_SR
     }
 }
 impl ::core::convert::From<F32ConvertI64U_SR> for crate::Op {
@@ -6371,11 +5091,6 @@ impl ::core::clone::Clone for F32ConvertI64U_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32ConvertI64U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32ConvertI64U_SS
-    }
-}
 impl ::core::convert::From<F32ConvertI64U_SS> for crate::Op {
     fn from(op: F32ConvertI64U_SS) -> Self {
         Self::F32ConvertI64U_SS {
@@ -6393,11 +5108,6 @@ impl ::core::marker::Copy for F64ConvertI32S_RR {}
 impl ::core::clone::Clone for F64ConvertI32S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64ConvertI32S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI32S_RR
     }
 }
 impl ::core::convert::From<F64ConvertI32S_RR> for crate::Op {
@@ -6419,11 +5129,6 @@ impl ::core::clone::Clone for F64ConvertI32S_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64ConvertI32S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI32S_RS
-    }
-}
 impl ::core::convert::From<F64ConvertI32S_RS> for crate::Op {
     fn from(op: F64ConvertI32S_RS) -> Self {
         Self::F64ConvertI32S_RS {
@@ -6441,11 +5146,6 @@ impl ::core::marker::Copy for F64ConvertI32S_SR {}
 impl ::core::clone::Clone for F64ConvertI32S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64ConvertI32S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI32S_SR
     }
 }
 impl ::core::convert::From<F64ConvertI32S_SR> for crate::Op {
@@ -6467,11 +5167,6 @@ impl ::core::clone::Clone for F64ConvertI32S_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64ConvertI32S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI32S_SS
-    }
-}
 impl ::core::convert::From<F64ConvertI32S_SS> for crate::Op {
     fn from(op: F64ConvertI32S_SS) -> Self {
         Self::F64ConvertI32S_SS {
@@ -6489,11 +5184,6 @@ impl ::core::marker::Copy for F64ConvertI32U_RR {}
 impl ::core::clone::Clone for F64ConvertI32U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64ConvertI32U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI32U_RR
     }
 }
 impl ::core::convert::From<F64ConvertI32U_RR> for crate::Op {
@@ -6515,11 +5205,6 @@ impl ::core::clone::Clone for F64ConvertI32U_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64ConvertI32U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI32U_RS
-    }
-}
 impl ::core::convert::From<F64ConvertI32U_RS> for crate::Op {
     fn from(op: F64ConvertI32U_RS) -> Self {
         Self::F64ConvertI32U_RS {
@@ -6537,11 +5222,6 @@ impl ::core::marker::Copy for F64ConvertI32U_SR {}
 impl ::core::clone::Clone for F64ConvertI32U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64ConvertI32U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI32U_SR
     }
 }
 impl ::core::convert::From<F64ConvertI32U_SR> for crate::Op {
@@ -6563,11 +5243,6 @@ impl ::core::clone::Clone for F64ConvertI32U_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64ConvertI32U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI32U_SS
-    }
-}
 impl ::core::convert::From<F64ConvertI32U_SS> for crate::Op {
     fn from(op: F64ConvertI32U_SS) -> Self {
         Self::F64ConvertI32U_SS {
@@ -6585,11 +5260,6 @@ impl ::core::marker::Copy for F64ConvertI64S_RR {}
 impl ::core::clone::Clone for F64ConvertI64S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64ConvertI64S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI64S_RR
     }
 }
 impl ::core::convert::From<F64ConvertI64S_RR> for crate::Op {
@@ -6611,11 +5281,6 @@ impl ::core::clone::Clone for F64ConvertI64S_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64ConvertI64S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI64S_RS
-    }
-}
 impl ::core::convert::From<F64ConvertI64S_RS> for crate::Op {
     fn from(op: F64ConvertI64S_RS) -> Self {
         Self::F64ConvertI64S_RS {
@@ -6633,11 +5298,6 @@ impl ::core::marker::Copy for F64ConvertI64S_SR {}
 impl ::core::clone::Clone for F64ConvertI64S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64ConvertI64S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI64S_SR
     }
 }
 impl ::core::convert::From<F64ConvertI64S_SR> for crate::Op {
@@ -6659,11 +5319,6 @@ impl ::core::clone::Clone for F64ConvertI64S_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64ConvertI64S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI64S_SS
-    }
-}
 impl ::core::convert::From<F64ConvertI64S_SS> for crate::Op {
     fn from(op: F64ConvertI64S_SS) -> Self {
         Self::F64ConvertI64S_SS {
@@ -6681,11 +5336,6 @@ impl ::core::marker::Copy for F64ConvertI64U_RR {}
 impl ::core::clone::Clone for F64ConvertI64U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64ConvertI64U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI64U_RR
     }
 }
 impl ::core::convert::From<F64ConvertI64U_RR> for crate::Op {
@@ -6707,11 +5357,6 @@ impl ::core::clone::Clone for F64ConvertI64U_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64ConvertI64U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI64U_RS
-    }
-}
 impl ::core::convert::From<F64ConvertI64U_RS> for crate::Op {
     fn from(op: F64ConvertI64U_RS) -> Self {
         Self::F64ConvertI64U_RS {
@@ -6729,11 +5374,6 @@ impl ::core::marker::Copy for F64ConvertI64U_SR {}
 impl ::core::clone::Clone for F64ConvertI64U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64ConvertI64U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI64U_SR
     }
 }
 impl ::core::convert::From<F64ConvertI64U_SR> for crate::Op {
@@ -6755,11 +5395,6 @@ impl ::core::clone::Clone for F64ConvertI64U_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64ConvertI64U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64ConvertI64U_SS
-    }
-}
 impl ::core::convert::From<F64ConvertI64U_SS> for crate::Op {
     fn from(op: F64ConvertI64U_SS) -> Self {
         Self::F64ConvertI64U_SS {
@@ -6777,11 +5412,6 @@ impl ::core::marker::Copy for I32TruncF32S_RR {}
 impl ::core::clone::Clone for I32TruncF32S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncF32S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF32S_RR
     }
 }
 impl ::core::convert::From<I32TruncF32S_RR> for crate::Op {
@@ -6803,11 +5433,6 @@ impl ::core::clone::Clone for I32TruncF32S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncF32S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF32S_RS
-    }
-}
 impl ::core::convert::From<I32TruncF32S_RS> for crate::Op {
     fn from(op: I32TruncF32S_RS) -> Self {
         Self::I32TruncF32S_RS {
@@ -6825,11 +5450,6 @@ impl ::core::marker::Copy for I32TruncF32S_SR {}
 impl ::core::clone::Clone for I32TruncF32S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncF32S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF32S_SR
     }
 }
 impl ::core::convert::From<I32TruncF32S_SR> for crate::Op {
@@ -6851,11 +5471,6 @@ impl ::core::clone::Clone for I32TruncF32S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncF32S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF32S_SS
-    }
-}
 impl ::core::convert::From<I32TruncF32S_SS> for crate::Op {
     fn from(op: I32TruncF32S_SS) -> Self {
         Self::I32TruncF32S_SS {
@@ -6873,11 +5488,6 @@ impl ::core::marker::Copy for I32TruncF32U_RR {}
 impl ::core::clone::Clone for I32TruncF32U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncF32U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF32U_RR
     }
 }
 impl ::core::convert::From<I32TruncF32U_RR> for crate::Op {
@@ -6899,11 +5509,6 @@ impl ::core::clone::Clone for I32TruncF32U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncF32U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF32U_RS
-    }
-}
 impl ::core::convert::From<I32TruncF32U_RS> for crate::Op {
     fn from(op: I32TruncF32U_RS) -> Self {
         Self::I32TruncF32U_RS {
@@ -6921,11 +5526,6 @@ impl ::core::marker::Copy for I32TruncF32U_SR {}
 impl ::core::clone::Clone for I32TruncF32U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncF32U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF32U_SR
     }
 }
 impl ::core::convert::From<I32TruncF32U_SR> for crate::Op {
@@ -6947,11 +5547,6 @@ impl ::core::clone::Clone for I32TruncF32U_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncF32U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF32U_SS
-    }
-}
 impl ::core::convert::From<I32TruncF32U_SS> for crate::Op {
     fn from(op: I32TruncF32U_SS) -> Self {
         Self::I32TruncF32U_SS {
@@ -6969,11 +5564,6 @@ impl ::core::marker::Copy for I32TruncF64S_RR {}
 impl ::core::clone::Clone for I32TruncF64S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncF64S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF64S_RR
     }
 }
 impl ::core::convert::From<I32TruncF64S_RR> for crate::Op {
@@ -6995,11 +5585,6 @@ impl ::core::clone::Clone for I32TruncF64S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncF64S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF64S_RS
-    }
-}
 impl ::core::convert::From<I32TruncF64S_RS> for crate::Op {
     fn from(op: I32TruncF64S_RS) -> Self {
         Self::I32TruncF64S_RS {
@@ -7017,11 +5602,6 @@ impl ::core::marker::Copy for I32TruncF64S_SR {}
 impl ::core::clone::Clone for I32TruncF64S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncF64S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF64S_SR
     }
 }
 impl ::core::convert::From<I32TruncF64S_SR> for crate::Op {
@@ -7043,11 +5623,6 @@ impl ::core::clone::Clone for I32TruncF64S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncF64S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF64S_SS
-    }
-}
 impl ::core::convert::From<I32TruncF64S_SS> for crate::Op {
     fn from(op: I32TruncF64S_SS) -> Self {
         Self::I32TruncF64S_SS {
@@ -7065,11 +5640,6 @@ impl ::core::marker::Copy for I32TruncF64U_RR {}
 impl ::core::clone::Clone for I32TruncF64U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncF64U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF64U_RR
     }
 }
 impl ::core::convert::From<I32TruncF64U_RR> for crate::Op {
@@ -7091,11 +5661,6 @@ impl ::core::clone::Clone for I32TruncF64U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncF64U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF64U_RS
-    }
-}
 impl ::core::convert::From<I32TruncF64U_RS> for crate::Op {
     fn from(op: I32TruncF64U_RS) -> Self {
         Self::I32TruncF64U_RS {
@@ -7113,11 +5678,6 @@ impl ::core::marker::Copy for I32TruncF64U_SR {}
 impl ::core::clone::Clone for I32TruncF64U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncF64U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF64U_SR
     }
 }
 impl ::core::convert::From<I32TruncF64U_SR> for crate::Op {
@@ -7139,11 +5699,6 @@ impl ::core::clone::Clone for I32TruncF64U_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncF64U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncF64U_SS
-    }
-}
 impl ::core::convert::From<I32TruncF64U_SS> for crate::Op {
     fn from(op: I32TruncF64U_SS) -> Self {
         Self::I32TruncF64U_SS {
@@ -7161,11 +5716,6 @@ impl ::core::marker::Copy for I64TruncF32S_RR {}
 impl ::core::clone::Clone for I64TruncF32S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncF32S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF32S_RR
     }
 }
 impl ::core::convert::From<I64TruncF32S_RR> for crate::Op {
@@ -7187,11 +5737,6 @@ impl ::core::clone::Clone for I64TruncF32S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncF32S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF32S_RS
-    }
-}
 impl ::core::convert::From<I64TruncF32S_RS> for crate::Op {
     fn from(op: I64TruncF32S_RS) -> Self {
         Self::I64TruncF32S_RS {
@@ -7209,11 +5754,6 @@ impl ::core::marker::Copy for I64TruncF32S_SR {}
 impl ::core::clone::Clone for I64TruncF32S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncF32S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF32S_SR
     }
 }
 impl ::core::convert::From<I64TruncF32S_SR> for crate::Op {
@@ -7235,11 +5775,6 @@ impl ::core::clone::Clone for I64TruncF32S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncF32S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF32S_SS
-    }
-}
 impl ::core::convert::From<I64TruncF32S_SS> for crate::Op {
     fn from(op: I64TruncF32S_SS) -> Self {
         Self::I64TruncF32S_SS {
@@ -7257,11 +5792,6 @@ impl ::core::marker::Copy for I64TruncF32U_RR {}
 impl ::core::clone::Clone for I64TruncF32U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncF32U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF32U_RR
     }
 }
 impl ::core::convert::From<I64TruncF32U_RR> for crate::Op {
@@ -7283,11 +5813,6 @@ impl ::core::clone::Clone for I64TruncF32U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncF32U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF32U_RS
-    }
-}
 impl ::core::convert::From<I64TruncF32U_RS> for crate::Op {
     fn from(op: I64TruncF32U_RS) -> Self {
         Self::I64TruncF32U_RS {
@@ -7305,11 +5830,6 @@ impl ::core::marker::Copy for I64TruncF32U_SR {}
 impl ::core::clone::Clone for I64TruncF32U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncF32U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF32U_SR
     }
 }
 impl ::core::convert::From<I64TruncF32U_SR> for crate::Op {
@@ -7331,11 +5851,6 @@ impl ::core::clone::Clone for I64TruncF32U_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncF32U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF32U_SS
-    }
-}
 impl ::core::convert::From<I64TruncF32U_SS> for crate::Op {
     fn from(op: I64TruncF32U_SS) -> Self {
         Self::I64TruncF32U_SS {
@@ -7353,11 +5868,6 @@ impl ::core::marker::Copy for I64TruncF64S_RR {}
 impl ::core::clone::Clone for I64TruncF64S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncF64S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF64S_RR
     }
 }
 impl ::core::convert::From<I64TruncF64S_RR> for crate::Op {
@@ -7379,11 +5889,6 @@ impl ::core::clone::Clone for I64TruncF64S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncF64S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF64S_RS
-    }
-}
 impl ::core::convert::From<I64TruncF64S_RS> for crate::Op {
     fn from(op: I64TruncF64S_RS) -> Self {
         Self::I64TruncF64S_RS {
@@ -7401,11 +5906,6 @@ impl ::core::marker::Copy for I64TruncF64S_SR {}
 impl ::core::clone::Clone for I64TruncF64S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncF64S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF64S_SR
     }
 }
 impl ::core::convert::From<I64TruncF64S_SR> for crate::Op {
@@ -7427,11 +5927,6 @@ impl ::core::clone::Clone for I64TruncF64S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncF64S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF64S_SS
-    }
-}
 impl ::core::convert::From<I64TruncF64S_SS> for crate::Op {
     fn from(op: I64TruncF64S_SS) -> Self {
         Self::I64TruncF64S_SS {
@@ -7449,11 +5944,6 @@ impl ::core::marker::Copy for I64TruncF64U_RR {}
 impl ::core::clone::Clone for I64TruncF64U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncF64U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF64U_RR
     }
 }
 impl ::core::convert::From<I64TruncF64U_RR> for crate::Op {
@@ -7475,11 +5965,6 @@ impl ::core::clone::Clone for I64TruncF64U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncF64U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF64U_RS
-    }
-}
 impl ::core::convert::From<I64TruncF64U_RS> for crate::Op {
     fn from(op: I64TruncF64U_RS) -> Self {
         Self::I64TruncF64U_RS {
@@ -7497,11 +5982,6 @@ impl ::core::marker::Copy for I64TruncF64U_SR {}
 impl ::core::clone::Clone for I64TruncF64U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncF64U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF64U_SR
     }
 }
 impl ::core::convert::From<I64TruncF64U_SR> for crate::Op {
@@ -7523,11 +6003,6 @@ impl ::core::clone::Clone for I64TruncF64U_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncF64U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncF64U_SS
-    }
-}
 impl ::core::convert::From<I64TruncF64U_SS> for crate::Op {
     fn from(op: I64TruncF64U_SS) -> Self {
         Self::I64TruncF64U_SS {
@@ -7545,11 +6020,6 @@ impl ::core::marker::Copy for I32TruncSatF32S_RR {}
 impl ::core::clone::Clone for I32TruncSatF32S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncSatF32S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF32S_RR
     }
 }
 impl ::core::convert::From<I32TruncSatF32S_RR> for crate::Op {
@@ -7571,11 +6041,6 @@ impl ::core::clone::Clone for I32TruncSatF32S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncSatF32S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF32S_RS
-    }
-}
 impl ::core::convert::From<I32TruncSatF32S_RS> for crate::Op {
     fn from(op: I32TruncSatF32S_RS) -> Self {
         Self::I32TruncSatF32S_RS {
@@ -7593,11 +6058,6 @@ impl ::core::marker::Copy for I32TruncSatF32S_SR {}
 impl ::core::clone::Clone for I32TruncSatF32S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncSatF32S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF32S_SR
     }
 }
 impl ::core::convert::From<I32TruncSatF32S_SR> for crate::Op {
@@ -7619,11 +6079,6 @@ impl ::core::clone::Clone for I32TruncSatF32S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncSatF32S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF32S_SS
-    }
-}
 impl ::core::convert::From<I32TruncSatF32S_SS> for crate::Op {
     fn from(op: I32TruncSatF32S_SS) -> Self {
         Self::I32TruncSatF32S_SS {
@@ -7641,11 +6096,6 @@ impl ::core::marker::Copy for I32TruncSatF32U_RR {}
 impl ::core::clone::Clone for I32TruncSatF32U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncSatF32U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF32U_RR
     }
 }
 impl ::core::convert::From<I32TruncSatF32U_RR> for crate::Op {
@@ -7667,11 +6117,6 @@ impl ::core::clone::Clone for I32TruncSatF32U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncSatF32U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF32U_RS
-    }
-}
 impl ::core::convert::From<I32TruncSatF32U_RS> for crate::Op {
     fn from(op: I32TruncSatF32U_RS) -> Self {
         Self::I32TruncSatF32U_RS {
@@ -7689,11 +6134,6 @@ impl ::core::marker::Copy for I32TruncSatF32U_SR {}
 impl ::core::clone::Clone for I32TruncSatF32U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncSatF32U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF32U_SR
     }
 }
 impl ::core::convert::From<I32TruncSatF32U_SR> for crate::Op {
@@ -7715,11 +6155,6 @@ impl ::core::clone::Clone for I32TruncSatF32U_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncSatF32U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF32U_SS
-    }
-}
 impl ::core::convert::From<I32TruncSatF32U_SS> for crate::Op {
     fn from(op: I32TruncSatF32U_SS) -> Self {
         Self::I32TruncSatF32U_SS {
@@ -7737,11 +6172,6 @@ impl ::core::marker::Copy for I32TruncSatF64S_RR {}
 impl ::core::clone::Clone for I32TruncSatF64S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncSatF64S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF64S_RR
     }
 }
 impl ::core::convert::From<I32TruncSatF64S_RR> for crate::Op {
@@ -7763,11 +6193,6 @@ impl ::core::clone::Clone for I32TruncSatF64S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncSatF64S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF64S_RS
-    }
-}
 impl ::core::convert::From<I32TruncSatF64S_RS> for crate::Op {
     fn from(op: I32TruncSatF64S_RS) -> Self {
         Self::I32TruncSatF64S_RS {
@@ -7785,11 +6210,6 @@ impl ::core::marker::Copy for I32TruncSatF64S_SR {}
 impl ::core::clone::Clone for I32TruncSatF64S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncSatF64S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF64S_SR
     }
 }
 impl ::core::convert::From<I32TruncSatF64S_SR> for crate::Op {
@@ -7811,11 +6231,6 @@ impl ::core::clone::Clone for I32TruncSatF64S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncSatF64S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF64S_SS
-    }
-}
 impl ::core::convert::From<I32TruncSatF64S_SS> for crate::Op {
     fn from(op: I32TruncSatF64S_SS) -> Self {
         Self::I32TruncSatF64S_SS {
@@ -7833,11 +6248,6 @@ impl ::core::marker::Copy for I32TruncSatF64U_RR {}
 impl ::core::clone::Clone for I32TruncSatF64U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncSatF64U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF64U_RR
     }
 }
 impl ::core::convert::From<I32TruncSatF64U_RR> for crate::Op {
@@ -7859,11 +6269,6 @@ impl ::core::clone::Clone for I32TruncSatF64U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncSatF64U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF64U_RS
-    }
-}
 impl ::core::convert::From<I32TruncSatF64U_RS> for crate::Op {
     fn from(op: I32TruncSatF64U_RS) -> Self {
         Self::I32TruncSatF64U_RS {
@@ -7881,11 +6286,6 @@ impl ::core::marker::Copy for I32TruncSatF64U_SR {}
 impl ::core::clone::Clone for I32TruncSatF64U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32TruncSatF64U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF64U_SR
     }
 }
 impl ::core::convert::From<I32TruncSatF64U_SR> for crate::Op {
@@ -7907,11 +6307,6 @@ impl ::core::clone::Clone for I32TruncSatF64U_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32TruncSatF64U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32TruncSatF64U_SS
-    }
-}
 impl ::core::convert::From<I32TruncSatF64U_SS> for crate::Op {
     fn from(op: I32TruncSatF64U_SS) -> Self {
         Self::I32TruncSatF64U_SS {
@@ -7929,11 +6324,6 @@ impl ::core::marker::Copy for I64TruncSatF32S_RR {}
 impl ::core::clone::Clone for I64TruncSatF32S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncSatF32S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF32S_RR
     }
 }
 impl ::core::convert::From<I64TruncSatF32S_RR> for crate::Op {
@@ -7955,11 +6345,6 @@ impl ::core::clone::Clone for I64TruncSatF32S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncSatF32S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF32S_RS
-    }
-}
 impl ::core::convert::From<I64TruncSatF32S_RS> for crate::Op {
     fn from(op: I64TruncSatF32S_RS) -> Self {
         Self::I64TruncSatF32S_RS {
@@ -7977,11 +6362,6 @@ impl ::core::marker::Copy for I64TruncSatF32S_SR {}
 impl ::core::clone::Clone for I64TruncSatF32S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncSatF32S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF32S_SR
     }
 }
 impl ::core::convert::From<I64TruncSatF32S_SR> for crate::Op {
@@ -8003,11 +6383,6 @@ impl ::core::clone::Clone for I64TruncSatF32S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncSatF32S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF32S_SS
-    }
-}
 impl ::core::convert::From<I64TruncSatF32S_SS> for crate::Op {
     fn from(op: I64TruncSatF32S_SS) -> Self {
         Self::I64TruncSatF32S_SS {
@@ -8025,11 +6400,6 @@ impl ::core::marker::Copy for I64TruncSatF32U_RR {}
 impl ::core::clone::Clone for I64TruncSatF32U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncSatF32U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF32U_RR
     }
 }
 impl ::core::convert::From<I64TruncSatF32U_RR> for crate::Op {
@@ -8051,11 +6421,6 @@ impl ::core::clone::Clone for I64TruncSatF32U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncSatF32U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF32U_RS
-    }
-}
 impl ::core::convert::From<I64TruncSatF32U_RS> for crate::Op {
     fn from(op: I64TruncSatF32U_RS) -> Self {
         Self::I64TruncSatF32U_RS {
@@ -8073,11 +6438,6 @@ impl ::core::marker::Copy for I64TruncSatF32U_SR {}
 impl ::core::clone::Clone for I64TruncSatF32U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncSatF32U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF32U_SR
     }
 }
 impl ::core::convert::From<I64TruncSatF32U_SR> for crate::Op {
@@ -8099,11 +6459,6 @@ impl ::core::clone::Clone for I64TruncSatF32U_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncSatF32U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF32U_SS
-    }
-}
 impl ::core::convert::From<I64TruncSatF32U_SS> for crate::Op {
     fn from(op: I64TruncSatF32U_SS) -> Self {
         Self::I64TruncSatF32U_SS {
@@ -8121,11 +6476,6 @@ impl ::core::marker::Copy for I64TruncSatF64S_RR {}
 impl ::core::clone::Clone for I64TruncSatF64S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncSatF64S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF64S_RR
     }
 }
 impl ::core::convert::From<I64TruncSatF64S_RR> for crate::Op {
@@ -8147,11 +6497,6 @@ impl ::core::clone::Clone for I64TruncSatF64S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncSatF64S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF64S_RS
-    }
-}
 impl ::core::convert::From<I64TruncSatF64S_RS> for crate::Op {
     fn from(op: I64TruncSatF64S_RS) -> Self {
         Self::I64TruncSatF64S_RS {
@@ -8169,11 +6514,6 @@ impl ::core::marker::Copy for I64TruncSatF64S_SR {}
 impl ::core::clone::Clone for I64TruncSatF64S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncSatF64S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF64S_SR
     }
 }
 impl ::core::convert::From<I64TruncSatF64S_SR> for crate::Op {
@@ -8195,11 +6535,6 @@ impl ::core::clone::Clone for I64TruncSatF64S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncSatF64S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF64S_SS
-    }
-}
 impl ::core::convert::From<I64TruncSatF64S_SS> for crate::Op {
     fn from(op: I64TruncSatF64S_SS) -> Self {
         Self::I64TruncSatF64S_SS {
@@ -8217,11 +6552,6 @@ impl ::core::marker::Copy for I64TruncSatF64U_RR {}
 impl ::core::clone::Clone for I64TruncSatF64U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncSatF64U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF64U_RR
     }
 }
 impl ::core::convert::From<I64TruncSatF64U_RR> for crate::Op {
@@ -8243,11 +6573,6 @@ impl ::core::clone::Clone for I64TruncSatF64U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncSatF64U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF64U_RS
-    }
-}
 impl ::core::convert::From<I64TruncSatF64U_RS> for crate::Op {
     fn from(op: I64TruncSatF64U_RS) -> Self {
         Self::I64TruncSatF64U_RS {
@@ -8265,11 +6590,6 @@ impl ::core::marker::Copy for I64TruncSatF64U_SR {}
 impl ::core::clone::Clone for I64TruncSatF64U_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64TruncSatF64U_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF64U_SR
     }
 }
 impl ::core::convert::From<I64TruncSatF64U_SR> for crate::Op {
@@ -8291,11 +6611,6 @@ impl ::core::clone::Clone for I64TruncSatF64U_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64TruncSatF64U_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64TruncSatF64U_SS
-    }
-}
 impl ::core::convert::From<I64TruncSatF64U_SS> for crate::Op {
     fn from(op: I64TruncSatF64U_SS) -> Self {
         Self::I64TruncSatF64U_SS {
@@ -8313,11 +6628,6 @@ impl ::core::marker::Copy for I32Extend8S_RR {}
 impl ::core::clone::Clone for I32Extend8S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Extend8S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Extend8S_RR
     }
 }
 impl ::core::convert::From<I32Extend8S_RR> for crate::Op {
@@ -8339,11 +6649,6 @@ impl ::core::clone::Clone for I32Extend8S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32Extend8S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Extend8S_RS
-    }
-}
 impl ::core::convert::From<I32Extend8S_RS> for crate::Op {
     fn from(op: I32Extend8S_RS) -> Self {
         Self::I32Extend8S_RS {
@@ -8361,11 +6666,6 @@ impl ::core::marker::Copy for I32Extend8S_SR {}
 impl ::core::clone::Clone for I32Extend8S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Extend8S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Extend8S_SR
     }
 }
 impl ::core::convert::From<I32Extend8S_SR> for crate::Op {
@@ -8387,11 +6687,6 @@ impl ::core::clone::Clone for I32Extend8S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Extend8S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Extend8S_SS
-    }
-}
 impl ::core::convert::From<I32Extend8S_SS> for crate::Op {
     fn from(op: I32Extend8S_SS) -> Self {
         Self::I32Extend8S_SS {
@@ -8409,11 +6704,6 @@ impl ::core::marker::Copy for I32Extend16S_RR {}
 impl ::core::clone::Clone for I32Extend16S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Extend16S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Extend16S_RR
     }
 }
 impl ::core::convert::From<I32Extend16S_RR> for crate::Op {
@@ -8435,11 +6725,6 @@ impl ::core::clone::Clone for I32Extend16S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32Extend16S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Extend16S_RS
-    }
-}
 impl ::core::convert::From<I32Extend16S_RS> for crate::Op {
     fn from(op: I32Extend16S_RS) -> Self {
         Self::I32Extend16S_RS {
@@ -8457,11 +6742,6 @@ impl ::core::marker::Copy for I32Extend16S_SR {}
 impl ::core::clone::Clone for I32Extend16S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Extend16S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Extend16S_SR
     }
 }
 impl ::core::convert::From<I32Extend16S_SR> for crate::Op {
@@ -8483,11 +6763,6 @@ impl ::core::clone::Clone for I32Extend16S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Extend16S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Extend16S_SS
-    }
-}
 impl ::core::convert::From<I32Extend16S_SS> for crate::Op {
     fn from(op: I32Extend16S_SS) -> Self {
         Self::I32Extend16S_SS {
@@ -8505,11 +6780,6 @@ impl ::core::marker::Copy for I64Extend8S_RR {}
 impl ::core::clone::Clone for I64Extend8S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Extend8S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend8S_RR
     }
 }
 impl ::core::convert::From<I64Extend8S_RR> for crate::Op {
@@ -8531,11 +6801,6 @@ impl ::core::clone::Clone for I64Extend8S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Extend8S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend8S_RS
-    }
-}
 impl ::core::convert::From<I64Extend8S_RS> for crate::Op {
     fn from(op: I64Extend8S_RS) -> Self {
         Self::I64Extend8S_RS {
@@ -8553,11 +6818,6 @@ impl ::core::marker::Copy for I64Extend8S_SR {}
 impl ::core::clone::Clone for I64Extend8S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Extend8S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend8S_SR
     }
 }
 impl ::core::convert::From<I64Extend8S_SR> for crate::Op {
@@ -8579,11 +6839,6 @@ impl ::core::clone::Clone for I64Extend8S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Extend8S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend8S_SS
-    }
-}
 impl ::core::convert::From<I64Extend8S_SS> for crate::Op {
     fn from(op: I64Extend8S_SS) -> Self {
         Self::I64Extend8S_SS {
@@ -8601,11 +6856,6 @@ impl ::core::marker::Copy for I64Extend16S_RR {}
 impl ::core::clone::Clone for I64Extend16S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Extend16S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend16S_RR
     }
 }
 impl ::core::convert::From<I64Extend16S_RR> for crate::Op {
@@ -8627,11 +6877,6 @@ impl ::core::clone::Clone for I64Extend16S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Extend16S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend16S_RS
-    }
-}
 impl ::core::convert::From<I64Extend16S_RS> for crate::Op {
     fn from(op: I64Extend16S_RS) -> Self {
         Self::I64Extend16S_RS {
@@ -8649,11 +6894,6 @@ impl ::core::marker::Copy for I64Extend16S_SR {}
 impl ::core::clone::Clone for I64Extend16S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Extend16S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend16S_SR
     }
 }
 impl ::core::convert::From<I64Extend16S_SR> for crate::Op {
@@ -8675,11 +6915,6 @@ impl ::core::clone::Clone for I64Extend16S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Extend16S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend16S_SS
-    }
-}
 impl ::core::convert::From<I64Extend16S_SS> for crate::Op {
     fn from(op: I64Extend16S_SS) -> Self {
         Self::I64Extend16S_SS {
@@ -8697,11 +6932,6 @@ impl ::core::marker::Copy for I64Extend32S_RR {}
 impl ::core::clone::Clone for I64Extend32S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Extend32S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend32S_RR
     }
 }
 impl ::core::convert::From<I64Extend32S_RR> for crate::Op {
@@ -8723,11 +6953,6 @@ impl ::core::clone::Clone for I64Extend32S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Extend32S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend32S_RS
-    }
-}
 impl ::core::convert::From<I64Extend32S_RS> for crate::Op {
     fn from(op: I64Extend32S_RS) -> Self {
         Self::I64Extend32S_RS {
@@ -8745,11 +6970,6 @@ impl ::core::marker::Copy for I64Extend32S_SR {}
 impl ::core::clone::Clone for I64Extend32S_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Extend32S_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend32S_SR
     }
 }
 impl ::core::convert::From<I64Extend32S_SR> for crate::Op {
@@ -8771,11 +6991,6 @@ impl ::core::clone::Clone for I64Extend32S_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Extend32S_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Extend32S_SS
-    }
-}
 impl ::core::convert::From<I64Extend32S_SS> for crate::Op {
     fn from(op: I64Extend32S_SS) -> Self {
         Self::I64Extend32S_SS {
@@ -8793,11 +7008,6 @@ impl ::core::marker::Copy for I32WrapI64_RR {}
 impl ::core::clone::Clone for I32WrapI64_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32WrapI64_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32WrapI64_RR
     }
 }
 impl ::core::convert::From<I32WrapI64_RR> for crate::Op {
@@ -8819,11 +7029,6 @@ impl ::core::clone::Clone for I32WrapI64_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32WrapI64_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32WrapI64_RS
-    }
-}
 impl ::core::convert::From<I32WrapI64_RS> for crate::Op {
     fn from(op: I32WrapI64_RS) -> Self {
         Self::I32WrapI64_RS {
@@ -8841,11 +7046,6 @@ impl ::core::marker::Copy for I32WrapI64_SR {}
 impl ::core::clone::Clone for I32WrapI64_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32WrapI64_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32WrapI64_SR
     }
 }
 impl ::core::convert::From<I32WrapI64_SR> for crate::Op {
@@ -8867,11 +7067,6 @@ impl ::core::clone::Clone for I32WrapI64_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32WrapI64_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32WrapI64_SS
-    }
-}
 impl ::core::convert::From<I32WrapI64_SS> for crate::Op {
     fn from(op: I32WrapI64_SS) -> Self {
         Self::I32WrapI64_SS {
@@ -8890,11 +7085,6 @@ impl ::core::marker::Copy for I32Add_RRS {}
 impl ::core::clone::Clone for I32Add_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Add_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Add_RRS
     }
 }
 impl ::core::convert::From<I32Add_RRS> for crate::Op {
@@ -8918,11 +7108,6 @@ impl ::core::clone::Clone for I32Add_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Add_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Add_RRI
-    }
-}
 impl ::core::convert::From<I32Add_RRI> for crate::Op {
     fn from(op: I32Add_RRI) -> Self {
         Self::I32Add_RRI {
@@ -8942,11 +7127,6 @@ impl ::core::marker::Copy for I32Add_RSS {}
 impl ::core::clone::Clone for I32Add_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Add_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Add_RSS
     }
 }
 impl ::core::convert::From<I32Add_RSS> for crate::Op {
@@ -8970,11 +7150,6 @@ impl ::core::clone::Clone for I32Add_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Add_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Add_RSI
-    }
-}
 impl ::core::convert::From<I32Add_RSI> for crate::Op {
     fn from(op: I32Add_RSI) -> Self {
         Self::I32Add_RSI {
@@ -8994,11 +7169,6 @@ impl ::core::marker::Copy for I32Add_SRS {}
 impl ::core::clone::Clone for I32Add_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Add_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Add_SRS
     }
 }
 impl ::core::convert::From<I32Add_SRS> for crate::Op {
@@ -9022,11 +7192,6 @@ impl ::core::clone::Clone for I32Add_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Add_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Add_SRI
-    }
-}
 impl ::core::convert::From<I32Add_SRI> for crate::Op {
     fn from(op: I32Add_SRI) -> Self {
         Self::I32Add_SRI {
@@ -9046,11 +7211,6 @@ impl ::core::marker::Copy for I32Add_SSS {}
 impl ::core::clone::Clone for I32Add_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Add_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Add_SSS
     }
 }
 impl ::core::convert::From<I32Add_SSS> for crate::Op {
@@ -9074,11 +7234,6 @@ impl ::core::clone::Clone for I32Add_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Add_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Add_SSI
-    }
-}
 impl ::core::convert::From<I32Add_SSI> for crate::Op {
     fn from(op: I32Add_SSI) -> Self {
         Self::I32Add_SSI {
@@ -9098,11 +7253,6 @@ impl ::core::marker::Copy for I64Add_RRS {}
 impl ::core::clone::Clone for I64Add_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Add_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Add_RRS
     }
 }
 impl ::core::convert::From<I64Add_RRS> for crate::Op {
@@ -9126,11 +7276,6 @@ impl ::core::clone::Clone for I64Add_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Add_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Add_RRI
-    }
-}
 impl ::core::convert::From<I64Add_RRI> for crate::Op {
     fn from(op: I64Add_RRI) -> Self {
         Self::I64Add_RRI {
@@ -9150,11 +7295,6 @@ impl ::core::marker::Copy for I64Add_RSS {}
 impl ::core::clone::Clone for I64Add_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Add_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Add_RSS
     }
 }
 impl ::core::convert::From<I64Add_RSS> for crate::Op {
@@ -9178,11 +7318,6 @@ impl ::core::clone::Clone for I64Add_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Add_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Add_RSI
-    }
-}
 impl ::core::convert::From<I64Add_RSI> for crate::Op {
     fn from(op: I64Add_RSI) -> Self {
         Self::I64Add_RSI {
@@ -9202,11 +7337,6 @@ impl ::core::marker::Copy for I64Add_SRS {}
 impl ::core::clone::Clone for I64Add_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Add_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Add_SRS
     }
 }
 impl ::core::convert::From<I64Add_SRS> for crate::Op {
@@ -9230,11 +7360,6 @@ impl ::core::clone::Clone for I64Add_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Add_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Add_SRI
-    }
-}
 impl ::core::convert::From<I64Add_SRI> for crate::Op {
     fn from(op: I64Add_SRI) -> Self {
         Self::I64Add_SRI {
@@ -9254,11 +7379,6 @@ impl ::core::marker::Copy for I64Add_SSS {}
 impl ::core::clone::Clone for I64Add_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Add_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Add_SSS
     }
 }
 impl ::core::convert::From<I64Add_SSS> for crate::Op {
@@ -9282,11 +7402,6 @@ impl ::core::clone::Clone for I64Add_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Add_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Add_SSI
-    }
-}
 impl ::core::convert::From<I64Add_SSI> for crate::Op {
     fn from(op: I64Add_SSI) -> Self {
         Self::I64Add_SSI {
@@ -9306,11 +7421,6 @@ impl ::core::marker::Copy for I32Mul_RRS {}
 impl ::core::clone::Clone for I32Mul_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Mul_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Mul_RRS
     }
 }
 impl ::core::convert::From<I32Mul_RRS> for crate::Op {
@@ -9334,11 +7444,6 @@ impl ::core::clone::Clone for I32Mul_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Mul_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Mul_RRI
-    }
-}
 impl ::core::convert::From<I32Mul_RRI> for crate::Op {
     fn from(op: I32Mul_RRI) -> Self {
         Self::I32Mul_RRI {
@@ -9358,11 +7463,6 @@ impl ::core::marker::Copy for I32Mul_RSS {}
 impl ::core::clone::Clone for I32Mul_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Mul_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Mul_RSS
     }
 }
 impl ::core::convert::From<I32Mul_RSS> for crate::Op {
@@ -9386,11 +7486,6 @@ impl ::core::clone::Clone for I32Mul_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Mul_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Mul_RSI
-    }
-}
 impl ::core::convert::From<I32Mul_RSI> for crate::Op {
     fn from(op: I32Mul_RSI) -> Self {
         Self::I32Mul_RSI {
@@ -9410,11 +7505,6 @@ impl ::core::marker::Copy for I32Mul_SRS {}
 impl ::core::clone::Clone for I32Mul_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Mul_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Mul_SRS
     }
 }
 impl ::core::convert::From<I32Mul_SRS> for crate::Op {
@@ -9438,11 +7528,6 @@ impl ::core::clone::Clone for I32Mul_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Mul_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Mul_SRI
-    }
-}
 impl ::core::convert::From<I32Mul_SRI> for crate::Op {
     fn from(op: I32Mul_SRI) -> Self {
         Self::I32Mul_SRI {
@@ -9462,11 +7547,6 @@ impl ::core::marker::Copy for I32Mul_SSS {}
 impl ::core::clone::Clone for I32Mul_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Mul_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Mul_SSS
     }
 }
 impl ::core::convert::From<I32Mul_SSS> for crate::Op {
@@ -9490,11 +7570,6 @@ impl ::core::clone::Clone for I32Mul_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Mul_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Mul_SSI
-    }
-}
 impl ::core::convert::From<I32Mul_SSI> for crate::Op {
     fn from(op: I32Mul_SSI) -> Self {
         Self::I32Mul_SSI {
@@ -9514,11 +7589,6 @@ impl ::core::marker::Copy for I64Mul_RRS {}
 impl ::core::clone::Clone for I64Mul_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Mul_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Mul_RRS
     }
 }
 impl ::core::convert::From<I64Mul_RRS> for crate::Op {
@@ -9542,11 +7612,6 @@ impl ::core::clone::Clone for I64Mul_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Mul_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Mul_RRI
-    }
-}
 impl ::core::convert::From<I64Mul_RRI> for crate::Op {
     fn from(op: I64Mul_RRI) -> Self {
         Self::I64Mul_RRI {
@@ -9566,11 +7631,6 @@ impl ::core::marker::Copy for I64Mul_RSS {}
 impl ::core::clone::Clone for I64Mul_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Mul_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Mul_RSS
     }
 }
 impl ::core::convert::From<I64Mul_RSS> for crate::Op {
@@ -9594,11 +7654,6 @@ impl ::core::clone::Clone for I64Mul_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Mul_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Mul_RSI
-    }
-}
 impl ::core::convert::From<I64Mul_RSI> for crate::Op {
     fn from(op: I64Mul_RSI) -> Self {
         Self::I64Mul_RSI {
@@ -9618,11 +7673,6 @@ impl ::core::marker::Copy for I64Mul_SRS {}
 impl ::core::clone::Clone for I64Mul_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Mul_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Mul_SRS
     }
 }
 impl ::core::convert::From<I64Mul_SRS> for crate::Op {
@@ -9646,11 +7696,6 @@ impl ::core::clone::Clone for I64Mul_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Mul_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Mul_SRI
-    }
-}
 impl ::core::convert::From<I64Mul_SRI> for crate::Op {
     fn from(op: I64Mul_SRI) -> Self {
         Self::I64Mul_SRI {
@@ -9670,11 +7715,6 @@ impl ::core::marker::Copy for I64Mul_SSS {}
 impl ::core::clone::Clone for I64Mul_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Mul_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Mul_SSS
     }
 }
 impl ::core::convert::From<I64Mul_SSS> for crate::Op {
@@ -9698,11 +7738,6 @@ impl ::core::clone::Clone for I64Mul_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Mul_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Mul_SSI
-    }
-}
 impl ::core::convert::From<I64Mul_SSI> for crate::Op {
     fn from(op: I64Mul_SSI) -> Self {
         Self::I64Mul_SSI {
@@ -9722,11 +7757,6 @@ impl ::core::marker::Copy for I32And_RRS {}
 impl ::core::clone::Clone for I32And_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32And_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_RRS
     }
 }
 impl ::core::convert::From<I32And_RRS> for crate::Op {
@@ -9750,11 +7780,6 @@ impl ::core::clone::Clone for I32And_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32And_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_RRI
-    }
-}
 impl ::core::convert::From<I32And_RRI> for crate::Op {
     fn from(op: I32And_RRI) -> Self {
         Self::I32And_RRI {
@@ -9774,11 +7799,6 @@ impl ::core::marker::Copy for I32And_RSS {}
 impl ::core::clone::Clone for I32And_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32And_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_RSS
     }
 }
 impl ::core::convert::From<I32And_RSS> for crate::Op {
@@ -9802,11 +7822,6 @@ impl ::core::clone::Clone for I32And_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I32And_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_RSI
-    }
-}
 impl ::core::convert::From<I32And_RSI> for crate::Op {
     fn from(op: I32And_RSI) -> Self {
         Self::I32And_RSI {
@@ -9826,11 +7841,6 @@ impl ::core::marker::Copy for I32And_SRS {}
 impl ::core::clone::Clone for I32And_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32And_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_SRS
     }
 }
 impl ::core::convert::From<I32And_SRS> for crate::Op {
@@ -9854,11 +7864,6 @@ impl ::core::clone::Clone for I32And_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I32And_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_SRI
-    }
-}
 impl ::core::convert::From<I32And_SRI> for crate::Op {
     fn from(op: I32And_SRI) -> Self {
         Self::I32And_SRI {
@@ -9878,11 +7883,6 @@ impl ::core::marker::Copy for I32And_SSS {}
 impl ::core::clone::Clone for I32And_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32And_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_SSS
     }
 }
 impl ::core::convert::From<I32And_SSS> for crate::Op {
@@ -9906,11 +7906,6 @@ impl ::core::clone::Clone for I32And_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I32And_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_SSI
-    }
-}
 impl ::core::convert::From<I32And_SSI> for crate::Op {
     fn from(op: I32And_SSI) -> Self {
         Self::I32And_SSI {
@@ -9930,11 +7925,6 @@ impl ::core::marker::Copy for I64And_RRS {}
 impl ::core::clone::Clone for I64And_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64And_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_RRS
     }
 }
 impl ::core::convert::From<I64And_RRS> for crate::Op {
@@ -9958,11 +7948,6 @@ impl ::core::clone::Clone for I64And_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I64And_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_RRI
-    }
-}
 impl ::core::convert::From<I64And_RRI> for crate::Op {
     fn from(op: I64And_RRI) -> Self {
         Self::I64And_RRI {
@@ -9982,11 +7967,6 @@ impl ::core::marker::Copy for I64And_RSS {}
 impl ::core::clone::Clone for I64And_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64And_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_RSS
     }
 }
 impl ::core::convert::From<I64And_RSS> for crate::Op {
@@ -10010,11 +7990,6 @@ impl ::core::clone::Clone for I64And_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64And_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_RSI
-    }
-}
 impl ::core::convert::From<I64And_RSI> for crate::Op {
     fn from(op: I64And_RSI) -> Self {
         Self::I64And_RSI {
@@ -10034,11 +8009,6 @@ impl ::core::marker::Copy for I64And_SRS {}
 impl ::core::clone::Clone for I64And_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64And_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_SRS
     }
 }
 impl ::core::convert::From<I64And_SRS> for crate::Op {
@@ -10062,11 +8032,6 @@ impl ::core::clone::Clone for I64And_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I64And_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_SRI
-    }
-}
 impl ::core::convert::From<I64And_SRI> for crate::Op {
     fn from(op: I64And_SRI) -> Self {
         Self::I64And_SRI {
@@ -10086,11 +8051,6 @@ impl ::core::marker::Copy for I64And_SSS {}
 impl ::core::clone::Clone for I64And_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64And_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_SSS
     }
 }
 impl ::core::convert::From<I64And_SSS> for crate::Op {
@@ -10114,11 +8074,6 @@ impl ::core::clone::Clone for I64And_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I64And_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_SSI
-    }
-}
 impl ::core::convert::From<I64And_SSI> for crate::Op {
     fn from(op: I64And_SSI) -> Self {
         Self::I64And_SSI {
@@ -10138,11 +8093,6 @@ impl ::core::marker::Copy for I32Or_RRS {}
 impl ::core::clone::Clone for I32Or_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Or_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_RRS
     }
 }
 impl ::core::convert::From<I32Or_RRS> for crate::Op {
@@ -10166,11 +8116,6 @@ impl ::core::clone::Clone for I32Or_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Or_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_RRI
-    }
-}
 impl ::core::convert::From<I32Or_RRI> for crate::Op {
     fn from(op: I32Or_RRI) -> Self {
         Self::I32Or_RRI {
@@ -10190,11 +8135,6 @@ impl ::core::marker::Copy for I32Or_RSS {}
 impl ::core::clone::Clone for I32Or_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Or_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_RSS
     }
 }
 impl ::core::convert::From<I32Or_RSS> for crate::Op {
@@ -10218,11 +8158,6 @@ impl ::core::clone::Clone for I32Or_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Or_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_RSI
-    }
-}
 impl ::core::convert::From<I32Or_RSI> for crate::Op {
     fn from(op: I32Or_RSI) -> Self {
         Self::I32Or_RSI {
@@ -10242,11 +8177,6 @@ impl ::core::marker::Copy for I32Or_SRS {}
 impl ::core::clone::Clone for I32Or_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Or_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_SRS
     }
 }
 impl ::core::convert::From<I32Or_SRS> for crate::Op {
@@ -10270,11 +8200,6 @@ impl ::core::clone::Clone for I32Or_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Or_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_SRI
-    }
-}
 impl ::core::convert::From<I32Or_SRI> for crate::Op {
     fn from(op: I32Or_SRI) -> Self {
         Self::I32Or_SRI {
@@ -10294,11 +8219,6 @@ impl ::core::marker::Copy for I32Or_SSS {}
 impl ::core::clone::Clone for I32Or_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Or_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_SSS
     }
 }
 impl ::core::convert::From<I32Or_SSS> for crate::Op {
@@ -10322,11 +8242,6 @@ impl ::core::clone::Clone for I32Or_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Or_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_SSI
-    }
-}
 impl ::core::convert::From<I32Or_SSI> for crate::Op {
     fn from(op: I32Or_SSI) -> Self {
         Self::I32Or_SSI {
@@ -10346,11 +8261,6 @@ impl ::core::marker::Copy for I64Or_RRS {}
 impl ::core::clone::Clone for I64Or_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Or_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_RRS
     }
 }
 impl ::core::convert::From<I64Or_RRS> for crate::Op {
@@ -10374,11 +8284,6 @@ impl ::core::clone::Clone for I64Or_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Or_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_RRI
-    }
-}
 impl ::core::convert::From<I64Or_RRI> for crate::Op {
     fn from(op: I64Or_RRI) -> Self {
         Self::I64Or_RRI {
@@ -10398,11 +8303,6 @@ impl ::core::marker::Copy for I64Or_RSS {}
 impl ::core::clone::Clone for I64Or_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Or_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_RSS
     }
 }
 impl ::core::convert::From<I64Or_RSS> for crate::Op {
@@ -10426,11 +8326,6 @@ impl ::core::clone::Clone for I64Or_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Or_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_RSI
-    }
-}
 impl ::core::convert::From<I64Or_RSI> for crate::Op {
     fn from(op: I64Or_RSI) -> Self {
         Self::I64Or_RSI {
@@ -10450,11 +8345,6 @@ impl ::core::marker::Copy for I64Or_SRS {}
 impl ::core::clone::Clone for I64Or_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Or_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_SRS
     }
 }
 impl ::core::convert::From<I64Or_SRS> for crate::Op {
@@ -10478,11 +8368,6 @@ impl ::core::clone::Clone for I64Or_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Or_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_SRI
-    }
-}
 impl ::core::convert::From<I64Or_SRI> for crate::Op {
     fn from(op: I64Or_SRI) -> Self {
         Self::I64Or_SRI {
@@ -10502,11 +8387,6 @@ impl ::core::marker::Copy for I64Or_SSS {}
 impl ::core::clone::Clone for I64Or_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Or_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_SSS
     }
 }
 impl ::core::convert::From<I64Or_SSS> for crate::Op {
@@ -10530,11 +8410,6 @@ impl ::core::clone::Clone for I64Or_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Or_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_SSI
-    }
-}
 impl ::core::convert::From<I64Or_SSI> for crate::Op {
     fn from(op: I64Or_SSI) -> Self {
         Self::I64Or_SSI {
@@ -10554,11 +8429,6 @@ impl ::core::marker::Copy for I32Xor_RRS {}
 impl ::core::clone::Clone for I32Xor_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Xor_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_RRS
     }
 }
 impl ::core::convert::From<I32Xor_RRS> for crate::Op {
@@ -10582,11 +8452,6 @@ impl ::core::clone::Clone for I32Xor_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Xor_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_RRI
-    }
-}
 impl ::core::convert::From<I32Xor_RRI> for crate::Op {
     fn from(op: I32Xor_RRI) -> Self {
         Self::I32Xor_RRI {
@@ -10606,11 +8471,6 @@ impl ::core::marker::Copy for I32Xor_RSS {}
 impl ::core::clone::Clone for I32Xor_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Xor_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_RSS
     }
 }
 impl ::core::convert::From<I32Xor_RSS> for crate::Op {
@@ -10634,11 +8494,6 @@ impl ::core::clone::Clone for I32Xor_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Xor_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_RSI
-    }
-}
 impl ::core::convert::From<I32Xor_RSI> for crate::Op {
     fn from(op: I32Xor_RSI) -> Self {
         Self::I32Xor_RSI {
@@ -10658,11 +8513,6 @@ impl ::core::marker::Copy for I32Xor_SRS {}
 impl ::core::clone::Clone for I32Xor_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Xor_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_SRS
     }
 }
 impl ::core::convert::From<I32Xor_SRS> for crate::Op {
@@ -10686,11 +8536,6 @@ impl ::core::clone::Clone for I32Xor_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Xor_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_SRI
-    }
-}
 impl ::core::convert::From<I32Xor_SRI> for crate::Op {
     fn from(op: I32Xor_SRI) -> Self {
         Self::I32Xor_SRI {
@@ -10710,11 +8555,6 @@ impl ::core::marker::Copy for I32Xor_SSS {}
 impl ::core::clone::Clone for I32Xor_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Xor_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_SSS
     }
 }
 impl ::core::convert::From<I32Xor_SSS> for crate::Op {
@@ -10738,11 +8578,6 @@ impl ::core::clone::Clone for I32Xor_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Xor_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_SSI
-    }
-}
 impl ::core::convert::From<I32Xor_SSI> for crate::Op {
     fn from(op: I32Xor_SSI) -> Self {
         Self::I32Xor_SSI {
@@ -10762,11 +8597,6 @@ impl ::core::marker::Copy for I64Xor_RRS {}
 impl ::core::clone::Clone for I64Xor_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Xor_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_RRS
     }
 }
 impl ::core::convert::From<I64Xor_RRS> for crate::Op {
@@ -10790,11 +8620,6 @@ impl ::core::clone::Clone for I64Xor_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Xor_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_RRI
-    }
-}
 impl ::core::convert::From<I64Xor_RRI> for crate::Op {
     fn from(op: I64Xor_RRI) -> Self {
         Self::I64Xor_RRI {
@@ -10814,11 +8639,6 @@ impl ::core::marker::Copy for I64Xor_RSS {}
 impl ::core::clone::Clone for I64Xor_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Xor_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_RSS
     }
 }
 impl ::core::convert::From<I64Xor_RSS> for crate::Op {
@@ -10842,11 +8662,6 @@ impl ::core::clone::Clone for I64Xor_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Xor_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_RSI
-    }
-}
 impl ::core::convert::From<I64Xor_RSI> for crate::Op {
     fn from(op: I64Xor_RSI) -> Self {
         Self::I64Xor_RSI {
@@ -10866,11 +8681,6 @@ impl ::core::marker::Copy for I64Xor_SRS {}
 impl ::core::clone::Clone for I64Xor_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Xor_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_SRS
     }
 }
 impl ::core::convert::From<I64Xor_SRS> for crate::Op {
@@ -10894,11 +8704,6 @@ impl ::core::clone::Clone for I64Xor_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Xor_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_SRI
-    }
-}
 impl ::core::convert::From<I64Xor_SRI> for crate::Op {
     fn from(op: I64Xor_SRI) -> Self {
         Self::I64Xor_SRI {
@@ -10918,11 +8723,6 @@ impl ::core::marker::Copy for I64Xor_SSS {}
 impl ::core::clone::Clone for I64Xor_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Xor_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_SSS
     }
 }
 impl ::core::convert::From<I64Xor_SSS> for crate::Op {
@@ -10946,11 +8746,6 @@ impl ::core::clone::Clone for I64Xor_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Xor_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_SSI
-    }
-}
 impl ::core::convert::From<I64Xor_SSI> for crate::Op {
     fn from(op: I64Xor_SSI) -> Self {
         Self::I64Xor_SSI {
@@ -10970,11 +8765,6 @@ impl ::core::marker::Copy for I32Eq_RRS {}
 impl ::core::clone::Clone for I32Eq_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Eq_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Eq_RRS
     }
 }
 impl ::core::convert::From<I32Eq_RRS> for crate::Op {
@@ -10998,11 +8788,6 @@ impl ::core::clone::Clone for I32Eq_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Eq_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Eq_RRI
-    }
-}
 impl ::core::convert::From<I32Eq_RRI> for crate::Op {
     fn from(op: I32Eq_RRI) -> Self {
         Self::I32Eq_RRI {
@@ -11022,11 +8807,6 @@ impl ::core::marker::Copy for I32Eq_RSS {}
 impl ::core::clone::Clone for I32Eq_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Eq_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Eq_RSS
     }
 }
 impl ::core::convert::From<I32Eq_RSS> for crate::Op {
@@ -11050,11 +8830,6 @@ impl ::core::clone::Clone for I32Eq_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Eq_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Eq_RSI
-    }
-}
 impl ::core::convert::From<I32Eq_RSI> for crate::Op {
     fn from(op: I32Eq_RSI) -> Self {
         Self::I32Eq_RSI {
@@ -11074,11 +8849,6 @@ impl ::core::marker::Copy for I32Eq_SRS {}
 impl ::core::clone::Clone for I32Eq_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Eq_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Eq_SRS
     }
 }
 impl ::core::convert::From<I32Eq_SRS> for crate::Op {
@@ -11102,11 +8872,6 @@ impl ::core::clone::Clone for I32Eq_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Eq_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Eq_SRI
-    }
-}
 impl ::core::convert::From<I32Eq_SRI> for crate::Op {
     fn from(op: I32Eq_SRI) -> Self {
         Self::I32Eq_SRI {
@@ -11126,11 +8891,6 @@ impl ::core::marker::Copy for I32Eq_SSS {}
 impl ::core::clone::Clone for I32Eq_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Eq_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Eq_SSS
     }
 }
 impl ::core::convert::From<I32Eq_SSS> for crate::Op {
@@ -11154,11 +8914,6 @@ impl ::core::clone::Clone for I32Eq_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Eq_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Eq_SSI
-    }
-}
 impl ::core::convert::From<I32Eq_SSI> for crate::Op {
     fn from(op: I32Eq_SSI) -> Self {
         Self::I32Eq_SSI {
@@ -11178,11 +8933,6 @@ impl ::core::marker::Copy for I64Eq_RRS {}
 impl ::core::clone::Clone for I64Eq_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Eq_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Eq_RRS
     }
 }
 impl ::core::convert::From<I64Eq_RRS> for crate::Op {
@@ -11206,11 +8956,6 @@ impl ::core::clone::Clone for I64Eq_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Eq_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Eq_RRI
-    }
-}
 impl ::core::convert::From<I64Eq_RRI> for crate::Op {
     fn from(op: I64Eq_RRI) -> Self {
         Self::I64Eq_RRI {
@@ -11230,11 +8975,6 @@ impl ::core::marker::Copy for I64Eq_RSS {}
 impl ::core::clone::Clone for I64Eq_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Eq_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Eq_RSS
     }
 }
 impl ::core::convert::From<I64Eq_RSS> for crate::Op {
@@ -11258,11 +8998,6 @@ impl ::core::clone::Clone for I64Eq_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Eq_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Eq_RSI
-    }
-}
 impl ::core::convert::From<I64Eq_RSI> for crate::Op {
     fn from(op: I64Eq_RSI) -> Self {
         Self::I64Eq_RSI {
@@ -11282,11 +9017,6 @@ impl ::core::marker::Copy for I64Eq_SRS {}
 impl ::core::clone::Clone for I64Eq_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Eq_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Eq_SRS
     }
 }
 impl ::core::convert::From<I64Eq_SRS> for crate::Op {
@@ -11310,11 +9040,6 @@ impl ::core::clone::Clone for I64Eq_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Eq_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Eq_SRI
-    }
-}
 impl ::core::convert::From<I64Eq_SRI> for crate::Op {
     fn from(op: I64Eq_SRI) -> Self {
         Self::I64Eq_SRI {
@@ -11334,11 +9059,6 @@ impl ::core::marker::Copy for I64Eq_SSS {}
 impl ::core::clone::Clone for I64Eq_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Eq_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Eq_SSS
     }
 }
 impl ::core::convert::From<I64Eq_SSS> for crate::Op {
@@ -11362,11 +9082,6 @@ impl ::core::clone::Clone for I64Eq_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Eq_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Eq_SSI
-    }
-}
 impl ::core::convert::From<I64Eq_SSI> for crate::Op {
     fn from(op: I64Eq_SSI) -> Self {
         Self::I64Eq_SSI {
@@ -11386,11 +9101,6 @@ impl ::core::marker::Copy for I32Ne_RRS {}
 impl ::core::clone::Clone for I32Ne_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Ne_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ne_RRS
     }
 }
 impl ::core::convert::From<I32Ne_RRS> for crate::Op {
@@ -11414,11 +9124,6 @@ impl ::core::clone::Clone for I32Ne_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Ne_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ne_RRI
-    }
-}
 impl ::core::convert::From<I32Ne_RRI> for crate::Op {
     fn from(op: I32Ne_RRI) -> Self {
         Self::I32Ne_RRI {
@@ -11438,11 +9143,6 @@ impl ::core::marker::Copy for I32Ne_RSS {}
 impl ::core::clone::Clone for I32Ne_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Ne_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ne_RSS
     }
 }
 impl ::core::convert::From<I32Ne_RSS> for crate::Op {
@@ -11466,11 +9166,6 @@ impl ::core::clone::Clone for I32Ne_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Ne_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ne_RSI
-    }
-}
 impl ::core::convert::From<I32Ne_RSI> for crate::Op {
     fn from(op: I32Ne_RSI) -> Self {
         Self::I32Ne_RSI {
@@ -11490,11 +9185,6 @@ impl ::core::marker::Copy for I32Ne_SRS {}
 impl ::core::clone::Clone for I32Ne_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Ne_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ne_SRS
     }
 }
 impl ::core::convert::From<I32Ne_SRS> for crate::Op {
@@ -11518,11 +9208,6 @@ impl ::core::clone::Clone for I32Ne_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Ne_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ne_SRI
-    }
-}
 impl ::core::convert::From<I32Ne_SRI> for crate::Op {
     fn from(op: I32Ne_SRI) -> Self {
         Self::I32Ne_SRI {
@@ -11542,11 +9227,6 @@ impl ::core::marker::Copy for I32Ne_SSS {}
 impl ::core::clone::Clone for I32Ne_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Ne_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ne_SSS
     }
 }
 impl ::core::convert::From<I32Ne_SSS> for crate::Op {
@@ -11570,11 +9250,6 @@ impl ::core::clone::Clone for I32Ne_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I32Ne_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Ne_SSI
-    }
-}
 impl ::core::convert::From<I32Ne_SSI> for crate::Op {
     fn from(op: I32Ne_SSI) -> Self {
         Self::I32Ne_SSI {
@@ -11594,11 +9269,6 @@ impl ::core::marker::Copy for I64Ne_RRS {}
 impl ::core::clone::Clone for I64Ne_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Ne_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ne_RRS
     }
 }
 impl ::core::convert::From<I64Ne_RRS> for crate::Op {
@@ -11622,11 +9292,6 @@ impl ::core::clone::Clone for I64Ne_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Ne_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ne_RRI
-    }
-}
 impl ::core::convert::From<I64Ne_RRI> for crate::Op {
     fn from(op: I64Ne_RRI) -> Self {
         Self::I64Ne_RRI {
@@ -11646,11 +9311,6 @@ impl ::core::marker::Copy for I64Ne_RSS {}
 impl ::core::clone::Clone for I64Ne_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Ne_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ne_RSS
     }
 }
 impl ::core::convert::From<I64Ne_RSS> for crate::Op {
@@ -11674,11 +9334,6 @@ impl ::core::clone::Clone for I64Ne_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Ne_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ne_RSI
-    }
-}
 impl ::core::convert::From<I64Ne_RSI> for crate::Op {
     fn from(op: I64Ne_RSI) -> Self {
         Self::I64Ne_RSI {
@@ -11698,11 +9353,6 @@ impl ::core::marker::Copy for I64Ne_SRS {}
 impl ::core::clone::Clone for I64Ne_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Ne_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ne_SRS
     }
 }
 impl ::core::convert::From<I64Ne_SRS> for crate::Op {
@@ -11726,11 +9376,6 @@ impl ::core::clone::Clone for I64Ne_SRI {
         *self
     }
 }
-impl crate::OperatorCode for I64Ne_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ne_SRI
-    }
-}
 impl ::core::convert::From<I64Ne_SRI> for crate::Op {
     fn from(op: I64Ne_SRI) -> Self {
         Self::I64Ne_SRI {
@@ -11750,11 +9395,6 @@ impl ::core::marker::Copy for I64Ne_SSS {}
 impl ::core::clone::Clone for I64Ne_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Ne_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ne_SSS
     }
 }
 impl ::core::convert::From<I64Ne_SSS> for crate::Op {
@@ -11778,11 +9418,6 @@ impl ::core::clone::Clone for I64Ne_SSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Ne_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Ne_SSI
-    }
-}
 impl ::core::convert::From<I64Ne_SSI> for crate::Op {
     fn from(op: I64Ne_SSI) -> Self {
         Self::I64Ne_SSI {
@@ -11802,11 +9437,6 @@ impl ::core::marker::Copy for F32Add_RRS {}
 impl ::core::clone::Clone for F32Add_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Add_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Add_RRS
     }
 }
 impl ::core::convert::From<F32Add_RRS> for crate::Op {
@@ -11830,11 +9460,6 @@ impl ::core::clone::Clone for F32Add_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Add_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Add_RRI
-    }
-}
 impl ::core::convert::From<F32Add_RRI> for crate::Op {
     fn from(op: F32Add_RRI) -> Self {
         Self::F32Add_RRI {
@@ -11854,11 +9479,6 @@ impl ::core::marker::Copy for F32Add_RSS {}
 impl ::core::clone::Clone for F32Add_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Add_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Add_RSS
     }
 }
 impl ::core::convert::From<F32Add_RSS> for crate::Op {
@@ -11882,11 +9502,6 @@ impl ::core::clone::Clone for F32Add_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Add_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Add_RSI
-    }
-}
 impl ::core::convert::From<F32Add_RSI> for crate::Op {
     fn from(op: F32Add_RSI) -> Self {
         Self::F32Add_RSI {
@@ -11906,11 +9521,6 @@ impl ::core::marker::Copy for F32Add_SRS {}
 impl ::core::clone::Clone for F32Add_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Add_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Add_SRS
     }
 }
 impl ::core::convert::From<F32Add_SRS> for crate::Op {
@@ -11934,11 +9544,6 @@ impl ::core::clone::Clone for F32Add_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Add_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Add_SRI
-    }
-}
 impl ::core::convert::From<F32Add_SRI> for crate::Op {
     fn from(op: F32Add_SRI) -> Self {
         Self::F32Add_SRI {
@@ -11958,11 +9563,6 @@ impl ::core::marker::Copy for F32Add_SSS {}
 impl ::core::clone::Clone for F32Add_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Add_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Add_SSS
     }
 }
 impl ::core::convert::From<F32Add_SSS> for crate::Op {
@@ -11986,11 +9586,6 @@ impl ::core::clone::Clone for F32Add_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Add_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Add_SSI
-    }
-}
 impl ::core::convert::From<F32Add_SSI> for crate::Op {
     fn from(op: F32Add_SSI) -> Self {
         Self::F32Add_SSI {
@@ -12010,11 +9605,6 @@ impl ::core::marker::Copy for F64Add_RRS {}
 impl ::core::clone::Clone for F64Add_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Add_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Add_RRS
     }
 }
 impl ::core::convert::From<F64Add_RRS> for crate::Op {
@@ -12038,11 +9628,6 @@ impl ::core::clone::Clone for F64Add_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Add_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Add_RRI
-    }
-}
 impl ::core::convert::From<F64Add_RRI> for crate::Op {
     fn from(op: F64Add_RRI) -> Self {
         Self::F64Add_RRI {
@@ -12062,11 +9647,6 @@ impl ::core::marker::Copy for F64Add_RSS {}
 impl ::core::clone::Clone for F64Add_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Add_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Add_RSS
     }
 }
 impl ::core::convert::From<F64Add_RSS> for crate::Op {
@@ -12090,11 +9670,6 @@ impl ::core::clone::Clone for F64Add_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Add_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Add_RSI
-    }
-}
 impl ::core::convert::From<F64Add_RSI> for crate::Op {
     fn from(op: F64Add_RSI) -> Self {
         Self::F64Add_RSI {
@@ -12114,11 +9689,6 @@ impl ::core::marker::Copy for F64Add_SRS {}
 impl ::core::clone::Clone for F64Add_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Add_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Add_SRS
     }
 }
 impl ::core::convert::From<F64Add_SRS> for crate::Op {
@@ -12142,11 +9712,6 @@ impl ::core::clone::Clone for F64Add_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Add_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Add_SRI
-    }
-}
 impl ::core::convert::From<F64Add_SRI> for crate::Op {
     fn from(op: F64Add_SRI) -> Self {
         Self::F64Add_SRI {
@@ -12166,11 +9731,6 @@ impl ::core::marker::Copy for F64Add_SSS {}
 impl ::core::clone::Clone for F64Add_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Add_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Add_SSS
     }
 }
 impl ::core::convert::From<F64Add_SSS> for crate::Op {
@@ -12194,11 +9754,6 @@ impl ::core::clone::Clone for F64Add_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Add_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Add_SSI
-    }
-}
 impl ::core::convert::From<F64Add_SSI> for crate::Op {
     fn from(op: F64Add_SSI) -> Self {
         Self::F64Add_SSI {
@@ -12218,11 +9773,6 @@ impl ::core::marker::Copy for F32Mul_RRS {}
 impl ::core::clone::Clone for F32Mul_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Mul_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Mul_RRS
     }
 }
 impl ::core::convert::From<F32Mul_RRS> for crate::Op {
@@ -12246,11 +9796,6 @@ impl ::core::clone::Clone for F32Mul_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Mul_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Mul_RRI
-    }
-}
 impl ::core::convert::From<F32Mul_RRI> for crate::Op {
     fn from(op: F32Mul_RRI) -> Self {
         Self::F32Mul_RRI {
@@ -12270,11 +9815,6 @@ impl ::core::marker::Copy for F32Mul_RSS {}
 impl ::core::clone::Clone for F32Mul_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Mul_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Mul_RSS
     }
 }
 impl ::core::convert::From<F32Mul_RSS> for crate::Op {
@@ -12298,11 +9838,6 @@ impl ::core::clone::Clone for F32Mul_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Mul_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Mul_RSI
-    }
-}
 impl ::core::convert::From<F32Mul_RSI> for crate::Op {
     fn from(op: F32Mul_RSI) -> Self {
         Self::F32Mul_RSI {
@@ -12322,11 +9857,6 @@ impl ::core::marker::Copy for F32Mul_SRS {}
 impl ::core::clone::Clone for F32Mul_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Mul_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Mul_SRS
     }
 }
 impl ::core::convert::From<F32Mul_SRS> for crate::Op {
@@ -12350,11 +9880,6 @@ impl ::core::clone::Clone for F32Mul_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Mul_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Mul_SRI
-    }
-}
 impl ::core::convert::From<F32Mul_SRI> for crate::Op {
     fn from(op: F32Mul_SRI) -> Self {
         Self::F32Mul_SRI {
@@ -12374,11 +9899,6 @@ impl ::core::marker::Copy for F32Mul_SSS {}
 impl ::core::clone::Clone for F32Mul_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Mul_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Mul_SSS
     }
 }
 impl ::core::convert::From<F32Mul_SSS> for crate::Op {
@@ -12402,11 +9922,6 @@ impl ::core::clone::Clone for F32Mul_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Mul_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Mul_SSI
-    }
-}
 impl ::core::convert::From<F32Mul_SSI> for crate::Op {
     fn from(op: F32Mul_SSI) -> Self {
         Self::F32Mul_SSI {
@@ -12426,11 +9941,6 @@ impl ::core::marker::Copy for F64Mul_RRS {}
 impl ::core::clone::Clone for F64Mul_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Mul_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Mul_RRS
     }
 }
 impl ::core::convert::From<F64Mul_RRS> for crate::Op {
@@ -12454,11 +9964,6 @@ impl ::core::clone::Clone for F64Mul_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Mul_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Mul_RRI
-    }
-}
 impl ::core::convert::From<F64Mul_RRI> for crate::Op {
     fn from(op: F64Mul_RRI) -> Self {
         Self::F64Mul_RRI {
@@ -12478,11 +9983,6 @@ impl ::core::marker::Copy for F64Mul_RSS {}
 impl ::core::clone::Clone for F64Mul_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Mul_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Mul_RSS
     }
 }
 impl ::core::convert::From<F64Mul_RSS> for crate::Op {
@@ -12506,11 +10006,6 @@ impl ::core::clone::Clone for F64Mul_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Mul_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Mul_RSI
-    }
-}
 impl ::core::convert::From<F64Mul_RSI> for crate::Op {
     fn from(op: F64Mul_RSI) -> Self {
         Self::F64Mul_RSI {
@@ -12530,11 +10025,6 @@ impl ::core::marker::Copy for F64Mul_SRS {}
 impl ::core::clone::Clone for F64Mul_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Mul_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Mul_SRS
     }
 }
 impl ::core::convert::From<F64Mul_SRS> for crate::Op {
@@ -12558,11 +10048,6 @@ impl ::core::clone::Clone for F64Mul_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Mul_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Mul_SRI
-    }
-}
 impl ::core::convert::From<F64Mul_SRI> for crate::Op {
     fn from(op: F64Mul_SRI) -> Self {
         Self::F64Mul_SRI {
@@ -12582,11 +10067,6 @@ impl ::core::marker::Copy for F64Mul_SSS {}
 impl ::core::clone::Clone for F64Mul_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Mul_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Mul_SSS
     }
 }
 impl ::core::convert::From<F64Mul_SSS> for crate::Op {
@@ -12610,11 +10090,6 @@ impl ::core::clone::Clone for F64Mul_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Mul_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Mul_SSI
-    }
-}
 impl ::core::convert::From<F64Mul_SSI> for crate::Op {
     fn from(op: F64Mul_SSI) -> Self {
         Self::F64Mul_SSI {
@@ -12634,11 +10109,6 @@ impl ::core::marker::Copy for F32Eq_RRS {}
 impl ::core::clone::Clone for F32Eq_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Eq_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Eq_RRS
     }
 }
 impl ::core::convert::From<F32Eq_RRS> for crate::Op {
@@ -12662,11 +10132,6 @@ impl ::core::clone::Clone for F32Eq_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Eq_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Eq_RRI
-    }
-}
 impl ::core::convert::From<F32Eq_RRI> for crate::Op {
     fn from(op: F32Eq_RRI) -> Self {
         Self::F32Eq_RRI {
@@ -12686,11 +10151,6 @@ impl ::core::marker::Copy for F32Eq_RSS {}
 impl ::core::clone::Clone for F32Eq_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Eq_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Eq_RSS
     }
 }
 impl ::core::convert::From<F32Eq_RSS> for crate::Op {
@@ -12714,11 +10174,6 @@ impl ::core::clone::Clone for F32Eq_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Eq_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Eq_RSI
-    }
-}
 impl ::core::convert::From<F32Eq_RSI> for crate::Op {
     fn from(op: F32Eq_RSI) -> Self {
         Self::F32Eq_RSI {
@@ -12738,11 +10193,6 @@ impl ::core::marker::Copy for F32Eq_SRS {}
 impl ::core::clone::Clone for F32Eq_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Eq_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Eq_SRS
     }
 }
 impl ::core::convert::From<F32Eq_SRS> for crate::Op {
@@ -12766,11 +10216,6 @@ impl ::core::clone::Clone for F32Eq_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Eq_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Eq_SRI
-    }
-}
 impl ::core::convert::From<F32Eq_SRI> for crate::Op {
     fn from(op: F32Eq_SRI) -> Self {
         Self::F32Eq_SRI {
@@ -12790,11 +10235,6 @@ impl ::core::marker::Copy for F32Eq_SSS {}
 impl ::core::clone::Clone for F32Eq_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Eq_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Eq_SSS
     }
 }
 impl ::core::convert::From<F32Eq_SSS> for crate::Op {
@@ -12818,11 +10258,6 @@ impl ::core::clone::Clone for F32Eq_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Eq_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Eq_SSI
-    }
-}
 impl ::core::convert::From<F32Eq_SSI> for crate::Op {
     fn from(op: F32Eq_SSI) -> Self {
         Self::F32Eq_SSI {
@@ -12842,11 +10277,6 @@ impl ::core::marker::Copy for F64Eq_RRS {}
 impl ::core::clone::Clone for F64Eq_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Eq_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Eq_RRS
     }
 }
 impl ::core::convert::From<F64Eq_RRS> for crate::Op {
@@ -12870,11 +10300,6 @@ impl ::core::clone::Clone for F64Eq_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Eq_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Eq_RRI
-    }
-}
 impl ::core::convert::From<F64Eq_RRI> for crate::Op {
     fn from(op: F64Eq_RRI) -> Self {
         Self::F64Eq_RRI {
@@ -12894,11 +10319,6 @@ impl ::core::marker::Copy for F64Eq_RSS {}
 impl ::core::clone::Clone for F64Eq_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Eq_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Eq_RSS
     }
 }
 impl ::core::convert::From<F64Eq_RSS> for crate::Op {
@@ -12922,11 +10342,6 @@ impl ::core::clone::Clone for F64Eq_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Eq_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Eq_RSI
-    }
-}
 impl ::core::convert::From<F64Eq_RSI> for crate::Op {
     fn from(op: F64Eq_RSI) -> Self {
         Self::F64Eq_RSI {
@@ -12946,11 +10361,6 @@ impl ::core::marker::Copy for F64Eq_SRS {}
 impl ::core::clone::Clone for F64Eq_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Eq_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Eq_SRS
     }
 }
 impl ::core::convert::From<F64Eq_SRS> for crate::Op {
@@ -12974,11 +10384,6 @@ impl ::core::clone::Clone for F64Eq_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Eq_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Eq_SRI
-    }
-}
 impl ::core::convert::From<F64Eq_SRI> for crate::Op {
     fn from(op: F64Eq_SRI) -> Self {
         Self::F64Eq_SRI {
@@ -12998,11 +10403,6 @@ impl ::core::marker::Copy for F64Eq_SSS {}
 impl ::core::clone::Clone for F64Eq_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Eq_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Eq_SSS
     }
 }
 impl ::core::convert::From<F64Eq_SSS> for crate::Op {
@@ -13026,11 +10426,6 @@ impl ::core::clone::Clone for F64Eq_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Eq_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Eq_SSI
-    }
-}
 impl ::core::convert::From<F64Eq_SSI> for crate::Op {
     fn from(op: F64Eq_SSI) -> Self {
         Self::F64Eq_SSI {
@@ -13050,11 +10445,6 @@ impl ::core::marker::Copy for F32Ne_RRS {}
 impl ::core::clone::Clone for F32Ne_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Ne_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ne_RRS
     }
 }
 impl ::core::convert::From<F32Ne_RRS> for crate::Op {
@@ -13078,11 +10468,6 @@ impl ::core::clone::Clone for F32Ne_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Ne_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ne_RRI
-    }
-}
 impl ::core::convert::From<F32Ne_RRI> for crate::Op {
     fn from(op: F32Ne_RRI) -> Self {
         Self::F32Ne_RRI {
@@ -13102,11 +10487,6 @@ impl ::core::marker::Copy for F32Ne_RSS {}
 impl ::core::clone::Clone for F32Ne_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Ne_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ne_RSS
     }
 }
 impl ::core::convert::From<F32Ne_RSS> for crate::Op {
@@ -13130,11 +10510,6 @@ impl ::core::clone::Clone for F32Ne_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Ne_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ne_RSI
-    }
-}
 impl ::core::convert::From<F32Ne_RSI> for crate::Op {
     fn from(op: F32Ne_RSI) -> Self {
         Self::F32Ne_RSI {
@@ -13154,11 +10529,6 @@ impl ::core::marker::Copy for F32Ne_SRS {}
 impl ::core::clone::Clone for F32Ne_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Ne_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ne_SRS
     }
 }
 impl ::core::convert::From<F32Ne_SRS> for crate::Op {
@@ -13182,11 +10552,6 @@ impl ::core::clone::Clone for F32Ne_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Ne_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ne_SRI
-    }
-}
 impl ::core::convert::From<F32Ne_SRI> for crate::Op {
     fn from(op: F32Ne_SRI) -> Self {
         Self::F32Ne_SRI {
@@ -13206,11 +10571,6 @@ impl ::core::marker::Copy for F32Ne_SSS {}
 impl ::core::clone::Clone for F32Ne_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Ne_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ne_SSS
     }
 }
 impl ::core::convert::From<F32Ne_SSS> for crate::Op {
@@ -13234,11 +10594,6 @@ impl ::core::clone::Clone for F32Ne_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Ne_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Ne_SSI
-    }
-}
 impl ::core::convert::From<F32Ne_SSI> for crate::Op {
     fn from(op: F32Ne_SSI) -> Self {
         Self::F32Ne_SSI {
@@ -13258,11 +10613,6 @@ impl ::core::marker::Copy for F64Ne_RRS {}
 impl ::core::clone::Clone for F64Ne_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Ne_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ne_RRS
     }
 }
 impl ::core::convert::From<F64Ne_RRS> for crate::Op {
@@ -13286,11 +10636,6 @@ impl ::core::clone::Clone for F64Ne_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Ne_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ne_RRI
-    }
-}
 impl ::core::convert::From<F64Ne_RRI> for crate::Op {
     fn from(op: F64Ne_RRI) -> Self {
         Self::F64Ne_RRI {
@@ -13310,11 +10655,6 @@ impl ::core::marker::Copy for F64Ne_RSS {}
 impl ::core::clone::Clone for F64Ne_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Ne_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ne_RSS
     }
 }
 impl ::core::convert::From<F64Ne_RSS> for crate::Op {
@@ -13338,11 +10678,6 @@ impl ::core::clone::Clone for F64Ne_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Ne_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ne_RSI
-    }
-}
 impl ::core::convert::From<F64Ne_RSI> for crate::Op {
     fn from(op: F64Ne_RSI) -> Self {
         Self::F64Ne_RSI {
@@ -13362,11 +10697,6 @@ impl ::core::marker::Copy for F64Ne_SRS {}
 impl ::core::clone::Clone for F64Ne_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Ne_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ne_SRS
     }
 }
 impl ::core::convert::From<F64Ne_SRS> for crate::Op {
@@ -13390,11 +10720,6 @@ impl ::core::clone::Clone for F64Ne_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Ne_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ne_SRI
-    }
-}
 impl ::core::convert::From<F64Ne_SRI> for crate::Op {
     fn from(op: F64Ne_SRI) -> Self {
         Self::F64Ne_SRI {
@@ -13414,11 +10739,6 @@ impl ::core::marker::Copy for F64Ne_SSS {}
 impl ::core::clone::Clone for F64Ne_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Ne_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ne_SSS
     }
 }
 impl ::core::convert::From<F64Ne_SSS> for crate::Op {
@@ -13442,11 +10762,6 @@ impl ::core::clone::Clone for F64Ne_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Ne_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Ne_SSI
-    }
-}
 impl ::core::convert::From<F64Ne_SSI> for crate::Op {
     fn from(op: F64Ne_SSI) -> Self {
         Self::F64Ne_SSI {
@@ -13466,11 +10781,6 @@ impl ::core::marker::Copy for F32Min_RRS {}
 impl ::core::clone::Clone for F32Min_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Min_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Min_RRS
     }
 }
 impl ::core::convert::From<F32Min_RRS> for crate::Op {
@@ -13494,11 +10804,6 @@ impl ::core::clone::Clone for F32Min_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Min_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Min_RRI
-    }
-}
 impl ::core::convert::From<F32Min_RRI> for crate::Op {
     fn from(op: F32Min_RRI) -> Self {
         Self::F32Min_RRI {
@@ -13518,11 +10823,6 @@ impl ::core::marker::Copy for F32Min_RSS {}
 impl ::core::clone::Clone for F32Min_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Min_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Min_RSS
     }
 }
 impl ::core::convert::From<F32Min_RSS> for crate::Op {
@@ -13546,11 +10846,6 @@ impl ::core::clone::Clone for F32Min_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Min_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Min_RSI
-    }
-}
 impl ::core::convert::From<F32Min_RSI> for crate::Op {
     fn from(op: F32Min_RSI) -> Self {
         Self::F32Min_RSI {
@@ -13570,11 +10865,6 @@ impl ::core::marker::Copy for F32Min_SRS {}
 impl ::core::clone::Clone for F32Min_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Min_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Min_SRS
     }
 }
 impl ::core::convert::From<F32Min_SRS> for crate::Op {
@@ -13598,11 +10888,6 @@ impl ::core::clone::Clone for F32Min_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Min_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Min_SRI
-    }
-}
 impl ::core::convert::From<F32Min_SRI> for crate::Op {
     fn from(op: F32Min_SRI) -> Self {
         Self::F32Min_SRI {
@@ -13622,11 +10907,6 @@ impl ::core::marker::Copy for F32Min_SSS {}
 impl ::core::clone::Clone for F32Min_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Min_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Min_SSS
     }
 }
 impl ::core::convert::From<F32Min_SSS> for crate::Op {
@@ -13650,11 +10930,6 @@ impl ::core::clone::Clone for F32Min_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Min_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Min_SSI
-    }
-}
 impl ::core::convert::From<F32Min_SSI> for crate::Op {
     fn from(op: F32Min_SSI) -> Self {
         Self::F32Min_SSI {
@@ -13674,11 +10949,6 @@ impl ::core::marker::Copy for F64Min_RRS {}
 impl ::core::clone::Clone for F64Min_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Min_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Min_RRS
     }
 }
 impl ::core::convert::From<F64Min_RRS> for crate::Op {
@@ -13702,11 +10972,6 @@ impl ::core::clone::Clone for F64Min_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Min_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Min_RRI
-    }
-}
 impl ::core::convert::From<F64Min_RRI> for crate::Op {
     fn from(op: F64Min_RRI) -> Self {
         Self::F64Min_RRI {
@@ -13726,11 +10991,6 @@ impl ::core::marker::Copy for F64Min_RSS {}
 impl ::core::clone::Clone for F64Min_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Min_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Min_RSS
     }
 }
 impl ::core::convert::From<F64Min_RSS> for crate::Op {
@@ -13754,11 +11014,6 @@ impl ::core::clone::Clone for F64Min_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Min_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Min_RSI
-    }
-}
 impl ::core::convert::From<F64Min_RSI> for crate::Op {
     fn from(op: F64Min_RSI) -> Self {
         Self::F64Min_RSI {
@@ -13778,11 +11033,6 @@ impl ::core::marker::Copy for F64Min_SRS {}
 impl ::core::clone::Clone for F64Min_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Min_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Min_SRS
     }
 }
 impl ::core::convert::From<F64Min_SRS> for crate::Op {
@@ -13806,11 +11056,6 @@ impl ::core::clone::Clone for F64Min_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Min_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Min_SRI
-    }
-}
 impl ::core::convert::From<F64Min_SRI> for crate::Op {
     fn from(op: F64Min_SRI) -> Self {
         Self::F64Min_SRI {
@@ -13830,11 +11075,6 @@ impl ::core::marker::Copy for F64Min_SSS {}
 impl ::core::clone::Clone for F64Min_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Min_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Min_SSS
     }
 }
 impl ::core::convert::From<F64Min_SSS> for crate::Op {
@@ -13858,11 +11098,6 @@ impl ::core::clone::Clone for F64Min_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Min_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Min_SSI
-    }
-}
 impl ::core::convert::From<F64Min_SSI> for crate::Op {
     fn from(op: F64Min_SSI) -> Self {
         Self::F64Min_SSI {
@@ -13882,11 +11117,6 @@ impl ::core::marker::Copy for F32Max_RRS {}
 impl ::core::clone::Clone for F32Max_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Max_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Max_RRS
     }
 }
 impl ::core::convert::From<F32Max_RRS> for crate::Op {
@@ -13910,11 +11140,6 @@ impl ::core::clone::Clone for F32Max_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Max_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Max_RRI
-    }
-}
 impl ::core::convert::From<F32Max_RRI> for crate::Op {
     fn from(op: F32Max_RRI) -> Self {
         Self::F32Max_RRI {
@@ -13934,11 +11159,6 @@ impl ::core::marker::Copy for F32Max_RSS {}
 impl ::core::clone::Clone for F32Max_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Max_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Max_RSS
     }
 }
 impl ::core::convert::From<F32Max_RSS> for crate::Op {
@@ -13962,11 +11182,6 @@ impl ::core::clone::Clone for F32Max_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Max_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Max_RSI
-    }
-}
 impl ::core::convert::From<F32Max_RSI> for crate::Op {
     fn from(op: F32Max_RSI) -> Self {
         Self::F32Max_RSI {
@@ -13986,11 +11201,6 @@ impl ::core::marker::Copy for F32Max_SRS {}
 impl ::core::clone::Clone for F32Max_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Max_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Max_SRS
     }
 }
 impl ::core::convert::From<F32Max_SRS> for crate::Op {
@@ -14014,11 +11224,6 @@ impl ::core::clone::Clone for F32Max_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Max_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Max_SRI
-    }
-}
 impl ::core::convert::From<F32Max_SRI> for crate::Op {
     fn from(op: F32Max_SRI) -> Self {
         Self::F32Max_SRI {
@@ -14038,11 +11243,6 @@ impl ::core::marker::Copy for F32Max_SSS {}
 impl ::core::clone::Clone for F32Max_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Max_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Max_SSS
     }
 }
 impl ::core::convert::From<F32Max_SSS> for crate::Op {
@@ -14066,11 +11266,6 @@ impl ::core::clone::Clone for F32Max_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F32Max_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Max_SSI
-    }
-}
 impl ::core::convert::From<F32Max_SSI> for crate::Op {
     fn from(op: F32Max_SSI) -> Self {
         Self::F32Max_SSI {
@@ -14090,11 +11285,6 @@ impl ::core::marker::Copy for F64Max_RRS {}
 impl ::core::clone::Clone for F64Max_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Max_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Max_RRS
     }
 }
 impl ::core::convert::From<F64Max_RRS> for crate::Op {
@@ -14118,11 +11308,6 @@ impl ::core::clone::Clone for F64Max_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Max_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Max_RRI
-    }
-}
 impl ::core::convert::From<F64Max_RRI> for crate::Op {
     fn from(op: F64Max_RRI) -> Self {
         Self::F64Max_RRI {
@@ -14142,11 +11327,6 @@ impl ::core::marker::Copy for F64Max_RSS {}
 impl ::core::clone::Clone for F64Max_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Max_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Max_RSS
     }
 }
 impl ::core::convert::From<F64Max_RSS> for crate::Op {
@@ -14170,11 +11350,6 @@ impl ::core::clone::Clone for F64Max_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Max_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Max_RSI
-    }
-}
 impl ::core::convert::From<F64Max_RSI> for crate::Op {
     fn from(op: F64Max_RSI) -> Self {
         Self::F64Max_RSI {
@@ -14194,11 +11369,6 @@ impl ::core::marker::Copy for F64Max_SRS {}
 impl ::core::clone::Clone for F64Max_SRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Max_SRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Max_SRS
     }
 }
 impl ::core::convert::From<F64Max_SRS> for crate::Op {
@@ -14222,11 +11392,6 @@ impl ::core::clone::Clone for F64Max_SRI {
         *self
     }
 }
-impl crate::OperatorCode for F64Max_SRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Max_SRI
-    }
-}
 impl ::core::convert::From<F64Max_SRI> for crate::Op {
     fn from(op: F64Max_SRI) -> Self {
         Self::F64Max_SRI {
@@ -14246,11 +11411,6 @@ impl ::core::marker::Copy for F64Max_SSS {}
 impl ::core::clone::Clone for F64Max_SSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Max_SSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Max_SSS
     }
 }
 impl ::core::convert::From<F64Max_SSS> for crate::Op {
@@ -14274,11 +11434,6 @@ impl ::core::clone::Clone for F64Max_SSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Max_SSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Max_SSI
-    }
-}
 impl ::core::convert::From<F64Max_SSI> for crate::Op {
     fn from(op: F64Max_SSI) -> Self {
         Self::F64Max_SSI {
@@ -14298,11 +11453,6 @@ impl ::core::marker::Copy for I32Sub_RRS {}
 impl ::core::clone::Clone for I32Sub_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Sub_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Sub_RRS
     }
 }
 impl ::core::convert::From<I32Sub_RRS> for crate::Op {
@@ -14326,11 +11476,6 @@ impl ::core::clone::Clone for I32Sub_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Sub_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Sub_RRI
-    }
-}
 impl ::core::convert::From<I32Sub_RRI> for crate::Op {
     fn from(op: I32Sub_RRI) -> Self {
         Self::I32Sub_RRI {
@@ -14350,11 +11495,6 @@ impl ::core::marker::Copy for I32Sub_RSR {}
 impl ::core::clone::Clone for I32Sub_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Sub_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Sub_RSR
     }
 }
 impl ::core::convert::From<I32Sub_RSR> for crate::Op {
@@ -14378,11 +11518,6 @@ impl ::core::clone::Clone for I32Sub_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32Sub_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Sub_RSS
-    }
-}
 impl ::core::convert::From<I32Sub_RSS> for crate::Op {
     fn from(op: I32Sub_RSS) -> Self {
         Self::I32Sub_RSS {
@@ -14402,11 +11537,6 @@ impl ::core::marker::Copy for I32Sub_RSI {}
 impl ::core::clone::Clone for I32Sub_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Sub_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Sub_RSI
     }
 }
 impl ::core::convert::From<I32Sub_RSI> for crate::Op {
@@ -14430,11 +11560,6 @@ impl ::core::clone::Clone for I32Sub_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32Sub_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Sub_RIR
-    }
-}
 impl ::core::convert::From<I32Sub_RIR> for crate::Op {
     fn from(op: I32Sub_RIR) -> Self {
         Self::I32Sub_RIR {
@@ -14454,11 +11579,6 @@ impl ::core::marker::Copy for I32Sub_RIS {}
 impl ::core::clone::Clone for I32Sub_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Sub_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Sub_RIS
     }
 }
 impl ::core::convert::From<I32Sub_RIS> for crate::Op {
@@ -14482,11 +11602,6 @@ impl ::core::clone::Clone for I64Sub_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64Sub_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Sub_RRS
-    }
-}
 impl ::core::convert::From<I64Sub_RRS> for crate::Op {
     fn from(op: I64Sub_RRS) -> Self {
         Self::I64Sub_RRS {
@@ -14506,11 +11621,6 @@ impl ::core::marker::Copy for I64Sub_RRI {}
 impl ::core::clone::Clone for I64Sub_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Sub_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Sub_RRI
     }
 }
 impl ::core::convert::From<I64Sub_RRI> for crate::Op {
@@ -14534,11 +11644,6 @@ impl ::core::clone::Clone for I64Sub_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64Sub_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Sub_RSR
-    }
-}
 impl ::core::convert::From<I64Sub_RSR> for crate::Op {
     fn from(op: I64Sub_RSR) -> Self {
         Self::I64Sub_RSR {
@@ -14558,11 +11663,6 @@ impl ::core::marker::Copy for I64Sub_RSS {}
 impl ::core::clone::Clone for I64Sub_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Sub_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Sub_RSS
     }
 }
 impl ::core::convert::From<I64Sub_RSS> for crate::Op {
@@ -14586,11 +11686,6 @@ impl ::core::clone::Clone for I64Sub_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Sub_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Sub_RSI
-    }
-}
 impl ::core::convert::From<I64Sub_RSI> for crate::Op {
     fn from(op: I64Sub_RSI) -> Self {
         Self::I64Sub_RSI {
@@ -14610,11 +11705,6 @@ impl ::core::marker::Copy for I64Sub_RIR {}
 impl ::core::clone::Clone for I64Sub_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Sub_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Sub_RIR
     }
 }
 impl ::core::convert::From<I64Sub_RIR> for crate::Op {
@@ -14638,11 +11728,6 @@ impl ::core::clone::Clone for I64Sub_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64Sub_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Sub_RIS
-    }
-}
 impl ::core::convert::From<I64Sub_RIS> for crate::Op {
     fn from(op: I64Sub_RIS) -> Self {
         Self::I64Sub_RIS {
@@ -14662,11 +11747,6 @@ impl ::core::marker::Copy for I32LtS_RRS {}
 impl ::core::clone::Clone for I32LtS_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtS_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtS_RRS
     }
 }
 impl ::core::convert::From<I32LtS_RRS> for crate::Op {
@@ -14690,11 +11770,6 @@ impl ::core::clone::Clone for I32LtS_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32LtS_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtS_RRI
-    }
-}
 impl ::core::convert::From<I32LtS_RRI> for crate::Op {
     fn from(op: I32LtS_RRI) -> Self {
         Self::I32LtS_RRI {
@@ -14714,11 +11789,6 @@ impl ::core::marker::Copy for I32LtS_RSR {}
 impl ::core::clone::Clone for I32LtS_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtS_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtS_RSR
     }
 }
 impl ::core::convert::From<I32LtS_RSR> for crate::Op {
@@ -14742,11 +11812,6 @@ impl ::core::clone::Clone for I32LtS_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32LtS_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtS_RSS
-    }
-}
 impl ::core::convert::From<I32LtS_RSS> for crate::Op {
     fn from(op: I32LtS_RSS) -> Self {
         Self::I32LtS_RSS {
@@ -14766,11 +11831,6 @@ impl ::core::marker::Copy for I32LtS_RSI {}
 impl ::core::clone::Clone for I32LtS_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtS_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtS_RSI
     }
 }
 impl ::core::convert::From<I32LtS_RSI> for crate::Op {
@@ -14794,11 +11854,6 @@ impl ::core::clone::Clone for I32LtS_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32LtS_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtS_RIR
-    }
-}
 impl ::core::convert::From<I32LtS_RIR> for crate::Op {
     fn from(op: I32LtS_RIR) -> Self {
         Self::I32LtS_RIR {
@@ -14818,11 +11873,6 @@ impl ::core::marker::Copy for I32LtS_RIS {}
 impl ::core::clone::Clone for I32LtS_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtS_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtS_RIS
     }
 }
 impl ::core::convert::From<I32LtS_RIS> for crate::Op {
@@ -14846,11 +11896,6 @@ impl ::core::clone::Clone for I64LtS_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64LtS_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtS_RRS
-    }
-}
 impl ::core::convert::From<I64LtS_RRS> for crate::Op {
     fn from(op: I64LtS_RRS) -> Self {
         Self::I64LtS_RRS {
@@ -14870,11 +11915,6 @@ impl ::core::marker::Copy for I64LtS_RRI {}
 impl ::core::clone::Clone for I64LtS_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtS_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtS_RRI
     }
 }
 impl ::core::convert::From<I64LtS_RRI> for crate::Op {
@@ -14898,11 +11938,6 @@ impl ::core::clone::Clone for I64LtS_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64LtS_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtS_RSR
-    }
-}
 impl ::core::convert::From<I64LtS_RSR> for crate::Op {
     fn from(op: I64LtS_RSR) -> Self {
         Self::I64LtS_RSR {
@@ -14922,11 +11957,6 @@ impl ::core::marker::Copy for I64LtS_RSS {}
 impl ::core::clone::Clone for I64LtS_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtS_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtS_RSS
     }
 }
 impl ::core::convert::From<I64LtS_RSS> for crate::Op {
@@ -14950,11 +11980,6 @@ impl ::core::clone::Clone for I64LtS_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64LtS_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtS_RSI
-    }
-}
 impl ::core::convert::From<I64LtS_RSI> for crate::Op {
     fn from(op: I64LtS_RSI) -> Self {
         Self::I64LtS_RSI {
@@ -14974,11 +11999,6 @@ impl ::core::marker::Copy for I64LtS_RIR {}
 impl ::core::clone::Clone for I64LtS_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtS_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtS_RIR
     }
 }
 impl ::core::convert::From<I64LtS_RIR> for crate::Op {
@@ -15002,11 +12022,6 @@ impl ::core::clone::Clone for I64LtS_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64LtS_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtS_RIS
-    }
-}
 impl ::core::convert::From<I64LtS_RIS> for crate::Op {
     fn from(op: I64LtS_RIS) -> Self {
         Self::I64LtS_RIS {
@@ -15026,11 +12041,6 @@ impl ::core::marker::Copy for I32LtU_RRS {}
 impl ::core::clone::Clone for I32LtU_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtU_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtU_RRS
     }
 }
 impl ::core::convert::From<I32LtU_RRS> for crate::Op {
@@ -15054,11 +12064,6 @@ impl ::core::clone::Clone for I32LtU_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32LtU_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtU_RRI
-    }
-}
 impl ::core::convert::From<I32LtU_RRI> for crate::Op {
     fn from(op: I32LtU_RRI) -> Self {
         Self::I32LtU_RRI {
@@ -15078,11 +12083,6 @@ impl ::core::marker::Copy for I32LtU_RSR {}
 impl ::core::clone::Clone for I32LtU_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtU_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtU_RSR
     }
 }
 impl ::core::convert::From<I32LtU_RSR> for crate::Op {
@@ -15106,11 +12106,6 @@ impl ::core::clone::Clone for I32LtU_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32LtU_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtU_RSS
-    }
-}
 impl ::core::convert::From<I32LtU_RSS> for crate::Op {
     fn from(op: I32LtU_RSS) -> Self {
         Self::I32LtU_RSS {
@@ -15130,11 +12125,6 @@ impl ::core::marker::Copy for I32LtU_RSI {}
 impl ::core::clone::Clone for I32LtU_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtU_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtU_RSI
     }
 }
 impl ::core::convert::From<I32LtU_RSI> for crate::Op {
@@ -15158,11 +12148,6 @@ impl ::core::clone::Clone for I32LtU_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32LtU_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtU_RIR
-    }
-}
 impl ::core::convert::From<I32LtU_RIR> for crate::Op {
     fn from(op: I32LtU_RIR) -> Self {
         Self::I32LtU_RIR {
@@ -15182,11 +12167,6 @@ impl ::core::marker::Copy for I32LtU_RIS {}
 impl ::core::clone::Clone for I32LtU_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LtU_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LtU_RIS
     }
 }
 impl ::core::convert::From<I32LtU_RIS> for crate::Op {
@@ -15210,11 +12190,6 @@ impl ::core::clone::Clone for I64LtU_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64LtU_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtU_RRS
-    }
-}
 impl ::core::convert::From<I64LtU_RRS> for crate::Op {
     fn from(op: I64LtU_RRS) -> Self {
         Self::I64LtU_RRS {
@@ -15234,11 +12209,6 @@ impl ::core::marker::Copy for I64LtU_RRI {}
 impl ::core::clone::Clone for I64LtU_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtU_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtU_RRI
     }
 }
 impl ::core::convert::From<I64LtU_RRI> for crate::Op {
@@ -15262,11 +12232,6 @@ impl ::core::clone::Clone for I64LtU_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64LtU_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtU_RSR
-    }
-}
 impl ::core::convert::From<I64LtU_RSR> for crate::Op {
     fn from(op: I64LtU_RSR) -> Self {
         Self::I64LtU_RSR {
@@ -15286,11 +12251,6 @@ impl ::core::marker::Copy for I64LtU_RSS {}
 impl ::core::clone::Clone for I64LtU_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtU_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtU_RSS
     }
 }
 impl ::core::convert::From<I64LtU_RSS> for crate::Op {
@@ -15314,11 +12274,6 @@ impl ::core::clone::Clone for I64LtU_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64LtU_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtU_RSI
-    }
-}
 impl ::core::convert::From<I64LtU_RSI> for crate::Op {
     fn from(op: I64LtU_RSI) -> Self {
         Self::I64LtU_RSI {
@@ -15338,11 +12293,6 @@ impl ::core::marker::Copy for I64LtU_RIR {}
 impl ::core::clone::Clone for I64LtU_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LtU_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtU_RIR
     }
 }
 impl ::core::convert::From<I64LtU_RIR> for crate::Op {
@@ -15366,11 +12316,6 @@ impl ::core::clone::Clone for I64LtU_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64LtU_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LtU_RIS
-    }
-}
 impl ::core::convert::From<I64LtU_RIS> for crate::Op {
     fn from(op: I64LtU_RIS) -> Self {
         Self::I64LtU_RIS {
@@ -15390,11 +12335,6 @@ impl ::core::marker::Copy for I32LeS_RRS {}
 impl ::core::clone::Clone for I32LeS_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeS_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeS_RRS
     }
 }
 impl ::core::convert::From<I32LeS_RRS> for crate::Op {
@@ -15418,11 +12358,6 @@ impl ::core::clone::Clone for I32LeS_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32LeS_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeS_RRI
-    }
-}
 impl ::core::convert::From<I32LeS_RRI> for crate::Op {
     fn from(op: I32LeS_RRI) -> Self {
         Self::I32LeS_RRI {
@@ -15442,11 +12377,6 @@ impl ::core::marker::Copy for I32LeS_RSR {}
 impl ::core::clone::Clone for I32LeS_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeS_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeS_RSR
     }
 }
 impl ::core::convert::From<I32LeS_RSR> for crate::Op {
@@ -15470,11 +12400,6 @@ impl ::core::clone::Clone for I32LeS_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32LeS_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeS_RSS
-    }
-}
 impl ::core::convert::From<I32LeS_RSS> for crate::Op {
     fn from(op: I32LeS_RSS) -> Self {
         Self::I32LeS_RSS {
@@ -15494,11 +12419,6 @@ impl ::core::marker::Copy for I32LeS_RSI {}
 impl ::core::clone::Clone for I32LeS_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeS_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeS_RSI
     }
 }
 impl ::core::convert::From<I32LeS_RSI> for crate::Op {
@@ -15522,11 +12442,6 @@ impl ::core::clone::Clone for I32LeS_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32LeS_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeS_RIR
-    }
-}
 impl ::core::convert::From<I32LeS_RIR> for crate::Op {
     fn from(op: I32LeS_RIR) -> Self {
         Self::I32LeS_RIR {
@@ -15546,11 +12461,6 @@ impl ::core::marker::Copy for I32LeS_RIS {}
 impl ::core::clone::Clone for I32LeS_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeS_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeS_RIS
     }
 }
 impl ::core::convert::From<I32LeS_RIS> for crate::Op {
@@ -15574,11 +12484,6 @@ impl ::core::clone::Clone for I64LeS_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64LeS_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeS_RRS
-    }
-}
 impl ::core::convert::From<I64LeS_RRS> for crate::Op {
     fn from(op: I64LeS_RRS) -> Self {
         Self::I64LeS_RRS {
@@ -15598,11 +12503,6 @@ impl ::core::marker::Copy for I64LeS_RRI {}
 impl ::core::clone::Clone for I64LeS_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeS_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeS_RRI
     }
 }
 impl ::core::convert::From<I64LeS_RRI> for crate::Op {
@@ -15626,11 +12526,6 @@ impl ::core::clone::Clone for I64LeS_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64LeS_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeS_RSR
-    }
-}
 impl ::core::convert::From<I64LeS_RSR> for crate::Op {
     fn from(op: I64LeS_RSR) -> Self {
         Self::I64LeS_RSR {
@@ -15650,11 +12545,6 @@ impl ::core::marker::Copy for I64LeS_RSS {}
 impl ::core::clone::Clone for I64LeS_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeS_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeS_RSS
     }
 }
 impl ::core::convert::From<I64LeS_RSS> for crate::Op {
@@ -15678,11 +12568,6 @@ impl ::core::clone::Clone for I64LeS_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64LeS_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeS_RSI
-    }
-}
 impl ::core::convert::From<I64LeS_RSI> for crate::Op {
     fn from(op: I64LeS_RSI) -> Self {
         Self::I64LeS_RSI {
@@ -15702,11 +12587,6 @@ impl ::core::marker::Copy for I64LeS_RIR {}
 impl ::core::clone::Clone for I64LeS_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeS_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeS_RIR
     }
 }
 impl ::core::convert::From<I64LeS_RIR> for crate::Op {
@@ -15730,11 +12610,6 @@ impl ::core::clone::Clone for I64LeS_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64LeS_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeS_RIS
-    }
-}
 impl ::core::convert::From<I64LeS_RIS> for crate::Op {
     fn from(op: I64LeS_RIS) -> Self {
         Self::I64LeS_RIS {
@@ -15754,11 +12629,6 @@ impl ::core::marker::Copy for I32LeU_RRS {}
 impl ::core::clone::Clone for I32LeU_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeU_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeU_RRS
     }
 }
 impl ::core::convert::From<I32LeU_RRS> for crate::Op {
@@ -15782,11 +12652,6 @@ impl ::core::clone::Clone for I32LeU_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32LeU_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeU_RRI
-    }
-}
 impl ::core::convert::From<I32LeU_RRI> for crate::Op {
     fn from(op: I32LeU_RRI) -> Self {
         Self::I32LeU_RRI {
@@ -15806,11 +12671,6 @@ impl ::core::marker::Copy for I32LeU_RSR {}
 impl ::core::clone::Clone for I32LeU_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeU_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeU_RSR
     }
 }
 impl ::core::convert::From<I32LeU_RSR> for crate::Op {
@@ -15834,11 +12694,6 @@ impl ::core::clone::Clone for I32LeU_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32LeU_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeU_RSS
-    }
-}
 impl ::core::convert::From<I32LeU_RSS> for crate::Op {
     fn from(op: I32LeU_RSS) -> Self {
         Self::I32LeU_RSS {
@@ -15858,11 +12713,6 @@ impl ::core::marker::Copy for I32LeU_RSI {}
 impl ::core::clone::Clone for I32LeU_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeU_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeU_RSI
     }
 }
 impl ::core::convert::From<I32LeU_RSI> for crate::Op {
@@ -15886,11 +12736,6 @@ impl ::core::clone::Clone for I32LeU_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32LeU_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeU_RIR
-    }
-}
 impl ::core::convert::From<I32LeU_RIR> for crate::Op {
     fn from(op: I32LeU_RIR) -> Self {
         Self::I32LeU_RIR {
@@ -15910,11 +12755,6 @@ impl ::core::marker::Copy for I32LeU_RIS {}
 impl ::core::clone::Clone for I32LeU_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LeU_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LeU_RIS
     }
 }
 impl ::core::convert::From<I32LeU_RIS> for crate::Op {
@@ -15938,11 +12778,6 @@ impl ::core::clone::Clone for I64LeU_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64LeU_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeU_RRS
-    }
-}
 impl ::core::convert::From<I64LeU_RRS> for crate::Op {
     fn from(op: I64LeU_RRS) -> Self {
         Self::I64LeU_RRS {
@@ -15962,11 +12797,6 @@ impl ::core::marker::Copy for I64LeU_RRI {}
 impl ::core::clone::Clone for I64LeU_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeU_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeU_RRI
     }
 }
 impl ::core::convert::From<I64LeU_RRI> for crate::Op {
@@ -15990,11 +12820,6 @@ impl ::core::clone::Clone for I64LeU_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64LeU_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeU_RSR
-    }
-}
 impl ::core::convert::From<I64LeU_RSR> for crate::Op {
     fn from(op: I64LeU_RSR) -> Self {
         Self::I64LeU_RSR {
@@ -16014,11 +12839,6 @@ impl ::core::marker::Copy for I64LeU_RSS {}
 impl ::core::clone::Clone for I64LeU_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeU_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeU_RSS
     }
 }
 impl ::core::convert::From<I64LeU_RSS> for crate::Op {
@@ -16042,11 +12862,6 @@ impl ::core::clone::Clone for I64LeU_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64LeU_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeU_RSI
-    }
-}
 impl ::core::convert::From<I64LeU_RSI> for crate::Op {
     fn from(op: I64LeU_RSI) -> Self {
         Self::I64LeU_RSI {
@@ -16066,11 +12881,6 @@ impl ::core::marker::Copy for I64LeU_RIR {}
 impl ::core::clone::Clone for I64LeU_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LeU_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeU_RIR
     }
 }
 impl ::core::convert::From<I64LeU_RIR> for crate::Op {
@@ -16094,11 +12904,6 @@ impl ::core::clone::Clone for I64LeU_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64LeU_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LeU_RIS
-    }
-}
 impl ::core::convert::From<I64LeU_RIS> for crate::Op {
     fn from(op: I64LeU_RIS) -> Self {
         Self::I64LeU_RIS {
@@ -16118,11 +12923,6 @@ impl ::core::marker::Copy for I32DivS_RRS {}
 impl ::core::clone::Clone for I32DivS_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32DivS_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivS_RRS
     }
 }
 impl ::core::convert::From<I32DivS_RRS> for crate::Op {
@@ -16146,11 +12946,6 @@ impl ::core::clone::Clone for I32DivS_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32DivS_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivS_RRI
-    }
-}
 impl ::core::convert::From<I32DivS_RRI> for crate::Op {
     fn from(op: I32DivS_RRI) -> Self {
         Self::I32DivS_RRI {
@@ -16170,11 +12965,6 @@ impl ::core::marker::Copy for I32DivS_RSR {}
 impl ::core::clone::Clone for I32DivS_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32DivS_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivS_RSR
     }
 }
 impl ::core::convert::From<I32DivS_RSR> for crate::Op {
@@ -16198,11 +12988,6 @@ impl ::core::clone::Clone for I32DivS_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32DivS_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivS_RSS
-    }
-}
 impl ::core::convert::From<I32DivS_RSS> for crate::Op {
     fn from(op: I32DivS_RSS) -> Self {
         Self::I32DivS_RSS {
@@ -16222,11 +13007,6 @@ impl ::core::marker::Copy for I32DivS_RSI {}
 impl ::core::clone::Clone for I32DivS_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32DivS_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivS_RSI
     }
 }
 impl ::core::convert::From<I32DivS_RSI> for crate::Op {
@@ -16250,11 +13030,6 @@ impl ::core::clone::Clone for I32DivS_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32DivS_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivS_RIR
-    }
-}
 impl ::core::convert::From<I32DivS_RIR> for crate::Op {
     fn from(op: I32DivS_RIR) -> Self {
         Self::I32DivS_RIR {
@@ -16274,11 +13049,6 @@ impl ::core::marker::Copy for I32DivS_RIS {}
 impl ::core::clone::Clone for I32DivS_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32DivS_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivS_RIS
     }
 }
 impl ::core::convert::From<I32DivS_RIS> for crate::Op {
@@ -16302,11 +13072,6 @@ impl ::core::clone::Clone for I64DivS_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64DivS_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivS_RRS
-    }
-}
 impl ::core::convert::From<I64DivS_RRS> for crate::Op {
     fn from(op: I64DivS_RRS) -> Self {
         Self::I64DivS_RRS {
@@ -16326,11 +13091,6 @@ impl ::core::marker::Copy for I64DivS_RRI {}
 impl ::core::clone::Clone for I64DivS_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64DivS_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivS_RRI
     }
 }
 impl ::core::convert::From<I64DivS_RRI> for crate::Op {
@@ -16354,11 +13114,6 @@ impl ::core::clone::Clone for I64DivS_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64DivS_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivS_RSR
-    }
-}
 impl ::core::convert::From<I64DivS_RSR> for crate::Op {
     fn from(op: I64DivS_RSR) -> Self {
         Self::I64DivS_RSR {
@@ -16378,11 +13133,6 @@ impl ::core::marker::Copy for I64DivS_RSS {}
 impl ::core::clone::Clone for I64DivS_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64DivS_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivS_RSS
     }
 }
 impl ::core::convert::From<I64DivS_RSS> for crate::Op {
@@ -16406,11 +13156,6 @@ impl ::core::clone::Clone for I64DivS_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64DivS_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivS_RSI
-    }
-}
 impl ::core::convert::From<I64DivS_RSI> for crate::Op {
     fn from(op: I64DivS_RSI) -> Self {
         Self::I64DivS_RSI {
@@ -16430,11 +13175,6 @@ impl ::core::marker::Copy for I64DivS_RIR {}
 impl ::core::clone::Clone for I64DivS_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64DivS_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivS_RIR
     }
 }
 impl ::core::convert::From<I64DivS_RIR> for crate::Op {
@@ -16458,11 +13198,6 @@ impl ::core::clone::Clone for I64DivS_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64DivS_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivS_RIS
-    }
-}
 impl ::core::convert::From<I64DivS_RIS> for crate::Op {
     fn from(op: I64DivS_RIS) -> Self {
         Self::I64DivS_RIS {
@@ -16482,11 +13217,6 @@ impl ::core::marker::Copy for I32DivU_RRS {}
 impl ::core::clone::Clone for I32DivU_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32DivU_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivU_RRS
     }
 }
 impl ::core::convert::From<I32DivU_RRS> for crate::Op {
@@ -16510,11 +13240,6 @@ impl ::core::clone::Clone for I32DivU_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32DivU_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivU_RRI
-    }
-}
 impl ::core::convert::From<I32DivU_RRI> for crate::Op {
     fn from(op: I32DivU_RRI) -> Self {
         Self::I32DivU_RRI {
@@ -16534,11 +13259,6 @@ impl ::core::marker::Copy for I32DivU_RSR {}
 impl ::core::clone::Clone for I32DivU_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32DivU_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivU_RSR
     }
 }
 impl ::core::convert::From<I32DivU_RSR> for crate::Op {
@@ -16562,11 +13282,6 @@ impl ::core::clone::Clone for I32DivU_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32DivU_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivU_RSS
-    }
-}
 impl ::core::convert::From<I32DivU_RSS> for crate::Op {
     fn from(op: I32DivU_RSS) -> Self {
         Self::I32DivU_RSS {
@@ -16586,11 +13301,6 @@ impl ::core::marker::Copy for I32DivU_RSI {}
 impl ::core::clone::Clone for I32DivU_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32DivU_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivU_RSI
     }
 }
 impl ::core::convert::From<I32DivU_RSI> for crate::Op {
@@ -16614,11 +13324,6 @@ impl ::core::clone::Clone for I32DivU_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32DivU_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivU_RIR
-    }
-}
 impl ::core::convert::From<I32DivU_RIR> for crate::Op {
     fn from(op: I32DivU_RIR) -> Self {
         Self::I32DivU_RIR {
@@ -16638,11 +13343,6 @@ impl ::core::marker::Copy for I32DivU_RIS {}
 impl ::core::clone::Clone for I32DivU_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32DivU_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32DivU_RIS
     }
 }
 impl ::core::convert::From<I32DivU_RIS> for crate::Op {
@@ -16666,11 +13366,6 @@ impl ::core::clone::Clone for I64DivU_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64DivU_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivU_RRS
-    }
-}
 impl ::core::convert::From<I64DivU_RRS> for crate::Op {
     fn from(op: I64DivU_RRS) -> Self {
         Self::I64DivU_RRS {
@@ -16690,11 +13385,6 @@ impl ::core::marker::Copy for I64DivU_RRI {}
 impl ::core::clone::Clone for I64DivU_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64DivU_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivU_RRI
     }
 }
 impl ::core::convert::From<I64DivU_RRI> for crate::Op {
@@ -16718,11 +13408,6 @@ impl ::core::clone::Clone for I64DivU_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64DivU_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivU_RSR
-    }
-}
 impl ::core::convert::From<I64DivU_RSR> for crate::Op {
     fn from(op: I64DivU_RSR) -> Self {
         Self::I64DivU_RSR {
@@ -16742,11 +13427,6 @@ impl ::core::marker::Copy for I64DivU_RSS {}
 impl ::core::clone::Clone for I64DivU_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64DivU_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivU_RSS
     }
 }
 impl ::core::convert::From<I64DivU_RSS> for crate::Op {
@@ -16770,11 +13450,6 @@ impl ::core::clone::Clone for I64DivU_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64DivU_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivU_RSI
-    }
-}
 impl ::core::convert::From<I64DivU_RSI> for crate::Op {
     fn from(op: I64DivU_RSI) -> Self {
         Self::I64DivU_RSI {
@@ -16794,11 +13469,6 @@ impl ::core::marker::Copy for I64DivU_RIR {}
 impl ::core::clone::Clone for I64DivU_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64DivU_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivU_RIR
     }
 }
 impl ::core::convert::From<I64DivU_RIR> for crate::Op {
@@ -16822,11 +13492,6 @@ impl ::core::clone::Clone for I64DivU_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64DivU_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64DivU_RIS
-    }
-}
 impl ::core::convert::From<I64DivU_RIS> for crate::Op {
     fn from(op: I64DivU_RIS) -> Self {
         Self::I64DivU_RIS {
@@ -16846,11 +13511,6 @@ impl ::core::marker::Copy for I32RemS_RRS {}
 impl ::core::clone::Clone for I32RemS_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32RemS_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemS_RRS
     }
 }
 impl ::core::convert::From<I32RemS_RRS> for crate::Op {
@@ -16874,11 +13534,6 @@ impl ::core::clone::Clone for I32RemS_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32RemS_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemS_RRI
-    }
-}
 impl ::core::convert::From<I32RemS_RRI> for crate::Op {
     fn from(op: I32RemS_RRI) -> Self {
         Self::I32RemS_RRI {
@@ -16898,11 +13553,6 @@ impl ::core::marker::Copy for I32RemS_RSR {}
 impl ::core::clone::Clone for I32RemS_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32RemS_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemS_RSR
     }
 }
 impl ::core::convert::From<I32RemS_RSR> for crate::Op {
@@ -16926,11 +13576,6 @@ impl ::core::clone::Clone for I32RemS_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32RemS_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemS_RSS
-    }
-}
 impl ::core::convert::From<I32RemS_RSS> for crate::Op {
     fn from(op: I32RemS_RSS) -> Self {
         Self::I32RemS_RSS {
@@ -16950,11 +13595,6 @@ impl ::core::marker::Copy for I32RemS_RSI {}
 impl ::core::clone::Clone for I32RemS_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32RemS_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemS_RSI
     }
 }
 impl ::core::convert::From<I32RemS_RSI> for crate::Op {
@@ -16978,11 +13618,6 @@ impl ::core::clone::Clone for I32RemS_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32RemS_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemS_RIR
-    }
-}
 impl ::core::convert::From<I32RemS_RIR> for crate::Op {
     fn from(op: I32RemS_RIR) -> Self {
         Self::I32RemS_RIR {
@@ -17002,11 +13637,6 @@ impl ::core::marker::Copy for I32RemS_RIS {}
 impl ::core::clone::Clone for I32RemS_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32RemS_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemS_RIS
     }
 }
 impl ::core::convert::From<I32RemS_RIS> for crate::Op {
@@ -17030,11 +13660,6 @@ impl ::core::clone::Clone for I64RemS_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64RemS_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemS_RRS
-    }
-}
 impl ::core::convert::From<I64RemS_RRS> for crate::Op {
     fn from(op: I64RemS_RRS) -> Self {
         Self::I64RemS_RRS {
@@ -17054,11 +13679,6 @@ impl ::core::marker::Copy for I64RemS_RRI {}
 impl ::core::clone::Clone for I64RemS_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64RemS_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemS_RRI
     }
 }
 impl ::core::convert::From<I64RemS_RRI> for crate::Op {
@@ -17082,11 +13702,6 @@ impl ::core::clone::Clone for I64RemS_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64RemS_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemS_RSR
-    }
-}
 impl ::core::convert::From<I64RemS_RSR> for crate::Op {
     fn from(op: I64RemS_RSR) -> Self {
         Self::I64RemS_RSR {
@@ -17106,11 +13721,6 @@ impl ::core::marker::Copy for I64RemS_RSS {}
 impl ::core::clone::Clone for I64RemS_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64RemS_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemS_RSS
     }
 }
 impl ::core::convert::From<I64RemS_RSS> for crate::Op {
@@ -17134,11 +13744,6 @@ impl ::core::clone::Clone for I64RemS_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64RemS_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemS_RSI
-    }
-}
 impl ::core::convert::From<I64RemS_RSI> for crate::Op {
     fn from(op: I64RemS_RSI) -> Self {
         Self::I64RemS_RSI {
@@ -17158,11 +13763,6 @@ impl ::core::marker::Copy for I64RemS_RIR {}
 impl ::core::clone::Clone for I64RemS_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64RemS_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemS_RIR
     }
 }
 impl ::core::convert::From<I64RemS_RIR> for crate::Op {
@@ -17186,11 +13786,6 @@ impl ::core::clone::Clone for I64RemS_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64RemS_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemS_RIS
-    }
-}
 impl ::core::convert::From<I64RemS_RIS> for crate::Op {
     fn from(op: I64RemS_RIS) -> Self {
         Self::I64RemS_RIS {
@@ -17210,11 +13805,6 @@ impl ::core::marker::Copy for I32RemU_RRS {}
 impl ::core::clone::Clone for I32RemU_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32RemU_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemU_RRS
     }
 }
 impl ::core::convert::From<I32RemU_RRS> for crate::Op {
@@ -17238,11 +13828,6 @@ impl ::core::clone::Clone for I32RemU_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32RemU_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemU_RRI
-    }
-}
 impl ::core::convert::From<I32RemU_RRI> for crate::Op {
     fn from(op: I32RemU_RRI) -> Self {
         Self::I32RemU_RRI {
@@ -17262,11 +13847,6 @@ impl ::core::marker::Copy for I32RemU_RSR {}
 impl ::core::clone::Clone for I32RemU_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32RemU_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemU_RSR
     }
 }
 impl ::core::convert::From<I32RemU_RSR> for crate::Op {
@@ -17290,11 +13870,6 @@ impl ::core::clone::Clone for I32RemU_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32RemU_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemU_RSS
-    }
-}
 impl ::core::convert::From<I32RemU_RSS> for crate::Op {
     fn from(op: I32RemU_RSS) -> Self {
         Self::I32RemU_RSS {
@@ -17314,11 +13889,6 @@ impl ::core::marker::Copy for I32RemU_RSI {}
 impl ::core::clone::Clone for I32RemU_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32RemU_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemU_RSI
     }
 }
 impl ::core::convert::From<I32RemU_RSI> for crate::Op {
@@ -17342,11 +13912,6 @@ impl ::core::clone::Clone for I32RemU_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32RemU_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemU_RIR
-    }
-}
 impl ::core::convert::From<I32RemU_RIR> for crate::Op {
     fn from(op: I32RemU_RIR) -> Self {
         Self::I32RemU_RIR {
@@ -17366,11 +13931,6 @@ impl ::core::marker::Copy for I32RemU_RIS {}
 impl ::core::clone::Clone for I32RemU_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32RemU_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32RemU_RIS
     }
 }
 impl ::core::convert::From<I32RemU_RIS> for crate::Op {
@@ -17394,11 +13954,6 @@ impl ::core::clone::Clone for I64RemU_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64RemU_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemU_RRS
-    }
-}
 impl ::core::convert::From<I64RemU_RRS> for crate::Op {
     fn from(op: I64RemU_RRS) -> Self {
         Self::I64RemU_RRS {
@@ -17418,11 +13973,6 @@ impl ::core::marker::Copy for I64RemU_RRI {}
 impl ::core::clone::Clone for I64RemU_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64RemU_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemU_RRI
     }
 }
 impl ::core::convert::From<I64RemU_RRI> for crate::Op {
@@ -17446,11 +13996,6 @@ impl ::core::clone::Clone for I64RemU_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64RemU_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemU_RSR
-    }
-}
 impl ::core::convert::From<I64RemU_RSR> for crate::Op {
     fn from(op: I64RemU_RSR) -> Self {
         Self::I64RemU_RSR {
@@ -17470,11 +14015,6 @@ impl ::core::marker::Copy for I64RemU_RSS {}
 impl ::core::clone::Clone for I64RemU_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64RemU_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemU_RSS
     }
 }
 impl ::core::convert::From<I64RemU_RSS> for crate::Op {
@@ -17498,11 +14038,6 @@ impl ::core::clone::Clone for I64RemU_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64RemU_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemU_RSI
-    }
-}
 impl ::core::convert::From<I64RemU_RSI> for crate::Op {
     fn from(op: I64RemU_RSI) -> Self {
         Self::I64RemU_RSI {
@@ -17522,11 +14057,6 @@ impl ::core::marker::Copy for I64RemU_RIR {}
 impl ::core::clone::Clone for I64RemU_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64RemU_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemU_RIR
     }
 }
 impl ::core::convert::From<I64RemU_RIR> for crate::Op {
@@ -17550,11 +14080,6 @@ impl ::core::clone::Clone for I64RemU_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64RemU_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64RemU_RIS
-    }
-}
 impl ::core::convert::From<I64RemU_RIS> for crate::Op {
     fn from(op: I64RemU_RIS) -> Self {
         Self::I64RemU_RIS {
@@ -17574,11 +14099,6 @@ impl ::core::marker::Copy for I32Shl_RRS {}
 impl ::core::clone::Clone for I32Shl_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Shl_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Shl_RRS
     }
 }
 impl ::core::convert::From<I32Shl_RRS> for crate::Op {
@@ -17602,11 +14122,6 @@ impl ::core::clone::Clone for I32Shl_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Shl_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Shl_RRI
-    }
-}
 impl ::core::convert::From<I32Shl_RRI> for crate::Op {
     fn from(op: I32Shl_RRI) -> Self {
         Self::I32Shl_RRI {
@@ -17626,11 +14141,6 @@ impl ::core::marker::Copy for I32Shl_RSR {}
 impl ::core::clone::Clone for I32Shl_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Shl_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Shl_RSR
     }
 }
 impl ::core::convert::From<I32Shl_RSR> for crate::Op {
@@ -17654,11 +14164,6 @@ impl ::core::clone::Clone for I32Shl_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32Shl_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Shl_RSS
-    }
-}
 impl ::core::convert::From<I32Shl_RSS> for crate::Op {
     fn from(op: I32Shl_RSS) -> Self {
         Self::I32Shl_RSS {
@@ -17678,11 +14183,6 @@ impl ::core::marker::Copy for I32Shl_RSI {}
 impl ::core::clone::Clone for I32Shl_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Shl_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Shl_RSI
     }
 }
 impl ::core::convert::From<I32Shl_RSI> for crate::Op {
@@ -17706,11 +14206,6 @@ impl ::core::clone::Clone for I32Shl_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32Shl_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Shl_RIR
-    }
-}
 impl ::core::convert::From<I32Shl_RIR> for crate::Op {
     fn from(op: I32Shl_RIR) -> Self {
         Self::I32Shl_RIR {
@@ -17730,11 +14225,6 @@ impl ::core::marker::Copy for I32Shl_RIS {}
 impl ::core::clone::Clone for I32Shl_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Shl_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Shl_RIS
     }
 }
 impl ::core::convert::From<I32Shl_RIS> for crate::Op {
@@ -17758,11 +14248,6 @@ impl ::core::clone::Clone for I64Shl_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64Shl_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Shl_RRS
-    }
-}
 impl ::core::convert::From<I64Shl_RRS> for crate::Op {
     fn from(op: I64Shl_RRS) -> Self {
         Self::I64Shl_RRS {
@@ -17782,11 +14267,6 @@ impl ::core::marker::Copy for I64Shl_RRI {}
 impl ::core::clone::Clone for I64Shl_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Shl_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Shl_RRI
     }
 }
 impl ::core::convert::From<I64Shl_RRI> for crate::Op {
@@ -17810,11 +14290,6 @@ impl ::core::clone::Clone for I64Shl_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64Shl_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Shl_RSR
-    }
-}
 impl ::core::convert::From<I64Shl_RSR> for crate::Op {
     fn from(op: I64Shl_RSR) -> Self {
         Self::I64Shl_RSR {
@@ -17834,11 +14309,6 @@ impl ::core::marker::Copy for I64Shl_RSS {}
 impl ::core::clone::Clone for I64Shl_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Shl_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Shl_RSS
     }
 }
 impl ::core::convert::From<I64Shl_RSS> for crate::Op {
@@ -17862,11 +14332,6 @@ impl ::core::clone::Clone for I64Shl_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Shl_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Shl_RSI
-    }
-}
 impl ::core::convert::From<I64Shl_RSI> for crate::Op {
     fn from(op: I64Shl_RSI) -> Self {
         Self::I64Shl_RSI {
@@ -17886,11 +14351,6 @@ impl ::core::marker::Copy for I64Shl_RIR {}
 impl ::core::clone::Clone for I64Shl_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Shl_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Shl_RIR
     }
 }
 impl ::core::convert::From<I64Shl_RIR> for crate::Op {
@@ -17914,11 +14374,6 @@ impl ::core::clone::Clone for I64Shl_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64Shl_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Shl_RIS
-    }
-}
 impl ::core::convert::From<I64Shl_RIS> for crate::Op {
     fn from(op: I64Shl_RIS) -> Self {
         Self::I64Shl_RIS {
@@ -17938,11 +14393,6 @@ impl ::core::marker::Copy for I32ShrS_RRS {}
 impl ::core::clone::Clone for I32ShrS_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32ShrS_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrS_RRS
     }
 }
 impl ::core::convert::From<I32ShrS_RRS> for crate::Op {
@@ -17966,11 +14416,6 @@ impl ::core::clone::Clone for I32ShrS_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32ShrS_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrS_RRI
-    }
-}
 impl ::core::convert::From<I32ShrS_RRI> for crate::Op {
     fn from(op: I32ShrS_RRI) -> Self {
         Self::I32ShrS_RRI {
@@ -17990,11 +14435,6 @@ impl ::core::marker::Copy for I32ShrS_RSR {}
 impl ::core::clone::Clone for I32ShrS_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32ShrS_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrS_RSR
     }
 }
 impl ::core::convert::From<I32ShrS_RSR> for crate::Op {
@@ -18018,11 +14458,6 @@ impl ::core::clone::Clone for I32ShrS_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32ShrS_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrS_RSS
-    }
-}
 impl ::core::convert::From<I32ShrS_RSS> for crate::Op {
     fn from(op: I32ShrS_RSS) -> Self {
         Self::I32ShrS_RSS {
@@ -18042,11 +14477,6 @@ impl ::core::marker::Copy for I32ShrS_RSI {}
 impl ::core::clone::Clone for I32ShrS_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32ShrS_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrS_RSI
     }
 }
 impl ::core::convert::From<I32ShrS_RSI> for crate::Op {
@@ -18070,11 +14500,6 @@ impl ::core::clone::Clone for I32ShrS_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32ShrS_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrS_RIR
-    }
-}
 impl ::core::convert::From<I32ShrS_RIR> for crate::Op {
     fn from(op: I32ShrS_RIR) -> Self {
         Self::I32ShrS_RIR {
@@ -18094,11 +14519,6 @@ impl ::core::marker::Copy for I32ShrS_RIS {}
 impl ::core::clone::Clone for I32ShrS_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32ShrS_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrS_RIS
     }
 }
 impl ::core::convert::From<I32ShrS_RIS> for crate::Op {
@@ -18122,11 +14542,6 @@ impl ::core::clone::Clone for I64ShrS_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64ShrS_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrS_RRS
-    }
-}
 impl ::core::convert::From<I64ShrS_RRS> for crate::Op {
     fn from(op: I64ShrS_RRS) -> Self {
         Self::I64ShrS_RRS {
@@ -18146,11 +14561,6 @@ impl ::core::marker::Copy for I64ShrS_RRI {}
 impl ::core::clone::Clone for I64ShrS_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64ShrS_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrS_RRI
     }
 }
 impl ::core::convert::From<I64ShrS_RRI> for crate::Op {
@@ -18174,11 +14584,6 @@ impl ::core::clone::Clone for I64ShrS_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64ShrS_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrS_RSR
-    }
-}
 impl ::core::convert::From<I64ShrS_RSR> for crate::Op {
     fn from(op: I64ShrS_RSR) -> Self {
         Self::I64ShrS_RSR {
@@ -18198,11 +14603,6 @@ impl ::core::marker::Copy for I64ShrS_RSS {}
 impl ::core::clone::Clone for I64ShrS_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64ShrS_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrS_RSS
     }
 }
 impl ::core::convert::From<I64ShrS_RSS> for crate::Op {
@@ -18226,11 +14626,6 @@ impl ::core::clone::Clone for I64ShrS_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64ShrS_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrS_RSI
-    }
-}
 impl ::core::convert::From<I64ShrS_RSI> for crate::Op {
     fn from(op: I64ShrS_RSI) -> Self {
         Self::I64ShrS_RSI {
@@ -18250,11 +14645,6 @@ impl ::core::marker::Copy for I64ShrS_RIR {}
 impl ::core::clone::Clone for I64ShrS_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64ShrS_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrS_RIR
     }
 }
 impl ::core::convert::From<I64ShrS_RIR> for crate::Op {
@@ -18278,11 +14668,6 @@ impl ::core::clone::Clone for I64ShrS_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64ShrS_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrS_RIS
-    }
-}
 impl ::core::convert::From<I64ShrS_RIS> for crate::Op {
     fn from(op: I64ShrS_RIS) -> Self {
         Self::I64ShrS_RIS {
@@ -18302,11 +14687,6 @@ impl ::core::marker::Copy for I32ShrU_RRS {}
 impl ::core::clone::Clone for I32ShrU_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32ShrU_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrU_RRS
     }
 }
 impl ::core::convert::From<I32ShrU_RRS> for crate::Op {
@@ -18330,11 +14710,6 @@ impl ::core::clone::Clone for I32ShrU_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32ShrU_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrU_RRI
-    }
-}
 impl ::core::convert::From<I32ShrU_RRI> for crate::Op {
     fn from(op: I32ShrU_RRI) -> Self {
         Self::I32ShrU_RRI {
@@ -18354,11 +14729,6 @@ impl ::core::marker::Copy for I32ShrU_RSR {}
 impl ::core::clone::Clone for I32ShrU_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32ShrU_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrU_RSR
     }
 }
 impl ::core::convert::From<I32ShrU_RSR> for crate::Op {
@@ -18382,11 +14752,6 @@ impl ::core::clone::Clone for I32ShrU_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32ShrU_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrU_RSS
-    }
-}
 impl ::core::convert::From<I32ShrU_RSS> for crate::Op {
     fn from(op: I32ShrU_RSS) -> Self {
         Self::I32ShrU_RSS {
@@ -18406,11 +14771,6 @@ impl ::core::marker::Copy for I32ShrU_RSI {}
 impl ::core::clone::Clone for I32ShrU_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32ShrU_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrU_RSI
     }
 }
 impl ::core::convert::From<I32ShrU_RSI> for crate::Op {
@@ -18434,11 +14794,6 @@ impl ::core::clone::Clone for I32ShrU_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32ShrU_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrU_RIR
-    }
-}
 impl ::core::convert::From<I32ShrU_RIR> for crate::Op {
     fn from(op: I32ShrU_RIR) -> Self {
         Self::I32ShrU_RIR {
@@ -18458,11 +14813,6 @@ impl ::core::marker::Copy for I32ShrU_RIS {}
 impl ::core::clone::Clone for I32ShrU_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32ShrU_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32ShrU_RIS
     }
 }
 impl ::core::convert::From<I32ShrU_RIS> for crate::Op {
@@ -18486,11 +14836,6 @@ impl ::core::clone::Clone for I64ShrU_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64ShrU_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrU_RRS
-    }
-}
 impl ::core::convert::From<I64ShrU_RRS> for crate::Op {
     fn from(op: I64ShrU_RRS) -> Self {
         Self::I64ShrU_RRS {
@@ -18510,11 +14855,6 @@ impl ::core::marker::Copy for I64ShrU_RRI {}
 impl ::core::clone::Clone for I64ShrU_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64ShrU_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrU_RRI
     }
 }
 impl ::core::convert::From<I64ShrU_RRI> for crate::Op {
@@ -18538,11 +14878,6 @@ impl ::core::clone::Clone for I64ShrU_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64ShrU_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrU_RSR
-    }
-}
 impl ::core::convert::From<I64ShrU_RSR> for crate::Op {
     fn from(op: I64ShrU_RSR) -> Self {
         Self::I64ShrU_RSR {
@@ -18562,11 +14897,6 @@ impl ::core::marker::Copy for I64ShrU_RSS {}
 impl ::core::clone::Clone for I64ShrU_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64ShrU_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrU_RSS
     }
 }
 impl ::core::convert::From<I64ShrU_RSS> for crate::Op {
@@ -18590,11 +14920,6 @@ impl ::core::clone::Clone for I64ShrU_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64ShrU_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrU_RSI
-    }
-}
 impl ::core::convert::From<I64ShrU_RSI> for crate::Op {
     fn from(op: I64ShrU_RSI) -> Self {
         Self::I64ShrU_RSI {
@@ -18614,11 +14939,6 @@ impl ::core::marker::Copy for I64ShrU_RIR {}
 impl ::core::clone::Clone for I64ShrU_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64ShrU_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrU_RIR
     }
 }
 impl ::core::convert::From<I64ShrU_RIR> for crate::Op {
@@ -18642,11 +14962,6 @@ impl ::core::clone::Clone for I64ShrU_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64ShrU_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64ShrU_RIS
-    }
-}
 impl ::core::convert::From<I64ShrU_RIS> for crate::Op {
     fn from(op: I64ShrU_RIS) -> Self {
         Self::I64ShrU_RIS {
@@ -18666,11 +14981,6 @@ impl ::core::marker::Copy for I32Rotl_RRS {}
 impl ::core::clone::Clone for I32Rotl_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Rotl_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotl_RRS
     }
 }
 impl ::core::convert::From<I32Rotl_RRS> for crate::Op {
@@ -18694,11 +15004,6 @@ impl ::core::clone::Clone for I32Rotl_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Rotl_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotl_RRI
-    }
-}
 impl ::core::convert::From<I32Rotl_RRI> for crate::Op {
     fn from(op: I32Rotl_RRI) -> Self {
         Self::I32Rotl_RRI {
@@ -18718,11 +15023,6 @@ impl ::core::marker::Copy for I32Rotl_RSR {}
 impl ::core::clone::Clone for I32Rotl_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Rotl_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotl_RSR
     }
 }
 impl ::core::convert::From<I32Rotl_RSR> for crate::Op {
@@ -18746,11 +15046,6 @@ impl ::core::clone::Clone for I32Rotl_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32Rotl_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotl_RSS
-    }
-}
 impl ::core::convert::From<I32Rotl_RSS> for crate::Op {
     fn from(op: I32Rotl_RSS) -> Self {
         Self::I32Rotl_RSS {
@@ -18770,11 +15065,6 @@ impl ::core::marker::Copy for I32Rotl_RSI {}
 impl ::core::clone::Clone for I32Rotl_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Rotl_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotl_RSI
     }
 }
 impl ::core::convert::From<I32Rotl_RSI> for crate::Op {
@@ -18798,11 +15088,6 @@ impl ::core::clone::Clone for I32Rotl_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32Rotl_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotl_RIR
-    }
-}
 impl ::core::convert::From<I32Rotl_RIR> for crate::Op {
     fn from(op: I32Rotl_RIR) -> Self {
         Self::I32Rotl_RIR {
@@ -18822,11 +15107,6 @@ impl ::core::marker::Copy for I32Rotl_RIS {}
 impl ::core::clone::Clone for I32Rotl_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Rotl_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotl_RIS
     }
 }
 impl ::core::convert::From<I32Rotl_RIS> for crate::Op {
@@ -18850,11 +15130,6 @@ impl ::core::clone::Clone for I64Rotl_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64Rotl_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotl_RRS
-    }
-}
 impl ::core::convert::From<I64Rotl_RRS> for crate::Op {
     fn from(op: I64Rotl_RRS) -> Self {
         Self::I64Rotl_RRS {
@@ -18874,11 +15149,6 @@ impl ::core::marker::Copy for I64Rotl_RRI {}
 impl ::core::clone::Clone for I64Rotl_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Rotl_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotl_RRI
     }
 }
 impl ::core::convert::From<I64Rotl_RRI> for crate::Op {
@@ -18902,11 +15172,6 @@ impl ::core::clone::Clone for I64Rotl_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64Rotl_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotl_RSR
-    }
-}
 impl ::core::convert::From<I64Rotl_RSR> for crate::Op {
     fn from(op: I64Rotl_RSR) -> Self {
         Self::I64Rotl_RSR {
@@ -18926,11 +15191,6 @@ impl ::core::marker::Copy for I64Rotl_RSS {}
 impl ::core::clone::Clone for I64Rotl_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Rotl_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotl_RSS
     }
 }
 impl ::core::convert::From<I64Rotl_RSS> for crate::Op {
@@ -18954,11 +15214,6 @@ impl ::core::clone::Clone for I64Rotl_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Rotl_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotl_RSI
-    }
-}
 impl ::core::convert::From<I64Rotl_RSI> for crate::Op {
     fn from(op: I64Rotl_RSI) -> Self {
         Self::I64Rotl_RSI {
@@ -18978,11 +15233,6 @@ impl ::core::marker::Copy for I64Rotl_RIR {}
 impl ::core::clone::Clone for I64Rotl_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Rotl_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotl_RIR
     }
 }
 impl ::core::convert::From<I64Rotl_RIR> for crate::Op {
@@ -19006,11 +15256,6 @@ impl ::core::clone::Clone for I64Rotl_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64Rotl_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotl_RIS
-    }
-}
 impl ::core::convert::From<I64Rotl_RIS> for crate::Op {
     fn from(op: I64Rotl_RIS) -> Self {
         Self::I64Rotl_RIS {
@@ -19030,11 +15275,6 @@ impl ::core::marker::Copy for I32Rotr_RRS {}
 impl ::core::clone::Clone for I32Rotr_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Rotr_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotr_RRS
     }
 }
 impl ::core::convert::From<I32Rotr_RRS> for crate::Op {
@@ -19058,11 +15298,6 @@ impl ::core::clone::Clone for I32Rotr_RRI {
         *self
     }
 }
-impl crate::OperatorCode for I32Rotr_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotr_RRI
-    }
-}
 impl ::core::convert::From<I32Rotr_RRI> for crate::Op {
     fn from(op: I32Rotr_RRI) -> Self {
         Self::I32Rotr_RRI {
@@ -19082,11 +15317,6 @@ impl ::core::marker::Copy for I32Rotr_RSR {}
 impl ::core::clone::Clone for I32Rotr_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Rotr_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotr_RSR
     }
 }
 impl ::core::convert::From<I32Rotr_RSR> for crate::Op {
@@ -19110,11 +15340,6 @@ impl ::core::clone::Clone for I32Rotr_RSS {
         *self
     }
 }
-impl crate::OperatorCode for I32Rotr_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotr_RSS
-    }
-}
 impl ::core::convert::From<I32Rotr_RSS> for crate::Op {
     fn from(op: I32Rotr_RSS) -> Self {
         Self::I32Rotr_RSS {
@@ -19134,11 +15359,6 @@ impl ::core::marker::Copy for I32Rotr_RSI {}
 impl ::core::clone::Clone for I32Rotr_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Rotr_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotr_RSI
     }
 }
 impl ::core::convert::From<I32Rotr_RSI> for crate::Op {
@@ -19162,11 +15382,6 @@ impl ::core::clone::Clone for I32Rotr_RIR {
         *self
     }
 }
-impl crate::OperatorCode for I32Rotr_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotr_RIR
-    }
-}
 impl ::core::convert::From<I32Rotr_RIR> for crate::Op {
     fn from(op: I32Rotr_RIR) -> Self {
         Self::I32Rotr_RIR {
@@ -19186,11 +15401,6 @@ impl ::core::marker::Copy for I32Rotr_RIS {}
 impl ::core::clone::Clone for I32Rotr_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Rotr_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Rotr_RIS
     }
 }
 impl ::core::convert::From<I32Rotr_RIS> for crate::Op {
@@ -19214,11 +15424,6 @@ impl ::core::clone::Clone for I64Rotr_RRS {
         *self
     }
 }
-impl crate::OperatorCode for I64Rotr_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotr_RRS
-    }
-}
 impl ::core::convert::From<I64Rotr_RRS> for crate::Op {
     fn from(op: I64Rotr_RRS) -> Self {
         Self::I64Rotr_RRS {
@@ -19238,11 +15443,6 @@ impl ::core::marker::Copy for I64Rotr_RRI {}
 impl ::core::clone::Clone for I64Rotr_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Rotr_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotr_RRI
     }
 }
 impl ::core::convert::From<I64Rotr_RRI> for crate::Op {
@@ -19266,11 +15466,6 @@ impl ::core::clone::Clone for I64Rotr_RSR {
         *self
     }
 }
-impl crate::OperatorCode for I64Rotr_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotr_RSR
-    }
-}
 impl ::core::convert::From<I64Rotr_RSR> for crate::Op {
     fn from(op: I64Rotr_RSR) -> Self {
         Self::I64Rotr_RSR {
@@ -19290,11 +15485,6 @@ impl ::core::marker::Copy for I64Rotr_RSS {}
 impl ::core::clone::Clone for I64Rotr_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Rotr_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotr_RSS
     }
 }
 impl ::core::convert::From<I64Rotr_RSS> for crate::Op {
@@ -19318,11 +15508,6 @@ impl ::core::clone::Clone for I64Rotr_RSI {
         *self
     }
 }
-impl crate::OperatorCode for I64Rotr_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotr_RSI
-    }
-}
 impl ::core::convert::From<I64Rotr_RSI> for crate::Op {
     fn from(op: I64Rotr_RSI) -> Self {
         Self::I64Rotr_RSI {
@@ -19342,11 +15527,6 @@ impl ::core::marker::Copy for I64Rotr_RIR {}
 impl ::core::clone::Clone for I64Rotr_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Rotr_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotr_RIR
     }
 }
 impl ::core::convert::From<I64Rotr_RIR> for crate::Op {
@@ -19370,11 +15550,6 @@ impl ::core::clone::Clone for I64Rotr_RIS {
         *self
     }
 }
-impl crate::OperatorCode for I64Rotr_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Rotr_RIS
-    }
-}
 impl ::core::convert::From<I64Rotr_RIS> for crate::Op {
     fn from(op: I64Rotr_RIS) -> Self {
         Self::I64Rotr_RIS {
@@ -19394,11 +15569,6 @@ impl ::core::marker::Copy for F32Sub_RRS {}
 impl ::core::clone::Clone for F32Sub_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Sub_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sub_RRS
     }
 }
 impl ::core::convert::From<F32Sub_RRS> for crate::Op {
@@ -19422,11 +15592,6 @@ impl ::core::clone::Clone for F32Sub_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Sub_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sub_RRI
-    }
-}
 impl ::core::convert::From<F32Sub_RRI> for crate::Op {
     fn from(op: F32Sub_RRI) -> Self {
         Self::F32Sub_RRI {
@@ -19446,11 +15611,6 @@ impl ::core::marker::Copy for F32Sub_RSR {}
 impl ::core::clone::Clone for F32Sub_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Sub_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sub_RSR
     }
 }
 impl ::core::convert::From<F32Sub_RSR> for crate::Op {
@@ -19474,11 +15634,6 @@ impl ::core::clone::Clone for F32Sub_RSS {
         *self
     }
 }
-impl crate::OperatorCode for F32Sub_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sub_RSS
-    }
-}
 impl ::core::convert::From<F32Sub_RSS> for crate::Op {
     fn from(op: F32Sub_RSS) -> Self {
         Self::F32Sub_RSS {
@@ -19498,11 +15653,6 @@ impl ::core::marker::Copy for F32Sub_RSI {}
 impl ::core::clone::Clone for F32Sub_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Sub_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sub_RSI
     }
 }
 impl ::core::convert::From<F32Sub_RSI> for crate::Op {
@@ -19526,11 +15676,6 @@ impl ::core::clone::Clone for F32Sub_RIR {
         *self
     }
 }
-impl crate::OperatorCode for F32Sub_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sub_RIR
-    }
-}
 impl ::core::convert::From<F32Sub_RIR> for crate::Op {
     fn from(op: F32Sub_RIR) -> Self {
         Self::F32Sub_RIR {
@@ -19550,11 +15695,6 @@ impl ::core::marker::Copy for F32Sub_RIS {}
 impl ::core::clone::Clone for F32Sub_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Sub_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Sub_RIS
     }
 }
 impl ::core::convert::From<F32Sub_RIS> for crate::Op {
@@ -19578,11 +15718,6 @@ impl ::core::clone::Clone for F64Sub_RRS {
         *self
     }
 }
-impl crate::OperatorCode for F64Sub_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sub_RRS
-    }
-}
 impl ::core::convert::From<F64Sub_RRS> for crate::Op {
     fn from(op: F64Sub_RRS) -> Self {
         Self::F64Sub_RRS {
@@ -19602,11 +15737,6 @@ impl ::core::marker::Copy for F64Sub_RRI {}
 impl ::core::clone::Clone for F64Sub_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Sub_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sub_RRI
     }
 }
 impl ::core::convert::From<F64Sub_RRI> for crate::Op {
@@ -19630,11 +15760,6 @@ impl ::core::clone::Clone for F64Sub_RSR {
         *self
     }
 }
-impl crate::OperatorCode for F64Sub_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sub_RSR
-    }
-}
 impl ::core::convert::From<F64Sub_RSR> for crate::Op {
     fn from(op: F64Sub_RSR) -> Self {
         Self::F64Sub_RSR {
@@ -19654,11 +15779,6 @@ impl ::core::marker::Copy for F64Sub_RSS {}
 impl ::core::clone::Clone for F64Sub_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Sub_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sub_RSS
     }
 }
 impl ::core::convert::From<F64Sub_RSS> for crate::Op {
@@ -19682,11 +15802,6 @@ impl ::core::clone::Clone for F64Sub_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Sub_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sub_RSI
-    }
-}
 impl ::core::convert::From<F64Sub_RSI> for crate::Op {
     fn from(op: F64Sub_RSI) -> Self {
         Self::F64Sub_RSI {
@@ -19706,11 +15821,6 @@ impl ::core::marker::Copy for F64Sub_RIR {}
 impl ::core::clone::Clone for F64Sub_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Sub_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sub_RIR
     }
 }
 impl ::core::convert::From<F64Sub_RIR> for crate::Op {
@@ -19734,11 +15844,6 @@ impl ::core::clone::Clone for F64Sub_RIS {
         *self
     }
 }
-impl crate::OperatorCode for F64Sub_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Sub_RIS
-    }
-}
 impl ::core::convert::From<F64Sub_RIS> for crate::Op {
     fn from(op: F64Sub_RIS) -> Self {
         Self::F64Sub_RIS {
@@ -19758,11 +15863,6 @@ impl ::core::marker::Copy for F32Div_RRS {}
 impl ::core::clone::Clone for F32Div_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Div_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Div_RRS
     }
 }
 impl ::core::convert::From<F32Div_RRS> for crate::Op {
@@ -19786,11 +15886,6 @@ impl ::core::clone::Clone for F32Div_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Div_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Div_RRI
-    }
-}
 impl ::core::convert::From<F32Div_RRI> for crate::Op {
     fn from(op: F32Div_RRI) -> Self {
         Self::F32Div_RRI {
@@ -19810,11 +15905,6 @@ impl ::core::marker::Copy for F32Div_RSR {}
 impl ::core::clone::Clone for F32Div_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Div_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Div_RSR
     }
 }
 impl ::core::convert::From<F32Div_RSR> for crate::Op {
@@ -19838,11 +15928,6 @@ impl ::core::clone::Clone for F32Div_RSS {
         *self
     }
 }
-impl crate::OperatorCode for F32Div_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Div_RSS
-    }
-}
 impl ::core::convert::From<F32Div_RSS> for crate::Op {
     fn from(op: F32Div_RSS) -> Self {
         Self::F32Div_RSS {
@@ -19862,11 +15947,6 @@ impl ::core::marker::Copy for F32Div_RSI {}
 impl ::core::clone::Clone for F32Div_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Div_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Div_RSI
     }
 }
 impl ::core::convert::From<F32Div_RSI> for crate::Op {
@@ -19890,11 +15970,6 @@ impl ::core::clone::Clone for F32Div_RIR {
         *self
     }
 }
-impl crate::OperatorCode for F32Div_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Div_RIR
-    }
-}
 impl ::core::convert::From<F32Div_RIR> for crate::Op {
     fn from(op: F32Div_RIR) -> Self {
         Self::F32Div_RIR {
@@ -19914,11 +15989,6 @@ impl ::core::marker::Copy for F32Div_RIS {}
 impl ::core::clone::Clone for F32Div_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Div_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Div_RIS
     }
 }
 impl ::core::convert::From<F32Div_RIS> for crate::Op {
@@ -19942,11 +16012,6 @@ impl ::core::clone::Clone for F64Div_RRS {
         *self
     }
 }
-impl crate::OperatorCode for F64Div_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Div_RRS
-    }
-}
 impl ::core::convert::From<F64Div_RRS> for crate::Op {
     fn from(op: F64Div_RRS) -> Self {
         Self::F64Div_RRS {
@@ -19966,11 +16031,6 @@ impl ::core::marker::Copy for F64Div_RRI {}
 impl ::core::clone::Clone for F64Div_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Div_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Div_RRI
     }
 }
 impl ::core::convert::From<F64Div_RRI> for crate::Op {
@@ -19994,11 +16054,6 @@ impl ::core::clone::Clone for F64Div_RSR {
         *self
     }
 }
-impl crate::OperatorCode for F64Div_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Div_RSR
-    }
-}
 impl ::core::convert::From<F64Div_RSR> for crate::Op {
     fn from(op: F64Div_RSR) -> Self {
         Self::F64Div_RSR {
@@ -20018,11 +16073,6 @@ impl ::core::marker::Copy for F64Div_RSS {}
 impl ::core::clone::Clone for F64Div_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Div_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Div_RSS
     }
 }
 impl ::core::convert::From<F64Div_RSS> for crate::Op {
@@ -20046,11 +16096,6 @@ impl ::core::clone::Clone for F64Div_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Div_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Div_RSI
-    }
-}
 impl ::core::convert::From<F64Div_RSI> for crate::Op {
     fn from(op: F64Div_RSI) -> Self {
         Self::F64Div_RSI {
@@ -20070,11 +16115,6 @@ impl ::core::marker::Copy for F64Div_RIR {}
 impl ::core::clone::Clone for F64Div_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Div_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Div_RIR
     }
 }
 impl ::core::convert::From<F64Div_RIR> for crate::Op {
@@ -20098,11 +16138,6 @@ impl ::core::clone::Clone for F64Div_RIS {
         *self
     }
 }
-impl crate::OperatorCode for F64Div_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Div_RIS
-    }
-}
 impl ::core::convert::From<F64Div_RIS> for crate::Op {
     fn from(op: F64Div_RIS) -> Self {
         Self::F64Div_RIS {
@@ -20122,11 +16157,6 @@ impl ::core::marker::Copy for F32Copysign_RRS {}
 impl ::core::clone::Clone for F32Copysign_RRS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Copysign_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Copysign_RRS
     }
 }
 impl ::core::convert::From<F32Copysign_RRS> for crate::Op {
@@ -20150,11 +16180,6 @@ impl ::core::clone::Clone for F32Copysign_RRI {
         *self
     }
 }
-impl crate::OperatorCode for F32Copysign_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Copysign_RRI
-    }
-}
 impl ::core::convert::From<F32Copysign_RRI> for crate::Op {
     fn from(op: F32Copysign_RRI) -> Self {
         Self::F32Copysign_RRI {
@@ -20174,11 +16199,6 @@ impl ::core::marker::Copy for F32Copysign_RSR {}
 impl ::core::clone::Clone for F32Copysign_RSR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Copysign_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Copysign_RSR
     }
 }
 impl ::core::convert::From<F32Copysign_RSR> for crate::Op {
@@ -20202,11 +16222,6 @@ impl ::core::clone::Clone for F32Copysign_RSS {
         *self
     }
 }
-impl crate::OperatorCode for F32Copysign_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Copysign_RSS
-    }
-}
 impl ::core::convert::From<F32Copysign_RSS> for crate::Op {
     fn from(op: F32Copysign_RSS) -> Self {
         Self::F32Copysign_RSS {
@@ -20226,11 +16241,6 @@ impl ::core::marker::Copy for F32Copysign_RSI {}
 impl ::core::clone::Clone for F32Copysign_RSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Copysign_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Copysign_RSI
     }
 }
 impl ::core::convert::From<F32Copysign_RSI> for crate::Op {
@@ -20254,11 +16264,6 @@ impl ::core::clone::Clone for F32Copysign_RIR {
         *self
     }
 }
-impl crate::OperatorCode for F32Copysign_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Copysign_RIR
-    }
-}
 impl ::core::convert::From<F32Copysign_RIR> for crate::Op {
     fn from(op: F32Copysign_RIR) -> Self {
         Self::F32Copysign_RIR {
@@ -20278,11 +16283,6 @@ impl ::core::marker::Copy for F32Copysign_RIS {}
 impl ::core::clone::Clone for F32Copysign_RIS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Copysign_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Copysign_RIS
     }
 }
 impl ::core::convert::From<F32Copysign_RIS> for crate::Op {
@@ -20306,11 +16306,6 @@ impl ::core::clone::Clone for F64Copysign_RRS {
         *self
     }
 }
-impl crate::OperatorCode for F64Copysign_RRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Copysign_RRS
-    }
-}
 impl ::core::convert::From<F64Copysign_RRS> for crate::Op {
     fn from(op: F64Copysign_RRS) -> Self {
         Self::F64Copysign_RRS {
@@ -20330,11 +16325,6 @@ impl ::core::marker::Copy for F64Copysign_RRI {}
 impl ::core::clone::Clone for F64Copysign_RRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Copysign_RRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Copysign_RRI
     }
 }
 impl ::core::convert::From<F64Copysign_RRI> for crate::Op {
@@ -20358,11 +16348,6 @@ impl ::core::clone::Clone for F64Copysign_RSR {
         *self
     }
 }
-impl crate::OperatorCode for F64Copysign_RSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Copysign_RSR
-    }
-}
 impl ::core::convert::From<F64Copysign_RSR> for crate::Op {
     fn from(op: F64Copysign_RSR) -> Self {
         Self::F64Copysign_RSR {
@@ -20382,11 +16367,6 @@ impl ::core::marker::Copy for F64Copysign_RSS {}
 impl ::core::clone::Clone for F64Copysign_RSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Copysign_RSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Copysign_RSS
     }
 }
 impl ::core::convert::From<F64Copysign_RSS> for crate::Op {
@@ -20410,11 +16390,6 @@ impl ::core::clone::Clone for F64Copysign_RSI {
         *self
     }
 }
-impl crate::OperatorCode for F64Copysign_RSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Copysign_RSI
-    }
-}
 impl ::core::convert::From<F64Copysign_RSI> for crate::Op {
     fn from(op: F64Copysign_RSI) -> Self {
         Self::F64Copysign_RSI {
@@ -20434,11 +16409,6 @@ impl ::core::marker::Copy for F64Copysign_RIR {}
 impl ::core::clone::Clone for F64Copysign_RIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Copysign_RIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Copysign_RIR
     }
 }
 impl ::core::convert::From<F64Copysign_RIR> for crate::Op {
@@ -20462,11 +16432,6 @@ impl ::core::clone::Clone for F64Copysign_RIS {
         *self
     }
 }
-impl crate::OperatorCode for F64Copysign_RIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Copysign_RIS
-    }
-}
 impl ::core::convert::From<F64Copysign_RIS> for crate::Op {
     fn from(op: F64Copysign_RIS) -> Self {
         Self::F64Copysign_RIS {
@@ -20487,11 +16452,6 @@ impl ::core::marker::Copy for I32Load_RR {}
 impl ::core::clone::Clone for I32Load_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load_RR
     }
 }
 impl ::core::convert::From<I32Load_RR> for crate::Op {
@@ -20517,11 +16477,6 @@ impl ::core::clone::Clone for I32Load_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32Load_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load_RS
-    }
-}
 impl ::core::convert::From<I32Load_RS> for crate::Op {
     fn from(op: I32Load_RS) -> Self {
         Self::I32Load_RS {
@@ -20543,11 +16498,6 @@ impl ::core::marker::Copy for I32Load_RI {}
 impl ::core::clone::Clone for I32Load_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load_RI
     }
 }
 impl ::core::convert::From<I32Load_RI> for crate::Op {
@@ -20572,11 +16522,6 @@ impl ::core::clone::Clone for I32LoadMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I32LoadMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LoadMem0_RR
-    }
-}
 impl ::core::convert::From<I32LoadMem0_RR> for crate::Op {
     fn from(op: I32LoadMem0_RR) -> Self {
         Self::I32LoadMem0_RR {
@@ -20596,11 +16541,6 @@ impl ::core::marker::Copy for I32LoadMem0_RS {}
 impl ::core::clone::Clone for I32LoadMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LoadMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LoadMem0_RS
     }
 }
 impl ::core::convert::From<I32LoadMem0_RS> for crate::Op {
@@ -20624,11 +16564,6 @@ impl ::core::clone::Clone for I32LoadMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32LoadMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LoadMem0_RI
-    }
-}
 impl ::core::convert::From<I32LoadMem0_RI> for crate::Op {
     fn from(op: I32LoadMem0_RI) -> Self {
         Self::I32LoadMem0_RI {
@@ -20648,11 +16583,6 @@ impl ::core::marker::Copy for I32LoadMem0_SR {}
 impl ::core::clone::Clone for I32LoadMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LoadMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LoadMem0_SR
     }
 }
 impl ::core::convert::From<I32LoadMem0_SR> for crate::Op {
@@ -20676,11 +16606,6 @@ impl ::core::clone::Clone for I32LoadMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32LoadMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LoadMem0_SS
-    }
-}
 impl ::core::convert::From<I32LoadMem0_SS> for crate::Op {
     fn from(op: I32LoadMem0_SS) -> Self {
         Self::I32LoadMem0_SS {
@@ -20700,11 +16625,6 @@ impl ::core::marker::Copy for I32LoadMem0_SI {}
 impl ::core::clone::Clone for I32LoadMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32LoadMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32LoadMem0_SI
     }
 }
 impl ::core::convert::From<I32LoadMem0_SI> for crate::Op {
@@ -20727,11 +16647,6 @@ impl ::core::marker::Copy for I64Load_RR {}
 impl ::core::clone::Clone for I64Load_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load_RR
     }
 }
 impl ::core::convert::From<I64Load_RR> for crate::Op {
@@ -20757,11 +16672,6 @@ impl ::core::clone::Clone for I64Load_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load_RS
-    }
-}
 impl ::core::convert::From<I64Load_RS> for crate::Op {
     fn from(op: I64Load_RS) -> Self {
         Self::I64Load_RS {
@@ -20783,11 +16693,6 @@ impl ::core::marker::Copy for I64Load_RI {}
 impl ::core::clone::Clone for I64Load_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load_RI
     }
 }
 impl ::core::convert::From<I64Load_RI> for crate::Op {
@@ -20812,11 +16717,6 @@ impl ::core::clone::Clone for I64LoadMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I64LoadMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LoadMem0_RR
-    }
-}
 impl ::core::convert::From<I64LoadMem0_RR> for crate::Op {
     fn from(op: I64LoadMem0_RR) -> Self {
         Self::I64LoadMem0_RR {
@@ -20836,11 +16736,6 @@ impl ::core::marker::Copy for I64LoadMem0_RS {}
 impl ::core::clone::Clone for I64LoadMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LoadMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LoadMem0_RS
     }
 }
 impl ::core::convert::From<I64LoadMem0_RS> for crate::Op {
@@ -20864,11 +16759,6 @@ impl ::core::clone::Clone for I64LoadMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64LoadMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LoadMem0_RI
-    }
-}
 impl ::core::convert::From<I64LoadMem0_RI> for crate::Op {
     fn from(op: I64LoadMem0_RI) -> Self {
         Self::I64LoadMem0_RI {
@@ -20888,11 +16778,6 @@ impl ::core::marker::Copy for I64LoadMem0_SR {}
 impl ::core::clone::Clone for I64LoadMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LoadMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LoadMem0_SR
     }
 }
 impl ::core::convert::From<I64LoadMem0_SR> for crate::Op {
@@ -20916,11 +16801,6 @@ impl ::core::clone::Clone for I64LoadMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64LoadMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LoadMem0_SS
-    }
-}
 impl ::core::convert::From<I64LoadMem0_SS> for crate::Op {
     fn from(op: I64LoadMem0_SS) -> Self {
         Self::I64LoadMem0_SS {
@@ -20940,11 +16820,6 @@ impl ::core::marker::Copy for I64LoadMem0_SI {}
 impl ::core::clone::Clone for I64LoadMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64LoadMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64LoadMem0_SI
     }
 }
 impl ::core::convert::From<I64LoadMem0_SI> for crate::Op {
@@ -20967,11 +16842,6 @@ impl ::core::marker::Copy for F32Load_RR {}
 impl ::core::clone::Clone for F32Load_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Load_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Load_RR
     }
 }
 impl ::core::convert::From<F32Load_RR> for crate::Op {
@@ -20997,11 +16867,6 @@ impl ::core::clone::Clone for F32Load_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32Load_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Load_RS
-    }
-}
 impl ::core::convert::From<F32Load_RS> for crate::Op {
     fn from(op: F32Load_RS) -> Self {
         Self::F32Load_RS {
@@ -21023,11 +16888,6 @@ impl ::core::marker::Copy for F32Load_RI {}
 impl ::core::clone::Clone for F32Load_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Load_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Load_RI
     }
 }
 impl ::core::convert::From<F32Load_RI> for crate::Op {
@@ -21052,11 +16912,6 @@ impl ::core::clone::Clone for F32LoadMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for F32LoadMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LoadMem0_RR
-    }
-}
 impl ::core::convert::From<F32LoadMem0_RR> for crate::Op {
     fn from(op: F32LoadMem0_RR) -> Self {
         Self::F32LoadMem0_RR {
@@ -21076,11 +16931,6 @@ impl ::core::marker::Copy for F32LoadMem0_RS {}
 impl ::core::clone::Clone for F32LoadMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LoadMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LoadMem0_RS
     }
 }
 impl ::core::convert::From<F32LoadMem0_RS> for crate::Op {
@@ -21104,11 +16954,6 @@ impl ::core::clone::Clone for F32LoadMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for F32LoadMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LoadMem0_RI
-    }
-}
 impl ::core::convert::From<F32LoadMem0_RI> for crate::Op {
     fn from(op: F32LoadMem0_RI) -> Self {
         Self::F32LoadMem0_RI {
@@ -21128,11 +16973,6 @@ impl ::core::marker::Copy for F32LoadMem0_SR {}
 impl ::core::clone::Clone for F32LoadMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LoadMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LoadMem0_SR
     }
 }
 impl ::core::convert::From<F32LoadMem0_SR> for crate::Op {
@@ -21156,11 +16996,6 @@ impl ::core::clone::Clone for F32LoadMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32LoadMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LoadMem0_SS
-    }
-}
 impl ::core::convert::From<F32LoadMem0_SS> for crate::Op {
     fn from(op: F32LoadMem0_SS) -> Self {
         Self::F32LoadMem0_SS {
@@ -21180,11 +17015,6 @@ impl ::core::marker::Copy for F32LoadMem0_SI {}
 impl ::core::clone::Clone for F32LoadMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32LoadMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32LoadMem0_SI
     }
 }
 impl ::core::convert::From<F32LoadMem0_SI> for crate::Op {
@@ -21207,11 +17037,6 @@ impl ::core::marker::Copy for F64Load_RR {}
 impl ::core::clone::Clone for F64Load_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Load_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Load_RR
     }
 }
 impl ::core::convert::From<F64Load_RR> for crate::Op {
@@ -21237,11 +17062,6 @@ impl ::core::clone::Clone for F64Load_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64Load_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Load_RS
-    }
-}
 impl ::core::convert::From<F64Load_RS> for crate::Op {
     fn from(op: F64Load_RS) -> Self {
         Self::F64Load_RS {
@@ -21263,11 +17083,6 @@ impl ::core::marker::Copy for F64Load_RI {}
 impl ::core::clone::Clone for F64Load_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Load_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Load_RI
     }
 }
 impl ::core::convert::From<F64Load_RI> for crate::Op {
@@ -21292,11 +17107,6 @@ impl ::core::clone::Clone for F64LoadMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for F64LoadMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LoadMem0_RR
-    }
-}
 impl ::core::convert::From<F64LoadMem0_RR> for crate::Op {
     fn from(op: F64LoadMem0_RR) -> Self {
         Self::F64LoadMem0_RR {
@@ -21316,11 +17126,6 @@ impl ::core::marker::Copy for F64LoadMem0_RS {}
 impl ::core::clone::Clone for F64LoadMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64LoadMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LoadMem0_RS
     }
 }
 impl ::core::convert::From<F64LoadMem0_RS> for crate::Op {
@@ -21344,11 +17149,6 @@ impl ::core::clone::Clone for F64LoadMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for F64LoadMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LoadMem0_RI
-    }
-}
 impl ::core::convert::From<F64LoadMem0_RI> for crate::Op {
     fn from(op: F64LoadMem0_RI) -> Self {
         Self::F64LoadMem0_RI {
@@ -21368,11 +17168,6 @@ impl ::core::marker::Copy for F64LoadMem0_SR {}
 impl ::core::clone::Clone for F64LoadMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64LoadMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LoadMem0_SR
     }
 }
 impl ::core::convert::From<F64LoadMem0_SR> for crate::Op {
@@ -21396,11 +17191,6 @@ impl ::core::clone::Clone for F64LoadMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64LoadMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LoadMem0_SS
-    }
-}
 impl ::core::convert::From<F64LoadMem0_SS> for crate::Op {
     fn from(op: F64LoadMem0_SS) -> Self {
         Self::F64LoadMem0_SS {
@@ -21420,11 +17210,6 @@ impl ::core::marker::Copy for F64LoadMem0_SI {}
 impl ::core::clone::Clone for F64LoadMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64LoadMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64LoadMem0_SI
     }
 }
 impl ::core::convert::From<F64LoadMem0_SI> for crate::Op {
@@ -21447,11 +17232,6 @@ impl ::core::marker::Copy for I32Load8S_RR {}
 impl ::core::clone::Clone for I32Load8S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load8S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8S_RR
     }
 }
 impl ::core::convert::From<I32Load8S_RR> for crate::Op {
@@ -21477,11 +17257,6 @@ impl ::core::clone::Clone for I32Load8S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32Load8S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8S_RS
-    }
-}
 impl ::core::convert::From<I32Load8S_RS> for crate::Op {
     fn from(op: I32Load8S_RS) -> Self {
         Self::I32Load8S_RS {
@@ -21503,11 +17278,6 @@ impl ::core::marker::Copy for I32Load8S_RI {}
 impl ::core::clone::Clone for I32Load8S_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load8S_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8S_RI
     }
 }
 impl ::core::convert::From<I32Load8S_RI> for crate::Op {
@@ -21532,11 +17302,6 @@ impl ::core::clone::Clone for I32Load8SMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I32Load8SMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8SMem0_RR
-    }
-}
 impl ::core::convert::From<I32Load8SMem0_RR> for crate::Op {
     fn from(op: I32Load8SMem0_RR) -> Self {
         Self::I32Load8SMem0_RR {
@@ -21556,11 +17321,6 @@ impl ::core::marker::Copy for I32Load8SMem0_RS {}
 impl ::core::clone::Clone for I32Load8SMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load8SMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8SMem0_RS
     }
 }
 impl ::core::convert::From<I32Load8SMem0_RS> for crate::Op {
@@ -21584,11 +17344,6 @@ impl ::core::clone::Clone for I32Load8SMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32Load8SMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8SMem0_RI
-    }
-}
 impl ::core::convert::From<I32Load8SMem0_RI> for crate::Op {
     fn from(op: I32Load8SMem0_RI) -> Self {
         Self::I32Load8SMem0_RI {
@@ -21608,11 +17363,6 @@ impl ::core::marker::Copy for I32Load8SMem0_SR {}
 impl ::core::clone::Clone for I32Load8SMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load8SMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8SMem0_SR
     }
 }
 impl ::core::convert::From<I32Load8SMem0_SR> for crate::Op {
@@ -21636,11 +17386,6 @@ impl ::core::clone::Clone for I32Load8SMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Load8SMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8SMem0_SS
-    }
-}
 impl ::core::convert::From<I32Load8SMem0_SS> for crate::Op {
     fn from(op: I32Load8SMem0_SS) -> Self {
         Self::I32Load8SMem0_SS {
@@ -21660,11 +17405,6 @@ impl ::core::marker::Copy for I32Load8SMem0_SI {}
 impl ::core::clone::Clone for I32Load8SMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load8SMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8SMem0_SI
     }
 }
 impl ::core::convert::From<I32Load8SMem0_SI> for crate::Op {
@@ -21687,11 +17427,6 @@ impl ::core::marker::Copy for I64Load8S_RR {}
 impl ::core::clone::Clone for I64Load8S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load8S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8S_RR
     }
 }
 impl ::core::convert::From<I64Load8S_RR> for crate::Op {
@@ -21717,11 +17452,6 @@ impl ::core::clone::Clone for I64Load8S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load8S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8S_RS
-    }
-}
 impl ::core::convert::From<I64Load8S_RS> for crate::Op {
     fn from(op: I64Load8S_RS) -> Self {
         Self::I64Load8S_RS {
@@ -21743,11 +17473,6 @@ impl ::core::marker::Copy for I64Load8S_RI {}
 impl ::core::clone::Clone for I64Load8S_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load8S_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8S_RI
     }
 }
 impl ::core::convert::From<I64Load8S_RI> for crate::Op {
@@ -21772,11 +17497,6 @@ impl ::core::clone::Clone for I64Load8SMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I64Load8SMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8SMem0_RR
-    }
-}
 impl ::core::convert::From<I64Load8SMem0_RR> for crate::Op {
     fn from(op: I64Load8SMem0_RR) -> Self {
         Self::I64Load8SMem0_RR {
@@ -21796,11 +17516,6 @@ impl ::core::marker::Copy for I64Load8SMem0_RS {}
 impl ::core::clone::Clone for I64Load8SMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load8SMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8SMem0_RS
     }
 }
 impl ::core::convert::From<I64Load8SMem0_RS> for crate::Op {
@@ -21824,11 +17539,6 @@ impl ::core::clone::Clone for I64Load8SMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Load8SMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8SMem0_RI
-    }
-}
 impl ::core::convert::From<I64Load8SMem0_RI> for crate::Op {
     fn from(op: I64Load8SMem0_RI) -> Self {
         Self::I64Load8SMem0_RI {
@@ -21848,11 +17558,6 @@ impl ::core::marker::Copy for I64Load8SMem0_SR {}
 impl ::core::clone::Clone for I64Load8SMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load8SMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8SMem0_SR
     }
 }
 impl ::core::convert::From<I64Load8SMem0_SR> for crate::Op {
@@ -21876,11 +17581,6 @@ impl ::core::clone::Clone for I64Load8SMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load8SMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8SMem0_SS
-    }
-}
 impl ::core::convert::From<I64Load8SMem0_SS> for crate::Op {
     fn from(op: I64Load8SMem0_SS) -> Self {
         Self::I64Load8SMem0_SS {
@@ -21900,11 +17600,6 @@ impl ::core::marker::Copy for I64Load8SMem0_SI {}
 impl ::core::clone::Clone for I64Load8SMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load8SMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8SMem0_SI
     }
 }
 impl ::core::convert::From<I64Load8SMem0_SI> for crate::Op {
@@ -21927,11 +17622,6 @@ impl ::core::marker::Copy for I32Load8U_RR {}
 impl ::core::clone::Clone for I32Load8U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load8U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8U_RR
     }
 }
 impl ::core::convert::From<I32Load8U_RR> for crate::Op {
@@ -21957,11 +17647,6 @@ impl ::core::clone::Clone for I32Load8U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32Load8U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8U_RS
-    }
-}
 impl ::core::convert::From<I32Load8U_RS> for crate::Op {
     fn from(op: I32Load8U_RS) -> Self {
         Self::I32Load8U_RS {
@@ -21983,11 +17668,6 @@ impl ::core::marker::Copy for I32Load8U_RI {}
 impl ::core::clone::Clone for I32Load8U_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load8U_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8U_RI
     }
 }
 impl ::core::convert::From<I32Load8U_RI> for crate::Op {
@@ -22012,11 +17692,6 @@ impl ::core::clone::Clone for I32Load8UMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I32Load8UMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8UMem0_RR
-    }
-}
 impl ::core::convert::From<I32Load8UMem0_RR> for crate::Op {
     fn from(op: I32Load8UMem0_RR) -> Self {
         Self::I32Load8UMem0_RR {
@@ -22036,11 +17711,6 @@ impl ::core::marker::Copy for I32Load8UMem0_RS {}
 impl ::core::clone::Clone for I32Load8UMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load8UMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8UMem0_RS
     }
 }
 impl ::core::convert::From<I32Load8UMem0_RS> for crate::Op {
@@ -22064,11 +17734,6 @@ impl ::core::clone::Clone for I32Load8UMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32Load8UMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8UMem0_RI
-    }
-}
 impl ::core::convert::From<I32Load8UMem0_RI> for crate::Op {
     fn from(op: I32Load8UMem0_RI) -> Self {
         Self::I32Load8UMem0_RI {
@@ -22088,11 +17753,6 @@ impl ::core::marker::Copy for I32Load8UMem0_SR {}
 impl ::core::clone::Clone for I32Load8UMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load8UMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8UMem0_SR
     }
 }
 impl ::core::convert::From<I32Load8UMem0_SR> for crate::Op {
@@ -22116,11 +17776,6 @@ impl ::core::clone::Clone for I32Load8UMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Load8UMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8UMem0_SS
-    }
-}
 impl ::core::convert::From<I32Load8UMem0_SS> for crate::Op {
     fn from(op: I32Load8UMem0_SS) -> Self {
         Self::I32Load8UMem0_SS {
@@ -22140,11 +17795,6 @@ impl ::core::marker::Copy for I32Load8UMem0_SI {}
 impl ::core::clone::Clone for I32Load8UMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load8UMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load8UMem0_SI
     }
 }
 impl ::core::convert::From<I32Load8UMem0_SI> for crate::Op {
@@ -22167,11 +17817,6 @@ impl ::core::marker::Copy for I64Load8U_RR {}
 impl ::core::clone::Clone for I64Load8U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load8U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8U_RR
     }
 }
 impl ::core::convert::From<I64Load8U_RR> for crate::Op {
@@ -22197,11 +17842,6 @@ impl ::core::clone::Clone for I64Load8U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load8U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8U_RS
-    }
-}
 impl ::core::convert::From<I64Load8U_RS> for crate::Op {
     fn from(op: I64Load8U_RS) -> Self {
         Self::I64Load8U_RS {
@@ -22223,11 +17863,6 @@ impl ::core::marker::Copy for I64Load8U_RI {}
 impl ::core::clone::Clone for I64Load8U_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load8U_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8U_RI
     }
 }
 impl ::core::convert::From<I64Load8U_RI> for crate::Op {
@@ -22252,11 +17887,6 @@ impl ::core::clone::Clone for I64Load8UMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I64Load8UMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8UMem0_RR
-    }
-}
 impl ::core::convert::From<I64Load8UMem0_RR> for crate::Op {
     fn from(op: I64Load8UMem0_RR) -> Self {
         Self::I64Load8UMem0_RR {
@@ -22276,11 +17906,6 @@ impl ::core::marker::Copy for I64Load8UMem0_RS {}
 impl ::core::clone::Clone for I64Load8UMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load8UMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8UMem0_RS
     }
 }
 impl ::core::convert::From<I64Load8UMem0_RS> for crate::Op {
@@ -22304,11 +17929,6 @@ impl ::core::clone::Clone for I64Load8UMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Load8UMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8UMem0_RI
-    }
-}
 impl ::core::convert::From<I64Load8UMem0_RI> for crate::Op {
     fn from(op: I64Load8UMem0_RI) -> Self {
         Self::I64Load8UMem0_RI {
@@ -22328,11 +17948,6 @@ impl ::core::marker::Copy for I64Load8UMem0_SR {}
 impl ::core::clone::Clone for I64Load8UMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load8UMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8UMem0_SR
     }
 }
 impl ::core::convert::From<I64Load8UMem0_SR> for crate::Op {
@@ -22356,11 +17971,6 @@ impl ::core::clone::Clone for I64Load8UMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load8UMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8UMem0_SS
-    }
-}
 impl ::core::convert::From<I64Load8UMem0_SS> for crate::Op {
     fn from(op: I64Load8UMem0_SS) -> Self {
         Self::I64Load8UMem0_SS {
@@ -22380,11 +17990,6 @@ impl ::core::marker::Copy for I64Load8UMem0_SI {}
 impl ::core::clone::Clone for I64Load8UMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load8UMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load8UMem0_SI
     }
 }
 impl ::core::convert::From<I64Load8UMem0_SI> for crate::Op {
@@ -22407,11 +18012,6 @@ impl ::core::marker::Copy for I32Load16S_RR {}
 impl ::core::clone::Clone for I32Load16S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load16S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16S_RR
     }
 }
 impl ::core::convert::From<I32Load16S_RR> for crate::Op {
@@ -22437,11 +18037,6 @@ impl ::core::clone::Clone for I32Load16S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32Load16S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16S_RS
-    }
-}
 impl ::core::convert::From<I32Load16S_RS> for crate::Op {
     fn from(op: I32Load16S_RS) -> Self {
         Self::I32Load16S_RS {
@@ -22463,11 +18058,6 @@ impl ::core::marker::Copy for I32Load16S_RI {}
 impl ::core::clone::Clone for I32Load16S_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load16S_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16S_RI
     }
 }
 impl ::core::convert::From<I32Load16S_RI> for crate::Op {
@@ -22492,11 +18082,6 @@ impl ::core::clone::Clone for I32Load16SMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I32Load16SMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16SMem0_RR
-    }
-}
 impl ::core::convert::From<I32Load16SMem0_RR> for crate::Op {
     fn from(op: I32Load16SMem0_RR) -> Self {
         Self::I32Load16SMem0_RR {
@@ -22516,11 +18101,6 @@ impl ::core::marker::Copy for I32Load16SMem0_RS {}
 impl ::core::clone::Clone for I32Load16SMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load16SMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16SMem0_RS
     }
 }
 impl ::core::convert::From<I32Load16SMem0_RS> for crate::Op {
@@ -22544,11 +18124,6 @@ impl ::core::clone::Clone for I32Load16SMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32Load16SMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16SMem0_RI
-    }
-}
 impl ::core::convert::From<I32Load16SMem0_RI> for crate::Op {
     fn from(op: I32Load16SMem0_RI) -> Self {
         Self::I32Load16SMem0_RI {
@@ -22568,11 +18143,6 @@ impl ::core::marker::Copy for I32Load16SMem0_SR {}
 impl ::core::clone::Clone for I32Load16SMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load16SMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16SMem0_SR
     }
 }
 impl ::core::convert::From<I32Load16SMem0_SR> for crate::Op {
@@ -22596,11 +18166,6 @@ impl ::core::clone::Clone for I32Load16SMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Load16SMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16SMem0_SS
-    }
-}
 impl ::core::convert::From<I32Load16SMem0_SS> for crate::Op {
     fn from(op: I32Load16SMem0_SS) -> Self {
         Self::I32Load16SMem0_SS {
@@ -22620,11 +18185,6 @@ impl ::core::marker::Copy for I32Load16SMem0_SI {}
 impl ::core::clone::Clone for I32Load16SMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load16SMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16SMem0_SI
     }
 }
 impl ::core::convert::From<I32Load16SMem0_SI> for crate::Op {
@@ -22647,11 +18207,6 @@ impl ::core::marker::Copy for I64Load16S_RR {}
 impl ::core::clone::Clone for I64Load16S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load16S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16S_RR
     }
 }
 impl ::core::convert::From<I64Load16S_RR> for crate::Op {
@@ -22677,11 +18232,6 @@ impl ::core::clone::Clone for I64Load16S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load16S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16S_RS
-    }
-}
 impl ::core::convert::From<I64Load16S_RS> for crate::Op {
     fn from(op: I64Load16S_RS) -> Self {
         Self::I64Load16S_RS {
@@ -22703,11 +18253,6 @@ impl ::core::marker::Copy for I64Load16S_RI {}
 impl ::core::clone::Clone for I64Load16S_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load16S_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16S_RI
     }
 }
 impl ::core::convert::From<I64Load16S_RI> for crate::Op {
@@ -22732,11 +18277,6 @@ impl ::core::clone::Clone for I64Load16SMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I64Load16SMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16SMem0_RR
-    }
-}
 impl ::core::convert::From<I64Load16SMem0_RR> for crate::Op {
     fn from(op: I64Load16SMem0_RR) -> Self {
         Self::I64Load16SMem0_RR {
@@ -22756,11 +18296,6 @@ impl ::core::marker::Copy for I64Load16SMem0_RS {}
 impl ::core::clone::Clone for I64Load16SMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load16SMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16SMem0_RS
     }
 }
 impl ::core::convert::From<I64Load16SMem0_RS> for crate::Op {
@@ -22784,11 +18319,6 @@ impl ::core::clone::Clone for I64Load16SMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Load16SMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16SMem0_RI
-    }
-}
 impl ::core::convert::From<I64Load16SMem0_RI> for crate::Op {
     fn from(op: I64Load16SMem0_RI) -> Self {
         Self::I64Load16SMem0_RI {
@@ -22808,11 +18338,6 @@ impl ::core::marker::Copy for I64Load16SMem0_SR {}
 impl ::core::clone::Clone for I64Load16SMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load16SMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16SMem0_SR
     }
 }
 impl ::core::convert::From<I64Load16SMem0_SR> for crate::Op {
@@ -22836,11 +18361,6 @@ impl ::core::clone::Clone for I64Load16SMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load16SMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16SMem0_SS
-    }
-}
 impl ::core::convert::From<I64Load16SMem0_SS> for crate::Op {
     fn from(op: I64Load16SMem0_SS) -> Self {
         Self::I64Load16SMem0_SS {
@@ -22860,11 +18380,6 @@ impl ::core::marker::Copy for I64Load16SMem0_SI {}
 impl ::core::clone::Clone for I64Load16SMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load16SMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16SMem0_SI
     }
 }
 impl ::core::convert::From<I64Load16SMem0_SI> for crate::Op {
@@ -22887,11 +18402,6 @@ impl ::core::marker::Copy for I32Load16U_RR {}
 impl ::core::clone::Clone for I32Load16U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load16U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16U_RR
     }
 }
 impl ::core::convert::From<I32Load16U_RR> for crate::Op {
@@ -22917,11 +18427,6 @@ impl ::core::clone::Clone for I32Load16U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I32Load16U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16U_RS
-    }
-}
 impl ::core::convert::From<I32Load16U_RS> for crate::Op {
     fn from(op: I32Load16U_RS) -> Self {
         Self::I32Load16U_RS {
@@ -22943,11 +18448,6 @@ impl ::core::marker::Copy for I32Load16U_RI {}
 impl ::core::clone::Clone for I32Load16U_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load16U_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16U_RI
     }
 }
 impl ::core::convert::From<I32Load16U_RI> for crate::Op {
@@ -22972,11 +18472,6 @@ impl ::core::clone::Clone for I32Load16UMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I32Load16UMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16UMem0_RR
-    }
-}
 impl ::core::convert::From<I32Load16UMem0_RR> for crate::Op {
     fn from(op: I32Load16UMem0_RR) -> Self {
         Self::I32Load16UMem0_RR {
@@ -22996,11 +18491,6 @@ impl ::core::marker::Copy for I32Load16UMem0_RS {}
 impl ::core::clone::Clone for I32Load16UMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load16UMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16UMem0_RS
     }
 }
 impl ::core::convert::From<I32Load16UMem0_RS> for crate::Op {
@@ -23024,11 +18514,6 @@ impl ::core::clone::Clone for I32Load16UMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32Load16UMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16UMem0_RI
-    }
-}
 impl ::core::convert::From<I32Load16UMem0_RI> for crate::Op {
     fn from(op: I32Load16UMem0_RI) -> Self {
         Self::I32Load16UMem0_RI {
@@ -23048,11 +18533,6 @@ impl ::core::marker::Copy for I32Load16UMem0_SR {}
 impl ::core::clone::Clone for I32Load16UMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load16UMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16UMem0_SR
     }
 }
 impl ::core::convert::From<I32Load16UMem0_SR> for crate::Op {
@@ -23076,11 +18556,6 @@ impl ::core::clone::Clone for I32Load16UMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Load16UMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16UMem0_SS
-    }
-}
 impl ::core::convert::From<I32Load16UMem0_SS> for crate::Op {
     fn from(op: I32Load16UMem0_SS) -> Self {
         Self::I32Load16UMem0_SS {
@@ -23100,11 +18575,6 @@ impl ::core::marker::Copy for I32Load16UMem0_SI {}
 impl ::core::clone::Clone for I32Load16UMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Load16UMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Load16UMem0_SI
     }
 }
 impl ::core::convert::From<I32Load16UMem0_SI> for crate::Op {
@@ -23127,11 +18597,6 @@ impl ::core::marker::Copy for I64Load16U_RR {}
 impl ::core::clone::Clone for I64Load16U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load16U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16U_RR
     }
 }
 impl ::core::convert::From<I64Load16U_RR> for crate::Op {
@@ -23157,11 +18622,6 @@ impl ::core::clone::Clone for I64Load16U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load16U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16U_RS
-    }
-}
 impl ::core::convert::From<I64Load16U_RS> for crate::Op {
     fn from(op: I64Load16U_RS) -> Self {
         Self::I64Load16U_RS {
@@ -23183,11 +18643,6 @@ impl ::core::marker::Copy for I64Load16U_RI {}
 impl ::core::clone::Clone for I64Load16U_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load16U_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16U_RI
     }
 }
 impl ::core::convert::From<I64Load16U_RI> for crate::Op {
@@ -23212,11 +18667,6 @@ impl ::core::clone::Clone for I64Load16UMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I64Load16UMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16UMem0_RR
-    }
-}
 impl ::core::convert::From<I64Load16UMem0_RR> for crate::Op {
     fn from(op: I64Load16UMem0_RR) -> Self {
         Self::I64Load16UMem0_RR {
@@ -23236,11 +18686,6 @@ impl ::core::marker::Copy for I64Load16UMem0_RS {}
 impl ::core::clone::Clone for I64Load16UMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load16UMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16UMem0_RS
     }
 }
 impl ::core::convert::From<I64Load16UMem0_RS> for crate::Op {
@@ -23264,11 +18709,6 @@ impl ::core::clone::Clone for I64Load16UMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Load16UMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16UMem0_RI
-    }
-}
 impl ::core::convert::From<I64Load16UMem0_RI> for crate::Op {
     fn from(op: I64Load16UMem0_RI) -> Self {
         Self::I64Load16UMem0_RI {
@@ -23288,11 +18728,6 @@ impl ::core::marker::Copy for I64Load16UMem0_SR {}
 impl ::core::clone::Clone for I64Load16UMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load16UMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16UMem0_SR
     }
 }
 impl ::core::convert::From<I64Load16UMem0_SR> for crate::Op {
@@ -23316,11 +18751,6 @@ impl ::core::clone::Clone for I64Load16UMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load16UMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16UMem0_SS
-    }
-}
 impl ::core::convert::From<I64Load16UMem0_SS> for crate::Op {
     fn from(op: I64Load16UMem0_SS) -> Self {
         Self::I64Load16UMem0_SS {
@@ -23340,11 +18770,6 @@ impl ::core::marker::Copy for I64Load16UMem0_SI {}
 impl ::core::clone::Clone for I64Load16UMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load16UMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load16UMem0_SI
     }
 }
 impl ::core::convert::From<I64Load16UMem0_SI> for crate::Op {
@@ -23367,11 +18792,6 @@ impl ::core::marker::Copy for I64Load32S_RR {}
 impl ::core::clone::Clone for I64Load32S_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load32S_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32S_RR
     }
 }
 impl ::core::convert::From<I64Load32S_RR> for crate::Op {
@@ -23397,11 +18817,6 @@ impl ::core::clone::Clone for I64Load32S_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load32S_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32S_RS
-    }
-}
 impl ::core::convert::From<I64Load32S_RS> for crate::Op {
     fn from(op: I64Load32S_RS) -> Self {
         Self::I64Load32S_RS {
@@ -23423,11 +18838,6 @@ impl ::core::marker::Copy for I64Load32S_RI {}
 impl ::core::clone::Clone for I64Load32S_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load32S_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32S_RI
     }
 }
 impl ::core::convert::From<I64Load32S_RI> for crate::Op {
@@ -23452,11 +18862,6 @@ impl ::core::clone::Clone for I64Load32SMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I64Load32SMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32SMem0_RR
-    }
-}
 impl ::core::convert::From<I64Load32SMem0_RR> for crate::Op {
     fn from(op: I64Load32SMem0_RR) -> Self {
         Self::I64Load32SMem0_RR {
@@ -23476,11 +18881,6 @@ impl ::core::marker::Copy for I64Load32SMem0_RS {}
 impl ::core::clone::Clone for I64Load32SMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load32SMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32SMem0_RS
     }
 }
 impl ::core::convert::From<I64Load32SMem0_RS> for crate::Op {
@@ -23504,11 +18904,6 @@ impl ::core::clone::Clone for I64Load32SMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Load32SMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32SMem0_RI
-    }
-}
 impl ::core::convert::From<I64Load32SMem0_RI> for crate::Op {
     fn from(op: I64Load32SMem0_RI) -> Self {
         Self::I64Load32SMem0_RI {
@@ -23528,11 +18923,6 @@ impl ::core::marker::Copy for I64Load32SMem0_SR {}
 impl ::core::clone::Clone for I64Load32SMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load32SMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32SMem0_SR
     }
 }
 impl ::core::convert::From<I64Load32SMem0_SR> for crate::Op {
@@ -23556,11 +18946,6 @@ impl ::core::clone::Clone for I64Load32SMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load32SMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32SMem0_SS
-    }
-}
 impl ::core::convert::From<I64Load32SMem0_SS> for crate::Op {
     fn from(op: I64Load32SMem0_SS) -> Self {
         Self::I64Load32SMem0_SS {
@@ -23580,11 +18965,6 @@ impl ::core::marker::Copy for I64Load32SMem0_SI {}
 impl ::core::clone::Clone for I64Load32SMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load32SMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32SMem0_SI
     }
 }
 impl ::core::convert::From<I64Load32SMem0_SI> for crate::Op {
@@ -23607,11 +18987,6 @@ impl ::core::marker::Copy for I64Load32U_RR {}
 impl ::core::clone::Clone for I64Load32U_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load32U_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32U_RR
     }
 }
 impl ::core::convert::From<I64Load32U_RR> for crate::Op {
@@ -23637,11 +19012,6 @@ impl ::core::clone::Clone for I64Load32U_RS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load32U_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32U_RS
-    }
-}
 impl ::core::convert::From<I64Load32U_RS> for crate::Op {
     fn from(op: I64Load32U_RS) -> Self {
         Self::I64Load32U_RS {
@@ -23663,11 +19033,6 @@ impl ::core::marker::Copy for I64Load32U_RI {}
 impl ::core::clone::Clone for I64Load32U_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load32U_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32U_RI
     }
 }
 impl ::core::convert::From<I64Load32U_RI> for crate::Op {
@@ -23692,11 +19057,6 @@ impl ::core::clone::Clone for I64Load32UMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for I64Load32UMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32UMem0_RR
-    }
-}
 impl ::core::convert::From<I64Load32UMem0_RR> for crate::Op {
     fn from(op: I64Load32UMem0_RR) -> Self {
         Self::I64Load32UMem0_RR {
@@ -23716,11 +19076,6 @@ impl ::core::marker::Copy for I64Load32UMem0_RS {}
 impl ::core::clone::Clone for I64Load32UMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load32UMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32UMem0_RS
     }
 }
 impl ::core::convert::From<I64Load32UMem0_RS> for crate::Op {
@@ -23744,11 +19099,6 @@ impl ::core::clone::Clone for I64Load32UMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Load32UMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32UMem0_RI
-    }
-}
 impl ::core::convert::From<I64Load32UMem0_RI> for crate::Op {
     fn from(op: I64Load32UMem0_RI) -> Self {
         Self::I64Load32UMem0_RI {
@@ -23768,11 +19118,6 @@ impl ::core::marker::Copy for I64Load32UMem0_SR {}
 impl ::core::clone::Clone for I64Load32UMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load32UMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32UMem0_SR
     }
 }
 impl ::core::convert::From<I64Load32UMem0_SR> for crate::Op {
@@ -23796,11 +19141,6 @@ impl ::core::clone::Clone for I64Load32UMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Load32UMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32UMem0_SS
-    }
-}
 impl ::core::convert::From<I64Load32UMem0_SS> for crate::Op {
     fn from(op: I64Load32UMem0_SS) -> Self {
         Self::I64Load32UMem0_SS {
@@ -23820,11 +19160,6 @@ impl ::core::marker::Copy for I64Load32UMem0_SI {}
 impl ::core::clone::Clone for I64Load32UMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Load32UMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Load32UMem0_SI
     }
 }
 impl ::core::convert::From<I64Load32UMem0_SI> for crate::Op {
@@ -23847,11 +19182,6 @@ impl ::core::marker::Copy for I32Store_RS {}
 impl ::core::clone::Clone for I32Store_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_RS
     }
 }
 impl ::core::convert::From<I32Store_RS> for crate::Op {
@@ -23877,11 +19207,6 @@ impl ::core::clone::Clone for I32Store_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32Store_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_RI
-    }
-}
 impl ::core::convert::From<I32Store_RI> for crate::Op {
     fn from(op: I32Store_RI) -> Self {
         Self::I32Store_RI {
@@ -23903,11 +19228,6 @@ impl ::core::marker::Copy for I32Store_SR {}
 impl ::core::clone::Clone for I32Store_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_SR
     }
 }
 impl ::core::convert::From<I32Store_SR> for crate::Op {
@@ -23933,11 +19253,6 @@ impl ::core::clone::Clone for I32Store_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Store_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_SS
-    }
-}
 impl ::core::convert::From<I32Store_SS> for crate::Op {
     fn from(op: I32Store_SS) -> Self {
         Self::I32Store_SS {
@@ -23959,11 +19274,6 @@ impl ::core::marker::Copy for I32Store_SI {}
 impl ::core::clone::Clone for I32Store_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_SI
     }
 }
 impl ::core::convert::From<I32Store_SI> for crate::Op {
@@ -23988,11 +19298,6 @@ impl ::core::clone::Clone for I32Store_IR {
         *self
     }
 }
-impl crate::OperatorCode for I32Store_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_IR
-    }
-}
 impl ::core::convert::From<I32Store_IR> for crate::Op {
     fn from(op: I32Store_IR) -> Self {
         Self::I32Store_IR {
@@ -24012,11 +19317,6 @@ impl ::core::marker::Copy for I32Store_IS {}
 impl ::core::clone::Clone for I32Store_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_IS
     }
 }
 impl ::core::convert::From<I32Store_IS> for crate::Op {
@@ -24040,11 +19340,6 @@ impl ::core::clone::Clone for I32Store_II {
         *self
     }
 }
-impl crate::OperatorCode for I32Store_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_II
-    }
-}
 impl ::core::convert::From<I32Store_II> for crate::Op {
     fn from(op: I32Store_II) -> Self {
         Self::I32Store_II {
@@ -24064,11 +19359,6 @@ impl ::core::marker::Copy for I32StoreMem0_RS {}
 impl ::core::clone::Clone for I32StoreMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32StoreMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32StoreMem0_RS
     }
 }
 impl ::core::convert::From<I32StoreMem0_RS> for crate::Op {
@@ -24092,11 +19382,6 @@ impl ::core::clone::Clone for I32StoreMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32StoreMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32StoreMem0_RI
-    }
-}
 impl ::core::convert::From<I32StoreMem0_RI> for crate::Op {
     fn from(op: I32StoreMem0_RI) -> Self {
         Self::I32StoreMem0_RI {
@@ -24116,11 +19401,6 @@ impl ::core::marker::Copy for I32StoreMem0_SR {}
 impl ::core::clone::Clone for I32StoreMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32StoreMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32StoreMem0_SR
     }
 }
 impl ::core::convert::From<I32StoreMem0_SR> for crate::Op {
@@ -24144,11 +19424,6 @@ impl ::core::clone::Clone for I32StoreMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32StoreMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32StoreMem0_SS
-    }
-}
 impl ::core::convert::From<I32StoreMem0_SS> for crate::Op {
     fn from(op: I32StoreMem0_SS) -> Self {
         Self::I32StoreMem0_SS {
@@ -24168,11 +19443,6 @@ impl ::core::marker::Copy for I32StoreMem0_SI {}
 impl ::core::clone::Clone for I32StoreMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32StoreMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32StoreMem0_SI
     }
 }
 impl ::core::convert::From<I32StoreMem0_SI> for crate::Op {
@@ -24195,11 +19465,6 @@ impl ::core::clone::Clone for I32StoreMem0_IR {
         *self
     }
 }
-impl crate::OperatorCode for I32StoreMem0_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32StoreMem0_IR
-    }
-}
 impl ::core::convert::From<I32StoreMem0_IR> for crate::Op {
     fn from(op: I32StoreMem0_IR) -> Self {
         Self::I32StoreMem0_IR {
@@ -24217,11 +19482,6 @@ impl ::core::marker::Copy for I32StoreMem0_IS {}
 impl ::core::clone::Clone for I32StoreMem0_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32StoreMem0_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32StoreMem0_IS
     }
 }
 impl ::core::convert::From<I32StoreMem0_IS> for crate::Op {
@@ -24243,11 +19503,6 @@ impl ::core::clone::Clone for I32StoreMem0_II {
         *self
     }
 }
-impl crate::OperatorCode for I32StoreMem0_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32StoreMem0_II
-    }
-}
 impl ::core::convert::From<I32StoreMem0_II> for crate::Op {
     fn from(op: I32StoreMem0_II) -> Self {
         Self::I32StoreMem0_II {
@@ -24267,11 +19522,6 @@ impl ::core::marker::Copy for I64Store_RS {}
 impl ::core::clone::Clone for I64Store_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_RS
     }
 }
 impl ::core::convert::From<I64Store_RS> for crate::Op {
@@ -24297,11 +19547,6 @@ impl ::core::clone::Clone for I64Store_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Store_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_RI
-    }
-}
 impl ::core::convert::From<I64Store_RI> for crate::Op {
     fn from(op: I64Store_RI) -> Self {
         Self::I64Store_RI {
@@ -24323,11 +19568,6 @@ impl ::core::marker::Copy for I64Store_SR {}
 impl ::core::clone::Clone for I64Store_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_SR
     }
 }
 impl ::core::convert::From<I64Store_SR> for crate::Op {
@@ -24353,11 +19593,6 @@ impl ::core::clone::Clone for I64Store_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Store_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_SS
-    }
-}
 impl ::core::convert::From<I64Store_SS> for crate::Op {
     fn from(op: I64Store_SS) -> Self {
         Self::I64Store_SS {
@@ -24379,11 +19614,6 @@ impl ::core::marker::Copy for I64Store_SI {}
 impl ::core::clone::Clone for I64Store_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_SI
     }
 }
 impl ::core::convert::From<I64Store_SI> for crate::Op {
@@ -24408,11 +19638,6 @@ impl ::core::clone::Clone for I64Store_IR {
         *self
     }
 }
-impl crate::OperatorCode for I64Store_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_IR
-    }
-}
 impl ::core::convert::From<I64Store_IR> for crate::Op {
     fn from(op: I64Store_IR) -> Self {
         Self::I64Store_IR {
@@ -24432,11 +19657,6 @@ impl ::core::marker::Copy for I64Store_IS {}
 impl ::core::clone::Clone for I64Store_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_IS
     }
 }
 impl ::core::convert::From<I64Store_IS> for crate::Op {
@@ -24460,11 +19680,6 @@ impl ::core::clone::Clone for I64Store_II {
         *self
     }
 }
-impl crate::OperatorCode for I64Store_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_II
-    }
-}
 impl ::core::convert::From<I64Store_II> for crate::Op {
     fn from(op: I64Store_II) -> Self {
         Self::I64Store_II {
@@ -24484,11 +19699,6 @@ impl ::core::marker::Copy for I64StoreMem0_RS {}
 impl ::core::clone::Clone for I64StoreMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64StoreMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64StoreMem0_RS
     }
 }
 impl ::core::convert::From<I64StoreMem0_RS> for crate::Op {
@@ -24512,11 +19722,6 @@ impl ::core::clone::Clone for I64StoreMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64StoreMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64StoreMem0_RI
-    }
-}
 impl ::core::convert::From<I64StoreMem0_RI> for crate::Op {
     fn from(op: I64StoreMem0_RI) -> Self {
         Self::I64StoreMem0_RI {
@@ -24536,11 +19741,6 @@ impl ::core::marker::Copy for I64StoreMem0_SR {}
 impl ::core::clone::Clone for I64StoreMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64StoreMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64StoreMem0_SR
     }
 }
 impl ::core::convert::From<I64StoreMem0_SR> for crate::Op {
@@ -24564,11 +19764,6 @@ impl ::core::clone::Clone for I64StoreMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64StoreMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64StoreMem0_SS
-    }
-}
 impl ::core::convert::From<I64StoreMem0_SS> for crate::Op {
     fn from(op: I64StoreMem0_SS) -> Self {
         Self::I64StoreMem0_SS {
@@ -24588,11 +19783,6 @@ impl ::core::marker::Copy for I64StoreMem0_SI {}
 impl ::core::clone::Clone for I64StoreMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64StoreMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64StoreMem0_SI
     }
 }
 impl ::core::convert::From<I64StoreMem0_SI> for crate::Op {
@@ -24615,11 +19805,6 @@ impl ::core::clone::Clone for I64StoreMem0_IR {
         *self
     }
 }
-impl crate::OperatorCode for I64StoreMem0_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64StoreMem0_IR
-    }
-}
 impl ::core::convert::From<I64StoreMem0_IR> for crate::Op {
     fn from(op: I64StoreMem0_IR) -> Self {
         Self::I64StoreMem0_IR {
@@ -24637,11 +19822,6 @@ impl ::core::marker::Copy for I64StoreMem0_IS {}
 impl ::core::clone::Clone for I64StoreMem0_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64StoreMem0_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64StoreMem0_IS
     }
 }
 impl ::core::convert::From<I64StoreMem0_IS> for crate::Op {
@@ -24663,11 +19843,6 @@ impl ::core::clone::Clone for I64StoreMem0_II {
         *self
     }
 }
-impl crate::OperatorCode for I64StoreMem0_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64StoreMem0_II
-    }
-}
 impl ::core::convert::From<I64StoreMem0_II> for crate::Op {
     fn from(op: I64StoreMem0_II) -> Self {
         Self::I64StoreMem0_II {
@@ -24687,11 +19862,6 @@ impl ::core::marker::Copy for F32Store_RR {}
 impl ::core::clone::Clone for F32Store_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Store_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_RR
     }
 }
 impl ::core::convert::From<F32Store_RR> for crate::Op {
@@ -24717,11 +19887,6 @@ impl ::core::clone::Clone for F32Store_RS {
         *self
     }
 }
-impl crate::OperatorCode for F32Store_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_RS
-    }
-}
 impl ::core::convert::From<F32Store_RS> for crate::Op {
     fn from(op: F32Store_RS) -> Self {
         Self::F32Store_RS {
@@ -24743,11 +19908,6 @@ impl ::core::marker::Copy for F32Store_RI {}
 impl ::core::clone::Clone for F32Store_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Store_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_RI
     }
 }
 impl ::core::convert::From<F32Store_RI> for crate::Op {
@@ -24773,11 +19933,6 @@ impl ::core::clone::Clone for F32Store_SR {
         *self
     }
 }
-impl crate::OperatorCode for F32Store_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_SR
-    }
-}
 impl ::core::convert::From<F32Store_SR> for crate::Op {
     fn from(op: F32Store_SR) -> Self {
         Self::F32Store_SR {
@@ -24799,11 +19954,6 @@ impl ::core::marker::Copy for F32Store_SS {}
 impl ::core::clone::Clone for F32Store_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Store_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_SS
     }
 }
 impl ::core::convert::From<F32Store_SS> for crate::Op {
@@ -24829,11 +19979,6 @@ impl ::core::clone::Clone for F32Store_SI {
         *self
     }
 }
-impl crate::OperatorCode for F32Store_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_SI
-    }
-}
 impl ::core::convert::From<F32Store_SI> for crate::Op {
     fn from(op: F32Store_SI) -> Self {
         Self::F32Store_SI {
@@ -24854,11 +19999,6 @@ impl ::core::marker::Copy for F32Store_IR {}
 impl ::core::clone::Clone for F32Store_IR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Store_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_IR
     }
 }
 impl ::core::convert::From<F32Store_IR> for crate::Op {
@@ -24882,11 +20022,6 @@ impl ::core::clone::Clone for F32Store_IS {
         *self
     }
 }
-impl crate::OperatorCode for F32Store_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_IS
-    }
-}
 impl ::core::convert::From<F32Store_IS> for crate::Op {
     fn from(op: F32Store_IS) -> Self {
         Self::F32Store_IS {
@@ -24906,11 +20041,6 @@ impl ::core::marker::Copy for F32Store_II {}
 impl ::core::clone::Clone for F32Store_II {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32Store_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_II
     }
 }
 impl ::core::convert::From<F32Store_II> for crate::Op {
@@ -24934,11 +20064,6 @@ impl ::core::clone::Clone for F32StoreMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for F32StoreMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32StoreMem0_RR
-    }
-}
 impl ::core::convert::From<F32StoreMem0_RR> for crate::Op {
     fn from(op: F32StoreMem0_RR) -> Self {
         Self::F32StoreMem0_RR {
@@ -24958,11 +20083,6 @@ impl ::core::marker::Copy for F32StoreMem0_RS {}
 impl ::core::clone::Clone for F32StoreMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32StoreMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32StoreMem0_RS
     }
 }
 impl ::core::convert::From<F32StoreMem0_RS> for crate::Op {
@@ -24986,11 +20106,6 @@ impl ::core::clone::Clone for F32StoreMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for F32StoreMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32StoreMem0_RI
-    }
-}
 impl ::core::convert::From<F32StoreMem0_RI> for crate::Op {
     fn from(op: F32StoreMem0_RI) -> Self {
         Self::F32StoreMem0_RI {
@@ -25010,11 +20125,6 @@ impl ::core::marker::Copy for F32StoreMem0_SR {}
 impl ::core::clone::Clone for F32StoreMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32StoreMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32StoreMem0_SR
     }
 }
 impl ::core::convert::From<F32StoreMem0_SR> for crate::Op {
@@ -25038,11 +20148,6 @@ impl ::core::clone::Clone for F32StoreMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for F32StoreMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32StoreMem0_SS
-    }
-}
 impl ::core::convert::From<F32StoreMem0_SS> for crate::Op {
     fn from(op: F32StoreMem0_SS) -> Self {
         Self::F32StoreMem0_SS {
@@ -25062,11 +20167,6 @@ impl ::core::marker::Copy for F32StoreMem0_SI {}
 impl ::core::clone::Clone for F32StoreMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32StoreMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32StoreMem0_SI
     }
 }
 impl ::core::convert::From<F32StoreMem0_SI> for crate::Op {
@@ -25089,11 +20189,6 @@ impl ::core::clone::Clone for F32StoreMem0_IR {
         *self
     }
 }
-impl crate::OperatorCode for F32StoreMem0_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32StoreMem0_IR
-    }
-}
 impl ::core::convert::From<F32StoreMem0_IR> for crate::Op {
     fn from(op: F32StoreMem0_IR) -> Self {
         Self::F32StoreMem0_IR {
@@ -25111,11 +20206,6 @@ impl ::core::marker::Copy for F32StoreMem0_IS {}
 impl ::core::clone::Clone for F32StoreMem0_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F32StoreMem0_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32StoreMem0_IS
     }
 }
 impl ::core::convert::From<F32StoreMem0_IS> for crate::Op {
@@ -25137,11 +20227,6 @@ impl ::core::clone::Clone for F32StoreMem0_II {
         *self
     }
 }
-impl crate::OperatorCode for F32StoreMem0_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32StoreMem0_II
-    }
-}
 impl ::core::convert::From<F32StoreMem0_II> for crate::Op {
     fn from(op: F32StoreMem0_II) -> Self {
         Self::F32StoreMem0_II {
@@ -25161,11 +20246,6 @@ impl ::core::marker::Copy for F64Store_RR {}
 impl ::core::clone::Clone for F64Store_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Store_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_RR
     }
 }
 impl ::core::convert::From<F64Store_RR> for crate::Op {
@@ -25191,11 +20271,6 @@ impl ::core::clone::Clone for F64Store_RS {
         *self
     }
 }
-impl crate::OperatorCode for F64Store_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_RS
-    }
-}
 impl ::core::convert::From<F64Store_RS> for crate::Op {
     fn from(op: F64Store_RS) -> Self {
         Self::F64Store_RS {
@@ -25217,11 +20292,6 @@ impl ::core::marker::Copy for F64Store_RI {}
 impl ::core::clone::Clone for F64Store_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Store_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_RI
     }
 }
 impl ::core::convert::From<F64Store_RI> for crate::Op {
@@ -25247,11 +20317,6 @@ impl ::core::clone::Clone for F64Store_SR {
         *self
     }
 }
-impl crate::OperatorCode for F64Store_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_SR
-    }
-}
 impl ::core::convert::From<F64Store_SR> for crate::Op {
     fn from(op: F64Store_SR) -> Self {
         Self::F64Store_SR {
@@ -25273,11 +20338,6 @@ impl ::core::marker::Copy for F64Store_SS {}
 impl ::core::clone::Clone for F64Store_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Store_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_SS
     }
 }
 impl ::core::convert::From<F64Store_SS> for crate::Op {
@@ -25303,11 +20363,6 @@ impl ::core::clone::Clone for F64Store_SI {
         *self
     }
 }
-impl crate::OperatorCode for F64Store_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_SI
-    }
-}
 impl ::core::convert::From<F64Store_SI> for crate::Op {
     fn from(op: F64Store_SI) -> Self {
         Self::F64Store_SI {
@@ -25328,11 +20383,6 @@ impl ::core::marker::Copy for F64Store_IR {}
 impl ::core::clone::Clone for F64Store_IR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Store_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_IR
     }
 }
 impl ::core::convert::From<F64Store_IR> for crate::Op {
@@ -25356,11 +20406,6 @@ impl ::core::clone::Clone for F64Store_IS {
         *self
     }
 }
-impl crate::OperatorCode for F64Store_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_IS
-    }
-}
 impl ::core::convert::From<F64Store_IS> for crate::Op {
     fn from(op: F64Store_IS) -> Self {
         Self::F64Store_IS {
@@ -25380,11 +20425,6 @@ impl ::core::marker::Copy for F64Store_II {}
 impl ::core::clone::Clone for F64Store_II {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64Store_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_II
     }
 }
 impl ::core::convert::From<F64Store_II> for crate::Op {
@@ -25408,11 +20448,6 @@ impl ::core::clone::Clone for F64StoreMem0_RR {
         *self
     }
 }
-impl crate::OperatorCode for F64StoreMem0_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64StoreMem0_RR
-    }
-}
 impl ::core::convert::From<F64StoreMem0_RR> for crate::Op {
     fn from(op: F64StoreMem0_RR) -> Self {
         Self::F64StoreMem0_RR {
@@ -25432,11 +20467,6 @@ impl ::core::marker::Copy for F64StoreMem0_RS {}
 impl ::core::clone::Clone for F64StoreMem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64StoreMem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64StoreMem0_RS
     }
 }
 impl ::core::convert::From<F64StoreMem0_RS> for crate::Op {
@@ -25460,11 +20490,6 @@ impl ::core::clone::Clone for F64StoreMem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for F64StoreMem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64StoreMem0_RI
-    }
-}
 impl ::core::convert::From<F64StoreMem0_RI> for crate::Op {
     fn from(op: F64StoreMem0_RI) -> Self {
         Self::F64StoreMem0_RI {
@@ -25484,11 +20509,6 @@ impl ::core::marker::Copy for F64StoreMem0_SR {}
 impl ::core::clone::Clone for F64StoreMem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64StoreMem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64StoreMem0_SR
     }
 }
 impl ::core::convert::From<F64StoreMem0_SR> for crate::Op {
@@ -25512,11 +20532,6 @@ impl ::core::clone::Clone for F64StoreMem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for F64StoreMem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64StoreMem0_SS
-    }
-}
 impl ::core::convert::From<F64StoreMem0_SS> for crate::Op {
     fn from(op: F64StoreMem0_SS) -> Self {
         Self::F64StoreMem0_SS {
@@ -25536,11 +20551,6 @@ impl ::core::marker::Copy for F64StoreMem0_SI {}
 impl ::core::clone::Clone for F64StoreMem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64StoreMem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64StoreMem0_SI
     }
 }
 impl ::core::convert::From<F64StoreMem0_SI> for crate::Op {
@@ -25563,11 +20573,6 @@ impl ::core::clone::Clone for F64StoreMem0_IR {
         *self
     }
 }
-impl crate::OperatorCode for F64StoreMem0_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64StoreMem0_IR
-    }
-}
 impl ::core::convert::From<F64StoreMem0_IR> for crate::Op {
     fn from(op: F64StoreMem0_IR) -> Self {
         Self::F64StoreMem0_IR {
@@ -25585,11 +20590,6 @@ impl ::core::marker::Copy for F64StoreMem0_IS {}
 impl ::core::clone::Clone for F64StoreMem0_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for F64StoreMem0_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64StoreMem0_IS
     }
 }
 impl ::core::convert::From<F64StoreMem0_IS> for crate::Op {
@@ -25611,11 +20611,6 @@ impl ::core::clone::Clone for F64StoreMem0_II {
         *self
     }
 }
-impl crate::OperatorCode for F64StoreMem0_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64StoreMem0_II
-    }
-}
 impl ::core::convert::From<F64StoreMem0_II> for crate::Op {
     fn from(op: F64StoreMem0_II) -> Self {
         Self::F64StoreMem0_II {
@@ -25635,11 +20630,6 @@ impl ::core::marker::Copy for I32Store8_RS {}
 impl ::core::clone::Clone for I32Store8_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store8_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_RS
     }
 }
 impl ::core::convert::From<I32Store8_RS> for crate::Op {
@@ -25665,11 +20655,6 @@ impl ::core::clone::Clone for I32Store8_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32Store8_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_RI
-    }
-}
 impl ::core::convert::From<I32Store8_RI> for crate::Op {
     fn from(op: I32Store8_RI) -> Self {
         Self::I32Store8_RI {
@@ -25691,11 +20676,6 @@ impl ::core::marker::Copy for I32Store8_SR {}
 impl ::core::clone::Clone for I32Store8_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store8_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_SR
     }
 }
 impl ::core::convert::From<I32Store8_SR> for crate::Op {
@@ -25721,11 +20701,6 @@ impl ::core::clone::Clone for I32Store8_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Store8_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_SS
-    }
-}
 impl ::core::convert::From<I32Store8_SS> for crate::Op {
     fn from(op: I32Store8_SS) -> Self {
         Self::I32Store8_SS {
@@ -25747,11 +20722,6 @@ impl ::core::marker::Copy for I32Store8_SI {}
 impl ::core::clone::Clone for I32Store8_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store8_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_SI
     }
 }
 impl ::core::convert::From<I32Store8_SI> for crate::Op {
@@ -25776,11 +20746,6 @@ impl ::core::clone::Clone for I32Store8_IR {
         *self
     }
 }
-impl crate::OperatorCode for I32Store8_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_IR
-    }
-}
 impl ::core::convert::From<I32Store8_IR> for crate::Op {
     fn from(op: I32Store8_IR) -> Self {
         Self::I32Store8_IR {
@@ -25800,11 +20765,6 @@ impl ::core::marker::Copy for I32Store8_IS {}
 impl ::core::clone::Clone for I32Store8_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store8_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_IS
     }
 }
 impl ::core::convert::From<I32Store8_IS> for crate::Op {
@@ -25828,11 +20788,6 @@ impl ::core::clone::Clone for I32Store8_II {
         *self
     }
 }
-impl crate::OperatorCode for I32Store8_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_II
-    }
-}
 impl ::core::convert::From<I32Store8_II> for crate::Op {
     fn from(op: I32Store8_II) -> Self {
         Self::I32Store8_II {
@@ -25852,11 +20807,6 @@ impl ::core::marker::Copy for I32Store8Mem0_RS {}
 impl ::core::clone::Clone for I32Store8Mem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store8Mem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8Mem0_RS
     }
 }
 impl ::core::convert::From<I32Store8Mem0_RS> for crate::Op {
@@ -25880,11 +20830,6 @@ impl ::core::clone::Clone for I32Store8Mem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32Store8Mem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8Mem0_RI
-    }
-}
 impl ::core::convert::From<I32Store8Mem0_RI> for crate::Op {
     fn from(op: I32Store8Mem0_RI) -> Self {
         Self::I32Store8Mem0_RI {
@@ -25904,11 +20849,6 @@ impl ::core::marker::Copy for I32Store8Mem0_SR {}
 impl ::core::clone::Clone for I32Store8Mem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store8Mem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8Mem0_SR
     }
 }
 impl ::core::convert::From<I32Store8Mem0_SR> for crate::Op {
@@ -25932,11 +20872,6 @@ impl ::core::clone::Clone for I32Store8Mem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Store8Mem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8Mem0_SS
-    }
-}
 impl ::core::convert::From<I32Store8Mem0_SS> for crate::Op {
     fn from(op: I32Store8Mem0_SS) -> Self {
         Self::I32Store8Mem0_SS {
@@ -25956,11 +20891,6 @@ impl ::core::marker::Copy for I32Store8Mem0_SI {}
 impl ::core::clone::Clone for I32Store8Mem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store8Mem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8Mem0_SI
     }
 }
 impl ::core::convert::From<I32Store8Mem0_SI> for crate::Op {
@@ -25983,11 +20913,6 @@ impl ::core::clone::Clone for I32Store8Mem0_IR {
         *self
     }
 }
-impl crate::OperatorCode for I32Store8Mem0_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8Mem0_IR
-    }
-}
 impl ::core::convert::From<I32Store8Mem0_IR> for crate::Op {
     fn from(op: I32Store8Mem0_IR) -> Self {
         Self::I32Store8Mem0_IR {
@@ -26005,11 +20930,6 @@ impl ::core::marker::Copy for I32Store8Mem0_IS {}
 impl ::core::clone::Clone for I32Store8Mem0_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store8Mem0_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8Mem0_IS
     }
 }
 impl ::core::convert::From<I32Store8Mem0_IS> for crate::Op {
@@ -26031,11 +20951,6 @@ impl ::core::clone::Clone for I32Store8Mem0_II {
         *self
     }
 }
-impl crate::OperatorCode for I32Store8Mem0_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8Mem0_II
-    }
-}
 impl ::core::convert::From<I32Store8Mem0_II> for crate::Op {
     fn from(op: I32Store8Mem0_II) -> Self {
         Self::I32Store8Mem0_II {
@@ -26055,11 +20970,6 @@ impl ::core::marker::Copy for I64Store8_RS {}
 impl ::core::clone::Clone for I64Store8_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store8_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_RS
     }
 }
 impl ::core::convert::From<I64Store8_RS> for crate::Op {
@@ -26085,11 +20995,6 @@ impl ::core::clone::Clone for I64Store8_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Store8_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_RI
-    }
-}
 impl ::core::convert::From<I64Store8_RI> for crate::Op {
     fn from(op: I64Store8_RI) -> Self {
         Self::I64Store8_RI {
@@ -26111,11 +21016,6 @@ impl ::core::marker::Copy for I64Store8_SR {}
 impl ::core::clone::Clone for I64Store8_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store8_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_SR
     }
 }
 impl ::core::convert::From<I64Store8_SR> for crate::Op {
@@ -26141,11 +21041,6 @@ impl ::core::clone::Clone for I64Store8_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Store8_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_SS
-    }
-}
 impl ::core::convert::From<I64Store8_SS> for crate::Op {
     fn from(op: I64Store8_SS) -> Self {
         Self::I64Store8_SS {
@@ -26167,11 +21062,6 @@ impl ::core::marker::Copy for I64Store8_SI {}
 impl ::core::clone::Clone for I64Store8_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store8_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_SI
     }
 }
 impl ::core::convert::From<I64Store8_SI> for crate::Op {
@@ -26196,11 +21086,6 @@ impl ::core::clone::Clone for I64Store8_IR {
         *self
     }
 }
-impl crate::OperatorCode for I64Store8_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_IR
-    }
-}
 impl ::core::convert::From<I64Store8_IR> for crate::Op {
     fn from(op: I64Store8_IR) -> Self {
         Self::I64Store8_IR {
@@ -26220,11 +21105,6 @@ impl ::core::marker::Copy for I64Store8_IS {}
 impl ::core::clone::Clone for I64Store8_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store8_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_IS
     }
 }
 impl ::core::convert::From<I64Store8_IS> for crate::Op {
@@ -26248,11 +21128,6 @@ impl ::core::clone::Clone for I64Store8_II {
         *self
     }
 }
-impl crate::OperatorCode for I64Store8_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_II
-    }
-}
 impl ::core::convert::From<I64Store8_II> for crate::Op {
     fn from(op: I64Store8_II) -> Self {
         Self::I64Store8_II {
@@ -26272,11 +21147,6 @@ impl ::core::marker::Copy for I64Store8Mem0_RS {}
 impl ::core::clone::Clone for I64Store8Mem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store8Mem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8Mem0_RS
     }
 }
 impl ::core::convert::From<I64Store8Mem0_RS> for crate::Op {
@@ -26300,11 +21170,6 @@ impl ::core::clone::Clone for I64Store8Mem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Store8Mem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8Mem0_RI
-    }
-}
 impl ::core::convert::From<I64Store8Mem0_RI> for crate::Op {
     fn from(op: I64Store8Mem0_RI) -> Self {
         Self::I64Store8Mem0_RI {
@@ -26324,11 +21189,6 @@ impl ::core::marker::Copy for I64Store8Mem0_SR {}
 impl ::core::clone::Clone for I64Store8Mem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store8Mem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8Mem0_SR
     }
 }
 impl ::core::convert::From<I64Store8Mem0_SR> for crate::Op {
@@ -26352,11 +21212,6 @@ impl ::core::clone::Clone for I64Store8Mem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Store8Mem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8Mem0_SS
-    }
-}
 impl ::core::convert::From<I64Store8Mem0_SS> for crate::Op {
     fn from(op: I64Store8Mem0_SS) -> Self {
         Self::I64Store8Mem0_SS {
@@ -26376,11 +21231,6 @@ impl ::core::marker::Copy for I64Store8Mem0_SI {}
 impl ::core::clone::Clone for I64Store8Mem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store8Mem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8Mem0_SI
     }
 }
 impl ::core::convert::From<I64Store8Mem0_SI> for crate::Op {
@@ -26403,11 +21253,6 @@ impl ::core::clone::Clone for I64Store8Mem0_IR {
         *self
     }
 }
-impl crate::OperatorCode for I64Store8Mem0_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8Mem0_IR
-    }
-}
 impl ::core::convert::From<I64Store8Mem0_IR> for crate::Op {
     fn from(op: I64Store8Mem0_IR) -> Self {
         Self::I64Store8Mem0_IR {
@@ -26425,11 +21270,6 @@ impl ::core::marker::Copy for I64Store8Mem0_IS {}
 impl ::core::clone::Clone for I64Store8Mem0_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store8Mem0_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8Mem0_IS
     }
 }
 impl ::core::convert::From<I64Store8Mem0_IS> for crate::Op {
@@ -26451,11 +21291,6 @@ impl ::core::clone::Clone for I64Store8Mem0_II {
         *self
     }
 }
-impl crate::OperatorCode for I64Store8Mem0_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8Mem0_II
-    }
-}
 impl ::core::convert::From<I64Store8Mem0_II> for crate::Op {
     fn from(op: I64Store8Mem0_II) -> Self {
         Self::I64Store8Mem0_II {
@@ -26475,11 +21310,6 @@ impl ::core::marker::Copy for I32Store16_RS {}
 impl ::core::clone::Clone for I32Store16_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store16_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_RS
     }
 }
 impl ::core::convert::From<I32Store16_RS> for crate::Op {
@@ -26505,11 +21335,6 @@ impl ::core::clone::Clone for I32Store16_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32Store16_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_RI
-    }
-}
 impl ::core::convert::From<I32Store16_RI> for crate::Op {
     fn from(op: I32Store16_RI) -> Self {
         Self::I32Store16_RI {
@@ -26531,11 +21356,6 @@ impl ::core::marker::Copy for I32Store16_SR {}
 impl ::core::clone::Clone for I32Store16_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store16_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_SR
     }
 }
 impl ::core::convert::From<I32Store16_SR> for crate::Op {
@@ -26561,11 +21381,6 @@ impl ::core::clone::Clone for I32Store16_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Store16_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_SS
-    }
-}
 impl ::core::convert::From<I32Store16_SS> for crate::Op {
     fn from(op: I32Store16_SS) -> Self {
         Self::I32Store16_SS {
@@ -26587,11 +21402,6 @@ impl ::core::marker::Copy for I32Store16_SI {}
 impl ::core::clone::Clone for I32Store16_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store16_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_SI
     }
 }
 impl ::core::convert::From<I32Store16_SI> for crate::Op {
@@ -26616,11 +21426,6 @@ impl ::core::clone::Clone for I32Store16_IR {
         *self
     }
 }
-impl crate::OperatorCode for I32Store16_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_IR
-    }
-}
 impl ::core::convert::From<I32Store16_IR> for crate::Op {
     fn from(op: I32Store16_IR) -> Self {
         Self::I32Store16_IR {
@@ -26640,11 +21445,6 @@ impl ::core::marker::Copy for I32Store16_IS {}
 impl ::core::clone::Clone for I32Store16_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store16_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_IS
     }
 }
 impl ::core::convert::From<I32Store16_IS> for crate::Op {
@@ -26668,11 +21468,6 @@ impl ::core::clone::Clone for I32Store16_II {
         *self
     }
 }
-impl crate::OperatorCode for I32Store16_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_II
-    }
-}
 impl ::core::convert::From<I32Store16_II> for crate::Op {
     fn from(op: I32Store16_II) -> Self {
         Self::I32Store16_II {
@@ -26692,11 +21487,6 @@ impl ::core::marker::Copy for I32Store16Mem0_RS {}
 impl ::core::clone::Clone for I32Store16Mem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store16Mem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16Mem0_RS
     }
 }
 impl ::core::convert::From<I32Store16Mem0_RS> for crate::Op {
@@ -26720,11 +21510,6 @@ impl ::core::clone::Clone for I32Store16Mem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I32Store16Mem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16Mem0_RI
-    }
-}
 impl ::core::convert::From<I32Store16Mem0_RI> for crate::Op {
     fn from(op: I32Store16Mem0_RI) -> Self {
         Self::I32Store16Mem0_RI {
@@ -26744,11 +21529,6 @@ impl ::core::marker::Copy for I32Store16Mem0_SR {}
 impl ::core::clone::Clone for I32Store16Mem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store16Mem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16Mem0_SR
     }
 }
 impl ::core::convert::From<I32Store16Mem0_SR> for crate::Op {
@@ -26772,11 +21552,6 @@ impl ::core::clone::Clone for I32Store16Mem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I32Store16Mem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16Mem0_SS
-    }
-}
 impl ::core::convert::From<I32Store16Mem0_SS> for crate::Op {
     fn from(op: I32Store16Mem0_SS) -> Self {
         Self::I32Store16Mem0_SS {
@@ -26796,11 +21571,6 @@ impl ::core::marker::Copy for I32Store16Mem0_SI {}
 impl ::core::clone::Clone for I32Store16Mem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store16Mem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16Mem0_SI
     }
 }
 impl ::core::convert::From<I32Store16Mem0_SI> for crate::Op {
@@ -26823,11 +21593,6 @@ impl ::core::clone::Clone for I32Store16Mem0_IR {
         *self
     }
 }
-impl crate::OperatorCode for I32Store16Mem0_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16Mem0_IR
-    }
-}
 impl ::core::convert::From<I32Store16Mem0_IR> for crate::Op {
     fn from(op: I32Store16Mem0_IR) -> Self {
         Self::I32Store16Mem0_IR {
@@ -26845,11 +21610,6 @@ impl ::core::marker::Copy for I32Store16Mem0_IS {}
 impl ::core::clone::Clone for I32Store16Mem0_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I32Store16Mem0_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16Mem0_IS
     }
 }
 impl ::core::convert::From<I32Store16Mem0_IS> for crate::Op {
@@ -26871,11 +21631,6 @@ impl ::core::clone::Clone for I32Store16Mem0_II {
         *self
     }
 }
-impl crate::OperatorCode for I32Store16Mem0_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16Mem0_II
-    }
-}
 impl ::core::convert::From<I32Store16Mem0_II> for crate::Op {
     fn from(op: I32Store16Mem0_II) -> Self {
         Self::I32Store16Mem0_II {
@@ -26895,11 +21650,6 @@ impl ::core::marker::Copy for I64Store16_RS {}
 impl ::core::clone::Clone for I64Store16_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store16_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_RS
     }
 }
 impl ::core::convert::From<I64Store16_RS> for crate::Op {
@@ -26925,11 +21675,6 @@ impl ::core::clone::Clone for I64Store16_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Store16_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_RI
-    }
-}
 impl ::core::convert::From<I64Store16_RI> for crate::Op {
     fn from(op: I64Store16_RI) -> Self {
         Self::I64Store16_RI {
@@ -26951,11 +21696,6 @@ impl ::core::marker::Copy for I64Store16_SR {}
 impl ::core::clone::Clone for I64Store16_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store16_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_SR
     }
 }
 impl ::core::convert::From<I64Store16_SR> for crate::Op {
@@ -26981,11 +21721,6 @@ impl ::core::clone::Clone for I64Store16_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Store16_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_SS
-    }
-}
 impl ::core::convert::From<I64Store16_SS> for crate::Op {
     fn from(op: I64Store16_SS) -> Self {
         Self::I64Store16_SS {
@@ -27007,11 +21742,6 @@ impl ::core::marker::Copy for I64Store16_SI {}
 impl ::core::clone::Clone for I64Store16_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store16_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_SI
     }
 }
 impl ::core::convert::From<I64Store16_SI> for crate::Op {
@@ -27036,11 +21766,6 @@ impl ::core::clone::Clone for I64Store16_IR {
         *self
     }
 }
-impl crate::OperatorCode for I64Store16_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_IR
-    }
-}
 impl ::core::convert::From<I64Store16_IR> for crate::Op {
     fn from(op: I64Store16_IR) -> Self {
         Self::I64Store16_IR {
@@ -27060,11 +21785,6 @@ impl ::core::marker::Copy for I64Store16_IS {}
 impl ::core::clone::Clone for I64Store16_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store16_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_IS
     }
 }
 impl ::core::convert::From<I64Store16_IS> for crate::Op {
@@ -27088,11 +21808,6 @@ impl ::core::clone::Clone for I64Store16_II {
         *self
     }
 }
-impl crate::OperatorCode for I64Store16_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_II
-    }
-}
 impl ::core::convert::From<I64Store16_II> for crate::Op {
     fn from(op: I64Store16_II) -> Self {
         Self::I64Store16_II {
@@ -27112,11 +21827,6 @@ impl ::core::marker::Copy for I64Store16Mem0_RS {}
 impl ::core::clone::Clone for I64Store16Mem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store16Mem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16Mem0_RS
     }
 }
 impl ::core::convert::From<I64Store16Mem0_RS> for crate::Op {
@@ -27140,11 +21850,6 @@ impl ::core::clone::Clone for I64Store16Mem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Store16Mem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16Mem0_RI
-    }
-}
 impl ::core::convert::From<I64Store16Mem0_RI> for crate::Op {
     fn from(op: I64Store16Mem0_RI) -> Self {
         Self::I64Store16Mem0_RI {
@@ -27164,11 +21869,6 @@ impl ::core::marker::Copy for I64Store16Mem0_SR {}
 impl ::core::clone::Clone for I64Store16Mem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store16Mem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16Mem0_SR
     }
 }
 impl ::core::convert::From<I64Store16Mem0_SR> for crate::Op {
@@ -27192,11 +21892,6 @@ impl ::core::clone::Clone for I64Store16Mem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Store16Mem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16Mem0_SS
-    }
-}
 impl ::core::convert::From<I64Store16Mem0_SS> for crate::Op {
     fn from(op: I64Store16Mem0_SS) -> Self {
         Self::I64Store16Mem0_SS {
@@ -27216,11 +21911,6 @@ impl ::core::marker::Copy for I64Store16Mem0_SI {}
 impl ::core::clone::Clone for I64Store16Mem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store16Mem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16Mem0_SI
     }
 }
 impl ::core::convert::From<I64Store16Mem0_SI> for crate::Op {
@@ -27243,11 +21933,6 @@ impl ::core::clone::Clone for I64Store16Mem0_IR {
         *self
     }
 }
-impl crate::OperatorCode for I64Store16Mem0_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16Mem0_IR
-    }
-}
 impl ::core::convert::From<I64Store16Mem0_IR> for crate::Op {
     fn from(op: I64Store16Mem0_IR) -> Self {
         Self::I64Store16Mem0_IR {
@@ -27265,11 +21950,6 @@ impl ::core::marker::Copy for I64Store16Mem0_IS {}
 impl ::core::clone::Clone for I64Store16Mem0_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store16Mem0_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16Mem0_IS
     }
 }
 impl ::core::convert::From<I64Store16Mem0_IS> for crate::Op {
@@ -27291,11 +21971,6 @@ impl ::core::clone::Clone for I64Store16Mem0_II {
         *self
     }
 }
-impl crate::OperatorCode for I64Store16Mem0_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16Mem0_II
-    }
-}
 impl ::core::convert::From<I64Store16Mem0_II> for crate::Op {
     fn from(op: I64Store16Mem0_II) -> Self {
         Self::I64Store16Mem0_II {
@@ -27315,11 +21990,6 @@ impl ::core::marker::Copy for I64Store32_RS {}
 impl ::core::clone::Clone for I64Store32_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store32_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_RS
     }
 }
 impl ::core::convert::From<I64Store32_RS> for crate::Op {
@@ -27345,11 +22015,6 @@ impl ::core::clone::Clone for I64Store32_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Store32_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_RI
-    }
-}
 impl ::core::convert::From<I64Store32_RI> for crate::Op {
     fn from(op: I64Store32_RI) -> Self {
         Self::I64Store32_RI {
@@ -27371,11 +22036,6 @@ impl ::core::marker::Copy for I64Store32_SR {}
 impl ::core::clone::Clone for I64Store32_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store32_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_SR
     }
 }
 impl ::core::convert::From<I64Store32_SR> for crate::Op {
@@ -27401,11 +22061,6 @@ impl ::core::clone::Clone for I64Store32_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Store32_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_SS
-    }
-}
 impl ::core::convert::From<I64Store32_SS> for crate::Op {
     fn from(op: I64Store32_SS) -> Self {
         Self::I64Store32_SS {
@@ -27427,11 +22082,6 @@ impl ::core::marker::Copy for I64Store32_SI {}
 impl ::core::clone::Clone for I64Store32_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store32_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_SI
     }
 }
 impl ::core::convert::From<I64Store32_SI> for crate::Op {
@@ -27456,11 +22106,6 @@ impl ::core::clone::Clone for I64Store32_IR {
         *self
     }
 }
-impl crate::OperatorCode for I64Store32_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_IR
-    }
-}
 impl ::core::convert::From<I64Store32_IR> for crate::Op {
     fn from(op: I64Store32_IR) -> Self {
         Self::I64Store32_IR {
@@ -27480,11 +22125,6 @@ impl ::core::marker::Copy for I64Store32_IS {}
 impl ::core::clone::Clone for I64Store32_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store32_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_IS
     }
 }
 impl ::core::convert::From<I64Store32_IS> for crate::Op {
@@ -27508,11 +22148,6 @@ impl ::core::clone::Clone for I64Store32_II {
         *self
     }
 }
-impl crate::OperatorCode for I64Store32_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_II
-    }
-}
 impl ::core::convert::From<I64Store32_II> for crate::Op {
     fn from(op: I64Store32_II) -> Self {
         Self::I64Store32_II {
@@ -27532,11 +22167,6 @@ impl ::core::marker::Copy for I64Store32Mem0_RS {}
 impl ::core::clone::Clone for I64Store32Mem0_RS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store32Mem0_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32Mem0_RS
     }
 }
 impl ::core::convert::From<I64Store32Mem0_RS> for crate::Op {
@@ -27560,11 +22190,6 @@ impl ::core::clone::Clone for I64Store32Mem0_RI {
         *self
     }
 }
-impl crate::OperatorCode for I64Store32Mem0_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32Mem0_RI
-    }
-}
 impl ::core::convert::From<I64Store32Mem0_RI> for crate::Op {
     fn from(op: I64Store32Mem0_RI) -> Self {
         Self::I64Store32Mem0_RI {
@@ -27584,11 +22209,6 @@ impl ::core::marker::Copy for I64Store32Mem0_SR {}
 impl ::core::clone::Clone for I64Store32Mem0_SR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store32Mem0_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32Mem0_SR
     }
 }
 impl ::core::convert::From<I64Store32Mem0_SR> for crate::Op {
@@ -27612,11 +22232,6 @@ impl ::core::clone::Clone for I64Store32Mem0_SS {
         *self
     }
 }
-impl crate::OperatorCode for I64Store32Mem0_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32Mem0_SS
-    }
-}
 impl ::core::convert::From<I64Store32Mem0_SS> for crate::Op {
     fn from(op: I64Store32Mem0_SS) -> Self {
         Self::I64Store32Mem0_SS {
@@ -27636,11 +22251,6 @@ impl ::core::marker::Copy for I64Store32Mem0_SI {}
 impl ::core::clone::Clone for I64Store32Mem0_SI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store32Mem0_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32Mem0_SI
     }
 }
 impl ::core::convert::From<I64Store32Mem0_SI> for crate::Op {
@@ -27663,11 +22273,6 @@ impl ::core::clone::Clone for I64Store32Mem0_IR {
         *self
     }
 }
-impl crate::OperatorCode for I64Store32Mem0_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32Mem0_IR
-    }
-}
 impl ::core::convert::From<I64Store32Mem0_IR> for crate::Op {
     fn from(op: I64Store32Mem0_IR) -> Self {
         Self::I64Store32Mem0_IR {
@@ -27685,11 +22290,6 @@ impl ::core::marker::Copy for I64Store32Mem0_IS {}
 impl ::core::clone::Clone for I64Store32Mem0_IS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for I64Store32Mem0_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32Mem0_IS
     }
 }
 impl ::core::convert::From<I64Store32Mem0_IS> for crate::Op {
@@ -27711,11 +22311,6 @@ impl ::core::clone::Clone for I64Store32Mem0_II {
         *self
     }
 }
-impl crate::OperatorCode for I64Store32Mem0_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32Mem0_II
-    }
-}
 impl ::core::convert::From<I64Store32Mem0_II> for crate::Op {
     fn from(op: I64Store32Mem0_II) -> Self {
         Self::I64Store32Mem0_II {
@@ -27735,11 +22330,6 @@ impl ::core::marker::Copy for Select {}
 impl ::core::clone::Clone for Select {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for Select {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::Select
     }
 }
 impl ::core::convert::From<Select> for crate::Op {
@@ -27765,11 +22355,6 @@ impl ::core::clone::Clone for SelectI32_RSSS {
         *self
     }
 }
-impl crate::OperatorCode for SelectI32_RSSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI32_RSSS
-    }
-}
 impl ::core::convert::From<SelectI32_RSSS> for crate::Op {
     fn from(op: SelectI32_RSSS) -> Self {
         Self::SelectI32_RSSS {
@@ -27791,11 +22376,6 @@ impl ::core::marker::Copy for SelectI32_RSSI {}
 impl ::core::clone::Clone for SelectI32_RSSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectI32_RSSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI32_RSSI
     }
 }
 impl ::core::convert::From<SelectI32_RSSI> for crate::Op {
@@ -27821,11 +22401,6 @@ impl ::core::clone::Clone for SelectI32_RSIS {
         *self
     }
 }
-impl crate::OperatorCode for SelectI32_RSIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI32_RSIS
-    }
-}
 impl ::core::convert::From<SelectI32_RSIS> for crate::Op {
     fn from(op: SelectI32_RSIS) -> Self {
         Self::SelectI32_RSIS {
@@ -27847,11 +22422,6 @@ impl ::core::marker::Copy for SelectI32_RSII {}
 impl ::core::clone::Clone for SelectI32_RSII {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectI32_RSII {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI32_RSII
     }
 }
 impl ::core::convert::From<SelectI32_RSII> for crate::Op {
@@ -27877,11 +22447,6 @@ impl ::core::clone::Clone for SelectI64_RRSS {
         *self
     }
 }
-impl crate::OperatorCode for SelectI64_RRSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RRSS
-    }
-}
 impl ::core::convert::From<SelectI64_RRSS> for crate::Op {
     fn from(op: SelectI64_RRSS) -> Self {
         Self::SelectI64_RRSS {
@@ -27903,11 +22468,6 @@ impl ::core::marker::Copy for SelectI64_RRSI {}
 impl ::core::clone::Clone for SelectI64_RRSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectI64_RRSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RRSI
     }
 }
 impl ::core::convert::From<SelectI64_RRSI> for crate::Op {
@@ -27933,11 +22493,6 @@ impl ::core::clone::Clone for SelectI64_RRIS {
         *self
     }
 }
-impl crate::OperatorCode for SelectI64_RRIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RRIS
-    }
-}
 impl ::core::convert::From<SelectI64_RRIS> for crate::Op {
     fn from(op: SelectI64_RRIS) -> Self {
         Self::SelectI64_RRIS {
@@ -27959,11 +22514,6 @@ impl ::core::marker::Copy for SelectI64_RRII {}
 impl ::core::clone::Clone for SelectI64_RRII {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectI64_RRII {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RRII
     }
 }
 impl ::core::convert::From<SelectI64_RRII> for crate::Op {
@@ -27989,11 +22539,6 @@ impl ::core::clone::Clone for SelectI64_RSRS {
         *self
     }
 }
-impl crate::OperatorCode for SelectI64_RSRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RSRS
-    }
-}
 impl ::core::convert::From<SelectI64_RSRS> for crate::Op {
     fn from(op: SelectI64_RSRS) -> Self {
         Self::SelectI64_RSRS {
@@ -28015,11 +22560,6 @@ impl ::core::marker::Copy for SelectI64_RSRI {}
 impl ::core::clone::Clone for SelectI64_RSRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectI64_RSRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RSRI
     }
 }
 impl ::core::convert::From<SelectI64_RSRI> for crate::Op {
@@ -28045,11 +22585,6 @@ impl ::core::clone::Clone for SelectI64_RSSR {
         *self
     }
 }
-impl crate::OperatorCode for SelectI64_RSSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RSSR
-    }
-}
 impl ::core::convert::From<SelectI64_RSSR> for crate::Op {
     fn from(op: SelectI64_RSSR) -> Self {
         Self::SelectI64_RSSR {
@@ -28071,11 +22606,6 @@ impl ::core::marker::Copy for SelectI64_RSSS {}
 impl ::core::clone::Clone for SelectI64_RSSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectI64_RSSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RSSS
     }
 }
 impl ::core::convert::From<SelectI64_RSSS> for crate::Op {
@@ -28101,11 +22631,6 @@ impl ::core::clone::Clone for SelectI64_RSSI {
         *self
     }
 }
-impl crate::OperatorCode for SelectI64_RSSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RSSI
-    }
-}
 impl ::core::convert::From<SelectI64_RSSI> for crate::Op {
     fn from(op: SelectI64_RSSI) -> Self {
         Self::SelectI64_RSSI {
@@ -28127,11 +22652,6 @@ impl ::core::marker::Copy for SelectI64_RSIR {}
 impl ::core::clone::Clone for SelectI64_RSIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectI64_RSIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RSIR
     }
 }
 impl ::core::convert::From<SelectI64_RSIR> for crate::Op {
@@ -28157,11 +22677,6 @@ impl ::core::clone::Clone for SelectI64_RSIS {
         *self
     }
 }
-impl crate::OperatorCode for SelectI64_RSIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RSIS
-    }
-}
 impl ::core::convert::From<SelectI64_RSIS> for crate::Op {
     fn from(op: SelectI64_RSIS) -> Self {
         Self::SelectI64_RSIS {
@@ -28183,11 +22698,6 @@ impl ::core::marker::Copy for SelectI64_RSII {}
 impl ::core::clone::Clone for SelectI64_RSII {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectI64_RSII {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectI64_RSII
     }
 }
 impl ::core::convert::From<SelectI64_RSII> for crate::Op {
@@ -28213,11 +22723,6 @@ impl ::core::clone::Clone for SelectF32_RRSS {
         *self
     }
 }
-impl crate::OperatorCode for SelectF32_RRSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RRSS
-    }
-}
 impl ::core::convert::From<SelectF32_RRSS> for crate::Op {
     fn from(op: SelectF32_RRSS) -> Self {
         Self::SelectF32_RRSS {
@@ -28239,11 +22744,6 @@ impl ::core::marker::Copy for SelectF32_RRSI {}
 impl ::core::clone::Clone for SelectF32_RRSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF32_RRSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RRSI
     }
 }
 impl ::core::convert::From<SelectF32_RRSI> for crate::Op {
@@ -28269,11 +22769,6 @@ impl ::core::clone::Clone for SelectF32_RRIS {
         *self
     }
 }
-impl crate::OperatorCode for SelectF32_RRIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RRIS
-    }
-}
 impl ::core::convert::From<SelectF32_RRIS> for crate::Op {
     fn from(op: SelectF32_RRIS) -> Self {
         Self::SelectF32_RRIS {
@@ -28295,11 +22790,6 @@ impl ::core::marker::Copy for SelectF32_RRII {}
 impl ::core::clone::Clone for SelectF32_RRII {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF32_RRII {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RRII
     }
 }
 impl ::core::convert::From<SelectF32_RRII> for crate::Op {
@@ -28325,11 +22815,6 @@ impl ::core::clone::Clone for SelectF32_RSRS {
         *self
     }
 }
-impl crate::OperatorCode for SelectF32_RSRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RSRS
-    }
-}
 impl ::core::convert::From<SelectF32_RSRS> for crate::Op {
     fn from(op: SelectF32_RSRS) -> Self {
         Self::SelectF32_RSRS {
@@ -28351,11 +22836,6 @@ impl ::core::marker::Copy for SelectF32_RSRI {}
 impl ::core::clone::Clone for SelectF32_RSRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF32_RSRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RSRI
     }
 }
 impl ::core::convert::From<SelectF32_RSRI> for crate::Op {
@@ -28381,11 +22861,6 @@ impl ::core::clone::Clone for SelectF32_RSSR {
         *self
     }
 }
-impl crate::OperatorCode for SelectF32_RSSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RSSR
-    }
-}
 impl ::core::convert::From<SelectF32_RSSR> for crate::Op {
     fn from(op: SelectF32_RSSR) -> Self {
         Self::SelectF32_RSSR {
@@ -28407,11 +22882,6 @@ impl ::core::marker::Copy for SelectF32_RSSS {}
 impl ::core::clone::Clone for SelectF32_RSSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF32_RSSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RSSS
     }
 }
 impl ::core::convert::From<SelectF32_RSSS> for crate::Op {
@@ -28437,11 +22907,6 @@ impl ::core::clone::Clone for SelectF32_RSSI {
         *self
     }
 }
-impl crate::OperatorCode for SelectF32_RSSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RSSI
-    }
-}
 impl ::core::convert::From<SelectF32_RSSI> for crate::Op {
     fn from(op: SelectF32_RSSI) -> Self {
         Self::SelectF32_RSSI {
@@ -28463,11 +22928,6 @@ impl ::core::marker::Copy for SelectF32_RSIR {}
 impl ::core::clone::Clone for SelectF32_RSIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF32_RSIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RSIR
     }
 }
 impl ::core::convert::From<SelectF32_RSIR> for crate::Op {
@@ -28493,11 +22953,6 @@ impl ::core::clone::Clone for SelectF32_RSIS {
         *self
     }
 }
-impl crate::OperatorCode for SelectF32_RSIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RSIS
-    }
-}
 impl ::core::convert::From<SelectF32_RSIS> for crate::Op {
     fn from(op: SelectF32_RSIS) -> Self {
         Self::SelectF32_RSIS {
@@ -28519,11 +22974,6 @@ impl ::core::marker::Copy for SelectF32_RSII {}
 impl ::core::clone::Clone for SelectF32_RSII {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF32_RSII {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF32_RSII
     }
 }
 impl ::core::convert::From<SelectF32_RSII> for crate::Op {
@@ -28549,11 +22999,6 @@ impl ::core::clone::Clone for SelectF64_RRSS {
         *self
     }
 }
-impl crate::OperatorCode for SelectF64_RRSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RRSS
-    }
-}
 impl ::core::convert::From<SelectF64_RRSS> for crate::Op {
     fn from(op: SelectF64_RRSS) -> Self {
         Self::SelectF64_RRSS {
@@ -28575,11 +23020,6 @@ impl ::core::marker::Copy for SelectF64_RRSI {}
 impl ::core::clone::Clone for SelectF64_RRSI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF64_RRSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RRSI
     }
 }
 impl ::core::convert::From<SelectF64_RRSI> for crate::Op {
@@ -28605,11 +23045,6 @@ impl ::core::clone::Clone for SelectF64_RRIS {
         *self
     }
 }
-impl crate::OperatorCode for SelectF64_RRIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RRIS
-    }
-}
 impl ::core::convert::From<SelectF64_RRIS> for crate::Op {
     fn from(op: SelectF64_RRIS) -> Self {
         Self::SelectF64_RRIS {
@@ -28631,11 +23066,6 @@ impl ::core::marker::Copy for SelectF64_RRII {}
 impl ::core::clone::Clone for SelectF64_RRII {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF64_RRII {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RRII
     }
 }
 impl ::core::convert::From<SelectF64_RRII> for crate::Op {
@@ -28661,11 +23091,6 @@ impl ::core::clone::Clone for SelectF64_RSRS {
         *self
     }
 }
-impl crate::OperatorCode for SelectF64_RSRS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RSRS
-    }
-}
 impl ::core::convert::From<SelectF64_RSRS> for crate::Op {
     fn from(op: SelectF64_RSRS) -> Self {
         Self::SelectF64_RSRS {
@@ -28687,11 +23112,6 @@ impl ::core::marker::Copy for SelectF64_RSRI {}
 impl ::core::clone::Clone for SelectF64_RSRI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF64_RSRI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RSRI
     }
 }
 impl ::core::convert::From<SelectF64_RSRI> for crate::Op {
@@ -28717,11 +23137,6 @@ impl ::core::clone::Clone for SelectF64_RSSR {
         *self
     }
 }
-impl crate::OperatorCode for SelectF64_RSSR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RSSR
-    }
-}
 impl ::core::convert::From<SelectF64_RSSR> for crate::Op {
     fn from(op: SelectF64_RSSR) -> Self {
         Self::SelectF64_RSSR {
@@ -28743,11 +23158,6 @@ impl ::core::marker::Copy for SelectF64_RSSS {}
 impl ::core::clone::Clone for SelectF64_RSSS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF64_RSSS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RSSS
     }
 }
 impl ::core::convert::From<SelectF64_RSSS> for crate::Op {
@@ -28773,11 +23183,6 @@ impl ::core::clone::Clone for SelectF64_RSSI {
         *self
     }
 }
-impl crate::OperatorCode for SelectF64_RSSI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RSSI
-    }
-}
 impl ::core::convert::From<SelectF64_RSSI> for crate::Op {
     fn from(op: SelectF64_RSSI) -> Self {
         Self::SelectF64_RSSI {
@@ -28799,11 +23204,6 @@ impl ::core::marker::Copy for SelectF64_RSIR {}
 impl ::core::clone::Clone for SelectF64_RSIR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for SelectF64_RSIR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RSIR
     }
 }
 impl ::core::convert::From<SelectF64_RSIR> for crate::Op {
@@ -28829,11 +23229,6 @@ impl ::core::clone::Clone for SelectF64_RSIS {
         *self
     }
 }
-impl crate::OperatorCode for SelectF64_RSIS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RSIS
-    }
-}
 impl ::core::convert::From<SelectF64_RSIS> for crate::Op {
     fn from(op: SelectF64_RSIS) -> Self {
         Self::SelectF64_RSIS {
@@ -28857,11 +23252,6 @@ impl ::core::clone::Clone for SelectF64_RSII {
         *self
     }
 }
-impl crate::OperatorCode for SelectF64_RSII {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::SelectF64_RSII
-    }
-}
 impl ::core::convert::From<SelectF64_RSII> for crate::Op {
     fn from(op: SelectF64_RSII) -> Self {
         Self::SelectF64_RSII {
@@ -28883,11 +23273,6 @@ impl ::core::clone::Clone for TableSize_R {
         *self
     }
 }
-impl crate::OperatorCode for TableSize_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableSize_R
-    }
-}
 impl ::core::convert::From<TableSize_R> for crate::Op {
     fn from(op: TableSize_R) -> Self {
         Self::TableSize_R {
@@ -28905,11 +23290,6 @@ impl ::core::marker::Copy for TableSize_S {}
 impl ::core::clone::Clone for TableSize_S {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for TableSize_S {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableSize_S
     }
 }
 impl ::core::convert::From<TableSize_S> for crate::Op {
@@ -28930,11 +23310,6 @@ impl ::core::marker::Copy for TableGet_RR {}
 impl ::core::clone::Clone for TableGet_RR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for TableGet_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableGet_RR
     }
 }
 impl ::core::convert::From<TableGet_RR> for crate::Op {
@@ -28958,11 +23333,6 @@ impl ::core::clone::Clone for TableGet_RS {
         *self
     }
 }
-impl crate::OperatorCode for TableGet_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableGet_RS
-    }
-}
 impl ::core::convert::From<TableGet_RS> for crate::Op {
     fn from(op: TableGet_RS) -> Self {
         Self::TableGet_RS {
@@ -28982,11 +23352,6 @@ impl ::core::marker::Copy for TableGet_RI {}
 impl ::core::clone::Clone for TableGet_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for TableGet_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableGet_RI
     }
 }
 impl ::core::convert::From<TableGet_RI> for crate::Op {
@@ -29010,11 +23375,6 @@ impl ::core::clone::Clone for TableSet_RS {
         *self
     }
 }
-impl crate::OperatorCode for TableSet_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableSet_RS
-    }
-}
 impl ::core::convert::From<TableSet_RS> for crate::Op {
     fn from(op: TableSet_RS) -> Self {
         Self::TableSet_RS {
@@ -29034,11 +23394,6 @@ impl ::core::marker::Copy for TableSet_RI {}
 impl ::core::clone::Clone for TableSet_RI {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for TableSet_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableSet_RI
     }
 }
 impl ::core::convert::From<TableSet_RI> for crate::Op {
@@ -29062,11 +23417,6 @@ impl ::core::clone::Clone for TableSet_SR {
         *self
     }
 }
-impl crate::OperatorCode for TableSet_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableSet_SR
-    }
-}
 impl ::core::convert::From<TableSet_SR> for crate::Op {
     fn from(op: TableSet_SR) -> Self {
         Self::TableSet_SR {
@@ -29086,11 +23436,6 @@ impl ::core::marker::Copy for TableSet_SS {}
 impl ::core::clone::Clone for TableSet_SS {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for TableSet_SS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableSet_SS
     }
 }
 impl ::core::convert::From<TableSet_SS> for crate::Op {
@@ -29114,11 +23459,6 @@ impl ::core::clone::Clone for TableSet_SI {
         *self
     }
 }
-impl crate::OperatorCode for TableSet_SI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableSet_SI
-    }
-}
 impl ::core::convert::From<TableSet_SI> for crate::Op {
     fn from(op: TableSet_SI) -> Self {
         Self::TableSet_SI {
@@ -29138,11 +23478,6 @@ impl ::core::marker::Copy for TableSet_IR {}
 impl ::core::clone::Clone for TableSet_IR {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for TableSet_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableSet_IR
     }
 }
 impl ::core::convert::From<TableSet_IR> for crate::Op {
@@ -29166,11 +23501,6 @@ impl ::core::clone::Clone for TableSet_IS {
         *self
     }
 }
-impl crate::OperatorCode for TableSet_IS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableSet_IS
-    }
-}
 impl ::core::convert::From<TableSet_IS> for crate::Op {
     fn from(op: TableSet_IS) -> Self {
         Self::TableSet_IS {
@@ -29190,11 +23520,6 @@ impl ::core::marker::Copy for TableSet_II {}
 impl ::core::clone::Clone for TableSet_II {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for TableSet_II {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableSet_II
     }
 }
 impl ::core::convert::From<TableSet_II> for crate::Op {
@@ -29218,11 +23543,6 @@ impl ::core::clone::Clone for TableGrow {
         *self
     }
 }
-impl crate::OperatorCode for TableGrow {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableGrow
-    }
-}
 impl ::core::convert::From<TableGrow> for crate::Op {
     fn from(op: TableGrow) -> Self {
         Self::TableGrow {
@@ -29244,11 +23564,6 @@ impl ::core::marker::Copy for TableCopy {}
 impl ::core::clone::Clone for TableCopy {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for TableCopy {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableCopy
     }
 }
 impl ::core::convert::From<TableCopy> for crate::Op {
@@ -29275,11 +23590,6 @@ impl ::core::clone::Clone for TableFill {
         *self
     }
 }
-impl crate::OperatorCode for TableFill {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableFill
-    }
-}
 impl ::core::convert::From<TableFill> for crate::Op {
     fn from(op: TableFill) -> Self {
         Self::TableFill {
@@ -29304,11 +23614,6 @@ impl ::core::clone::Clone for TableInit {
         *self
     }
 }
-impl crate::OperatorCode for TableInit {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::TableInit
-    }
-}
 impl ::core::convert::From<TableInit> for crate::Op {
     fn from(op: TableInit) -> Self {
         Self::TableInit {
@@ -29331,11 +23636,6 @@ impl ::core::clone::Clone for MemorySize_R {
         *self
     }
 }
-impl crate::OperatorCode for MemorySize_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::MemorySize_R
-    }
-}
 impl ::core::convert::From<MemorySize_R> for crate::Op {
     fn from(op: MemorySize_R) -> Self {
         Self::MemorySize_R {
@@ -29353,11 +23653,6 @@ impl ::core::marker::Copy for MemorySize_S {}
 impl ::core::clone::Clone for MemorySize_S {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for MemorySize_S {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::MemorySize_S
     }
 }
 impl ::core::convert::From<MemorySize_S> for crate::Op {
@@ -29378,11 +23673,6 @@ impl ::core::marker::Copy for MemoryGrow {}
 impl ::core::clone::Clone for MemoryGrow {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for MemoryGrow {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::MemoryGrow
     }
 }
 impl ::core::convert::From<MemoryGrow> for crate::Op {
@@ -29406,11 +23696,6 @@ impl ::core::marker::Copy for MemoryCopy {}
 impl ::core::clone::Clone for MemoryCopy {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for MemoryCopy {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::MemoryCopy
     }
 }
 impl ::core::convert::From<MemoryCopy> for crate::Op {
@@ -29437,11 +23722,6 @@ impl ::core::clone::Clone for MemoryFill {
         *self
     }
 }
-impl crate::OperatorCode for MemoryFill {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::MemoryFill
-    }
-}
 impl ::core::convert::From<MemoryFill> for crate::Op {
     fn from(op: MemoryFill) -> Self {
         Self::MemoryFill {
@@ -29464,11 +23744,6 @@ impl ::core::marker::Copy for MemoryInit {}
 impl ::core::clone::Clone for MemoryInit {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for MemoryInit {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::MemoryInit
     }
 }
 impl ::core::convert::From<MemoryInit> for crate::Op {
@@ -29494,11 +23769,6 @@ impl ::core::clone::Clone for CallInternal {
         *self
     }
 }
-impl crate::OperatorCode for CallInternal {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::CallInternal
-    }
-}
 impl ::core::convert::From<CallInternal> for crate::Op {
     fn from(op: CallInternal) -> Self {
         Self::CallInternal {
@@ -29518,11 +23788,6 @@ impl ::core::marker::Copy for ReturnCallInternal {}
 impl ::core::clone::Clone for ReturnCallInternal {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for ReturnCallInternal {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::ReturnCallInternal
     }
 }
 impl ::core::convert::From<ReturnCallInternal> for crate::Op {
@@ -29546,11 +23811,6 @@ impl ::core::clone::Clone for CallImported {
         *self
     }
 }
-impl crate::OperatorCode for CallImported {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::CallImported
-    }
-}
 impl ::core::convert::From<CallImported> for crate::Op {
     fn from(op: CallImported) -> Self {
         Self::CallImported {
@@ -29570,11 +23830,6 @@ impl ::core::marker::Copy for ReturnCallImported {}
 impl ::core::clone::Clone for ReturnCallImported {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for ReturnCallImported {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::ReturnCallImported
     }
 }
 impl ::core::convert::From<ReturnCallImported> for crate::Op {
@@ -29597,11 +23852,6 @@ impl ::core::marker::Copy for CallIndirect_R {}
 impl ::core::clone::Clone for CallIndirect_R {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for CallIndirect_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::CallIndirect_R
     }
 }
 impl ::core::convert::From<CallIndirect_R> for crate::Op {
@@ -29627,11 +23877,6 @@ impl ::core::clone::Clone for CallIndirect_S {
         *self
     }
 }
-impl crate::OperatorCode for CallIndirect_S {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::CallIndirect_S
-    }
-}
 impl ::core::convert::From<CallIndirect_S> for crate::Op {
     fn from(op: CallIndirect_S) -> Self {
         Self::CallIndirect_S {
@@ -29653,11 +23898,6 @@ impl ::core::marker::Copy for CallIndirect_I {}
 impl ::core::clone::Clone for CallIndirect_I {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for CallIndirect_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::CallIndirect_I
     }
 }
 impl ::core::convert::From<CallIndirect_I> for crate::Op {
@@ -29683,11 +23923,6 @@ impl ::core::clone::Clone for ReturnCallIndirect_R {
         *self
     }
 }
-impl crate::OperatorCode for ReturnCallIndirect_R {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::ReturnCallIndirect_R
-    }
-}
 impl ::core::convert::From<ReturnCallIndirect_R> for crate::Op {
     fn from(op: ReturnCallIndirect_R) -> Self {
         Self::ReturnCallIndirect_R {
@@ -29711,11 +23946,6 @@ impl ::core::clone::Clone for ReturnCallIndirect_S {
         *self
     }
 }
-impl crate::OperatorCode for ReturnCallIndirect_S {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::ReturnCallIndirect_S
-    }
-}
 impl ::core::convert::From<ReturnCallIndirect_S> for crate::Op {
     fn from(op: ReturnCallIndirect_S) -> Self {
         Self::ReturnCallIndirect_S {
@@ -29737,11 +23967,6 @@ impl ::core::marker::Copy for ReturnCallIndirect_I {}
 impl ::core::clone::Clone for ReturnCallIndirect_I {
     fn clone(&self) -> Self {
         *self
-    }
-}
-impl crate::OperatorCode for ReturnCallIndirect_I {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::ReturnCallIndirect_I
     }
 }
 impl ::core::convert::From<ReturnCallIndirect_I> for crate::Op {

@@ -2352,3 +2352,5783 @@ impl crate::OperatorCode for crate::Op {
         }
     }
 }
+impl crate::OperatorCode for crate::op::Copy1_S {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Copy1_S
+    }
+}
+impl crate::OperatorCode for crate::op::Copy {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Copy
+    }
+}
+impl crate::OperatorCode for crate::op::Copy1I32_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Copy1I32_I
+    }
+}
+impl crate::OperatorCode for crate::op::Copy1I64_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Copy1I64_R
+    }
+}
+impl crate::OperatorCode for crate::op::Copy1I64_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Copy1I64_I
+    }
+}
+impl crate::OperatorCode for crate::op::Copy1F32_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Copy1F32_R
+    }
+}
+impl crate::OperatorCode for crate::op::Copy1F32_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Copy1F32_I
+    }
+}
+impl crate::OperatorCode for crate::op::Copy1F64_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Copy1F64_R
+    }
+}
+impl crate::OperatorCode for crate::op::Copy1F64_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Copy1F64_I
+    }
+}
+impl crate::OperatorCode for crate::op::Return0 {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return0
+    }
+}
+impl crate::OperatorCode for crate::op::Return1_S {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return1_S
+    }
+}
+impl crate::OperatorCode for crate::op::Return {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return
+    }
+}
+impl crate::OperatorCode for crate::op::Return1I32_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return1I32_R
+    }
+}
+impl crate::OperatorCode for crate::op::Return1I64_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return1I64_R
+    }
+}
+impl crate::OperatorCode for crate::op::Return1F32_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return1F32_R
+    }
+}
+impl crate::OperatorCode for crate::op::Return1F64_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return1F64_R
+    }
+}
+impl crate::OperatorCode for crate::op::Return1I32_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return1I32_I
+    }
+}
+impl crate::OperatorCode for crate::op::Return1I64_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return1I64_I
+    }
+}
+impl crate::OperatorCode for crate::op::Return1F32_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return1F32_I
+    }
+}
+impl crate::OperatorCode for crate::op::Return1F64_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Return1F64_I
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalGet_S {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalGet_S
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalGetI32_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalGetI32_R
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalGetI64_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalGetI64_R
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalGetF32_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalGetF32_R
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalGetF64_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalGetF64_R
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalSet_S {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalSet_S
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalSetI32_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalSetI32_R
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalSetI64_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalSetI64_R
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalSetF32_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalSetF32_R
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalSetF64_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalSetF64_R
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalSetI32_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalSetI32_I
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalSetI64_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalSetI64_I
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalSetF32_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalSetF32_I
+    }
+}
+impl crate::OperatorCode for crate::op::GlobalSetF64_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::GlobalSetF64_I
+    }
+}
+impl crate::OperatorCode for crate::op::BranchTable0_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::BranchTable0_R
+    }
+}
+impl crate::OperatorCode for crate::op::BranchTable_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::BranchTable_R
+    }
+}
+impl crate::OperatorCode for crate::op::BranchTable0_S {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::BranchTable0_S
+    }
+}
+impl crate::OperatorCode for crate::op::BranchTable_S {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::BranchTable_S
+    }
+}
+impl crate::OperatorCode for crate::op::I32EqBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32EqBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32EqBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32EqBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32EqBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32EqBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32EqBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32EqBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64EqBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64EqBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64EqBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64EqBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64EqBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64EqBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64EqBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64EqBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F32EqBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32EqBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32EqBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32EqBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F32EqBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32EqBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32EqBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32EqBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F64EqBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64EqBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64EqBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64EqBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F64EqBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64EqBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64EqBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64EqBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32NeBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32NeBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32NeBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32NeBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32NeBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32NeBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32NeBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32NeBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64NeBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64NeBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64NeBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64NeBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64NeBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64NeBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64NeBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64NeBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F32NeBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32NeBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32NeBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32NeBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F32NeBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32NeBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32NeBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32NeBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F64NeBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64NeBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64NeBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64NeBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F64NeBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64NeBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64NeBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64NeBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtSBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtSBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtSBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtSBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtSBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtSBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtSBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtSBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtSBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtSBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtSBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtSBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtSBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtSBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtSBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtSBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtSBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtSBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtSBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtSBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtSBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtSBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtSBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtSBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtSBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtSBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtSBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtSBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtUBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtUBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtUBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtUBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtUBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtUBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtUBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtUBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtUBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtUBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtUBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtUBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtUBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtUBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtUBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtUBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtUBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtUBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtUBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtUBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtUBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtUBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtUBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtUBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtUBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtUBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtUBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtUBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeSBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeSBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeSBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeSBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeSBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeSBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeSBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeSBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeSBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeSBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeSBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeSBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeSBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeSBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeSBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeSBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeSBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeSBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeSBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeSBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeSBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeSBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeSBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeSBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeSBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeSBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeSBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeSBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeUBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeUBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeUBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeUBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeUBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeUBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeUBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeUBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeUBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeUBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeUBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeUBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeUBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeUBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeUBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeUBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeUBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeUBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeUBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeUBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeUBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeUBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeUBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeUBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeUBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeUBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeUBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeUBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::F32LtBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LtBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32LtBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LtBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F32LtBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LtBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32LtBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LtBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32LtBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LtBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F32LtBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LtBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::F32LtBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LtBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::F64LtBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LtBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64LtBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LtBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F64LtBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LtBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64LtBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LtBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64LtBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LtBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F64LtBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LtBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::F64LtBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LtBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::F32LeBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LeBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32LeBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LeBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F32LeBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LeBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32LeBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LeBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32LeBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LeBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F32LeBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LeBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::F32LeBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LeBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::F64LeBranch_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LeBranch_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64LeBranch_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LeBranch_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F64LeBranch_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LeBranch_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64LeBranch_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LeBranch_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64LeBranch_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LeBranch_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F64LeBranch_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LeBranch_IR
+    }
+}
+impl crate::OperatorCode for crate::op::F64LeBranch_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LeBranch_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Popcnt_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Popcnt_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Popcnt_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Popcnt_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Popcnt_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Popcnt_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Popcnt_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Popcnt_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Popcnt_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Popcnt_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Popcnt_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Popcnt_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Popcnt_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Popcnt_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Popcnt_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Popcnt_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Clz_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Clz_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Clz_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Clz_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Clz_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Clz_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Clz_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Clz_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Clz_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Clz_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Clz_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Clz_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Clz_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Clz_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Clz_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Clz_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ctz_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ctz_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ctz_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ctz_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ctz_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ctz_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ctz_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ctz_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ctz_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ctz_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ctz_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ctz_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ctz_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ctz_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ctz_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ctz_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Abs_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Abs_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Abs_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Abs_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Abs_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Abs_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Abs_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Abs_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Abs_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Abs_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Abs_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Abs_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Abs_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Abs_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Abs_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Abs_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Neg_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Neg_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Neg_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Neg_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Neg_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Neg_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Neg_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Neg_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Neg_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Neg_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Neg_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Neg_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Neg_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Neg_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Neg_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Neg_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ceil_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ceil_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ceil_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ceil_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ceil_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ceil_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ceil_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ceil_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ceil_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ceil_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ceil_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ceil_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ceil_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ceil_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ceil_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ceil_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Floor_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Floor_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Floor_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Floor_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Floor_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Floor_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Floor_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Floor_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Floor_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Floor_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Floor_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Floor_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Floor_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Floor_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Floor_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Floor_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Trunc_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Trunc_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Trunc_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Trunc_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Trunc_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Trunc_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Trunc_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Trunc_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Trunc_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Trunc_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Trunc_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Trunc_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Trunc_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Trunc_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Trunc_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Trunc_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Nearest_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Nearest_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Nearest_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Nearest_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Nearest_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Nearest_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Nearest_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Nearest_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Nearest_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Nearest_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Nearest_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Nearest_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Nearest_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Nearest_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Nearest_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Nearest_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sqrt_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sqrt_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sqrt_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sqrt_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sqrt_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sqrt_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sqrt_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sqrt_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sqrt_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sqrt_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sqrt_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sqrt_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sqrt_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sqrt_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sqrt_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sqrt_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Demote_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Demote_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Demote_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Demote_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Demote_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Demote_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Demote_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Demote_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Promote_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Promote_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Promote_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Promote_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Promote_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Promote_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Promote_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Promote_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI32S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI32S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI32S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI32S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI32S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI32S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI32S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI32S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI32U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI32U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI32U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI32U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI32U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI32U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI32U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI32U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI64S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI64S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI64S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI64S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI64S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI64S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI64S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI64S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI64U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI64U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI64U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI64U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI64U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI64U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32ConvertI64U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32ConvertI64U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI32S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI32S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI32S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI32S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI32S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI32S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI32S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI32S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI32U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI32U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI32U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI32U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI32U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI32U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI32U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI32U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI64S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI64S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI64S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI64S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI64S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI64S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI64S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI64S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI64U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI64U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI64U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI64U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI64U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI64U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64ConvertI64U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64ConvertI64U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF32S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF32S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF32S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF32S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF32S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF32S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF32S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF32S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF32U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF32U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF32U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF32U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF32U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF32U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF32U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF32U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF64S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF64S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF64S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF64S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF64S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF64S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF64S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF64S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF64U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF64U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF64U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF64U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF64U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF64U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncF64U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncF64U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF32S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF32S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF32S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF32S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF32S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF32S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF32S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF32S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF32U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF32U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF32U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF32U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF32U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF32U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF32U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF32U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF64S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF64S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF64S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF64S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF64S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF64S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF64S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF64S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF64U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF64U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF64U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF64U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF64U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF64U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncF64U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncF64U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF32S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF32S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF32S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF32S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF32S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF32S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF32S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF32S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF32U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF32U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF32U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF32U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF32U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF32U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF32U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF32U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF64S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF64S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF64S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF64S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF64S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF64S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF64S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF64S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF64U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF64U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF64U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF64U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF64U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF64U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32TruncSatF64U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32TruncSatF64U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF32S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF32S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF32S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF32S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF32S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF32S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF32S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF32S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF32U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF32U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF32U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF32U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF32U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF32U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF32U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF32U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF64S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF64S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF64S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF64S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF64S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF64S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF64S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF64S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF64U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF64U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF64U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF64U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF64U_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF64U_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64TruncSatF64U_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64TruncSatF64U_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Extend8S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Extend8S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Extend8S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Extend8S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Extend8S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Extend8S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Extend8S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Extend8S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Extend16S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Extend16S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Extend16S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Extend16S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Extend16S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Extend16S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Extend16S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Extend16S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend8S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend8S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend8S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend8S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend8S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend8S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend8S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend8S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend16S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend16S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend16S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend16S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend16S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend16S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend16S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend16S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend32S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend32S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend32S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend32S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend32S_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend32S_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Extend32S_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Extend32S_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32WrapI64_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32WrapI64_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32WrapI64_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32WrapI64_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32WrapI64_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32WrapI64_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32WrapI64_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32WrapI64_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Add_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Add_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Add_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Add_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Add_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Add_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Add_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Add_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Add_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Add_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Add_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Add_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Add_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Add_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Add_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Add_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Add_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Add_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Add_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Add_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Add_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Add_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Add_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Add_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Add_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Add_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Add_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Add_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Add_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Add_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Add_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Add_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Mul_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Mul_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Mul_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Mul_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Mul_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Mul_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Mul_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Mul_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Mul_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Mul_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Mul_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Mul_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Mul_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Mul_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Mul_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Mul_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Mul_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Mul_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Mul_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Mul_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Mul_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Mul_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Mul_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Mul_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Mul_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Mul_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Mul_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Mul_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Mul_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Mul_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Mul_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Mul_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32And_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32And_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32And_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32And_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32And_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32And_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32And_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32And_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32And_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32And_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32And_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32And_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32And_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32And_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32And_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32And_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64And_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64And_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64And_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64And_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64And_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64And_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64And_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64And_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64And_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64And_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64And_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64And_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64And_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64And_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64And_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64And_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Or_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Or_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Or_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Or_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Or_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Or_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Or_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Or_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Or_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Or_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Or_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Or_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Or_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Or_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Or_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Or_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Or_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Or_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Or_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Or_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Or_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Or_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Or_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Or_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Or_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Or_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Or_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Or_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Or_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Or_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Or_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Or_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Xor_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Xor_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Xor_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Xor_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Xor_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Xor_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Xor_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Xor_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Xor_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Xor_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Xor_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Xor_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Xor_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Xor_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Xor_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Xor_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Xor_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Xor_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Xor_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Xor_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Xor_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Xor_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Xor_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Xor_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Xor_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Xor_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Xor_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Xor_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Xor_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Xor_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Xor_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Xor_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Eq_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Eq_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Eq_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Eq_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Eq_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Eq_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Eq_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Eq_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Eq_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Eq_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Eq_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Eq_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Eq_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Eq_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Eq_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Eq_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Eq_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Eq_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Eq_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Eq_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Eq_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Eq_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Eq_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Eq_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Eq_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Eq_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Eq_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Eq_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Eq_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Eq_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Eq_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Eq_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ne_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ne_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ne_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ne_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ne_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ne_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ne_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ne_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ne_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ne_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ne_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ne_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ne_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ne_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Ne_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Ne_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ne_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ne_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ne_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ne_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ne_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ne_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ne_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ne_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ne_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ne_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ne_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ne_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ne_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ne_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Ne_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Ne_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Add_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Add_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Add_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Add_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Add_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Add_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Add_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Add_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Add_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Add_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Add_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Add_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Add_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Add_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Add_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Add_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Add_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Add_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Add_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Add_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Add_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Add_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Add_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Add_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Add_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Add_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Add_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Add_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Add_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Add_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Add_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Add_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Mul_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Mul_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Mul_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Mul_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Mul_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Mul_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Mul_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Mul_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Mul_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Mul_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Mul_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Mul_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Mul_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Mul_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Mul_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Mul_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Mul_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Mul_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Mul_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Mul_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Mul_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Mul_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Mul_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Mul_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Mul_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Mul_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Mul_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Mul_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Mul_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Mul_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Mul_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Mul_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Eq_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Eq_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Eq_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Eq_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Eq_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Eq_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Eq_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Eq_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Eq_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Eq_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Eq_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Eq_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Eq_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Eq_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Eq_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Eq_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Eq_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Eq_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Eq_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Eq_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Eq_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Eq_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Eq_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Eq_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Eq_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Eq_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Eq_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Eq_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Eq_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Eq_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Eq_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Eq_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ne_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ne_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ne_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ne_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ne_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ne_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ne_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ne_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ne_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ne_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ne_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ne_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ne_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ne_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Ne_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Ne_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ne_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ne_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ne_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ne_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ne_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ne_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ne_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ne_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ne_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ne_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ne_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ne_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ne_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ne_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Ne_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Ne_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Min_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Min_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Min_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Min_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Min_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Min_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Min_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Min_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Min_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Min_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Min_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Min_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Min_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Min_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Min_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Min_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Min_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Min_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Min_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Min_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Min_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Min_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Min_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Min_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Min_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Min_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Min_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Min_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Min_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Min_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Min_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Min_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Max_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Max_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Max_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Max_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Max_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Max_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Max_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Max_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Max_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Max_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Max_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Max_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Max_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Max_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Max_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Max_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Max_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Max_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Max_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Max_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Max_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Max_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Max_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Max_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Max_SRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Max_SRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Max_SRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Max_SRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Max_SSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Max_SSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Max_SSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Max_SSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Sub_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Sub_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Sub_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Sub_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Sub_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Sub_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Sub_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Sub_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Sub_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Sub_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Sub_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Sub_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Sub_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Sub_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Sub_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Sub_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Sub_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Sub_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Sub_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Sub_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Sub_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Sub_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Sub_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Sub_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Sub_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Sub_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Sub_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Sub_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtS_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtS_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtS_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtS_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtS_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtS_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtS_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtS_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtS_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtS_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtS_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtS_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtS_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtS_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtS_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtS_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtS_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtS_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtS_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtS_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtS_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtS_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtS_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtS_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtS_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtS_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtS_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtS_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtU_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtU_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtU_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtU_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtU_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtU_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtU_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtU_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtU_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtU_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtU_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtU_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LtU_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LtU_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtU_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtU_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtU_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtU_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtU_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtU_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtU_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtU_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtU_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtU_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtU_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtU_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LtU_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LtU_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeS_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeS_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeS_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeS_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeS_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeS_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeS_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeS_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeS_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeS_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeS_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeS_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeS_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeS_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeS_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeS_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeS_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeS_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeS_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeS_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeS_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeS_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeS_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeS_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeS_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeS_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeS_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeS_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeU_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeU_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeU_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeU_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeU_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeU_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeU_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeU_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeU_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeU_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeU_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeU_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LeU_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LeU_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeU_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeU_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeU_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeU_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeU_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeU_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeU_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeU_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeU_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeU_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeU_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeU_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LeU_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LeU_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivS_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivS_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivS_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivS_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivS_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivS_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivS_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivS_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivS_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivS_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivS_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivS_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivS_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivS_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivS_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivS_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivS_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivS_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivS_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivS_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivS_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivS_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivS_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivS_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivS_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivS_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivS_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivS_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivU_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivU_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivU_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivU_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivU_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivU_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivU_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivU_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivU_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivU_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivU_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivU_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32DivU_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32DivU_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivU_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivU_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivU_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivU_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivU_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivU_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivU_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivU_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivU_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivU_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivU_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivU_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64DivU_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64DivU_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemS_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemS_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemS_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemS_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemS_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemS_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemS_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemS_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemS_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemS_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemS_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemS_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemS_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemS_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemS_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemS_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemS_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemS_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemS_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemS_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemS_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemS_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemS_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemS_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemS_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemS_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemS_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemS_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemU_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemU_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemU_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemU_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemU_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemU_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemU_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemU_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemU_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemU_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemU_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemU_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32RemU_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32RemU_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemU_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemU_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemU_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemU_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemU_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemU_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemU_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemU_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemU_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemU_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemU_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemU_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64RemU_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64RemU_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Shl_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Shl_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Shl_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Shl_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Shl_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Shl_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Shl_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Shl_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Shl_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Shl_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Shl_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Shl_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Shl_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Shl_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Shl_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Shl_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Shl_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Shl_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Shl_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Shl_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Shl_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Shl_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Shl_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Shl_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Shl_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Shl_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Shl_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Shl_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrS_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrS_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrS_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrS_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrS_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrS_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrS_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrS_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrS_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrS_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrS_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrS_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrS_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrS_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrS_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrS_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrS_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrS_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrS_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrS_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrS_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrS_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrS_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrS_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrS_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrS_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrS_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrS_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrU_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrU_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrU_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrU_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrU_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrU_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrU_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrU_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrU_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrU_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrU_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrU_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32ShrU_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32ShrU_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrU_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrU_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrU_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrU_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrU_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrU_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrU_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrU_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrU_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrU_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrU_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrU_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64ShrU_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64ShrU_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotl_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotl_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotl_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotl_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotl_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotl_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotl_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotl_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotl_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotl_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotl_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotl_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotl_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotl_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotl_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotl_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotl_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotl_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotl_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotl_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotl_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotl_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotl_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotl_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotl_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotl_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotl_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotl_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotr_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotr_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotr_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotr_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotr_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotr_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotr_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotr_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotr_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotr_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotr_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotr_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Rotr_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Rotr_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotr_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotr_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotr_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotr_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotr_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotr_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotr_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotr_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotr_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotr_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotr_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotr_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Rotr_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Rotr_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sub_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sub_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sub_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sub_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sub_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sub_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sub_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sub_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sub_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sub_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sub_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sub_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Sub_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Sub_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sub_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sub_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sub_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sub_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sub_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sub_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sub_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sub_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sub_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sub_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sub_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sub_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Sub_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Sub_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Div_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Div_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Div_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Div_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Div_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Div_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Div_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Div_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Div_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Div_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Div_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Div_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Div_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Div_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Div_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Div_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Div_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Div_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Div_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Div_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Div_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Div_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Div_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Div_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Div_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Div_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Div_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Div_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Copysign_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Copysign_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Copysign_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Copysign_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Copysign_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Copysign_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Copysign_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Copysign_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Copysign_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Copysign_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Copysign_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Copysign_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Copysign_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Copysign_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Copysign_RRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Copysign_RRS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Copysign_RRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Copysign_RRI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Copysign_RSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Copysign_RSR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Copysign_RSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Copysign_RSS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Copysign_RSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Copysign_RSI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Copysign_RIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Copysign_RIR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Copysign_RIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Copysign_RIS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LoadMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LoadMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LoadMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LoadMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LoadMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LoadMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32LoadMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LoadMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32LoadMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LoadMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32LoadMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32LoadMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LoadMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LoadMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LoadMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LoadMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LoadMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LoadMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64LoadMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LoadMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64LoadMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LoadMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64LoadMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64LoadMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Load_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Load_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Load_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Load_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Load_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Load_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F32LoadMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LoadMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32LoadMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LoadMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32LoadMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LoadMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F32LoadMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LoadMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32LoadMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LoadMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32LoadMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32LoadMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Load_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Load_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Load_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Load_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Load_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Load_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F64LoadMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LoadMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64LoadMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LoadMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64LoadMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LoadMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F64LoadMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LoadMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64LoadMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LoadMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64LoadMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64LoadMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8S_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8S_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8SMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8SMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8SMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8SMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8SMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8SMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8SMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8SMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8SMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8SMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8SMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8SMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8S_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8S_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8SMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8SMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8SMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8SMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8SMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8SMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8SMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8SMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8SMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8SMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8SMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8SMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8U_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8U_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8UMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8UMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8UMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8UMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8UMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8UMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8UMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8UMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8UMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8UMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load8UMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load8UMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8U_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8U_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8UMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8UMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8UMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8UMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8UMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8UMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8UMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8UMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8UMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8UMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load8UMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load8UMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16S_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16S_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16SMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16SMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16SMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16SMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16SMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16SMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16SMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16SMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16SMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16SMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16SMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16SMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16S_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16S_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16SMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16SMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16SMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16SMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16SMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16SMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16SMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16SMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16SMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16SMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16SMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16SMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16U_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16U_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16UMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16UMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16UMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16UMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16UMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16UMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16UMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16UMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16UMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16UMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Load16UMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Load16UMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16U_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16U_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16UMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16UMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16UMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16UMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16UMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16UMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16UMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16UMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16UMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16UMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load16UMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load16UMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32S_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32S_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32S_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32S_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32S_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32S_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32SMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32SMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32SMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32SMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32SMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32SMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32SMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32SMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32SMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32SMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32SMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32SMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32U_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32U_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32U_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32U_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32U_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32U_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32UMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32UMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32UMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32UMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32UMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32UMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32UMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32UMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32UMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32UMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Load32UMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Load32UMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store_II
+    }
+}
+impl crate::OperatorCode for crate::op::I32StoreMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32StoreMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32StoreMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32StoreMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32StoreMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32StoreMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32StoreMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32StoreMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32StoreMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32StoreMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32StoreMem0_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32StoreMem0_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I32StoreMem0_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32StoreMem0_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I32StoreMem0_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32StoreMem0_II
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store_II
+    }
+}
+impl crate::OperatorCode for crate::op::I64StoreMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64StoreMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64StoreMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64StoreMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64StoreMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64StoreMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64StoreMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64StoreMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64StoreMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64StoreMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64StoreMem0_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64StoreMem0_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64StoreMem0_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64StoreMem0_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64StoreMem0_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64StoreMem0_II
+    }
+}
+impl crate::OperatorCode for crate::op::F32Store_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Store_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Store_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Store_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Store_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Store_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Store_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Store_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Store_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Store_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Store_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Store_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F32Store_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Store_IR
+    }
+}
+impl crate::OperatorCode for crate::op::F32Store_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Store_IS
+    }
+}
+impl crate::OperatorCode for crate::op::F32Store_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32Store_II
+    }
+}
+impl crate::OperatorCode for crate::op::F32StoreMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32StoreMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F32StoreMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32StoreMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F32StoreMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32StoreMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F32StoreMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32StoreMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F32StoreMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32StoreMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F32StoreMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32StoreMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F32StoreMem0_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32StoreMem0_IR
+    }
+}
+impl crate::OperatorCode for crate::op::F32StoreMem0_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32StoreMem0_IS
+    }
+}
+impl crate::OperatorCode for crate::op::F32StoreMem0_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F32StoreMem0_II
+    }
+}
+impl crate::OperatorCode for crate::op::F64Store_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Store_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Store_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Store_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Store_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Store_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Store_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Store_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Store_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Store_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Store_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Store_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F64Store_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Store_IR
+    }
+}
+impl crate::OperatorCode for crate::op::F64Store_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Store_IS
+    }
+}
+impl crate::OperatorCode for crate::op::F64Store_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64Store_II
+    }
+}
+impl crate::OperatorCode for crate::op::F64StoreMem0_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64StoreMem0_RR
+    }
+}
+impl crate::OperatorCode for crate::op::F64StoreMem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64StoreMem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::F64StoreMem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64StoreMem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::F64StoreMem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64StoreMem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::F64StoreMem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64StoreMem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::F64StoreMem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64StoreMem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::F64StoreMem0_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64StoreMem0_IR
+    }
+}
+impl crate::OperatorCode for crate::op::F64StoreMem0_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64StoreMem0_IS
+    }
+}
+impl crate::OperatorCode for crate::op::F64StoreMem0_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::F64StoreMem0_II
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8_II
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8Mem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8Mem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8Mem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8Mem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8Mem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8Mem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8Mem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8Mem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8Mem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8Mem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8Mem0_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8Mem0_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8Mem0_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8Mem0_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store8Mem0_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store8Mem0_II
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8_II
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8Mem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8Mem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8Mem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8Mem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8Mem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8Mem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8Mem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8Mem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8Mem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8Mem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8Mem0_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8Mem0_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8Mem0_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8Mem0_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store8Mem0_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store8Mem0_II
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16_II
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16Mem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16Mem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16Mem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16Mem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16Mem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16Mem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16Mem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16Mem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16Mem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16Mem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16Mem0_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16Mem0_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16Mem0_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16Mem0_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I32Store16Mem0_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I32Store16Mem0_II
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16_II
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16Mem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16Mem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16Mem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16Mem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16Mem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16Mem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16Mem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16Mem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16Mem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16Mem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16Mem0_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16Mem0_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16Mem0_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16Mem0_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store16Mem0_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store16Mem0_II
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32_II
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32Mem0_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32Mem0_RS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32Mem0_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32Mem0_RI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32Mem0_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32Mem0_SR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32Mem0_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32Mem0_SS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32Mem0_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32Mem0_SI
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32Mem0_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32Mem0_IR
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32Mem0_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32Mem0_IS
+    }
+}
+impl crate::OperatorCode for crate::op::I64Store32Mem0_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::I64Store32Mem0_II
+    }
+}
+impl crate::OperatorCode for crate::op::Select {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::Select
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI32_RSSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI32_RSSS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI32_RSSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI32_RSSI
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI32_RSIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI32_RSIS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI32_RSII {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI32_RSII
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RRSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RRSS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RRSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RRSI
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RRIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RRIS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RRII {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RRII
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RSRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RSRS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RSRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RSRI
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RSSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RSSR
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RSSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RSSS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RSSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RSSI
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RSIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RSIR
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RSIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RSIS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectI64_RSII {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectI64_RSII
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RRSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RRSS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RRSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RRSI
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RRIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RRIS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RRII {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RRII
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RSRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RSRS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RSRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RSRI
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RSSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RSSR
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RSSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RSSS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RSSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RSSI
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RSIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RSIR
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RSIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RSIS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF32_RSII {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF32_RSII
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RRSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RRSS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RRSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RRSI
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RRIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RRIS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RRII {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RRII
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RSRS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RSRS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RSRI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RSRI
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RSSR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RSSR
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RSSS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RSSS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RSSI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RSSI
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RSIR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RSIR
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RSIS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RSIS
+    }
+}
+impl crate::OperatorCode for crate::op::SelectF64_RSII {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::SelectF64_RSII
+    }
+}
+impl crate::OperatorCode for crate::op::TableSize_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableSize_R
+    }
+}
+impl crate::OperatorCode for crate::op::TableSize_S {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableSize_S
+    }
+}
+impl crate::OperatorCode for crate::op::TableGet_RR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableGet_RR
+    }
+}
+impl crate::OperatorCode for crate::op::TableGet_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableGet_RS
+    }
+}
+impl crate::OperatorCode for crate::op::TableGet_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableGet_RI
+    }
+}
+impl crate::OperatorCode for crate::op::TableSet_RS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableSet_RS
+    }
+}
+impl crate::OperatorCode for crate::op::TableSet_RI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableSet_RI
+    }
+}
+impl crate::OperatorCode for crate::op::TableSet_SR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableSet_SR
+    }
+}
+impl crate::OperatorCode for crate::op::TableSet_SS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableSet_SS
+    }
+}
+impl crate::OperatorCode for crate::op::TableSet_SI {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableSet_SI
+    }
+}
+impl crate::OperatorCode for crate::op::TableSet_IR {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableSet_IR
+    }
+}
+impl crate::OperatorCode for crate::op::TableSet_IS {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableSet_IS
+    }
+}
+impl crate::OperatorCode for crate::op::TableSet_II {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableSet_II
+    }
+}
+impl crate::OperatorCode for crate::op::TableGrow {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableGrow
+    }
+}
+impl crate::OperatorCode for crate::op::TableCopy {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableCopy
+    }
+}
+impl crate::OperatorCode for crate::op::TableFill {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableFill
+    }
+}
+impl crate::OperatorCode for crate::op::TableInit {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::TableInit
+    }
+}
+impl crate::OperatorCode for crate::op::MemorySize_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::MemorySize_R
+    }
+}
+impl crate::OperatorCode for crate::op::MemorySize_S {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::MemorySize_S
+    }
+}
+impl crate::OperatorCode for crate::op::MemoryGrow {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::MemoryGrow
+    }
+}
+impl crate::OperatorCode for crate::op::MemoryCopy {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::MemoryCopy
+    }
+}
+impl crate::OperatorCode for crate::op::MemoryFill {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::MemoryFill
+    }
+}
+impl crate::OperatorCode for crate::op::MemoryInit {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::MemoryInit
+    }
+}
+impl crate::OperatorCode for crate::op::CallInternal {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::CallInternal
+    }
+}
+impl crate::OperatorCode for crate::op::ReturnCallInternal {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::ReturnCallInternal
+    }
+}
+impl crate::OperatorCode for crate::op::CallImported {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::CallImported
+    }
+}
+impl crate::OperatorCode for crate::op::ReturnCallImported {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::ReturnCallImported
+    }
+}
+impl crate::OperatorCode for crate::op::CallIndirect_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::CallIndirect_R
+    }
+}
+impl crate::OperatorCode for crate::op::CallIndirect_S {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::CallIndirect_S
+    }
+}
+impl crate::OperatorCode for crate::op::CallIndirect_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::CallIndirect_I
+    }
+}
+impl crate::OperatorCode for crate::op::ReturnCallIndirect_R {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::ReturnCallIndirect_R
+    }
+}
+impl crate::OperatorCode for crate::op::ReturnCallIndirect_S {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::ReturnCallIndirect_S
+    }
+}
+impl crate::OperatorCode for crate::op::ReturnCallIndirect_I {
+    fn op_code(&self) -> crate::OpCode {
+        crate::OpCode::ReturnCallIndirect_I
+    }
+}
