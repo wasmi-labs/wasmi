@@ -23,9 +23,9 @@ pub struct Op {
 }
 
 impl Op {
-    pub fn new(name: impl AsRef<str>) -> Self {
+    pub fn new(name: impl Into<Box<str>>) -> Self {
         Self {
-            name: name.as_ref().into(),
+            name: name.into(),
             fields: Vec::new(),
         }
     }
