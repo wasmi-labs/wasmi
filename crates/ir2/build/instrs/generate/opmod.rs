@@ -1,4 +1,5 @@
-use super::*;
+use super::{Context, DisplayFields, DisplayIndent, Field, Op, Visibility};
+use std::fmt::{self, Display};
 
 pub struct DisplayOpMod<'a> {
     ctx: &'a Context,
