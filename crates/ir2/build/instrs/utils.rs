@@ -108,7 +108,7 @@ impl Display for ValTy {
 }
 
 #[macro_export]
-macro_rules! instr {
+macro_rules! op {
     (
         name: $name:expr,
         fields: [
