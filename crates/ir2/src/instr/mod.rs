@@ -6811,11 +6811,8 @@ impl crate::OperatorCode for Op {
         }
     }
 }
-impl Op {
-    /// Encodes [`Op`] allowing customization of its [`OpCode`] encoding.
-    ///
-    /// This is useful to allow both direct and indirect dispatch techniques.
-    pub fn encode_as<T: Copy>(
+impl crate::EncodeOpAs for Op {
+    fn encode_op_as<T: ::core::marker::Copy>(
         &self,
         encoder: &mut crate::CopyEncoder,
         f: impl ::core::ops::Fn(crate::OpCode) -> T
