@@ -69,16 +69,27 @@ impl Display for DisplayOpModInstr<'_> {
         let fields = DisplayFields::new(self.op.fields(), indent.inc(), Visibility::Pub);
         let from_impl = DisplayOpModFromImpl::new(self.op, indent);
         let name = self.op.name();
-        if self.op.fields().is_empty() {
-            return writeln!(f, "{indent}pub struct {name};");
+        match self.op.fields().is_empty() {
+            true => writeln!(
+                f,
+                "\
+                {indent}#[repr(C, packed)]\n\
+                {indent}pub struct {name};\
+                "
+            )?,
+            false => writeln!(
+                f,
+                "\
+                {indent}#[repr(C, packed)]\n\
+                {indent}pub struct {name} {{\n\
+                {fields}\n\
+                {indent}}}\
+                "
+            )?,
         }
         write!(
             f,
             "\
-            {indent}#[repr(C, packed)]\n\
-            {indent}pub struct {name} {{\n\
-            {fields}\n\
-            {indent}}}\n\
             {indent}impl ::core::marker::Copy for {name} {{}}\n\
             {indent}impl ::core::clone::Clone for {name} {{\n\
             {indent}    fn clone(&self) -> Self {{\n\
@@ -108,9 +119,6 @@ impl Display for DisplayOpModFromImpl<'_> {
         let indent = self.indent;
         let fields = DisplayOpModFromImplFields::new(self.op.fields(), indent.inc_by(3));
         let name = self.op.name();
-        if self.op.fields().is_empty() {
-            return writeln!(f, "{indent}pub struct {name};");
-        }
         write!(
             f,
             "\
