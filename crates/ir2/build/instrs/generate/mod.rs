@@ -29,8 +29,6 @@ impl Display for Context {
             "//!"
             "//! Do _not_ edit this file directly but change `build.rs` script logic instead."
             ""
-            "pub mod utils;"
-            ""
         );
         DisplayOpEnum::new(self, indent).fmt(f)?;
         DisplayOpCodeEnum::new(self, indent).fmt(f)?;
