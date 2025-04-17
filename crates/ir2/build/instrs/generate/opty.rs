@@ -161,26 +161,3 @@ impl Display for DisplayOpEnumImplEncodeForVariant<'_> {
         Ok(())
     }
 }
-
-pub struct DisplayFieldsPattern<'a> {
-    fields: &'a [Field],
-}
-
-impl<'a> DisplayFieldsPattern<'a> {
-    fn new(fields: &'a [Field]) -> Self {
-        Self { fields }
-    }
-}
-
-impl Display for DisplayFieldsPattern<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Some((first, rest)) = self.fields.split_first() else {
-            return Ok(());
-        };
-        write!(f, "{}", first.name)?;
-        for field in rest {
-            write!(f, ", {}", field.name)?;
-        }
-        Ok(())
-    }
-}

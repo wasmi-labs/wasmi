@@ -8,7 +8,7 @@ use self::{
     opcode::DisplayOpCodeEnum,
     opmod::DisplayOpMod,
     opty::DisplayOpEnum,
-    utils::{DisplayFields, DisplayIndent, Visibility},
+    utils::{DisplayFields, DisplayFieldsPattern, DisplayIndent, Visibility},
 };
 use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op};
 use std::{
