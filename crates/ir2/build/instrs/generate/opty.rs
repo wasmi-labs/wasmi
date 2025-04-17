@@ -1,4 +1,5 @@
-use super::*;
+use super::{Context, DisplayFields, DisplayFieldsPattern, DisplayIndent, Op, Visibility};
+use std::fmt::{self, Display};
 
 pub struct DisplayOpEnum<'a> {
     ctx: &'a Context,
