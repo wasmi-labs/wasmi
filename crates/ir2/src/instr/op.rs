@@ -2,6 +2,8 @@
 //!
 //! Do _not_ edit this file directly but change `build.rs` script logic instead.
 
+#![allow(unused_variables)]
+
 #[repr(C, packed)]
 pub struct Copy1_S {
     pub result: crate::Stack,
@@ -173,8 +175,21 @@ impl ::core::convert::From<Copy1F64_I> for crate::Op {
         }
     }
 }
+#[repr(C, packed)]
 pub struct Return0;
+impl ::core::marker::Copy for Return0 {}
+impl ::core::clone::Clone for Return0 {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<Return0> for crate::Op {
+    fn from(op: Return0) -> Self {
+        Self::Return0 {
 
+        }
+    }
+}
 #[repr(C, packed)]
 pub struct Return1_S {
     pub value: crate::Stack,

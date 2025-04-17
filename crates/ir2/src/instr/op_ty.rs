@@ -5648,4634 +5648,3480 @@ impl ::core::clone::Clone for Op {
         *self
     }
 }
-impl crate::EncodeOpAs for Op {
-    fn encode_op_as<T: ::core::marker::Copy>(
+impl Op {
+    /// Encodes `self` without its [`OpCode`].
+    pub fn encode_params(
         &self,
         encoder: &mut crate::CopyEncoder,
-        f: impl ::core::ops::Fn(crate::OpCode) -> T
     ) -> ::core::result::Result<(), crate::EncoderError> {
         match *self {
             Self::Copy1_S { result, value } => {
-                encoder.encode(f(crate::OpCode::Copy1_S))?;
-                encoder.encode(crate::op::Copy1_S { result, value } )
+                encoder.encode(crate::op::Copy1_S { result, value })
             }
             Self::Copy { result, len_values } => {
-                encoder.encode(f(crate::OpCode::Copy))?;
-                encoder.encode(crate::op::Copy { result, len_values } )
+                encoder.encode(crate::op::Copy { result, len_values })
             }
             Self::Copy1I32_I { result, value } => {
-                encoder.encode(f(crate::OpCode::Copy1I32_I))?;
-                encoder.encode(crate::op::Copy1I32_I { result, value } )
+                encoder.encode(crate::op::Copy1I32_I { result, value })
             }
             Self::Copy1I64_R { result, value } => {
-                encoder.encode(f(crate::OpCode::Copy1I64_R))?;
-                encoder.encode(crate::op::Copy1I64_R { result, value } )
+                encoder.encode(crate::op::Copy1I64_R { result, value })
             }
             Self::Copy1I64_I { result, value } => {
-                encoder.encode(f(crate::OpCode::Copy1I64_I))?;
-                encoder.encode(crate::op::Copy1I64_I { result, value } )
+                encoder.encode(crate::op::Copy1I64_I { result, value })
             }
             Self::Copy1F32_R { result, value } => {
-                encoder.encode(f(crate::OpCode::Copy1F32_R))?;
-                encoder.encode(crate::op::Copy1F32_R { result, value } )
+                encoder.encode(crate::op::Copy1F32_R { result, value })
             }
             Self::Copy1F32_I { result, value } => {
-                encoder.encode(f(crate::OpCode::Copy1F32_I))?;
-                encoder.encode(crate::op::Copy1F32_I { result, value } )
+                encoder.encode(crate::op::Copy1F32_I { result, value })
             }
             Self::Copy1F64_R { result, value } => {
-                encoder.encode(f(crate::OpCode::Copy1F64_R))?;
-                encoder.encode(crate::op::Copy1F64_R { result, value } )
+                encoder.encode(crate::op::Copy1F64_R { result, value })
             }
             Self::Copy1F64_I { result, value } => {
-                encoder.encode(f(crate::OpCode::Copy1F64_I))?;
-                encoder.encode(crate::op::Copy1F64_I { result, value } )
+                encoder.encode(crate::op::Copy1F64_I { result, value })
             }
-            Self::Return0 => { encoder.encode(f(crate::OpCode::Return0)) } 
-
+            Self::Return0 {  } => {
+                encoder.encode(crate::op::Return0 {  })
+            }
             Self::Return1_S { value } => {
-                encoder.encode(f(crate::OpCode::Return1_S))?;
-                encoder.encode(crate::op::Return1_S { value } )
+                encoder.encode(crate::op::Return1_S { value })
             }
             Self::Return { len_values } => {
-                encoder.encode(f(crate::OpCode::Return))?;
-                encoder.encode(crate::op::Return { len_values } )
+                encoder.encode(crate::op::Return { len_values })
             }
             Self::Return1I32_R { value } => {
-                encoder.encode(f(crate::OpCode::Return1I32_R))?;
-                encoder.encode(crate::op::Return1I32_R { value } )
+                encoder.encode(crate::op::Return1I32_R { value })
             }
             Self::Return1I64_R { value } => {
-                encoder.encode(f(crate::OpCode::Return1I64_R))?;
-                encoder.encode(crate::op::Return1I64_R { value } )
+                encoder.encode(crate::op::Return1I64_R { value })
             }
             Self::Return1F32_R { value } => {
-                encoder.encode(f(crate::OpCode::Return1F32_R))?;
-                encoder.encode(crate::op::Return1F32_R { value } )
+                encoder.encode(crate::op::Return1F32_R { value })
             }
             Self::Return1F64_R { value } => {
-                encoder.encode(f(crate::OpCode::Return1F64_R))?;
-                encoder.encode(crate::op::Return1F64_R { value } )
+                encoder.encode(crate::op::Return1F64_R { value })
             }
             Self::Return1I32_I { value } => {
-                encoder.encode(f(crate::OpCode::Return1I32_I))?;
-                encoder.encode(crate::op::Return1I32_I { value } )
+                encoder.encode(crate::op::Return1I32_I { value })
             }
             Self::Return1I64_I { value } => {
-                encoder.encode(f(crate::OpCode::Return1I64_I))?;
-                encoder.encode(crate::op::Return1I64_I { value } )
+                encoder.encode(crate::op::Return1I64_I { value })
             }
             Self::Return1F32_I { value } => {
-                encoder.encode(f(crate::OpCode::Return1F32_I))?;
-                encoder.encode(crate::op::Return1F32_I { value } )
+                encoder.encode(crate::op::Return1F32_I { value })
             }
             Self::Return1F64_I { value } => {
-                encoder.encode(f(crate::OpCode::Return1F64_I))?;
-                encoder.encode(crate::op::Return1F64_I { value } )
+                encoder.encode(crate::op::Return1F64_I { value })
             }
             Self::GlobalGet_S { result, global } => {
-                encoder.encode(f(crate::OpCode::GlobalGet_S))?;
-                encoder.encode(crate::op::GlobalGet_S { result, global } )
+                encoder.encode(crate::op::GlobalGet_S { result, global })
             }
             Self::GlobalGetI32_R { result, global } => {
-                encoder.encode(f(crate::OpCode::GlobalGetI32_R))?;
-                encoder.encode(crate::op::GlobalGetI32_R { result, global } )
+                encoder.encode(crate::op::GlobalGetI32_R { result, global })
             }
             Self::GlobalGetI64_R { result, global } => {
-                encoder.encode(f(crate::OpCode::GlobalGetI64_R))?;
-                encoder.encode(crate::op::GlobalGetI64_R { result, global } )
+                encoder.encode(crate::op::GlobalGetI64_R { result, global })
             }
             Self::GlobalGetF32_R { result, global } => {
-                encoder.encode(f(crate::OpCode::GlobalGetF32_R))?;
-                encoder.encode(crate::op::GlobalGetF32_R { result, global } )
+                encoder.encode(crate::op::GlobalGetF32_R { result, global })
             }
             Self::GlobalGetF64_R { result, global } => {
-                encoder.encode(f(crate::OpCode::GlobalGetF64_R))?;
-                encoder.encode(crate::op::GlobalGetF64_R { result, global } )
+                encoder.encode(crate::op::GlobalGetF64_R { result, global })
             }
             Self::GlobalSet_S { global, value } => {
-                encoder.encode(f(crate::OpCode::GlobalSet_S))?;
-                encoder.encode(crate::op::GlobalSet_S { global, value } )
+                encoder.encode(crate::op::GlobalSet_S { global, value })
             }
             Self::GlobalSetI32_R { global, value } => {
-                encoder.encode(f(crate::OpCode::GlobalSetI32_R))?;
-                encoder.encode(crate::op::GlobalSetI32_R { global, value } )
+                encoder.encode(crate::op::GlobalSetI32_R { global, value })
             }
             Self::GlobalSetI64_R { global, value } => {
-                encoder.encode(f(crate::OpCode::GlobalSetI64_R))?;
-                encoder.encode(crate::op::GlobalSetI64_R { global, value } )
+                encoder.encode(crate::op::GlobalSetI64_R { global, value })
             }
             Self::GlobalSetF32_R { global, value } => {
-                encoder.encode(f(crate::OpCode::GlobalSetF32_R))?;
-                encoder.encode(crate::op::GlobalSetF32_R { global, value } )
+                encoder.encode(crate::op::GlobalSetF32_R { global, value })
             }
             Self::GlobalSetF64_R { global, value } => {
-                encoder.encode(f(crate::OpCode::GlobalSetF64_R))?;
-                encoder.encode(crate::op::GlobalSetF64_R { global, value } )
+                encoder.encode(crate::op::GlobalSetF64_R { global, value })
             }
             Self::GlobalSetI32_I { global, value } => {
-                encoder.encode(f(crate::OpCode::GlobalSetI32_I))?;
-                encoder.encode(crate::op::GlobalSetI32_I { global, value } )
+                encoder.encode(crate::op::GlobalSetI32_I { global, value })
             }
             Self::GlobalSetI64_I { global, value } => {
-                encoder.encode(f(crate::OpCode::GlobalSetI64_I))?;
-                encoder.encode(crate::op::GlobalSetI64_I { global, value } )
+                encoder.encode(crate::op::GlobalSetI64_I { global, value })
             }
             Self::GlobalSetF32_I { global, value } => {
-                encoder.encode(f(crate::OpCode::GlobalSetF32_I))?;
-                encoder.encode(crate::op::GlobalSetF32_I { global, value } )
+                encoder.encode(crate::op::GlobalSetF32_I { global, value })
             }
             Self::GlobalSetF64_I { global, value } => {
-                encoder.encode(f(crate::OpCode::GlobalSetF64_I))?;
-                encoder.encode(crate::op::GlobalSetF64_I { global, value } )
+                encoder.encode(crate::op::GlobalSetF64_I { global, value })
             }
             Self::BranchTable0_R { index, len_targets } => {
-                encoder.encode(f(crate::OpCode::BranchTable0_R))?;
-                encoder.encode(crate::op::BranchTable0_R { index, len_targets } )
+                encoder.encode(crate::op::BranchTable0_R { index, len_targets })
             }
             Self::BranchTable_R { index, len_targets } => {
-                encoder.encode(f(crate::OpCode::BranchTable_R))?;
-                encoder.encode(crate::op::BranchTable_R { index, len_targets } )
+                encoder.encode(crate::op::BranchTable_R { index, len_targets })
             }
             Self::BranchTable0_S { index, len_targets } => {
-                encoder.encode(f(crate::OpCode::BranchTable0_S))?;
-                encoder.encode(crate::op::BranchTable0_S { index, len_targets } )
+                encoder.encode(crate::op::BranchTable0_S { index, len_targets })
             }
             Self::BranchTable_S { index, len_targets } => {
-                encoder.encode(f(crate::OpCode::BranchTable_S))?;
-                encoder.encode(crate::op::BranchTable_S { index, len_targets } )
+                encoder.encode(crate::op::BranchTable_S { index, len_targets })
             }
             Self::I32EqBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32EqBranch_RS))?;
-                encoder.encode(crate::op::I32EqBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32EqBranch_RS { lhs, rhs, offset })
             }
             Self::I32EqBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32EqBranch_RI))?;
-                encoder.encode(crate::op::I32EqBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32EqBranch_RI { lhs, rhs, offset })
             }
             Self::I32EqBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32EqBranch_SS))?;
-                encoder.encode(crate::op::I32EqBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32EqBranch_SS { lhs, rhs, offset })
             }
             Self::I32EqBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32EqBranch_SI))?;
-                encoder.encode(crate::op::I32EqBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32EqBranch_SI { lhs, rhs, offset })
             }
             Self::I64EqBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64EqBranch_RS))?;
-                encoder.encode(crate::op::I64EqBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64EqBranch_RS { lhs, rhs, offset })
             }
             Self::I64EqBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64EqBranch_RI))?;
-                encoder.encode(crate::op::I64EqBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64EqBranch_RI { lhs, rhs, offset })
             }
             Self::I64EqBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64EqBranch_SS))?;
-                encoder.encode(crate::op::I64EqBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64EqBranch_SS { lhs, rhs, offset })
             }
             Self::I64EqBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64EqBranch_SI))?;
-                encoder.encode(crate::op::I64EqBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64EqBranch_SI { lhs, rhs, offset })
             }
             Self::F32EqBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32EqBranch_RS))?;
-                encoder.encode(crate::op::F32EqBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32EqBranch_RS { lhs, rhs, offset })
             }
             Self::F32EqBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32EqBranch_RI))?;
-                encoder.encode(crate::op::F32EqBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32EqBranch_RI { lhs, rhs, offset })
             }
             Self::F32EqBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32EqBranch_SS))?;
-                encoder.encode(crate::op::F32EqBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32EqBranch_SS { lhs, rhs, offset })
             }
             Self::F32EqBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32EqBranch_SI))?;
-                encoder.encode(crate::op::F32EqBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32EqBranch_SI { lhs, rhs, offset })
             }
             Self::F64EqBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64EqBranch_RS))?;
-                encoder.encode(crate::op::F64EqBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64EqBranch_RS { lhs, rhs, offset })
             }
             Self::F64EqBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64EqBranch_RI))?;
-                encoder.encode(crate::op::F64EqBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64EqBranch_RI { lhs, rhs, offset })
             }
             Self::F64EqBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64EqBranch_SS))?;
-                encoder.encode(crate::op::F64EqBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64EqBranch_SS { lhs, rhs, offset })
             }
             Self::F64EqBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64EqBranch_SI))?;
-                encoder.encode(crate::op::F64EqBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64EqBranch_SI { lhs, rhs, offset })
             }
             Self::I32NeBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32NeBranch_RS))?;
-                encoder.encode(crate::op::I32NeBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32NeBranch_RS { lhs, rhs, offset })
             }
             Self::I32NeBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32NeBranch_RI))?;
-                encoder.encode(crate::op::I32NeBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32NeBranch_RI { lhs, rhs, offset })
             }
             Self::I32NeBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32NeBranch_SS))?;
-                encoder.encode(crate::op::I32NeBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32NeBranch_SS { lhs, rhs, offset })
             }
             Self::I32NeBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32NeBranch_SI))?;
-                encoder.encode(crate::op::I32NeBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32NeBranch_SI { lhs, rhs, offset })
             }
             Self::I64NeBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64NeBranch_RS))?;
-                encoder.encode(crate::op::I64NeBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64NeBranch_RS { lhs, rhs, offset })
             }
             Self::I64NeBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64NeBranch_RI))?;
-                encoder.encode(crate::op::I64NeBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64NeBranch_RI { lhs, rhs, offset })
             }
             Self::I64NeBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64NeBranch_SS))?;
-                encoder.encode(crate::op::I64NeBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64NeBranch_SS { lhs, rhs, offset })
             }
             Self::I64NeBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64NeBranch_SI))?;
-                encoder.encode(crate::op::I64NeBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64NeBranch_SI { lhs, rhs, offset })
             }
             Self::F32NeBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32NeBranch_RS))?;
-                encoder.encode(crate::op::F32NeBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32NeBranch_RS { lhs, rhs, offset })
             }
             Self::F32NeBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32NeBranch_RI))?;
-                encoder.encode(crate::op::F32NeBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32NeBranch_RI { lhs, rhs, offset })
             }
             Self::F32NeBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32NeBranch_SS))?;
-                encoder.encode(crate::op::F32NeBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32NeBranch_SS { lhs, rhs, offset })
             }
             Self::F32NeBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32NeBranch_SI))?;
-                encoder.encode(crate::op::F32NeBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32NeBranch_SI { lhs, rhs, offset })
             }
             Self::F64NeBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64NeBranch_RS))?;
-                encoder.encode(crate::op::F64NeBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64NeBranch_RS { lhs, rhs, offset })
             }
             Self::F64NeBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64NeBranch_RI))?;
-                encoder.encode(crate::op::F64NeBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64NeBranch_RI { lhs, rhs, offset })
             }
             Self::F64NeBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64NeBranch_SS))?;
-                encoder.encode(crate::op::F64NeBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64NeBranch_SS { lhs, rhs, offset })
             }
             Self::F64NeBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64NeBranch_SI))?;
-                encoder.encode(crate::op::F64NeBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64NeBranch_SI { lhs, rhs, offset })
             }
             Self::I32LtSBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtSBranch_RS))?;
-                encoder.encode(crate::op::I32LtSBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtSBranch_RS { lhs, rhs, offset })
             }
             Self::I32LtSBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtSBranch_RI))?;
-                encoder.encode(crate::op::I32LtSBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtSBranch_RI { lhs, rhs, offset })
             }
             Self::I32LtSBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtSBranch_SR))?;
-                encoder.encode(crate::op::I32LtSBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtSBranch_SR { lhs, rhs, offset })
             }
             Self::I32LtSBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtSBranch_SS))?;
-                encoder.encode(crate::op::I32LtSBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtSBranch_SS { lhs, rhs, offset })
             }
             Self::I32LtSBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtSBranch_SI))?;
-                encoder.encode(crate::op::I32LtSBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtSBranch_SI { lhs, rhs, offset })
             }
             Self::I32LtSBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtSBranch_IR))?;
-                encoder.encode(crate::op::I32LtSBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtSBranch_IR { lhs, rhs, offset })
             }
             Self::I32LtSBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtSBranch_IS))?;
-                encoder.encode(crate::op::I32LtSBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtSBranch_IS { lhs, rhs, offset })
             }
             Self::I64LtSBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtSBranch_RS))?;
-                encoder.encode(crate::op::I64LtSBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtSBranch_RS { lhs, rhs, offset })
             }
             Self::I64LtSBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtSBranch_RI))?;
-                encoder.encode(crate::op::I64LtSBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtSBranch_RI { lhs, rhs, offset })
             }
             Self::I64LtSBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtSBranch_SR))?;
-                encoder.encode(crate::op::I64LtSBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtSBranch_SR { lhs, rhs, offset })
             }
             Self::I64LtSBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtSBranch_SS))?;
-                encoder.encode(crate::op::I64LtSBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtSBranch_SS { lhs, rhs, offset })
             }
             Self::I64LtSBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtSBranch_SI))?;
-                encoder.encode(crate::op::I64LtSBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtSBranch_SI { lhs, rhs, offset })
             }
             Self::I64LtSBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtSBranch_IR))?;
-                encoder.encode(crate::op::I64LtSBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtSBranch_IR { lhs, rhs, offset })
             }
             Self::I64LtSBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtSBranch_IS))?;
-                encoder.encode(crate::op::I64LtSBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtSBranch_IS { lhs, rhs, offset })
             }
             Self::I32LtUBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtUBranch_RS))?;
-                encoder.encode(crate::op::I32LtUBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtUBranch_RS { lhs, rhs, offset })
             }
             Self::I32LtUBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtUBranch_RI))?;
-                encoder.encode(crate::op::I32LtUBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtUBranch_RI { lhs, rhs, offset })
             }
             Self::I32LtUBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtUBranch_SR))?;
-                encoder.encode(crate::op::I32LtUBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtUBranch_SR { lhs, rhs, offset })
             }
             Self::I32LtUBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtUBranch_SS))?;
-                encoder.encode(crate::op::I32LtUBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtUBranch_SS { lhs, rhs, offset })
             }
             Self::I32LtUBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtUBranch_SI))?;
-                encoder.encode(crate::op::I32LtUBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtUBranch_SI { lhs, rhs, offset })
             }
             Self::I32LtUBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtUBranch_IR))?;
-                encoder.encode(crate::op::I32LtUBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtUBranch_IR { lhs, rhs, offset })
             }
             Self::I32LtUBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LtUBranch_IS))?;
-                encoder.encode(crate::op::I32LtUBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LtUBranch_IS { lhs, rhs, offset })
             }
             Self::I64LtUBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtUBranch_RS))?;
-                encoder.encode(crate::op::I64LtUBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtUBranch_RS { lhs, rhs, offset })
             }
             Self::I64LtUBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtUBranch_RI))?;
-                encoder.encode(crate::op::I64LtUBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtUBranch_RI { lhs, rhs, offset })
             }
             Self::I64LtUBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtUBranch_SR))?;
-                encoder.encode(crate::op::I64LtUBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtUBranch_SR { lhs, rhs, offset })
             }
             Self::I64LtUBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtUBranch_SS))?;
-                encoder.encode(crate::op::I64LtUBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtUBranch_SS { lhs, rhs, offset })
             }
             Self::I64LtUBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtUBranch_SI))?;
-                encoder.encode(crate::op::I64LtUBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtUBranch_SI { lhs, rhs, offset })
             }
             Self::I64LtUBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtUBranch_IR))?;
-                encoder.encode(crate::op::I64LtUBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtUBranch_IR { lhs, rhs, offset })
             }
             Self::I64LtUBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LtUBranch_IS))?;
-                encoder.encode(crate::op::I64LtUBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LtUBranch_IS { lhs, rhs, offset })
             }
             Self::I32LeSBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeSBranch_RS))?;
-                encoder.encode(crate::op::I32LeSBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeSBranch_RS { lhs, rhs, offset })
             }
             Self::I32LeSBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeSBranch_RI))?;
-                encoder.encode(crate::op::I32LeSBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeSBranch_RI { lhs, rhs, offset })
             }
             Self::I32LeSBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeSBranch_SR))?;
-                encoder.encode(crate::op::I32LeSBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeSBranch_SR { lhs, rhs, offset })
             }
             Self::I32LeSBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeSBranch_SS))?;
-                encoder.encode(crate::op::I32LeSBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeSBranch_SS { lhs, rhs, offset })
             }
             Self::I32LeSBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeSBranch_SI))?;
-                encoder.encode(crate::op::I32LeSBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeSBranch_SI { lhs, rhs, offset })
             }
             Self::I32LeSBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeSBranch_IR))?;
-                encoder.encode(crate::op::I32LeSBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeSBranch_IR { lhs, rhs, offset })
             }
             Self::I32LeSBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeSBranch_IS))?;
-                encoder.encode(crate::op::I32LeSBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeSBranch_IS { lhs, rhs, offset })
             }
             Self::I64LeSBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeSBranch_RS))?;
-                encoder.encode(crate::op::I64LeSBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeSBranch_RS { lhs, rhs, offset })
             }
             Self::I64LeSBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeSBranch_RI))?;
-                encoder.encode(crate::op::I64LeSBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeSBranch_RI { lhs, rhs, offset })
             }
             Self::I64LeSBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeSBranch_SR))?;
-                encoder.encode(crate::op::I64LeSBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeSBranch_SR { lhs, rhs, offset })
             }
             Self::I64LeSBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeSBranch_SS))?;
-                encoder.encode(crate::op::I64LeSBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeSBranch_SS { lhs, rhs, offset })
             }
             Self::I64LeSBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeSBranch_SI))?;
-                encoder.encode(crate::op::I64LeSBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeSBranch_SI { lhs, rhs, offset })
             }
             Self::I64LeSBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeSBranch_IR))?;
-                encoder.encode(crate::op::I64LeSBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeSBranch_IR { lhs, rhs, offset })
             }
             Self::I64LeSBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeSBranch_IS))?;
-                encoder.encode(crate::op::I64LeSBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeSBranch_IS { lhs, rhs, offset })
             }
             Self::I32LeUBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeUBranch_RS))?;
-                encoder.encode(crate::op::I32LeUBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeUBranch_RS { lhs, rhs, offset })
             }
             Self::I32LeUBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeUBranch_RI))?;
-                encoder.encode(crate::op::I32LeUBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeUBranch_RI { lhs, rhs, offset })
             }
             Self::I32LeUBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeUBranch_SR))?;
-                encoder.encode(crate::op::I32LeUBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeUBranch_SR { lhs, rhs, offset })
             }
             Self::I32LeUBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeUBranch_SS))?;
-                encoder.encode(crate::op::I32LeUBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeUBranch_SS { lhs, rhs, offset })
             }
             Self::I32LeUBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeUBranch_SI))?;
-                encoder.encode(crate::op::I32LeUBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeUBranch_SI { lhs, rhs, offset })
             }
             Self::I32LeUBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeUBranch_IR))?;
-                encoder.encode(crate::op::I32LeUBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeUBranch_IR { lhs, rhs, offset })
             }
             Self::I32LeUBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I32LeUBranch_IS))?;
-                encoder.encode(crate::op::I32LeUBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I32LeUBranch_IS { lhs, rhs, offset })
             }
             Self::I64LeUBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeUBranch_RS))?;
-                encoder.encode(crate::op::I64LeUBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeUBranch_RS { lhs, rhs, offset })
             }
             Self::I64LeUBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeUBranch_RI))?;
-                encoder.encode(crate::op::I64LeUBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeUBranch_RI { lhs, rhs, offset })
             }
             Self::I64LeUBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeUBranch_SR))?;
-                encoder.encode(crate::op::I64LeUBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeUBranch_SR { lhs, rhs, offset })
             }
             Self::I64LeUBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeUBranch_SS))?;
-                encoder.encode(crate::op::I64LeUBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeUBranch_SS { lhs, rhs, offset })
             }
             Self::I64LeUBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeUBranch_SI))?;
-                encoder.encode(crate::op::I64LeUBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeUBranch_SI { lhs, rhs, offset })
             }
             Self::I64LeUBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeUBranch_IR))?;
-                encoder.encode(crate::op::I64LeUBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeUBranch_IR { lhs, rhs, offset })
             }
             Self::I64LeUBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::I64LeUBranch_IS))?;
-                encoder.encode(crate::op::I64LeUBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::I64LeUBranch_IS { lhs, rhs, offset })
             }
             Self::F32LtBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LtBranch_RS))?;
-                encoder.encode(crate::op::F32LtBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LtBranch_RS { lhs, rhs, offset })
             }
             Self::F32LtBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LtBranch_RI))?;
-                encoder.encode(crate::op::F32LtBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LtBranch_RI { lhs, rhs, offset })
             }
             Self::F32LtBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LtBranch_SR))?;
-                encoder.encode(crate::op::F32LtBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LtBranch_SR { lhs, rhs, offset })
             }
             Self::F32LtBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LtBranch_SS))?;
-                encoder.encode(crate::op::F32LtBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LtBranch_SS { lhs, rhs, offset })
             }
             Self::F32LtBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LtBranch_SI))?;
-                encoder.encode(crate::op::F32LtBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LtBranch_SI { lhs, rhs, offset })
             }
             Self::F32LtBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LtBranch_IR))?;
-                encoder.encode(crate::op::F32LtBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LtBranch_IR { lhs, rhs, offset })
             }
             Self::F32LtBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LtBranch_IS))?;
-                encoder.encode(crate::op::F32LtBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LtBranch_IS { lhs, rhs, offset })
             }
             Self::F64LtBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LtBranch_RS))?;
-                encoder.encode(crate::op::F64LtBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LtBranch_RS { lhs, rhs, offset })
             }
             Self::F64LtBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LtBranch_RI))?;
-                encoder.encode(crate::op::F64LtBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LtBranch_RI { lhs, rhs, offset })
             }
             Self::F64LtBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LtBranch_SR))?;
-                encoder.encode(crate::op::F64LtBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LtBranch_SR { lhs, rhs, offset })
             }
             Self::F64LtBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LtBranch_SS))?;
-                encoder.encode(crate::op::F64LtBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LtBranch_SS { lhs, rhs, offset })
             }
             Self::F64LtBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LtBranch_SI))?;
-                encoder.encode(crate::op::F64LtBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LtBranch_SI { lhs, rhs, offset })
             }
             Self::F64LtBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LtBranch_IR))?;
-                encoder.encode(crate::op::F64LtBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LtBranch_IR { lhs, rhs, offset })
             }
             Self::F64LtBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LtBranch_IS))?;
-                encoder.encode(crate::op::F64LtBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LtBranch_IS { lhs, rhs, offset })
             }
             Self::F32LeBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LeBranch_RS))?;
-                encoder.encode(crate::op::F32LeBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LeBranch_RS { lhs, rhs, offset })
             }
             Self::F32LeBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LeBranch_RI))?;
-                encoder.encode(crate::op::F32LeBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LeBranch_RI { lhs, rhs, offset })
             }
             Self::F32LeBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LeBranch_SR))?;
-                encoder.encode(crate::op::F32LeBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LeBranch_SR { lhs, rhs, offset })
             }
             Self::F32LeBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LeBranch_SS))?;
-                encoder.encode(crate::op::F32LeBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LeBranch_SS { lhs, rhs, offset })
             }
             Self::F32LeBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LeBranch_SI))?;
-                encoder.encode(crate::op::F32LeBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LeBranch_SI { lhs, rhs, offset })
             }
             Self::F32LeBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LeBranch_IR))?;
-                encoder.encode(crate::op::F32LeBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LeBranch_IR { lhs, rhs, offset })
             }
             Self::F32LeBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F32LeBranch_IS))?;
-                encoder.encode(crate::op::F32LeBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F32LeBranch_IS { lhs, rhs, offset })
             }
             Self::F64LeBranch_RS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LeBranch_RS))?;
-                encoder.encode(crate::op::F64LeBranch_RS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LeBranch_RS { lhs, rhs, offset })
             }
             Self::F64LeBranch_RI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LeBranch_RI))?;
-                encoder.encode(crate::op::F64LeBranch_RI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LeBranch_RI { lhs, rhs, offset })
             }
             Self::F64LeBranch_SR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LeBranch_SR))?;
-                encoder.encode(crate::op::F64LeBranch_SR { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LeBranch_SR { lhs, rhs, offset })
             }
             Self::F64LeBranch_SS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LeBranch_SS))?;
-                encoder.encode(crate::op::F64LeBranch_SS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LeBranch_SS { lhs, rhs, offset })
             }
             Self::F64LeBranch_SI { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LeBranch_SI))?;
-                encoder.encode(crate::op::F64LeBranch_SI { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LeBranch_SI { lhs, rhs, offset })
             }
             Self::F64LeBranch_IR { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LeBranch_IR))?;
-                encoder.encode(crate::op::F64LeBranch_IR { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LeBranch_IR { lhs, rhs, offset })
             }
             Self::F64LeBranch_IS { lhs, rhs, offset } => {
-                encoder.encode(f(crate::OpCode::F64LeBranch_IS))?;
-                encoder.encode(crate::op::F64LeBranch_IS { lhs, rhs, offset } )
+                encoder.encode(crate::op::F64LeBranch_IS { lhs, rhs, offset })
             }
             Self::I32Popcnt_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Popcnt_RR))?;
-                encoder.encode(crate::op::I32Popcnt_RR { result, input } )
+                encoder.encode(crate::op::I32Popcnt_RR { result, input })
             }
             Self::I32Popcnt_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Popcnt_RS))?;
-                encoder.encode(crate::op::I32Popcnt_RS { result, input } )
+                encoder.encode(crate::op::I32Popcnt_RS { result, input })
             }
             Self::I32Popcnt_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Popcnt_SR))?;
-                encoder.encode(crate::op::I32Popcnt_SR { result, input } )
+                encoder.encode(crate::op::I32Popcnt_SR { result, input })
             }
             Self::I32Popcnt_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Popcnt_SS))?;
-                encoder.encode(crate::op::I32Popcnt_SS { result, input } )
+                encoder.encode(crate::op::I32Popcnt_SS { result, input })
             }
             Self::I64Popcnt_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Popcnt_RR))?;
-                encoder.encode(crate::op::I64Popcnt_RR { result, input } )
+                encoder.encode(crate::op::I64Popcnt_RR { result, input })
             }
             Self::I64Popcnt_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Popcnt_RS))?;
-                encoder.encode(crate::op::I64Popcnt_RS { result, input } )
+                encoder.encode(crate::op::I64Popcnt_RS { result, input })
             }
             Self::I64Popcnt_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Popcnt_SR))?;
-                encoder.encode(crate::op::I64Popcnt_SR { result, input } )
+                encoder.encode(crate::op::I64Popcnt_SR { result, input })
             }
             Self::I64Popcnt_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Popcnt_SS))?;
-                encoder.encode(crate::op::I64Popcnt_SS { result, input } )
+                encoder.encode(crate::op::I64Popcnt_SS { result, input })
             }
             Self::I32Clz_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Clz_RR))?;
-                encoder.encode(crate::op::I32Clz_RR { result, input } )
+                encoder.encode(crate::op::I32Clz_RR { result, input })
             }
             Self::I32Clz_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Clz_RS))?;
-                encoder.encode(crate::op::I32Clz_RS { result, input } )
+                encoder.encode(crate::op::I32Clz_RS { result, input })
             }
             Self::I32Clz_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Clz_SR))?;
-                encoder.encode(crate::op::I32Clz_SR { result, input } )
+                encoder.encode(crate::op::I32Clz_SR { result, input })
             }
             Self::I32Clz_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Clz_SS))?;
-                encoder.encode(crate::op::I32Clz_SS { result, input } )
+                encoder.encode(crate::op::I32Clz_SS { result, input })
             }
             Self::I64Clz_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Clz_RR))?;
-                encoder.encode(crate::op::I64Clz_RR { result, input } )
+                encoder.encode(crate::op::I64Clz_RR { result, input })
             }
             Self::I64Clz_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Clz_RS))?;
-                encoder.encode(crate::op::I64Clz_RS { result, input } )
+                encoder.encode(crate::op::I64Clz_RS { result, input })
             }
             Self::I64Clz_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Clz_SR))?;
-                encoder.encode(crate::op::I64Clz_SR { result, input } )
+                encoder.encode(crate::op::I64Clz_SR { result, input })
             }
             Self::I64Clz_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Clz_SS))?;
-                encoder.encode(crate::op::I64Clz_SS { result, input } )
+                encoder.encode(crate::op::I64Clz_SS { result, input })
             }
             Self::I32Ctz_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Ctz_RR))?;
-                encoder.encode(crate::op::I32Ctz_RR { result, input } )
+                encoder.encode(crate::op::I32Ctz_RR { result, input })
             }
             Self::I32Ctz_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Ctz_RS))?;
-                encoder.encode(crate::op::I32Ctz_RS { result, input } )
+                encoder.encode(crate::op::I32Ctz_RS { result, input })
             }
             Self::I32Ctz_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Ctz_SR))?;
-                encoder.encode(crate::op::I32Ctz_SR { result, input } )
+                encoder.encode(crate::op::I32Ctz_SR { result, input })
             }
             Self::I32Ctz_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Ctz_SS))?;
-                encoder.encode(crate::op::I32Ctz_SS { result, input } )
+                encoder.encode(crate::op::I32Ctz_SS { result, input })
             }
             Self::I64Ctz_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Ctz_RR))?;
-                encoder.encode(crate::op::I64Ctz_RR { result, input } )
+                encoder.encode(crate::op::I64Ctz_RR { result, input })
             }
             Self::I64Ctz_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Ctz_RS))?;
-                encoder.encode(crate::op::I64Ctz_RS { result, input } )
+                encoder.encode(crate::op::I64Ctz_RS { result, input })
             }
             Self::I64Ctz_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Ctz_SR))?;
-                encoder.encode(crate::op::I64Ctz_SR { result, input } )
+                encoder.encode(crate::op::I64Ctz_SR { result, input })
             }
             Self::I64Ctz_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Ctz_SS))?;
-                encoder.encode(crate::op::I64Ctz_SS { result, input } )
+                encoder.encode(crate::op::I64Ctz_SS { result, input })
             }
             Self::F32Abs_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Abs_RR))?;
-                encoder.encode(crate::op::F32Abs_RR { result, input } )
+                encoder.encode(crate::op::F32Abs_RR { result, input })
             }
             Self::F32Abs_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Abs_RS))?;
-                encoder.encode(crate::op::F32Abs_RS { result, input } )
+                encoder.encode(crate::op::F32Abs_RS { result, input })
             }
             Self::F32Abs_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Abs_SR))?;
-                encoder.encode(crate::op::F32Abs_SR { result, input } )
+                encoder.encode(crate::op::F32Abs_SR { result, input })
             }
             Self::F32Abs_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Abs_SS))?;
-                encoder.encode(crate::op::F32Abs_SS { result, input } )
+                encoder.encode(crate::op::F32Abs_SS { result, input })
             }
             Self::F64Abs_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Abs_RR))?;
-                encoder.encode(crate::op::F64Abs_RR { result, input } )
+                encoder.encode(crate::op::F64Abs_RR { result, input })
             }
             Self::F64Abs_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Abs_RS))?;
-                encoder.encode(crate::op::F64Abs_RS { result, input } )
+                encoder.encode(crate::op::F64Abs_RS { result, input })
             }
             Self::F64Abs_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Abs_SR))?;
-                encoder.encode(crate::op::F64Abs_SR { result, input } )
+                encoder.encode(crate::op::F64Abs_SR { result, input })
             }
             Self::F64Abs_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Abs_SS))?;
-                encoder.encode(crate::op::F64Abs_SS { result, input } )
+                encoder.encode(crate::op::F64Abs_SS { result, input })
             }
             Self::F32Neg_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Neg_RR))?;
-                encoder.encode(crate::op::F32Neg_RR { result, input } )
+                encoder.encode(crate::op::F32Neg_RR { result, input })
             }
             Self::F32Neg_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Neg_RS))?;
-                encoder.encode(crate::op::F32Neg_RS { result, input } )
+                encoder.encode(crate::op::F32Neg_RS { result, input })
             }
             Self::F32Neg_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Neg_SR))?;
-                encoder.encode(crate::op::F32Neg_SR { result, input } )
+                encoder.encode(crate::op::F32Neg_SR { result, input })
             }
             Self::F32Neg_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Neg_SS))?;
-                encoder.encode(crate::op::F32Neg_SS { result, input } )
+                encoder.encode(crate::op::F32Neg_SS { result, input })
             }
             Self::F64Neg_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Neg_RR))?;
-                encoder.encode(crate::op::F64Neg_RR { result, input } )
+                encoder.encode(crate::op::F64Neg_RR { result, input })
             }
             Self::F64Neg_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Neg_RS))?;
-                encoder.encode(crate::op::F64Neg_RS { result, input } )
+                encoder.encode(crate::op::F64Neg_RS { result, input })
             }
             Self::F64Neg_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Neg_SR))?;
-                encoder.encode(crate::op::F64Neg_SR { result, input } )
+                encoder.encode(crate::op::F64Neg_SR { result, input })
             }
             Self::F64Neg_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Neg_SS))?;
-                encoder.encode(crate::op::F64Neg_SS { result, input } )
+                encoder.encode(crate::op::F64Neg_SS { result, input })
             }
             Self::F32Ceil_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Ceil_RR))?;
-                encoder.encode(crate::op::F32Ceil_RR { result, input } )
+                encoder.encode(crate::op::F32Ceil_RR { result, input })
             }
             Self::F32Ceil_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Ceil_RS))?;
-                encoder.encode(crate::op::F32Ceil_RS { result, input } )
+                encoder.encode(crate::op::F32Ceil_RS { result, input })
             }
             Self::F32Ceil_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Ceil_SR))?;
-                encoder.encode(crate::op::F32Ceil_SR { result, input } )
+                encoder.encode(crate::op::F32Ceil_SR { result, input })
             }
             Self::F32Ceil_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Ceil_SS))?;
-                encoder.encode(crate::op::F32Ceil_SS { result, input } )
+                encoder.encode(crate::op::F32Ceil_SS { result, input })
             }
             Self::F64Ceil_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Ceil_RR))?;
-                encoder.encode(crate::op::F64Ceil_RR { result, input } )
+                encoder.encode(crate::op::F64Ceil_RR { result, input })
             }
             Self::F64Ceil_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Ceil_RS))?;
-                encoder.encode(crate::op::F64Ceil_RS { result, input } )
+                encoder.encode(crate::op::F64Ceil_RS { result, input })
             }
             Self::F64Ceil_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Ceil_SR))?;
-                encoder.encode(crate::op::F64Ceil_SR { result, input } )
+                encoder.encode(crate::op::F64Ceil_SR { result, input })
             }
             Self::F64Ceil_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Ceil_SS))?;
-                encoder.encode(crate::op::F64Ceil_SS { result, input } )
+                encoder.encode(crate::op::F64Ceil_SS { result, input })
             }
             Self::F32Floor_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Floor_RR))?;
-                encoder.encode(crate::op::F32Floor_RR { result, input } )
+                encoder.encode(crate::op::F32Floor_RR { result, input })
             }
             Self::F32Floor_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Floor_RS))?;
-                encoder.encode(crate::op::F32Floor_RS { result, input } )
+                encoder.encode(crate::op::F32Floor_RS { result, input })
             }
             Self::F32Floor_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Floor_SR))?;
-                encoder.encode(crate::op::F32Floor_SR { result, input } )
+                encoder.encode(crate::op::F32Floor_SR { result, input })
             }
             Self::F32Floor_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Floor_SS))?;
-                encoder.encode(crate::op::F32Floor_SS { result, input } )
+                encoder.encode(crate::op::F32Floor_SS { result, input })
             }
             Self::F64Floor_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Floor_RR))?;
-                encoder.encode(crate::op::F64Floor_RR { result, input } )
+                encoder.encode(crate::op::F64Floor_RR { result, input })
             }
             Self::F64Floor_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Floor_RS))?;
-                encoder.encode(crate::op::F64Floor_RS { result, input } )
+                encoder.encode(crate::op::F64Floor_RS { result, input })
             }
             Self::F64Floor_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Floor_SR))?;
-                encoder.encode(crate::op::F64Floor_SR { result, input } )
+                encoder.encode(crate::op::F64Floor_SR { result, input })
             }
             Self::F64Floor_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Floor_SS))?;
-                encoder.encode(crate::op::F64Floor_SS { result, input } )
+                encoder.encode(crate::op::F64Floor_SS { result, input })
             }
             Self::F32Trunc_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Trunc_RR))?;
-                encoder.encode(crate::op::F32Trunc_RR { result, input } )
+                encoder.encode(crate::op::F32Trunc_RR { result, input })
             }
             Self::F32Trunc_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Trunc_RS))?;
-                encoder.encode(crate::op::F32Trunc_RS { result, input } )
+                encoder.encode(crate::op::F32Trunc_RS { result, input })
             }
             Self::F32Trunc_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Trunc_SR))?;
-                encoder.encode(crate::op::F32Trunc_SR { result, input } )
+                encoder.encode(crate::op::F32Trunc_SR { result, input })
             }
             Self::F32Trunc_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Trunc_SS))?;
-                encoder.encode(crate::op::F32Trunc_SS { result, input } )
+                encoder.encode(crate::op::F32Trunc_SS { result, input })
             }
             Self::F64Trunc_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Trunc_RR))?;
-                encoder.encode(crate::op::F64Trunc_RR { result, input } )
+                encoder.encode(crate::op::F64Trunc_RR { result, input })
             }
             Self::F64Trunc_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Trunc_RS))?;
-                encoder.encode(crate::op::F64Trunc_RS { result, input } )
+                encoder.encode(crate::op::F64Trunc_RS { result, input })
             }
             Self::F64Trunc_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Trunc_SR))?;
-                encoder.encode(crate::op::F64Trunc_SR { result, input } )
+                encoder.encode(crate::op::F64Trunc_SR { result, input })
             }
             Self::F64Trunc_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Trunc_SS))?;
-                encoder.encode(crate::op::F64Trunc_SS { result, input } )
+                encoder.encode(crate::op::F64Trunc_SS { result, input })
             }
             Self::F32Nearest_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Nearest_RR))?;
-                encoder.encode(crate::op::F32Nearest_RR { result, input } )
+                encoder.encode(crate::op::F32Nearest_RR { result, input })
             }
             Self::F32Nearest_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Nearest_RS))?;
-                encoder.encode(crate::op::F32Nearest_RS { result, input } )
+                encoder.encode(crate::op::F32Nearest_RS { result, input })
             }
             Self::F32Nearest_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Nearest_SR))?;
-                encoder.encode(crate::op::F32Nearest_SR { result, input } )
+                encoder.encode(crate::op::F32Nearest_SR { result, input })
             }
             Self::F32Nearest_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Nearest_SS))?;
-                encoder.encode(crate::op::F32Nearest_SS { result, input } )
+                encoder.encode(crate::op::F32Nearest_SS { result, input })
             }
             Self::F64Nearest_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Nearest_RR))?;
-                encoder.encode(crate::op::F64Nearest_RR { result, input } )
+                encoder.encode(crate::op::F64Nearest_RR { result, input })
             }
             Self::F64Nearest_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Nearest_RS))?;
-                encoder.encode(crate::op::F64Nearest_RS { result, input } )
+                encoder.encode(crate::op::F64Nearest_RS { result, input })
             }
             Self::F64Nearest_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Nearest_SR))?;
-                encoder.encode(crate::op::F64Nearest_SR { result, input } )
+                encoder.encode(crate::op::F64Nearest_SR { result, input })
             }
             Self::F64Nearest_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Nearest_SS))?;
-                encoder.encode(crate::op::F64Nearest_SS { result, input } )
+                encoder.encode(crate::op::F64Nearest_SS { result, input })
             }
             Self::F32Sqrt_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Sqrt_RR))?;
-                encoder.encode(crate::op::F32Sqrt_RR { result, input } )
+                encoder.encode(crate::op::F32Sqrt_RR { result, input })
             }
             Self::F32Sqrt_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Sqrt_RS))?;
-                encoder.encode(crate::op::F32Sqrt_RS { result, input } )
+                encoder.encode(crate::op::F32Sqrt_RS { result, input })
             }
             Self::F32Sqrt_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Sqrt_SR))?;
-                encoder.encode(crate::op::F32Sqrt_SR { result, input } )
+                encoder.encode(crate::op::F32Sqrt_SR { result, input })
             }
             Self::F32Sqrt_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Sqrt_SS))?;
-                encoder.encode(crate::op::F32Sqrt_SS { result, input } )
+                encoder.encode(crate::op::F32Sqrt_SS { result, input })
             }
             Self::F64Sqrt_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Sqrt_RR))?;
-                encoder.encode(crate::op::F64Sqrt_RR { result, input } )
+                encoder.encode(crate::op::F64Sqrt_RR { result, input })
             }
             Self::F64Sqrt_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Sqrt_RS))?;
-                encoder.encode(crate::op::F64Sqrt_RS { result, input } )
+                encoder.encode(crate::op::F64Sqrt_RS { result, input })
             }
             Self::F64Sqrt_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Sqrt_SR))?;
-                encoder.encode(crate::op::F64Sqrt_SR { result, input } )
+                encoder.encode(crate::op::F64Sqrt_SR { result, input })
             }
             Self::F64Sqrt_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Sqrt_SS))?;
-                encoder.encode(crate::op::F64Sqrt_SS { result, input } )
+                encoder.encode(crate::op::F64Sqrt_SS { result, input })
             }
             Self::F32Demote_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Demote_RR))?;
-                encoder.encode(crate::op::F32Demote_RR { result, input } )
+                encoder.encode(crate::op::F32Demote_RR { result, input })
             }
             Self::F32Demote_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Demote_RS))?;
-                encoder.encode(crate::op::F32Demote_RS { result, input } )
+                encoder.encode(crate::op::F32Demote_RS { result, input })
             }
             Self::F32Demote_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Demote_SR))?;
-                encoder.encode(crate::op::F32Demote_SR { result, input } )
+                encoder.encode(crate::op::F32Demote_SR { result, input })
             }
             Self::F32Demote_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32Demote_SS))?;
-                encoder.encode(crate::op::F32Demote_SS { result, input } )
+                encoder.encode(crate::op::F32Demote_SS { result, input })
             }
             Self::F64Promote_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Promote_RR))?;
-                encoder.encode(crate::op::F64Promote_RR { result, input } )
+                encoder.encode(crate::op::F64Promote_RR { result, input })
             }
             Self::F64Promote_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Promote_RS))?;
-                encoder.encode(crate::op::F64Promote_RS { result, input } )
+                encoder.encode(crate::op::F64Promote_RS { result, input })
             }
             Self::F64Promote_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Promote_SR))?;
-                encoder.encode(crate::op::F64Promote_SR { result, input } )
+                encoder.encode(crate::op::F64Promote_SR { result, input })
             }
             Self::F64Promote_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64Promote_SS))?;
-                encoder.encode(crate::op::F64Promote_SS { result, input } )
+                encoder.encode(crate::op::F64Promote_SS { result, input })
             }
             Self::F32ConvertI32S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI32S_RR))?;
-                encoder.encode(crate::op::F32ConvertI32S_RR { result, input } )
+                encoder.encode(crate::op::F32ConvertI32S_RR { result, input })
             }
             Self::F32ConvertI32S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI32S_RS))?;
-                encoder.encode(crate::op::F32ConvertI32S_RS { result, input } )
+                encoder.encode(crate::op::F32ConvertI32S_RS { result, input })
             }
             Self::F32ConvertI32S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI32S_SR))?;
-                encoder.encode(crate::op::F32ConvertI32S_SR { result, input } )
+                encoder.encode(crate::op::F32ConvertI32S_SR { result, input })
             }
             Self::F32ConvertI32S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI32S_SS))?;
-                encoder.encode(crate::op::F32ConvertI32S_SS { result, input } )
+                encoder.encode(crate::op::F32ConvertI32S_SS { result, input })
             }
             Self::F32ConvertI32U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI32U_RR))?;
-                encoder.encode(crate::op::F32ConvertI32U_RR { result, input } )
+                encoder.encode(crate::op::F32ConvertI32U_RR { result, input })
             }
             Self::F32ConvertI32U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI32U_RS))?;
-                encoder.encode(crate::op::F32ConvertI32U_RS { result, input } )
+                encoder.encode(crate::op::F32ConvertI32U_RS { result, input })
             }
             Self::F32ConvertI32U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI32U_SR))?;
-                encoder.encode(crate::op::F32ConvertI32U_SR { result, input } )
+                encoder.encode(crate::op::F32ConvertI32U_SR { result, input })
             }
             Self::F32ConvertI32U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI32U_SS))?;
-                encoder.encode(crate::op::F32ConvertI32U_SS { result, input } )
+                encoder.encode(crate::op::F32ConvertI32U_SS { result, input })
             }
             Self::F32ConvertI64S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI64S_RR))?;
-                encoder.encode(crate::op::F32ConvertI64S_RR { result, input } )
+                encoder.encode(crate::op::F32ConvertI64S_RR { result, input })
             }
             Self::F32ConvertI64S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI64S_RS))?;
-                encoder.encode(crate::op::F32ConvertI64S_RS { result, input } )
+                encoder.encode(crate::op::F32ConvertI64S_RS { result, input })
             }
             Self::F32ConvertI64S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI64S_SR))?;
-                encoder.encode(crate::op::F32ConvertI64S_SR { result, input } )
+                encoder.encode(crate::op::F32ConvertI64S_SR { result, input })
             }
             Self::F32ConvertI64S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI64S_SS))?;
-                encoder.encode(crate::op::F32ConvertI64S_SS { result, input } )
+                encoder.encode(crate::op::F32ConvertI64S_SS { result, input })
             }
             Self::F32ConvertI64U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI64U_RR))?;
-                encoder.encode(crate::op::F32ConvertI64U_RR { result, input } )
+                encoder.encode(crate::op::F32ConvertI64U_RR { result, input })
             }
             Self::F32ConvertI64U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI64U_RS))?;
-                encoder.encode(crate::op::F32ConvertI64U_RS { result, input } )
+                encoder.encode(crate::op::F32ConvertI64U_RS { result, input })
             }
             Self::F32ConvertI64U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI64U_SR))?;
-                encoder.encode(crate::op::F32ConvertI64U_SR { result, input } )
+                encoder.encode(crate::op::F32ConvertI64U_SR { result, input })
             }
             Self::F32ConvertI64U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F32ConvertI64U_SS))?;
-                encoder.encode(crate::op::F32ConvertI64U_SS { result, input } )
+                encoder.encode(crate::op::F32ConvertI64U_SS { result, input })
             }
             Self::F64ConvertI32S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI32S_RR))?;
-                encoder.encode(crate::op::F64ConvertI32S_RR { result, input } )
+                encoder.encode(crate::op::F64ConvertI32S_RR { result, input })
             }
             Self::F64ConvertI32S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI32S_RS))?;
-                encoder.encode(crate::op::F64ConvertI32S_RS { result, input } )
+                encoder.encode(crate::op::F64ConvertI32S_RS { result, input })
             }
             Self::F64ConvertI32S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI32S_SR))?;
-                encoder.encode(crate::op::F64ConvertI32S_SR { result, input } )
+                encoder.encode(crate::op::F64ConvertI32S_SR { result, input })
             }
             Self::F64ConvertI32S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI32S_SS))?;
-                encoder.encode(crate::op::F64ConvertI32S_SS { result, input } )
+                encoder.encode(crate::op::F64ConvertI32S_SS { result, input })
             }
             Self::F64ConvertI32U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI32U_RR))?;
-                encoder.encode(crate::op::F64ConvertI32U_RR { result, input } )
+                encoder.encode(crate::op::F64ConvertI32U_RR { result, input })
             }
             Self::F64ConvertI32U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI32U_RS))?;
-                encoder.encode(crate::op::F64ConvertI32U_RS { result, input } )
+                encoder.encode(crate::op::F64ConvertI32U_RS { result, input })
             }
             Self::F64ConvertI32U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI32U_SR))?;
-                encoder.encode(crate::op::F64ConvertI32U_SR { result, input } )
+                encoder.encode(crate::op::F64ConvertI32U_SR { result, input })
             }
             Self::F64ConvertI32U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI32U_SS))?;
-                encoder.encode(crate::op::F64ConvertI32U_SS { result, input } )
+                encoder.encode(crate::op::F64ConvertI32U_SS { result, input })
             }
             Self::F64ConvertI64S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI64S_RR))?;
-                encoder.encode(crate::op::F64ConvertI64S_RR { result, input } )
+                encoder.encode(crate::op::F64ConvertI64S_RR { result, input })
             }
             Self::F64ConvertI64S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI64S_RS))?;
-                encoder.encode(crate::op::F64ConvertI64S_RS { result, input } )
+                encoder.encode(crate::op::F64ConvertI64S_RS { result, input })
             }
             Self::F64ConvertI64S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI64S_SR))?;
-                encoder.encode(crate::op::F64ConvertI64S_SR { result, input } )
+                encoder.encode(crate::op::F64ConvertI64S_SR { result, input })
             }
             Self::F64ConvertI64S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI64S_SS))?;
-                encoder.encode(crate::op::F64ConvertI64S_SS { result, input } )
+                encoder.encode(crate::op::F64ConvertI64S_SS { result, input })
             }
             Self::F64ConvertI64U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI64U_RR))?;
-                encoder.encode(crate::op::F64ConvertI64U_RR { result, input } )
+                encoder.encode(crate::op::F64ConvertI64U_RR { result, input })
             }
             Self::F64ConvertI64U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI64U_RS))?;
-                encoder.encode(crate::op::F64ConvertI64U_RS { result, input } )
+                encoder.encode(crate::op::F64ConvertI64U_RS { result, input })
             }
             Self::F64ConvertI64U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI64U_SR))?;
-                encoder.encode(crate::op::F64ConvertI64U_SR { result, input } )
+                encoder.encode(crate::op::F64ConvertI64U_SR { result, input })
             }
             Self::F64ConvertI64U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::F64ConvertI64U_SS))?;
-                encoder.encode(crate::op::F64ConvertI64U_SS { result, input } )
+                encoder.encode(crate::op::F64ConvertI64U_SS { result, input })
             }
             Self::I32TruncF32S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF32S_RR))?;
-                encoder.encode(crate::op::I32TruncF32S_RR { result, input } )
+                encoder.encode(crate::op::I32TruncF32S_RR { result, input })
             }
             Self::I32TruncF32S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF32S_RS))?;
-                encoder.encode(crate::op::I32TruncF32S_RS { result, input } )
+                encoder.encode(crate::op::I32TruncF32S_RS { result, input })
             }
             Self::I32TruncF32S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF32S_SR))?;
-                encoder.encode(crate::op::I32TruncF32S_SR { result, input } )
+                encoder.encode(crate::op::I32TruncF32S_SR { result, input })
             }
             Self::I32TruncF32S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF32S_SS))?;
-                encoder.encode(crate::op::I32TruncF32S_SS { result, input } )
+                encoder.encode(crate::op::I32TruncF32S_SS { result, input })
             }
             Self::I32TruncF32U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF32U_RR))?;
-                encoder.encode(crate::op::I32TruncF32U_RR { result, input } )
+                encoder.encode(crate::op::I32TruncF32U_RR { result, input })
             }
             Self::I32TruncF32U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF32U_RS))?;
-                encoder.encode(crate::op::I32TruncF32U_RS { result, input } )
+                encoder.encode(crate::op::I32TruncF32U_RS { result, input })
             }
             Self::I32TruncF32U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF32U_SR))?;
-                encoder.encode(crate::op::I32TruncF32U_SR { result, input } )
+                encoder.encode(crate::op::I32TruncF32U_SR { result, input })
             }
             Self::I32TruncF32U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF32U_SS))?;
-                encoder.encode(crate::op::I32TruncF32U_SS { result, input } )
+                encoder.encode(crate::op::I32TruncF32U_SS { result, input })
             }
             Self::I32TruncF64S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF64S_RR))?;
-                encoder.encode(crate::op::I32TruncF64S_RR { result, input } )
+                encoder.encode(crate::op::I32TruncF64S_RR { result, input })
             }
             Self::I32TruncF64S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF64S_RS))?;
-                encoder.encode(crate::op::I32TruncF64S_RS { result, input } )
+                encoder.encode(crate::op::I32TruncF64S_RS { result, input })
             }
             Self::I32TruncF64S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF64S_SR))?;
-                encoder.encode(crate::op::I32TruncF64S_SR { result, input } )
+                encoder.encode(crate::op::I32TruncF64S_SR { result, input })
             }
             Self::I32TruncF64S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF64S_SS))?;
-                encoder.encode(crate::op::I32TruncF64S_SS { result, input } )
+                encoder.encode(crate::op::I32TruncF64S_SS { result, input })
             }
             Self::I32TruncF64U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF64U_RR))?;
-                encoder.encode(crate::op::I32TruncF64U_RR { result, input } )
+                encoder.encode(crate::op::I32TruncF64U_RR { result, input })
             }
             Self::I32TruncF64U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF64U_RS))?;
-                encoder.encode(crate::op::I32TruncF64U_RS { result, input } )
+                encoder.encode(crate::op::I32TruncF64U_RS { result, input })
             }
             Self::I32TruncF64U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF64U_SR))?;
-                encoder.encode(crate::op::I32TruncF64U_SR { result, input } )
+                encoder.encode(crate::op::I32TruncF64U_SR { result, input })
             }
             Self::I32TruncF64U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncF64U_SS))?;
-                encoder.encode(crate::op::I32TruncF64U_SS { result, input } )
+                encoder.encode(crate::op::I32TruncF64U_SS { result, input })
             }
             Self::I64TruncF32S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF32S_RR))?;
-                encoder.encode(crate::op::I64TruncF32S_RR { result, input } )
+                encoder.encode(crate::op::I64TruncF32S_RR { result, input })
             }
             Self::I64TruncF32S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF32S_RS))?;
-                encoder.encode(crate::op::I64TruncF32S_RS { result, input } )
+                encoder.encode(crate::op::I64TruncF32S_RS { result, input })
             }
             Self::I64TruncF32S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF32S_SR))?;
-                encoder.encode(crate::op::I64TruncF32S_SR { result, input } )
+                encoder.encode(crate::op::I64TruncF32S_SR { result, input })
             }
             Self::I64TruncF32S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF32S_SS))?;
-                encoder.encode(crate::op::I64TruncF32S_SS { result, input } )
+                encoder.encode(crate::op::I64TruncF32S_SS { result, input })
             }
             Self::I64TruncF32U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF32U_RR))?;
-                encoder.encode(crate::op::I64TruncF32U_RR { result, input } )
+                encoder.encode(crate::op::I64TruncF32U_RR { result, input })
             }
             Self::I64TruncF32U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF32U_RS))?;
-                encoder.encode(crate::op::I64TruncF32U_RS { result, input } )
+                encoder.encode(crate::op::I64TruncF32U_RS { result, input })
             }
             Self::I64TruncF32U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF32U_SR))?;
-                encoder.encode(crate::op::I64TruncF32U_SR { result, input } )
+                encoder.encode(crate::op::I64TruncF32U_SR { result, input })
             }
             Self::I64TruncF32U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF32U_SS))?;
-                encoder.encode(crate::op::I64TruncF32U_SS { result, input } )
+                encoder.encode(crate::op::I64TruncF32U_SS { result, input })
             }
             Self::I64TruncF64S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF64S_RR))?;
-                encoder.encode(crate::op::I64TruncF64S_RR { result, input } )
+                encoder.encode(crate::op::I64TruncF64S_RR { result, input })
             }
             Self::I64TruncF64S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF64S_RS))?;
-                encoder.encode(crate::op::I64TruncF64S_RS { result, input } )
+                encoder.encode(crate::op::I64TruncF64S_RS { result, input })
             }
             Self::I64TruncF64S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF64S_SR))?;
-                encoder.encode(crate::op::I64TruncF64S_SR { result, input } )
+                encoder.encode(crate::op::I64TruncF64S_SR { result, input })
             }
             Self::I64TruncF64S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF64S_SS))?;
-                encoder.encode(crate::op::I64TruncF64S_SS { result, input } )
+                encoder.encode(crate::op::I64TruncF64S_SS { result, input })
             }
             Self::I64TruncF64U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF64U_RR))?;
-                encoder.encode(crate::op::I64TruncF64U_RR { result, input } )
+                encoder.encode(crate::op::I64TruncF64U_RR { result, input })
             }
             Self::I64TruncF64U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF64U_RS))?;
-                encoder.encode(crate::op::I64TruncF64U_RS { result, input } )
+                encoder.encode(crate::op::I64TruncF64U_RS { result, input })
             }
             Self::I64TruncF64U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF64U_SR))?;
-                encoder.encode(crate::op::I64TruncF64U_SR { result, input } )
+                encoder.encode(crate::op::I64TruncF64U_SR { result, input })
             }
             Self::I64TruncF64U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncF64U_SS))?;
-                encoder.encode(crate::op::I64TruncF64U_SS { result, input } )
+                encoder.encode(crate::op::I64TruncF64U_SS { result, input })
             }
             Self::I32TruncSatF32S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF32S_RR))?;
-                encoder.encode(crate::op::I32TruncSatF32S_RR { result, input } )
+                encoder.encode(crate::op::I32TruncSatF32S_RR { result, input })
             }
             Self::I32TruncSatF32S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF32S_RS))?;
-                encoder.encode(crate::op::I32TruncSatF32S_RS { result, input } )
+                encoder.encode(crate::op::I32TruncSatF32S_RS { result, input })
             }
             Self::I32TruncSatF32S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF32S_SR))?;
-                encoder.encode(crate::op::I32TruncSatF32S_SR { result, input } )
+                encoder.encode(crate::op::I32TruncSatF32S_SR { result, input })
             }
             Self::I32TruncSatF32S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF32S_SS))?;
-                encoder.encode(crate::op::I32TruncSatF32S_SS { result, input } )
+                encoder.encode(crate::op::I32TruncSatF32S_SS { result, input })
             }
             Self::I32TruncSatF32U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF32U_RR))?;
-                encoder.encode(crate::op::I32TruncSatF32U_RR { result, input } )
+                encoder.encode(crate::op::I32TruncSatF32U_RR { result, input })
             }
             Self::I32TruncSatF32U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF32U_RS))?;
-                encoder.encode(crate::op::I32TruncSatF32U_RS { result, input } )
+                encoder.encode(crate::op::I32TruncSatF32U_RS { result, input })
             }
             Self::I32TruncSatF32U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF32U_SR))?;
-                encoder.encode(crate::op::I32TruncSatF32U_SR { result, input } )
+                encoder.encode(crate::op::I32TruncSatF32U_SR { result, input })
             }
             Self::I32TruncSatF32U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF32U_SS))?;
-                encoder.encode(crate::op::I32TruncSatF32U_SS { result, input } )
+                encoder.encode(crate::op::I32TruncSatF32U_SS { result, input })
             }
             Self::I32TruncSatF64S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF64S_RR))?;
-                encoder.encode(crate::op::I32TruncSatF64S_RR { result, input } )
+                encoder.encode(crate::op::I32TruncSatF64S_RR { result, input })
             }
             Self::I32TruncSatF64S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF64S_RS))?;
-                encoder.encode(crate::op::I32TruncSatF64S_RS { result, input } )
+                encoder.encode(crate::op::I32TruncSatF64S_RS { result, input })
             }
             Self::I32TruncSatF64S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF64S_SR))?;
-                encoder.encode(crate::op::I32TruncSatF64S_SR { result, input } )
+                encoder.encode(crate::op::I32TruncSatF64S_SR { result, input })
             }
             Self::I32TruncSatF64S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF64S_SS))?;
-                encoder.encode(crate::op::I32TruncSatF64S_SS { result, input } )
+                encoder.encode(crate::op::I32TruncSatF64S_SS { result, input })
             }
             Self::I32TruncSatF64U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF64U_RR))?;
-                encoder.encode(crate::op::I32TruncSatF64U_RR { result, input } )
+                encoder.encode(crate::op::I32TruncSatF64U_RR { result, input })
             }
             Self::I32TruncSatF64U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF64U_RS))?;
-                encoder.encode(crate::op::I32TruncSatF64U_RS { result, input } )
+                encoder.encode(crate::op::I32TruncSatF64U_RS { result, input })
             }
             Self::I32TruncSatF64U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF64U_SR))?;
-                encoder.encode(crate::op::I32TruncSatF64U_SR { result, input } )
+                encoder.encode(crate::op::I32TruncSatF64U_SR { result, input })
             }
             Self::I32TruncSatF64U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32TruncSatF64U_SS))?;
-                encoder.encode(crate::op::I32TruncSatF64U_SS { result, input } )
+                encoder.encode(crate::op::I32TruncSatF64U_SS { result, input })
             }
             Self::I64TruncSatF32S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF32S_RR))?;
-                encoder.encode(crate::op::I64TruncSatF32S_RR { result, input } )
+                encoder.encode(crate::op::I64TruncSatF32S_RR { result, input })
             }
             Self::I64TruncSatF32S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF32S_RS))?;
-                encoder.encode(crate::op::I64TruncSatF32S_RS { result, input } )
+                encoder.encode(crate::op::I64TruncSatF32S_RS { result, input })
             }
             Self::I64TruncSatF32S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF32S_SR))?;
-                encoder.encode(crate::op::I64TruncSatF32S_SR { result, input } )
+                encoder.encode(crate::op::I64TruncSatF32S_SR { result, input })
             }
             Self::I64TruncSatF32S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF32S_SS))?;
-                encoder.encode(crate::op::I64TruncSatF32S_SS { result, input } )
+                encoder.encode(crate::op::I64TruncSatF32S_SS { result, input })
             }
             Self::I64TruncSatF32U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF32U_RR))?;
-                encoder.encode(crate::op::I64TruncSatF32U_RR { result, input } )
+                encoder.encode(crate::op::I64TruncSatF32U_RR { result, input })
             }
             Self::I64TruncSatF32U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF32U_RS))?;
-                encoder.encode(crate::op::I64TruncSatF32U_RS { result, input } )
+                encoder.encode(crate::op::I64TruncSatF32U_RS { result, input })
             }
             Self::I64TruncSatF32U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF32U_SR))?;
-                encoder.encode(crate::op::I64TruncSatF32U_SR { result, input } )
+                encoder.encode(crate::op::I64TruncSatF32U_SR { result, input })
             }
             Self::I64TruncSatF32U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF32U_SS))?;
-                encoder.encode(crate::op::I64TruncSatF32U_SS { result, input } )
+                encoder.encode(crate::op::I64TruncSatF32U_SS { result, input })
             }
             Self::I64TruncSatF64S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF64S_RR))?;
-                encoder.encode(crate::op::I64TruncSatF64S_RR { result, input } )
+                encoder.encode(crate::op::I64TruncSatF64S_RR { result, input })
             }
             Self::I64TruncSatF64S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF64S_RS))?;
-                encoder.encode(crate::op::I64TruncSatF64S_RS { result, input } )
+                encoder.encode(crate::op::I64TruncSatF64S_RS { result, input })
             }
             Self::I64TruncSatF64S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF64S_SR))?;
-                encoder.encode(crate::op::I64TruncSatF64S_SR { result, input } )
+                encoder.encode(crate::op::I64TruncSatF64S_SR { result, input })
             }
             Self::I64TruncSatF64S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF64S_SS))?;
-                encoder.encode(crate::op::I64TruncSatF64S_SS { result, input } )
+                encoder.encode(crate::op::I64TruncSatF64S_SS { result, input })
             }
             Self::I64TruncSatF64U_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF64U_RR))?;
-                encoder.encode(crate::op::I64TruncSatF64U_RR { result, input } )
+                encoder.encode(crate::op::I64TruncSatF64U_RR { result, input })
             }
             Self::I64TruncSatF64U_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF64U_RS))?;
-                encoder.encode(crate::op::I64TruncSatF64U_RS { result, input } )
+                encoder.encode(crate::op::I64TruncSatF64U_RS { result, input })
             }
             Self::I64TruncSatF64U_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF64U_SR))?;
-                encoder.encode(crate::op::I64TruncSatF64U_SR { result, input } )
+                encoder.encode(crate::op::I64TruncSatF64U_SR { result, input })
             }
             Self::I64TruncSatF64U_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64TruncSatF64U_SS))?;
-                encoder.encode(crate::op::I64TruncSatF64U_SS { result, input } )
+                encoder.encode(crate::op::I64TruncSatF64U_SS { result, input })
             }
             Self::I32Extend8S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Extend8S_RR))?;
-                encoder.encode(crate::op::I32Extend8S_RR { result, input } )
+                encoder.encode(crate::op::I32Extend8S_RR { result, input })
             }
             Self::I32Extend8S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Extend8S_RS))?;
-                encoder.encode(crate::op::I32Extend8S_RS { result, input } )
+                encoder.encode(crate::op::I32Extend8S_RS { result, input })
             }
             Self::I32Extend8S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Extend8S_SR))?;
-                encoder.encode(crate::op::I32Extend8S_SR { result, input } )
+                encoder.encode(crate::op::I32Extend8S_SR { result, input })
             }
             Self::I32Extend8S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Extend8S_SS))?;
-                encoder.encode(crate::op::I32Extend8S_SS { result, input } )
+                encoder.encode(crate::op::I32Extend8S_SS { result, input })
             }
             Self::I32Extend16S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Extend16S_RR))?;
-                encoder.encode(crate::op::I32Extend16S_RR { result, input } )
+                encoder.encode(crate::op::I32Extend16S_RR { result, input })
             }
             Self::I32Extend16S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Extend16S_RS))?;
-                encoder.encode(crate::op::I32Extend16S_RS { result, input } )
+                encoder.encode(crate::op::I32Extend16S_RS { result, input })
             }
             Self::I32Extend16S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Extend16S_SR))?;
-                encoder.encode(crate::op::I32Extend16S_SR { result, input } )
+                encoder.encode(crate::op::I32Extend16S_SR { result, input })
             }
             Self::I32Extend16S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32Extend16S_SS))?;
-                encoder.encode(crate::op::I32Extend16S_SS { result, input } )
+                encoder.encode(crate::op::I32Extend16S_SS { result, input })
             }
             Self::I64Extend8S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend8S_RR))?;
-                encoder.encode(crate::op::I64Extend8S_RR { result, input } )
+                encoder.encode(crate::op::I64Extend8S_RR { result, input })
             }
             Self::I64Extend8S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend8S_RS))?;
-                encoder.encode(crate::op::I64Extend8S_RS { result, input } )
+                encoder.encode(crate::op::I64Extend8S_RS { result, input })
             }
             Self::I64Extend8S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend8S_SR))?;
-                encoder.encode(crate::op::I64Extend8S_SR { result, input } )
+                encoder.encode(crate::op::I64Extend8S_SR { result, input })
             }
             Self::I64Extend8S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend8S_SS))?;
-                encoder.encode(crate::op::I64Extend8S_SS { result, input } )
+                encoder.encode(crate::op::I64Extend8S_SS { result, input })
             }
             Self::I64Extend16S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend16S_RR))?;
-                encoder.encode(crate::op::I64Extend16S_RR { result, input } )
+                encoder.encode(crate::op::I64Extend16S_RR { result, input })
             }
             Self::I64Extend16S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend16S_RS))?;
-                encoder.encode(crate::op::I64Extend16S_RS { result, input } )
+                encoder.encode(crate::op::I64Extend16S_RS { result, input })
             }
             Self::I64Extend16S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend16S_SR))?;
-                encoder.encode(crate::op::I64Extend16S_SR { result, input } )
+                encoder.encode(crate::op::I64Extend16S_SR { result, input })
             }
             Self::I64Extend16S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend16S_SS))?;
-                encoder.encode(crate::op::I64Extend16S_SS { result, input } )
+                encoder.encode(crate::op::I64Extend16S_SS { result, input })
             }
             Self::I64Extend32S_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend32S_RR))?;
-                encoder.encode(crate::op::I64Extend32S_RR { result, input } )
+                encoder.encode(crate::op::I64Extend32S_RR { result, input })
             }
             Self::I64Extend32S_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend32S_RS))?;
-                encoder.encode(crate::op::I64Extend32S_RS { result, input } )
+                encoder.encode(crate::op::I64Extend32S_RS { result, input })
             }
             Self::I64Extend32S_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend32S_SR))?;
-                encoder.encode(crate::op::I64Extend32S_SR { result, input } )
+                encoder.encode(crate::op::I64Extend32S_SR { result, input })
             }
             Self::I64Extend32S_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I64Extend32S_SS))?;
-                encoder.encode(crate::op::I64Extend32S_SS { result, input } )
+                encoder.encode(crate::op::I64Extend32S_SS { result, input })
             }
             Self::I32WrapI64_RR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32WrapI64_RR))?;
-                encoder.encode(crate::op::I32WrapI64_RR { result, input } )
+                encoder.encode(crate::op::I32WrapI64_RR { result, input })
             }
             Self::I32WrapI64_RS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32WrapI64_RS))?;
-                encoder.encode(crate::op::I32WrapI64_RS { result, input } )
+                encoder.encode(crate::op::I32WrapI64_RS { result, input })
             }
             Self::I32WrapI64_SR { result, input } => {
-                encoder.encode(f(crate::OpCode::I32WrapI64_SR))?;
-                encoder.encode(crate::op::I32WrapI64_SR { result, input } )
+                encoder.encode(crate::op::I32WrapI64_SR { result, input })
             }
             Self::I32WrapI64_SS { result, input } => {
-                encoder.encode(f(crate::OpCode::I32WrapI64_SS))?;
-                encoder.encode(crate::op::I32WrapI64_SS { result, input } )
+                encoder.encode(crate::op::I32WrapI64_SS { result, input })
             }
             Self::I32Add_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Add_RRS))?;
-                encoder.encode(crate::op::I32Add_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Add_RRS { result, lhs, rhs })
             }
             Self::I32Add_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Add_RRI))?;
-                encoder.encode(crate::op::I32Add_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Add_RRI { result, lhs, rhs })
             }
             Self::I32Add_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Add_RSS))?;
-                encoder.encode(crate::op::I32Add_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Add_RSS { result, lhs, rhs })
             }
             Self::I32Add_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Add_RSI))?;
-                encoder.encode(crate::op::I32Add_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Add_RSI { result, lhs, rhs })
             }
             Self::I32Add_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Add_SRS))?;
-                encoder.encode(crate::op::I32Add_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Add_SRS { result, lhs, rhs })
             }
             Self::I32Add_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Add_SRI))?;
-                encoder.encode(crate::op::I32Add_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Add_SRI { result, lhs, rhs })
             }
             Self::I32Add_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Add_SSS))?;
-                encoder.encode(crate::op::I32Add_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Add_SSS { result, lhs, rhs })
             }
             Self::I32Add_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Add_SSI))?;
-                encoder.encode(crate::op::I32Add_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Add_SSI { result, lhs, rhs })
             }
             Self::I64Add_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Add_RRS))?;
-                encoder.encode(crate::op::I64Add_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Add_RRS { result, lhs, rhs })
             }
             Self::I64Add_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Add_RRI))?;
-                encoder.encode(crate::op::I64Add_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Add_RRI { result, lhs, rhs })
             }
             Self::I64Add_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Add_RSS))?;
-                encoder.encode(crate::op::I64Add_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Add_RSS { result, lhs, rhs })
             }
             Self::I64Add_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Add_RSI))?;
-                encoder.encode(crate::op::I64Add_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Add_RSI { result, lhs, rhs })
             }
             Self::I64Add_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Add_SRS))?;
-                encoder.encode(crate::op::I64Add_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Add_SRS { result, lhs, rhs })
             }
             Self::I64Add_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Add_SRI))?;
-                encoder.encode(crate::op::I64Add_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Add_SRI { result, lhs, rhs })
             }
             Self::I64Add_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Add_SSS))?;
-                encoder.encode(crate::op::I64Add_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Add_SSS { result, lhs, rhs })
             }
             Self::I64Add_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Add_SSI))?;
-                encoder.encode(crate::op::I64Add_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Add_SSI { result, lhs, rhs })
             }
             Self::I32Mul_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Mul_RRS))?;
-                encoder.encode(crate::op::I32Mul_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Mul_RRS { result, lhs, rhs })
             }
             Self::I32Mul_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Mul_RRI))?;
-                encoder.encode(crate::op::I32Mul_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Mul_RRI { result, lhs, rhs })
             }
             Self::I32Mul_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Mul_RSS))?;
-                encoder.encode(crate::op::I32Mul_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Mul_RSS { result, lhs, rhs })
             }
             Self::I32Mul_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Mul_RSI))?;
-                encoder.encode(crate::op::I32Mul_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Mul_RSI { result, lhs, rhs })
             }
             Self::I32Mul_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Mul_SRS))?;
-                encoder.encode(crate::op::I32Mul_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Mul_SRS { result, lhs, rhs })
             }
             Self::I32Mul_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Mul_SRI))?;
-                encoder.encode(crate::op::I32Mul_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Mul_SRI { result, lhs, rhs })
             }
             Self::I32Mul_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Mul_SSS))?;
-                encoder.encode(crate::op::I32Mul_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Mul_SSS { result, lhs, rhs })
             }
             Self::I32Mul_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Mul_SSI))?;
-                encoder.encode(crate::op::I32Mul_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Mul_SSI { result, lhs, rhs })
             }
             Self::I64Mul_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Mul_RRS))?;
-                encoder.encode(crate::op::I64Mul_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Mul_RRS { result, lhs, rhs })
             }
             Self::I64Mul_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Mul_RRI))?;
-                encoder.encode(crate::op::I64Mul_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Mul_RRI { result, lhs, rhs })
             }
             Self::I64Mul_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Mul_RSS))?;
-                encoder.encode(crate::op::I64Mul_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Mul_RSS { result, lhs, rhs })
             }
             Self::I64Mul_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Mul_RSI))?;
-                encoder.encode(crate::op::I64Mul_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Mul_RSI { result, lhs, rhs })
             }
             Self::I64Mul_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Mul_SRS))?;
-                encoder.encode(crate::op::I64Mul_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Mul_SRS { result, lhs, rhs })
             }
             Self::I64Mul_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Mul_SRI))?;
-                encoder.encode(crate::op::I64Mul_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Mul_SRI { result, lhs, rhs })
             }
             Self::I64Mul_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Mul_SSS))?;
-                encoder.encode(crate::op::I64Mul_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Mul_SSS { result, lhs, rhs })
             }
             Self::I64Mul_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Mul_SSI))?;
-                encoder.encode(crate::op::I64Mul_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Mul_SSI { result, lhs, rhs })
             }
             Self::I32And_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32And_RRS))?;
-                encoder.encode(crate::op::I32And_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32And_RRS { result, lhs, rhs })
             }
             Self::I32And_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32And_RRI))?;
-                encoder.encode(crate::op::I32And_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32And_RRI { result, lhs, rhs })
             }
             Self::I32And_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32And_RSS))?;
-                encoder.encode(crate::op::I32And_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32And_RSS { result, lhs, rhs })
             }
             Self::I32And_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32And_RSI))?;
-                encoder.encode(crate::op::I32And_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32And_RSI { result, lhs, rhs })
             }
             Self::I32And_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32And_SRS))?;
-                encoder.encode(crate::op::I32And_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32And_SRS { result, lhs, rhs })
             }
             Self::I32And_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32And_SRI))?;
-                encoder.encode(crate::op::I32And_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32And_SRI { result, lhs, rhs })
             }
             Self::I32And_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32And_SSS))?;
-                encoder.encode(crate::op::I32And_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32And_SSS { result, lhs, rhs })
             }
             Self::I32And_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32And_SSI))?;
-                encoder.encode(crate::op::I32And_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32And_SSI { result, lhs, rhs })
             }
             Self::I64And_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64And_RRS))?;
-                encoder.encode(crate::op::I64And_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64And_RRS { result, lhs, rhs })
             }
             Self::I64And_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64And_RRI))?;
-                encoder.encode(crate::op::I64And_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64And_RRI { result, lhs, rhs })
             }
             Self::I64And_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64And_RSS))?;
-                encoder.encode(crate::op::I64And_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64And_RSS { result, lhs, rhs })
             }
             Self::I64And_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64And_RSI))?;
-                encoder.encode(crate::op::I64And_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64And_RSI { result, lhs, rhs })
             }
             Self::I64And_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64And_SRS))?;
-                encoder.encode(crate::op::I64And_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64And_SRS { result, lhs, rhs })
             }
             Self::I64And_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64And_SRI))?;
-                encoder.encode(crate::op::I64And_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64And_SRI { result, lhs, rhs })
             }
             Self::I64And_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64And_SSS))?;
-                encoder.encode(crate::op::I64And_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64And_SSS { result, lhs, rhs })
             }
             Self::I64And_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64And_SSI))?;
-                encoder.encode(crate::op::I64And_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64And_SSI { result, lhs, rhs })
             }
             Self::I32Or_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Or_RRS))?;
-                encoder.encode(crate::op::I32Or_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Or_RRS { result, lhs, rhs })
             }
             Self::I32Or_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Or_RRI))?;
-                encoder.encode(crate::op::I32Or_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Or_RRI { result, lhs, rhs })
             }
             Self::I32Or_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Or_RSS))?;
-                encoder.encode(crate::op::I32Or_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Or_RSS { result, lhs, rhs })
             }
             Self::I32Or_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Or_RSI))?;
-                encoder.encode(crate::op::I32Or_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Or_RSI { result, lhs, rhs })
             }
             Self::I32Or_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Or_SRS))?;
-                encoder.encode(crate::op::I32Or_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Or_SRS { result, lhs, rhs })
             }
             Self::I32Or_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Or_SRI))?;
-                encoder.encode(crate::op::I32Or_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Or_SRI { result, lhs, rhs })
             }
             Self::I32Or_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Or_SSS))?;
-                encoder.encode(crate::op::I32Or_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Or_SSS { result, lhs, rhs })
             }
             Self::I32Or_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Or_SSI))?;
-                encoder.encode(crate::op::I32Or_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Or_SSI { result, lhs, rhs })
             }
             Self::I64Or_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Or_RRS))?;
-                encoder.encode(crate::op::I64Or_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Or_RRS { result, lhs, rhs })
             }
             Self::I64Or_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Or_RRI))?;
-                encoder.encode(crate::op::I64Or_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Or_RRI { result, lhs, rhs })
             }
             Self::I64Or_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Or_RSS))?;
-                encoder.encode(crate::op::I64Or_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Or_RSS { result, lhs, rhs })
             }
             Self::I64Or_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Or_RSI))?;
-                encoder.encode(crate::op::I64Or_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Or_RSI { result, lhs, rhs })
             }
             Self::I64Or_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Or_SRS))?;
-                encoder.encode(crate::op::I64Or_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Or_SRS { result, lhs, rhs })
             }
             Self::I64Or_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Or_SRI))?;
-                encoder.encode(crate::op::I64Or_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Or_SRI { result, lhs, rhs })
             }
             Self::I64Or_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Or_SSS))?;
-                encoder.encode(crate::op::I64Or_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Or_SSS { result, lhs, rhs })
             }
             Self::I64Or_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Or_SSI))?;
-                encoder.encode(crate::op::I64Or_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Or_SSI { result, lhs, rhs })
             }
             Self::I32Xor_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Xor_RRS))?;
-                encoder.encode(crate::op::I32Xor_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Xor_RRS { result, lhs, rhs })
             }
             Self::I32Xor_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Xor_RRI))?;
-                encoder.encode(crate::op::I32Xor_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Xor_RRI { result, lhs, rhs })
             }
             Self::I32Xor_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Xor_RSS))?;
-                encoder.encode(crate::op::I32Xor_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Xor_RSS { result, lhs, rhs })
             }
             Self::I32Xor_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Xor_RSI))?;
-                encoder.encode(crate::op::I32Xor_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Xor_RSI { result, lhs, rhs })
             }
             Self::I32Xor_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Xor_SRS))?;
-                encoder.encode(crate::op::I32Xor_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Xor_SRS { result, lhs, rhs })
             }
             Self::I32Xor_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Xor_SRI))?;
-                encoder.encode(crate::op::I32Xor_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Xor_SRI { result, lhs, rhs })
             }
             Self::I32Xor_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Xor_SSS))?;
-                encoder.encode(crate::op::I32Xor_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Xor_SSS { result, lhs, rhs })
             }
             Self::I32Xor_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Xor_SSI))?;
-                encoder.encode(crate::op::I32Xor_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Xor_SSI { result, lhs, rhs })
             }
             Self::I64Xor_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Xor_RRS))?;
-                encoder.encode(crate::op::I64Xor_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Xor_RRS { result, lhs, rhs })
             }
             Self::I64Xor_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Xor_RRI))?;
-                encoder.encode(crate::op::I64Xor_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Xor_RRI { result, lhs, rhs })
             }
             Self::I64Xor_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Xor_RSS))?;
-                encoder.encode(crate::op::I64Xor_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Xor_RSS { result, lhs, rhs })
             }
             Self::I64Xor_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Xor_RSI))?;
-                encoder.encode(crate::op::I64Xor_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Xor_RSI { result, lhs, rhs })
             }
             Self::I64Xor_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Xor_SRS))?;
-                encoder.encode(crate::op::I64Xor_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Xor_SRS { result, lhs, rhs })
             }
             Self::I64Xor_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Xor_SRI))?;
-                encoder.encode(crate::op::I64Xor_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Xor_SRI { result, lhs, rhs })
             }
             Self::I64Xor_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Xor_SSS))?;
-                encoder.encode(crate::op::I64Xor_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Xor_SSS { result, lhs, rhs })
             }
             Self::I64Xor_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Xor_SSI))?;
-                encoder.encode(crate::op::I64Xor_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Xor_SSI { result, lhs, rhs })
             }
             Self::I32Eq_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Eq_RRS))?;
-                encoder.encode(crate::op::I32Eq_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Eq_RRS { result, lhs, rhs })
             }
             Self::I32Eq_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Eq_RRI))?;
-                encoder.encode(crate::op::I32Eq_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Eq_RRI { result, lhs, rhs })
             }
             Self::I32Eq_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Eq_RSS))?;
-                encoder.encode(crate::op::I32Eq_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Eq_RSS { result, lhs, rhs })
             }
             Self::I32Eq_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Eq_RSI))?;
-                encoder.encode(crate::op::I32Eq_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Eq_RSI { result, lhs, rhs })
             }
             Self::I32Eq_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Eq_SRS))?;
-                encoder.encode(crate::op::I32Eq_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Eq_SRS { result, lhs, rhs })
             }
             Self::I32Eq_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Eq_SRI))?;
-                encoder.encode(crate::op::I32Eq_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Eq_SRI { result, lhs, rhs })
             }
             Self::I32Eq_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Eq_SSS))?;
-                encoder.encode(crate::op::I32Eq_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Eq_SSS { result, lhs, rhs })
             }
             Self::I32Eq_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Eq_SSI))?;
-                encoder.encode(crate::op::I32Eq_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Eq_SSI { result, lhs, rhs })
             }
             Self::I64Eq_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Eq_RRS))?;
-                encoder.encode(crate::op::I64Eq_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Eq_RRS { result, lhs, rhs })
             }
             Self::I64Eq_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Eq_RRI))?;
-                encoder.encode(crate::op::I64Eq_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Eq_RRI { result, lhs, rhs })
             }
             Self::I64Eq_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Eq_RSS))?;
-                encoder.encode(crate::op::I64Eq_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Eq_RSS { result, lhs, rhs })
             }
             Self::I64Eq_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Eq_RSI))?;
-                encoder.encode(crate::op::I64Eq_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Eq_RSI { result, lhs, rhs })
             }
             Self::I64Eq_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Eq_SRS))?;
-                encoder.encode(crate::op::I64Eq_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Eq_SRS { result, lhs, rhs })
             }
             Self::I64Eq_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Eq_SRI))?;
-                encoder.encode(crate::op::I64Eq_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Eq_SRI { result, lhs, rhs })
             }
             Self::I64Eq_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Eq_SSS))?;
-                encoder.encode(crate::op::I64Eq_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Eq_SSS { result, lhs, rhs })
             }
             Self::I64Eq_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Eq_SSI))?;
-                encoder.encode(crate::op::I64Eq_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Eq_SSI { result, lhs, rhs })
             }
             Self::I32Ne_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Ne_RRS))?;
-                encoder.encode(crate::op::I32Ne_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Ne_RRS { result, lhs, rhs })
             }
             Self::I32Ne_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Ne_RRI))?;
-                encoder.encode(crate::op::I32Ne_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Ne_RRI { result, lhs, rhs })
             }
             Self::I32Ne_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Ne_RSS))?;
-                encoder.encode(crate::op::I32Ne_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Ne_RSS { result, lhs, rhs })
             }
             Self::I32Ne_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Ne_RSI))?;
-                encoder.encode(crate::op::I32Ne_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Ne_RSI { result, lhs, rhs })
             }
             Self::I32Ne_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Ne_SRS))?;
-                encoder.encode(crate::op::I32Ne_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Ne_SRS { result, lhs, rhs })
             }
             Self::I32Ne_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Ne_SRI))?;
-                encoder.encode(crate::op::I32Ne_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Ne_SRI { result, lhs, rhs })
             }
             Self::I32Ne_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Ne_SSS))?;
-                encoder.encode(crate::op::I32Ne_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Ne_SSS { result, lhs, rhs })
             }
             Self::I32Ne_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Ne_SSI))?;
-                encoder.encode(crate::op::I32Ne_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Ne_SSI { result, lhs, rhs })
             }
             Self::I64Ne_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Ne_RRS))?;
-                encoder.encode(crate::op::I64Ne_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Ne_RRS { result, lhs, rhs })
             }
             Self::I64Ne_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Ne_RRI))?;
-                encoder.encode(crate::op::I64Ne_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Ne_RRI { result, lhs, rhs })
             }
             Self::I64Ne_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Ne_RSS))?;
-                encoder.encode(crate::op::I64Ne_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Ne_RSS { result, lhs, rhs })
             }
             Self::I64Ne_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Ne_RSI))?;
-                encoder.encode(crate::op::I64Ne_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Ne_RSI { result, lhs, rhs })
             }
             Self::I64Ne_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Ne_SRS))?;
-                encoder.encode(crate::op::I64Ne_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Ne_SRS { result, lhs, rhs })
             }
             Self::I64Ne_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Ne_SRI))?;
-                encoder.encode(crate::op::I64Ne_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Ne_SRI { result, lhs, rhs })
             }
             Self::I64Ne_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Ne_SSS))?;
-                encoder.encode(crate::op::I64Ne_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Ne_SSS { result, lhs, rhs })
             }
             Self::I64Ne_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Ne_SSI))?;
-                encoder.encode(crate::op::I64Ne_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Ne_SSI { result, lhs, rhs })
             }
             Self::F32Add_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Add_RRS))?;
-                encoder.encode(crate::op::F32Add_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Add_RRS { result, lhs, rhs })
             }
             Self::F32Add_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Add_RRI))?;
-                encoder.encode(crate::op::F32Add_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Add_RRI { result, lhs, rhs })
             }
             Self::F32Add_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Add_RSS))?;
-                encoder.encode(crate::op::F32Add_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Add_RSS { result, lhs, rhs })
             }
             Self::F32Add_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Add_RSI))?;
-                encoder.encode(crate::op::F32Add_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Add_RSI { result, lhs, rhs })
             }
             Self::F32Add_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Add_SRS))?;
-                encoder.encode(crate::op::F32Add_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Add_SRS { result, lhs, rhs })
             }
             Self::F32Add_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Add_SRI))?;
-                encoder.encode(crate::op::F32Add_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Add_SRI { result, lhs, rhs })
             }
             Self::F32Add_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Add_SSS))?;
-                encoder.encode(crate::op::F32Add_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Add_SSS { result, lhs, rhs })
             }
             Self::F32Add_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Add_SSI))?;
-                encoder.encode(crate::op::F32Add_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Add_SSI { result, lhs, rhs })
             }
             Self::F64Add_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Add_RRS))?;
-                encoder.encode(crate::op::F64Add_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Add_RRS { result, lhs, rhs })
             }
             Self::F64Add_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Add_RRI))?;
-                encoder.encode(crate::op::F64Add_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Add_RRI { result, lhs, rhs })
             }
             Self::F64Add_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Add_RSS))?;
-                encoder.encode(crate::op::F64Add_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Add_RSS { result, lhs, rhs })
             }
             Self::F64Add_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Add_RSI))?;
-                encoder.encode(crate::op::F64Add_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Add_RSI { result, lhs, rhs })
             }
             Self::F64Add_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Add_SRS))?;
-                encoder.encode(crate::op::F64Add_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Add_SRS { result, lhs, rhs })
             }
             Self::F64Add_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Add_SRI))?;
-                encoder.encode(crate::op::F64Add_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Add_SRI { result, lhs, rhs })
             }
             Self::F64Add_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Add_SSS))?;
-                encoder.encode(crate::op::F64Add_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Add_SSS { result, lhs, rhs })
             }
             Self::F64Add_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Add_SSI))?;
-                encoder.encode(crate::op::F64Add_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Add_SSI { result, lhs, rhs })
             }
             Self::F32Mul_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Mul_RRS))?;
-                encoder.encode(crate::op::F32Mul_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Mul_RRS { result, lhs, rhs })
             }
             Self::F32Mul_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Mul_RRI))?;
-                encoder.encode(crate::op::F32Mul_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Mul_RRI { result, lhs, rhs })
             }
             Self::F32Mul_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Mul_RSS))?;
-                encoder.encode(crate::op::F32Mul_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Mul_RSS { result, lhs, rhs })
             }
             Self::F32Mul_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Mul_RSI))?;
-                encoder.encode(crate::op::F32Mul_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Mul_RSI { result, lhs, rhs })
             }
             Self::F32Mul_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Mul_SRS))?;
-                encoder.encode(crate::op::F32Mul_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Mul_SRS { result, lhs, rhs })
             }
             Self::F32Mul_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Mul_SRI))?;
-                encoder.encode(crate::op::F32Mul_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Mul_SRI { result, lhs, rhs })
             }
             Self::F32Mul_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Mul_SSS))?;
-                encoder.encode(crate::op::F32Mul_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Mul_SSS { result, lhs, rhs })
             }
             Self::F32Mul_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Mul_SSI))?;
-                encoder.encode(crate::op::F32Mul_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Mul_SSI { result, lhs, rhs })
             }
             Self::F64Mul_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Mul_RRS))?;
-                encoder.encode(crate::op::F64Mul_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Mul_RRS { result, lhs, rhs })
             }
             Self::F64Mul_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Mul_RRI))?;
-                encoder.encode(crate::op::F64Mul_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Mul_RRI { result, lhs, rhs })
             }
             Self::F64Mul_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Mul_RSS))?;
-                encoder.encode(crate::op::F64Mul_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Mul_RSS { result, lhs, rhs })
             }
             Self::F64Mul_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Mul_RSI))?;
-                encoder.encode(crate::op::F64Mul_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Mul_RSI { result, lhs, rhs })
             }
             Self::F64Mul_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Mul_SRS))?;
-                encoder.encode(crate::op::F64Mul_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Mul_SRS { result, lhs, rhs })
             }
             Self::F64Mul_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Mul_SRI))?;
-                encoder.encode(crate::op::F64Mul_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Mul_SRI { result, lhs, rhs })
             }
             Self::F64Mul_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Mul_SSS))?;
-                encoder.encode(crate::op::F64Mul_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Mul_SSS { result, lhs, rhs })
             }
             Self::F64Mul_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Mul_SSI))?;
-                encoder.encode(crate::op::F64Mul_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Mul_SSI { result, lhs, rhs })
             }
             Self::F32Eq_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Eq_RRS))?;
-                encoder.encode(crate::op::F32Eq_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Eq_RRS { result, lhs, rhs })
             }
             Self::F32Eq_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Eq_RRI))?;
-                encoder.encode(crate::op::F32Eq_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Eq_RRI { result, lhs, rhs })
             }
             Self::F32Eq_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Eq_RSS))?;
-                encoder.encode(crate::op::F32Eq_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Eq_RSS { result, lhs, rhs })
             }
             Self::F32Eq_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Eq_RSI))?;
-                encoder.encode(crate::op::F32Eq_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Eq_RSI { result, lhs, rhs })
             }
             Self::F32Eq_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Eq_SRS))?;
-                encoder.encode(crate::op::F32Eq_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Eq_SRS { result, lhs, rhs })
             }
             Self::F32Eq_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Eq_SRI))?;
-                encoder.encode(crate::op::F32Eq_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Eq_SRI { result, lhs, rhs })
             }
             Self::F32Eq_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Eq_SSS))?;
-                encoder.encode(crate::op::F32Eq_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Eq_SSS { result, lhs, rhs })
             }
             Self::F32Eq_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Eq_SSI))?;
-                encoder.encode(crate::op::F32Eq_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Eq_SSI { result, lhs, rhs })
             }
             Self::F64Eq_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Eq_RRS))?;
-                encoder.encode(crate::op::F64Eq_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Eq_RRS { result, lhs, rhs })
             }
             Self::F64Eq_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Eq_RRI))?;
-                encoder.encode(crate::op::F64Eq_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Eq_RRI { result, lhs, rhs })
             }
             Self::F64Eq_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Eq_RSS))?;
-                encoder.encode(crate::op::F64Eq_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Eq_RSS { result, lhs, rhs })
             }
             Self::F64Eq_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Eq_RSI))?;
-                encoder.encode(crate::op::F64Eq_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Eq_RSI { result, lhs, rhs })
             }
             Self::F64Eq_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Eq_SRS))?;
-                encoder.encode(crate::op::F64Eq_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Eq_SRS { result, lhs, rhs })
             }
             Self::F64Eq_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Eq_SRI))?;
-                encoder.encode(crate::op::F64Eq_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Eq_SRI { result, lhs, rhs })
             }
             Self::F64Eq_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Eq_SSS))?;
-                encoder.encode(crate::op::F64Eq_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Eq_SSS { result, lhs, rhs })
             }
             Self::F64Eq_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Eq_SSI))?;
-                encoder.encode(crate::op::F64Eq_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Eq_SSI { result, lhs, rhs })
             }
             Self::F32Ne_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Ne_RRS))?;
-                encoder.encode(crate::op::F32Ne_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Ne_RRS { result, lhs, rhs })
             }
             Self::F32Ne_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Ne_RRI))?;
-                encoder.encode(crate::op::F32Ne_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Ne_RRI { result, lhs, rhs })
             }
             Self::F32Ne_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Ne_RSS))?;
-                encoder.encode(crate::op::F32Ne_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Ne_RSS { result, lhs, rhs })
             }
             Self::F32Ne_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Ne_RSI))?;
-                encoder.encode(crate::op::F32Ne_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Ne_RSI { result, lhs, rhs })
             }
             Self::F32Ne_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Ne_SRS))?;
-                encoder.encode(crate::op::F32Ne_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Ne_SRS { result, lhs, rhs })
             }
             Self::F32Ne_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Ne_SRI))?;
-                encoder.encode(crate::op::F32Ne_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Ne_SRI { result, lhs, rhs })
             }
             Self::F32Ne_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Ne_SSS))?;
-                encoder.encode(crate::op::F32Ne_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Ne_SSS { result, lhs, rhs })
             }
             Self::F32Ne_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Ne_SSI))?;
-                encoder.encode(crate::op::F32Ne_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Ne_SSI { result, lhs, rhs })
             }
             Self::F64Ne_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Ne_RRS))?;
-                encoder.encode(crate::op::F64Ne_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Ne_RRS { result, lhs, rhs })
             }
             Self::F64Ne_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Ne_RRI))?;
-                encoder.encode(crate::op::F64Ne_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Ne_RRI { result, lhs, rhs })
             }
             Self::F64Ne_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Ne_RSS))?;
-                encoder.encode(crate::op::F64Ne_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Ne_RSS { result, lhs, rhs })
             }
             Self::F64Ne_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Ne_RSI))?;
-                encoder.encode(crate::op::F64Ne_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Ne_RSI { result, lhs, rhs })
             }
             Self::F64Ne_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Ne_SRS))?;
-                encoder.encode(crate::op::F64Ne_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Ne_SRS { result, lhs, rhs })
             }
             Self::F64Ne_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Ne_SRI))?;
-                encoder.encode(crate::op::F64Ne_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Ne_SRI { result, lhs, rhs })
             }
             Self::F64Ne_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Ne_SSS))?;
-                encoder.encode(crate::op::F64Ne_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Ne_SSS { result, lhs, rhs })
             }
             Self::F64Ne_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Ne_SSI))?;
-                encoder.encode(crate::op::F64Ne_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Ne_SSI { result, lhs, rhs })
             }
             Self::F32Min_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Min_RRS))?;
-                encoder.encode(crate::op::F32Min_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Min_RRS { result, lhs, rhs })
             }
             Self::F32Min_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Min_RRI))?;
-                encoder.encode(crate::op::F32Min_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Min_RRI { result, lhs, rhs })
             }
             Self::F32Min_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Min_RSS))?;
-                encoder.encode(crate::op::F32Min_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Min_RSS { result, lhs, rhs })
             }
             Self::F32Min_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Min_RSI))?;
-                encoder.encode(crate::op::F32Min_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Min_RSI { result, lhs, rhs })
             }
             Self::F32Min_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Min_SRS))?;
-                encoder.encode(crate::op::F32Min_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Min_SRS { result, lhs, rhs })
             }
             Self::F32Min_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Min_SRI))?;
-                encoder.encode(crate::op::F32Min_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Min_SRI { result, lhs, rhs })
             }
             Self::F32Min_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Min_SSS))?;
-                encoder.encode(crate::op::F32Min_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Min_SSS { result, lhs, rhs })
             }
             Self::F32Min_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Min_SSI))?;
-                encoder.encode(crate::op::F32Min_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Min_SSI { result, lhs, rhs })
             }
             Self::F64Min_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Min_RRS))?;
-                encoder.encode(crate::op::F64Min_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Min_RRS { result, lhs, rhs })
             }
             Self::F64Min_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Min_RRI))?;
-                encoder.encode(crate::op::F64Min_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Min_RRI { result, lhs, rhs })
             }
             Self::F64Min_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Min_RSS))?;
-                encoder.encode(crate::op::F64Min_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Min_RSS { result, lhs, rhs })
             }
             Self::F64Min_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Min_RSI))?;
-                encoder.encode(crate::op::F64Min_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Min_RSI { result, lhs, rhs })
             }
             Self::F64Min_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Min_SRS))?;
-                encoder.encode(crate::op::F64Min_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Min_SRS { result, lhs, rhs })
             }
             Self::F64Min_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Min_SRI))?;
-                encoder.encode(crate::op::F64Min_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Min_SRI { result, lhs, rhs })
             }
             Self::F64Min_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Min_SSS))?;
-                encoder.encode(crate::op::F64Min_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Min_SSS { result, lhs, rhs })
             }
             Self::F64Min_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Min_SSI))?;
-                encoder.encode(crate::op::F64Min_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Min_SSI { result, lhs, rhs })
             }
             Self::F32Max_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Max_RRS))?;
-                encoder.encode(crate::op::F32Max_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Max_RRS { result, lhs, rhs })
             }
             Self::F32Max_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Max_RRI))?;
-                encoder.encode(crate::op::F32Max_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Max_RRI { result, lhs, rhs })
             }
             Self::F32Max_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Max_RSS))?;
-                encoder.encode(crate::op::F32Max_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Max_RSS { result, lhs, rhs })
             }
             Self::F32Max_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Max_RSI))?;
-                encoder.encode(crate::op::F32Max_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Max_RSI { result, lhs, rhs })
             }
             Self::F32Max_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Max_SRS))?;
-                encoder.encode(crate::op::F32Max_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Max_SRS { result, lhs, rhs })
             }
             Self::F32Max_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Max_SRI))?;
-                encoder.encode(crate::op::F32Max_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Max_SRI { result, lhs, rhs })
             }
             Self::F32Max_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Max_SSS))?;
-                encoder.encode(crate::op::F32Max_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Max_SSS { result, lhs, rhs })
             }
             Self::F32Max_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Max_SSI))?;
-                encoder.encode(crate::op::F32Max_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Max_SSI { result, lhs, rhs })
             }
             Self::F64Max_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Max_RRS))?;
-                encoder.encode(crate::op::F64Max_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Max_RRS { result, lhs, rhs })
             }
             Self::F64Max_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Max_RRI))?;
-                encoder.encode(crate::op::F64Max_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Max_RRI { result, lhs, rhs })
             }
             Self::F64Max_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Max_RSS))?;
-                encoder.encode(crate::op::F64Max_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Max_RSS { result, lhs, rhs })
             }
             Self::F64Max_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Max_RSI))?;
-                encoder.encode(crate::op::F64Max_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Max_RSI { result, lhs, rhs })
             }
             Self::F64Max_SRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Max_SRS))?;
-                encoder.encode(crate::op::F64Max_SRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Max_SRS { result, lhs, rhs })
             }
             Self::F64Max_SRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Max_SRI))?;
-                encoder.encode(crate::op::F64Max_SRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Max_SRI { result, lhs, rhs })
             }
             Self::F64Max_SSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Max_SSS))?;
-                encoder.encode(crate::op::F64Max_SSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Max_SSS { result, lhs, rhs })
             }
             Self::F64Max_SSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Max_SSI))?;
-                encoder.encode(crate::op::F64Max_SSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Max_SSI { result, lhs, rhs })
             }
             Self::I32Sub_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Sub_RRS))?;
-                encoder.encode(crate::op::I32Sub_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Sub_RRS { result, lhs, rhs })
             }
             Self::I32Sub_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Sub_RRI))?;
-                encoder.encode(crate::op::I32Sub_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Sub_RRI { result, lhs, rhs })
             }
             Self::I32Sub_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Sub_RSR))?;
-                encoder.encode(crate::op::I32Sub_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Sub_RSR { result, lhs, rhs })
             }
             Self::I32Sub_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Sub_RSS))?;
-                encoder.encode(crate::op::I32Sub_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Sub_RSS { result, lhs, rhs })
             }
             Self::I32Sub_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Sub_RSI))?;
-                encoder.encode(crate::op::I32Sub_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Sub_RSI { result, lhs, rhs })
             }
             Self::I32Sub_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Sub_RIR))?;
-                encoder.encode(crate::op::I32Sub_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Sub_RIR { result, lhs, rhs })
             }
             Self::I32Sub_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Sub_RIS))?;
-                encoder.encode(crate::op::I32Sub_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Sub_RIS { result, lhs, rhs })
             }
             Self::I64Sub_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Sub_RRS))?;
-                encoder.encode(crate::op::I64Sub_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Sub_RRS { result, lhs, rhs })
             }
             Self::I64Sub_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Sub_RRI))?;
-                encoder.encode(crate::op::I64Sub_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Sub_RRI { result, lhs, rhs })
             }
             Self::I64Sub_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Sub_RSR))?;
-                encoder.encode(crate::op::I64Sub_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Sub_RSR { result, lhs, rhs })
             }
             Self::I64Sub_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Sub_RSS))?;
-                encoder.encode(crate::op::I64Sub_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Sub_RSS { result, lhs, rhs })
             }
             Self::I64Sub_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Sub_RSI))?;
-                encoder.encode(crate::op::I64Sub_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Sub_RSI { result, lhs, rhs })
             }
             Self::I64Sub_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Sub_RIR))?;
-                encoder.encode(crate::op::I64Sub_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Sub_RIR { result, lhs, rhs })
             }
             Self::I64Sub_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Sub_RIS))?;
-                encoder.encode(crate::op::I64Sub_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Sub_RIS { result, lhs, rhs })
             }
             Self::I32LtS_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtS_RRS))?;
-                encoder.encode(crate::op::I32LtS_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtS_RRS { result, lhs, rhs })
             }
             Self::I32LtS_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtS_RRI))?;
-                encoder.encode(crate::op::I32LtS_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtS_RRI { result, lhs, rhs })
             }
             Self::I32LtS_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtS_RSR))?;
-                encoder.encode(crate::op::I32LtS_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtS_RSR { result, lhs, rhs })
             }
             Self::I32LtS_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtS_RSS))?;
-                encoder.encode(crate::op::I32LtS_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtS_RSS { result, lhs, rhs })
             }
             Self::I32LtS_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtS_RSI))?;
-                encoder.encode(crate::op::I32LtS_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtS_RSI { result, lhs, rhs })
             }
             Self::I32LtS_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtS_RIR))?;
-                encoder.encode(crate::op::I32LtS_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtS_RIR { result, lhs, rhs })
             }
             Self::I32LtS_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtS_RIS))?;
-                encoder.encode(crate::op::I32LtS_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtS_RIS { result, lhs, rhs })
             }
             Self::I64LtS_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtS_RRS))?;
-                encoder.encode(crate::op::I64LtS_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtS_RRS { result, lhs, rhs })
             }
             Self::I64LtS_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtS_RRI))?;
-                encoder.encode(crate::op::I64LtS_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtS_RRI { result, lhs, rhs })
             }
             Self::I64LtS_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtS_RSR))?;
-                encoder.encode(crate::op::I64LtS_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtS_RSR { result, lhs, rhs })
             }
             Self::I64LtS_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtS_RSS))?;
-                encoder.encode(crate::op::I64LtS_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtS_RSS { result, lhs, rhs })
             }
             Self::I64LtS_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtS_RSI))?;
-                encoder.encode(crate::op::I64LtS_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtS_RSI { result, lhs, rhs })
             }
             Self::I64LtS_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtS_RIR))?;
-                encoder.encode(crate::op::I64LtS_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtS_RIR { result, lhs, rhs })
             }
             Self::I64LtS_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtS_RIS))?;
-                encoder.encode(crate::op::I64LtS_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtS_RIS { result, lhs, rhs })
             }
             Self::I32LtU_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtU_RRS))?;
-                encoder.encode(crate::op::I32LtU_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtU_RRS { result, lhs, rhs })
             }
             Self::I32LtU_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtU_RRI))?;
-                encoder.encode(crate::op::I32LtU_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtU_RRI { result, lhs, rhs })
             }
             Self::I32LtU_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtU_RSR))?;
-                encoder.encode(crate::op::I32LtU_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtU_RSR { result, lhs, rhs })
             }
             Self::I32LtU_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtU_RSS))?;
-                encoder.encode(crate::op::I32LtU_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtU_RSS { result, lhs, rhs })
             }
             Self::I32LtU_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtU_RSI))?;
-                encoder.encode(crate::op::I32LtU_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtU_RSI { result, lhs, rhs })
             }
             Self::I32LtU_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtU_RIR))?;
-                encoder.encode(crate::op::I32LtU_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtU_RIR { result, lhs, rhs })
             }
             Self::I32LtU_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LtU_RIS))?;
-                encoder.encode(crate::op::I32LtU_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LtU_RIS { result, lhs, rhs })
             }
             Self::I64LtU_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtU_RRS))?;
-                encoder.encode(crate::op::I64LtU_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtU_RRS { result, lhs, rhs })
             }
             Self::I64LtU_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtU_RRI))?;
-                encoder.encode(crate::op::I64LtU_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtU_RRI { result, lhs, rhs })
             }
             Self::I64LtU_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtU_RSR))?;
-                encoder.encode(crate::op::I64LtU_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtU_RSR { result, lhs, rhs })
             }
             Self::I64LtU_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtU_RSS))?;
-                encoder.encode(crate::op::I64LtU_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtU_RSS { result, lhs, rhs })
             }
             Self::I64LtU_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtU_RSI))?;
-                encoder.encode(crate::op::I64LtU_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtU_RSI { result, lhs, rhs })
             }
             Self::I64LtU_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtU_RIR))?;
-                encoder.encode(crate::op::I64LtU_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtU_RIR { result, lhs, rhs })
             }
             Self::I64LtU_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LtU_RIS))?;
-                encoder.encode(crate::op::I64LtU_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LtU_RIS { result, lhs, rhs })
             }
             Self::I32LeS_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeS_RRS))?;
-                encoder.encode(crate::op::I32LeS_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeS_RRS { result, lhs, rhs })
             }
             Self::I32LeS_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeS_RRI))?;
-                encoder.encode(crate::op::I32LeS_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeS_RRI { result, lhs, rhs })
             }
             Self::I32LeS_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeS_RSR))?;
-                encoder.encode(crate::op::I32LeS_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeS_RSR { result, lhs, rhs })
             }
             Self::I32LeS_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeS_RSS))?;
-                encoder.encode(crate::op::I32LeS_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeS_RSS { result, lhs, rhs })
             }
             Self::I32LeS_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeS_RSI))?;
-                encoder.encode(crate::op::I32LeS_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeS_RSI { result, lhs, rhs })
             }
             Self::I32LeS_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeS_RIR))?;
-                encoder.encode(crate::op::I32LeS_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeS_RIR { result, lhs, rhs })
             }
             Self::I32LeS_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeS_RIS))?;
-                encoder.encode(crate::op::I32LeS_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeS_RIS { result, lhs, rhs })
             }
             Self::I64LeS_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeS_RRS))?;
-                encoder.encode(crate::op::I64LeS_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeS_RRS { result, lhs, rhs })
             }
             Self::I64LeS_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeS_RRI))?;
-                encoder.encode(crate::op::I64LeS_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeS_RRI { result, lhs, rhs })
             }
             Self::I64LeS_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeS_RSR))?;
-                encoder.encode(crate::op::I64LeS_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeS_RSR { result, lhs, rhs })
             }
             Self::I64LeS_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeS_RSS))?;
-                encoder.encode(crate::op::I64LeS_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeS_RSS { result, lhs, rhs })
             }
             Self::I64LeS_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeS_RSI))?;
-                encoder.encode(crate::op::I64LeS_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeS_RSI { result, lhs, rhs })
             }
             Self::I64LeS_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeS_RIR))?;
-                encoder.encode(crate::op::I64LeS_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeS_RIR { result, lhs, rhs })
             }
             Self::I64LeS_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeS_RIS))?;
-                encoder.encode(crate::op::I64LeS_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeS_RIS { result, lhs, rhs })
             }
             Self::I32LeU_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeU_RRS))?;
-                encoder.encode(crate::op::I32LeU_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeU_RRS { result, lhs, rhs })
             }
             Self::I32LeU_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeU_RRI))?;
-                encoder.encode(crate::op::I32LeU_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeU_RRI { result, lhs, rhs })
             }
             Self::I32LeU_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeU_RSR))?;
-                encoder.encode(crate::op::I32LeU_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeU_RSR { result, lhs, rhs })
             }
             Self::I32LeU_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeU_RSS))?;
-                encoder.encode(crate::op::I32LeU_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeU_RSS { result, lhs, rhs })
             }
             Self::I32LeU_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeU_RSI))?;
-                encoder.encode(crate::op::I32LeU_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeU_RSI { result, lhs, rhs })
             }
             Self::I32LeU_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeU_RIR))?;
-                encoder.encode(crate::op::I32LeU_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeU_RIR { result, lhs, rhs })
             }
             Self::I32LeU_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32LeU_RIS))?;
-                encoder.encode(crate::op::I32LeU_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32LeU_RIS { result, lhs, rhs })
             }
             Self::I64LeU_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeU_RRS))?;
-                encoder.encode(crate::op::I64LeU_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeU_RRS { result, lhs, rhs })
             }
             Self::I64LeU_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeU_RRI))?;
-                encoder.encode(crate::op::I64LeU_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeU_RRI { result, lhs, rhs })
             }
             Self::I64LeU_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeU_RSR))?;
-                encoder.encode(crate::op::I64LeU_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeU_RSR { result, lhs, rhs })
             }
             Self::I64LeU_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeU_RSS))?;
-                encoder.encode(crate::op::I64LeU_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeU_RSS { result, lhs, rhs })
             }
             Self::I64LeU_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeU_RSI))?;
-                encoder.encode(crate::op::I64LeU_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeU_RSI { result, lhs, rhs })
             }
             Self::I64LeU_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeU_RIR))?;
-                encoder.encode(crate::op::I64LeU_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeU_RIR { result, lhs, rhs })
             }
             Self::I64LeU_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64LeU_RIS))?;
-                encoder.encode(crate::op::I64LeU_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64LeU_RIS { result, lhs, rhs })
             }
             Self::I32DivS_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivS_RRS))?;
-                encoder.encode(crate::op::I32DivS_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivS_RRS { result, lhs, rhs })
             }
             Self::I32DivS_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivS_RRI))?;
-                encoder.encode(crate::op::I32DivS_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivS_RRI { result, lhs, rhs })
             }
             Self::I32DivS_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivS_RSR))?;
-                encoder.encode(crate::op::I32DivS_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivS_RSR { result, lhs, rhs })
             }
             Self::I32DivS_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivS_RSS))?;
-                encoder.encode(crate::op::I32DivS_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivS_RSS { result, lhs, rhs })
             }
             Self::I32DivS_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivS_RSI))?;
-                encoder.encode(crate::op::I32DivS_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivS_RSI { result, lhs, rhs })
             }
             Self::I32DivS_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivS_RIR))?;
-                encoder.encode(crate::op::I32DivS_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivS_RIR { result, lhs, rhs })
             }
             Self::I32DivS_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivS_RIS))?;
-                encoder.encode(crate::op::I32DivS_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivS_RIS { result, lhs, rhs })
             }
             Self::I64DivS_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivS_RRS))?;
-                encoder.encode(crate::op::I64DivS_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivS_RRS { result, lhs, rhs })
             }
             Self::I64DivS_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivS_RRI))?;
-                encoder.encode(crate::op::I64DivS_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivS_RRI { result, lhs, rhs })
             }
             Self::I64DivS_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivS_RSR))?;
-                encoder.encode(crate::op::I64DivS_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivS_RSR { result, lhs, rhs })
             }
             Self::I64DivS_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivS_RSS))?;
-                encoder.encode(crate::op::I64DivS_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivS_RSS { result, lhs, rhs })
             }
             Self::I64DivS_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivS_RSI))?;
-                encoder.encode(crate::op::I64DivS_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivS_RSI { result, lhs, rhs })
             }
             Self::I64DivS_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivS_RIR))?;
-                encoder.encode(crate::op::I64DivS_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivS_RIR { result, lhs, rhs })
             }
             Self::I64DivS_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivS_RIS))?;
-                encoder.encode(crate::op::I64DivS_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivS_RIS { result, lhs, rhs })
             }
             Self::I32DivU_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivU_RRS))?;
-                encoder.encode(crate::op::I32DivU_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivU_RRS { result, lhs, rhs })
             }
             Self::I32DivU_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivU_RRI))?;
-                encoder.encode(crate::op::I32DivU_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivU_RRI { result, lhs, rhs })
             }
             Self::I32DivU_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivU_RSR))?;
-                encoder.encode(crate::op::I32DivU_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivU_RSR { result, lhs, rhs })
             }
             Self::I32DivU_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivU_RSS))?;
-                encoder.encode(crate::op::I32DivU_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivU_RSS { result, lhs, rhs })
             }
             Self::I32DivU_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivU_RSI))?;
-                encoder.encode(crate::op::I32DivU_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivU_RSI { result, lhs, rhs })
             }
             Self::I32DivU_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivU_RIR))?;
-                encoder.encode(crate::op::I32DivU_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivU_RIR { result, lhs, rhs })
             }
             Self::I32DivU_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32DivU_RIS))?;
-                encoder.encode(crate::op::I32DivU_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32DivU_RIS { result, lhs, rhs })
             }
             Self::I64DivU_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivU_RRS))?;
-                encoder.encode(crate::op::I64DivU_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivU_RRS { result, lhs, rhs })
             }
             Self::I64DivU_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivU_RRI))?;
-                encoder.encode(crate::op::I64DivU_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivU_RRI { result, lhs, rhs })
             }
             Self::I64DivU_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivU_RSR))?;
-                encoder.encode(crate::op::I64DivU_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivU_RSR { result, lhs, rhs })
             }
             Self::I64DivU_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivU_RSS))?;
-                encoder.encode(crate::op::I64DivU_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivU_RSS { result, lhs, rhs })
             }
             Self::I64DivU_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivU_RSI))?;
-                encoder.encode(crate::op::I64DivU_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivU_RSI { result, lhs, rhs })
             }
             Self::I64DivU_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivU_RIR))?;
-                encoder.encode(crate::op::I64DivU_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivU_RIR { result, lhs, rhs })
             }
             Self::I64DivU_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64DivU_RIS))?;
-                encoder.encode(crate::op::I64DivU_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64DivU_RIS { result, lhs, rhs })
             }
             Self::I32RemS_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemS_RRS))?;
-                encoder.encode(crate::op::I32RemS_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemS_RRS { result, lhs, rhs })
             }
             Self::I32RemS_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemS_RRI))?;
-                encoder.encode(crate::op::I32RemS_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemS_RRI { result, lhs, rhs })
             }
             Self::I32RemS_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemS_RSR))?;
-                encoder.encode(crate::op::I32RemS_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemS_RSR { result, lhs, rhs })
             }
             Self::I32RemS_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemS_RSS))?;
-                encoder.encode(crate::op::I32RemS_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemS_RSS { result, lhs, rhs })
             }
             Self::I32RemS_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemS_RSI))?;
-                encoder.encode(crate::op::I32RemS_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemS_RSI { result, lhs, rhs })
             }
             Self::I32RemS_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemS_RIR))?;
-                encoder.encode(crate::op::I32RemS_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemS_RIR { result, lhs, rhs })
             }
             Self::I32RemS_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemS_RIS))?;
-                encoder.encode(crate::op::I32RemS_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemS_RIS { result, lhs, rhs })
             }
             Self::I64RemS_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemS_RRS))?;
-                encoder.encode(crate::op::I64RemS_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemS_RRS { result, lhs, rhs })
             }
             Self::I64RemS_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemS_RRI))?;
-                encoder.encode(crate::op::I64RemS_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemS_RRI { result, lhs, rhs })
             }
             Self::I64RemS_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemS_RSR))?;
-                encoder.encode(crate::op::I64RemS_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemS_RSR { result, lhs, rhs })
             }
             Self::I64RemS_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemS_RSS))?;
-                encoder.encode(crate::op::I64RemS_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemS_RSS { result, lhs, rhs })
             }
             Self::I64RemS_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemS_RSI))?;
-                encoder.encode(crate::op::I64RemS_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemS_RSI { result, lhs, rhs })
             }
             Self::I64RemS_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemS_RIR))?;
-                encoder.encode(crate::op::I64RemS_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemS_RIR { result, lhs, rhs })
             }
             Self::I64RemS_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemS_RIS))?;
-                encoder.encode(crate::op::I64RemS_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemS_RIS { result, lhs, rhs })
             }
             Self::I32RemU_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemU_RRS))?;
-                encoder.encode(crate::op::I32RemU_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemU_RRS { result, lhs, rhs })
             }
             Self::I32RemU_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemU_RRI))?;
-                encoder.encode(crate::op::I32RemU_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemU_RRI { result, lhs, rhs })
             }
             Self::I32RemU_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemU_RSR))?;
-                encoder.encode(crate::op::I32RemU_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemU_RSR { result, lhs, rhs })
             }
             Self::I32RemU_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemU_RSS))?;
-                encoder.encode(crate::op::I32RemU_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemU_RSS { result, lhs, rhs })
             }
             Self::I32RemU_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemU_RSI))?;
-                encoder.encode(crate::op::I32RemU_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemU_RSI { result, lhs, rhs })
             }
             Self::I32RemU_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemU_RIR))?;
-                encoder.encode(crate::op::I32RemU_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemU_RIR { result, lhs, rhs })
             }
             Self::I32RemU_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32RemU_RIS))?;
-                encoder.encode(crate::op::I32RemU_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32RemU_RIS { result, lhs, rhs })
             }
             Self::I64RemU_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemU_RRS))?;
-                encoder.encode(crate::op::I64RemU_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemU_RRS { result, lhs, rhs })
             }
             Self::I64RemU_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemU_RRI))?;
-                encoder.encode(crate::op::I64RemU_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemU_RRI { result, lhs, rhs })
             }
             Self::I64RemU_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemU_RSR))?;
-                encoder.encode(crate::op::I64RemU_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemU_RSR { result, lhs, rhs })
             }
             Self::I64RemU_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemU_RSS))?;
-                encoder.encode(crate::op::I64RemU_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemU_RSS { result, lhs, rhs })
             }
             Self::I64RemU_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemU_RSI))?;
-                encoder.encode(crate::op::I64RemU_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemU_RSI { result, lhs, rhs })
             }
             Self::I64RemU_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemU_RIR))?;
-                encoder.encode(crate::op::I64RemU_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemU_RIR { result, lhs, rhs })
             }
             Self::I64RemU_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64RemU_RIS))?;
-                encoder.encode(crate::op::I64RemU_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64RemU_RIS { result, lhs, rhs })
             }
             Self::I32Shl_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Shl_RRS))?;
-                encoder.encode(crate::op::I32Shl_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Shl_RRS { result, lhs, rhs })
             }
             Self::I32Shl_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Shl_RRI))?;
-                encoder.encode(crate::op::I32Shl_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Shl_RRI { result, lhs, rhs })
             }
             Self::I32Shl_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Shl_RSR))?;
-                encoder.encode(crate::op::I32Shl_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Shl_RSR { result, lhs, rhs })
             }
             Self::I32Shl_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Shl_RSS))?;
-                encoder.encode(crate::op::I32Shl_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Shl_RSS { result, lhs, rhs })
             }
             Self::I32Shl_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Shl_RSI))?;
-                encoder.encode(crate::op::I32Shl_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Shl_RSI { result, lhs, rhs })
             }
             Self::I32Shl_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Shl_RIR))?;
-                encoder.encode(crate::op::I32Shl_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Shl_RIR { result, lhs, rhs })
             }
             Self::I32Shl_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Shl_RIS))?;
-                encoder.encode(crate::op::I32Shl_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Shl_RIS { result, lhs, rhs })
             }
             Self::I64Shl_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Shl_RRS))?;
-                encoder.encode(crate::op::I64Shl_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Shl_RRS { result, lhs, rhs })
             }
             Self::I64Shl_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Shl_RRI))?;
-                encoder.encode(crate::op::I64Shl_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Shl_RRI { result, lhs, rhs })
             }
             Self::I64Shl_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Shl_RSR))?;
-                encoder.encode(crate::op::I64Shl_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Shl_RSR { result, lhs, rhs })
             }
             Self::I64Shl_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Shl_RSS))?;
-                encoder.encode(crate::op::I64Shl_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Shl_RSS { result, lhs, rhs })
             }
             Self::I64Shl_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Shl_RSI))?;
-                encoder.encode(crate::op::I64Shl_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Shl_RSI { result, lhs, rhs })
             }
             Self::I64Shl_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Shl_RIR))?;
-                encoder.encode(crate::op::I64Shl_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Shl_RIR { result, lhs, rhs })
             }
             Self::I64Shl_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Shl_RIS))?;
-                encoder.encode(crate::op::I64Shl_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Shl_RIS { result, lhs, rhs })
             }
             Self::I32ShrS_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrS_RRS))?;
-                encoder.encode(crate::op::I32ShrS_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrS_RRS { result, lhs, rhs })
             }
             Self::I32ShrS_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrS_RRI))?;
-                encoder.encode(crate::op::I32ShrS_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrS_RRI { result, lhs, rhs })
             }
             Self::I32ShrS_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrS_RSR))?;
-                encoder.encode(crate::op::I32ShrS_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrS_RSR { result, lhs, rhs })
             }
             Self::I32ShrS_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrS_RSS))?;
-                encoder.encode(crate::op::I32ShrS_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrS_RSS { result, lhs, rhs })
             }
             Self::I32ShrS_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrS_RSI))?;
-                encoder.encode(crate::op::I32ShrS_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrS_RSI { result, lhs, rhs })
             }
             Self::I32ShrS_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrS_RIR))?;
-                encoder.encode(crate::op::I32ShrS_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrS_RIR { result, lhs, rhs })
             }
             Self::I32ShrS_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrS_RIS))?;
-                encoder.encode(crate::op::I32ShrS_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrS_RIS { result, lhs, rhs })
             }
             Self::I64ShrS_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrS_RRS))?;
-                encoder.encode(crate::op::I64ShrS_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrS_RRS { result, lhs, rhs })
             }
             Self::I64ShrS_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrS_RRI))?;
-                encoder.encode(crate::op::I64ShrS_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrS_RRI { result, lhs, rhs })
             }
             Self::I64ShrS_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrS_RSR))?;
-                encoder.encode(crate::op::I64ShrS_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrS_RSR { result, lhs, rhs })
             }
             Self::I64ShrS_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrS_RSS))?;
-                encoder.encode(crate::op::I64ShrS_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrS_RSS { result, lhs, rhs })
             }
             Self::I64ShrS_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrS_RSI))?;
-                encoder.encode(crate::op::I64ShrS_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrS_RSI { result, lhs, rhs })
             }
             Self::I64ShrS_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrS_RIR))?;
-                encoder.encode(crate::op::I64ShrS_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrS_RIR { result, lhs, rhs })
             }
             Self::I64ShrS_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrS_RIS))?;
-                encoder.encode(crate::op::I64ShrS_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrS_RIS { result, lhs, rhs })
             }
             Self::I32ShrU_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrU_RRS))?;
-                encoder.encode(crate::op::I32ShrU_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrU_RRS { result, lhs, rhs })
             }
             Self::I32ShrU_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrU_RRI))?;
-                encoder.encode(crate::op::I32ShrU_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrU_RRI { result, lhs, rhs })
             }
             Self::I32ShrU_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrU_RSR))?;
-                encoder.encode(crate::op::I32ShrU_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrU_RSR { result, lhs, rhs })
             }
             Self::I32ShrU_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrU_RSS))?;
-                encoder.encode(crate::op::I32ShrU_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrU_RSS { result, lhs, rhs })
             }
             Self::I32ShrU_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrU_RSI))?;
-                encoder.encode(crate::op::I32ShrU_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrU_RSI { result, lhs, rhs })
             }
             Self::I32ShrU_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrU_RIR))?;
-                encoder.encode(crate::op::I32ShrU_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrU_RIR { result, lhs, rhs })
             }
             Self::I32ShrU_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32ShrU_RIS))?;
-                encoder.encode(crate::op::I32ShrU_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32ShrU_RIS { result, lhs, rhs })
             }
             Self::I64ShrU_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrU_RRS))?;
-                encoder.encode(crate::op::I64ShrU_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrU_RRS { result, lhs, rhs })
             }
             Self::I64ShrU_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrU_RRI))?;
-                encoder.encode(crate::op::I64ShrU_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrU_RRI { result, lhs, rhs })
             }
             Self::I64ShrU_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrU_RSR))?;
-                encoder.encode(crate::op::I64ShrU_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrU_RSR { result, lhs, rhs })
             }
             Self::I64ShrU_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrU_RSS))?;
-                encoder.encode(crate::op::I64ShrU_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrU_RSS { result, lhs, rhs })
             }
             Self::I64ShrU_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrU_RSI))?;
-                encoder.encode(crate::op::I64ShrU_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrU_RSI { result, lhs, rhs })
             }
             Self::I64ShrU_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrU_RIR))?;
-                encoder.encode(crate::op::I64ShrU_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrU_RIR { result, lhs, rhs })
             }
             Self::I64ShrU_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64ShrU_RIS))?;
-                encoder.encode(crate::op::I64ShrU_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64ShrU_RIS { result, lhs, rhs })
             }
             Self::I32Rotl_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotl_RRS))?;
-                encoder.encode(crate::op::I32Rotl_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotl_RRS { result, lhs, rhs })
             }
             Self::I32Rotl_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotl_RRI))?;
-                encoder.encode(crate::op::I32Rotl_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotl_RRI { result, lhs, rhs })
             }
             Self::I32Rotl_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotl_RSR))?;
-                encoder.encode(crate::op::I32Rotl_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotl_RSR { result, lhs, rhs })
             }
             Self::I32Rotl_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotl_RSS))?;
-                encoder.encode(crate::op::I32Rotl_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotl_RSS { result, lhs, rhs })
             }
             Self::I32Rotl_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotl_RSI))?;
-                encoder.encode(crate::op::I32Rotl_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotl_RSI { result, lhs, rhs })
             }
             Self::I32Rotl_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotl_RIR))?;
-                encoder.encode(crate::op::I32Rotl_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotl_RIR { result, lhs, rhs })
             }
             Self::I32Rotl_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotl_RIS))?;
-                encoder.encode(crate::op::I32Rotl_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotl_RIS { result, lhs, rhs })
             }
             Self::I64Rotl_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotl_RRS))?;
-                encoder.encode(crate::op::I64Rotl_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotl_RRS { result, lhs, rhs })
             }
             Self::I64Rotl_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotl_RRI))?;
-                encoder.encode(crate::op::I64Rotl_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotl_RRI { result, lhs, rhs })
             }
             Self::I64Rotl_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotl_RSR))?;
-                encoder.encode(crate::op::I64Rotl_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotl_RSR { result, lhs, rhs })
             }
             Self::I64Rotl_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotl_RSS))?;
-                encoder.encode(crate::op::I64Rotl_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotl_RSS { result, lhs, rhs })
             }
             Self::I64Rotl_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotl_RSI))?;
-                encoder.encode(crate::op::I64Rotl_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotl_RSI { result, lhs, rhs })
             }
             Self::I64Rotl_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotl_RIR))?;
-                encoder.encode(crate::op::I64Rotl_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotl_RIR { result, lhs, rhs })
             }
             Self::I64Rotl_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotl_RIS))?;
-                encoder.encode(crate::op::I64Rotl_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotl_RIS { result, lhs, rhs })
             }
             Self::I32Rotr_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotr_RRS))?;
-                encoder.encode(crate::op::I32Rotr_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotr_RRS { result, lhs, rhs })
             }
             Self::I32Rotr_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotr_RRI))?;
-                encoder.encode(crate::op::I32Rotr_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotr_RRI { result, lhs, rhs })
             }
             Self::I32Rotr_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotr_RSR))?;
-                encoder.encode(crate::op::I32Rotr_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotr_RSR { result, lhs, rhs })
             }
             Self::I32Rotr_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotr_RSS))?;
-                encoder.encode(crate::op::I32Rotr_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotr_RSS { result, lhs, rhs })
             }
             Self::I32Rotr_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotr_RSI))?;
-                encoder.encode(crate::op::I32Rotr_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotr_RSI { result, lhs, rhs })
             }
             Self::I32Rotr_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotr_RIR))?;
-                encoder.encode(crate::op::I32Rotr_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotr_RIR { result, lhs, rhs })
             }
             Self::I32Rotr_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I32Rotr_RIS))?;
-                encoder.encode(crate::op::I32Rotr_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I32Rotr_RIS { result, lhs, rhs })
             }
             Self::I64Rotr_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotr_RRS))?;
-                encoder.encode(crate::op::I64Rotr_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotr_RRS { result, lhs, rhs })
             }
             Self::I64Rotr_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotr_RRI))?;
-                encoder.encode(crate::op::I64Rotr_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotr_RRI { result, lhs, rhs })
             }
             Self::I64Rotr_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotr_RSR))?;
-                encoder.encode(crate::op::I64Rotr_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotr_RSR { result, lhs, rhs })
             }
             Self::I64Rotr_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotr_RSS))?;
-                encoder.encode(crate::op::I64Rotr_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotr_RSS { result, lhs, rhs })
             }
             Self::I64Rotr_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotr_RSI))?;
-                encoder.encode(crate::op::I64Rotr_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotr_RSI { result, lhs, rhs })
             }
             Self::I64Rotr_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotr_RIR))?;
-                encoder.encode(crate::op::I64Rotr_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotr_RIR { result, lhs, rhs })
             }
             Self::I64Rotr_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::I64Rotr_RIS))?;
-                encoder.encode(crate::op::I64Rotr_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::I64Rotr_RIS { result, lhs, rhs })
             }
             Self::F32Sub_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Sub_RRS))?;
-                encoder.encode(crate::op::F32Sub_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Sub_RRS { result, lhs, rhs })
             }
             Self::F32Sub_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Sub_RRI))?;
-                encoder.encode(crate::op::F32Sub_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Sub_RRI { result, lhs, rhs })
             }
             Self::F32Sub_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Sub_RSR))?;
-                encoder.encode(crate::op::F32Sub_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Sub_RSR { result, lhs, rhs })
             }
             Self::F32Sub_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Sub_RSS))?;
-                encoder.encode(crate::op::F32Sub_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Sub_RSS { result, lhs, rhs })
             }
             Self::F32Sub_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Sub_RSI))?;
-                encoder.encode(crate::op::F32Sub_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Sub_RSI { result, lhs, rhs })
             }
             Self::F32Sub_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Sub_RIR))?;
-                encoder.encode(crate::op::F32Sub_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Sub_RIR { result, lhs, rhs })
             }
             Self::F32Sub_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Sub_RIS))?;
-                encoder.encode(crate::op::F32Sub_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Sub_RIS { result, lhs, rhs })
             }
             Self::F64Sub_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Sub_RRS))?;
-                encoder.encode(crate::op::F64Sub_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Sub_RRS { result, lhs, rhs })
             }
             Self::F64Sub_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Sub_RRI))?;
-                encoder.encode(crate::op::F64Sub_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Sub_RRI { result, lhs, rhs })
             }
             Self::F64Sub_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Sub_RSR))?;
-                encoder.encode(crate::op::F64Sub_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Sub_RSR { result, lhs, rhs })
             }
             Self::F64Sub_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Sub_RSS))?;
-                encoder.encode(crate::op::F64Sub_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Sub_RSS { result, lhs, rhs })
             }
             Self::F64Sub_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Sub_RSI))?;
-                encoder.encode(crate::op::F64Sub_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Sub_RSI { result, lhs, rhs })
             }
             Self::F64Sub_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Sub_RIR))?;
-                encoder.encode(crate::op::F64Sub_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Sub_RIR { result, lhs, rhs })
             }
             Self::F64Sub_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Sub_RIS))?;
-                encoder.encode(crate::op::F64Sub_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Sub_RIS { result, lhs, rhs })
             }
             Self::F32Div_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Div_RRS))?;
-                encoder.encode(crate::op::F32Div_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Div_RRS { result, lhs, rhs })
             }
             Self::F32Div_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Div_RRI))?;
-                encoder.encode(crate::op::F32Div_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Div_RRI { result, lhs, rhs })
             }
             Self::F32Div_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Div_RSR))?;
-                encoder.encode(crate::op::F32Div_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Div_RSR { result, lhs, rhs })
             }
             Self::F32Div_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Div_RSS))?;
-                encoder.encode(crate::op::F32Div_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Div_RSS { result, lhs, rhs })
             }
             Self::F32Div_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Div_RSI))?;
-                encoder.encode(crate::op::F32Div_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Div_RSI { result, lhs, rhs })
             }
             Self::F32Div_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Div_RIR))?;
-                encoder.encode(crate::op::F32Div_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Div_RIR { result, lhs, rhs })
             }
             Self::F32Div_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Div_RIS))?;
-                encoder.encode(crate::op::F32Div_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Div_RIS { result, lhs, rhs })
             }
             Self::F64Div_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Div_RRS))?;
-                encoder.encode(crate::op::F64Div_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Div_RRS { result, lhs, rhs })
             }
             Self::F64Div_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Div_RRI))?;
-                encoder.encode(crate::op::F64Div_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Div_RRI { result, lhs, rhs })
             }
             Self::F64Div_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Div_RSR))?;
-                encoder.encode(crate::op::F64Div_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Div_RSR { result, lhs, rhs })
             }
             Self::F64Div_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Div_RSS))?;
-                encoder.encode(crate::op::F64Div_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Div_RSS { result, lhs, rhs })
             }
             Self::F64Div_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Div_RSI))?;
-                encoder.encode(crate::op::F64Div_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Div_RSI { result, lhs, rhs })
             }
             Self::F64Div_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Div_RIR))?;
-                encoder.encode(crate::op::F64Div_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Div_RIR { result, lhs, rhs })
             }
             Self::F64Div_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Div_RIS))?;
-                encoder.encode(crate::op::F64Div_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Div_RIS { result, lhs, rhs })
             }
             Self::F32Copysign_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Copysign_RRS))?;
-                encoder.encode(crate::op::F32Copysign_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Copysign_RRS { result, lhs, rhs })
             }
             Self::F32Copysign_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Copysign_RRI))?;
-                encoder.encode(crate::op::F32Copysign_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Copysign_RRI { result, lhs, rhs })
             }
             Self::F32Copysign_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Copysign_RSR))?;
-                encoder.encode(crate::op::F32Copysign_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Copysign_RSR { result, lhs, rhs })
             }
             Self::F32Copysign_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Copysign_RSS))?;
-                encoder.encode(crate::op::F32Copysign_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Copysign_RSS { result, lhs, rhs })
             }
             Self::F32Copysign_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Copysign_RSI))?;
-                encoder.encode(crate::op::F32Copysign_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Copysign_RSI { result, lhs, rhs })
             }
             Self::F32Copysign_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Copysign_RIR))?;
-                encoder.encode(crate::op::F32Copysign_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Copysign_RIR { result, lhs, rhs })
             }
             Self::F32Copysign_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F32Copysign_RIS))?;
-                encoder.encode(crate::op::F32Copysign_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::F32Copysign_RIS { result, lhs, rhs })
             }
             Self::F64Copysign_RRS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Copysign_RRS))?;
-                encoder.encode(crate::op::F64Copysign_RRS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Copysign_RRS { result, lhs, rhs })
             }
             Self::F64Copysign_RRI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Copysign_RRI))?;
-                encoder.encode(crate::op::F64Copysign_RRI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Copysign_RRI { result, lhs, rhs })
             }
             Self::F64Copysign_RSR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Copysign_RSR))?;
-                encoder.encode(crate::op::F64Copysign_RSR { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Copysign_RSR { result, lhs, rhs })
             }
             Self::F64Copysign_RSS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Copysign_RSS))?;
-                encoder.encode(crate::op::F64Copysign_RSS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Copysign_RSS { result, lhs, rhs })
             }
             Self::F64Copysign_RSI { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Copysign_RSI))?;
-                encoder.encode(crate::op::F64Copysign_RSI { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Copysign_RSI { result, lhs, rhs })
             }
             Self::F64Copysign_RIR { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Copysign_RIR))?;
-                encoder.encode(crate::op::F64Copysign_RIR { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Copysign_RIR { result, lhs, rhs })
             }
             Self::F64Copysign_RIS { result, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::F64Copysign_RIS))?;
-                encoder.encode(crate::op::F64Copysign_RIS { result, lhs, rhs } )
+                encoder.encode(crate::op::F64Copysign_RIS { result, lhs, rhs })
             }
             Self::I32Load_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load_RR))?;
-                encoder.encode(crate::op::I32Load_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load_RR { result, ptr, offset, memory })
             }
             Self::I32Load_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load_RS))?;
-                encoder.encode(crate::op::I32Load_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load_RS { result, ptr, offset, memory })
             }
             Self::I32Load_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load_RI))?;
-                encoder.encode(crate::op::I32Load_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load_RI { result, ptr, offset, memory })
             }
             Self::I32LoadMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32LoadMem0_RR))?;
-                encoder.encode(crate::op::I32LoadMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I32LoadMem0_RR { result, ptr, offset })
             }
             Self::I32LoadMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32LoadMem0_RS))?;
-                encoder.encode(crate::op::I32LoadMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I32LoadMem0_RS { result, ptr, offset })
             }
             Self::I32LoadMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32LoadMem0_RI))?;
-                encoder.encode(crate::op::I32LoadMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I32LoadMem0_RI { result, ptr, offset })
             }
             Self::I32LoadMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32LoadMem0_SR))?;
-                encoder.encode(crate::op::I32LoadMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I32LoadMem0_SR { result, ptr, offset })
             }
             Self::I32LoadMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32LoadMem0_SS))?;
-                encoder.encode(crate::op::I32LoadMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I32LoadMem0_SS { result, ptr, offset })
             }
             Self::I32LoadMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32LoadMem0_SI))?;
-                encoder.encode(crate::op::I32LoadMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I32LoadMem0_SI { result, ptr, offset })
             }
             Self::I64Load_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load_RR))?;
-                encoder.encode(crate::op::I64Load_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load_RR { result, ptr, offset, memory })
             }
             Self::I64Load_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load_RS))?;
-                encoder.encode(crate::op::I64Load_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load_RS { result, ptr, offset, memory })
             }
             Self::I64Load_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load_RI))?;
-                encoder.encode(crate::op::I64Load_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load_RI { result, ptr, offset, memory })
             }
             Self::I64LoadMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64LoadMem0_RR))?;
-                encoder.encode(crate::op::I64LoadMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I64LoadMem0_RR { result, ptr, offset })
             }
             Self::I64LoadMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64LoadMem0_RS))?;
-                encoder.encode(crate::op::I64LoadMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I64LoadMem0_RS { result, ptr, offset })
             }
             Self::I64LoadMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64LoadMem0_RI))?;
-                encoder.encode(crate::op::I64LoadMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I64LoadMem0_RI { result, ptr, offset })
             }
             Self::I64LoadMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64LoadMem0_SR))?;
-                encoder.encode(crate::op::I64LoadMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I64LoadMem0_SR { result, ptr, offset })
             }
             Self::I64LoadMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64LoadMem0_SS))?;
-                encoder.encode(crate::op::I64LoadMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I64LoadMem0_SS { result, ptr, offset })
             }
             Self::I64LoadMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64LoadMem0_SI))?;
-                encoder.encode(crate::op::I64LoadMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I64LoadMem0_SI { result, ptr, offset })
             }
             Self::F32Load_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F32Load_RR))?;
-                encoder.encode(crate::op::F32Load_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::F32Load_RR { result, ptr, offset, memory })
             }
             Self::F32Load_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F32Load_RS))?;
-                encoder.encode(crate::op::F32Load_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::F32Load_RS { result, ptr, offset, memory })
             }
             Self::F32Load_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F32Load_RI))?;
-                encoder.encode(crate::op::F32Load_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::F32Load_RI { result, ptr, offset, memory })
             }
             Self::F32LoadMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F32LoadMem0_RR))?;
-                encoder.encode(crate::op::F32LoadMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::F32LoadMem0_RR { result, ptr, offset })
             }
             Self::F32LoadMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F32LoadMem0_RS))?;
-                encoder.encode(crate::op::F32LoadMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::F32LoadMem0_RS { result, ptr, offset })
             }
             Self::F32LoadMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F32LoadMem0_RI))?;
-                encoder.encode(crate::op::F32LoadMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::F32LoadMem0_RI { result, ptr, offset })
             }
             Self::F32LoadMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F32LoadMem0_SR))?;
-                encoder.encode(crate::op::F32LoadMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::F32LoadMem0_SR { result, ptr, offset })
             }
             Self::F32LoadMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F32LoadMem0_SS))?;
-                encoder.encode(crate::op::F32LoadMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::F32LoadMem0_SS { result, ptr, offset })
             }
             Self::F32LoadMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F32LoadMem0_SI))?;
-                encoder.encode(crate::op::F32LoadMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::F32LoadMem0_SI { result, ptr, offset })
             }
             Self::F64Load_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F64Load_RR))?;
-                encoder.encode(crate::op::F64Load_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::F64Load_RR { result, ptr, offset, memory })
             }
             Self::F64Load_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F64Load_RS))?;
-                encoder.encode(crate::op::F64Load_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::F64Load_RS { result, ptr, offset, memory })
             }
             Self::F64Load_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F64Load_RI))?;
-                encoder.encode(crate::op::F64Load_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::F64Load_RI { result, ptr, offset, memory })
             }
             Self::F64LoadMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F64LoadMem0_RR))?;
-                encoder.encode(crate::op::F64LoadMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::F64LoadMem0_RR { result, ptr, offset })
             }
             Self::F64LoadMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F64LoadMem0_RS))?;
-                encoder.encode(crate::op::F64LoadMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::F64LoadMem0_RS { result, ptr, offset })
             }
             Self::F64LoadMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F64LoadMem0_RI))?;
-                encoder.encode(crate::op::F64LoadMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::F64LoadMem0_RI { result, ptr, offset })
             }
             Self::F64LoadMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F64LoadMem0_SR))?;
-                encoder.encode(crate::op::F64LoadMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::F64LoadMem0_SR { result, ptr, offset })
             }
             Self::F64LoadMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F64LoadMem0_SS))?;
-                encoder.encode(crate::op::F64LoadMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::F64LoadMem0_SS { result, ptr, offset })
             }
             Self::F64LoadMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::F64LoadMem0_SI))?;
-                encoder.encode(crate::op::F64LoadMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::F64LoadMem0_SI { result, ptr, offset })
             }
             Self::I32Load8S_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load8S_RR))?;
-                encoder.encode(crate::op::I32Load8S_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load8S_RR { result, ptr, offset, memory })
             }
             Self::I32Load8S_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load8S_RS))?;
-                encoder.encode(crate::op::I32Load8S_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load8S_RS { result, ptr, offset, memory })
             }
             Self::I32Load8S_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load8S_RI))?;
-                encoder.encode(crate::op::I32Load8S_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load8S_RI { result, ptr, offset, memory })
             }
             Self::I32Load8SMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8SMem0_RR))?;
-                encoder.encode(crate::op::I32Load8SMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8SMem0_RR { result, ptr, offset })
             }
             Self::I32Load8SMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8SMem0_RS))?;
-                encoder.encode(crate::op::I32Load8SMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8SMem0_RS { result, ptr, offset })
             }
             Self::I32Load8SMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8SMem0_RI))?;
-                encoder.encode(crate::op::I32Load8SMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8SMem0_RI { result, ptr, offset })
             }
             Self::I32Load8SMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8SMem0_SR))?;
-                encoder.encode(crate::op::I32Load8SMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8SMem0_SR { result, ptr, offset })
             }
             Self::I32Load8SMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8SMem0_SS))?;
-                encoder.encode(crate::op::I32Load8SMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8SMem0_SS { result, ptr, offset })
             }
             Self::I32Load8SMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8SMem0_SI))?;
-                encoder.encode(crate::op::I32Load8SMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8SMem0_SI { result, ptr, offset })
             }
             Self::I64Load8S_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load8S_RR))?;
-                encoder.encode(crate::op::I64Load8S_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load8S_RR { result, ptr, offset, memory })
             }
             Self::I64Load8S_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load8S_RS))?;
-                encoder.encode(crate::op::I64Load8S_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load8S_RS { result, ptr, offset, memory })
             }
             Self::I64Load8S_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load8S_RI))?;
-                encoder.encode(crate::op::I64Load8S_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load8S_RI { result, ptr, offset, memory })
             }
             Self::I64Load8SMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8SMem0_RR))?;
-                encoder.encode(crate::op::I64Load8SMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8SMem0_RR { result, ptr, offset })
             }
             Self::I64Load8SMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8SMem0_RS))?;
-                encoder.encode(crate::op::I64Load8SMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8SMem0_RS { result, ptr, offset })
             }
             Self::I64Load8SMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8SMem0_RI))?;
-                encoder.encode(crate::op::I64Load8SMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8SMem0_RI { result, ptr, offset })
             }
             Self::I64Load8SMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8SMem0_SR))?;
-                encoder.encode(crate::op::I64Load8SMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8SMem0_SR { result, ptr, offset })
             }
             Self::I64Load8SMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8SMem0_SS))?;
-                encoder.encode(crate::op::I64Load8SMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8SMem0_SS { result, ptr, offset })
             }
             Self::I64Load8SMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8SMem0_SI))?;
-                encoder.encode(crate::op::I64Load8SMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8SMem0_SI { result, ptr, offset })
             }
             Self::I32Load8U_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load8U_RR))?;
-                encoder.encode(crate::op::I32Load8U_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load8U_RR { result, ptr, offset, memory })
             }
             Self::I32Load8U_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load8U_RS))?;
-                encoder.encode(crate::op::I32Load8U_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load8U_RS { result, ptr, offset, memory })
             }
             Self::I32Load8U_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load8U_RI))?;
-                encoder.encode(crate::op::I32Load8U_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load8U_RI { result, ptr, offset, memory })
             }
             Self::I32Load8UMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8UMem0_RR))?;
-                encoder.encode(crate::op::I32Load8UMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8UMem0_RR { result, ptr, offset })
             }
             Self::I32Load8UMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8UMem0_RS))?;
-                encoder.encode(crate::op::I32Load8UMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8UMem0_RS { result, ptr, offset })
             }
             Self::I32Load8UMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8UMem0_RI))?;
-                encoder.encode(crate::op::I32Load8UMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8UMem0_RI { result, ptr, offset })
             }
             Self::I32Load8UMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8UMem0_SR))?;
-                encoder.encode(crate::op::I32Load8UMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8UMem0_SR { result, ptr, offset })
             }
             Self::I32Load8UMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8UMem0_SS))?;
-                encoder.encode(crate::op::I32Load8UMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8UMem0_SS { result, ptr, offset })
             }
             Self::I32Load8UMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load8UMem0_SI))?;
-                encoder.encode(crate::op::I32Load8UMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load8UMem0_SI { result, ptr, offset })
             }
             Self::I64Load8U_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load8U_RR))?;
-                encoder.encode(crate::op::I64Load8U_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load8U_RR { result, ptr, offset, memory })
             }
             Self::I64Load8U_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load8U_RS))?;
-                encoder.encode(crate::op::I64Load8U_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load8U_RS { result, ptr, offset, memory })
             }
             Self::I64Load8U_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load8U_RI))?;
-                encoder.encode(crate::op::I64Load8U_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load8U_RI { result, ptr, offset, memory })
             }
             Self::I64Load8UMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8UMem0_RR))?;
-                encoder.encode(crate::op::I64Load8UMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8UMem0_RR { result, ptr, offset })
             }
             Self::I64Load8UMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8UMem0_RS))?;
-                encoder.encode(crate::op::I64Load8UMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8UMem0_RS { result, ptr, offset })
             }
             Self::I64Load8UMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8UMem0_RI))?;
-                encoder.encode(crate::op::I64Load8UMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8UMem0_RI { result, ptr, offset })
             }
             Self::I64Load8UMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8UMem0_SR))?;
-                encoder.encode(crate::op::I64Load8UMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8UMem0_SR { result, ptr, offset })
             }
             Self::I64Load8UMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8UMem0_SS))?;
-                encoder.encode(crate::op::I64Load8UMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8UMem0_SS { result, ptr, offset })
             }
             Self::I64Load8UMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load8UMem0_SI))?;
-                encoder.encode(crate::op::I64Load8UMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load8UMem0_SI { result, ptr, offset })
             }
             Self::I32Load16S_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load16S_RR))?;
-                encoder.encode(crate::op::I32Load16S_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load16S_RR { result, ptr, offset, memory })
             }
             Self::I32Load16S_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load16S_RS))?;
-                encoder.encode(crate::op::I32Load16S_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load16S_RS { result, ptr, offset, memory })
             }
             Self::I32Load16S_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load16S_RI))?;
-                encoder.encode(crate::op::I32Load16S_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load16S_RI { result, ptr, offset, memory })
             }
             Self::I32Load16SMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16SMem0_RR))?;
-                encoder.encode(crate::op::I32Load16SMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16SMem0_RR { result, ptr, offset })
             }
             Self::I32Load16SMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16SMem0_RS))?;
-                encoder.encode(crate::op::I32Load16SMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16SMem0_RS { result, ptr, offset })
             }
             Self::I32Load16SMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16SMem0_RI))?;
-                encoder.encode(crate::op::I32Load16SMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16SMem0_RI { result, ptr, offset })
             }
             Self::I32Load16SMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16SMem0_SR))?;
-                encoder.encode(crate::op::I32Load16SMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16SMem0_SR { result, ptr, offset })
             }
             Self::I32Load16SMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16SMem0_SS))?;
-                encoder.encode(crate::op::I32Load16SMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16SMem0_SS { result, ptr, offset })
             }
             Self::I32Load16SMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16SMem0_SI))?;
-                encoder.encode(crate::op::I32Load16SMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16SMem0_SI { result, ptr, offset })
             }
             Self::I64Load16S_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load16S_RR))?;
-                encoder.encode(crate::op::I64Load16S_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load16S_RR { result, ptr, offset, memory })
             }
             Self::I64Load16S_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load16S_RS))?;
-                encoder.encode(crate::op::I64Load16S_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load16S_RS { result, ptr, offset, memory })
             }
             Self::I64Load16S_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load16S_RI))?;
-                encoder.encode(crate::op::I64Load16S_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load16S_RI { result, ptr, offset, memory })
             }
             Self::I64Load16SMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16SMem0_RR))?;
-                encoder.encode(crate::op::I64Load16SMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16SMem0_RR { result, ptr, offset })
             }
             Self::I64Load16SMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16SMem0_RS))?;
-                encoder.encode(crate::op::I64Load16SMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16SMem0_RS { result, ptr, offset })
             }
             Self::I64Load16SMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16SMem0_RI))?;
-                encoder.encode(crate::op::I64Load16SMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16SMem0_RI { result, ptr, offset })
             }
             Self::I64Load16SMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16SMem0_SR))?;
-                encoder.encode(crate::op::I64Load16SMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16SMem0_SR { result, ptr, offset })
             }
             Self::I64Load16SMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16SMem0_SS))?;
-                encoder.encode(crate::op::I64Load16SMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16SMem0_SS { result, ptr, offset })
             }
             Self::I64Load16SMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16SMem0_SI))?;
-                encoder.encode(crate::op::I64Load16SMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16SMem0_SI { result, ptr, offset })
             }
             Self::I32Load16U_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load16U_RR))?;
-                encoder.encode(crate::op::I32Load16U_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load16U_RR { result, ptr, offset, memory })
             }
             Self::I32Load16U_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load16U_RS))?;
-                encoder.encode(crate::op::I32Load16U_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load16U_RS { result, ptr, offset, memory })
             }
             Self::I32Load16U_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Load16U_RI))?;
-                encoder.encode(crate::op::I32Load16U_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I32Load16U_RI { result, ptr, offset, memory })
             }
             Self::I32Load16UMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16UMem0_RR))?;
-                encoder.encode(crate::op::I32Load16UMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16UMem0_RR { result, ptr, offset })
             }
             Self::I32Load16UMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16UMem0_RS))?;
-                encoder.encode(crate::op::I32Load16UMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16UMem0_RS { result, ptr, offset })
             }
             Self::I32Load16UMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16UMem0_RI))?;
-                encoder.encode(crate::op::I32Load16UMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16UMem0_RI { result, ptr, offset })
             }
             Self::I32Load16UMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16UMem0_SR))?;
-                encoder.encode(crate::op::I32Load16UMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16UMem0_SR { result, ptr, offset })
             }
             Self::I32Load16UMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16UMem0_SS))?;
-                encoder.encode(crate::op::I32Load16UMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16UMem0_SS { result, ptr, offset })
             }
             Self::I32Load16UMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I32Load16UMem0_SI))?;
-                encoder.encode(crate::op::I32Load16UMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I32Load16UMem0_SI { result, ptr, offset })
             }
             Self::I64Load16U_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load16U_RR))?;
-                encoder.encode(crate::op::I64Load16U_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load16U_RR { result, ptr, offset, memory })
             }
             Self::I64Load16U_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load16U_RS))?;
-                encoder.encode(crate::op::I64Load16U_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load16U_RS { result, ptr, offset, memory })
             }
             Self::I64Load16U_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load16U_RI))?;
-                encoder.encode(crate::op::I64Load16U_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load16U_RI { result, ptr, offset, memory })
             }
             Self::I64Load16UMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16UMem0_RR))?;
-                encoder.encode(crate::op::I64Load16UMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16UMem0_RR { result, ptr, offset })
             }
             Self::I64Load16UMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16UMem0_RS))?;
-                encoder.encode(crate::op::I64Load16UMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16UMem0_RS { result, ptr, offset })
             }
             Self::I64Load16UMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16UMem0_RI))?;
-                encoder.encode(crate::op::I64Load16UMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16UMem0_RI { result, ptr, offset })
             }
             Self::I64Load16UMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16UMem0_SR))?;
-                encoder.encode(crate::op::I64Load16UMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16UMem0_SR { result, ptr, offset })
             }
             Self::I64Load16UMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16UMem0_SS))?;
-                encoder.encode(crate::op::I64Load16UMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16UMem0_SS { result, ptr, offset })
             }
             Self::I64Load16UMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load16UMem0_SI))?;
-                encoder.encode(crate::op::I64Load16UMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load16UMem0_SI { result, ptr, offset })
             }
             Self::I64Load32S_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load32S_RR))?;
-                encoder.encode(crate::op::I64Load32S_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load32S_RR { result, ptr, offset, memory })
             }
             Self::I64Load32S_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load32S_RS))?;
-                encoder.encode(crate::op::I64Load32S_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load32S_RS { result, ptr, offset, memory })
             }
             Self::I64Load32S_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load32S_RI))?;
-                encoder.encode(crate::op::I64Load32S_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load32S_RI { result, ptr, offset, memory })
             }
             Self::I64Load32SMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32SMem0_RR))?;
-                encoder.encode(crate::op::I64Load32SMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32SMem0_RR { result, ptr, offset })
             }
             Self::I64Load32SMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32SMem0_RS))?;
-                encoder.encode(crate::op::I64Load32SMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32SMem0_RS { result, ptr, offset })
             }
             Self::I64Load32SMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32SMem0_RI))?;
-                encoder.encode(crate::op::I64Load32SMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32SMem0_RI { result, ptr, offset })
             }
             Self::I64Load32SMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32SMem0_SR))?;
-                encoder.encode(crate::op::I64Load32SMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32SMem0_SR { result, ptr, offset })
             }
             Self::I64Load32SMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32SMem0_SS))?;
-                encoder.encode(crate::op::I64Load32SMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32SMem0_SS { result, ptr, offset })
             }
             Self::I64Load32SMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32SMem0_SI))?;
-                encoder.encode(crate::op::I64Load32SMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32SMem0_SI { result, ptr, offset })
             }
             Self::I64Load32U_RR { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load32U_RR))?;
-                encoder.encode(crate::op::I64Load32U_RR { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load32U_RR { result, ptr, offset, memory })
             }
             Self::I64Load32U_RS { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load32U_RS))?;
-                encoder.encode(crate::op::I64Load32U_RS { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load32U_RS { result, ptr, offset, memory })
             }
             Self::I64Load32U_RI { result, ptr, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Load32U_RI))?;
-                encoder.encode(crate::op::I64Load32U_RI { result, ptr, offset, memory } )
+                encoder.encode(crate::op::I64Load32U_RI { result, ptr, offset, memory })
             }
             Self::I64Load32UMem0_RR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32UMem0_RR))?;
-                encoder.encode(crate::op::I64Load32UMem0_RR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32UMem0_RR { result, ptr, offset })
             }
             Self::I64Load32UMem0_RS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32UMem0_RS))?;
-                encoder.encode(crate::op::I64Load32UMem0_RS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32UMem0_RS { result, ptr, offset })
             }
             Self::I64Load32UMem0_RI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32UMem0_RI))?;
-                encoder.encode(crate::op::I64Load32UMem0_RI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32UMem0_RI { result, ptr, offset })
             }
             Self::I64Load32UMem0_SR { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32UMem0_SR))?;
-                encoder.encode(crate::op::I64Load32UMem0_SR { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32UMem0_SR { result, ptr, offset })
             }
             Self::I64Load32UMem0_SS { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32UMem0_SS))?;
-                encoder.encode(crate::op::I64Load32UMem0_SS { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32UMem0_SS { result, ptr, offset })
             }
             Self::I64Load32UMem0_SI { result, ptr, offset } => {
-                encoder.encode(f(crate::OpCode::I64Load32UMem0_SI))?;
-                encoder.encode(crate::op::I64Load32UMem0_SI { result, ptr, offset } )
+                encoder.encode(crate::op::I64Load32UMem0_SI { result, ptr, offset })
             }
             Self::I32Store_RS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store_RS))?;
-                encoder.encode(crate::op::I32Store_RS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store_RS { ptr, value, offset, memory })
             }
             Self::I32Store_RI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store_RI))?;
-                encoder.encode(crate::op::I32Store_RI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store_RI { ptr, value, offset, memory })
             }
             Self::I32Store_SR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store_SR))?;
-                encoder.encode(crate::op::I32Store_SR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store_SR { ptr, value, offset, memory })
             }
             Self::I32Store_SS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store_SS))?;
-                encoder.encode(crate::op::I32Store_SS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store_SS { ptr, value, offset, memory })
             }
             Self::I32Store_SI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store_SI))?;
-                encoder.encode(crate::op::I32Store_SI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store_SI { ptr, value, offset, memory })
             }
             Self::I32Store_IR { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store_IR))?;
-                encoder.encode(crate::op::I32Store_IR { address, value, memory } )
+                encoder.encode(crate::op::I32Store_IR { address, value, memory })
             }
             Self::I32Store_IS { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store_IS))?;
-                encoder.encode(crate::op::I32Store_IS { address, value, memory } )
+                encoder.encode(crate::op::I32Store_IS { address, value, memory })
             }
             Self::I32Store_II { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store_II))?;
-                encoder.encode(crate::op::I32Store_II { address, value, memory } )
+                encoder.encode(crate::op::I32Store_II { address, value, memory })
             }
             Self::I32StoreMem0_RS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32StoreMem0_RS))?;
-                encoder.encode(crate::op::I32StoreMem0_RS { ptr, value, offset } )
+                encoder.encode(crate::op::I32StoreMem0_RS { ptr, value, offset })
             }
             Self::I32StoreMem0_RI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32StoreMem0_RI))?;
-                encoder.encode(crate::op::I32StoreMem0_RI { ptr, value, offset } )
+                encoder.encode(crate::op::I32StoreMem0_RI { ptr, value, offset })
             }
             Self::I32StoreMem0_SR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32StoreMem0_SR))?;
-                encoder.encode(crate::op::I32StoreMem0_SR { ptr, value, offset } )
+                encoder.encode(crate::op::I32StoreMem0_SR { ptr, value, offset })
             }
             Self::I32StoreMem0_SS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32StoreMem0_SS))?;
-                encoder.encode(crate::op::I32StoreMem0_SS { ptr, value, offset } )
+                encoder.encode(crate::op::I32StoreMem0_SS { ptr, value, offset })
             }
             Self::I32StoreMem0_SI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32StoreMem0_SI))?;
-                encoder.encode(crate::op::I32StoreMem0_SI { ptr, value, offset } )
+                encoder.encode(crate::op::I32StoreMem0_SI { ptr, value, offset })
             }
             Self::I32StoreMem0_IR { address, value } => {
-                encoder.encode(f(crate::OpCode::I32StoreMem0_IR))?;
-                encoder.encode(crate::op::I32StoreMem0_IR { address, value } )
+                encoder.encode(crate::op::I32StoreMem0_IR { address, value })
             }
             Self::I32StoreMem0_IS { address, value } => {
-                encoder.encode(f(crate::OpCode::I32StoreMem0_IS))?;
-                encoder.encode(crate::op::I32StoreMem0_IS { address, value } )
+                encoder.encode(crate::op::I32StoreMem0_IS { address, value })
             }
             Self::I32StoreMem0_II { address, value } => {
-                encoder.encode(f(crate::OpCode::I32StoreMem0_II))?;
-                encoder.encode(crate::op::I32StoreMem0_II { address, value } )
+                encoder.encode(crate::op::I32StoreMem0_II { address, value })
             }
             Self::I64Store_RS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store_RS))?;
-                encoder.encode(crate::op::I64Store_RS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store_RS { ptr, value, offset, memory })
             }
             Self::I64Store_RI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store_RI))?;
-                encoder.encode(crate::op::I64Store_RI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store_RI { ptr, value, offset, memory })
             }
             Self::I64Store_SR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store_SR))?;
-                encoder.encode(crate::op::I64Store_SR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store_SR { ptr, value, offset, memory })
             }
             Self::I64Store_SS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store_SS))?;
-                encoder.encode(crate::op::I64Store_SS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store_SS { ptr, value, offset, memory })
             }
             Self::I64Store_SI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store_SI))?;
-                encoder.encode(crate::op::I64Store_SI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store_SI { ptr, value, offset, memory })
             }
             Self::I64Store_IR { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store_IR))?;
-                encoder.encode(crate::op::I64Store_IR { address, value, memory } )
+                encoder.encode(crate::op::I64Store_IR { address, value, memory })
             }
             Self::I64Store_IS { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store_IS))?;
-                encoder.encode(crate::op::I64Store_IS { address, value, memory } )
+                encoder.encode(crate::op::I64Store_IS { address, value, memory })
             }
             Self::I64Store_II { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store_II))?;
-                encoder.encode(crate::op::I64Store_II { address, value, memory } )
+                encoder.encode(crate::op::I64Store_II { address, value, memory })
             }
             Self::I64StoreMem0_RS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64StoreMem0_RS))?;
-                encoder.encode(crate::op::I64StoreMem0_RS { ptr, value, offset } )
+                encoder.encode(crate::op::I64StoreMem0_RS { ptr, value, offset })
             }
             Self::I64StoreMem0_RI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64StoreMem0_RI))?;
-                encoder.encode(crate::op::I64StoreMem0_RI { ptr, value, offset } )
+                encoder.encode(crate::op::I64StoreMem0_RI { ptr, value, offset })
             }
             Self::I64StoreMem0_SR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64StoreMem0_SR))?;
-                encoder.encode(crate::op::I64StoreMem0_SR { ptr, value, offset } )
+                encoder.encode(crate::op::I64StoreMem0_SR { ptr, value, offset })
             }
             Self::I64StoreMem0_SS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64StoreMem0_SS))?;
-                encoder.encode(crate::op::I64StoreMem0_SS { ptr, value, offset } )
+                encoder.encode(crate::op::I64StoreMem0_SS { ptr, value, offset })
             }
             Self::I64StoreMem0_SI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64StoreMem0_SI))?;
-                encoder.encode(crate::op::I64StoreMem0_SI { ptr, value, offset } )
+                encoder.encode(crate::op::I64StoreMem0_SI { ptr, value, offset })
             }
             Self::I64StoreMem0_IR { address, value } => {
-                encoder.encode(f(crate::OpCode::I64StoreMem0_IR))?;
-                encoder.encode(crate::op::I64StoreMem0_IR { address, value } )
+                encoder.encode(crate::op::I64StoreMem0_IR { address, value })
             }
             Self::I64StoreMem0_IS { address, value } => {
-                encoder.encode(f(crate::OpCode::I64StoreMem0_IS))?;
-                encoder.encode(crate::op::I64StoreMem0_IS { address, value } )
+                encoder.encode(crate::op::I64StoreMem0_IS { address, value })
             }
             Self::I64StoreMem0_II { address, value } => {
-                encoder.encode(f(crate::OpCode::I64StoreMem0_II))?;
-                encoder.encode(crate::op::I64StoreMem0_II { address, value } )
+                encoder.encode(crate::op::I64StoreMem0_II { address, value })
             }
             Self::F32Store_RR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F32Store_RR))?;
-                encoder.encode(crate::op::F32Store_RR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F32Store_RR { ptr, value, offset, memory })
             }
             Self::F32Store_RS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F32Store_RS))?;
-                encoder.encode(crate::op::F32Store_RS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F32Store_RS { ptr, value, offset, memory })
             }
             Self::F32Store_RI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F32Store_RI))?;
-                encoder.encode(crate::op::F32Store_RI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F32Store_RI { ptr, value, offset, memory })
             }
             Self::F32Store_SR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F32Store_SR))?;
-                encoder.encode(crate::op::F32Store_SR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F32Store_SR { ptr, value, offset, memory })
             }
             Self::F32Store_SS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F32Store_SS))?;
-                encoder.encode(crate::op::F32Store_SS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F32Store_SS { ptr, value, offset, memory })
             }
             Self::F32Store_SI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F32Store_SI))?;
-                encoder.encode(crate::op::F32Store_SI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F32Store_SI { ptr, value, offset, memory })
             }
             Self::F32Store_IR { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::F32Store_IR))?;
-                encoder.encode(crate::op::F32Store_IR { address, value, memory } )
+                encoder.encode(crate::op::F32Store_IR { address, value, memory })
             }
             Self::F32Store_IS { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::F32Store_IS))?;
-                encoder.encode(crate::op::F32Store_IS { address, value, memory } )
+                encoder.encode(crate::op::F32Store_IS { address, value, memory })
             }
             Self::F32Store_II { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::F32Store_II))?;
-                encoder.encode(crate::op::F32Store_II { address, value, memory } )
+                encoder.encode(crate::op::F32Store_II { address, value, memory })
             }
             Self::F32StoreMem0_RR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F32StoreMem0_RR))?;
-                encoder.encode(crate::op::F32StoreMem0_RR { ptr, value, offset } )
+                encoder.encode(crate::op::F32StoreMem0_RR { ptr, value, offset })
             }
             Self::F32StoreMem0_RS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F32StoreMem0_RS))?;
-                encoder.encode(crate::op::F32StoreMem0_RS { ptr, value, offset } )
+                encoder.encode(crate::op::F32StoreMem0_RS { ptr, value, offset })
             }
             Self::F32StoreMem0_RI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F32StoreMem0_RI))?;
-                encoder.encode(crate::op::F32StoreMem0_RI { ptr, value, offset } )
+                encoder.encode(crate::op::F32StoreMem0_RI { ptr, value, offset })
             }
             Self::F32StoreMem0_SR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F32StoreMem0_SR))?;
-                encoder.encode(crate::op::F32StoreMem0_SR { ptr, value, offset } )
+                encoder.encode(crate::op::F32StoreMem0_SR { ptr, value, offset })
             }
             Self::F32StoreMem0_SS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F32StoreMem0_SS))?;
-                encoder.encode(crate::op::F32StoreMem0_SS { ptr, value, offset } )
+                encoder.encode(crate::op::F32StoreMem0_SS { ptr, value, offset })
             }
             Self::F32StoreMem0_SI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F32StoreMem0_SI))?;
-                encoder.encode(crate::op::F32StoreMem0_SI { ptr, value, offset } )
+                encoder.encode(crate::op::F32StoreMem0_SI { ptr, value, offset })
             }
             Self::F32StoreMem0_IR { address, value } => {
-                encoder.encode(f(crate::OpCode::F32StoreMem0_IR))?;
-                encoder.encode(crate::op::F32StoreMem0_IR { address, value } )
+                encoder.encode(crate::op::F32StoreMem0_IR { address, value })
             }
             Self::F32StoreMem0_IS { address, value } => {
-                encoder.encode(f(crate::OpCode::F32StoreMem0_IS))?;
-                encoder.encode(crate::op::F32StoreMem0_IS { address, value } )
+                encoder.encode(crate::op::F32StoreMem0_IS { address, value })
             }
             Self::F32StoreMem0_II { address, value } => {
-                encoder.encode(f(crate::OpCode::F32StoreMem0_II))?;
-                encoder.encode(crate::op::F32StoreMem0_II { address, value } )
+                encoder.encode(crate::op::F32StoreMem0_II { address, value })
             }
             Self::F64Store_RR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F64Store_RR))?;
-                encoder.encode(crate::op::F64Store_RR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F64Store_RR { ptr, value, offset, memory })
             }
             Self::F64Store_RS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F64Store_RS))?;
-                encoder.encode(crate::op::F64Store_RS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F64Store_RS { ptr, value, offset, memory })
             }
             Self::F64Store_RI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F64Store_RI))?;
-                encoder.encode(crate::op::F64Store_RI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F64Store_RI { ptr, value, offset, memory })
             }
             Self::F64Store_SR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F64Store_SR))?;
-                encoder.encode(crate::op::F64Store_SR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F64Store_SR { ptr, value, offset, memory })
             }
             Self::F64Store_SS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F64Store_SS))?;
-                encoder.encode(crate::op::F64Store_SS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F64Store_SS { ptr, value, offset, memory })
             }
             Self::F64Store_SI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::F64Store_SI))?;
-                encoder.encode(crate::op::F64Store_SI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::F64Store_SI { ptr, value, offset, memory })
             }
             Self::F64Store_IR { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::F64Store_IR))?;
-                encoder.encode(crate::op::F64Store_IR { address, value, memory } )
+                encoder.encode(crate::op::F64Store_IR { address, value, memory })
             }
             Self::F64Store_IS { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::F64Store_IS))?;
-                encoder.encode(crate::op::F64Store_IS { address, value, memory } )
+                encoder.encode(crate::op::F64Store_IS { address, value, memory })
             }
             Self::F64Store_II { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::F64Store_II))?;
-                encoder.encode(crate::op::F64Store_II { address, value, memory } )
+                encoder.encode(crate::op::F64Store_II { address, value, memory })
             }
             Self::F64StoreMem0_RR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F64StoreMem0_RR))?;
-                encoder.encode(crate::op::F64StoreMem0_RR { ptr, value, offset } )
+                encoder.encode(crate::op::F64StoreMem0_RR { ptr, value, offset })
             }
             Self::F64StoreMem0_RS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F64StoreMem0_RS))?;
-                encoder.encode(crate::op::F64StoreMem0_RS { ptr, value, offset } )
+                encoder.encode(crate::op::F64StoreMem0_RS { ptr, value, offset })
             }
             Self::F64StoreMem0_RI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F64StoreMem0_RI))?;
-                encoder.encode(crate::op::F64StoreMem0_RI { ptr, value, offset } )
+                encoder.encode(crate::op::F64StoreMem0_RI { ptr, value, offset })
             }
             Self::F64StoreMem0_SR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F64StoreMem0_SR))?;
-                encoder.encode(crate::op::F64StoreMem0_SR { ptr, value, offset } )
+                encoder.encode(crate::op::F64StoreMem0_SR { ptr, value, offset })
             }
             Self::F64StoreMem0_SS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F64StoreMem0_SS))?;
-                encoder.encode(crate::op::F64StoreMem0_SS { ptr, value, offset } )
+                encoder.encode(crate::op::F64StoreMem0_SS { ptr, value, offset })
             }
             Self::F64StoreMem0_SI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::F64StoreMem0_SI))?;
-                encoder.encode(crate::op::F64StoreMem0_SI { ptr, value, offset } )
+                encoder.encode(crate::op::F64StoreMem0_SI { ptr, value, offset })
             }
             Self::F64StoreMem0_IR { address, value } => {
-                encoder.encode(f(crate::OpCode::F64StoreMem0_IR))?;
-                encoder.encode(crate::op::F64StoreMem0_IR { address, value } )
+                encoder.encode(crate::op::F64StoreMem0_IR { address, value })
             }
             Self::F64StoreMem0_IS { address, value } => {
-                encoder.encode(f(crate::OpCode::F64StoreMem0_IS))?;
-                encoder.encode(crate::op::F64StoreMem0_IS { address, value } )
+                encoder.encode(crate::op::F64StoreMem0_IS { address, value })
             }
             Self::F64StoreMem0_II { address, value } => {
-                encoder.encode(f(crate::OpCode::F64StoreMem0_II))?;
-                encoder.encode(crate::op::F64StoreMem0_II { address, value } )
+                encoder.encode(crate::op::F64StoreMem0_II { address, value })
             }
             Self::I32Store8_RS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store8_RS))?;
-                encoder.encode(crate::op::I32Store8_RS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store8_RS { ptr, value, offset, memory })
             }
             Self::I32Store8_RI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store8_RI))?;
-                encoder.encode(crate::op::I32Store8_RI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store8_RI { ptr, value, offset, memory })
             }
             Self::I32Store8_SR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store8_SR))?;
-                encoder.encode(crate::op::I32Store8_SR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store8_SR { ptr, value, offset, memory })
             }
             Self::I32Store8_SS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store8_SS))?;
-                encoder.encode(crate::op::I32Store8_SS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store8_SS { ptr, value, offset, memory })
             }
             Self::I32Store8_SI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store8_SI))?;
-                encoder.encode(crate::op::I32Store8_SI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store8_SI { ptr, value, offset, memory })
             }
             Self::I32Store8_IR { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store8_IR))?;
-                encoder.encode(crate::op::I32Store8_IR { address, value, memory } )
+                encoder.encode(crate::op::I32Store8_IR { address, value, memory })
             }
             Self::I32Store8_IS { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store8_IS))?;
-                encoder.encode(crate::op::I32Store8_IS { address, value, memory } )
+                encoder.encode(crate::op::I32Store8_IS { address, value, memory })
             }
             Self::I32Store8_II { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store8_II))?;
-                encoder.encode(crate::op::I32Store8_II { address, value, memory } )
+                encoder.encode(crate::op::I32Store8_II { address, value, memory })
             }
             Self::I32Store8Mem0_RS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32Store8Mem0_RS))?;
-                encoder.encode(crate::op::I32Store8Mem0_RS { ptr, value, offset } )
+                encoder.encode(crate::op::I32Store8Mem0_RS { ptr, value, offset })
             }
             Self::I32Store8Mem0_RI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32Store8Mem0_RI))?;
-                encoder.encode(crate::op::I32Store8Mem0_RI { ptr, value, offset } )
+                encoder.encode(crate::op::I32Store8Mem0_RI { ptr, value, offset })
             }
             Self::I32Store8Mem0_SR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32Store8Mem0_SR))?;
-                encoder.encode(crate::op::I32Store8Mem0_SR { ptr, value, offset } )
+                encoder.encode(crate::op::I32Store8Mem0_SR { ptr, value, offset })
             }
             Self::I32Store8Mem0_SS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32Store8Mem0_SS))?;
-                encoder.encode(crate::op::I32Store8Mem0_SS { ptr, value, offset } )
+                encoder.encode(crate::op::I32Store8Mem0_SS { ptr, value, offset })
             }
             Self::I32Store8Mem0_SI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32Store8Mem0_SI))?;
-                encoder.encode(crate::op::I32Store8Mem0_SI { ptr, value, offset } )
+                encoder.encode(crate::op::I32Store8Mem0_SI { ptr, value, offset })
             }
             Self::I32Store8Mem0_IR { address, value } => {
-                encoder.encode(f(crate::OpCode::I32Store8Mem0_IR))?;
-                encoder.encode(crate::op::I32Store8Mem0_IR { address, value } )
+                encoder.encode(crate::op::I32Store8Mem0_IR { address, value })
             }
             Self::I32Store8Mem0_IS { address, value } => {
-                encoder.encode(f(crate::OpCode::I32Store8Mem0_IS))?;
-                encoder.encode(crate::op::I32Store8Mem0_IS { address, value } )
+                encoder.encode(crate::op::I32Store8Mem0_IS { address, value })
             }
             Self::I32Store8Mem0_II { address, value } => {
-                encoder.encode(f(crate::OpCode::I32Store8Mem0_II))?;
-                encoder.encode(crate::op::I32Store8Mem0_II { address, value } )
+                encoder.encode(crate::op::I32Store8Mem0_II { address, value })
             }
             Self::I64Store8_RS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store8_RS))?;
-                encoder.encode(crate::op::I64Store8_RS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store8_RS { ptr, value, offset, memory })
             }
             Self::I64Store8_RI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store8_RI))?;
-                encoder.encode(crate::op::I64Store8_RI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store8_RI { ptr, value, offset, memory })
             }
             Self::I64Store8_SR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store8_SR))?;
-                encoder.encode(crate::op::I64Store8_SR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store8_SR { ptr, value, offset, memory })
             }
             Self::I64Store8_SS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store8_SS))?;
-                encoder.encode(crate::op::I64Store8_SS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store8_SS { ptr, value, offset, memory })
             }
             Self::I64Store8_SI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store8_SI))?;
-                encoder.encode(crate::op::I64Store8_SI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store8_SI { ptr, value, offset, memory })
             }
             Self::I64Store8_IR { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store8_IR))?;
-                encoder.encode(crate::op::I64Store8_IR { address, value, memory } )
+                encoder.encode(crate::op::I64Store8_IR { address, value, memory })
             }
             Self::I64Store8_IS { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store8_IS))?;
-                encoder.encode(crate::op::I64Store8_IS { address, value, memory } )
+                encoder.encode(crate::op::I64Store8_IS { address, value, memory })
             }
             Self::I64Store8_II { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store8_II))?;
-                encoder.encode(crate::op::I64Store8_II { address, value, memory } )
+                encoder.encode(crate::op::I64Store8_II { address, value, memory })
             }
             Self::I64Store8Mem0_RS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store8Mem0_RS))?;
-                encoder.encode(crate::op::I64Store8Mem0_RS { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store8Mem0_RS { ptr, value, offset })
             }
             Self::I64Store8Mem0_RI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store8Mem0_RI))?;
-                encoder.encode(crate::op::I64Store8Mem0_RI { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store8Mem0_RI { ptr, value, offset })
             }
             Self::I64Store8Mem0_SR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store8Mem0_SR))?;
-                encoder.encode(crate::op::I64Store8Mem0_SR { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store8Mem0_SR { ptr, value, offset })
             }
             Self::I64Store8Mem0_SS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store8Mem0_SS))?;
-                encoder.encode(crate::op::I64Store8Mem0_SS { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store8Mem0_SS { ptr, value, offset })
             }
             Self::I64Store8Mem0_SI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store8Mem0_SI))?;
-                encoder.encode(crate::op::I64Store8Mem0_SI { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store8Mem0_SI { ptr, value, offset })
             }
             Self::I64Store8Mem0_IR { address, value } => {
-                encoder.encode(f(crate::OpCode::I64Store8Mem0_IR))?;
-                encoder.encode(crate::op::I64Store8Mem0_IR { address, value } )
+                encoder.encode(crate::op::I64Store8Mem0_IR { address, value })
             }
             Self::I64Store8Mem0_IS { address, value } => {
-                encoder.encode(f(crate::OpCode::I64Store8Mem0_IS))?;
-                encoder.encode(crate::op::I64Store8Mem0_IS { address, value } )
+                encoder.encode(crate::op::I64Store8Mem0_IS { address, value })
             }
             Self::I64Store8Mem0_II { address, value } => {
-                encoder.encode(f(crate::OpCode::I64Store8Mem0_II))?;
-                encoder.encode(crate::op::I64Store8Mem0_II { address, value } )
+                encoder.encode(crate::op::I64Store8Mem0_II { address, value })
             }
             Self::I32Store16_RS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store16_RS))?;
-                encoder.encode(crate::op::I32Store16_RS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store16_RS { ptr, value, offset, memory })
             }
             Self::I32Store16_RI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store16_RI))?;
-                encoder.encode(crate::op::I32Store16_RI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store16_RI { ptr, value, offset, memory })
             }
             Self::I32Store16_SR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store16_SR))?;
-                encoder.encode(crate::op::I32Store16_SR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store16_SR { ptr, value, offset, memory })
             }
             Self::I32Store16_SS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store16_SS))?;
-                encoder.encode(crate::op::I32Store16_SS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store16_SS { ptr, value, offset, memory })
             }
             Self::I32Store16_SI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store16_SI))?;
-                encoder.encode(crate::op::I32Store16_SI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I32Store16_SI { ptr, value, offset, memory })
             }
             Self::I32Store16_IR { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store16_IR))?;
-                encoder.encode(crate::op::I32Store16_IR { address, value, memory } )
+                encoder.encode(crate::op::I32Store16_IR { address, value, memory })
             }
             Self::I32Store16_IS { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store16_IS))?;
-                encoder.encode(crate::op::I32Store16_IS { address, value, memory } )
+                encoder.encode(crate::op::I32Store16_IS { address, value, memory })
             }
             Self::I32Store16_II { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I32Store16_II))?;
-                encoder.encode(crate::op::I32Store16_II { address, value, memory } )
+                encoder.encode(crate::op::I32Store16_II { address, value, memory })
             }
             Self::I32Store16Mem0_RS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32Store16Mem0_RS))?;
-                encoder.encode(crate::op::I32Store16Mem0_RS { ptr, value, offset } )
+                encoder.encode(crate::op::I32Store16Mem0_RS { ptr, value, offset })
             }
             Self::I32Store16Mem0_RI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32Store16Mem0_RI))?;
-                encoder.encode(crate::op::I32Store16Mem0_RI { ptr, value, offset } )
+                encoder.encode(crate::op::I32Store16Mem0_RI { ptr, value, offset })
             }
             Self::I32Store16Mem0_SR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32Store16Mem0_SR))?;
-                encoder.encode(crate::op::I32Store16Mem0_SR { ptr, value, offset } )
+                encoder.encode(crate::op::I32Store16Mem0_SR { ptr, value, offset })
             }
             Self::I32Store16Mem0_SS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32Store16Mem0_SS))?;
-                encoder.encode(crate::op::I32Store16Mem0_SS { ptr, value, offset } )
+                encoder.encode(crate::op::I32Store16Mem0_SS { ptr, value, offset })
             }
             Self::I32Store16Mem0_SI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I32Store16Mem0_SI))?;
-                encoder.encode(crate::op::I32Store16Mem0_SI { ptr, value, offset } )
+                encoder.encode(crate::op::I32Store16Mem0_SI { ptr, value, offset })
             }
             Self::I32Store16Mem0_IR { address, value } => {
-                encoder.encode(f(crate::OpCode::I32Store16Mem0_IR))?;
-                encoder.encode(crate::op::I32Store16Mem0_IR { address, value } )
+                encoder.encode(crate::op::I32Store16Mem0_IR { address, value })
             }
             Self::I32Store16Mem0_IS { address, value } => {
-                encoder.encode(f(crate::OpCode::I32Store16Mem0_IS))?;
-                encoder.encode(crate::op::I32Store16Mem0_IS { address, value } )
+                encoder.encode(crate::op::I32Store16Mem0_IS { address, value })
             }
             Self::I32Store16Mem0_II { address, value } => {
-                encoder.encode(f(crate::OpCode::I32Store16Mem0_II))?;
-                encoder.encode(crate::op::I32Store16Mem0_II { address, value } )
+                encoder.encode(crate::op::I32Store16Mem0_II { address, value })
             }
             Self::I64Store16_RS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store16_RS))?;
-                encoder.encode(crate::op::I64Store16_RS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store16_RS { ptr, value, offset, memory })
             }
             Self::I64Store16_RI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store16_RI))?;
-                encoder.encode(crate::op::I64Store16_RI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store16_RI { ptr, value, offset, memory })
             }
             Self::I64Store16_SR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store16_SR))?;
-                encoder.encode(crate::op::I64Store16_SR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store16_SR { ptr, value, offset, memory })
             }
             Self::I64Store16_SS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store16_SS))?;
-                encoder.encode(crate::op::I64Store16_SS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store16_SS { ptr, value, offset, memory })
             }
             Self::I64Store16_SI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store16_SI))?;
-                encoder.encode(crate::op::I64Store16_SI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store16_SI { ptr, value, offset, memory })
             }
             Self::I64Store16_IR { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store16_IR))?;
-                encoder.encode(crate::op::I64Store16_IR { address, value, memory } )
+                encoder.encode(crate::op::I64Store16_IR { address, value, memory })
             }
             Self::I64Store16_IS { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store16_IS))?;
-                encoder.encode(crate::op::I64Store16_IS { address, value, memory } )
+                encoder.encode(crate::op::I64Store16_IS { address, value, memory })
             }
             Self::I64Store16_II { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store16_II))?;
-                encoder.encode(crate::op::I64Store16_II { address, value, memory } )
+                encoder.encode(crate::op::I64Store16_II { address, value, memory })
             }
             Self::I64Store16Mem0_RS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store16Mem0_RS))?;
-                encoder.encode(crate::op::I64Store16Mem0_RS { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store16Mem0_RS { ptr, value, offset })
             }
             Self::I64Store16Mem0_RI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store16Mem0_RI))?;
-                encoder.encode(crate::op::I64Store16Mem0_RI { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store16Mem0_RI { ptr, value, offset })
             }
             Self::I64Store16Mem0_SR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store16Mem0_SR))?;
-                encoder.encode(crate::op::I64Store16Mem0_SR { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store16Mem0_SR { ptr, value, offset })
             }
             Self::I64Store16Mem0_SS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store16Mem0_SS))?;
-                encoder.encode(crate::op::I64Store16Mem0_SS { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store16Mem0_SS { ptr, value, offset })
             }
             Self::I64Store16Mem0_SI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store16Mem0_SI))?;
-                encoder.encode(crate::op::I64Store16Mem0_SI { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store16Mem0_SI { ptr, value, offset })
             }
             Self::I64Store16Mem0_IR { address, value } => {
-                encoder.encode(f(crate::OpCode::I64Store16Mem0_IR))?;
-                encoder.encode(crate::op::I64Store16Mem0_IR { address, value } )
+                encoder.encode(crate::op::I64Store16Mem0_IR { address, value })
             }
             Self::I64Store16Mem0_IS { address, value } => {
-                encoder.encode(f(crate::OpCode::I64Store16Mem0_IS))?;
-                encoder.encode(crate::op::I64Store16Mem0_IS { address, value } )
+                encoder.encode(crate::op::I64Store16Mem0_IS { address, value })
             }
             Self::I64Store16Mem0_II { address, value } => {
-                encoder.encode(f(crate::OpCode::I64Store16Mem0_II))?;
-                encoder.encode(crate::op::I64Store16Mem0_II { address, value } )
+                encoder.encode(crate::op::I64Store16Mem0_II { address, value })
             }
             Self::I64Store32_RS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store32_RS))?;
-                encoder.encode(crate::op::I64Store32_RS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store32_RS { ptr, value, offset, memory })
             }
             Self::I64Store32_RI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store32_RI))?;
-                encoder.encode(crate::op::I64Store32_RI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store32_RI { ptr, value, offset, memory })
             }
             Self::I64Store32_SR { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store32_SR))?;
-                encoder.encode(crate::op::I64Store32_SR { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store32_SR { ptr, value, offset, memory })
             }
             Self::I64Store32_SS { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store32_SS))?;
-                encoder.encode(crate::op::I64Store32_SS { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store32_SS { ptr, value, offset, memory })
             }
             Self::I64Store32_SI { ptr, value, offset, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store32_SI))?;
-                encoder.encode(crate::op::I64Store32_SI { ptr, value, offset, memory } )
+                encoder.encode(crate::op::I64Store32_SI { ptr, value, offset, memory })
             }
             Self::I64Store32_IR { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store32_IR))?;
-                encoder.encode(crate::op::I64Store32_IR { address, value, memory } )
+                encoder.encode(crate::op::I64Store32_IR { address, value, memory })
             }
             Self::I64Store32_IS { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store32_IS))?;
-                encoder.encode(crate::op::I64Store32_IS { address, value, memory } )
+                encoder.encode(crate::op::I64Store32_IS { address, value, memory })
             }
             Self::I64Store32_II { address, value, memory } => {
-                encoder.encode(f(crate::OpCode::I64Store32_II))?;
-                encoder.encode(crate::op::I64Store32_II { address, value, memory } )
+                encoder.encode(crate::op::I64Store32_II { address, value, memory })
             }
             Self::I64Store32Mem0_RS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store32Mem0_RS))?;
-                encoder.encode(crate::op::I64Store32Mem0_RS { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store32Mem0_RS { ptr, value, offset })
             }
             Self::I64Store32Mem0_RI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store32Mem0_RI))?;
-                encoder.encode(crate::op::I64Store32Mem0_RI { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store32Mem0_RI { ptr, value, offset })
             }
             Self::I64Store32Mem0_SR { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store32Mem0_SR))?;
-                encoder.encode(crate::op::I64Store32Mem0_SR { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store32Mem0_SR { ptr, value, offset })
             }
             Self::I64Store32Mem0_SS { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store32Mem0_SS))?;
-                encoder.encode(crate::op::I64Store32Mem0_SS { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store32Mem0_SS { ptr, value, offset })
             }
             Self::I64Store32Mem0_SI { ptr, value, offset } => {
-                encoder.encode(f(crate::OpCode::I64Store32Mem0_SI))?;
-                encoder.encode(crate::op::I64Store32Mem0_SI { ptr, value, offset } )
+                encoder.encode(crate::op::I64Store32Mem0_SI { ptr, value, offset })
             }
             Self::I64Store32Mem0_IR { address, value } => {
-                encoder.encode(f(crate::OpCode::I64Store32Mem0_IR))?;
-                encoder.encode(crate::op::I64Store32Mem0_IR { address, value } )
+                encoder.encode(crate::op::I64Store32Mem0_IR { address, value })
             }
             Self::I64Store32Mem0_IS { address, value } => {
-                encoder.encode(f(crate::OpCode::I64Store32Mem0_IS))?;
-                encoder.encode(crate::op::I64Store32Mem0_IS { address, value } )
+                encoder.encode(crate::op::I64Store32Mem0_IS { address, value })
             }
             Self::I64Store32Mem0_II { address, value } => {
-                encoder.encode(f(crate::OpCode::I64Store32Mem0_II))?;
-                encoder.encode(crate::op::I64Store32Mem0_II { address, value } )
+                encoder.encode(crate::op::I64Store32Mem0_II { address, value })
             }
             Self::Select { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::Select))?;
-                encoder.encode(crate::op::Select { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::Select { result, condition, lhs, rhs })
             }
             Self::SelectI32_RSSS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI32_RSSS))?;
-                encoder.encode(crate::op::SelectI32_RSSS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI32_RSSS { result, condition, lhs, rhs })
             }
             Self::SelectI32_RSSI { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI32_RSSI))?;
-                encoder.encode(crate::op::SelectI32_RSSI { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI32_RSSI { result, condition, lhs, rhs })
             }
             Self::SelectI32_RSIS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI32_RSIS))?;
-                encoder.encode(crate::op::SelectI32_RSIS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI32_RSIS { result, condition, lhs, rhs })
             }
             Self::SelectI32_RSII { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI32_RSII))?;
-                encoder.encode(crate::op::SelectI32_RSII { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI32_RSII { result, condition, lhs, rhs })
             }
             Self::SelectI64_RRSS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RRSS))?;
-                encoder.encode(crate::op::SelectI64_RRSS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RRSS { result, condition, lhs, rhs })
             }
             Self::SelectI64_RRSI { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RRSI))?;
-                encoder.encode(crate::op::SelectI64_RRSI { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RRSI { result, condition, lhs, rhs })
             }
             Self::SelectI64_RRIS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RRIS))?;
-                encoder.encode(crate::op::SelectI64_RRIS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RRIS { result, condition, lhs, rhs })
             }
             Self::SelectI64_RRII { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RRII))?;
-                encoder.encode(crate::op::SelectI64_RRII { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RRII { result, condition, lhs, rhs })
             }
             Self::SelectI64_RSRS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RSRS))?;
-                encoder.encode(crate::op::SelectI64_RSRS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RSRS { result, condition, lhs, rhs })
             }
             Self::SelectI64_RSRI { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RSRI))?;
-                encoder.encode(crate::op::SelectI64_RSRI { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RSRI { result, condition, lhs, rhs })
             }
             Self::SelectI64_RSSR { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RSSR))?;
-                encoder.encode(crate::op::SelectI64_RSSR { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RSSR { result, condition, lhs, rhs })
             }
             Self::SelectI64_RSSS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RSSS))?;
-                encoder.encode(crate::op::SelectI64_RSSS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RSSS { result, condition, lhs, rhs })
             }
             Self::SelectI64_RSSI { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RSSI))?;
-                encoder.encode(crate::op::SelectI64_RSSI { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RSSI { result, condition, lhs, rhs })
             }
             Self::SelectI64_RSIR { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RSIR))?;
-                encoder.encode(crate::op::SelectI64_RSIR { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RSIR { result, condition, lhs, rhs })
             }
             Self::SelectI64_RSIS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RSIS))?;
-                encoder.encode(crate::op::SelectI64_RSIS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RSIS { result, condition, lhs, rhs })
             }
             Self::SelectI64_RSII { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectI64_RSII))?;
-                encoder.encode(crate::op::SelectI64_RSII { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectI64_RSII { result, condition, lhs, rhs })
             }
             Self::SelectF32_RRSS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RRSS))?;
-                encoder.encode(crate::op::SelectF32_RRSS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RRSS { result, condition, lhs, rhs })
             }
             Self::SelectF32_RRSI { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RRSI))?;
-                encoder.encode(crate::op::SelectF32_RRSI { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RRSI { result, condition, lhs, rhs })
             }
             Self::SelectF32_RRIS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RRIS))?;
-                encoder.encode(crate::op::SelectF32_RRIS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RRIS { result, condition, lhs, rhs })
             }
             Self::SelectF32_RRII { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RRII))?;
-                encoder.encode(crate::op::SelectF32_RRII { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RRII { result, condition, lhs, rhs })
             }
             Self::SelectF32_RSRS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RSRS))?;
-                encoder.encode(crate::op::SelectF32_RSRS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RSRS { result, condition, lhs, rhs })
             }
             Self::SelectF32_RSRI { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RSRI))?;
-                encoder.encode(crate::op::SelectF32_RSRI { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RSRI { result, condition, lhs, rhs })
             }
             Self::SelectF32_RSSR { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RSSR))?;
-                encoder.encode(crate::op::SelectF32_RSSR { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RSSR { result, condition, lhs, rhs })
             }
             Self::SelectF32_RSSS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RSSS))?;
-                encoder.encode(crate::op::SelectF32_RSSS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RSSS { result, condition, lhs, rhs })
             }
             Self::SelectF32_RSSI { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RSSI))?;
-                encoder.encode(crate::op::SelectF32_RSSI { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RSSI { result, condition, lhs, rhs })
             }
             Self::SelectF32_RSIR { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RSIR))?;
-                encoder.encode(crate::op::SelectF32_RSIR { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RSIR { result, condition, lhs, rhs })
             }
             Self::SelectF32_RSIS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RSIS))?;
-                encoder.encode(crate::op::SelectF32_RSIS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RSIS { result, condition, lhs, rhs })
             }
             Self::SelectF32_RSII { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF32_RSII))?;
-                encoder.encode(crate::op::SelectF32_RSII { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF32_RSII { result, condition, lhs, rhs })
             }
             Self::SelectF64_RRSS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RRSS))?;
-                encoder.encode(crate::op::SelectF64_RRSS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RRSS { result, condition, lhs, rhs })
             }
             Self::SelectF64_RRSI { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RRSI))?;
-                encoder.encode(crate::op::SelectF64_RRSI { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RRSI { result, condition, lhs, rhs })
             }
             Self::SelectF64_RRIS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RRIS))?;
-                encoder.encode(crate::op::SelectF64_RRIS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RRIS { result, condition, lhs, rhs })
             }
             Self::SelectF64_RRII { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RRII))?;
-                encoder.encode(crate::op::SelectF64_RRII { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RRII { result, condition, lhs, rhs })
             }
             Self::SelectF64_RSRS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RSRS))?;
-                encoder.encode(crate::op::SelectF64_RSRS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RSRS { result, condition, lhs, rhs })
             }
             Self::SelectF64_RSRI { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RSRI))?;
-                encoder.encode(crate::op::SelectF64_RSRI { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RSRI { result, condition, lhs, rhs })
             }
             Self::SelectF64_RSSR { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RSSR))?;
-                encoder.encode(crate::op::SelectF64_RSSR { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RSSR { result, condition, lhs, rhs })
             }
             Self::SelectF64_RSSS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RSSS))?;
-                encoder.encode(crate::op::SelectF64_RSSS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RSSS { result, condition, lhs, rhs })
             }
             Self::SelectF64_RSSI { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RSSI))?;
-                encoder.encode(crate::op::SelectF64_RSSI { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RSSI { result, condition, lhs, rhs })
             }
             Self::SelectF64_RSIR { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RSIR))?;
-                encoder.encode(crate::op::SelectF64_RSIR { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RSIR { result, condition, lhs, rhs })
             }
             Self::SelectF64_RSIS { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RSIS))?;
-                encoder.encode(crate::op::SelectF64_RSIS { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RSIS { result, condition, lhs, rhs })
             }
             Self::SelectF64_RSII { result, condition, lhs, rhs } => {
-                encoder.encode(f(crate::OpCode::SelectF64_RSII))?;
-                encoder.encode(crate::op::SelectF64_RSII { result, condition, lhs, rhs } )
+                encoder.encode(crate::op::SelectF64_RSII { result, condition, lhs, rhs })
             }
             Self::TableSize_R { result, table } => {
-                encoder.encode(f(crate::OpCode::TableSize_R))?;
-                encoder.encode(crate::op::TableSize_R { result, table } )
+                encoder.encode(crate::op::TableSize_R { result, table })
             }
             Self::TableSize_S { result, table } => {
-                encoder.encode(f(crate::OpCode::TableSize_S))?;
-                encoder.encode(crate::op::TableSize_S { result, table } )
+                encoder.encode(crate::op::TableSize_S { result, table })
             }
             Self::TableGet_RR { result, index, table } => {
-                encoder.encode(f(crate::OpCode::TableGet_RR))?;
-                encoder.encode(crate::op::TableGet_RR { result, index, table } )
+                encoder.encode(crate::op::TableGet_RR { result, index, table })
             }
             Self::TableGet_RS { result, index, table } => {
-                encoder.encode(f(crate::OpCode::TableGet_RS))?;
-                encoder.encode(crate::op::TableGet_RS { result, index, table } )
+                encoder.encode(crate::op::TableGet_RS { result, index, table })
             }
             Self::TableGet_RI { result, index, table } => {
-                encoder.encode(f(crate::OpCode::TableGet_RI))?;
-                encoder.encode(crate::op::TableGet_RI { result, index, table } )
+                encoder.encode(crate::op::TableGet_RI { result, index, table })
             }
             Self::TableSet_RS { index, value, table } => {
-                encoder.encode(f(crate::OpCode::TableSet_RS))?;
-                encoder.encode(crate::op::TableSet_RS { index, value, table } )
+                encoder.encode(crate::op::TableSet_RS { index, value, table })
             }
             Self::TableSet_RI { index, value, table } => {
-                encoder.encode(f(crate::OpCode::TableSet_RI))?;
-                encoder.encode(crate::op::TableSet_RI { index, value, table } )
+                encoder.encode(crate::op::TableSet_RI { index, value, table })
             }
             Self::TableSet_SR { index, value, table } => {
-                encoder.encode(f(crate::OpCode::TableSet_SR))?;
-                encoder.encode(crate::op::TableSet_SR { index, value, table } )
+                encoder.encode(crate::op::TableSet_SR { index, value, table })
             }
             Self::TableSet_SS { index, value, table } => {
-                encoder.encode(f(crate::OpCode::TableSet_SS))?;
-                encoder.encode(crate::op::TableSet_SS { index, value, table } )
+                encoder.encode(crate::op::TableSet_SS { index, value, table })
             }
             Self::TableSet_SI { index, value, table } => {
-                encoder.encode(f(crate::OpCode::TableSet_SI))?;
-                encoder.encode(crate::op::TableSet_SI { index, value, table } )
+                encoder.encode(crate::op::TableSet_SI { index, value, table })
             }
             Self::TableSet_IR { index, value, table } => {
-                encoder.encode(f(crate::OpCode::TableSet_IR))?;
-                encoder.encode(crate::op::TableSet_IR { index, value, table } )
+                encoder.encode(crate::op::TableSet_IR { index, value, table })
             }
             Self::TableSet_IS { index, value, table } => {
-                encoder.encode(f(crate::OpCode::TableSet_IS))?;
-                encoder.encode(crate::op::TableSet_IS { index, value, table } )
+                encoder.encode(crate::op::TableSet_IS { index, value, table })
             }
             Self::TableSet_II { index, value, table } => {
-                encoder.encode(f(crate::OpCode::TableSet_II))?;
-                encoder.encode(crate::op::TableSet_II { index, value, table } )
+                encoder.encode(crate::op::TableSet_II { index, value, table })
             }
             Self::TableGrow { result, delta, table } => {
-                encoder.encode(f(crate::OpCode::TableGrow))?;
-                encoder.encode(crate::op::TableGrow { result, delta, table } )
+                encoder.encode(crate::op::TableGrow { result, delta, table })
             }
             Self::TableCopy { dst_index, src_index, len, dst_table, src_table } => {
-                encoder.encode(f(crate::OpCode::TableCopy))?;
-                encoder.encode(crate::op::TableCopy { dst_index, src_index, len, dst_table, src_table } )
+                encoder.encode(crate::op::TableCopy { dst_index, src_index, len, dst_table, src_table })
             }
             Self::TableFill { dst_index, value, len, table } => {
-                encoder.encode(f(crate::OpCode::TableFill))?;
-                encoder.encode(crate::op::TableFill { dst_index, value, len, table } )
+                encoder.encode(crate::op::TableFill { dst_index, value, len, table })
             }
             Self::TableInit { dst_index, src_index, len, table, elem } => {
-                encoder.encode(f(crate::OpCode::TableInit))?;
-                encoder.encode(crate::op::TableInit { dst_index, src_index, len, table, elem } )
+                encoder.encode(crate::op::TableInit { dst_index, src_index, len, table, elem })
             }
             Self::MemorySize_R { result, memory } => {
-                encoder.encode(f(crate::OpCode::MemorySize_R))?;
-                encoder.encode(crate::op::MemorySize_R { result, memory } )
+                encoder.encode(crate::op::MemorySize_R { result, memory })
             }
             Self::MemorySize_S { result, memory } => {
-                encoder.encode(f(crate::OpCode::MemorySize_S))?;
-                encoder.encode(crate::op::MemorySize_S { result, memory } )
+                encoder.encode(crate::op::MemorySize_S { result, memory })
             }
             Self::MemoryGrow { result, delta, memory } => {
-                encoder.encode(f(crate::OpCode::MemoryGrow))?;
-                encoder.encode(crate::op::MemoryGrow { result, delta, memory } )
+                encoder.encode(crate::op::MemoryGrow { result, delta, memory })
             }
             Self::MemoryCopy { dst_index, src_index, len, dst_memory, src_memory } => {
-                encoder.encode(f(crate::OpCode::MemoryCopy))?;
-                encoder.encode(crate::op::MemoryCopy { dst_index, src_index, len, dst_memory, src_memory } )
+                encoder.encode(crate::op::MemoryCopy { dst_index, src_index, len, dst_memory, src_memory })
             }
             Self::MemoryFill { dst_index, value, len, memory } => {
-                encoder.encode(f(crate::OpCode::MemoryFill))?;
-                encoder.encode(crate::op::MemoryFill { dst_index, value, len, memory } )
+                encoder.encode(crate::op::MemoryFill { dst_index, value, len, memory })
             }
             Self::MemoryInit { dst_index, src_index, len, memory, data } => {
-                encoder.encode(f(crate::OpCode::MemoryInit))?;
-                encoder.encode(crate::op::MemoryInit { dst_index, src_index, len, memory, data } )
+                encoder.encode(crate::op::MemoryInit { dst_index, src_index, len, memory, data })
             }
             Self::CallInternal { func, len_params, len_results } => {
-                encoder.encode(f(crate::OpCode::CallInternal))?;
-                encoder.encode(crate::op::CallInternal { func, len_params, len_results } )
+                encoder.encode(crate::op::CallInternal { func, len_params, len_results })
             }
             Self::ReturnCallInternal { func, len_params, len_results } => {
-                encoder.encode(f(crate::OpCode::ReturnCallInternal))?;
-                encoder.encode(crate::op::ReturnCallInternal { func, len_params, len_results } )
+                encoder.encode(crate::op::ReturnCallInternal { func, len_params, len_results })
             }
             Self::CallImported { func, len_params, len_results } => {
-                encoder.encode(f(crate::OpCode::CallImported))?;
-                encoder.encode(crate::op::CallImported { func, len_params, len_results } )
+                encoder.encode(crate::op::CallImported { func, len_params, len_results })
             }
             Self::ReturnCallImported { func, len_params, len_results } => {
-                encoder.encode(f(crate::OpCode::ReturnCallImported))?;
-                encoder.encode(crate::op::ReturnCallImported { func, len_params, len_results } )
+                encoder.encode(crate::op::ReturnCallImported { func, len_params, len_results })
             }
             Self::CallIndirect_R { table, index, len_params, len_results } => {
-                encoder.encode(f(crate::OpCode::CallIndirect_R))?;
-                encoder.encode(crate::op::CallIndirect_R { table, index, len_params, len_results } )
+                encoder.encode(crate::op::CallIndirect_R { table, index, len_params, len_results })
             }
             Self::CallIndirect_S { table, index, len_params, len_results } => {
-                encoder.encode(f(crate::OpCode::CallIndirect_S))?;
-                encoder.encode(crate::op::CallIndirect_S { table, index, len_params, len_results } )
+                encoder.encode(crate::op::CallIndirect_S { table, index, len_params, len_results })
             }
             Self::CallIndirect_I { table, index, len_params, len_results } => {
-                encoder.encode(f(crate::OpCode::CallIndirect_I))?;
-                encoder.encode(crate::op::CallIndirect_I { table, index, len_params, len_results } )
+                encoder.encode(crate::op::CallIndirect_I { table, index, len_params, len_results })
             }
             Self::ReturnCallIndirect_R { table, index, len_params, len_results } => {
-                encoder.encode(f(crate::OpCode::ReturnCallIndirect_R))?;
-                encoder.encode(crate::op::ReturnCallIndirect_R { table, index, len_params, len_results } )
+                encoder.encode(crate::op::ReturnCallIndirect_R { table, index, len_params, len_results })
             }
             Self::ReturnCallIndirect_S { table, index, len_params, len_results } => {
-                encoder.encode(f(crate::OpCode::ReturnCallIndirect_S))?;
-                encoder.encode(crate::op::ReturnCallIndirect_S { table, index, len_params, len_results } )
+                encoder.encode(crate::op::ReturnCallIndirect_S { table, index, len_params, len_results })
             }
             Self::ReturnCallIndirect_I { table, index, len_params, len_results } => {
-                encoder.encode(f(crate::OpCode::ReturnCallIndirect_I))?;
-                encoder.encode(crate::op::ReturnCallIndirect_I { table, index, len_params, len_results } )
+                encoder.encode(crate::op::ReturnCallIndirect_I { table, index, len_params, len_results })
             }
         }
     }
