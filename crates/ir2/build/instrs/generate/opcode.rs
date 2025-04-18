@@ -89,7 +89,7 @@ impl<'a> DisplayOpCodeEnumVariants<'a> {
         indent: DisplayIndent,
     ) -> fmt::Result {
         let name = op.name();
-        write!(f, "{indent}{name} = {index},")
+        write!(f, "{indent}{name} = {index}_u16,")
     }
 }
 

@@ -93,14 +93,14 @@ impl Display for DisplayOpEnumVariant<'_> {
         let name = self.op.name();
         let index = self.index;
         if self.op.fields().is_empty() {
-            return write!(f, "{indent}{name} = {index},");
+            return write!(f, "{indent}{name} = {index}_u16,");
         }
         write!(
             f,
             "\
             {indent}{name} {{\n\
             {fields}\n\
-            {indent}}} = {index},\
+            {indent}}} = {index}_u16,\
             "
         )?;
         Ok(())
