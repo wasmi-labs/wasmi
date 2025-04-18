@@ -38,7 +38,7 @@ impl Display for DisplayOpEnum<'_> {
             "    pub fn encode_params("
             "        &self,"
             "        encoder: &mut crate::CopyEncoder,"
-            "    ) -> ::core::result::Result<(), crate::EncoderError> {"
+            "    ) -> ::core::result::Result<::core::primitive::usize, crate::EncoderError> {"
             "        match *self {"
                         impl_encode_params
             "        }"

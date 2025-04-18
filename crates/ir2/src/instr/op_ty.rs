@@ -5652,7 +5652,7 @@ impl Op {
     pub fn encode_params(
         &self,
         encoder: &mut crate::CopyEncoder,
-    ) -> ::core::result::Result<(), crate::EncoderError> {
+    ) -> ::core::result::Result<::core::primitive::usize, crate::EncoderError> {
         match *self {
             Self::Copy1_S { result, value } => {
                 encoder.encode(crate::op::Copy1_S { result, value })

@@ -203,14 +203,15 @@ impl CopyEncoder {
         self.top.addr() - self.start.addr()
     }
 
-    pub fn encode<T: Copy>(&mut self, value: T) -> Result<(), EncoderError> {
+    pub fn encode<T: Copy>(&mut self, value: T) -> Result<usize, EncoderError> {
         let len_bytes = mem::size_of::<T>();
         if len_bytes > self.remaining_capacity() {
             self.grow(len_bytes)?;
         }
+        let index = self.len();
         unsafe { self.top.cast::<T>().write_unaligned(value) };
         self.top = unsafe { self.top.add(len_bytes) };
-        Ok(())
+        Ok(index)
     }
 
     fn grow(&mut self, additional: usize) -> Result<(), EncoderError> {
