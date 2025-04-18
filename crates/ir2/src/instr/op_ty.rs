@@ -5649,7 +5649,7 @@ impl ::core::clone::Clone for Op {
     }
 }
 impl Op {
-    /// Encodes `self` without its [`OpCode`].
+    /// Encodes `self` without its [`OpCode`][crate::OpCode].
     pub fn encode_params(
         &self,
         encoder: &mut crate::CopyEncoder,
