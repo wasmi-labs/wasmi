@@ -65,10 +65,10 @@ impl Display for DisplayOpEnumVariants<'_> {
         let Some((first, rest)) = self.ops.split_first() else {
             return Ok(());
         };
-        DisplayOpEnumVariant::new(first, self.indent).fmt(f)?;
-        for instr in rest {
+        DisplayOpEnumVariant::new(first, 0, self.indent).fmt(f)?;
+        for (index, op) in rest.iter().enumerate() {
             writeln!(f)?;
-            DisplayOpEnumVariant::new(instr, self.indent).fmt(f)?;
+            DisplayOpEnumVariant::new(op, index + 1, self.indent).fmt(f)?;
         }
         Ok(())
     }
@@ -76,12 +76,13 @@ impl Display for DisplayOpEnumVariants<'_> {
 
 pub struct DisplayOpEnumVariant<'a> {
     op: &'a Op,
+    index: usize,
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayOpEnumVariant<'a> {
-    fn new(op: &'a Op, indent: DisplayIndent) -> Self {
-        Self { op, indent }
+    fn new(op: &'a Op, index: usize, indent: DisplayIndent) -> Self {
+        Self { op, index, indent }
     }
 }
 
@@ -90,15 +91,16 @@ impl Display for DisplayOpEnumVariant<'_> {
         let indent = self.indent;
         let fields = DisplayFields::new(self.op.fields(), indent.inc(), Visibility::Default);
         let name = self.op.name();
+        let index = self.index;
         if self.op.fields().is_empty() {
-            return writeln!(f, "{indent}{name},");
+            return write!(f, "{indent}{name} = {index},");
         }
         write!(
             f,
             "\
             {indent}{name} {{\n\
             {fields}\n\
-            {indent}}},\
+            {indent}}} = {index},\
             "
         )?;
         Ok(())
