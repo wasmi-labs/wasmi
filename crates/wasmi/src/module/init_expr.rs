@@ -21,7 +21,7 @@ use wasmparser::AbstractHeapType;
 #[cfg(feature = "simd")]
 use crate::core::V128;
 
-/// Types that allow evluation given an evaluation context.
+/// Types that allow evaluation given an evaluation context.
 pub trait Eval {
     /// Evaluates `self` given an [`EvalContext`].
     fn eval(&self, ctx: &dyn EvalContext) -> Option<UntypedVal>;
