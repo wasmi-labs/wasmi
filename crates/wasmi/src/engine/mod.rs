@@ -467,7 +467,7 @@ impl ReusableAllocationStack {
 
 /// The engine's stacks for reuse.
 ///
-/// Rquired for efficient concurrent Wasm executions.
+/// Required for efficient concurrent Wasm executions.
 #[derive(Debug)]
 pub struct EngineStacks {
     /// Stacks to be (re)used.
