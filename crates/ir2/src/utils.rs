@@ -22,10 +22,10 @@ impl<T> Deref for RefAccess<T> {
     }
 }
 
-/// Trait to query the [`OpCode`] of operators.
+/// Trait to query the [`OpCode`][`crate::OpCode`] of operators.
 ///
-/// Implemented by [`Op`] and all operators found in the [`crate::Op`] module.
+/// Implemented by [`Op`][crate::Op] and all operators found in the [`crate::Op`] module.
 pub trait OperatorCode {
-    /// Returns the [`OpCode`] associated to `self`.
+    /// Returns the [`OpCode`][crate::OpCode] associated to `self`.
     fn op_code(&self) -> crate::OpCode;
 }
