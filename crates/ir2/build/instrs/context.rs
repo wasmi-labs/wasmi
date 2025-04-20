@@ -9,10 +9,6 @@ pub struct Context {
 
 pub struct UnaryOp {
     pub name: Box<str>,
-    pub rr: Box<str>,
-    pub rs: Box<str>,
-    pub sr: Box<str>,
-    pub ss: Box<str>,
 }
 
 impl Context {

@@ -118,33 +118,26 @@ fn define_fused_cmp_branch_instrs(ctx: &mut Context) {
 }
 
 fn define_unary_operator(ctx: &mut Context, name: &str, result_ty: ValTy, input_ty: ValTy) {
-    let name = format!("{result_ty}{name}");
-    let [rr, rs, sr, ss] = [
+    let ops = [
         (Operand::Reg, Operand::Reg),
         (Operand::Reg, Operand::Stack),
         (Operand::Stack, Operand::Reg),
         (Operand::Stack, Operand::Stack),
-    ]
-    .map(|(result, input)| {
+    ];
+    let name: Box<str> = format!("{result_ty}{name}").into();
+    for (result, input) in ops {
         let result_id = result.id();
         let input_id = input.id();
         let name = format!("{name}_{result_id}{input_id}");
         ctx.push_op(op! {
-            name: name.as_str(),
+            name: name,
             fields: [
                 result: result.ty(result_ty),
                 input: input.ty(input_ty),
             ],
         });
-        name
-    });
-    ctx.unary_ops.push(UnaryOp {
-        name: name.into(),
-        rr: rr.into(),
-        rs: rs.into(),
-        sr: sr.into(),
-        ss: ss.into(),
-    })
+    }
+    ctx.unary_ops.push(UnaryOp { name })
 }
 
 fn define_iunop_instrs(ctx: &mut Context) {

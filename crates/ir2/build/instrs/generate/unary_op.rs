@@ -1,3 +1,5 @@
+use crate::instrs::instrs::utils::Operand;
+
 use super::{Context, DisplayIndent, UnaryOp};
 use core::{fmt, fmt::Display};
 
@@ -40,10 +42,12 @@ impl<'a> DisplayUnaryOpClasses<'a> {
     fn emit(&self, f: &mut fmt::Formatter, op: &UnaryOp) -> fmt::Result {
         let indent = self.indent;
         let name = &*op.name;
-        let op_rr = &*op.rr;
-        let op_rs = &*op.rs;
-        let op_sr = &*op.sr;
-        let op_ss = &*op.ss;
+        let r_id = Operand::Reg.id();
+        let s_id = Operand::Stack.id();
+        let op_rr = format!("{}_{}{}", name, r_id, r_id);
+        let op_rs = format!("{}_{}{}", name, r_id, s_id);
+        let op_sr = format!("{}_{}{}", name, s_id, r_id);
+        let op_ss = format!("{}_{}{}", name, s_id, s_id);
         write!(
             f,
             "\
