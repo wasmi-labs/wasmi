@@ -36,42 +36,51 @@ impl<'a> DisplayUnaryOpClasses<'a> {
     pub fn new(ops: &'a [UnaryOp], indent: DisplayIndent) -> Self {
         Self { ops, indent }
     }
+
+    fn emit(&self, f: &mut fmt::Formatter, op: &UnaryOp) -> fmt::Result {
+        let indent = self.indent;
+        let name = &*op.name;
+        let op_rr = &*op.rr;
+        let op_rs = &*op.rs;
+        let op_sr = &*op.sr;
+        let op_ss = &*op.ss;
+        write!(
+            f,
+            "\
+            {indent}pub enum {name} {{}}\n\
+            {indent}impl crate::UnaryOperator for {name} {{\n\
+            {indent}    const NAME: &'static ::core::primitive::str = \"{name}\";\n\
+            {indent}    type OpRr = crate::op::{op_rr};\n\
+            {indent}    type OpRs = crate::op::{op_rs};\n\
+            {indent}    type OpSr = crate::op::{op_sr};\n\
+            {indent}    type OpSs = crate::op::{op_ss};\n\
+            {indent}    fn make_rr(result: crate::Reg, input: crate::Reg) -> Self::OpRr {{\n\
+            {indent}        Self::OpRr {{ result, input }}\n\
+            {indent}    }}\n\
+            {indent}    fn make_rs(result: crate::Reg, input: crate::Stack) -> Self::OpRs {{\n\
+            {indent}        Self::OpRs {{ result, input }}\n\
+            {indent}    }}\n\
+            {indent}    fn make_sr(result: crate::Stack, input: crate::Reg) -> Self::OpSr {{\n\
+            {indent}        Self::OpSr {{ result, input }}\n\
+            {indent}    }}\n\
+            {indent}    fn make_ss(result: crate::Stack, input: crate::Stack) -> Self::OpSs {{\n\
+            {indent}        Self::OpSs {{ result, input }}\n\
+            {indent}    }}\n\
+            {indent}}}\
+            "
+        )
+    }
 }
 
 impl Display for DisplayUnaryOpClasses<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let indent = self.indent;
-        for op in self.ops {
-            let name = &*op.name;
-            let op_rr = &*op.rr;
-            let op_rs = &*op.rs;
-            let op_sr = &*op.sr;
-            let op_ss = &*op.ss;
-            write!(
-                f,
-                "\
-                {indent}pub enum {name} {{}}\n\
-                {indent}impl crate::UnaryOperator for {name} {{\n\
-                {indent}    const NAME: &'static ::core::primitive::str = \"{name}\";\n\
-                {indent}    type OpRr = crate::op::{op_rr};\n\
-                {indent}    type OpRs = crate::op::{op_rs};\n\
-                {indent}    type OpSr = crate::op::{op_sr};\n\
-                {indent}    type OpSs = crate::op::{op_ss};\n\
-                {indent}    fn make_rr(result: crate::Reg, input: crate::Reg) -> Self::OpRr {{\n\
-                {indent}        Self::OpRr {{ result, input }}\n\
-                {indent}    }}\n\
-                {indent}    fn make_rs(result: crate::Reg, input: crate::Stack) -> Self::OpRs {{\n\
-                {indent}        Self::OpRs {{ result, input }}\n\
-                {indent}    }}\n\
-                {indent}    fn make_sr(result: crate::Stack, input: crate::Reg) -> Self::OpSr {{\n\
-                {indent}        Self::OpSr {{ result, input }}\n\
-                {indent}    }}\n\
-                {indent}    fn make_ss(result: crate::Stack, input: crate::Stack) -> Self::OpSs {{\n\
-                {indent}        Self::OpSs {{ result, input }}\n\
-                {indent}    }}\n\
-                {indent}}}\n\
-                "
-            )?;
+        let Some((first, rest)) = self.ops.split_first() else {
+            return Ok(());
+        };
+        self.emit(f, first)?;
+        for op in rest {
+            writeln!(f)?;
+            self.emit(f, op)?;
         }
         Ok(())
     }

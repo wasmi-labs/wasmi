@@ -1042,4 +1042,3 @@ impl crate::UnaryOperator for I32WrapI64 {
         Self::OpSs { result, input }
     }
 }
-
