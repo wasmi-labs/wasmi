@@ -1,4 +1,4 @@
-use super::{Context, FieldName, FieldTy, ImmediateTy, Op, Operand, ValTy};
+use super::{context::UnaryOp, Context, FieldName, FieldTy, ImmediateTy, Op, Operand, ValTy};
 use std::format;
 
 pub fn define_instrs(ctx: &mut Context) {
@@ -117,41 +117,50 @@ fn define_fused_cmp_branch_instrs(ctx: &mut Context) {
     )
 }
 
-fn define_unop_instrs(
-    ctx: &mut Context,
-    ops: impl IntoIterator<Item = &'static str>,
-    tys: impl IntoIterator<Item = ValTy> + Clone,
-) {
-    for op in ops {
-        for ty in tys.clone() {
-            let op = format!("{ty}{op}");
-            for result in [Operand::Reg, Operand::Stack] {
-                for input in [Operand::Reg, Operand::Stack] {
-                    let result_id = result.id();
-                    let input_id = input.id();
-                    ctx.push_op(op! {
-                        name: format!("{op}_{result_id}{input_id}"),
-                        fields: [
-                            result: result.ty(ty),
-                            input: input.ty(ty),
-                        ],
-                    });
-                }
-            }
+fn define_unary_operator(ctx: &mut Context, name: &str, result_ty: ValTy, input_ty: ValTy) {
+    let name = format!("{result_ty}{name}");
+    let [rr, rs, sr, ss] = [
+        (Operand::Reg, Operand::Reg),
+        (Operand::Reg, Operand::Stack),
+        (Operand::Stack, Operand::Reg),
+        (Operand::Stack, Operand::Stack),
+    ]
+    .map(|(result, input)| {
+        let result_id = result.id();
+        let input_id = input.id();
+        let name = format!("{name}_{result_id}{input_id}");
+        ctx.push_op(op! {
+            name: name.as_str(),
+            fields: [
+                result: result.ty(result_ty),
+                input: input.ty(input_ty),
+            ],
+        });
+        name
+    });
+    ctx.unary_ops.push(UnaryOp {
+        name: name.into(),
+        rr: rr.into(),
+        rs: rs.into(),
+        sr: sr.into(),
+        ss: ss.into(),
+    })
+}
+
+fn define_iunop_instrs(ctx: &mut Context) {
+    for op in ["Popcnt", "Clz", "Ctz"] {
+        for ty in [ValTy::I32, ValTy::I64] {
+            define_unary_operator(ctx, op, ty, ty);
         }
     }
 }
 
-fn define_iunop_instrs(ctx: &mut Context) {
-    define_unop_instrs(ctx, ["Popcnt", "Clz", "Ctz"], [ValTy::I32, ValTy::I64])
-}
-
 fn define_funop_instrs(ctx: &mut Context) {
-    define_unop_instrs(
-        ctx,
-        ["Abs", "Neg", "Ceil", "Floor", "Trunc", "Nearest", "Sqrt"],
-        [ValTy::F32, ValTy::F64],
-    )
+    for op in ["Abs", "Neg", "Ceil", "Floor", "Trunc", "Nearest", "Sqrt"] {
+        for ty in [ValTy::F32, ValTy::F64] {
+            define_unary_operator(ctx, op, ty, ty);
+        }
+    }
 }
 
 fn define_conversion_instrs(ctx: &mut Context) {
@@ -189,21 +198,8 @@ fn define_conversion_instrs(ctx: &mut Context) {
         ("Extend32S", ValTy::I64, ValTy::I64),
         ("WrapI64", ValTy::I32, ValTy::I64),
     ];
-    for (op, result_ty, input_ty) in ops {
-        let op = format!("{result_ty}{op}");
-        for result in [Operand::Reg, Operand::Stack] {
-            for input in [Operand::Reg, Operand::Stack] {
-                let result_id = result.id();
-                let input_id = input.id();
-                ctx.push_op(op! {
-                    name: format!("{op}_{result_id}{input_id}"),
-                    fields: [
-                        result: result.ty(result_ty),
-                        input: input.ty(input_ty),
-                    ],
-                });
-            }
-        }
+    for (name, result_ty, input_ty) in ops {
+        define_unary_operator(ctx, name, result_ty, input_ty);
     }
 }
 
