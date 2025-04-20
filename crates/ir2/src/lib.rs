@@ -13,7 +13,7 @@ use self::utils::RefAccess;
 pub use self::{
     decode::{Decode, Decoder},
     encode::{CheckedEncoder, CopyDecoder, CopyEncoder, Encode, Encoder, EncoderError},
-    instr::{op, Op, OpCode},
+    instr::{class, op, Op, OpCode},
     utils::{Operator, OperatorCode, UnaryOperator},
 };
 
