@@ -4,6 +4,15 @@ use std::{boxed::Box, vec::Vec};
 #[derive(Default)]
 pub struct Context {
     ops: Vec<Op>,
+    pub unary_ops: Vec<UnaryOp>,
+}
+
+pub struct UnaryOp {
+    pub name: Box<str>,
+    pub rr: Box<str>,
+    pub rs: Box<str>,
+    pub sr: Box<str>,
+    pub ss: Box<str>,
 }
 
 impl Context {
