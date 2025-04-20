@@ -1,6 +1,5 @@
-use crate::instrs::instrs::utils::Operand;
-
 use super::{Context, DisplayIndent, UnaryOp};
+use crate::instrs::instrs::utils::Operand;
 use core::{fmt, fmt::Display};
 
 pub struct DisplayOpClasses<'a> {
