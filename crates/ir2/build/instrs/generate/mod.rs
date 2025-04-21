@@ -6,7 +6,7 @@ mod opmod;
 mod opty;
 
 use self::{
-    impls::{DisplayBinaryOpImplsFile, DisplayUnaryOpImplsFile},
+    impls::{DisplayBinaryOpImpls, DisplayUnaryOpImpls},
     opcode::DisplayOpCodeEnum,
     opmod::DisplayOpMod,
     opty::DisplayOpEnum,
@@ -20,10 +20,13 @@ pub fn generate_instrs(ctx: &Context) -> Result<(), io::Error> {
     generate_file("op_ty.rs", DisplayOpEnum::new(ctx, indent))?;
     generate_file("op_code.rs", DisplayOpCodeEnum::new(ctx, indent))?;
     generate_file("op.rs", DisplayOpMod::new(ctx, indent))?;
-    generate_file("impls/unary.rs", DisplayUnaryOpImplsFile::new(ctx, indent))?;
+    generate_file(
+        "impls/unary.rs",
+        DisplayUnaryOpImpls::new(&ctx.unary_ops, indent),
+    )?;
     generate_file(
         "impls/binary_commutative.rs",
-        DisplayBinaryOpImplsFile::new(ctx, indent),
+        DisplayBinaryOpImpls::new(&ctx.binary_commutative_ops, indent),
     )?;
     Ok(())
 }
