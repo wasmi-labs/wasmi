@@ -104,3 +104,42 @@ pub trait BinaryCommutativeOperator {
     /// Creates the operator variant with signature: `fn(Stack, Stack) -> Stack`
     fn make_sss(result: Stack, lhs: Stack, rhs: Stack) -> Self::OpSss;
 }
+
+/// Class of non-commutative binary operators.
+pub trait BinaryOperator {
+    /// The name of the operator class.
+    const NAME: &'static str;
+
+    /// The type of immediate input operands.
+    type Imm;
+
+    /// The operator variant with signature: `fn(Imm, Reg) -> Reg`
+    type OpRir: Operator;
+    /// The operator variant with signature: `fn(Imm, Stack) -> Reg`
+    type OpRis: Operator;
+    /// The operator variant with signature: `fn(Reg, Imm) -> Reg`
+    type OpRri: Operator;
+    /// The operator variant with signature: `fn(Reg, Stack) -> Reg`
+    type OpRrs: Operator;
+    /// The operator variant with signature: `fn(Stack, Imm) -> Reg`
+    type OpRsi: Operator;
+    /// The operator variant with signature: `fn(Stack, Reg) -> Reg`
+    type OpRsr: Operator;
+    /// The operator variant with signature: `fn(Stack, Stack) -> Reg`
+    type OpRss: Operator;
+
+    /// Creates the operator variant with signature: `fn(Imm, Reg) -> Reg`
+    fn make_rir(result: Reg, lhs: Self::Imm, rhs: Reg) -> Self::OpRir;
+    /// Creates the operator variant with signature: `fn(Imm, Stack) -> Reg`
+    fn make_ris(result: Reg, lhs: Self::Imm, rhs: Stack) -> Self::OpRis;
+    /// Creates the operator variant with signature: `fn(Reg, Imm) -> Reg`
+    fn make_rri(result: Reg, lhs: Reg, rhs: Self::Imm) -> Self::OpRri;
+    /// Creates the operator variant with signature: `fn(Reg, Stack) -> Reg`
+    fn make_rrs(result: Reg, lhs: Reg, rhs: Stack) -> Self::OpRrs;
+    /// Creates the operator variant with signature: `fn(Stack, Imm) -> Reg`
+    fn make_rsi(result: Reg, lhs: Stack, rhs: Self::Imm) -> Self::OpRsi;
+    /// Creates the operator variant with signature: `fn(Stack, Reg) -> Reg`
+    fn make_rsr(result: Reg, lhs: Stack, rhs: Reg) -> Self::OpRsr;
+    /// Creates the operator variant with signature: `fn(Stack, Stack) -> Reg`
+    fn make_rss(result: Reg, lhs: Stack, rhs: Stack) -> Self::OpRss;
+}
