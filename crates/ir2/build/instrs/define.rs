@@ -382,11 +382,13 @@ fn define_binop_instrs(
                     }
                 }
             }
-            if commutative {
-                ctx.binary_commutative_ops.push(BinaryOp {
-                    name: name.into(),
-                    input_ty: ty,
-                });
+            let op_class = BinaryOp {
+                name: name.into(),
+                input_ty: ty,
+            };
+            match commutative {
+                true => ctx.binary_commutative_ops.push(op_class),
+                false => ctx.binary_ops.push(op_class),
             }
         }
     }

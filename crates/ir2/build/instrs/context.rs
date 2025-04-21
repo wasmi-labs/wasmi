@@ -6,6 +6,7 @@ pub struct Context {
     ops: Vec<Op>,
     pub unary_ops: Vec<UnaryOp>,
     pub binary_commutative_ops: Vec<BinaryOp>,
+    pub binary_ops: Vec<BinaryOp>,
 }
 
 pub struct UnaryOp {
