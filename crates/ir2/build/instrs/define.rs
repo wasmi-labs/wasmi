@@ -346,7 +346,7 @@ fn define_binop_instrs(
     let rhs_in = [Operand::Reg, Operand::Stack, Operand::Immediate];
     for op in ops {
         for ty in tys.clone() {
-            let op = format!("{ty}{op}");
+            let name = format!("{ty}{op}");
             for result in results {
                 for lhs in lhs_in {
                     for rhs in rhs_in {
@@ -363,7 +363,7 @@ fn define_binop_instrs(
                         let lhs_id = lhs.id();
                         let rhs_id = rhs.id();
                         ctx.push_op(op! {
-                            name: format!("{op}_{result_id}{lhs_id}{rhs_id}"),
+                            name: format!("{name}_{result_id}{lhs_id}{rhs_id}"),
                             fields: [
                                 result: result.ty(ty),
                                 lhs: lhs.ty(ty),
