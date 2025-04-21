@@ -5,8 +5,8 @@ mod utils;
 mod define;
 mod generate;
 
-use self::{
-    context::{Context, Field, FieldName, FieldTy, Op, UnaryOp},
+pub use self::{
+    context::{BinaryCommutativeOp, Context, Field, FieldName, FieldTy, Op, UnaryOp},
     define::define_instrs,
     generate::generate_instrs,
     utils::{ImmediateTy, Operand, ValTy},

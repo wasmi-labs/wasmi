@@ -95,6 +95,17 @@ pub enum ValTy {
     F64,
 }
 
+impl From<ValTy> for ImmediateTy {
+    fn from(ty: ValTy) -> Self {
+        match ty {
+            ValTy::I32 => ImmediateTy::I32,
+            ValTy::I64 => ImmediateTy::I64,
+            ValTy::F32 => ImmediateTy::F32,
+            ValTy::F64 => ImmediateTy::F64,
+        }
+    }
+}
+
 impl Display for ValTy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let str = match self {

@@ -1,18 +1,18 @@
 #[macro_use]
 mod utils;
+mod impls;
 mod opcode;
 mod opmod;
 mod opty;
-mod unary_op;
 
 use self::{
+    impls::{DisplayBinaryOpImplsFile, DisplayUnaryOpImplsFile},
     opcode::DisplayOpCodeEnum,
     opmod::DisplayOpMod,
     opty::DisplayOpEnum,
-    unary_op::DisplayOpClasses,
     utils::{DisplayFields, DisplayFieldsPattern, DisplayIndent, Visibility},
 };
-use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op, UnaryOp};
+use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op, Operand};
 use std::{fmt::Display, fs, io};
 
 pub fn generate_instrs(ctx: &Context) -> Result<(), io::Error> {
@@ -20,7 +20,11 @@ pub fn generate_instrs(ctx: &Context) -> Result<(), io::Error> {
     generate_file("op_ty.rs", DisplayOpEnum::new(ctx, indent))?;
     generate_file("op_code.rs", DisplayOpCodeEnum::new(ctx, indent))?;
     generate_file("op.rs", DisplayOpMod::new(ctx, indent))?;
-    generate_file("unary_op.rs", DisplayOpClasses::new(ctx, indent))?;
+    generate_file("impls/unary.rs", DisplayUnaryOpImplsFile::new(ctx, indent))?;
+    generate_file(
+        "impls/binary_commutative.rs",
+        DisplayBinaryOpImplsFile::new(ctx, indent),
+    )?;
     Ok(())
 }
 
