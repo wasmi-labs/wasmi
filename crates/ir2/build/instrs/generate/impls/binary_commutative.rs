@@ -88,6 +88,7 @@ impl Display for DisplayBinaryCommutativeOperatorImpls<'_> {
             writeln!(f)?;
             self.emit(f, op)?;
         }
+        writeln!(f)?;
         Ok(())
     }
 }

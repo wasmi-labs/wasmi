@@ -64,6 +64,7 @@ impl Display for DisplayUnaryOperatorImpls<'_> {
             writeln!(f)?;
             self.emit(f, op)?;
         }
+        writeln!(f)?;
         Ok(())
     }
 }

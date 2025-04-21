@@ -61,7 +61,7 @@ impl<'a> DisplayBinaryOperatorImpls<'a> {
             {indent}    fn make_rss(result: crate::Reg, lhs: crate::Stack, rhs: crate::Stack) -> Self::OpRss {{\n\
             {indent}        Self::OpRss {{ result, lhs, rhs }}\n\
             {indent}    }}\n\
-            {indent}}}\n\
+            {indent}}}\
             "
         )
     }
@@ -83,6 +83,7 @@ impl Display for DisplayBinaryOperatorImpls<'_> {
             writeln!(f)?;
             self.emit(f, op)?;
         }
+        writeln!(f)?;
         Ok(())
     }
 }

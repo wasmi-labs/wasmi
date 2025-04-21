@@ -35,7 +35,6 @@ impl crate::BinaryOperator for I32Sub {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64Sub {}
 impl crate::BinaryOperator for I64Sub {
     const NAME: &'static ::core::primitive::str = "I64Sub";
@@ -69,7 +68,6 @@ impl crate::BinaryOperator for I64Sub {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32LtS {}
 impl crate::BinaryOperator for I32LtS {
     const NAME: &'static ::core::primitive::str = "I32LtS";
@@ -103,7 +101,6 @@ impl crate::BinaryOperator for I32LtS {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64LtS {}
 impl crate::BinaryOperator for I64LtS {
     const NAME: &'static ::core::primitive::str = "I64LtS";
@@ -137,7 +134,6 @@ impl crate::BinaryOperator for I64LtS {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32LtU {}
 impl crate::BinaryOperator for I32LtU {
     const NAME: &'static ::core::primitive::str = "I32LtU";
@@ -171,7 +167,6 @@ impl crate::BinaryOperator for I32LtU {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64LtU {}
 impl crate::BinaryOperator for I64LtU {
     const NAME: &'static ::core::primitive::str = "I64LtU";
@@ -205,7 +200,6 @@ impl crate::BinaryOperator for I64LtU {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32LeS {}
 impl crate::BinaryOperator for I32LeS {
     const NAME: &'static ::core::primitive::str = "I32LeS";
@@ -239,7 +233,6 @@ impl crate::BinaryOperator for I32LeS {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64LeS {}
 impl crate::BinaryOperator for I64LeS {
     const NAME: &'static ::core::primitive::str = "I64LeS";
@@ -273,7 +266,6 @@ impl crate::BinaryOperator for I64LeS {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32LeU {}
 impl crate::BinaryOperator for I32LeU {
     const NAME: &'static ::core::primitive::str = "I32LeU";
@@ -307,7 +299,6 @@ impl crate::BinaryOperator for I32LeU {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64LeU {}
 impl crate::BinaryOperator for I64LeU {
     const NAME: &'static ::core::primitive::str = "I64LeU";
@@ -341,7 +332,6 @@ impl crate::BinaryOperator for I64LeU {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32DivS {}
 impl crate::BinaryOperator for I32DivS {
     const NAME: &'static ::core::primitive::str = "I32DivS";
@@ -375,7 +365,6 @@ impl crate::BinaryOperator for I32DivS {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64DivS {}
 impl crate::BinaryOperator for I64DivS {
     const NAME: &'static ::core::primitive::str = "I64DivS";
@@ -409,7 +398,6 @@ impl crate::BinaryOperator for I64DivS {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32DivU {}
 impl crate::BinaryOperator for I32DivU {
     const NAME: &'static ::core::primitive::str = "I32DivU";
@@ -443,7 +431,6 @@ impl crate::BinaryOperator for I32DivU {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64DivU {}
 impl crate::BinaryOperator for I64DivU {
     const NAME: &'static ::core::primitive::str = "I64DivU";
@@ -477,7 +464,6 @@ impl crate::BinaryOperator for I64DivU {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32RemS {}
 impl crate::BinaryOperator for I32RemS {
     const NAME: &'static ::core::primitive::str = "I32RemS";
@@ -511,7 +497,6 @@ impl crate::BinaryOperator for I32RemS {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64RemS {}
 impl crate::BinaryOperator for I64RemS {
     const NAME: &'static ::core::primitive::str = "I64RemS";
@@ -545,7 +530,6 @@ impl crate::BinaryOperator for I64RemS {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32RemU {}
 impl crate::BinaryOperator for I32RemU {
     const NAME: &'static ::core::primitive::str = "I32RemU";
@@ -579,7 +563,6 @@ impl crate::BinaryOperator for I32RemU {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64RemU {}
 impl crate::BinaryOperator for I64RemU {
     const NAME: &'static ::core::primitive::str = "I64RemU";
@@ -613,7 +596,6 @@ impl crate::BinaryOperator for I64RemU {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32Shl {}
 impl crate::BinaryOperator for I32Shl {
     const NAME: &'static ::core::primitive::str = "I32Shl";
@@ -647,7 +629,6 @@ impl crate::BinaryOperator for I32Shl {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64Shl {}
 impl crate::BinaryOperator for I64Shl {
     const NAME: &'static ::core::primitive::str = "I64Shl";
@@ -681,7 +662,6 @@ impl crate::BinaryOperator for I64Shl {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32ShrS {}
 impl crate::BinaryOperator for I32ShrS {
     const NAME: &'static ::core::primitive::str = "I32ShrS";
@@ -715,7 +695,6 @@ impl crate::BinaryOperator for I32ShrS {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64ShrS {}
 impl crate::BinaryOperator for I64ShrS {
     const NAME: &'static ::core::primitive::str = "I64ShrS";
@@ -749,7 +728,6 @@ impl crate::BinaryOperator for I64ShrS {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32ShrU {}
 impl crate::BinaryOperator for I32ShrU {
     const NAME: &'static ::core::primitive::str = "I32ShrU";
@@ -783,7 +761,6 @@ impl crate::BinaryOperator for I32ShrU {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64ShrU {}
 impl crate::BinaryOperator for I64ShrU {
     const NAME: &'static ::core::primitive::str = "I64ShrU";
@@ -817,7 +794,6 @@ impl crate::BinaryOperator for I64ShrU {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32Rotl {}
 impl crate::BinaryOperator for I32Rotl {
     const NAME: &'static ::core::primitive::str = "I32Rotl";
@@ -851,7 +827,6 @@ impl crate::BinaryOperator for I32Rotl {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64Rotl {}
 impl crate::BinaryOperator for I64Rotl {
     const NAME: &'static ::core::primitive::str = "I64Rotl";
@@ -885,7 +860,6 @@ impl crate::BinaryOperator for I64Rotl {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I32Rotr {}
 impl crate::BinaryOperator for I32Rotr {
     const NAME: &'static ::core::primitive::str = "I32Rotr";
@@ -919,7 +893,6 @@ impl crate::BinaryOperator for I32Rotr {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum I64Rotr {}
 impl crate::BinaryOperator for I64Rotr {
     const NAME: &'static ::core::primitive::str = "I64Rotr";
@@ -953,7 +926,6 @@ impl crate::BinaryOperator for I64Rotr {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum F32Sub {}
 impl crate::BinaryOperator for F32Sub {
     const NAME: &'static ::core::primitive::str = "F32Sub";
@@ -987,7 +959,6 @@ impl crate::BinaryOperator for F32Sub {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum F64Sub {}
 impl crate::BinaryOperator for F64Sub {
     const NAME: &'static ::core::primitive::str = "F64Sub";
@@ -1021,7 +992,6 @@ impl crate::BinaryOperator for F64Sub {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum F32Div {}
 impl crate::BinaryOperator for F32Div {
     const NAME: &'static ::core::primitive::str = "F32Div";
@@ -1055,7 +1025,6 @@ impl crate::BinaryOperator for F32Div {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum F64Div {}
 impl crate::BinaryOperator for F64Div {
     const NAME: &'static ::core::primitive::str = "F64Div";
@@ -1089,7 +1058,6 @@ impl crate::BinaryOperator for F64Div {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum F32Copysign {}
 impl crate::BinaryOperator for F32Copysign {
     const NAME: &'static ::core::primitive::str = "F32Copysign";
@@ -1123,7 +1091,6 @@ impl crate::BinaryOperator for F32Copysign {
         Self::OpRss { result, lhs, rhs }
     }
 }
-
 pub enum F64Copysign {}
 impl crate::BinaryOperator for F64Copysign {
     const NAME: &'static ::core::primitive::str = "F64Copysign";
