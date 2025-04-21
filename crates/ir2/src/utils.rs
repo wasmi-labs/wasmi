@@ -37,27 +37,27 @@ impl<T> Operator for T where T: Copy + OperatorCode + Into<Op> {}
 
 /// Class of unary operators.
 pub trait UnaryOperator {
-    /// The name of the unary operator.
+    /// The name of the operator class.
     const NAME: &'static str;
 
-    /// The variant of the unary operator that takes a [`Reg`] and returns a [`Reg`].
+    /// The operator variant that takes a [`Reg`] and returns a [`Reg`].
     type OpRr: Operator;
 
-    /// The variant of the unary operator that takes a [`Stack`] and returns a [`Reg`].
+    /// The operator variant that takes a [`Stack`] and returns a [`Reg`].
     type OpRs: Operator;
 
-    /// The variant of the unary operator that takes a [`Reg`] and returns a [`Stack`].
+    /// The operator variant that takes a [`Reg`] and returns a [`Stack`].
     type OpSr: Operator;
 
-    /// The variant of the unary operator that takes a [`Stack`] and returns a [`Stack`].
+    /// The operator variant that takes a [`Stack`] and returns a [`Stack`].
     type OpSs: Operator;
 
-    /// Creates the unary operator variant that takes a [`Reg`] and returns a [`Reg`].
+    /// Creates the operator variant that takes a [`Reg`] and returns a [`Reg`].
     fn make_rr(result: Reg, input: Reg) -> Self::OpRr;
-    /// Creates the unary operator variant that takes a [`Stack`] and returns a [`Reg`].
+    /// Creates the operator variant that takes a [`Stack`] and returns a [`Reg`].
     fn make_rs(result: Reg, input: Stack) -> Self::OpRs;
-    /// Creates the unary operator variant that takes a [`Reg`] and returns a [`Stack`].
+    /// Creates the operator variant that takes a [`Reg`] and returns a [`Stack`].
     fn make_sr(result: Stack, input: Reg) -> Self::OpSr;
-    /// Creates the unary operator variant that takes a [`Stack`] and returns a [`Stack`].
+    /// Creates the operator variant that takes a [`Stack`] and returns a [`Stack`].
     fn make_ss(result: Stack, input: Stack) -> Self::OpSs;
 }
