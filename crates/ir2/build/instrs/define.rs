@@ -1,4 +1,13 @@
-use super::{context::UnaryOp, Context, FieldName, FieldTy, ImmediateTy, Op, Operand, ValTy};
+use super::{
+    context::{BinaryCommutativeOp, UnaryOp},
+    Context,
+    FieldName,
+    FieldTy,
+    ImmediateTy,
+    Op,
+    Operand,
+    ValTy,
+};
 use std::format;
 
 pub fn define_instrs(ctx: &mut Context) {
@@ -372,6 +381,12 @@ fn define_binop_instrs(
                         });
                     }
                 }
+            }
+            if commutative {
+                ctx.binary_commutative_ops.push(BinaryCommutativeOp {
+                    name: name.into(),
+                    input_ty: ty,
+                });
             }
         }
     }

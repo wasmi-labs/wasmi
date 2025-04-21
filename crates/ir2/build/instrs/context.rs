@@ -1,14 +1,20 @@
-use super::ImmediateTy;
+use super::{utils::ValTy, ImmediateTy};
 use std::{boxed::Box, vec::Vec};
 
 #[derive(Default)]
 pub struct Context {
     ops: Vec<Op>,
     pub unary_ops: Vec<UnaryOp>,
+    pub binary_commutative_ops: Vec<BinaryCommutativeOp>,
 }
 
 pub struct UnaryOp {
     pub name: Box<str>,
+}
+
+pub struct BinaryCommutativeOp {
+    pub name: Box<str>,
+    pub input_ty: ValTy,
 }
 
 impl Context {
