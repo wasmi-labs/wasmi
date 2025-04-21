@@ -1,5 +1,5 @@
 use super::{
-    context::{BinaryCommutativeOp, UnaryOp},
+    context::{BinaryOp, UnaryOp},
     Context,
     FieldName,
     FieldTy,
@@ -383,7 +383,7 @@ fn define_binop_instrs(
                 }
             }
             if commutative {
-                ctx.binary_commutative_ops.push(BinaryCommutativeOp {
+                ctx.binary_commutative_ops.push(BinaryOp {
                     name: name.into(),
                     input_ty: ty,
                 });

@@ -5,14 +5,14 @@ use std::{boxed::Box, vec::Vec};
 pub struct Context {
     ops: Vec<Op>,
     pub unary_ops: Vec<UnaryOp>,
-    pub binary_commutative_ops: Vec<BinaryCommutativeOp>,
+    pub binary_commutative_ops: Vec<BinaryOp>,
 }
 
 pub struct UnaryOp {
     pub name: Box<str>,
 }
 
-pub struct BinaryCommutativeOp {
+pub struct BinaryOp {
     pub name: Box<str>,
     pub input_ty: ValTy,
 }
