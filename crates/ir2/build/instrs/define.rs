@@ -1,5 +1,5 @@
 use super::{
-    context::{BinaryOp, UnaryOp},
+    context::{BinaryOp, LoadOp, UnaryOp},
     Context,
     FieldName,
     FieldTy,
@@ -272,6 +272,7 @@ fn define_load_instrs(ctx: &mut Context) {
                 }
             }
         }
+        ctx.load_ops.push(LoadOp { name: name.into() });
     }
 }
 

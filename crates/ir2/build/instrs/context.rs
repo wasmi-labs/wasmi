@@ -7,6 +7,7 @@ pub struct Context {
     pub unary_ops: Vec<UnaryOp>,
     pub binary_commutative_ops: Vec<BinaryOp>,
     pub binary_ops: Vec<BinaryOp>,
+    pub load_ops: Vec<LoadOp>,
 }
 
 pub struct UnaryOp {
@@ -16,6 +17,10 @@ pub struct UnaryOp {
 pub struct BinaryOp {
     pub name: Box<str>,
     pub input_ty: ValTy,
+}
+
+pub struct LoadOp {
+    pub name: Box<str>,
 }
 
 impl Context {
