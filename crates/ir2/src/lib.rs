@@ -20,6 +20,7 @@ pub use self::{
         LoadOperator,
         Operator,
         OperatorCode,
+        StoreOperator,
         UnaryOperator,
     },
 };
