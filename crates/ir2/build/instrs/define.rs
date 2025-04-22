@@ -11,13 +11,13 @@ use super::{
 use std::format;
 
 pub fn define_ops(ctx: &mut Context) {
-    define_trap_instr(ctx);
-    define_consume_fuel_instr(ctx);
+    define_trap_op(ctx);
+    define_consume_fuel_op(ctx);
     define_copy_ops(ctx);
     define_return_ops(ctx);
     define_global_ops(ctx);
     define_br_table_ops(ctx);
-    define_branch_instr(ctx);
+    define_branch_op(ctx);
     define_fused_cmp_branch_ops_commutative(ctx);
     define_fused_cmp_branch_ops(ctx);
     define_iunop_ops(ctx);
@@ -32,7 +32,7 @@ pub fn define_ops(ctx: &mut Context) {
     define_call_ops(ctx);
 }
 
-fn define_trap_instr(ctx: &mut Context) {
+fn define_trap_op(ctx: &mut Context) {
     ctx.push_op(op! {
         name: format!("Trap"),
         fields: [
@@ -41,7 +41,7 @@ fn define_trap_instr(ctx: &mut Context) {
     })
 }
 
-fn define_consume_fuel_instr(ctx: &mut Context) {
+fn define_consume_fuel_op(ctx: &mut Context) {
     ctx.push_op(op! {
         name: format!("ConsumeFuel"),
         fields: [
@@ -50,7 +50,7 @@ fn define_consume_fuel_instr(ctx: &mut Context) {
     })
 }
 
-fn define_branch_instr(ctx: &mut Context) {
+fn define_branch_op(ctx: &mut Context) {
     ctx.push_op(op! {
         name: format!("Branch"),
         fields: [
