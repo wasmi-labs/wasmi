@@ -225,12 +225,8 @@ fn define_load_instrs(ctx: &mut Context) {
     let results = [Operand::Reg, Operand::Stack];
     let ptrs = [Operand::Reg, Operand::Stack, Operand::Immediate];
     for (op, ty) in ops_and_tys {
+        let name = format!("{ty}{op}");
         for mem0 in [false, true] {
-            let mem0_str: &str = match mem0 {
-                true => "Mem0",
-                false => "",
-            };
-            let op = format!("{ty}{op}{mem0_str}");
             for result in results {
                 if !mem0 && result.is_stack() {
                     continue;
@@ -238,17 +234,32 @@ fn define_load_instrs(ctx: &mut Context) {
                 for ptr in ptrs {
                     let result_id = result.id();
                     let ptr_id = ptr.id();
-                    let instr = match mem0 {
-                        true => op! {
-                            name: format!("{op}_{result_id}{ptr_id}"),
+                    let instr = match (mem0, ptr) {
+                        (true, Operand::Immediate) => op! {
+                            name: format!("{name}Mem0_{result_id}{ptr_id}"),
+                            fields: [
+                                result: result.ty(ty),
+                                address: ImmediateTy::Address,
+                            ],
+                        },
+                        (true, _) => op! {
+                            name: format!("{name}Mem0_{result_id}{ptr_id}"),
                             fields: [
                                 result: result.ty(ty),
                                 ptr: ptr.ty(ValTy::I64),
                                 offset: ImmediateTy::Offset,
                             ],
                         },
-                        false => op! {
-                            name: format!("{op}_{result_id}{ptr_id}"),
+                        (false, Operand::Immediate) => op! {
+                            name: format!("{name}_{result_id}{ptr_id}"),
+                            fields: [
+                                result: result.ty(ty),
+                                address: ImmediateTy::Address,
+                                memory: ImmediateTy::Memory,
+                            ],
+                        },
+                        (false, _) => op! {
+                            name: format!("{name}_{result_id}{ptr_id}"),
                             fields: [
                                 result: result.ty(ty),
                                 ptr: ptr.ty(ValTy::I64),

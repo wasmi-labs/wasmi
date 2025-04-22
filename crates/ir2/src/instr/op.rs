@@ -16505,8 +16505,7 @@ impl ::core::convert::From<I32Load_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I32Load_RI {}
@@ -16519,8 +16518,7 @@ impl ::core::convert::From<I32Load_RI> for crate::Op {
     fn from(op: I32Load_RI) -> Self {
         Self::I32Load_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -16570,8 +16568,7 @@ impl ::core::convert::From<I32LoadMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32LoadMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I32LoadMem0_RI {}
 impl ::core::clone::Clone for I32LoadMem0_RI {
@@ -16583,8 +16580,7 @@ impl ::core::convert::From<I32LoadMem0_RI> for crate::Op {
     fn from(op: I32LoadMem0_RI) -> Self {
         Self::I32LoadMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -16633,8 +16629,7 @@ impl ::core::convert::From<I32LoadMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32LoadMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I32LoadMem0_SI {}
 impl ::core::clone::Clone for I32LoadMem0_SI {
@@ -16646,8 +16641,7 @@ impl ::core::convert::From<I32LoadMem0_SI> for crate::Op {
     fn from(op: I32LoadMem0_SI) -> Self {
         Self::I32LoadMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -16700,8 +16694,7 @@ impl ::core::convert::From<I64Load_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I64Load_RI {}
@@ -16714,8 +16707,7 @@ impl ::core::convert::From<I64Load_RI> for crate::Op {
     fn from(op: I64Load_RI) -> Self {
         Self::I64Load_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -16765,8 +16757,7 @@ impl ::core::convert::From<I64LoadMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64LoadMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64LoadMem0_RI {}
 impl ::core::clone::Clone for I64LoadMem0_RI {
@@ -16778,8 +16769,7 @@ impl ::core::convert::From<I64LoadMem0_RI> for crate::Op {
     fn from(op: I64LoadMem0_RI) -> Self {
         Self::I64LoadMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -16828,8 +16818,7 @@ impl ::core::convert::From<I64LoadMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64LoadMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64LoadMem0_SI {}
 impl ::core::clone::Clone for I64LoadMem0_SI {
@@ -16841,8 +16830,7 @@ impl ::core::convert::From<I64LoadMem0_SI> for crate::Op {
     fn from(op: I64LoadMem0_SI) -> Self {
         Self::I64LoadMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -16895,8 +16883,7 @@ impl ::core::convert::From<F32Load_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct F32Load_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for F32Load_RI {}
@@ -16909,8 +16896,7 @@ impl ::core::convert::From<F32Load_RI> for crate::Op {
     fn from(op: F32Load_RI) -> Self {
         Self::F32Load_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -16960,8 +16946,7 @@ impl ::core::convert::From<F32LoadMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct F32LoadMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for F32LoadMem0_RI {}
 impl ::core::clone::Clone for F32LoadMem0_RI {
@@ -16973,8 +16958,7 @@ impl ::core::convert::From<F32LoadMem0_RI> for crate::Op {
     fn from(op: F32LoadMem0_RI) -> Self {
         Self::F32LoadMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17023,8 +17007,7 @@ impl ::core::convert::From<F32LoadMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct F32LoadMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for F32LoadMem0_SI {}
 impl ::core::clone::Clone for F32LoadMem0_SI {
@@ -17036,8 +17019,7 @@ impl ::core::convert::From<F32LoadMem0_SI> for crate::Op {
     fn from(op: F32LoadMem0_SI) -> Self {
         Self::F32LoadMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17090,8 +17072,7 @@ impl ::core::convert::From<F64Load_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct F64Load_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for F64Load_RI {}
@@ -17104,8 +17085,7 @@ impl ::core::convert::From<F64Load_RI> for crate::Op {
     fn from(op: F64Load_RI) -> Self {
         Self::F64Load_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -17155,8 +17135,7 @@ impl ::core::convert::From<F64LoadMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct F64LoadMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for F64LoadMem0_RI {}
 impl ::core::clone::Clone for F64LoadMem0_RI {
@@ -17168,8 +17147,7 @@ impl ::core::convert::From<F64LoadMem0_RI> for crate::Op {
     fn from(op: F64LoadMem0_RI) -> Self {
         Self::F64LoadMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17218,8 +17196,7 @@ impl ::core::convert::From<F64LoadMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct F64LoadMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for F64LoadMem0_SI {}
 impl ::core::clone::Clone for F64LoadMem0_SI {
@@ -17231,8 +17208,7 @@ impl ::core::convert::From<F64LoadMem0_SI> for crate::Op {
     fn from(op: F64LoadMem0_SI) -> Self {
         Self::F64LoadMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17285,8 +17261,7 @@ impl ::core::convert::From<I32Load8S_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load8S_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I32Load8S_RI {}
@@ -17299,8 +17274,7 @@ impl ::core::convert::From<I32Load8S_RI> for crate::Op {
     fn from(op: I32Load8S_RI) -> Self {
         Self::I32Load8S_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -17350,8 +17324,7 @@ impl ::core::convert::From<I32Load8SMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load8SMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I32Load8SMem0_RI {}
 impl ::core::clone::Clone for I32Load8SMem0_RI {
@@ -17363,8 +17336,7 @@ impl ::core::convert::From<I32Load8SMem0_RI> for crate::Op {
     fn from(op: I32Load8SMem0_RI) -> Self {
         Self::I32Load8SMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17413,8 +17385,7 @@ impl ::core::convert::From<I32Load8SMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load8SMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I32Load8SMem0_SI {}
 impl ::core::clone::Clone for I32Load8SMem0_SI {
@@ -17426,8 +17397,7 @@ impl ::core::convert::From<I32Load8SMem0_SI> for crate::Op {
     fn from(op: I32Load8SMem0_SI) -> Self {
         Self::I32Load8SMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17480,8 +17450,7 @@ impl ::core::convert::From<I64Load8S_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load8S_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I64Load8S_RI {}
@@ -17494,8 +17463,7 @@ impl ::core::convert::From<I64Load8S_RI> for crate::Op {
     fn from(op: I64Load8S_RI) -> Self {
         Self::I64Load8S_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -17545,8 +17513,7 @@ impl ::core::convert::From<I64Load8SMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load8SMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load8SMem0_RI {}
 impl ::core::clone::Clone for I64Load8SMem0_RI {
@@ -17558,8 +17525,7 @@ impl ::core::convert::From<I64Load8SMem0_RI> for crate::Op {
     fn from(op: I64Load8SMem0_RI) -> Self {
         Self::I64Load8SMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17608,8 +17574,7 @@ impl ::core::convert::From<I64Load8SMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load8SMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load8SMem0_SI {}
 impl ::core::clone::Clone for I64Load8SMem0_SI {
@@ -17621,8 +17586,7 @@ impl ::core::convert::From<I64Load8SMem0_SI> for crate::Op {
     fn from(op: I64Load8SMem0_SI) -> Self {
         Self::I64Load8SMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17675,8 +17639,7 @@ impl ::core::convert::From<I32Load8U_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load8U_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I32Load8U_RI {}
@@ -17689,8 +17652,7 @@ impl ::core::convert::From<I32Load8U_RI> for crate::Op {
     fn from(op: I32Load8U_RI) -> Self {
         Self::I32Load8U_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -17740,8 +17702,7 @@ impl ::core::convert::From<I32Load8UMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load8UMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I32Load8UMem0_RI {}
 impl ::core::clone::Clone for I32Load8UMem0_RI {
@@ -17753,8 +17714,7 @@ impl ::core::convert::From<I32Load8UMem0_RI> for crate::Op {
     fn from(op: I32Load8UMem0_RI) -> Self {
         Self::I32Load8UMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17803,8 +17763,7 @@ impl ::core::convert::From<I32Load8UMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load8UMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I32Load8UMem0_SI {}
 impl ::core::clone::Clone for I32Load8UMem0_SI {
@@ -17816,8 +17775,7 @@ impl ::core::convert::From<I32Load8UMem0_SI> for crate::Op {
     fn from(op: I32Load8UMem0_SI) -> Self {
         Self::I32Load8UMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17870,8 +17828,7 @@ impl ::core::convert::From<I64Load8U_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load8U_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I64Load8U_RI {}
@@ -17884,8 +17841,7 @@ impl ::core::convert::From<I64Load8U_RI> for crate::Op {
     fn from(op: I64Load8U_RI) -> Self {
         Self::I64Load8U_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -17935,8 +17891,7 @@ impl ::core::convert::From<I64Load8UMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load8UMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load8UMem0_RI {}
 impl ::core::clone::Clone for I64Load8UMem0_RI {
@@ -17948,8 +17903,7 @@ impl ::core::convert::From<I64Load8UMem0_RI> for crate::Op {
     fn from(op: I64Load8UMem0_RI) -> Self {
         Self::I64Load8UMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -17998,8 +17952,7 @@ impl ::core::convert::From<I64Load8UMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load8UMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load8UMem0_SI {}
 impl ::core::clone::Clone for I64Load8UMem0_SI {
@@ -18011,8 +17964,7 @@ impl ::core::convert::From<I64Load8UMem0_SI> for crate::Op {
     fn from(op: I64Load8UMem0_SI) -> Self {
         Self::I64Load8UMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -18065,8 +18017,7 @@ impl ::core::convert::From<I32Load16S_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load16S_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I32Load16S_RI {}
@@ -18079,8 +18030,7 @@ impl ::core::convert::From<I32Load16S_RI> for crate::Op {
     fn from(op: I32Load16S_RI) -> Self {
         Self::I32Load16S_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -18130,8 +18080,7 @@ impl ::core::convert::From<I32Load16SMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load16SMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I32Load16SMem0_RI {}
 impl ::core::clone::Clone for I32Load16SMem0_RI {
@@ -18143,8 +18092,7 @@ impl ::core::convert::From<I32Load16SMem0_RI> for crate::Op {
     fn from(op: I32Load16SMem0_RI) -> Self {
         Self::I32Load16SMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -18193,8 +18141,7 @@ impl ::core::convert::From<I32Load16SMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load16SMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I32Load16SMem0_SI {}
 impl ::core::clone::Clone for I32Load16SMem0_SI {
@@ -18206,8 +18153,7 @@ impl ::core::convert::From<I32Load16SMem0_SI> for crate::Op {
     fn from(op: I32Load16SMem0_SI) -> Self {
         Self::I32Load16SMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -18260,8 +18206,7 @@ impl ::core::convert::From<I64Load16S_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load16S_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I64Load16S_RI {}
@@ -18274,8 +18219,7 @@ impl ::core::convert::From<I64Load16S_RI> for crate::Op {
     fn from(op: I64Load16S_RI) -> Self {
         Self::I64Load16S_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -18325,8 +18269,7 @@ impl ::core::convert::From<I64Load16SMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load16SMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load16SMem0_RI {}
 impl ::core::clone::Clone for I64Load16SMem0_RI {
@@ -18338,8 +18281,7 @@ impl ::core::convert::From<I64Load16SMem0_RI> for crate::Op {
     fn from(op: I64Load16SMem0_RI) -> Self {
         Self::I64Load16SMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -18388,8 +18330,7 @@ impl ::core::convert::From<I64Load16SMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load16SMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load16SMem0_SI {}
 impl ::core::clone::Clone for I64Load16SMem0_SI {
@@ -18401,8 +18342,7 @@ impl ::core::convert::From<I64Load16SMem0_SI> for crate::Op {
     fn from(op: I64Load16SMem0_SI) -> Self {
         Self::I64Load16SMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -18455,8 +18395,7 @@ impl ::core::convert::From<I32Load16U_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load16U_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I32Load16U_RI {}
@@ -18469,8 +18408,7 @@ impl ::core::convert::From<I32Load16U_RI> for crate::Op {
     fn from(op: I32Load16U_RI) -> Self {
         Self::I32Load16U_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -18520,8 +18458,7 @@ impl ::core::convert::From<I32Load16UMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load16UMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I32Load16UMem0_RI {}
 impl ::core::clone::Clone for I32Load16UMem0_RI {
@@ -18533,8 +18470,7 @@ impl ::core::convert::From<I32Load16UMem0_RI> for crate::Op {
     fn from(op: I32Load16UMem0_RI) -> Self {
         Self::I32Load16UMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -18583,8 +18519,7 @@ impl ::core::convert::From<I32Load16UMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I32Load16UMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I32Load16UMem0_SI {}
 impl ::core::clone::Clone for I32Load16UMem0_SI {
@@ -18596,8 +18531,7 @@ impl ::core::convert::From<I32Load16UMem0_SI> for crate::Op {
     fn from(op: I32Load16UMem0_SI) -> Self {
         Self::I32Load16UMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -18650,8 +18584,7 @@ impl ::core::convert::From<I64Load16U_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load16U_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I64Load16U_RI {}
@@ -18664,8 +18597,7 @@ impl ::core::convert::From<I64Load16U_RI> for crate::Op {
     fn from(op: I64Load16U_RI) -> Self {
         Self::I64Load16U_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -18715,8 +18647,7 @@ impl ::core::convert::From<I64Load16UMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load16UMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load16UMem0_RI {}
 impl ::core::clone::Clone for I64Load16UMem0_RI {
@@ -18728,8 +18659,7 @@ impl ::core::convert::From<I64Load16UMem0_RI> for crate::Op {
     fn from(op: I64Load16UMem0_RI) -> Self {
         Self::I64Load16UMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -18778,8 +18708,7 @@ impl ::core::convert::From<I64Load16UMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load16UMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load16UMem0_SI {}
 impl ::core::clone::Clone for I64Load16UMem0_SI {
@@ -18791,8 +18720,7 @@ impl ::core::convert::From<I64Load16UMem0_SI> for crate::Op {
     fn from(op: I64Load16UMem0_SI) -> Self {
         Self::I64Load16UMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -18845,8 +18773,7 @@ impl ::core::convert::From<I64Load32S_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load32S_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I64Load32S_RI {}
@@ -18859,8 +18786,7 @@ impl ::core::convert::From<I64Load32S_RI> for crate::Op {
     fn from(op: I64Load32S_RI) -> Self {
         Self::I64Load32S_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -18910,8 +18836,7 @@ impl ::core::convert::From<I64Load32SMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load32SMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load32SMem0_RI {}
 impl ::core::clone::Clone for I64Load32SMem0_RI {
@@ -18923,8 +18848,7 @@ impl ::core::convert::From<I64Load32SMem0_RI> for crate::Op {
     fn from(op: I64Load32SMem0_RI) -> Self {
         Self::I64Load32SMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -18973,8 +18897,7 @@ impl ::core::convert::From<I64Load32SMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load32SMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load32SMem0_SI {}
 impl ::core::clone::Clone for I64Load32SMem0_SI {
@@ -18986,8 +18909,7 @@ impl ::core::convert::From<I64Load32SMem0_SI> for crate::Op {
     fn from(op: I64Load32SMem0_SI) -> Self {
         Self::I64Load32SMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -19040,8 +18962,7 @@ impl ::core::convert::From<I64Load32U_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load32U_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
     pub memory: crate::Memory,
 }
 impl ::core::marker::Copy for I64Load32U_RI {}
@@ -19054,8 +18975,7 @@ impl ::core::convert::From<I64Load32U_RI> for crate::Op {
     fn from(op: I64Load32U_RI) -> Self {
         Self::I64Load32U_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
             memory: op.memory,
         }
     }
@@ -19105,8 +19025,7 @@ impl ::core::convert::From<I64Load32UMem0_RS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load32UMem0_RI {
     pub result: crate::Reg,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load32UMem0_RI {}
 impl ::core::clone::Clone for I64Load32UMem0_RI {
@@ -19118,8 +19037,7 @@ impl ::core::convert::From<I64Load32UMem0_RI> for crate::Op {
     fn from(op: I64Load32UMem0_RI) -> Self {
         Self::I64Load32UMem0_RI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }
@@ -19168,8 +19086,7 @@ impl ::core::convert::From<I64Load32UMem0_SS> for crate::Op {
 #[repr(C, packed)]
 pub struct I64Load32UMem0_SI {
     pub result: crate::Stack,
-    pub ptr: ::core::primitive::i64,
-    pub offset: crate::Offset,
+    pub address: crate::Address,
 }
 impl ::core::marker::Copy for I64Load32UMem0_SI {}
 impl ::core::clone::Clone for I64Load32UMem0_SI {
@@ -19181,8 +19098,7 @@ impl ::core::convert::From<I64Load32UMem0_SI> for crate::Op {
     fn from(op: I64Load32UMem0_SI) -> Self {
         Self::I64Load32UMem0_SI {
             result: op.result,
-            ptr: op.ptr,
-            offset: op.offset,
+            address: op.address,
         }
     }
 }

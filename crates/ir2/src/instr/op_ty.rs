@@ -3799,8 +3799,7 @@ pub enum Op {
     } = 809_u16,
     I32Load_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 810_u16,
     I32LoadMem0_RR {
@@ -3815,8 +3814,7 @@ pub enum Op {
     } = 812_u16,
     I32LoadMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 813_u16,
     I32LoadMem0_SR {
         result: crate::Stack,
@@ -3830,8 +3828,7 @@ pub enum Op {
     } = 815_u16,
     I32LoadMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 816_u16,
     I64Load_RR {
         result: crate::Reg,
@@ -3847,8 +3844,7 @@ pub enum Op {
     } = 818_u16,
     I64Load_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 819_u16,
     I64LoadMem0_RR {
@@ -3863,8 +3859,7 @@ pub enum Op {
     } = 821_u16,
     I64LoadMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 822_u16,
     I64LoadMem0_SR {
         result: crate::Stack,
@@ -3878,8 +3873,7 @@ pub enum Op {
     } = 824_u16,
     I64LoadMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 825_u16,
     F32Load_RR {
         result: crate::Reg,
@@ -3895,8 +3889,7 @@ pub enum Op {
     } = 827_u16,
     F32Load_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 828_u16,
     F32LoadMem0_RR {
@@ -3911,8 +3904,7 @@ pub enum Op {
     } = 830_u16,
     F32LoadMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 831_u16,
     F32LoadMem0_SR {
         result: crate::Stack,
@@ -3926,8 +3918,7 @@ pub enum Op {
     } = 833_u16,
     F32LoadMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 834_u16,
     F64Load_RR {
         result: crate::Reg,
@@ -3943,8 +3934,7 @@ pub enum Op {
     } = 836_u16,
     F64Load_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 837_u16,
     F64LoadMem0_RR {
@@ -3959,8 +3949,7 @@ pub enum Op {
     } = 839_u16,
     F64LoadMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 840_u16,
     F64LoadMem0_SR {
         result: crate::Stack,
@@ -3974,8 +3963,7 @@ pub enum Op {
     } = 842_u16,
     F64LoadMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 843_u16,
     I32Load8S_RR {
         result: crate::Reg,
@@ -3991,8 +3979,7 @@ pub enum Op {
     } = 845_u16,
     I32Load8S_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 846_u16,
     I32Load8SMem0_RR {
@@ -4007,8 +3994,7 @@ pub enum Op {
     } = 848_u16,
     I32Load8SMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 849_u16,
     I32Load8SMem0_SR {
         result: crate::Stack,
@@ -4022,8 +4008,7 @@ pub enum Op {
     } = 851_u16,
     I32Load8SMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 852_u16,
     I64Load8S_RR {
         result: crate::Reg,
@@ -4039,8 +4024,7 @@ pub enum Op {
     } = 854_u16,
     I64Load8S_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 855_u16,
     I64Load8SMem0_RR {
@@ -4055,8 +4039,7 @@ pub enum Op {
     } = 857_u16,
     I64Load8SMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 858_u16,
     I64Load8SMem0_SR {
         result: crate::Stack,
@@ -4070,8 +4053,7 @@ pub enum Op {
     } = 860_u16,
     I64Load8SMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 861_u16,
     I32Load8U_RR {
         result: crate::Reg,
@@ -4087,8 +4069,7 @@ pub enum Op {
     } = 863_u16,
     I32Load8U_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 864_u16,
     I32Load8UMem0_RR {
@@ -4103,8 +4084,7 @@ pub enum Op {
     } = 866_u16,
     I32Load8UMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 867_u16,
     I32Load8UMem0_SR {
         result: crate::Stack,
@@ -4118,8 +4098,7 @@ pub enum Op {
     } = 869_u16,
     I32Load8UMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 870_u16,
     I64Load8U_RR {
         result: crate::Reg,
@@ -4135,8 +4114,7 @@ pub enum Op {
     } = 872_u16,
     I64Load8U_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 873_u16,
     I64Load8UMem0_RR {
@@ -4151,8 +4129,7 @@ pub enum Op {
     } = 875_u16,
     I64Load8UMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 876_u16,
     I64Load8UMem0_SR {
         result: crate::Stack,
@@ -4166,8 +4143,7 @@ pub enum Op {
     } = 878_u16,
     I64Load8UMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 879_u16,
     I32Load16S_RR {
         result: crate::Reg,
@@ -4183,8 +4159,7 @@ pub enum Op {
     } = 881_u16,
     I32Load16S_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 882_u16,
     I32Load16SMem0_RR {
@@ -4199,8 +4174,7 @@ pub enum Op {
     } = 884_u16,
     I32Load16SMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 885_u16,
     I32Load16SMem0_SR {
         result: crate::Stack,
@@ -4214,8 +4188,7 @@ pub enum Op {
     } = 887_u16,
     I32Load16SMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 888_u16,
     I64Load16S_RR {
         result: crate::Reg,
@@ -4231,8 +4204,7 @@ pub enum Op {
     } = 890_u16,
     I64Load16S_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 891_u16,
     I64Load16SMem0_RR {
@@ -4247,8 +4219,7 @@ pub enum Op {
     } = 893_u16,
     I64Load16SMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 894_u16,
     I64Load16SMem0_SR {
         result: crate::Stack,
@@ -4262,8 +4233,7 @@ pub enum Op {
     } = 896_u16,
     I64Load16SMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 897_u16,
     I32Load16U_RR {
         result: crate::Reg,
@@ -4279,8 +4249,7 @@ pub enum Op {
     } = 899_u16,
     I32Load16U_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 900_u16,
     I32Load16UMem0_RR {
@@ -4295,8 +4264,7 @@ pub enum Op {
     } = 902_u16,
     I32Load16UMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 903_u16,
     I32Load16UMem0_SR {
         result: crate::Stack,
@@ -4310,8 +4278,7 @@ pub enum Op {
     } = 905_u16,
     I32Load16UMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 906_u16,
     I64Load16U_RR {
         result: crate::Reg,
@@ -4327,8 +4294,7 @@ pub enum Op {
     } = 908_u16,
     I64Load16U_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 909_u16,
     I64Load16UMem0_RR {
@@ -4343,8 +4309,7 @@ pub enum Op {
     } = 911_u16,
     I64Load16UMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 912_u16,
     I64Load16UMem0_SR {
         result: crate::Stack,
@@ -4358,8 +4323,7 @@ pub enum Op {
     } = 914_u16,
     I64Load16UMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 915_u16,
     I64Load32S_RR {
         result: crate::Reg,
@@ -4375,8 +4339,7 @@ pub enum Op {
     } = 917_u16,
     I64Load32S_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 918_u16,
     I64Load32SMem0_RR {
@@ -4391,8 +4354,7 @@ pub enum Op {
     } = 920_u16,
     I64Load32SMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 921_u16,
     I64Load32SMem0_SR {
         result: crate::Stack,
@@ -4406,8 +4368,7 @@ pub enum Op {
     } = 923_u16,
     I64Load32SMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 924_u16,
     I64Load32U_RR {
         result: crate::Reg,
@@ -4423,8 +4384,7 @@ pub enum Op {
     } = 926_u16,
     I64Load32U_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
         memory: crate::Memory,
     } = 927_u16,
     I64Load32UMem0_RR {
@@ -4439,8 +4399,7 @@ pub enum Op {
     } = 929_u16,
     I64Load32UMem0_RI {
         result: crate::Reg,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 930_u16,
     I64Load32UMem0_SR {
         result: crate::Stack,
@@ -4454,8 +4413,7 @@ pub enum Op {
     } = 932_u16,
     I64Load32UMem0_SI {
         result: crate::Stack,
-        ptr: ::core::primitive::i64,
-        offset: crate::Offset,
+        address: crate::Address,
     } = 933_u16,
     I32Store_RS {
         ptr: crate::Reg,
@@ -8084,8 +8042,8 @@ impl Op {
             Self::I32Load_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I32Load_RS { result, ptr, offset, memory })
             }
-            Self::I32Load_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I32Load_RI { result, ptr, offset, memory })
+            Self::I32Load_RI { result, address, memory } => {
+                encoder.encode(crate::op::I32Load_RI { result, address, memory })
             }
             Self::I32LoadMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I32LoadMem0_RR { result, ptr, offset })
@@ -8093,8 +8051,8 @@ impl Op {
             Self::I32LoadMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I32LoadMem0_RS { result, ptr, offset })
             }
-            Self::I32LoadMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I32LoadMem0_RI { result, ptr, offset })
+            Self::I32LoadMem0_RI { result, address } => {
+                encoder.encode(crate::op::I32LoadMem0_RI { result, address })
             }
             Self::I32LoadMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I32LoadMem0_SR { result, ptr, offset })
@@ -8102,8 +8060,8 @@ impl Op {
             Self::I32LoadMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I32LoadMem0_SS { result, ptr, offset })
             }
-            Self::I32LoadMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I32LoadMem0_SI { result, ptr, offset })
+            Self::I32LoadMem0_SI { result, address } => {
+                encoder.encode(crate::op::I32LoadMem0_SI { result, address })
             }
             Self::I64Load_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load_RR { result, ptr, offset, memory })
@@ -8111,8 +8069,8 @@ impl Op {
             Self::I64Load_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load_RS { result, ptr, offset, memory })
             }
-            Self::I64Load_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I64Load_RI { result, ptr, offset, memory })
+            Self::I64Load_RI { result, address, memory } => {
+                encoder.encode(crate::op::I64Load_RI { result, address, memory })
             }
             Self::I64LoadMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64LoadMem0_RR { result, ptr, offset })
@@ -8120,8 +8078,8 @@ impl Op {
             Self::I64LoadMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64LoadMem0_RS { result, ptr, offset })
             }
-            Self::I64LoadMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64LoadMem0_RI { result, ptr, offset })
+            Self::I64LoadMem0_RI { result, address } => {
+                encoder.encode(crate::op::I64LoadMem0_RI { result, address })
             }
             Self::I64LoadMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64LoadMem0_SR { result, ptr, offset })
@@ -8129,8 +8087,8 @@ impl Op {
             Self::I64LoadMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64LoadMem0_SS { result, ptr, offset })
             }
-            Self::I64LoadMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64LoadMem0_SI { result, ptr, offset })
+            Self::I64LoadMem0_SI { result, address } => {
+                encoder.encode(crate::op::I64LoadMem0_SI { result, address })
             }
             Self::F32Load_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::F32Load_RR { result, ptr, offset, memory })
@@ -8138,8 +8096,8 @@ impl Op {
             Self::F32Load_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::F32Load_RS { result, ptr, offset, memory })
             }
-            Self::F32Load_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::F32Load_RI { result, ptr, offset, memory })
+            Self::F32Load_RI { result, address, memory } => {
+                encoder.encode(crate::op::F32Load_RI { result, address, memory })
             }
             Self::F32LoadMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::F32LoadMem0_RR { result, ptr, offset })
@@ -8147,8 +8105,8 @@ impl Op {
             Self::F32LoadMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::F32LoadMem0_RS { result, ptr, offset })
             }
-            Self::F32LoadMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::F32LoadMem0_RI { result, ptr, offset })
+            Self::F32LoadMem0_RI { result, address } => {
+                encoder.encode(crate::op::F32LoadMem0_RI { result, address })
             }
             Self::F32LoadMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::F32LoadMem0_SR { result, ptr, offset })
@@ -8156,8 +8114,8 @@ impl Op {
             Self::F32LoadMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::F32LoadMem0_SS { result, ptr, offset })
             }
-            Self::F32LoadMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::F32LoadMem0_SI { result, ptr, offset })
+            Self::F32LoadMem0_SI { result, address } => {
+                encoder.encode(crate::op::F32LoadMem0_SI { result, address })
             }
             Self::F64Load_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::F64Load_RR { result, ptr, offset, memory })
@@ -8165,8 +8123,8 @@ impl Op {
             Self::F64Load_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::F64Load_RS { result, ptr, offset, memory })
             }
-            Self::F64Load_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::F64Load_RI { result, ptr, offset, memory })
+            Self::F64Load_RI { result, address, memory } => {
+                encoder.encode(crate::op::F64Load_RI { result, address, memory })
             }
             Self::F64LoadMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::F64LoadMem0_RR { result, ptr, offset })
@@ -8174,8 +8132,8 @@ impl Op {
             Self::F64LoadMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::F64LoadMem0_RS { result, ptr, offset })
             }
-            Self::F64LoadMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::F64LoadMem0_RI { result, ptr, offset })
+            Self::F64LoadMem0_RI { result, address } => {
+                encoder.encode(crate::op::F64LoadMem0_RI { result, address })
             }
             Self::F64LoadMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::F64LoadMem0_SR { result, ptr, offset })
@@ -8183,8 +8141,8 @@ impl Op {
             Self::F64LoadMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::F64LoadMem0_SS { result, ptr, offset })
             }
-            Self::F64LoadMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::F64LoadMem0_SI { result, ptr, offset })
+            Self::F64LoadMem0_SI { result, address } => {
+                encoder.encode(crate::op::F64LoadMem0_SI { result, address })
             }
             Self::I32Load8S_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I32Load8S_RR { result, ptr, offset, memory })
@@ -8192,8 +8150,8 @@ impl Op {
             Self::I32Load8S_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I32Load8S_RS { result, ptr, offset, memory })
             }
-            Self::I32Load8S_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I32Load8S_RI { result, ptr, offset, memory })
+            Self::I32Load8S_RI { result, address, memory } => {
+                encoder.encode(crate::op::I32Load8S_RI { result, address, memory })
             }
             Self::I32Load8SMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load8SMem0_RR { result, ptr, offset })
@@ -8201,8 +8159,8 @@ impl Op {
             Self::I32Load8SMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load8SMem0_RS { result, ptr, offset })
             }
-            Self::I32Load8SMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I32Load8SMem0_RI { result, ptr, offset })
+            Self::I32Load8SMem0_RI { result, address } => {
+                encoder.encode(crate::op::I32Load8SMem0_RI { result, address })
             }
             Self::I32Load8SMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load8SMem0_SR { result, ptr, offset })
@@ -8210,8 +8168,8 @@ impl Op {
             Self::I32Load8SMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load8SMem0_SS { result, ptr, offset })
             }
-            Self::I32Load8SMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I32Load8SMem0_SI { result, ptr, offset })
+            Self::I32Load8SMem0_SI { result, address } => {
+                encoder.encode(crate::op::I32Load8SMem0_SI { result, address })
             }
             Self::I64Load8S_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load8S_RR { result, ptr, offset, memory })
@@ -8219,8 +8177,8 @@ impl Op {
             Self::I64Load8S_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load8S_RS { result, ptr, offset, memory })
             }
-            Self::I64Load8S_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I64Load8S_RI { result, ptr, offset, memory })
+            Self::I64Load8S_RI { result, address, memory } => {
+                encoder.encode(crate::op::I64Load8S_RI { result, address, memory })
             }
             Self::I64Load8SMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load8SMem0_RR { result, ptr, offset })
@@ -8228,8 +8186,8 @@ impl Op {
             Self::I64Load8SMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load8SMem0_RS { result, ptr, offset })
             }
-            Self::I64Load8SMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load8SMem0_RI { result, ptr, offset })
+            Self::I64Load8SMem0_RI { result, address } => {
+                encoder.encode(crate::op::I64Load8SMem0_RI { result, address })
             }
             Self::I64Load8SMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load8SMem0_SR { result, ptr, offset })
@@ -8237,8 +8195,8 @@ impl Op {
             Self::I64Load8SMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load8SMem0_SS { result, ptr, offset })
             }
-            Self::I64Load8SMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load8SMem0_SI { result, ptr, offset })
+            Self::I64Load8SMem0_SI { result, address } => {
+                encoder.encode(crate::op::I64Load8SMem0_SI { result, address })
             }
             Self::I32Load8U_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I32Load8U_RR { result, ptr, offset, memory })
@@ -8246,8 +8204,8 @@ impl Op {
             Self::I32Load8U_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I32Load8U_RS { result, ptr, offset, memory })
             }
-            Self::I32Load8U_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I32Load8U_RI { result, ptr, offset, memory })
+            Self::I32Load8U_RI { result, address, memory } => {
+                encoder.encode(crate::op::I32Load8U_RI { result, address, memory })
             }
             Self::I32Load8UMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load8UMem0_RR { result, ptr, offset })
@@ -8255,8 +8213,8 @@ impl Op {
             Self::I32Load8UMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load8UMem0_RS { result, ptr, offset })
             }
-            Self::I32Load8UMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I32Load8UMem0_RI { result, ptr, offset })
+            Self::I32Load8UMem0_RI { result, address } => {
+                encoder.encode(crate::op::I32Load8UMem0_RI { result, address })
             }
             Self::I32Load8UMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load8UMem0_SR { result, ptr, offset })
@@ -8264,8 +8222,8 @@ impl Op {
             Self::I32Load8UMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load8UMem0_SS { result, ptr, offset })
             }
-            Self::I32Load8UMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I32Load8UMem0_SI { result, ptr, offset })
+            Self::I32Load8UMem0_SI { result, address } => {
+                encoder.encode(crate::op::I32Load8UMem0_SI { result, address })
             }
             Self::I64Load8U_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load8U_RR { result, ptr, offset, memory })
@@ -8273,8 +8231,8 @@ impl Op {
             Self::I64Load8U_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load8U_RS { result, ptr, offset, memory })
             }
-            Self::I64Load8U_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I64Load8U_RI { result, ptr, offset, memory })
+            Self::I64Load8U_RI { result, address, memory } => {
+                encoder.encode(crate::op::I64Load8U_RI { result, address, memory })
             }
             Self::I64Load8UMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load8UMem0_RR { result, ptr, offset })
@@ -8282,8 +8240,8 @@ impl Op {
             Self::I64Load8UMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load8UMem0_RS { result, ptr, offset })
             }
-            Self::I64Load8UMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load8UMem0_RI { result, ptr, offset })
+            Self::I64Load8UMem0_RI { result, address } => {
+                encoder.encode(crate::op::I64Load8UMem0_RI { result, address })
             }
             Self::I64Load8UMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load8UMem0_SR { result, ptr, offset })
@@ -8291,8 +8249,8 @@ impl Op {
             Self::I64Load8UMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load8UMem0_SS { result, ptr, offset })
             }
-            Self::I64Load8UMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load8UMem0_SI { result, ptr, offset })
+            Self::I64Load8UMem0_SI { result, address } => {
+                encoder.encode(crate::op::I64Load8UMem0_SI { result, address })
             }
             Self::I32Load16S_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I32Load16S_RR { result, ptr, offset, memory })
@@ -8300,8 +8258,8 @@ impl Op {
             Self::I32Load16S_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I32Load16S_RS { result, ptr, offset, memory })
             }
-            Self::I32Load16S_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I32Load16S_RI { result, ptr, offset, memory })
+            Self::I32Load16S_RI { result, address, memory } => {
+                encoder.encode(crate::op::I32Load16S_RI { result, address, memory })
             }
             Self::I32Load16SMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load16SMem0_RR { result, ptr, offset })
@@ -8309,8 +8267,8 @@ impl Op {
             Self::I32Load16SMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load16SMem0_RS { result, ptr, offset })
             }
-            Self::I32Load16SMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I32Load16SMem0_RI { result, ptr, offset })
+            Self::I32Load16SMem0_RI { result, address } => {
+                encoder.encode(crate::op::I32Load16SMem0_RI { result, address })
             }
             Self::I32Load16SMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load16SMem0_SR { result, ptr, offset })
@@ -8318,8 +8276,8 @@ impl Op {
             Self::I32Load16SMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load16SMem0_SS { result, ptr, offset })
             }
-            Self::I32Load16SMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I32Load16SMem0_SI { result, ptr, offset })
+            Self::I32Load16SMem0_SI { result, address } => {
+                encoder.encode(crate::op::I32Load16SMem0_SI { result, address })
             }
             Self::I64Load16S_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load16S_RR { result, ptr, offset, memory })
@@ -8327,8 +8285,8 @@ impl Op {
             Self::I64Load16S_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load16S_RS { result, ptr, offset, memory })
             }
-            Self::I64Load16S_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I64Load16S_RI { result, ptr, offset, memory })
+            Self::I64Load16S_RI { result, address, memory } => {
+                encoder.encode(crate::op::I64Load16S_RI { result, address, memory })
             }
             Self::I64Load16SMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load16SMem0_RR { result, ptr, offset })
@@ -8336,8 +8294,8 @@ impl Op {
             Self::I64Load16SMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load16SMem0_RS { result, ptr, offset })
             }
-            Self::I64Load16SMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load16SMem0_RI { result, ptr, offset })
+            Self::I64Load16SMem0_RI { result, address } => {
+                encoder.encode(crate::op::I64Load16SMem0_RI { result, address })
             }
             Self::I64Load16SMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load16SMem0_SR { result, ptr, offset })
@@ -8345,8 +8303,8 @@ impl Op {
             Self::I64Load16SMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load16SMem0_SS { result, ptr, offset })
             }
-            Self::I64Load16SMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load16SMem0_SI { result, ptr, offset })
+            Self::I64Load16SMem0_SI { result, address } => {
+                encoder.encode(crate::op::I64Load16SMem0_SI { result, address })
             }
             Self::I32Load16U_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I32Load16U_RR { result, ptr, offset, memory })
@@ -8354,8 +8312,8 @@ impl Op {
             Self::I32Load16U_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I32Load16U_RS { result, ptr, offset, memory })
             }
-            Self::I32Load16U_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I32Load16U_RI { result, ptr, offset, memory })
+            Self::I32Load16U_RI { result, address, memory } => {
+                encoder.encode(crate::op::I32Load16U_RI { result, address, memory })
             }
             Self::I32Load16UMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load16UMem0_RR { result, ptr, offset })
@@ -8363,8 +8321,8 @@ impl Op {
             Self::I32Load16UMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load16UMem0_RS { result, ptr, offset })
             }
-            Self::I32Load16UMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I32Load16UMem0_RI { result, ptr, offset })
+            Self::I32Load16UMem0_RI { result, address } => {
+                encoder.encode(crate::op::I32Load16UMem0_RI { result, address })
             }
             Self::I32Load16UMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load16UMem0_SR { result, ptr, offset })
@@ -8372,8 +8330,8 @@ impl Op {
             Self::I32Load16UMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I32Load16UMem0_SS { result, ptr, offset })
             }
-            Self::I32Load16UMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I32Load16UMem0_SI { result, ptr, offset })
+            Self::I32Load16UMem0_SI { result, address } => {
+                encoder.encode(crate::op::I32Load16UMem0_SI { result, address })
             }
             Self::I64Load16U_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load16U_RR { result, ptr, offset, memory })
@@ -8381,8 +8339,8 @@ impl Op {
             Self::I64Load16U_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load16U_RS { result, ptr, offset, memory })
             }
-            Self::I64Load16U_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I64Load16U_RI { result, ptr, offset, memory })
+            Self::I64Load16U_RI { result, address, memory } => {
+                encoder.encode(crate::op::I64Load16U_RI { result, address, memory })
             }
             Self::I64Load16UMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load16UMem0_RR { result, ptr, offset })
@@ -8390,8 +8348,8 @@ impl Op {
             Self::I64Load16UMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load16UMem0_RS { result, ptr, offset })
             }
-            Self::I64Load16UMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load16UMem0_RI { result, ptr, offset })
+            Self::I64Load16UMem0_RI { result, address } => {
+                encoder.encode(crate::op::I64Load16UMem0_RI { result, address })
             }
             Self::I64Load16UMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load16UMem0_SR { result, ptr, offset })
@@ -8399,8 +8357,8 @@ impl Op {
             Self::I64Load16UMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load16UMem0_SS { result, ptr, offset })
             }
-            Self::I64Load16UMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load16UMem0_SI { result, ptr, offset })
+            Self::I64Load16UMem0_SI { result, address } => {
+                encoder.encode(crate::op::I64Load16UMem0_SI { result, address })
             }
             Self::I64Load32S_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load32S_RR { result, ptr, offset, memory })
@@ -8408,8 +8366,8 @@ impl Op {
             Self::I64Load32S_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load32S_RS { result, ptr, offset, memory })
             }
-            Self::I64Load32S_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I64Load32S_RI { result, ptr, offset, memory })
+            Self::I64Load32S_RI { result, address, memory } => {
+                encoder.encode(crate::op::I64Load32S_RI { result, address, memory })
             }
             Self::I64Load32SMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load32SMem0_RR { result, ptr, offset })
@@ -8417,8 +8375,8 @@ impl Op {
             Self::I64Load32SMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load32SMem0_RS { result, ptr, offset })
             }
-            Self::I64Load32SMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load32SMem0_RI { result, ptr, offset })
+            Self::I64Load32SMem0_RI { result, address } => {
+                encoder.encode(crate::op::I64Load32SMem0_RI { result, address })
             }
             Self::I64Load32SMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load32SMem0_SR { result, ptr, offset })
@@ -8426,8 +8384,8 @@ impl Op {
             Self::I64Load32SMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load32SMem0_SS { result, ptr, offset })
             }
-            Self::I64Load32SMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load32SMem0_SI { result, ptr, offset })
+            Self::I64Load32SMem0_SI { result, address } => {
+                encoder.encode(crate::op::I64Load32SMem0_SI { result, address })
             }
             Self::I64Load32U_RR { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load32U_RR { result, ptr, offset, memory })
@@ -8435,8 +8393,8 @@ impl Op {
             Self::I64Load32U_RS { result, ptr, offset, memory } => {
                 encoder.encode(crate::op::I64Load32U_RS { result, ptr, offset, memory })
             }
-            Self::I64Load32U_RI { result, ptr, offset, memory } => {
-                encoder.encode(crate::op::I64Load32U_RI { result, ptr, offset, memory })
+            Self::I64Load32U_RI { result, address, memory } => {
+                encoder.encode(crate::op::I64Load32U_RI { result, address, memory })
             }
             Self::I64Load32UMem0_RR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load32UMem0_RR { result, ptr, offset })
@@ -8444,8 +8402,8 @@ impl Op {
             Self::I64Load32UMem0_RS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load32UMem0_RS { result, ptr, offset })
             }
-            Self::I64Load32UMem0_RI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load32UMem0_RI { result, ptr, offset })
+            Self::I64Load32UMem0_RI { result, address } => {
+                encoder.encode(crate::op::I64Load32UMem0_RI { result, address })
             }
             Self::I64Load32UMem0_SR { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load32UMem0_SR { result, ptr, offset })
@@ -8453,8 +8411,8 @@ impl Op {
             Self::I64Load32UMem0_SS { result, ptr, offset } => {
                 encoder.encode(crate::op::I64Load32UMem0_SS { result, ptr, offset })
             }
-            Self::I64Load32UMem0_SI { result, ptr, offset } => {
-                encoder.encode(crate::op::I64Load32UMem0_SI { result, ptr, offset })
+            Self::I64Load32UMem0_SI { result, address } => {
+                encoder.encode(crate::op::I64Load32UMem0_SI { result, address })
             }
             Self::I32Store_RS { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I32Store_RS { ptr, value, offset, memory })
