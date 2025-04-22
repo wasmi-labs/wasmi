@@ -1,5 +1,5 @@
 use super::{
-    context::{BinaryOp, LoadOp, StoreOp, UnaryOp},
+    context::{BinaryOp, CmpBranchOp, LoadOp, StoreOp, UnaryOp},
     Context,
     FieldName,
     FieldTy,
@@ -61,7 +61,7 @@ fn define_fused_cmp_branch_instrs_impl(
     let lhs_in = [Operand::Reg, Operand::Stack, Operand::Immediate];
     let rhs_in = [Operand::Reg, Operand::Stack, Operand::Immediate];
     for (op, ty) in ops_and_tys {
-        let op = format!("{ty}{op}");
+        let name = format!("{ty}{op}Branch");
         for lhs in &lhs_in {
             for rhs in &rhs_in {
                 if lhs.is_imm() && rhs.is_imm() {
@@ -76,7 +76,7 @@ fn define_fused_cmp_branch_instrs_impl(
                 let lhs_id = lhs.id();
                 let rhs_id = rhs.id();
                 ctx.push_op(op! {
-                    name: format!("{op}Branch_{lhs_id}{rhs_id}"),
+                    name: format!("{name}_{lhs_id}{rhs_id}"),
                     fields: [
                         lhs: lhs.ty(ty),
                         rhs: rhs.ty(ty),
@@ -84,6 +84,12 @@ fn define_fused_cmp_branch_instrs_impl(
                     ],
                 });
             }
+        }
+        if commutative {
+            ctx.cmp_branch_ops.push(CmpBranchOp {
+                name: name.into(),
+                input_ty: ty,
+            })
         }
     }
 }

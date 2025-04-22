@@ -6,7 +6,18 @@ mod define;
 mod generate;
 
 pub use self::{
-    context::{BinaryOp, Context, Field, FieldName, FieldTy, LoadOp, Op, StoreOp, UnaryOp},
+    context::{
+        BinaryOp,
+        CmpBranchOp,
+        Context,
+        Field,
+        FieldName,
+        FieldTy,
+        LoadOp,
+        Op,
+        StoreOp,
+        UnaryOp,
+    },
     define::define_instrs,
     generate::generate_instrs,
     utils::{ImmediateTy, Operand, ValTy},

@@ -9,6 +9,7 @@ pub struct Context {
     pub binary_ops: Vec<BinaryOp>,
     pub load_ops: Vec<LoadOp>,
     pub store_ops: Vec<StoreOp>,
+    pub cmp_branch_ops: Vec<CmpBranchOp>,
 }
 
 pub struct UnaryOp {
@@ -25,6 +26,11 @@ pub struct LoadOp {
 }
 
 pub struct StoreOp {
+    pub name: Box<str>,
+    pub input_ty: ValTy,
+}
+
+pub struct CmpBranchOp {
     pub name: Box<str>,
     pub input_ty: ValTy,
 }

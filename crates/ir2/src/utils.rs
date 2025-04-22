@@ -1,4 +1,4 @@
-use crate::{Address, Memory, Offset, Op, Reg, Stack};
+use crate::{Address, BranchOffset, Memory, Offset, Op, Reg, Stack};
 use core::ops::Deref;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -271,4 +271,31 @@ pub trait StoreOperator {
     fn make_is(ptr: Address, value: Stack, memory: Memory) -> Self::OpIs;
     /// Creates the operator variant with signature: `fn(Imm, Imm)`
     fn make_ii(ptr: Address, value: Self::Imm, memory: Memory) -> Self::OpIi;
+}
+
+/// Class of commutative compare-and-branch operators.
+pub trait CmpBranchCommutativeOperator {
+    /// The name of the operator class.
+    const NAME: &'static str;
+
+    /// The type of immediate value operand.
+    type Imm;
+
+    /// The operator variant with signature: `fn(Reg, Imm)`
+    type OpRi: Operator;
+    /// The operator variant with signature: `fn(Reg, Stack)`
+    type OpRs: Operator;
+    /// The operator variant with signature: `fn(Stack, Imm)`
+    type OpSi: Operator;
+    /// The operator variant with signature: `fn(Stack, Stack)`
+    type OpSs: Operator;
+
+    /// Creates the operator variant with signature: `fn(Reg, Imm)`
+    fn make_ri(lhs: Reg, rhs: Self::Imm, offset: BranchOffset) -> Self::OpRi;
+    /// Creates the operator variant with signature: `fn(Reg, Stack)`
+    fn make_rs(lhs: Reg, rhs: Stack, offset: BranchOffset) -> Self::OpRs;
+    /// Creates the operator variant with signature: `fn(Stack, Imm)`
+    fn make_si(lhs: Stack, rhs: Self::Imm, offset: BranchOffset) -> Self::OpSi;
+    /// Creates the operator variant with signature: `fn(Stack, Stack)`
+    fn make_ss(lhs: Stack, rhs: Stack, offset: BranchOffset) -> Self::OpSs;
 }
