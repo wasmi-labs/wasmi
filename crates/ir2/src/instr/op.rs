@@ -1426,6 +1426,1014 @@ impl ::core::convert::From<F64NeBranch_SI> for crate::Op {
     }
 }
 #[repr(C, packed)]
+pub struct I32AndBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32AndBranch_RS {}
+impl ::core::clone::Clone for I32AndBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32AndBranch_RS> for crate::Op {
+    fn from(op: I32AndBranch_RS) -> Self {
+        Self::I32AndBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32AndBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32AndBranch_RI {}
+impl ::core::clone::Clone for I32AndBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32AndBranch_RI> for crate::Op {
+    fn from(op: I32AndBranch_RI) -> Self {
+        Self::I32AndBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32AndBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32AndBranch_SS {}
+impl ::core::clone::Clone for I32AndBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32AndBranch_SS> for crate::Op {
+    fn from(op: I32AndBranch_SS) -> Self {
+        Self::I32AndBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32AndBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32AndBranch_SI {}
+impl ::core::clone::Clone for I32AndBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32AndBranch_SI> for crate::Op {
+    fn from(op: I32AndBranch_SI) -> Self {
+        Self::I32AndBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64AndBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64AndBranch_RS {}
+impl ::core::clone::Clone for I64AndBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64AndBranch_RS> for crate::Op {
+    fn from(op: I64AndBranch_RS) -> Self {
+        Self::I64AndBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64AndBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64AndBranch_RI {}
+impl ::core::clone::Clone for I64AndBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64AndBranch_RI> for crate::Op {
+    fn from(op: I64AndBranch_RI) -> Self {
+        Self::I64AndBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64AndBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64AndBranch_SS {}
+impl ::core::clone::Clone for I64AndBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64AndBranch_SS> for crate::Op {
+    fn from(op: I64AndBranch_SS) -> Self {
+        Self::I64AndBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64AndBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64AndBranch_SI {}
+impl ::core::clone::Clone for I64AndBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64AndBranch_SI> for crate::Op {
+    fn from(op: I64AndBranch_SI) -> Self {
+        Self::I64AndBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32OrBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32OrBranch_RS {}
+impl ::core::clone::Clone for I32OrBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32OrBranch_RS> for crate::Op {
+    fn from(op: I32OrBranch_RS) -> Self {
+        Self::I32OrBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32OrBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32OrBranch_RI {}
+impl ::core::clone::Clone for I32OrBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32OrBranch_RI> for crate::Op {
+    fn from(op: I32OrBranch_RI) -> Self {
+        Self::I32OrBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32OrBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32OrBranch_SS {}
+impl ::core::clone::Clone for I32OrBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32OrBranch_SS> for crate::Op {
+    fn from(op: I32OrBranch_SS) -> Self {
+        Self::I32OrBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32OrBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32OrBranch_SI {}
+impl ::core::clone::Clone for I32OrBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32OrBranch_SI> for crate::Op {
+    fn from(op: I32OrBranch_SI) -> Self {
+        Self::I32OrBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64OrBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64OrBranch_RS {}
+impl ::core::clone::Clone for I64OrBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64OrBranch_RS> for crate::Op {
+    fn from(op: I64OrBranch_RS) -> Self {
+        Self::I64OrBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64OrBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64OrBranch_RI {}
+impl ::core::clone::Clone for I64OrBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64OrBranch_RI> for crate::Op {
+    fn from(op: I64OrBranch_RI) -> Self {
+        Self::I64OrBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64OrBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64OrBranch_SS {}
+impl ::core::clone::Clone for I64OrBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64OrBranch_SS> for crate::Op {
+    fn from(op: I64OrBranch_SS) -> Self {
+        Self::I64OrBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64OrBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64OrBranch_SI {}
+impl ::core::clone::Clone for I64OrBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64OrBranch_SI> for crate::Op {
+    fn from(op: I64OrBranch_SI) -> Self {
+        Self::I64OrBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32XorBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32XorBranch_RS {}
+impl ::core::clone::Clone for I32XorBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32XorBranch_RS> for crate::Op {
+    fn from(op: I32XorBranch_RS) -> Self {
+        Self::I32XorBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32XorBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32XorBranch_RI {}
+impl ::core::clone::Clone for I32XorBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32XorBranch_RI> for crate::Op {
+    fn from(op: I32XorBranch_RI) -> Self {
+        Self::I32XorBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32XorBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32XorBranch_SS {}
+impl ::core::clone::Clone for I32XorBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32XorBranch_SS> for crate::Op {
+    fn from(op: I32XorBranch_SS) -> Self {
+        Self::I32XorBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32XorBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32XorBranch_SI {}
+impl ::core::clone::Clone for I32XorBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32XorBranch_SI> for crate::Op {
+    fn from(op: I32XorBranch_SI) -> Self {
+        Self::I32XorBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64XorBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64XorBranch_RS {}
+impl ::core::clone::Clone for I64XorBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64XorBranch_RS> for crate::Op {
+    fn from(op: I64XorBranch_RS) -> Self {
+        Self::I64XorBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64XorBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64XorBranch_RI {}
+impl ::core::clone::Clone for I64XorBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64XorBranch_RI> for crate::Op {
+    fn from(op: I64XorBranch_RI) -> Self {
+        Self::I64XorBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64XorBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64XorBranch_SS {}
+impl ::core::clone::Clone for I64XorBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64XorBranch_SS> for crate::Op {
+    fn from(op: I64XorBranch_SS) -> Self {
+        Self::I64XorBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64XorBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64XorBranch_SI {}
+impl ::core::clone::Clone for I64XorBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64XorBranch_SI> for crate::Op {
+    fn from(op: I64XorBranch_SI) -> Self {
+        Self::I64XorBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotAndBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotAndBranch_RS {}
+impl ::core::clone::Clone for I32NotAndBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotAndBranch_RS> for crate::Op {
+    fn from(op: I32NotAndBranch_RS) -> Self {
+        Self::I32NotAndBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotAndBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotAndBranch_RI {}
+impl ::core::clone::Clone for I32NotAndBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotAndBranch_RI> for crate::Op {
+    fn from(op: I32NotAndBranch_RI) -> Self {
+        Self::I32NotAndBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotAndBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotAndBranch_SS {}
+impl ::core::clone::Clone for I32NotAndBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotAndBranch_SS> for crate::Op {
+    fn from(op: I32NotAndBranch_SS) -> Self {
+        Self::I32NotAndBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotAndBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotAndBranch_SI {}
+impl ::core::clone::Clone for I32NotAndBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotAndBranch_SI> for crate::Op {
+    fn from(op: I32NotAndBranch_SI) -> Self {
+        Self::I32NotAndBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotAndBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotAndBranch_RS {}
+impl ::core::clone::Clone for I64NotAndBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotAndBranch_RS> for crate::Op {
+    fn from(op: I64NotAndBranch_RS) -> Self {
+        Self::I64NotAndBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotAndBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotAndBranch_RI {}
+impl ::core::clone::Clone for I64NotAndBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotAndBranch_RI> for crate::Op {
+    fn from(op: I64NotAndBranch_RI) -> Self {
+        Self::I64NotAndBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotAndBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotAndBranch_SS {}
+impl ::core::clone::Clone for I64NotAndBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotAndBranch_SS> for crate::Op {
+    fn from(op: I64NotAndBranch_SS) -> Self {
+        Self::I64NotAndBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotAndBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotAndBranch_SI {}
+impl ::core::clone::Clone for I64NotAndBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotAndBranch_SI> for crate::Op {
+    fn from(op: I64NotAndBranch_SI) -> Self {
+        Self::I64NotAndBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotOrBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotOrBranch_RS {}
+impl ::core::clone::Clone for I32NotOrBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotOrBranch_RS> for crate::Op {
+    fn from(op: I32NotOrBranch_RS) -> Self {
+        Self::I32NotOrBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotOrBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotOrBranch_RI {}
+impl ::core::clone::Clone for I32NotOrBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotOrBranch_RI> for crate::Op {
+    fn from(op: I32NotOrBranch_RI) -> Self {
+        Self::I32NotOrBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotOrBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotOrBranch_SS {}
+impl ::core::clone::Clone for I32NotOrBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotOrBranch_SS> for crate::Op {
+    fn from(op: I32NotOrBranch_SS) -> Self {
+        Self::I32NotOrBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotOrBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotOrBranch_SI {}
+impl ::core::clone::Clone for I32NotOrBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotOrBranch_SI> for crate::Op {
+    fn from(op: I32NotOrBranch_SI) -> Self {
+        Self::I32NotOrBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotOrBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotOrBranch_RS {}
+impl ::core::clone::Clone for I64NotOrBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotOrBranch_RS> for crate::Op {
+    fn from(op: I64NotOrBranch_RS) -> Self {
+        Self::I64NotOrBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotOrBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotOrBranch_RI {}
+impl ::core::clone::Clone for I64NotOrBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotOrBranch_RI> for crate::Op {
+    fn from(op: I64NotOrBranch_RI) -> Self {
+        Self::I64NotOrBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotOrBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotOrBranch_SS {}
+impl ::core::clone::Clone for I64NotOrBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotOrBranch_SS> for crate::Op {
+    fn from(op: I64NotOrBranch_SS) -> Self {
+        Self::I64NotOrBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotOrBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotOrBranch_SI {}
+impl ::core::clone::Clone for I64NotOrBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotOrBranch_SI> for crate::Op {
+    fn from(op: I64NotOrBranch_SI) -> Self {
+        Self::I64NotOrBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotXorBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotXorBranch_RS {}
+impl ::core::clone::Clone for I32NotXorBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotXorBranch_RS> for crate::Op {
+    fn from(op: I32NotXorBranch_RS) -> Self {
+        Self::I32NotXorBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotXorBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotXorBranch_RI {}
+impl ::core::clone::Clone for I32NotXorBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotXorBranch_RI> for crate::Op {
+    fn from(op: I32NotXorBranch_RI) -> Self {
+        Self::I32NotXorBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotXorBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotXorBranch_SS {}
+impl ::core::clone::Clone for I32NotXorBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotXorBranch_SS> for crate::Op {
+    fn from(op: I32NotXorBranch_SS) -> Self {
+        Self::I32NotXorBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32NotXorBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i32,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I32NotXorBranch_SI {}
+impl ::core::clone::Clone for I32NotXorBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32NotXorBranch_SI> for crate::Op {
+    fn from(op: I32NotXorBranch_SI) -> Self {
+        Self::I32NotXorBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotXorBranch_RS {
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotXorBranch_RS {}
+impl ::core::clone::Clone for I64NotXorBranch_RS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotXorBranch_RS> for crate::Op {
+    fn from(op: I64NotXorBranch_RS) -> Self {
+        Self::I64NotXorBranch_RS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotXorBranch_RI {
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotXorBranch_RI {}
+impl ::core::clone::Clone for I64NotXorBranch_RI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotXorBranch_RI> for crate::Op {
+    fn from(op: I64NotXorBranch_RI) -> Self {
+        Self::I64NotXorBranch_RI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotXorBranch_SS {
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotXorBranch_SS {}
+impl ::core::clone::Clone for I64NotXorBranch_SS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotXorBranch_SS> for crate::Op {
+    fn from(op: I64NotXorBranch_SS) -> Self {
+        Self::I64NotXorBranch_SS {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64NotXorBranch_SI {
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i64,
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for I64NotXorBranch_SI {}
+impl ::core::clone::Clone for I64NotXorBranch_SI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64NotXorBranch_SI> for crate::Op {
+    fn from(op: I64NotXorBranch_SI) -> Self {
+        Self::I64NotXorBranch_SI {
+            lhs: op.lhs,
+            rhs: op.rhs,
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
 pub struct I32LtSBranch_RS {
     pub lhs: crate::Reg,
     pub rhs: crate::Stack,

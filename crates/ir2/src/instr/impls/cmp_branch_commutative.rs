@@ -170,3 +170,255 @@ impl crate::CmpBranchCommutativeOperator for F64NeBranch {
         Self::OpSs { lhs, rhs, offset }
     }
 }
+pub enum I32AndBranch {}
+impl crate::CmpBranchCommutativeOperator for I32AndBranch {
+    const NAME: &'static ::core::primitive::str = "I32AndBranch";
+    type Imm = ::core::primitive::i32;
+    type OpRi = crate::op::I32AndBranch_RI;
+    type OpRs = crate::op::I32AndBranch_RS;
+    type OpSi = crate::op::I32AndBranch_SI;
+    type OpSs = crate::op::I32AndBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I64AndBranch {}
+impl crate::CmpBranchCommutativeOperator for I64AndBranch {
+    const NAME: &'static ::core::primitive::str = "I64AndBranch";
+    type Imm = ::core::primitive::i64;
+    type OpRi = crate::op::I64AndBranch_RI;
+    type OpRs = crate::op::I64AndBranch_RS;
+    type OpSi = crate::op::I64AndBranch_SI;
+    type OpSs = crate::op::I64AndBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I32OrBranch {}
+impl crate::CmpBranchCommutativeOperator for I32OrBranch {
+    const NAME: &'static ::core::primitive::str = "I32OrBranch";
+    type Imm = ::core::primitive::i32;
+    type OpRi = crate::op::I32OrBranch_RI;
+    type OpRs = crate::op::I32OrBranch_RS;
+    type OpSi = crate::op::I32OrBranch_SI;
+    type OpSs = crate::op::I32OrBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I64OrBranch {}
+impl crate::CmpBranchCommutativeOperator for I64OrBranch {
+    const NAME: &'static ::core::primitive::str = "I64OrBranch";
+    type Imm = ::core::primitive::i64;
+    type OpRi = crate::op::I64OrBranch_RI;
+    type OpRs = crate::op::I64OrBranch_RS;
+    type OpSi = crate::op::I64OrBranch_SI;
+    type OpSs = crate::op::I64OrBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I32XorBranch {}
+impl crate::CmpBranchCommutativeOperator for I32XorBranch {
+    const NAME: &'static ::core::primitive::str = "I32XorBranch";
+    type Imm = ::core::primitive::i32;
+    type OpRi = crate::op::I32XorBranch_RI;
+    type OpRs = crate::op::I32XorBranch_RS;
+    type OpSi = crate::op::I32XorBranch_SI;
+    type OpSs = crate::op::I32XorBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I64XorBranch {}
+impl crate::CmpBranchCommutativeOperator for I64XorBranch {
+    const NAME: &'static ::core::primitive::str = "I64XorBranch";
+    type Imm = ::core::primitive::i64;
+    type OpRi = crate::op::I64XorBranch_RI;
+    type OpRs = crate::op::I64XorBranch_RS;
+    type OpSi = crate::op::I64XorBranch_SI;
+    type OpSs = crate::op::I64XorBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I32NotAndBranch {}
+impl crate::CmpBranchCommutativeOperator for I32NotAndBranch {
+    const NAME: &'static ::core::primitive::str = "I32NotAndBranch";
+    type Imm = ::core::primitive::i32;
+    type OpRi = crate::op::I32NotAndBranch_RI;
+    type OpRs = crate::op::I32NotAndBranch_RS;
+    type OpSi = crate::op::I32NotAndBranch_SI;
+    type OpSs = crate::op::I32NotAndBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I64NotAndBranch {}
+impl crate::CmpBranchCommutativeOperator for I64NotAndBranch {
+    const NAME: &'static ::core::primitive::str = "I64NotAndBranch";
+    type Imm = ::core::primitive::i64;
+    type OpRi = crate::op::I64NotAndBranch_RI;
+    type OpRs = crate::op::I64NotAndBranch_RS;
+    type OpSi = crate::op::I64NotAndBranch_SI;
+    type OpSs = crate::op::I64NotAndBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I32NotOrBranch {}
+impl crate::CmpBranchCommutativeOperator for I32NotOrBranch {
+    const NAME: &'static ::core::primitive::str = "I32NotOrBranch";
+    type Imm = ::core::primitive::i32;
+    type OpRi = crate::op::I32NotOrBranch_RI;
+    type OpRs = crate::op::I32NotOrBranch_RS;
+    type OpSi = crate::op::I32NotOrBranch_SI;
+    type OpSs = crate::op::I32NotOrBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I64NotOrBranch {}
+impl crate::CmpBranchCommutativeOperator for I64NotOrBranch {
+    const NAME: &'static ::core::primitive::str = "I64NotOrBranch";
+    type Imm = ::core::primitive::i64;
+    type OpRi = crate::op::I64NotOrBranch_RI;
+    type OpRs = crate::op::I64NotOrBranch_RS;
+    type OpSi = crate::op::I64NotOrBranch_SI;
+    type OpSs = crate::op::I64NotOrBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I32NotXorBranch {}
+impl crate::CmpBranchCommutativeOperator for I32NotXorBranch {
+    const NAME: &'static ::core::primitive::str = "I32NotXorBranch";
+    type Imm = ::core::primitive::i32;
+    type OpRi = crate::op::I32NotXorBranch_RI;
+    type OpRs = crate::op::I32NotXorBranch_RS;
+    type OpSi = crate::op::I32NotXorBranch_SI;
+    type OpSs = crate::op::I32NotXorBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
+pub enum I64NotXorBranch {}
+impl crate::CmpBranchCommutativeOperator for I64NotXorBranch {
+    const NAME: &'static ::core::primitive::str = "I64NotXorBranch";
+    type Imm = ::core::primitive::i64;
+    type OpRi = crate::op::I64NotXorBranch_RI;
+    type OpRs = crate::op::I64NotXorBranch_RS;
+    type OpSi = crate::op::I64NotXorBranch_SI;
+    type OpSs = crate::op::I64NotXorBranch_SS;
+    fn make_ri(lhs: crate::Reg, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpRi {
+        Self::OpRi { lhs, rhs, offset }
+    }
+    fn make_rs(lhs: crate::Reg, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpRs {
+        Self::OpRs { lhs, rhs, offset }
+    }
+    fn make_si(lhs: crate::Stack, rhs: Self::Imm, offset: crate::BranchOffset) -> Self::OpSi {
+        Self::OpSi { lhs, rhs, offset }
+    }
+    fn make_ss(lhs: crate::Stack, rhs: crate::Stack, offset: crate::BranchOffset) -> Self::OpSs {
+        Self::OpSs { lhs, rhs, offset }
+    }
+}
