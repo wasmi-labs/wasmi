@@ -35,6 +35,20 @@ pub trait OperatorCode {
 pub trait Operator: Copy + OperatorCode + Into<Op> {}
 impl<T> Operator for T where T: Copy + OperatorCode + Into<Op> {}
 
+/// Indicates that the operator type alias is vacant.
+#[derive(Copy, Clone)]
+pub enum NoOp {}
+impl OperatorCode for NoOp {
+    fn op_code(&self) -> crate::OpCode {
+        unreachable!("intentionally unimplemented: must never be used")
+    }
+}
+impl From<NoOp> for Op {
+    fn from(op: NoOp) -> Self {
+        unreachable!("intentionally unimplemented: must never be used")
+    }
+}
+
 /// Class of unary operators.
 pub trait UnaryOperator {
     /// The name of the operator class.
