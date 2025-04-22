@@ -136,6 +136,18 @@ fn define_fused_cmp_branch_ops_commutative(ctx: &mut Context) {
             ("Ne", ValTy::I64),
             ("Ne", ValTy::F32),
             ("Ne", ValTy::F64),
+            ("And", ValTy::I32),
+            ("And", ValTy::I64),
+            ("Or", ValTy::I32),
+            ("Or", ValTy::I64),
+            ("Xor", ValTy::I32),
+            ("Xor", ValTy::I64),
+            ("NotAnd", ValTy::I32),
+            ("NotAnd", ValTy::I64),
+            ("NotOr", ValTy::I32),
+            ("NotOr", ValTy::I64),
+            ("NotXor", ValTy::I32),
+            ("NotXor", ValTy::I64),
         ],
     )
 }
