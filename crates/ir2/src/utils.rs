@@ -232,7 +232,7 @@ pub trait StoreOperator {
     /// # Note
     /// 
     /// This only exists for some of the store classes.
-    fn make_mem0_rr(ptr: Reg, value: Stack) -> Option<Self::OpMem0Rr>;
+    fn make_mem0_rr(ptr: Reg, value: Reg) -> Option<Self::OpMem0Rr>;
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Reg, Stack)`
     fn make_mem0_rs(ptr: Reg, value: Stack) -> Self::OpMem0Rs;
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Reg, Imm)`
