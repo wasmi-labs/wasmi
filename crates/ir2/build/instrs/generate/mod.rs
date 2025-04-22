@@ -23,7 +23,7 @@ use self::{
 use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op, Operand};
 use std::{fmt::Display, fs, io};
 
-pub fn generate_instrs(ctx: &Context) -> Result<(), io::Error> {
+pub fn generate_ops(ctx: &Context) -> Result<(), io::Error> {
     let indent = DisplayIndent::default();
     generate_file("op_ty.rs", DisplayOpEnum::new(ctx, indent))?;
     generate_file("op_code.rs", DisplayOpCodeEnum::new(ctx, indent))?;

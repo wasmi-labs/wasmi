@@ -10,26 +10,26 @@ use super::{
 };
 use std::format;
 
-pub fn define_instrs(ctx: &mut Context) {
+pub fn define_ops(ctx: &mut Context) {
     define_trap_instr(ctx);
     define_consume_fuel_instr(ctx);
-    define_copy_instrs(ctx);
-    define_return_instrs(ctx);
-    define_global_instrs(ctx);
-    define_br_table_instrs(ctx);
+    define_copy_ops(ctx);
+    define_return_ops(ctx);
+    define_global_ops(ctx);
+    define_br_table_ops(ctx);
     define_branch_instr(ctx);
-    define_fused_cmp_branch_instrs_commutative(ctx);
-    define_fused_cmp_branch_instrs(ctx);
-    define_iunop_instrs(ctx);
-    define_funop_instrs(ctx);
-    define_conversion_instrs(ctx);
-    define_ibinop_instrs(ctx);
-    define_load_instrs(ctx);
-    define_store_instrs(ctx);
-    define_select_instrs(ctx);
-    define_table_instrs(ctx);
-    define_memory_instrs(ctx);
-    define_call_instrs(ctx);
+    define_fused_cmp_branch_ops_commutative(ctx);
+    define_fused_cmp_branch_ops(ctx);
+    define_iunop_ops(ctx);
+    define_funop_ops(ctx);
+    define_conversion_ops(ctx);
+    define_ibinop_ops(ctx);
+    define_load_ops(ctx);
+    define_store_ops(ctx);
+    define_select_ops(ctx);
+    define_table_ops(ctx);
+    define_memory_ops(ctx);
+    define_call_ops(ctx);
 }
 
 fn define_trap_instr(ctx: &mut Context) {
@@ -59,7 +59,7 @@ fn define_branch_instr(ctx: &mut Context) {
     })
 }
 
-fn define_br_table_instrs(ctx: &mut Context) {
+fn define_br_table_ops(ctx: &mut Context) {
     for index in [Operand::Reg, Operand::Stack] {
         let index_id = index.id();
         let index_ty = index.ty(ValTy::I32);
@@ -80,7 +80,7 @@ fn define_br_table_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_fused_cmp_branch_instrs_impl(
+fn define_fused_cmp_branch_ops_impl(
     ctx: &mut Context,
     commutative: bool,
     ops_and_tys: impl IntoIterator<Item = (&'static str, ValTy)>,
@@ -123,8 +123,8 @@ fn define_fused_cmp_branch_instrs_impl(
     }
 }
 
-fn define_fused_cmp_branch_instrs_commutative(ctx: &mut Context) {
-    define_fused_cmp_branch_instrs_impl(
+fn define_fused_cmp_branch_ops_commutative(ctx: &mut Context) {
+    define_fused_cmp_branch_ops_impl(
         ctx,
         true,
         [
@@ -140,8 +140,8 @@ fn define_fused_cmp_branch_instrs_commutative(ctx: &mut Context) {
     )
 }
 
-fn define_fused_cmp_branch_instrs(ctx: &mut Context) {
-    define_fused_cmp_branch_instrs_impl(
+fn define_fused_cmp_branch_ops(ctx: &mut Context) {
+    define_fused_cmp_branch_ops_impl(
         ctx,
         false,
         [
@@ -184,7 +184,7 @@ fn define_unary_operator(ctx: &mut Context, name: &str, result_ty: ValTy, input_
     ctx.unary_ops.push(UnaryOp { name })
 }
 
-fn define_iunop_instrs(ctx: &mut Context) {
+fn define_iunop_ops(ctx: &mut Context) {
     for op in ["Popcnt", "Clz", "Ctz"] {
         for ty in [ValTy::I32, ValTy::I64] {
             define_unary_operator(ctx, op, ty, ty);
@@ -192,7 +192,7 @@ fn define_iunop_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_funop_instrs(ctx: &mut Context) {
+fn define_funop_ops(ctx: &mut Context) {
     for op in ["Abs", "Neg", "Ceil", "Floor", "Trunc", "Nearest", "Sqrt"] {
         for ty in [ValTy::F32, ValTy::F64] {
             define_unary_operator(ctx, op, ty, ty);
@@ -200,7 +200,7 @@ fn define_funop_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_conversion_instrs(ctx: &mut Context) {
+fn define_conversion_ops(ctx: &mut Context) {
     let ops = [
         ("Demote", ValTy::F32, ValTy::F64),
         ("Promote", ValTy::F64, ValTy::F32),
@@ -240,7 +240,7 @@ fn define_conversion_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_load_instrs(ctx: &mut Context) {
+fn define_load_ops(ctx: &mut Context) {
     let ops_and_tys = [
         ("Load", ValTy::I32),
         ("Load", ValTy::I64),
@@ -311,7 +311,7 @@ fn define_load_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_store_instrs(ctx: &mut Context) {
+fn define_store_ops(ctx: &mut Context) {
     let ops_and_tys = [
         ("Store", ValTy::I32),
         ("Store", ValTy::I64),
@@ -391,7 +391,7 @@ fn define_store_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_binop_instrs(
+fn define_binop_ops(
     ctx: &mut Context,
     commutative: bool,
     ops: impl IntoIterator<Item = &'static str>,
@@ -444,20 +444,20 @@ fn define_binop_instrs(
     }
 }
 
-fn define_ibinop_instrs(ctx: &mut Context) {
-    define_binop_instrs(
+fn define_ibinop_ops(ctx: &mut Context) {
+    define_binop_ops(
         ctx,
         true,
         ["Add", "Mul", "And", "Or", "Xor", "Eq", "Ne"],
         [ValTy::I32, ValTy::I64],
     );
-    define_binop_instrs(
+    define_binop_ops(
         ctx,
         true,
         ["Add", "Mul", "Eq", "Ne", "Min", "Max"],
         [ValTy::F32, ValTy::F64],
     );
-    define_binop_instrs(
+    define_binop_ops(
         ctx,
         false,
         [
@@ -466,7 +466,7 @@ fn define_ibinop_instrs(ctx: &mut Context) {
         ],
         [ValTy::I32, ValTy::I64],
     );
-    define_binop_instrs(
+    define_binop_ops(
         ctx,
         false,
         ["Sub", "Div", "Copysign"],
@@ -474,7 +474,7 @@ fn define_ibinop_instrs(ctx: &mut Context) {
     );
 }
 
-fn define_copy_instrs(ctx: &mut Context) {
+fn define_copy_ops(ctx: &mut Context) {
     let stack_id = Operand::Stack.id();
     ctx.push_op(op! {
         name: format!("Copy1_{stack_id}"),
@@ -508,12 +508,12 @@ fn define_copy_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_global_instrs(ctx: &mut Context) {
-    define_global_get_instrs(ctx);
-    define_global_set_instrs(ctx);
+fn define_global_ops(ctx: &mut Context) {
+    define_global_get_ops(ctx);
+    define_global_set_ops(ctx);
 }
 
-fn define_global_get_instrs(ctx: &mut Context) {
+fn define_global_get_ops(ctx: &mut Context) {
     let stack_id = Operand::Stack.id();
     ctx.push_op(op! {
         name: format!("GlobalGet_{stack_id}"),
@@ -534,7 +534,7 @@ fn define_global_get_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_global_set_instrs(ctx: &mut Context) {
+fn define_global_set_ops(ctx: &mut Context) {
     let stack_id = Operand::Stack.id();
     ctx.push_op(op! {
         name: format!("GlobalSet_{stack_id}"),
@@ -557,7 +557,7 @@ fn define_global_set_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_return_instrs(ctx: &mut Context) {
+fn define_return_ops(ctx: &mut Context) {
     // Return0
     ctx.push_op(op! {
         name: "Return0",
@@ -594,7 +594,7 @@ fn define_return_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_select_instrs(ctx: &mut Context) {
+fn define_select_ops(ctx: &mut Context) {
     // Select without type:
     ctx.push_op(op! {
         name: "Select",
@@ -658,17 +658,17 @@ fn define_select_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_table_instrs(ctx: &mut Context) {
-    define_table_size_instrs(ctx);
-    define_table_get_instrs(ctx);
-    define_table_set_instrs(ctx);
-    define_table_grow_instrs(ctx);
-    define_table_copy_instrs(ctx);
-    define_table_fill_instrs(ctx);
-    define_table_init_instrs(ctx);
+fn define_table_ops(ctx: &mut Context) {
+    define_table_size_ops(ctx);
+    define_table_get_ops(ctx);
+    define_table_set_ops(ctx);
+    define_table_grow_ops(ctx);
+    define_table_copy_ops(ctx);
+    define_table_fill_ops(ctx);
+    define_table_init_ops(ctx);
 }
 
-fn define_table_size_instrs(ctx: &mut Context) {
+fn define_table_size_ops(ctx: &mut Context) {
     for result in [Operand::Reg, Operand::Stack] {
         let result_id = result.id();
         ctx.push_op(op! {
@@ -681,7 +681,7 @@ fn define_table_size_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_table_get_instrs(ctx: &mut Context) {
+fn define_table_get_ops(ctx: &mut Context) {
     let result_id = Operand::Reg.id();
     let result_ty = Operand::Reg.ty(ValTy::I64);
     for index in [Operand::Reg, Operand::Stack, Operand::Immediate] {
@@ -697,7 +697,7 @@ fn define_table_get_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_table_set_instrs(ctx: &mut Context) {
+fn define_table_set_ops(ctx: &mut Context) {
     for index in [Operand::Reg, Operand::Stack, Operand::Immediate] {
         let index_id = index.id();
         let index_ty = index.ty(ValTy::I64);
@@ -719,7 +719,7 @@ fn define_table_set_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_table_grow_instrs(ctx: &mut Context) {
+fn define_table_grow_ops(ctx: &mut Context) {
     ctx.push_op(op! {
         name: "TableGrow",
         fields: [
@@ -730,7 +730,7 @@ fn define_table_grow_instrs(ctx: &mut Context) {
     });
 }
 
-fn define_table_copy_instrs(ctx: &mut Context) {
+fn define_table_copy_ops(ctx: &mut Context) {
     ctx.push_op(op! {
         name: "TableCopy",
         fields: [
@@ -743,7 +743,7 @@ fn define_table_copy_instrs(ctx: &mut Context) {
     });
 }
 
-fn define_table_fill_instrs(ctx: &mut Context) {
+fn define_table_fill_ops(ctx: &mut Context) {
     ctx.push_op(op! {
         name: "TableFill",
         fields: [
@@ -755,7 +755,7 @@ fn define_table_fill_instrs(ctx: &mut Context) {
     });
 }
 
-fn define_table_init_instrs(ctx: &mut Context) {
+fn define_table_init_ops(ctx: &mut Context) {
     ctx.push_op(op! {
         name: "TableInit",
         fields: [
@@ -768,15 +768,15 @@ fn define_table_init_instrs(ctx: &mut Context) {
     });
 }
 
-fn define_memory_instrs(ctx: &mut Context) {
-    define_memory_size_instrs(ctx);
-    define_memory_grow_instrs(ctx);
-    define_memory_copy_instrs(ctx);
-    define_memory_fill_instrs(ctx);
-    define_memory_init_instrs(ctx);
+fn define_memory_ops(ctx: &mut Context) {
+    define_memory_size_ops(ctx);
+    define_memory_grow_ops(ctx);
+    define_memory_copy_ops(ctx);
+    define_memory_fill_ops(ctx);
+    define_memory_init_ops(ctx);
 }
 
-fn define_memory_size_instrs(ctx: &mut Context) {
+fn define_memory_size_ops(ctx: &mut Context) {
     for result in [Operand::Reg, Operand::Stack] {
         let result_id = result.id();
         ctx.push_op(op! {
@@ -789,7 +789,7 @@ fn define_memory_size_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_memory_grow_instrs(ctx: &mut Context) {
+fn define_memory_grow_ops(ctx: &mut Context) {
     ctx.push_op(op! {
         name: "MemoryGrow",
         fields: [
@@ -800,7 +800,7 @@ fn define_memory_grow_instrs(ctx: &mut Context) {
     })
 }
 
-fn define_memory_copy_instrs(ctx: &mut Context) {
+fn define_memory_copy_ops(ctx: &mut Context) {
     ctx.push_op(op! {
         name: "MemoryCopy",
         fields: [
@@ -813,7 +813,7 @@ fn define_memory_copy_instrs(ctx: &mut Context) {
     })
 }
 
-fn define_memory_fill_instrs(ctx: &mut Context) {
+fn define_memory_fill_ops(ctx: &mut Context) {
     ctx.push_op(op! {
         name: "MemoryFill",
         fields: [
@@ -825,7 +825,7 @@ fn define_memory_fill_instrs(ctx: &mut Context) {
     })
 }
 
-fn define_memory_init_instrs(ctx: &mut Context) {
+fn define_memory_init_ops(ctx: &mut Context) {
     ctx.push_op(op! {
         name: "MemoryInit",
         fields: [
@@ -838,13 +838,13 @@ fn define_memory_init_instrs(ctx: &mut Context) {
     })
 }
 
-fn define_call_instrs(ctx: &mut Context) {
-    define_call_internal_instrs(ctx);
-    define_call_imported_instrs(ctx);
-    define_call_indirect_instrs(ctx);
+fn define_call_ops(ctx: &mut Context) {
+    define_call_internal_ops(ctx);
+    define_call_imported_ops(ctx);
+    define_call_indirect_ops(ctx);
 }
 
-fn define_call_internal_instrs(ctx: &mut Context) {
+fn define_call_internal_ops(ctx: &mut Context) {
     for op in ["Call", "ReturnCall"] {
         ctx.push_op(op! {
             name: format!("{op}Internal"),
@@ -857,7 +857,7 @@ fn define_call_internal_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_call_imported_instrs(ctx: &mut Context) {
+fn define_call_imported_ops(ctx: &mut Context) {
     for op in ["Call", "ReturnCall"] {
         ctx.push_op(op! {
             name: format!("{op}Imported"),
@@ -870,7 +870,7 @@ fn define_call_imported_instrs(ctx: &mut Context) {
     }
 }
 
-fn define_call_indirect_instrs(ctx: &mut Context) {
+fn define_call_indirect_ops(ctx: &mut Context) {
     for op in ["Call", "ReturnCall"] {
         for index in [Operand::Reg, Operand::Stack, Operand::Immediate] {
             let index_id = index.id();
