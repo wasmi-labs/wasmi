@@ -44,7 +44,7 @@ impl OperatorCode for NoOp {
     }
 }
 impl From<NoOp> for Op {
-    fn from(op: NoOp) -> Self {
+    fn from(_: NoOp) -> Self {
         unreachable!("intentionally unimplemented: must never be used")
     }
 }
