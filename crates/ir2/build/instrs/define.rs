@@ -23,10 +23,7 @@ pub fn define_instrs(ctx: &mut Context) {
     define_iunop_instrs(ctx);
     define_funop_instrs(ctx);
     define_conversion_instrs(ctx);
-    define_ibinop_instrs_commutative(ctx);
-    define_fbinop_instrs_commutative(ctx);
     define_ibinop_instrs(ctx);
-    define_fbinop_instrs(ctx);
     define_load_instrs(ctx);
     define_store_instrs(ctx);
     define_select_instrs(ctx);
@@ -447,25 +444,19 @@ fn define_binop_instrs(
     }
 }
 
-fn define_ibinop_instrs_commutative(ctx: &mut Context) {
+fn define_ibinop_instrs(ctx: &mut Context) {
     define_binop_instrs(
         ctx,
         true,
         ["Add", "Mul", "And", "Or", "Xor", "Eq", "Ne"],
         [ValTy::I32, ValTy::I64],
-    )
-}
-
-fn define_fbinop_instrs_commutative(ctx: &mut Context) {
+    );
     define_binop_instrs(
         ctx,
         true,
         ["Add", "Mul", "Eq", "Ne", "Min", "Max"],
         [ValTy::F32, ValTy::F64],
-    )
-}
-
-fn define_ibinop_instrs(ctx: &mut Context) {
+    );
     define_binop_instrs(
         ctx,
         false,
@@ -474,16 +465,13 @@ fn define_ibinop_instrs(ctx: &mut Context) {
             "ShrU", "Rotl", "Rotr",
         ],
         [ValTy::I32, ValTy::I64],
-    )
-}
-
-fn define_fbinop_instrs(ctx: &mut Context) {
+    );
     define_binop_instrs(
         ctx,
         false,
         ["Sub", "Div", "Copysign"],
         [ValTy::F32, ValTy::F64],
-    )
+    );
 }
 
 fn define_copy_instrs(ctx: &mut Context) {
