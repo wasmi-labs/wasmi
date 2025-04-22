@@ -1,4 +1,4 @@
-use crate::{Op, Reg, Stack};
+use crate::{Memory, Op, Reg, Stack};
 use core::ops::Deref;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -142,4 +142,51 @@ pub trait BinaryOperator {
     fn make_rsr(result: Reg, lhs: Stack, rhs: Reg) -> Self::OpRsr;
     /// Creates the operator variant with signature: `fn(Stack, Stack) -> Reg`
     fn make_rss(result: Reg, lhs: Stack, rhs: Stack) -> Self::OpRss;
+}
+
+/// Class of load operators.
+pub trait LoadOperator {
+    /// The name of the operator class.
+    const NAME: &'static str;
+
+    /// The type of immediate input operands.
+    type Imm;
+
+    /// The operator variant for `(memory 0)` with signature: `fn(Imm) -> Reg`
+    type OpMem0Ri: Operator;
+    /// The operator variant for `(memory 0)` with signature: `fn(Reg) -> Reg`
+    type OpMem0Rr: Operator;
+    /// The operator variant for `(memory 0)` with signature: `fn(Stack) -> Reg`
+    type OpMem0Rs: Operator;
+    /// The operator variant for `(memory 0)` with signature: `fn(Imm) -> Stack`
+    type OpMem0Si: Operator;
+    /// The operator variant for `(memory 0)` with signature: `fn(Reg) -> Stack`
+    type OpMem0Sr: Operator;
+    /// The operator variant for `(memory 0)` with signature: `fn(Stack) -> Stack`
+    type OpMem0Ss: Operator;
+    /// The operator variant for with signature: `fn(Imm) -> Reg`
+    type OpRi: Operator;
+    /// The operator variant for with signature: `fn(Reg) -> Reg`
+    type OpRr: Operator;
+    /// The operator variant for with signature: `fn(Stack) -> Reg`
+    type OpRs: Operator;
+
+    /// Creates the operator variant for `(memory 0)` with signature: `fn(Imm) -> Reg`
+    fn make_mem0_ri(result: Reg, ptr: Self::Imm) -> Self::OpMem0Ri;
+    /// Creates the operator variant for `(memory 0)` with signature: `fn(Reg) -> Reg`
+    fn make_mem0_rr(result: Reg, ptr: Reg) -> Self::OpMem0Rr;
+    /// Creates the operator variant for `(memory 0)` with signature: `fn(Stack) -> Reg`
+    fn make_mem0_rs(result: Reg, ptr: Stack) -> Self::OpMem0Rs;
+    /// Creates the operator variant for `(memory 0)` with signature: `fn(Imm) -> Stack`
+    fn make_mem0_si(result: Stack, ptr: Self::Imm) -> Self::OpMem0Si;
+    /// Creates the operator variant for `(memory 0)` with signature: `fn(Reg) -> Stack`
+    fn make_mem0_sr(result: Stack, ptr: Reg) -> Self::OpMem0Sr;
+    /// Creates the operator variant for `(memory 0)` with signature: `fn(Stack) -> Stack`
+    fn make_mem0_ss(result: Stack, ptr: Stack) -> Self::OpMem0Ss;
+    /// Creates the operator variant for with signature: `fn(Imm) -> Reg`
+    fn make_ri(result: Reg, ptr: Self::Imm, memory: Memory) -> Self::OpRi;
+    /// Creates the operator variant for with signature: `fn(Reg) -> Reg`
+    fn make_rr(result: Reg, ptr: Reg, memory: Memory) -> Self::OpRr;
+    /// Creates the operator variant for with signature: `fn(Stack) -> Reg`
+    fn make_rs(result: Reg, ptr: Stack, memory: Memory) -> Self::OpRs;
 }

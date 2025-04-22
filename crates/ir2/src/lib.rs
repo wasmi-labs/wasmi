@@ -14,7 +14,14 @@ pub use self::{
     decode::{Decode, Decoder},
     encode::{CheckedEncoder, CopyDecoder, CopyEncoder, Encode, Encoder, EncoderError},
     instr::{class, op, Op, OpCode},
-    utils::{BinaryCommutativeOperator, BinaryOperator, Operator, OperatorCode, UnaryOperator},
+    utils::{
+        BinaryCommutativeOperator,
+        BinaryOperator,
+        LoadOperator,
+        Operator,
+        OperatorCode,
+        UnaryOperator,
+    },
 };
 
 /// Address to load from or store to memory.
