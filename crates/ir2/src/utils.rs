@@ -211,9 +211,9 @@ pub trait StoreOperator {
     type Imm;
 
     /// The operator variant for `(memory 0)` with signature: `fn(Reg, Reg)`
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This only exists for some of the store classes.
     type OpMem0Rr: Operator;
     /// The operator variant for `(memory 0)` with signature: `fn(Reg, Stack)`
@@ -242,21 +242,21 @@ pub trait StoreOperator {
     type OpIi: Operator;
 
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Reg, Reg)`
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This only exists for some of the store classes.
-    fn make_mem0_rr(ptr: Reg, value: Reg) -> Option<Self::OpMem0Rr>;
+    fn make_mem0_rr(ptr: Reg, offset: Offset, value: Reg) -> Option<Self::OpMem0Rr>;
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Reg, Stack)`
-    fn make_mem0_rs(ptr: Reg, value: Stack) -> Self::OpMem0Rs;
+    fn make_mem0_rs(ptr: Reg, offset: Offset, value: Stack) -> Self::OpMem0Rs;
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Reg, Imm)`
-    fn make_mem0_ri(ptr: Reg, value: Self::Imm) -> Self::OpMem0Ri;
+    fn make_mem0_ri(ptr: Reg, offset: Offset, value: Self::Imm) -> Self::OpMem0Ri;
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Stack, Reg)`
-    fn make_mem0_sr(ptr: Stack, value: Reg) -> Self::OpMem0Sr;
+    fn make_mem0_sr(ptr: Stack, offset: Offset, value: Reg) -> Self::OpMem0Sr;
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Stack, Stack)`
-    fn make_mem0_ss(ptr: Stack, value: Stack) -> Self::OpMem0Ss;
+    fn make_mem0_ss(ptr: Stack, offset: Offset, value: Stack) -> Self::OpMem0Ss;
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Stack, Imm)`
-    fn make_mem0_si(ptr: Stack, value: Self::Imm) -> Self::OpMem0Si;
+    fn make_mem0_si(ptr: Stack, offset: Offset, value: Self::Imm) -> Self::OpMem0Si;
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Imm, Reg)`
     fn make_mem0_ir(address: Address, value: Reg) -> Self::OpMem0Ir;
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Imm, Stack)`
@@ -264,11 +264,11 @@ pub trait StoreOperator {
     /// Creates the operator variant for `(memory 0)` with signature: `fn(Imm, Imm)`
     fn make_mem0_ii(address: Address, value: Self::Imm) -> Self::OpMem0Ii;
     /// Creates the operator variant with signature: `fn(Stack, Stack)`
-    fn make_ss() -> Self::OpSs;
+    fn make_ss(ptr: Stack, offset: Offset, value: Stack, memory: Memory) -> Self::OpSs;
     /// Creates the operator variant with signature: `fn(Stack, Imm)`
-    fn make_si() -> Self::OpSi;
+    fn make_si(ptr: Stack, offset: Offset, value: Self::Imm, memory: Memory) -> Self::OpSi;
     /// Creates the operator variant with signature: `fn(Imm, Stack)`
-    fn make_is() -> Self::OpIs;
+    fn make_is(ptr: Address, value: Stack, memory: Memory) -> Self::OpIs;
     /// Creates the operator variant with signature: `fn(Imm, Imm)`
-    fn make_ii() -> Self::OpIi;
+    fn make_ii(ptr: Address, value: Self::Imm, memory: Memory) -> Self::OpIi;
 }
