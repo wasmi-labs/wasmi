@@ -13,6 +13,7 @@ use std::format;
 pub fn define_ops(ctx: &mut Context) {
     define_trap_op(ctx);
     define_consume_fuel_op(ctx);
+    define_ref_func_op(ctx);
     define_copy_ops(ctx);
     define_return_ops(ctx);
     define_global_ops(ctx);
@@ -46,6 +47,15 @@ fn define_consume_fuel_op(ctx: &mut Context) {
         name: format!("ConsumeFuel"),
         fields: [
             fuel: ImmediateTy::U64,
+        ],
+    })
+}
+
+fn define_ref_func_op(ctx: &mut Context) {
+    ctx.push_op(op! {
+        name: format!("RefFunc"),
+        fields: [
+            func: ImmediateTy::U32,
         ],
     })
 }

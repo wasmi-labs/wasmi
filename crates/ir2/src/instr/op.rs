@@ -39,6 +39,23 @@ impl ::core::convert::From<ConsumeFuel> for crate::Op {
     }
 }
 #[repr(C, packed)]
+pub struct RefFunc {
+    pub func: ::core::primitive::u32,
+}
+impl ::core::marker::Copy for RefFunc {}
+impl ::core::clone::Clone for RefFunc {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<RefFunc> for crate::Op {
+    fn from(op: RefFunc) -> Self {
+        Self::RefFunc {
+            func: op.func,
+        }
+    }
+}
+#[repr(C, packed)]
 pub struct Copy1_S {
     pub result: crate::Stack,
     pub value: crate::Stack,
