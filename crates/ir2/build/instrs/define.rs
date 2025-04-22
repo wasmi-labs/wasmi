@@ -17,6 +17,7 @@ pub fn define_instrs(ctx: &mut Context) {
     define_return_instrs(ctx);
     define_global_instrs(ctx);
     define_br_table_instrs(ctx);
+    define_branch_instr(ctx);
     define_fused_cmp_branch_instrs_commutative(ctx);
     define_fused_cmp_branch_instrs(ctx);
     define_iunop_instrs(ctx);
@@ -48,6 +49,15 @@ fn define_consume_fuel_instr(ctx: &mut Context) {
         name: format!("ConsumeFuel"),
         fields: [
             fuel: ImmediateTy::U64,
+        ],
+    })
+}
+
+fn define_branch_instr(ctx: &mut Context) {
+    ctx.push_op(op! {
+        name: format!("Branch"),
+        fields: [
+            offset: ImmediateTy::BranchOffset,
         ],
     })
 }

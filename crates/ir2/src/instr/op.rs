@@ -737,6 +737,23 @@ impl ::core::convert::From<BranchTable_S> for crate::Op {
     }
 }
 #[repr(C, packed)]
+pub struct Branch {
+    pub offset: crate::BranchOffset,
+}
+impl ::core::marker::Copy for Branch {}
+impl ::core::clone::Clone for Branch {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<Branch> for crate::Op {
+    fn from(op: Branch) -> Self {
+        Self::Branch {
+            offset: op.offset,
+        }
+    }
+}
+#[repr(C, packed)]
 pub struct I32EqBranch_RS {
     pub lhs: crate::Reg,
     pub rhs: crate::Stack,
