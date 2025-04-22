@@ -1,5 +1,5 @@
 use super::{
-    context::{BinaryOp, LoadOp, UnaryOp},
+    context::{BinaryOp, LoadOp, StoreOp, UnaryOp},
     Context,
     FieldName,
     FieldTy,
@@ -291,12 +291,8 @@ fn define_store_instrs(ctx: &mut Context) {
     let ptrs = [Operand::Reg, Operand::Stack, Operand::Immediate];
     let values = [Operand::Reg, Operand::Stack, Operand::Immediate];
     for (op, ty) in ops_and_tys {
+        let name = format!("{ty}{op}");
         for mem0 in [false, true] {
-            let mem0_id = match mem0 {
-                true => "Mem0",
-                false => "",
-            };
-            let op = format!("{ty}{op}{mem0_id}");
             for ptr in &ptrs {
                 for value in &values {
                     if !mem0 && (ptr.is_reg() || value.is_reg()) {
@@ -310,7 +306,7 @@ fn define_store_instrs(ctx: &mut Context) {
                     let instr = match (ptr, mem0) {
                         (Operand::Immediate, true) => {
                             op! {
-                                name: format!("{op}_{ptr_id}{value_id}"),
+                                name: format!("{name}Mem0_{ptr_id}{value_id}"),
                                 fields: [
                                     address: ImmediateTy::Address,
                                     value: value.ty(ty),
@@ -319,7 +315,7 @@ fn define_store_instrs(ctx: &mut Context) {
                         }
                         (Operand::Immediate, false) => {
                             op! {
-                                name: format!("{op}_{ptr_id}{value_id}"),
+                                name: format!("{name}_{ptr_id}{value_id}"),
                                 fields: [
                                     address: ImmediateTy::Address,
                                     value: value.ty(ty),
@@ -329,7 +325,7 @@ fn define_store_instrs(ctx: &mut Context) {
                         }
                         (_, true) => {
                             op! {
-                                name: format!("{op}_{ptr_id}{value_id}"),
+                                name: format!("{name}Mem0_{ptr_id}{value_id}"),
                                 fields: [
                                     ptr: ptr.ty(ValTy::I64),
                                     value: value.ty(ty),
@@ -339,7 +335,7 @@ fn define_store_instrs(ctx: &mut Context) {
                         }
                         (_, false) => {
                             op! {
-                                name: format!("{op}_{ptr_id}{value_id}"),
+                                name: format!("{name}_{ptr_id}{value_id}"),
                                 fields: [
                                     ptr: ptr.ty(ValTy::I64),
                                     value: value.ty(ty),
@@ -353,6 +349,10 @@ fn define_store_instrs(ctx: &mut Context) {
                 }
             }
         }
+        ctx.store_ops.push(StoreOp {
+            name: name.into(),
+            input_ty: ty,
+        });
     }
 }
 

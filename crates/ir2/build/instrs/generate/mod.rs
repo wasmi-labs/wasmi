@@ -10,6 +10,7 @@ use self::{
         DisplayBinaryCommutativeOperatorImpls,
         DisplayBinaryOperatorImpls,
         DisplayLoadOperatorImpls,
+        DisplayStoreOperatorImpls,
         DisplayUnaryOperatorImpls,
     },
     opcode::DisplayOpCodeEnum,
@@ -40,6 +41,10 @@ pub fn generate_instrs(ctx: &Context) -> Result<(), io::Error> {
     generate_file(
         "impls/load.rs",
         DisplayLoadOperatorImpls::new(&ctx.load_ops, indent),
+    )?;
+    generate_file(
+        "impls/store.rs",
+        DisplayStoreOperatorImpls::new(&ctx.store_ops, indent),
     )?;
     Ok(())
 }
