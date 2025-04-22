@@ -11,6 +11,7 @@ use super::{
 use std::format;
 
 pub fn define_instrs(ctx: &mut Context) {
+    define_trap_instr(ctx);
     define_copy_instrs(ctx);
     define_return_instrs(ctx);
     define_global_instrs(ctx);
@@ -30,6 +31,15 @@ pub fn define_instrs(ctx: &mut Context) {
     define_table_instrs(ctx);
     define_memory_instrs(ctx);
     define_call_instrs(ctx);
+}
+
+fn define_trap_instr(ctx: &mut Context) {
+    ctx.push_op(op! {
+        name: format!("Trap"),
+        fields: [
+            code: ImmediateTy::TrapCode,
+        ],
+    })
 }
 
 fn define_br_table_instrs(ctx: &mut Context) {

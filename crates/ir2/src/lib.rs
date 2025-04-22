@@ -68,6 +68,20 @@ pub struct Data(pub u32);
 #[derive(Debug, Copy, Clone)]
 pub struct Elem(pub u32);
 
+#[derive(Debug, Copy, Clone)]
+pub enum TrapCode {
+    UnreachableCodeReached,
+    MemoryOutOfBounds,
+    TableOutOfBounds,
+    IndirectCallToNull,
+    IntegerDivisionByZero,
+    IntegerOverflow,
+    BadConversionToInteger,
+    StackOverflow,
+    BadSignature,
+    OutOfFuel,
+}
+
 /// A branch table target.
 pub struct BranchTableTarget {
     pub result: Stack,

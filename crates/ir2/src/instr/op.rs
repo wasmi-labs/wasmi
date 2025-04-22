@@ -5,6 +5,23 @@
 #![allow(unused_variables)]
 
 #[repr(C, packed)]
+pub struct Trap {
+    pub code: crate::TrapCode,
+}
+impl ::core::marker::Copy for Trap {}
+impl ::core::clone::Clone for Trap {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<Trap> for crate::Op {
+    fn from(op: Trap) -> Self {
+        Self::Trap {
+            code: op.code,
+        }
+    }
+}
+#[repr(C, packed)]
 pub struct Copy1_S {
     pub result: crate::Stack,
     pub value: crate::Stack,

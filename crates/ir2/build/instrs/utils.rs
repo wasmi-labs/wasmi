@@ -22,6 +22,7 @@ pub enum ImmediateTy {
     Address,
     Offset,
     BranchOffset,
+    TrapCode,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]

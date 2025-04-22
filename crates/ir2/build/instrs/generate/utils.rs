@@ -155,6 +155,7 @@ impl Display for FieldName {
             Self::Func => "func",
             Self::Data => "data",
             Self::Elem => "elem",
+            Self::Code => "code",
         };
         write!(f, "{str}")
     }
@@ -192,6 +193,7 @@ impl Display for ImmediateTy {
             Self::Address => "crate::Address",
             Self::Offset => "crate::Offset",
             Self::BranchOffset => "crate::BranchOffset",
+            Self::TrapCode => "crate::TrapCode",
         };
         write!(f, "{str}")
     }
