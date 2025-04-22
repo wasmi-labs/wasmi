@@ -299,3 +299,42 @@ pub trait CmpBranchCommutativeOperator {
     /// Creates the operator variant with signature: `fn(Stack, Stack)`
     fn make_ss(lhs: Stack, rhs: Stack, offset: BranchOffset) -> Self::OpSs;
 }
+
+/// Class of non-commutative compare-and-branch operators.
+pub trait CmpBranchOperator {
+    /// The name of the operator class.
+    const NAME: &'static str;
+
+    /// The type of immediate value operand.
+    type Imm;
+
+    /// The operator variant with signature: `fn(Imm, Reg)`
+    type OpIr: Operator;
+    /// The operator variant with signature: `fn(Imm, Stack)`
+    type OpIs: Operator;
+    /// The operator variant with signature: `fn(Reg, Imm)`
+    type OpRi: Operator;
+    /// The operator variant with signature: `fn(Reg, Stack)`
+    type OpRs: Operator;
+    /// The operator variant with signature: `fn(Stack, Imm)`
+    type OpSi: Operator;
+    /// The operator variant with signature: `fn(Stack, Reg)`
+    type OpSr: Operator;
+    /// The operator variant with signature: `fn(Stack, Stack)`
+    type OpSs: Operator;
+
+    /// Creates the operator variant with signature: `fn(Imm, Reg)`
+    fn make_ir(lhs: Self::Imm, rhs: Reg, offset: BranchOffset) -> Self::OpIr;
+    /// Creates the operator variant with signature: `fn(Imm, Stack)`
+    fn make_is(lhs: Self::Imm, rhs: Stack, offset: BranchOffset) -> Self::OpIs;
+    /// Creates the operator variant with signature: `fn(Reg, Imm)`
+    fn make_ri(lhs: Reg, rhs: Self::Imm, offset: BranchOffset) -> Self::OpRi;
+    /// Creates the operator variant with signature: `fn(Reg, Stack)`
+    fn make_rs(lhs: Reg, rhs: Stack, offset: BranchOffset) -> Self::OpRs;
+    /// Creates the operator variant with signature: `fn(Stack, Imm)`
+    fn make_si(lhs: Stack, rhs: Self::Imm, offset: BranchOffset) -> Self::OpSi;
+    /// Creates the operator variant with signature: `fn(Stack, Reg)`
+    fn make_sr(lhs: Stack, rhs: Reg, offset: BranchOffset) -> Self::OpSr;
+    /// Creates the operator variant with signature: `fn(Stack, Stack)`
+    fn make_ss(lhs: Stack, rhs: Stack, offset: BranchOffset) -> Self::OpSs;
+}

@@ -18,6 +18,7 @@ pub use self::{
         BinaryCommutativeOperator,
         BinaryOperator,
         CmpBranchCommutativeOperator,
+        CmpBranchOperator,
         LoadOperator,
         Operator,
         OperatorCode,
