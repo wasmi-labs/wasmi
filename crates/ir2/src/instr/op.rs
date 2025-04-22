@@ -22,6 +22,23 @@ impl ::core::convert::From<Trap> for crate::Op {
     }
 }
 #[repr(C, packed)]
+pub struct ConsumeFuel {
+    pub fuel: ::core::primitive::u64,
+}
+impl ::core::marker::Copy for ConsumeFuel {}
+impl ::core::clone::Clone for ConsumeFuel {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<ConsumeFuel> for crate::Op {
+    fn from(op: ConsumeFuel) -> Self {
+        Self::ConsumeFuel {
+            fuel: op.fuel,
+        }
+    }
+}
+#[repr(C, packed)]
 pub struct Copy1_S {
     pub result: crate::Stack,
     pub value: crate::Stack,

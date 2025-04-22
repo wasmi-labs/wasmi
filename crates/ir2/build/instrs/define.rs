@@ -12,6 +12,7 @@ use std::format;
 
 pub fn define_instrs(ctx: &mut Context) {
     define_trap_instr(ctx);
+    define_consume_fuel_instr(ctx);
     define_copy_instrs(ctx);
     define_return_instrs(ctx);
     define_global_instrs(ctx);
@@ -38,6 +39,15 @@ fn define_trap_instr(ctx: &mut Context) {
         name: format!("Trap"),
         fields: [
             code: ImmediateTy::TrapCode,
+        ],
+    })
+}
+
+fn define_consume_fuel_instr(ctx: &mut Context) {
+    ctx.push_op(op! {
+        name: format!("ConsumeFuel"),
+        fields: [
+            fuel: ImmediateTy::U64,
         ],
     })
 }

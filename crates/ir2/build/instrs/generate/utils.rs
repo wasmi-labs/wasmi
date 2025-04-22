@@ -156,6 +156,7 @@ impl Display for FieldName {
             Self::Data => "data",
             Self::Elem => "elem",
             Self::Code => "code",
+            Self::Fuel => "fuel",
         };
         write!(f, "{str}")
     }

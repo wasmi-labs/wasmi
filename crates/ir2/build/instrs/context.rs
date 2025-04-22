@@ -119,6 +119,7 @@ pub enum FieldName {
     Data,
     Elem,
     Code,
+    Fuel,
 }
 
 #[macro_export]
@@ -154,6 +155,7 @@ macro_rules! ident_to_field_name {
     (data) => { FieldName::Data };
     (elem) => { FieldName::Elem };
     (code) => { FieldName::Code };
+    (fuel) => { FieldName::Fuel };
     ($error:ident) => {{
         compile_error!(concat!(
             "invalid field name identifier: ",
