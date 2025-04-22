@@ -19103,75 +19103,6 @@ impl ::core::convert::From<I64Load32UMem0_SI> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32Store_RS {
-    pub ptr: crate::Reg,
-    pub value: crate::Stack,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store_RS {}
-impl ::core::clone::Clone for I32Store_RS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store_RS> for crate::Op {
-    fn from(op: I32Store_RS) -> Self {
-        Self::I32Store_RS {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Store_RI {
-    pub ptr: crate::Reg,
-    pub value: ::core::primitive::i32,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store_RI {}
-impl ::core::clone::Clone for I32Store_RI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store_RI> for crate::Op {
-    fn from(op: I32Store_RI) -> Self {
-        Self::I32Store_RI {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Store_SR {
-    pub ptr: crate::Stack,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store_SR {}
-impl ::core::clone::Clone for I32Store_SR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store_SR> for crate::Op {
-    fn from(op: I32Store_SR) -> Self {
-        Self::I32Store_SR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
 pub struct I32Store_SS {
     pub ptr: crate::Stack,
     pub value: crate::Stack,
@@ -19213,27 +19144,6 @@ impl ::core::convert::From<I32Store_SI> for crate::Op {
             ptr: op.ptr,
             value: op.value,
             offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Store_IR {
-    pub address: crate::Address,
-    pub value: crate::Reg,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store_IR {}
-impl ::core::clone::Clone for I32Store_IR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store_IR> for crate::Op {
-    fn from(op: I32Store_IR) -> Self {
-        Self::I32Store_IR {
-            address: op.address,
-            value: op.value,
             memory: op.memory,
         }
     }
@@ -19443,75 +19353,6 @@ impl ::core::convert::From<I32StoreMem0_II> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Store_RS {
-    pub ptr: crate::Reg,
-    pub value: crate::Stack,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store_RS {}
-impl ::core::clone::Clone for I64Store_RS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store_RS> for crate::Op {
-    fn from(op: I64Store_RS) -> Self {
-        Self::I64Store_RS {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store_RI {
-    pub ptr: crate::Reg,
-    pub value: ::core::primitive::i64,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store_RI {}
-impl ::core::clone::Clone for I64Store_RI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store_RI> for crate::Op {
-    fn from(op: I64Store_RI) -> Self {
-        Self::I64Store_RI {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store_SR {
-    pub ptr: crate::Stack,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store_SR {}
-impl ::core::clone::Clone for I64Store_SR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store_SR> for crate::Op {
-    fn from(op: I64Store_SR) -> Self {
-        Self::I64Store_SR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
 pub struct I64Store_SS {
     pub ptr: crate::Stack,
     pub value: crate::Stack,
@@ -19553,27 +19394,6 @@ impl ::core::convert::From<I64Store_SI> for crate::Op {
             ptr: op.ptr,
             value: op.value,
             offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store_IR {
-    pub address: crate::Address,
-    pub value: crate::Reg,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store_IR {}
-impl ::core::clone::Clone for I64Store_IR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store_IR> for crate::Op {
-    fn from(op: I64Store_IR) -> Self {
-        Self::I64Store_IR {
-            address: op.address,
-            value: op.value,
             memory: op.memory,
         }
     }
@@ -19783,98 +19603,6 @@ impl ::core::convert::From<I64StoreMem0_II> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct F32Store_RR {
-    pub ptr: crate::Reg,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for F32Store_RR {}
-impl ::core::clone::Clone for F32Store_RR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<F32Store_RR> for crate::Op {
-    fn from(op: F32Store_RR) -> Self {
-        Self::F32Store_RR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct F32Store_RS {
-    pub ptr: crate::Reg,
-    pub value: crate::Stack,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for F32Store_RS {}
-impl ::core::clone::Clone for F32Store_RS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<F32Store_RS> for crate::Op {
-    fn from(op: F32Store_RS) -> Self {
-        Self::F32Store_RS {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct F32Store_RI {
-    pub ptr: crate::Reg,
-    pub value: ::core::primitive::f32,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for F32Store_RI {}
-impl ::core::clone::Clone for F32Store_RI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<F32Store_RI> for crate::Op {
-    fn from(op: F32Store_RI) -> Self {
-        Self::F32Store_RI {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct F32Store_SR {
-    pub ptr: crate::Stack,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for F32Store_SR {}
-impl ::core::clone::Clone for F32Store_SR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<F32Store_SR> for crate::Op {
-    fn from(op: F32Store_SR) -> Self {
-        Self::F32Store_SR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
 pub struct F32Store_SS {
     pub ptr: crate::Stack,
     pub value: crate::Stack,
@@ -19916,27 +19644,6 @@ impl ::core::convert::From<F32Store_SI> for crate::Op {
             ptr: op.ptr,
             value: op.value,
             offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct F32Store_IR {
-    pub address: crate::Address,
-    pub value: crate::Reg,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for F32Store_IR {}
-impl ::core::clone::Clone for F32Store_IR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<F32Store_IR> for crate::Op {
-    fn from(op: F32Store_IR) -> Self {
-        Self::F32Store_IR {
-            address: op.address,
-            value: op.value,
             memory: op.memory,
         }
     }
@@ -20167,98 +19874,6 @@ impl ::core::convert::From<F32StoreMem0_II> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct F64Store_RR {
-    pub ptr: crate::Reg,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for F64Store_RR {}
-impl ::core::clone::Clone for F64Store_RR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<F64Store_RR> for crate::Op {
-    fn from(op: F64Store_RR) -> Self {
-        Self::F64Store_RR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct F64Store_RS {
-    pub ptr: crate::Reg,
-    pub value: crate::Stack,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for F64Store_RS {}
-impl ::core::clone::Clone for F64Store_RS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<F64Store_RS> for crate::Op {
-    fn from(op: F64Store_RS) -> Self {
-        Self::F64Store_RS {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct F64Store_RI {
-    pub ptr: crate::Reg,
-    pub value: ::core::primitive::f64,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for F64Store_RI {}
-impl ::core::clone::Clone for F64Store_RI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<F64Store_RI> for crate::Op {
-    fn from(op: F64Store_RI) -> Self {
-        Self::F64Store_RI {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct F64Store_SR {
-    pub ptr: crate::Stack,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for F64Store_SR {}
-impl ::core::clone::Clone for F64Store_SR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<F64Store_SR> for crate::Op {
-    fn from(op: F64Store_SR) -> Self {
-        Self::F64Store_SR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
 pub struct F64Store_SS {
     pub ptr: crate::Stack,
     pub value: crate::Stack,
@@ -20300,27 +19915,6 @@ impl ::core::convert::From<F64Store_SI> for crate::Op {
             ptr: op.ptr,
             value: op.value,
             offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct F64Store_IR {
-    pub address: crate::Address,
-    pub value: crate::Reg,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for F64Store_IR {}
-impl ::core::clone::Clone for F64Store_IR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<F64Store_IR> for crate::Op {
-    fn from(op: F64Store_IR) -> Self {
-        Self::F64Store_IR {
-            address: op.address,
-            value: op.value,
             memory: op.memory,
         }
     }
@@ -20551,75 +20145,6 @@ impl ::core::convert::From<F64StoreMem0_II> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32Store8_RS {
-    pub ptr: crate::Reg,
-    pub value: crate::Stack,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store8_RS {}
-impl ::core::clone::Clone for I32Store8_RS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store8_RS> for crate::Op {
-    fn from(op: I32Store8_RS) -> Self {
-        Self::I32Store8_RS {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Store8_RI {
-    pub ptr: crate::Reg,
-    pub value: ::core::primitive::i32,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store8_RI {}
-impl ::core::clone::Clone for I32Store8_RI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store8_RI> for crate::Op {
-    fn from(op: I32Store8_RI) -> Self {
-        Self::I32Store8_RI {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Store8_SR {
-    pub ptr: crate::Stack,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store8_SR {}
-impl ::core::clone::Clone for I32Store8_SR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store8_SR> for crate::Op {
-    fn from(op: I32Store8_SR) -> Self {
-        Self::I32Store8_SR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
 pub struct I32Store8_SS {
     pub ptr: crate::Stack,
     pub value: crate::Stack,
@@ -20661,27 +20186,6 @@ impl ::core::convert::From<I32Store8_SI> for crate::Op {
             ptr: op.ptr,
             value: op.value,
             offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Store8_IR {
-    pub address: crate::Address,
-    pub value: crate::Reg,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store8_IR {}
-impl ::core::clone::Clone for I32Store8_IR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store8_IR> for crate::Op {
-    fn from(op: I32Store8_IR) -> Self {
-        Self::I32Store8_IR {
-            address: op.address,
-            value: op.value,
             memory: op.memory,
         }
     }
@@ -20891,75 +20395,6 @@ impl ::core::convert::From<I32Store8Mem0_II> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Store8_RS {
-    pub ptr: crate::Reg,
-    pub value: crate::Stack,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store8_RS {}
-impl ::core::clone::Clone for I64Store8_RS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store8_RS> for crate::Op {
-    fn from(op: I64Store8_RS) -> Self {
-        Self::I64Store8_RS {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store8_RI {
-    pub ptr: crate::Reg,
-    pub value: ::core::primitive::i64,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store8_RI {}
-impl ::core::clone::Clone for I64Store8_RI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store8_RI> for crate::Op {
-    fn from(op: I64Store8_RI) -> Self {
-        Self::I64Store8_RI {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store8_SR {
-    pub ptr: crate::Stack,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store8_SR {}
-impl ::core::clone::Clone for I64Store8_SR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store8_SR> for crate::Op {
-    fn from(op: I64Store8_SR) -> Self {
-        Self::I64Store8_SR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
 pub struct I64Store8_SS {
     pub ptr: crate::Stack,
     pub value: crate::Stack,
@@ -21001,27 +20436,6 @@ impl ::core::convert::From<I64Store8_SI> for crate::Op {
             ptr: op.ptr,
             value: op.value,
             offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store8_IR {
-    pub address: crate::Address,
-    pub value: crate::Reg,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store8_IR {}
-impl ::core::clone::Clone for I64Store8_IR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store8_IR> for crate::Op {
-    fn from(op: I64Store8_IR) -> Self {
-        Self::I64Store8_IR {
-            address: op.address,
-            value: op.value,
             memory: op.memory,
         }
     }
@@ -21231,75 +20645,6 @@ impl ::core::convert::From<I64Store8Mem0_II> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32Store16_RS {
-    pub ptr: crate::Reg,
-    pub value: crate::Stack,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store16_RS {}
-impl ::core::clone::Clone for I32Store16_RS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store16_RS> for crate::Op {
-    fn from(op: I32Store16_RS) -> Self {
-        Self::I32Store16_RS {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Store16_RI {
-    pub ptr: crate::Reg,
-    pub value: ::core::primitive::i32,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store16_RI {}
-impl ::core::clone::Clone for I32Store16_RI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store16_RI> for crate::Op {
-    fn from(op: I32Store16_RI) -> Self {
-        Self::I32Store16_RI {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Store16_SR {
-    pub ptr: crate::Stack,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store16_SR {}
-impl ::core::clone::Clone for I32Store16_SR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store16_SR> for crate::Op {
-    fn from(op: I32Store16_SR) -> Self {
-        Self::I32Store16_SR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
 pub struct I32Store16_SS {
     pub ptr: crate::Stack,
     pub value: crate::Stack,
@@ -21341,27 +20686,6 @@ impl ::core::convert::From<I32Store16_SI> for crate::Op {
             ptr: op.ptr,
             value: op.value,
             offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Store16_IR {
-    pub address: crate::Address,
-    pub value: crate::Reg,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I32Store16_IR {}
-impl ::core::clone::Clone for I32Store16_IR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Store16_IR> for crate::Op {
-    fn from(op: I32Store16_IR) -> Self {
-        Self::I32Store16_IR {
-            address: op.address,
-            value: op.value,
             memory: op.memory,
         }
     }
@@ -21571,75 +20895,6 @@ impl ::core::convert::From<I32Store16Mem0_II> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Store16_RS {
-    pub ptr: crate::Reg,
-    pub value: crate::Stack,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store16_RS {}
-impl ::core::clone::Clone for I64Store16_RS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store16_RS> for crate::Op {
-    fn from(op: I64Store16_RS) -> Self {
-        Self::I64Store16_RS {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store16_RI {
-    pub ptr: crate::Reg,
-    pub value: ::core::primitive::i64,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store16_RI {}
-impl ::core::clone::Clone for I64Store16_RI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store16_RI> for crate::Op {
-    fn from(op: I64Store16_RI) -> Self {
-        Self::I64Store16_RI {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store16_SR {
-    pub ptr: crate::Stack,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store16_SR {}
-impl ::core::clone::Clone for I64Store16_SR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store16_SR> for crate::Op {
-    fn from(op: I64Store16_SR) -> Self {
-        Self::I64Store16_SR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
 pub struct I64Store16_SS {
     pub ptr: crate::Stack,
     pub value: crate::Stack,
@@ -21681,27 +20936,6 @@ impl ::core::convert::From<I64Store16_SI> for crate::Op {
             ptr: op.ptr,
             value: op.value,
             offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store16_IR {
-    pub address: crate::Address,
-    pub value: crate::Reg,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store16_IR {}
-impl ::core::clone::Clone for I64Store16_IR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store16_IR> for crate::Op {
-    fn from(op: I64Store16_IR) -> Self {
-        Self::I64Store16_IR {
-            address: op.address,
-            value: op.value,
             memory: op.memory,
         }
     }
@@ -21911,75 +21145,6 @@ impl ::core::convert::From<I64Store16Mem0_II> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Store32_RS {
-    pub ptr: crate::Reg,
-    pub value: crate::Stack,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store32_RS {}
-impl ::core::clone::Clone for I64Store32_RS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store32_RS> for crate::Op {
-    fn from(op: I64Store32_RS) -> Self {
-        Self::I64Store32_RS {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store32_RI {
-    pub ptr: crate::Reg,
-    pub value: ::core::primitive::i64,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store32_RI {}
-impl ::core::clone::Clone for I64Store32_RI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store32_RI> for crate::Op {
-    fn from(op: I64Store32_RI) -> Self {
-        Self::I64Store32_RI {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store32_SR {
-    pub ptr: crate::Stack,
-    pub value: crate::Reg,
-    pub offset: crate::Offset,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store32_SR {}
-impl ::core::clone::Clone for I64Store32_SR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store32_SR> for crate::Op {
-    fn from(op: I64Store32_SR) -> Self {
-        Self::I64Store32_SR {
-            ptr: op.ptr,
-            value: op.value,
-            offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
 pub struct I64Store32_SS {
     pub ptr: crate::Stack,
     pub value: crate::Stack,
@@ -22021,27 +21186,6 @@ impl ::core::convert::From<I64Store32_SI> for crate::Op {
             ptr: op.ptr,
             value: op.value,
             offset: op.offset,
-            memory: op.memory,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Store32_IR {
-    pub address: crate::Address,
-    pub value: crate::Reg,
-    pub memory: crate::Memory,
-}
-impl ::core::marker::Copy for I64Store32_IR {}
-impl ::core::clone::Clone for I64Store32_IR {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Store32_IR> for crate::Op {
-    fn from(op: I64Store32_IR) -> Self {
-        Self::I64Store32_IR {
-            address: op.address,
-            value: op.value,
             memory: op.memory,
         }
     }

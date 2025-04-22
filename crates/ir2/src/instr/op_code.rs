@@ -938,228 +938,190 @@ pub enum OpCode {
     I64Load32UMem0_SR = 931_u16,
     I64Load32UMem0_SS = 932_u16,
     I64Load32UMem0_SI = 933_u16,
-    I32Store_RS = 934_u16,
-    I32Store_RI = 935_u16,
-    I32Store_SR = 936_u16,
-    I32Store_SS = 937_u16,
-    I32Store_SI = 938_u16,
-    I32Store_IR = 939_u16,
-    I32Store_IS = 940_u16,
-    I32Store_II = 941_u16,
-    I32StoreMem0_RS = 942_u16,
-    I32StoreMem0_RI = 943_u16,
-    I32StoreMem0_SR = 944_u16,
-    I32StoreMem0_SS = 945_u16,
-    I32StoreMem0_SI = 946_u16,
-    I32StoreMem0_IR = 947_u16,
-    I32StoreMem0_IS = 948_u16,
-    I32StoreMem0_II = 949_u16,
-    I64Store_RS = 950_u16,
-    I64Store_RI = 951_u16,
-    I64Store_SR = 952_u16,
-    I64Store_SS = 953_u16,
-    I64Store_SI = 954_u16,
-    I64Store_IR = 955_u16,
-    I64Store_IS = 956_u16,
-    I64Store_II = 957_u16,
-    I64StoreMem0_RS = 958_u16,
-    I64StoreMem0_RI = 959_u16,
-    I64StoreMem0_SR = 960_u16,
-    I64StoreMem0_SS = 961_u16,
-    I64StoreMem0_SI = 962_u16,
-    I64StoreMem0_IR = 963_u16,
-    I64StoreMem0_IS = 964_u16,
-    I64StoreMem0_II = 965_u16,
-    F32Store_RR = 966_u16,
-    F32Store_RS = 967_u16,
-    F32Store_RI = 968_u16,
-    F32Store_SR = 969_u16,
-    F32Store_SS = 970_u16,
-    F32Store_SI = 971_u16,
-    F32Store_IR = 972_u16,
-    F32Store_IS = 973_u16,
-    F32Store_II = 974_u16,
-    F32StoreMem0_RR = 975_u16,
-    F32StoreMem0_RS = 976_u16,
-    F32StoreMem0_RI = 977_u16,
-    F32StoreMem0_SR = 978_u16,
-    F32StoreMem0_SS = 979_u16,
-    F32StoreMem0_SI = 980_u16,
-    F32StoreMem0_IR = 981_u16,
-    F32StoreMem0_IS = 982_u16,
-    F32StoreMem0_II = 983_u16,
-    F64Store_RR = 984_u16,
-    F64Store_RS = 985_u16,
-    F64Store_RI = 986_u16,
-    F64Store_SR = 987_u16,
-    F64Store_SS = 988_u16,
-    F64Store_SI = 989_u16,
-    F64Store_IR = 990_u16,
-    F64Store_IS = 991_u16,
-    F64Store_II = 992_u16,
-    F64StoreMem0_RR = 993_u16,
-    F64StoreMem0_RS = 994_u16,
-    F64StoreMem0_RI = 995_u16,
-    F64StoreMem0_SR = 996_u16,
-    F64StoreMem0_SS = 997_u16,
-    F64StoreMem0_SI = 998_u16,
-    F64StoreMem0_IR = 999_u16,
-    F64StoreMem0_IS = 1000_u16,
-    F64StoreMem0_II = 1001_u16,
-    I32Store8_RS = 1002_u16,
-    I32Store8_RI = 1003_u16,
-    I32Store8_SR = 1004_u16,
-    I32Store8_SS = 1005_u16,
-    I32Store8_SI = 1006_u16,
-    I32Store8_IR = 1007_u16,
-    I32Store8_IS = 1008_u16,
-    I32Store8_II = 1009_u16,
-    I32Store8Mem0_RS = 1010_u16,
-    I32Store8Mem0_RI = 1011_u16,
-    I32Store8Mem0_SR = 1012_u16,
-    I32Store8Mem0_SS = 1013_u16,
-    I32Store8Mem0_SI = 1014_u16,
-    I32Store8Mem0_IR = 1015_u16,
-    I32Store8Mem0_IS = 1016_u16,
-    I32Store8Mem0_II = 1017_u16,
-    I64Store8_RS = 1018_u16,
-    I64Store8_RI = 1019_u16,
-    I64Store8_SR = 1020_u16,
-    I64Store8_SS = 1021_u16,
-    I64Store8_SI = 1022_u16,
-    I64Store8_IR = 1023_u16,
-    I64Store8_IS = 1024_u16,
-    I64Store8_II = 1025_u16,
-    I64Store8Mem0_RS = 1026_u16,
-    I64Store8Mem0_RI = 1027_u16,
-    I64Store8Mem0_SR = 1028_u16,
-    I64Store8Mem0_SS = 1029_u16,
-    I64Store8Mem0_SI = 1030_u16,
-    I64Store8Mem0_IR = 1031_u16,
-    I64Store8Mem0_IS = 1032_u16,
-    I64Store8Mem0_II = 1033_u16,
-    I32Store16_RS = 1034_u16,
-    I32Store16_RI = 1035_u16,
-    I32Store16_SR = 1036_u16,
-    I32Store16_SS = 1037_u16,
-    I32Store16_SI = 1038_u16,
-    I32Store16_IR = 1039_u16,
-    I32Store16_IS = 1040_u16,
-    I32Store16_II = 1041_u16,
-    I32Store16Mem0_RS = 1042_u16,
-    I32Store16Mem0_RI = 1043_u16,
-    I32Store16Mem0_SR = 1044_u16,
-    I32Store16Mem0_SS = 1045_u16,
-    I32Store16Mem0_SI = 1046_u16,
-    I32Store16Mem0_IR = 1047_u16,
-    I32Store16Mem0_IS = 1048_u16,
-    I32Store16Mem0_II = 1049_u16,
-    I64Store16_RS = 1050_u16,
-    I64Store16_RI = 1051_u16,
-    I64Store16_SR = 1052_u16,
-    I64Store16_SS = 1053_u16,
-    I64Store16_SI = 1054_u16,
-    I64Store16_IR = 1055_u16,
-    I64Store16_IS = 1056_u16,
-    I64Store16_II = 1057_u16,
-    I64Store16Mem0_RS = 1058_u16,
-    I64Store16Mem0_RI = 1059_u16,
-    I64Store16Mem0_SR = 1060_u16,
-    I64Store16Mem0_SS = 1061_u16,
-    I64Store16Mem0_SI = 1062_u16,
-    I64Store16Mem0_IR = 1063_u16,
-    I64Store16Mem0_IS = 1064_u16,
-    I64Store16Mem0_II = 1065_u16,
-    I64Store32_RS = 1066_u16,
-    I64Store32_RI = 1067_u16,
-    I64Store32_SR = 1068_u16,
-    I64Store32_SS = 1069_u16,
-    I64Store32_SI = 1070_u16,
-    I64Store32_IR = 1071_u16,
-    I64Store32_IS = 1072_u16,
-    I64Store32_II = 1073_u16,
-    I64Store32Mem0_RS = 1074_u16,
-    I64Store32Mem0_RI = 1075_u16,
-    I64Store32Mem0_SR = 1076_u16,
-    I64Store32Mem0_SS = 1077_u16,
-    I64Store32Mem0_SI = 1078_u16,
-    I64Store32Mem0_IR = 1079_u16,
-    I64Store32Mem0_IS = 1080_u16,
-    I64Store32Mem0_II = 1081_u16,
-    Select = 1082_u16,
-    SelectI32_RSSS = 1083_u16,
-    SelectI32_RSSI = 1084_u16,
-    SelectI32_RSIS = 1085_u16,
-    SelectI32_RSII = 1086_u16,
-    SelectI64_RRSS = 1087_u16,
-    SelectI64_RRSI = 1088_u16,
-    SelectI64_RRIS = 1089_u16,
-    SelectI64_RRII = 1090_u16,
-    SelectI64_RSRS = 1091_u16,
-    SelectI64_RSRI = 1092_u16,
-    SelectI64_RSSR = 1093_u16,
-    SelectI64_RSSS = 1094_u16,
-    SelectI64_RSSI = 1095_u16,
-    SelectI64_RSIR = 1096_u16,
-    SelectI64_RSIS = 1097_u16,
-    SelectI64_RSII = 1098_u16,
-    SelectF32_RRSS = 1099_u16,
-    SelectF32_RRSI = 1100_u16,
-    SelectF32_RRIS = 1101_u16,
-    SelectF32_RRII = 1102_u16,
-    SelectF32_RSRS = 1103_u16,
-    SelectF32_RSRI = 1104_u16,
-    SelectF32_RSSR = 1105_u16,
-    SelectF32_RSSS = 1106_u16,
-    SelectF32_RSSI = 1107_u16,
-    SelectF32_RSIR = 1108_u16,
-    SelectF32_RSIS = 1109_u16,
-    SelectF32_RSII = 1110_u16,
-    SelectF64_RRSS = 1111_u16,
-    SelectF64_RRSI = 1112_u16,
-    SelectF64_RRIS = 1113_u16,
-    SelectF64_RRII = 1114_u16,
-    SelectF64_RSRS = 1115_u16,
-    SelectF64_RSRI = 1116_u16,
-    SelectF64_RSSR = 1117_u16,
-    SelectF64_RSSS = 1118_u16,
-    SelectF64_RSSI = 1119_u16,
-    SelectF64_RSIR = 1120_u16,
-    SelectF64_RSIS = 1121_u16,
-    SelectF64_RSII = 1122_u16,
-    TableSize_R = 1123_u16,
-    TableSize_S = 1124_u16,
-    TableGet_RR = 1125_u16,
-    TableGet_RS = 1126_u16,
-    TableGet_RI = 1127_u16,
-    TableSet_RS = 1128_u16,
-    TableSet_RI = 1129_u16,
-    TableSet_SR = 1130_u16,
-    TableSet_SS = 1131_u16,
-    TableSet_SI = 1132_u16,
-    TableSet_IR = 1133_u16,
-    TableSet_IS = 1134_u16,
-    TableSet_II = 1135_u16,
-    TableGrow = 1136_u16,
-    TableCopy = 1137_u16,
-    TableFill = 1138_u16,
-    TableInit = 1139_u16,
-    MemorySize_R = 1140_u16,
-    MemorySize_S = 1141_u16,
-    MemoryGrow = 1142_u16,
-    MemoryCopy = 1143_u16,
-    MemoryFill = 1144_u16,
-    MemoryInit = 1145_u16,
-    CallInternal = 1146_u16,
-    ReturnCallInternal = 1147_u16,
-    CallImported = 1148_u16,
-    ReturnCallImported = 1149_u16,
-    CallIndirect_R = 1150_u16,
-    CallIndirect_S = 1151_u16,
-    CallIndirect_I = 1152_u16,
-    ReturnCallIndirect_R = 1153_u16,
-    ReturnCallIndirect_S = 1154_u16,
-    ReturnCallIndirect_I = 1155_u16,
+    I32Store_SS = 934_u16,
+    I32Store_SI = 935_u16,
+    I32Store_IS = 936_u16,
+    I32Store_II = 937_u16,
+    I32StoreMem0_RS = 938_u16,
+    I32StoreMem0_RI = 939_u16,
+    I32StoreMem0_SR = 940_u16,
+    I32StoreMem0_SS = 941_u16,
+    I32StoreMem0_SI = 942_u16,
+    I32StoreMem0_IR = 943_u16,
+    I32StoreMem0_IS = 944_u16,
+    I32StoreMem0_II = 945_u16,
+    I64Store_SS = 946_u16,
+    I64Store_SI = 947_u16,
+    I64Store_IS = 948_u16,
+    I64Store_II = 949_u16,
+    I64StoreMem0_RS = 950_u16,
+    I64StoreMem0_RI = 951_u16,
+    I64StoreMem0_SR = 952_u16,
+    I64StoreMem0_SS = 953_u16,
+    I64StoreMem0_SI = 954_u16,
+    I64StoreMem0_IR = 955_u16,
+    I64StoreMem0_IS = 956_u16,
+    I64StoreMem0_II = 957_u16,
+    F32Store_SS = 958_u16,
+    F32Store_SI = 959_u16,
+    F32Store_IS = 960_u16,
+    F32Store_II = 961_u16,
+    F32StoreMem0_RR = 962_u16,
+    F32StoreMem0_RS = 963_u16,
+    F32StoreMem0_RI = 964_u16,
+    F32StoreMem0_SR = 965_u16,
+    F32StoreMem0_SS = 966_u16,
+    F32StoreMem0_SI = 967_u16,
+    F32StoreMem0_IR = 968_u16,
+    F32StoreMem0_IS = 969_u16,
+    F32StoreMem0_II = 970_u16,
+    F64Store_SS = 971_u16,
+    F64Store_SI = 972_u16,
+    F64Store_IS = 973_u16,
+    F64Store_II = 974_u16,
+    F64StoreMem0_RR = 975_u16,
+    F64StoreMem0_RS = 976_u16,
+    F64StoreMem0_RI = 977_u16,
+    F64StoreMem0_SR = 978_u16,
+    F64StoreMem0_SS = 979_u16,
+    F64StoreMem0_SI = 980_u16,
+    F64StoreMem0_IR = 981_u16,
+    F64StoreMem0_IS = 982_u16,
+    F64StoreMem0_II = 983_u16,
+    I32Store8_SS = 984_u16,
+    I32Store8_SI = 985_u16,
+    I32Store8_IS = 986_u16,
+    I32Store8_II = 987_u16,
+    I32Store8Mem0_RS = 988_u16,
+    I32Store8Mem0_RI = 989_u16,
+    I32Store8Mem0_SR = 990_u16,
+    I32Store8Mem0_SS = 991_u16,
+    I32Store8Mem0_SI = 992_u16,
+    I32Store8Mem0_IR = 993_u16,
+    I32Store8Mem0_IS = 994_u16,
+    I32Store8Mem0_II = 995_u16,
+    I64Store8_SS = 996_u16,
+    I64Store8_SI = 997_u16,
+    I64Store8_IS = 998_u16,
+    I64Store8_II = 999_u16,
+    I64Store8Mem0_RS = 1000_u16,
+    I64Store8Mem0_RI = 1001_u16,
+    I64Store8Mem0_SR = 1002_u16,
+    I64Store8Mem0_SS = 1003_u16,
+    I64Store8Mem0_SI = 1004_u16,
+    I64Store8Mem0_IR = 1005_u16,
+    I64Store8Mem0_IS = 1006_u16,
+    I64Store8Mem0_II = 1007_u16,
+    I32Store16_SS = 1008_u16,
+    I32Store16_SI = 1009_u16,
+    I32Store16_IS = 1010_u16,
+    I32Store16_II = 1011_u16,
+    I32Store16Mem0_RS = 1012_u16,
+    I32Store16Mem0_RI = 1013_u16,
+    I32Store16Mem0_SR = 1014_u16,
+    I32Store16Mem0_SS = 1015_u16,
+    I32Store16Mem0_SI = 1016_u16,
+    I32Store16Mem0_IR = 1017_u16,
+    I32Store16Mem0_IS = 1018_u16,
+    I32Store16Mem0_II = 1019_u16,
+    I64Store16_SS = 1020_u16,
+    I64Store16_SI = 1021_u16,
+    I64Store16_IS = 1022_u16,
+    I64Store16_II = 1023_u16,
+    I64Store16Mem0_RS = 1024_u16,
+    I64Store16Mem0_RI = 1025_u16,
+    I64Store16Mem0_SR = 1026_u16,
+    I64Store16Mem0_SS = 1027_u16,
+    I64Store16Mem0_SI = 1028_u16,
+    I64Store16Mem0_IR = 1029_u16,
+    I64Store16Mem0_IS = 1030_u16,
+    I64Store16Mem0_II = 1031_u16,
+    I64Store32_SS = 1032_u16,
+    I64Store32_SI = 1033_u16,
+    I64Store32_IS = 1034_u16,
+    I64Store32_II = 1035_u16,
+    I64Store32Mem0_RS = 1036_u16,
+    I64Store32Mem0_RI = 1037_u16,
+    I64Store32Mem0_SR = 1038_u16,
+    I64Store32Mem0_SS = 1039_u16,
+    I64Store32Mem0_SI = 1040_u16,
+    I64Store32Mem0_IR = 1041_u16,
+    I64Store32Mem0_IS = 1042_u16,
+    I64Store32Mem0_II = 1043_u16,
+    Select = 1044_u16,
+    SelectI32_RSSS = 1045_u16,
+    SelectI32_RSSI = 1046_u16,
+    SelectI32_RSIS = 1047_u16,
+    SelectI32_RSII = 1048_u16,
+    SelectI64_RRSS = 1049_u16,
+    SelectI64_RRSI = 1050_u16,
+    SelectI64_RRIS = 1051_u16,
+    SelectI64_RRII = 1052_u16,
+    SelectI64_RSRS = 1053_u16,
+    SelectI64_RSRI = 1054_u16,
+    SelectI64_RSSR = 1055_u16,
+    SelectI64_RSSS = 1056_u16,
+    SelectI64_RSSI = 1057_u16,
+    SelectI64_RSIR = 1058_u16,
+    SelectI64_RSIS = 1059_u16,
+    SelectI64_RSII = 1060_u16,
+    SelectF32_RRSS = 1061_u16,
+    SelectF32_RRSI = 1062_u16,
+    SelectF32_RRIS = 1063_u16,
+    SelectF32_RRII = 1064_u16,
+    SelectF32_RSRS = 1065_u16,
+    SelectF32_RSRI = 1066_u16,
+    SelectF32_RSSR = 1067_u16,
+    SelectF32_RSSS = 1068_u16,
+    SelectF32_RSSI = 1069_u16,
+    SelectF32_RSIR = 1070_u16,
+    SelectF32_RSIS = 1071_u16,
+    SelectF32_RSII = 1072_u16,
+    SelectF64_RRSS = 1073_u16,
+    SelectF64_RRSI = 1074_u16,
+    SelectF64_RRIS = 1075_u16,
+    SelectF64_RRII = 1076_u16,
+    SelectF64_RSRS = 1077_u16,
+    SelectF64_RSRI = 1078_u16,
+    SelectF64_RSSR = 1079_u16,
+    SelectF64_RSSS = 1080_u16,
+    SelectF64_RSSI = 1081_u16,
+    SelectF64_RSIR = 1082_u16,
+    SelectF64_RSIS = 1083_u16,
+    SelectF64_RSII = 1084_u16,
+    TableSize_R = 1085_u16,
+    TableSize_S = 1086_u16,
+    TableGet_RR = 1087_u16,
+    TableGet_RS = 1088_u16,
+    TableGet_RI = 1089_u16,
+    TableSet_RS = 1090_u16,
+    TableSet_RI = 1091_u16,
+    TableSet_SR = 1092_u16,
+    TableSet_SS = 1093_u16,
+    TableSet_SI = 1094_u16,
+    TableSet_IR = 1095_u16,
+    TableSet_IS = 1096_u16,
+    TableSet_II = 1097_u16,
+    TableGrow = 1098_u16,
+    TableCopy = 1099_u16,
+    TableFill = 1100_u16,
+    TableInit = 1101_u16,
+    MemorySize_R = 1102_u16,
+    MemorySize_S = 1103_u16,
+    MemoryGrow = 1104_u16,
+    MemoryCopy = 1105_u16,
+    MemoryFill = 1106_u16,
+    MemoryInit = 1107_u16,
+    CallInternal = 1108_u16,
+    ReturnCallInternal = 1109_u16,
+    CallImported = 1110_u16,
+    ReturnCallImported = 1111_u16,
+    CallIndirect_R = 1112_u16,
+    CallIndirect_S = 1113_u16,
+    CallIndirect_I = 1114_u16,
+    ReturnCallIndirect_R = 1115_u16,
+    ReturnCallIndirect_S = 1116_u16,
+    ReturnCallIndirect_I = 1117_u16,
 }
 impl ::core::marker::Copy for OpCode {}
 impl ::core::clone::Clone for OpCode {
@@ -2127,12 +2089,8 @@ impl crate::OperatorCode for crate::Op {
             Self::I64Load32UMem0_SR { .. } => crate::OpCode::I64Load32UMem0_SR,
             Self::I64Load32UMem0_SS { .. } => crate::OpCode::I64Load32UMem0_SS,
             Self::I64Load32UMem0_SI { .. } => crate::OpCode::I64Load32UMem0_SI,
-            Self::I32Store_RS { .. } => crate::OpCode::I32Store_RS,
-            Self::I32Store_RI { .. } => crate::OpCode::I32Store_RI,
-            Self::I32Store_SR { .. } => crate::OpCode::I32Store_SR,
             Self::I32Store_SS { .. } => crate::OpCode::I32Store_SS,
             Self::I32Store_SI { .. } => crate::OpCode::I32Store_SI,
-            Self::I32Store_IR { .. } => crate::OpCode::I32Store_IR,
             Self::I32Store_IS { .. } => crate::OpCode::I32Store_IS,
             Self::I32Store_II { .. } => crate::OpCode::I32Store_II,
             Self::I32StoreMem0_RS { .. } => crate::OpCode::I32StoreMem0_RS,
@@ -2143,12 +2101,8 @@ impl crate::OperatorCode for crate::Op {
             Self::I32StoreMem0_IR { .. } => crate::OpCode::I32StoreMem0_IR,
             Self::I32StoreMem0_IS { .. } => crate::OpCode::I32StoreMem0_IS,
             Self::I32StoreMem0_II { .. } => crate::OpCode::I32StoreMem0_II,
-            Self::I64Store_RS { .. } => crate::OpCode::I64Store_RS,
-            Self::I64Store_RI { .. } => crate::OpCode::I64Store_RI,
-            Self::I64Store_SR { .. } => crate::OpCode::I64Store_SR,
             Self::I64Store_SS { .. } => crate::OpCode::I64Store_SS,
             Self::I64Store_SI { .. } => crate::OpCode::I64Store_SI,
-            Self::I64Store_IR { .. } => crate::OpCode::I64Store_IR,
             Self::I64Store_IS { .. } => crate::OpCode::I64Store_IS,
             Self::I64Store_II { .. } => crate::OpCode::I64Store_II,
             Self::I64StoreMem0_RS { .. } => crate::OpCode::I64StoreMem0_RS,
@@ -2159,13 +2113,8 @@ impl crate::OperatorCode for crate::Op {
             Self::I64StoreMem0_IR { .. } => crate::OpCode::I64StoreMem0_IR,
             Self::I64StoreMem0_IS { .. } => crate::OpCode::I64StoreMem0_IS,
             Self::I64StoreMem0_II { .. } => crate::OpCode::I64StoreMem0_II,
-            Self::F32Store_RR { .. } => crate::OpCode::F32Store_RR,
-            Self::F32Store_RS { .. } => crate::OpCode::F32Store_RS,
-            Self::F32Store_RI { .. } => crate::OpCode::F32Store_RI,
-            Self::F32Store_SR { .. } => crate::OpCode::F32Store_SR,
             Self::F32Store_SS { .. } => crate::OpCode::F32Store_SS,
             Self::F32Store_SI { .. } => crate::OpCode::F32Store_SI,
-            Self::F32Store_IR { .. } => crate::OpCode::F32Store_IR,
             Self::F32Store_IS { .. } => crate::OpCode::F32Store_IS,
             Self::F32Store_II { .. } => crate::OpCode::F32Store_II,
             Self::F32StoreMem0_RR { .. } => crate::OpCode::F32StoreMem0_RR,
@@ -2177,13 +2126,8 @@ impl crate::OperatorCode for crate::Op {
             Self::F32StoreMem0_IR { .. } => crate::OpCode::F32StoreMem0_IR,
             Self::F32StoreMem0_IS { .. } => crate::OpCode::F32StoreMem0_IS,
             Self::F32StoreMem0_II { .. } => crate::OpCode::F32StoreMem0_II,
-            Self::F64Store_RR { .. } => crate::OpCode::F64Store_RR,
-            Self::F64Store_RS { .. } => crate::OpCode::F64Store_RS,
-            Self::F64Store_RI { .. } => crate::OpCode::F64Store_RI,
-            Self::F64Store_SR { .. } => crate::OpCode::F64Store_SR,
             Self::F64Store_SS { .. } => crate::OpCode::F64Store_SS,
             Self::F64Store_SI { .. } => crate::OpCode::F64Store_SI,
-            Self::F64Store_IR { .. } => crate::OpCode::F64Store_IR,
             Self::F64Store_IS { .. } => crate::OpCode::F64Store_IS,
             Self::F64Store_II { .. } => crate::OpCode::F64Store_II,
             Self::F64StoreMem0_RR { .. } => crate::OpCode::F64StoreMem0_RR,
@@ -2195,12 +2139,8 @@ impl crate::OperatorCode for crate::Op {
             Self::F64StoreMem0_IR { .. } => crate::OpCode::F64StoreMem0_IR,
             Self::F64StoreMem0_IS { .. } => crate::OpCode::F64StoreMem0_IS,
             Self::F64StoreMem0_II { .. } => crate::OpCode::F64StoreMem0_II,
-            Self::I32Store8_RS { .. } => crate::OpCode::I32Store8_RS,
-            Self::I32Store8_RI { .. } => crate::OpCode::I32Store8_RI,
-            Self::I32Store8_SR { .. } => crate::OpCode::I32Store8_SR,
             Self::I32Store8_SS { .. } => crate::OpCode::I32Store8_SS,
             Self::I32Store8_SI { .. } => crate::OpCode::I32Store8_SI,
-            Self::I32Store8_IR { .. } => crate::OpCode::I32Store8_IR,
             Self::I32Store8_IS { .. } => crate::OpCode::I32Store8_IS,
             Self::I32Store8_II { .. } => crate::OpCode::I32Store8_II,
             Self::I32Store8Mem0_RS { .. } => crate::OpCode::I32Store8Mem0_RS,
@@ -2211,12 +2151,8 @@ impl crate::OperatorCode for crate::Op {
             Self::I32Store8Mem0_IR { .. } => crate::OpCode::I32Store8Mem0_IR,
             Self::I32Store8Mem0_IS { .. } => crate::OpCode::I32Store8Mem0_IS,
             Self::I32Store8Mem0_II { .. } => crate::OpCode::I32Store8Mem0_II,
-            Self::I64Store8_RS { .. } => crate::OpCode::I64Store8_RS,
-            Self::I64Store8_RI { .. } => crate::OpCode::I64Store8_RI,
-            Self::I64Store8_SR { .. } => crate::OpCode::I64Store8_SR,
             Self::I64Store8_SS { .. } => crate::OpCode::I64Store8_SS,
             Self::I64Store8_SI { .. } => crate::OpCode::I64Store8_SI,
-            Self::I64Store8_IR { .. } => crate::OpCode::I64Store8_IR,
             Self::I64Store8_IS { .. } => crate::OpCode::I64Store8_IS,
             Self::I64Store8_II { .. } => crate::OpCode::I64Store8_II,
             Self::I64Store8Mem0_RS { .. } => crate::OpCode::I64Store8Mem0_RS,
@@ -2227,12 +2163,8 @@ impl crate::OperatorCode for crate::Op {
             Self::I64Store8Mem0_IR { .. } => crate::OpCode::I64Store8Mem0_IR,
             Self::I64Store8Mem0_IS { .. } => crate::OpCode::I64Store8Mem0_IS,
             Self::I64Store8Mem0_II { .. } => crate::OpCode::I64Store8Mem0_II,
-            Self::I32Store16_RS { .. } => crate::OpCode::I32Store16_RS,
-            Self::I32Store16_RI { .. } => crate::OpCode::I32Store16_RI,
-            Self::I32Store16_SR { .. } => crate::OpCode::I32Store16_SR,
             Self::I32Store16_SS { .. } => crate::OpCode::I32Store16_SS,
             Self::I32Store16_SI { .. } => crate::OpCode::I32Store16_SI,
-            Self::I32Store16_IR { .. } => crate::OpCode::I32Store16_IR,
             Self::I32Store16_IS { .. } => crate::OpCode::I32Store16_IS,
             Self::I32Store16_II { .. } => crate::OpCode::I32Store16_II,
             Self::I32Store16Mem0_RS { .. } => crate::OpCode::I32Store16Mem0_RS,
@@ -2243,12 +2175,8 @@ impl crate::OperatorCode for crate::Op {
             Self::I32Store16Mem0_IR { .. } => crate::OpCode::I32Store16Mem0_IR,
             Self::I32Store16Mem0_IS { .. } => crate::OpCode::I32Store16Mem0_IS,
             Self::I32Store16Mem0_II { .. } => crate::OpCode::I32Store16Mem0_II,
-            Self::I64Store16_RS { .. } => crate::OpCode::I64Store16_RS,
-            Self::I64Store16_RI { .. } => crate::OpCode::I64Store16_RI,
-            Self::I64Store16_SR { .. } => crate::OpCode::I64Store16_SR,
             Self::I64Store16_SS { .. } => crate::OpCode::I64Store16_SS,
             Self::I64Store16_SI { .. } => crate::OpCode::I64Store16_SI,
-            Self::I64Store16_IR { .. } => crate::OpCode::I64Store16_IR,
             Self::I64Store16_IS { .. } => crate::OpCode::I64Store16_IS,
             Self::I64Store16_II { .. } => crate::OpCode::I64Store16_II,
             Self::I64Store16Mem0_RS { .. } => crate::OpCode::I64Store16Mem0_RS,
@@ -2259,12 +2187,8 @@ impl crate::OperatorCode for crate::Op {
             Self::I64Store16Mem0_IR { .. } => crate::OpCode::I64Store16Mem0_IR,
             Self::I64Store16Mem0_IS { .. } => crate::OpCode::I64Store16Mem0_IS,
             Self::I64Store16Mem0_II { .. } => crate::OpCode::I64Store16Mem0_II,
-            Self::I64Store32_RS { .. } => crate::OpCode::I64Store32_RS,
-            Self::I64Store32_RI { .. } => crate::OpCode::I64Store32_RI,
-            Self::I64Store32_SR { .. } => crate::OpCode::I64Store32_SR,
             Self::I64Store32_SS { .. } => crate::OpCode::I64Store32_SS,
             Self::I64Store32_SI { .. } => crate::OpCode::I64Store32_SI,
-            Self::I64Store32_IR { .. } => crate::OpCode::I64Store32_IR,
             Self::I64Store32_IS { .. } => crate::OpCode::I64Store32_IS,
             Self::I64Store32_II { .. } => crate::OpCode::I64Store32_II,
             Self::I64Store32Mem0_RS { .. } => crate::OpCode::I64Store32Mem0_RS,
@@ -7022,21 +6946,6 @@ impl crate::OperatorCode for crate::op::I64Load32UMem0_SI {
         crate::OpCode::I64Load32UMem0_SI
     }
 }
-impl crate::OperatorCode for crate::op::I32Store_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_RS
-    }
-}
-impl crate::OperatorCode for crate::op::I32Store_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_RI
-    }
-}
-impl crate::OperatorCode for crate::op::I32Store_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_SR
-    }
-}
 impl crate::OperatorCode for crate::op::I32Store_SS {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I32Store_SS
@@ -7045,11 +6954,6 @@ impl crate::OperatorCode for crate::op::I32Store_SS {
 impl crate::OperatorCode for crate::op::I32Store_SI {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I32Store_SI
-    }
-}
-impl crate::OperatorCode for crate::op::I32Store_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store_IR
     }
 }
 impl crate::OperatorCode for crate::op::I32Store_IS {
@@ -7102,21 +7006,6 @@ impl crate::OperatorCode for crate::op::I32StoreMem0_II {
         crate::OpCode::I32StoreMem0_II
     }
 }
-impl crate::OperatorCode for crate::op::I64Store_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_RS
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_RI
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_SR
-    }
-}
 impl crate::OperatorCode for crate::op::I64Store_SS {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I64Store_SS
@@ -7125,11 +7014,6 @@ impl crate::OperatorCode for crate::op::I64Store_SS {
 impl crate::OperatorCode for crate::op::I64Store_SI {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I64Store_SI
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store_IR
     }
 }
 impl crate::OperatorCode for crate::op::I64Store_IS {
@@ -7182,26 +7066,6 @@ impl crate::OperatorCode for crate::op::I64StoreMem0_II {
         crate::OpCode::I64StoreMem0_II
     }
 }
-impl crate::OperatorCode for crate::op::F32Store_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_RR
-    }
-}
-impl crate::OperatorCode for crate::op::F32Store_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_RS
-    }
-}
-impl crate::OperatorCode for crate::op::F32Store_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_RI
-    }
-}
-impl crate::OperatorCode for crate::op::F32Store_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_SR
-    }
-}
 impl crate::OperatorCode for crate::op::F32Store_SS {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::F32Store_SS
@@ -7210,11 +7074,6 @@ impl crate::OperatorCode for crate::op::F32Store_SS {
 impl crate::OperatorCode for crate::op::F32Store_SI {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::F32Store_SI
-    }
-}
-impl crate::OperatorCode for crate::op::F32Store_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F32Store_IR
     }
 }
 impl crate::OperatorCode for crate::op::F32Store_IS {
@@ -7272,26 +7131,6 @@ impl crate::OperatorCode for crate::op::F32StoreMem0_II {
         crate::OpCode::F32StoreMem0_II
     }
 }
-impl crate::OperatorCode for crate::op::F64Store_RR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_RR
-    }
-}
-impl crate::OperatorCode for crate::op::F64Store_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_RS
-    }
-}
-impl crate::OperatorCode for crate::op::F64Store_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_RI
-    }
-}
-impl crate::OperatorCode for crate::op::F64Store_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_SR
-    }
-}
 impl crate::OperatorCode for crate::op::F64Store_SS {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::F64Store_SS
@@ -7300,11 +7139,6 @@ impl crate::OperatorCode for crate::op::F64Store_SS {
 impl crate::OperatorCode for crate::op::F64Store_SI {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::F64Store_SI
-    }
-}
-impl crate::OperatorCode for crate::op::F64Store_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::F64Store_IR
     }
 }
 impl crate::OperatorCode for crate::op::F64Store_IS {
@@ -7362,21 +7196,6 @@ impl crate::OperatorCode for crate::op::F64StoreMem0_II {
         crate::OpCode::F64StoreMem0_II
     }
 }
-impl crate::OperatorCode for crate::op::I32Store8_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_RS
-    }
-}
-impl crate::OperatorCode for crate::op::I32Store8_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_RI
-    }
-}
-impl crate::OperatorCode for crate::op::I32Store8_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_SR
-    }
-}
 impl crate::OperatorCode for crate::op::I32Store8_SS {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I32Store8_SS
@@ -7385,11 +7204,6 @@ impl crate::OperatorCode for crate::op::I32Store8_SS {
 impl crate::OperatorCode for crate::op::I32Store8_SI {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I32Store8_SI
-    }
-}
-impl crate::OperatorCode for crate::op::I32Store8_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store8_IR
     }
 }
 impl crate::OperatorCode for crate::op::I32Store8_IS {
@@ -7442,21 +7256,6 @@ impl crate::OperatorCode for crate::op::I32Store8Mem0_II {
         crate::OpCode::I32Store8Mem0_II
     }
 }
-impl crate::OperatorCode for crate::op::I64Store8_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_RS
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store8_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_RI
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store8_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_SR
-    }
-}
 impl crate::OperatorCode for crate::op::I64Store8_SS {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I64Store8_SS
@@ -7465,11 +7264,6 @@ impl crate::OperatorCode for crate::op::I64Store8_SS {
 impl crate::OperatorCode for crate::op::I64Store8_SI {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I64Store8_SI
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store8_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store8_IR
     }
 }
 impl crate::OperatorCode for crate::op::I64Store8_IS {
@@ -7522,21 +7316,6 @@ impl crate::OperatorCode for crate::op::I64Store8Mem0_II {
         crate::OpCode::I64Store8Mem0_II
     }
 }
-impl crate::OperatorCode for crate::op::I32Store16_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_RS
-    }
-}
-impl crate::OperatorCode for crate::op::I32Store16_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_RI
-    }
-}
-impl crate::OperatorCode for crate::op::I32Store16_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_SR
-    }
-}
 impl crate::OperatorCode for crate::op::I32Store16_SS {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I32Store16_SS
@@ -7545,11 +7324,6 @@ impl crate::OperatorCode for crate::op::I32Store16_SS {
 impl crate::OperatorCode for crate::op::I32Store16_SI {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I32Store16_SI
-    }
-}
-impl crate::OperatorCode for crate::op::I32Store16_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Store16_IR
     }
 }
 impl crate::OperatorCode for crate::op::I32Store16_IS {
@@ -7602,21 +7376,6 @@ impl crate::OperatorCode for crate::op::I32Store16Mem0_II {
         crate::OpCode::I32Store16Mem0_II
     }
 }
-impl crate::OperatorCode for crate::op::I64Store16_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_RS
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store16_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_RI
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store16_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_SR
-    }
-}
 impl crate::OperatorCode for crate::op::I64Store16_SS {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I64Store16_SS
@@ -7625,11 +7384,6 @@ impl crate::OperatorCode for crate::op::I64Store16_SS {
 impl crate::OperatorCode for crate::op::I64Store16_SI {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I64Store16_SI
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store16_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store16_IR
     }
 }
 impl crate::OperatorCode for crate::op::I64Store16_IS {
@@ -7682,21 +7436,6 @@ impl crate::OperatorCode for crate::op::I64Store16Mem0_II {
         crate::OpCode::I64Store16Mem0_II
     }
 }
-impl crate::OperatorCode for crate::op::I64Store32_RS {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_RS
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store32_RI {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_RI
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store32_SR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_SR
-    }
-}
 impl crate::OperatorCode for crate::op::I64Store32_SS {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I64Store32_SS
@@ -7705,11 +7444,6 @@ impl crate::OperatorCode for crate::op::I64Store32_SS {
 impl crate::OperatorCode for crate::op::I64Store32_SI {
     fn op_code(&self) -> crate::OpCode {
         crate::OpCode::I64Store32_SI
-    }
-}
-impl crate::OperatorCode for crate::op::I64Store32_IR {
-    fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Store32_IR
     }
 }
 impl crate::OperatorCode for crate::op::I64Store32_IS {

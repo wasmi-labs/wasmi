@@ -299,6 +299,9 @@ fn define_store_instrs(ctx: &mut Context) {
             let op = format!("{ty}{op}{mem0_id}");
             for ptr in &ptrs {
                 for value in &values {
+                    if !mem0 && (ptr.is_reg() || value.is_reg()) {
+                        continue;
+                    }
                     if matches!(ty, ValTy::I32 | ValTy::I64) && ptr.is_reg() && value.is_reg() {
                         continue;
                     }

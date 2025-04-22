@@ -4415,1189 +4415,970 @@ pub enum Op {
         result: crate::Stack,
         address: crate::Address,
     } = 933_u16,
-    I32Store_RS {
-        ptr: crate::Reg,
-        value: crate::Stack,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 934_u16,
-    I32Store_RI {
-        ptr: crate::Reg,
-        value: ::core::primitive::i32,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 935_u16,
-    I32Store_SR {
-        ptr: crate::Stack,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 936_u16,
     I32Store_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 937_u16,
+    } = 934_u16,
     I32Store_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 938_u16,
-    I32Store_IR {
-        address: crate::Address,
-        value: crate::Reg,
-        memory: crate::Memory,
-    } = 939_u16,
+    } = 935_u16,
     I32Store_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 940_u16,
+    } = 936_u16,
     I32Store_II {
         address: crate::Address,
         value: ::core::primitive::i32,
         memory: crate::Memory,
-    } = 941_u16,
+    } = 937_u16,
     I32StoreMem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 942_u16,
+    } = 938_u16,
     I32StoreMem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 943_u16,
+    } = 939_u16,
     I32StoreMem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 944_u16,
+    } = 940_u16,
     I32StoreMem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 945_u16,
+    } = 941_u16,
     I32StoreMem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 946_u16,
+    } = 942_u16,
     I32StoreMem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 947_u16,
+    } = 943_u16,
     I32StoreMem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 948_u16,
+    } = 944_u16,
     I32StoreMem0_II {
         address: crate::Address,
         value: ::core::primitive::i32,
-    } = 949_u16,
-    I64Store_RS {
-        ptr: crate::Reg,
-        value: crate::Stack,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 950_u16,
-    I64Store_RI {
-        ptr: crate::Reg,
-        value: ::core::primitive::i64,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 951_u16,
-    I64Store_SR {
-        ptr: crate::Stack,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 952_u16,
+    } = 945_u16,
     I64Store_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 953_u16,
+    } = 946_u16,
     I64Store_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 954_u16,
-    I64Store_IR {
-        address: crate::Address,
-        value: crate::Reg,
-        memory: crate::Memory,
-    } = 955_u16,
+    } = 947_u16,
     I64Store_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 956_u16,
+    } = 948_u16,
     I64Store_II {
         address: crate::Address,
         value: ::core::primitive::i64,
         memory: crate::Memory,
-    } = 957_u16,
+    } = 949_u16,
     I64StoreMem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 958_u16,
+    } = 950_u16,
     I64StoreMem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 959_u16,
+    } = 951_u16,
     I64StoreMem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 960_u16,
+    } = 952_u16,
     I64StoreMem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 961_u16,
+    } = 953_u16,
     I64StoreMem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 962_u16,
+    } = 954_u16,
     I64StoreMem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 963_u16,
+    } = 955_u16,
     I64StoreMem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 964_u16,
+    } = 956_u16,
     I64StoreMem0_II {
         address: crate::Address,
         value: ::core::primitive::i64,
-    } = 965_u16,
-    F32Store_RR {
-        ptr: crate::Reg,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 966_u16,
-    F32Store_RS {
-        ptr: crate::Reg,
-        value: crate::Stack,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 967_u16,
-    F32Store_RI {
-        ptr: crate::Reg,
-        value: ::core::primitive::f32,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 968_u16,
-    F32Store_SR {
-        ptr: crate::Stack,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 969_u16,
+    } = 957_u16,
     F32Store_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 970_u16,
+    } = 958_u16,
     F32Store_SI {
         ptr: crate::Stack,
         value: ::core::primitive::f32,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 971_u16,
-    F32Store_IR {
-        address: crate::Address,
-        value: crate::Reg,
-        memory: crate::Memory,
-    } = 972_u16,
+    } = 959_u16,
     F32Store_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 973_u16,
+    } = 960_u16,
     F32Store_II {
         address: crate::Address,
         value: ::core::primitive::f32,
         memory: crate::Memory,
-    } = 974_u16,
+    } = 961_u16,
     F32StoreMem0_RR {
         ptr: crate::Reg,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 975_u16,
+    } = 962_u16,
     F32StoreMem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 976_u16,
+    } = 963_u16,
     F32StoreMem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::f32,
         offset: crate::Offset,
-    } = 977_u16,
+    } = 964_u16,
     F32StoreMem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 978_u16,
+    } = 965_u16,
     F32StoreMem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 979_u16,
+    } = 966_u16,
     F32StoreMem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::f32,
         offset: crate::Offset,
-    } = 980_u16,
+    } = 967_u16,
     F32StoreMem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 981_u16,
+    } = 968_u16,
     F32StoreMem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 982_u16,
+    } = 969_u16,
     F32StoreMem0_II {
         address: crate::Address,
         value: ::core::primitive::f32,
-    } = 983_u16,
-    F64Store_RR {
-        ptr: crate::Reg,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 984_u16,
-    F64Store_RS {
-        ptr: crate::Reg,
-        value: crate::Stack,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 985_u16,
-    F64Store_RI {
-        ptr: crate::Reg,
-        value: ::core::primitive::f64,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 986_u16,
-    F64Store_SR {
-        ptr: crate::Stack,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 987_u16,
+    } = 970_u16,
     F64Store_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 988_u16,
+    } = 971_u16,
     F64Store_SI {
         ptr: crate::Stack,
         value: ::core::primitive::f64,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 989_u16,
-    F64Store_IR {
-        address: crate::Address,
-        value: crate::Reg,
-        memory: crate::Memory,
-    } = 990_u16,
+    } = 972_u16,
     F64Store_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 991_u16,
+    } = 973_u16,
     F64Store_II {
         address: crate::Address,
         value: ::core::primitive::f64,
         memory: crate::Memory,
-    } = 992_u16,
+    } = 974_u16,
     F64StoreMem0_RR {
         ptr: crate::Reg,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 993_u16,
+    } = 975_u16,
     F64StoreMem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 994_u16,
+    } = 976_u16,
     F64StoreMem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::f64,
         offset: crate::Offset,
-    } = 995_u16,
+    } = 977_u16,
     F64StoreMem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 996_u16,
+    } = 978_u16,
     F64StoreMem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 997_u16,
+    } = 979_u16,
     F64StoreMem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::f64,
         offset: crate::Offset,
-    } = 998_u16,
+    } = 980_u16,
     F64StoreMem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 999_u16,
+    } = 981_u16,
     F64StoreMem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1000_u16,
+    } = 982_u16,
     F64StoreMem0_II {
         address: crate::Address,
         value: ::core::primitive::f64,
-    } = 1001_u16,
-    I32Store8_RS {
-        ptr: crate::Reg,
-        value: crate::Stack,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1002_u16,
-    I32Store8_RI {
-        ptr: crate::Reg,
-        value: ::core::primitive::i32,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1003_u16,
-    I32Store8_SR {
-        ptr: crate::Stack,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1004_u16,
+    } = 983_u16,
     I32Store8_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1005_u16,
+    } = 984_u16,
     I32Store8_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1006_u16,
-    I32Store8_IR {
-        address: crate::Address,
-        value: crate::Reg,
-        memory: crate::Memory,
-    } = 1007_u16,
+    } = 985_u16,
     I32Store8_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1008_u16,
+    } = 986_u16,
     I32Store8_II {
         address: crate::Address,
         value: ::core::primitive::i32,
         memory: crate::Memory,
-    } = 1009_u16,
+    } = 987_u16,
     I32Store8Mem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1010_u16,
+    } = 988_u16,
     I32Store8Mem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 1011_u16,
+    } = 989_u16,
     I32Store8Mem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1012_u16,
+    } = 990_u16,
     I32Store8Mem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1013_u16,
+    } = 991_u16,
     I32Store8Mem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 1014_u16,
+    } = 992_u16,
     I32Store8Mem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1015_u16,
+    } = 993_u16,
     I32Store8Mem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1016_u16,
+    } = 994_u16,
     I32Store8Mem0_II {
         address: crate::Address,
         value: ::core::primitive::i32,
-    } = 1017_u16,
-    I64Store8_RS {
-        ptr: crate::Reg,
-        value: crate::Stack,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1018_u16,
-    I64Store8_RI {
-        ptr: crate::Reg,
-        value: ::core::primitive::i64,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1019_u16,
-    I64Store8_SR {
-        ptr: crate::Stack,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1020_u16,
+    } = 995_u16,
     I64Store8_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1021_u16,
+    } = 996_u16,
     I64Store8_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1022_u16,
-    I64Store8_IR {
-        address: crate::Address,
-        value: crate::Reg,
-        memory: crate::Memory,
-    } = 1023_u16,
+    } = 997_u16,
     I64Store8_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1024_u16,
+    } = 998_u16,
     I64Store8_II {
         address: crate::Address,
         value: ::core::primitive::i64,
         memory: crate::Memory,
-    } = 1025_u16,
+    } = 999_u16,
     I64Store8Mem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1026_u16,
+    } = 1000_u16,
     I64Store8Mem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1027_u16,
+    } = 1001_u16,
     I64Store8Mem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1028_u16,
+    } = 1002_u16,
     I64Store8Mem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1029_u16,
+    } = 1003_u16,
     I64Store8Mem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1030_u16,
+    } = 1004_u16,
     I64Store8Mem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1031_u16,
+    } = 1005_u16,
     I64Store8Mem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1032_u16,
+    } = 1006_u16,
     I64Store8Mem0_II {
         address: crate::Address,
         value: ::core::primitive::i64,
-    } = 1033_u16,
-    I32Store16_RS {
-        ptr: crate::Reg,
-        value: crate::Stack,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1034_u16,
-    I32Store16_RI {
-        ptr: crate::Reg,
-        value: ::core::primitive::i32,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1035_u16,
-    I32Store16_SR {
-        ptr: crate::Stack,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1036_u16,
+    } = 1007_u16,
     I32Store16_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1037_u16,
+    } = 1008_u16,
     I32Store16_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1038_u16,
-    I32Store16_IR {
-        address: crate::Address,
-        value: crate::Reg,
-        memory: crate::Memory,
-    } = 1039_u16,
+    } = 1009_u16,
     I32Store16_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1040_u16,
+    } = 1010_u16,
     I32Store16_II {
         address: crate::Address,
         value: ::core::primitive::i32,
         memory: crate::Memory,
-    } = 1041_u16,
+    } = 1011_u16,
     I32Store16Mem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1042_u16,
+    } = 1012_u16,
     I32Store16Mem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 1043_u16,
+    } = 1013_u16,
     I32Store16Mem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1044_u16,
+    } = 1014_u16,
     I32Store16Mem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1045_u16,
+    } = 1015_u16,
     I32Store16Mem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 1046_u16,
+    } = 1016_u16,
     I32Store16Mem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1047_u16,
+    } = 1017_u16,
     I32Store16Mem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1048_u16,
+    } = 1018_u16,
     I32Store16Mem0_II {
         address: crate::Address,
         value: ::core::primitive::i32,
-    } = 1049_u16,
-    I64Store16_RS {
-        ptr: crate::Reg,
-        value: crate::Stack,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1050_u16,
-    I64Store16_RI {
-        ptr: crate::Reg,
-        value: ::core::primitive::i64,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1051_u16,
-    I64Store16_SR {
-        ptr: crate::Stack,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1052_u16,
+    } = 1019_u16,
     I64Store16_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1053_u16,
+    } = 1020_u16,
     I64Store16_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1054_u16,
-    I64Store16_IR {
-        address: crate::Address,
-        value: crate::Reg,
-        memory: crate::Memory,
-    } = 1055_u16,
+    } = 1021_u16,
     I64Store16_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1056_u16,
+    } = 1022_u16,
     I64Store16_II {
         address: crate::Address,
         value: ::core::primitive::i64,
         memory: crate::Memory,
-    } = 1057_u16,
+    } = 1023_u16,
     I64Store16Mem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1058_u16,
+    } = 1024_u16,
     I64Store16Mem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1059_u16,
+    } = 1025_u16,
     I64Store16Mem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1060_u16,
+    } = 1026_u16,
     I64Store16Mem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1061_u16,
+    } = 1027_u16,
     I64Store16Mem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1062_u16,
+    } = 1028_u16,
     I64Store16Mem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1063_u16,
+    } = 1029_u16,
     I64Store16Mem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1064_u16,
+    } = 1030_u16,
     I64Store16Mem0_II {
         address: crate::Address,
         value: ::core::primitive::i64,
-    } = 1065_u16,
-    I64Store32_RS {
-        ptr: crate::Reg,
-        value: crate::Stack,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1066_u16,
-    I64Store32_RI {
-        ptr: crate::Reg,
-        value: ::core::primitive::i64,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1067_u16,
-    I64Store32_SR {
-        ptr: crate::Stack,
-        value: crate::Reg,
-        offset: crate::Offset,
-        memory: crate::Memory,
-    } = 1068_u16,
+    } = 1031_u16,
     I64Store32_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1069_u16,
+    } = 1032_u16,
     I64Store32_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1070_u16,
-    I64Store32_IR {
-        address: crate::Address,
-        value: crate::Reg,
-        memory: crate::Memory,
-    } = 1071_u16,
+    } = 1033_u16,
     I64Store32_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1072_u16,
+    } = 1034_u16,
     I64Store32_II {
         address: crate::Address,
         value: ::core::primitive::i64,
         memory: crate::Memory,
-    } = 1073_u16,
+    } = 1035_u16,
     I64Store32Mem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1074_u16,
+    } = 1036_u16,
     I64Store32Mem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1075_u16,
+    } = 1037_u16,
     I64Store32Mem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1076_u16,
+    } = 1038_u16,
     I64Store32Mem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1077_u16,
+    } = 1039_u16,
     I64Store32Mem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1078_u16,
+    } = 1040_u16,
     I64Store32Mem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1079_u16,
+    } = 1041_u16,
     I64Store32Mem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1080_u16,
+    } = 1042_u16,
     I64Store32Mem0_II {
         address: crate::Address,
         value: ::core::primitive::i64,
-    } = 1081_u16,
+    } = 1043_u16,
     Select {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1082_u16,
+    } = 1044_u16,
     SelectI32_RSSS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1083_u16,
+    } = 1045_u16,
     SelectI32_RSSI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 1084_u16,
+    } = 1046_u16,
     SelectI32_RSIS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 1085_u16,
+    } = 1047_u16,
     SelectI32_RSII {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::i32,
         rhs: ::core::primitive::i32,
-    } = 1086_u16,
+    } = 1048_u16,
     SelectI64_RRSS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1087_u16,
+    } = 1049_u16,
     SelectI64_RRSI {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 1088_u16,
+    } = 1050_u16,
     SelectI64_RRIS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 1089_u16,
+    } = 1051_u16,
     SelectI64_RRII {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: ::core::primitive::i64,
-    } = 1090_u16,
+    } = 1052_u16,
     SelectI64_RSRS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 1091_u16,
+    } = 1053_u16,
     SelectI64_RSRI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 1092_u16,
+    } = 1054_u16,
     SelectI64_RSSR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 1093_u16,
+    } = 1055_u16,
     SelectI64_RSSS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1094_u16,
+    } = 1056_u16,
     SelectI64_RSSI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 1095_u16,
+    } = 1057_u16,
     SelectI64_RSIR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 1096_u16,
+    } = 1058_u16,
     SelectI64_RSIS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 1097_u16,
+    } = 1059_u16,
     SelectI64_RSII {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::i64,
         rhs: ::core::primitive::i64,
-    } = 1098_u16,
+    } = 1060_u16,
     SelectF32_RRSS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1099_u16,
+    } = 1061_u16,
     SelectF32_RRSI {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
-    } = 1100_u16,
+    } = 1062_u16,
     SelectF32_RRIS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::f32,
         rhs: crate::Stack,
-    } = 1101_u16,
+    } = 1063_u16,
     SelectF32_RRII {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::f32,
         rhs: ::core::primitive::f32,
-    } = 1102_u16,
+    } = 1064_u16,
     SelectF32_RSRS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 1103_u16,
+    } = 1065_u16,
     SelectF32_RSRI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
-    } = 1104_u16,
+    } = 1066_u16,
     SelectF32_RSSR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 1105_u16,
+    } = 1067_u16,
     SelectF32_RSSS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1106_u16,
+    } = 1068_u16,
     SelectF32_RSSI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
-    } = 1107_u16,
+    } = 1069_u16,
     SelectF32_RSIR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f32,
         rhs: crate::Reg,
-    } = 1108_u16,
+    } = 1070_u16,
     SelectF32_RSIS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f32,
         rhs: crate::Stack,
-    } = 1109_u16,
+    } = 1071_u16,
     SelectF32_RSII {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f32,
         rhs: ::core::primitive::f32,
-    } = 1110_u16,
+    } = 1072_u16,
     SelectF64_RRSS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1111_u16,
+    } = 1073_u16,
     SelectF64_RRSI {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
-    } = 1112_u16,
+    } = 1074_u16,
     SelectF64_RRIS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::f64,
         rhs: crate::Stack,
-    } = 1113_u16,
+    } = 1075_u16,
     SelectF64_RRII {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::f64,
         rhs: ::core::primitive::f64,
-    } = 1114_u16,
+    } = 1076_u16,
     SelectF64_RSRS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 1115_u16,
+    } = 1077_u16,
     SelectF64_RSRI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
-    } = 1116_u16,
+    } = 1078_u16,
     SelectF64_RSSR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 1117_u16,
+    } = 1079_u16,
     SelectF64_RSSS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1118_u16,
+    } = 1080_u16,
     SelectF64_RSSI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
-    } = 1119_u16,
+    } = 1081_u16,
     SelectF64_RSIR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f64,
         rhs: crate::Reg,
-    } = 1120_u16,
+    } = 1082_u16,
     SelectF64_RSIS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f64,
         rhs: crate::Stack,
-    } = 1121_u16,
+    } = 1083_u16,
     SelectF64_RSII {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f64,
         rhs: ::core::primitive::f64,
-    } = 1122_u16,
+    } = 1084_u16,
     TableSize_R {
         result: crate::Reg,
         table: crate::Table,
-    } = 1123_u16,
+    } = 1085_u16,
     TableSize_S {
         result: crate::Stack,
         table: crate::Table,
-    } = 1124_u16,
+    } = 1086_u16,
     TableGet_RR {
         result: crate::Reg,
         index: crate::Reg,
         table: crate::Table,
-    } = 1125_u16,
+    } = 1087_u16,
     TableGet_RS {
         result: crate::Reg,
         index: crate::Stack,
         table: crate::Table,
-    } = 1126_u16,
+    } = 1088_u16,
     TableGet_RI {
         result: crate::Reg,
         index: ::core::primitive::i64,
         table: crate::Table,
-    } = 1127_u16,
+    } = 1089_u16,
     TableSet_RS {
         index: crate::Reg,
         value: crate::Stack,
         table: crate::Table,
-    } = 1128_u16,
+    } = 1090_u16,
     TableSet_RI {
         index: crate::Reg,
         value: ::core::primitive::i32,
         table: crate::Table,
-    } = 1129_u16,
+    } = 1091_u16,
     TableSet_SR {
         index: crate::Stack,
         value: crate::Reg,
         table: crate::Table,
-    } = 1130_u16,
+    } = 1092_u16,
     TableSet_SS {
         index: crate::Stack,
         value: crate::Stack,
         table: crate::Table,
-    } = 1131_u16,
+    } = 1093_u16,
     TableSet_SI {
         index: crate::Stack,
         value: ::core::primitive::i32,
         table: crate::Table,
-    } = 1132_u16,
+    } = 1094_u16,
     TableSet_IR {
         index: ::core::primitive::i64,
         value: crate::Reg,
         table: crate::Table,
-    } = 1133_u16,
+    } = 1095_u16,
     TableSet_IS {
         index: ::core::primitive::i64,
         value: crate::Stack,
         table: crate::Table,
-    } = 1134_u16,
+    } = 1096_u16,
     TableSet_II {
         index: ::core::primitive::i64,
         value: ::core::primitive::i32,
         table: crate::Table,
-    } = 1135_u16,
+    } = 1097_u16,
     TableGrow {
         result: crate::Stack,
         delta: crate::Stack,
         table: crate::Table,
-    } = 1136_u16,
+    } = 1098_u16,
     TableCopy {
         dst_index: crate::Stack,
         src_index: crate::Stack,
         len: crate::Stack,
         dst_table: crate::Table,
         src_table: crate::Table,
-    } = 1137_u16,
+    } = 1099_u16,
     TableFill {
         dst_index: crate::Stack,
         value: crate::Stack,
         len: crate::Stack,
         table: crate::Table,
-    } = 1138_u16,
+    } = 1100_u16,
     TableInit {
         dst_index: crate::Stack,
         src_index: crate::Stack,
         len: crate::Stack,
         table: crate::Table,
         elem: crate::Elem,
-    } = 1139_u16,
+    } = 1101_u16,
     MemorySize_R {
         result: crate::Reg,
         memory: crate::Memory,
-    } = 1140_u16,
+    } = 1102_u16,
     MemorySize_S {
         result: crate::Stack,
         memory: crate::Memory,
-    } = 1141_u16,
+    } = 1103_u16,
     MemoryGrow {
         result: crate::Reg,
         delta: crate::Stack,
         memory: crate::Memory,
-    } = 1142_u16,
+    } = 1104_u16,
     MemoryCopy {
         dst_index: crate::Stack,
         src_index: crate::Stack,
         len: crate::Stack,
         dst_memory: crate::Memory,
         src_memory: crate::Memory,
-    } = 1143_u16,
+    } = 1105_u16,
     MemoryFill {
         dst_index: crate::Stack,
         value: crate::Stack,
         len: crate::Stack,
         memory: crate::Memory,
-    } = 1144_u16,
+    } = 1106_u16,
     MemoryInit {
         dst_index: crate::Stack,
         src_index: crate::Stack,
         len: crate::Stack,
         memory: crate::Memory,
         data: crate::Data,
-    } = 1145_u16,
+    } = 1107_u16,
     CallInternal {
         func: crate::WasmFunc,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1146_u16,
+    } = 1108_u16,
     ReturnCallInternal {
         func: crate::WasmFunc,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1147_u16,
+    } = 1109_u16,
     CallImported {
         func: crate::Func,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1148_u16,
+    } = 1110_u16,
     ReturnCallImported {
         func: crate::Func,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1149_u16,
+    } = 1111_u16,
     CallIndirect_R {
         table: crate::Table,
         index: crate::Reg,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1150_u16,
+    } = 1112_u16,
     CallIndirect_S {
         table: crate::Table,
         index: crate::Stack,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1151_u16,
+    } = 1113_u16,
     CallIndirect_I {
         table: crate::Table,
         index: ::core::primitive::i64,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1152_u16,
+    } = 1114_u16,
     ReturnCallIndirect_R {
         table: crate::Table,
         index: crate::Reg,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1153_u16,
+    } = 1115_u16,
     ReturnCallIndirect_S {
         table: crate::Table,
         index: crate::Stack,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1154_u16,
+    } = 1116_u16,
     ReturnCallIndirect_I {
         table: crate::Table,
         index: ::core::primitive::i64,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1155_u16,
+    } = 1117_u16,
 }
 impl ::core::marker::Copy for Op {}
 impl ::core::clone::Clone for Op {
@@ -8414,23 +8195,11 @@ impl Op {
             Self::I64Load32UMem0_SI { result, address } => {
                 encoder.encode(crate::op::I64Load32UMem0_SI { result, address })
             }
-            Self::I32Store_RS { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I32Store_RS { ptr, value, offset, memory })
-            }
-            Self::I32Store_RI { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I32Store_RI { ptr, value, offset, memory })
-            }
-            Self::I32Store_SR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I32Store_SR { ptr, value, offset, memory })
-            }
             Self::I32Store_SS { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I32Store_SS { ptr, value, offset, memory })
             }
             Self::I32Store_SI { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I32Store_SI { ptr, value, offset, memory })
-            }
-            Self::I32Store_IR { address, value, memory } => {
-                encoder.encode(crate::op::I32Store_IR { address, value, memory })
             }
             Self::I32Store_IS { address, value, memory } => {
                 encoder.encode(crate::op::I32Store_IS { address, value, memory })
@@ -8462,23 +8231,11 @@ impl Op {
             Self::I32StoreMem0_II { address, value } => {
                 encoder.encode(crate::op::I32StoreMem0_II { address, value })
             }
-            Self::I64Store_RS { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store_RS { ptr, value, offset, memory })
-            }
-            Self::I64Store_RI { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store_RI { ptr, value, offset, memory })
-            }
-            Self::I64Store_SR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store_SR { ptr, value, offset, memory })
-            }
             Self::I64Store_SS { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I64Store_SS { ptr, value, offset, memory })
             }
             Self::I64Store_SI { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I64Store_SI { ptr, value, offset, memory })
-            }
-            Self::I64Store_IR { address, value, memory } => {
-                encoder.encode(crate::op::I64Store_IR { address, value, memory })
             }
             Self::I64Store_IS { address, value, memory } => {
                 encoder.encode(crate::op::I64Store_IS { address, value, memory })
@@ -8510,26 +8267,11 @@ impl Op {
             Self::I64StoreMem0_II { address, value } => {
                 encoder.encode(crate::op::I64StoreMem0_II { address, value })
             }
-            Self::F32Store_RR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::F32Store_RR { ptr, value, offset, memory })
-            }
-            Self::F32Store_RS { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::F32Store_RS { ptr, value, offset, memory })
-            }
-            Self::F32Store_RI { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::F32Store_RI { ptr, value, offset, memory })
-            }
-            Self::F32Store_SR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::F32Store_SR { ptr, value, offset, memory })
-            }
             Self::F32Store_SS { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::F32Store_SS { ptr, value, offset, memory })
             }
             Self::F32Store_SI { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::F32Store_SI { ptr, value, offset, memory })
-            }
-            Self::F32Store_IR { address, value, memory } => {
-                encoder.encode(crate::op::F32Store_IR { address, value, memory })
             }
             Self::F32Store_IS { address, value, memory } => {
                 encoder.encode(crate::op::F32Store_IS { address, value, memory })
@@ -8564,26 +8306,11 @@ impl Op {
             Self::F32StoreMem0_II { address, value } => {
                 encoder.encode(crate::op::F32StoreMem0_II { address, value })
             }
-            Self::F64Store_RR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::F64Store_RR { ptr, value, offset, memory })
-            }
-            Self::F64Store_RS { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::F64Store_RS { ptr, value, offset, memory })
-            }
-            Self::F64Store_RI { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::F64Store_RI { ptr, value, offset, memory })
-            }
-            Self::F64Store_SR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::F64Store_SR { ptr, value, offset, memory })
-            }
             Self::F64Store_SS { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::F64Store_SS { ptr, value, offset, memory })
             }
             Self::F64Store_SI { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::F64Store_SI { ptr, value, offset, memory })
-            }
-            Self::F64Store_IR { address, value, memory } => {
-                encoder.encode(crate::op::F64Store_IR { address, value, memory })
             }
             Self::F64Store_IS { address, value, memory } => {
                 encoder.encode(crate::op::F64Store_IS { address, value, memory })
@@ -8618,23 +8345,11 @@ impl Op {
             Self::F64StoreMem0_II { address, value } => {
                 encoder.encode(crate::op::F64StoreMem0_II { address, value })
             }
-            Self::I32Store8_RS { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I32Store8_RS { ptr, value, offset, memory })
-            }
-            Self::I32Store8_RI { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I32Store8_RI { ptr, value, offset, memory })
-            }
-            Self::I32Store8_SR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I32Store8_SR { ptr, value, offset, memory })
-            }
             Self::I32Store8_SS { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I32Store8_SS { ptr, value, offset, memory })
             }
             Self::I32Store8_SI { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I32Store8_SI { ptr, value, offset, memory })
-            }
-            Self::I32Store8_IR { address, value, memory } => {
-                encoder.encode(crate::op::I32Store8_IR { address, value, memory })
             }
             Self::I32Store8_IS { address, value, memory } => {
                 encoder.encode(crate::op::I32Store8_IS { address, value, memory })
@@ -8666,23 +8381,11 @@ impl Op {
             Self::I32Store8Mem0_II { address, value } => {
                 encoder.encode(crate::op::I32Store8Mem0_II { address, value })
             }
-            Self::I64Store8_RS { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store8_RS { ptr, value, offset, memory })
-            }
-            Self::I64Store8_RI { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store8_RI { ptr, value, offset, memory })
-            }
-            Self::I64Store8_SR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store8_SR { ptr, value, offset, memory })
-            }
             Self::I64Store8_SS { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I64Store8_SS { ptr, value, offset, memory })
             }
             Self::I64Store8_SI { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I64Store8_SI { ptr, value, offset, memory })
-            }
-            Self::I64Store8_IR { address, value, memory } => {
-                encoder.encode(crate::op::I64Store8_IR { address, value, memory })
             }
             Self::I64Store8_IS { address, value, memory } => {
                 encoder.encode(crate::op::I64Store8_IS { address, value, memory })
@@ -8714,23 +8417,11 @@ impl Op {
             Self::I64Store8Mem0_II { address, value } => {
                 encoder.encode(crate::op::I64Store8Mem0_II { address, value })
             }
-            Self::I32Store16_RS { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I32Store16_RS { ptr, value, offset, memory })
-            }
-            Self::I32Store16_RI { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I32Store16_RI { ptr, value, offset, memory })
-            }
-            Self::I32Store16_SR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I32Store16_SR { ptr, value, offset, memory })
-            }
             Self::I32Store16_SS { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I32Store16_SS { ptr, value, offset, memory })
             }
             Self::I32Store16_SI { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I32Store16_SI { ptr, value, offset, memory })
-            }
-            Self::I32Store16_IR { address, value, memory } => {
-                encoder.encode(crate::op::I32Store16_IR { address, value, memory })
             }
             Self::I32Store16_IS { address, value, memory } => {
                 encoder.encode(crate::op::I32Store16_IS { address, value, memory })
@@ -8762,23 +8453,11 @@ impl Op {
             Self::I32Store16Mem0_II { address, value } => {
                 encoder.encode(crate::op::I32Store16Mem0_II { address, value })
             }
-            Self::I64Store16_RS { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store16_RS { ptr, value, offset, memory })
-            }
-            Self::I64Store16_RI { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store16_RI { ptr, value, offset, memory })
-            }
-            Self::I64Store16_SR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store16_SR { ptr, value, offset, memory })
-            }
             Self::I64Store16_SS { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I64Store16_SS { ptr, value, offset, memory })
             }
             Self::I64Store16_SI { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I64Store16_SI { ptr, value, offset, memory })
-            }
-            Self::I64Store16_IR { address, value, memory } => {
-                encoder.encode(crate::op::I64Store16_IR { address, value, memory })
             }
             Self::I64Store16_IS { address, value, memory } => {
                 encoder.encode(crate::op::I64Store16_IS { address, value, memory })
@@ -8810,23 +8489,11 @@ impl Op {
             Self::I64Store16Mem0_II { address, value } => {
                 encoder.encode(crate::op::I64Store16Mem0_II { address, value })
             }
-            Self::I64Store32_RS { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store32_RS { ptr, value, offset, memory })
-            }
-            Self::I64Store32_RI { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store32_RI { ptr, value, offset, memory })
-            }
-            Self::I64Store32_SR { ptr, value, offset, memory } => {
-                encoder.encode(crate::op::I64Store32_SR { ptr, value, offset, memory })
-            }
             Self::I64Store32_SS { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I64Store32_SS { ptr, value, offset, memory })
             }
             Self::I64Store32_SI { ptr, value, offset, memory } => {
                 encoder.encode(crate::op::I64Store32_SI { ptr, value, offset, memory })
-            }
-            Self::I64Store32_IR { address, value, memory } => {
-                encoder.encode(crate::op::I64Store32_IR { address, value, memory })
             }
             Self::I64Store32_IS { address, value, memory } => {
                 encoder.encode(crate::op::I64Store32_IS { address, value, memory })
