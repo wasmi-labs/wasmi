@@ -85,11 +85,13 @@ fn define_fused_cmp_branch_instrs_impl(
                 });
             }
         }
-        if commutative {
-            ctx.cmp_branch_ops.push(CmpBranchOp {
-                name: name.into(),
-                input_ty: ty,
-            })
+        let op = CmpBranchOp {
+            name: name.into(),
+            input_ty: ty,
+        };
+        match commutative {
+            true => ctx.cmp_branch_commutative_ops.push(op),
+            false => ctx.cmp_branch_ops.push(op),
         }
     }
 }

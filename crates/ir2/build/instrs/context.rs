@@ -9,6 +9,7 @@ pub struct Context {
     pub binary_ops: Vec<BinaryOp>,
     pub load_ops: Vec<LoadOp>,
     pub store_ops: Vec<StoreOp>,
+    pub cmp_branch_commutative_ops: Vec<CmpBranchOp>,
     pub cmp_branch_ops: Vec<CmpBranchOp>,
 }
 

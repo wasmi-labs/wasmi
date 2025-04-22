@@ -37,7 +37,7 @@ pub fn generate_instrs(ctx: &Context) -> Result<(), io::Error> {
     )?;
     generate_file(
         "impls/cmp_branch_commutative.rs",
-        DisplayCmpBranchCommutativeOperatorImpls::new(&ctx.cmp_branch_ops, indent),
+        DisplayCmpBranchCommutativeOperatorImpls::new(&ctx.cmp_branch_commutative_ops, indent),
     )?;
     generate_file(
         "impls/binary.rs",
