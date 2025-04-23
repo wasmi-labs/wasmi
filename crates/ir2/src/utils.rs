@@ -23,6 +23,21 @@ impl<T> Deref for RefAccess<T> {
     }
 }
 
+/// Where an operator stores its result if any.
+#[derive(Debug, Copy, Clone)]
+pub enum OpResult {
+    /// The operator stores its result in a register.
+    Reg,
+    /// The operator stores its result on the stack.
+    Stack(usize),
+}
+
+/// Trait to query the result of an operator.
+pub trait OperatorResult {
+    /// Returns the result of an operator if any.
+    fn op_result(&self) -> Option<OpResult>;
+}
+
 /// Trait to query the [`OpCode`][`crate::OpCode`] of operators.
 ///
 /// Implemented by [`Op`][crate::Op] and all operators found in the [`crate::Op`] module.
