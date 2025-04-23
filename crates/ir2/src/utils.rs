@@ -52,6 +52,20 @@ pub trait OperatorResult {
     }
 }
 
+/// Trait to update the result of an operator if possible.
+///
+/// This works by returning a new operator with the updated result.
+/// If updating the result is not possible, `None` is returned.
+pub trait UpdateOperatorResult {
+    /// The operator type with updated result.
+    type Output: Operator;
+
+    /// Returns an operator copy of `self` with an update result.
+    fn update_operator_result(&self) -> Option<Self::Output> {
+        None
+    }
+}
+
 /// Trait to query the [`OpCode`][`crate::OpCode`] of operators.
 ///
 /// Implemented by [`Op`][crate::Op] and all operators found in the [`crate::Op`] module.
@@ -73,6 +87,9 @@ impl OperatorCode for NoOp {
     }
 }
 impl OperatorResult for NoOp {}
+impl UpdateOperatorResult for NoOp {
+    type Output = Self;
+}
 impl From<NoOp> for Op {
     fn from(_: NoOp) -> Self {
         unreachable!("intentionally unimplemented: must never be used")

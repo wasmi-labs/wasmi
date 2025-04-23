@@ -26,6 +26,7 @@ pub use self::{
         OperatorResult,
         StoreOperator,
         UnaryOperator,
+        UpdateOperatorResult,
     },
 };
 
