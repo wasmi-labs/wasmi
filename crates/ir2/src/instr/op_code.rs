@@ -450,54 +450,54 @@ pub enum OpCode {
     I64Mul_SRI = 443_u16,
     I64Mul_SSS = 444_u16,
     I64Mul_SSI = 445_u16,
-    I32And_RRS = 446_u16,
-    I32And_RRI = 447_u16,
-    I32And_RSS = 448_u16,
-    I32And_RSI = 449_u16,
-    I32And_SRS = 450_u16,
-    I32And_SRI = 451_u16,
-    I32And_SSS = 452_u16,
-    I32And_SSI = 453_u16,
-    I64And_RRS = 454_u16,
-    I64And_RRI = 455_u16,
-    I64And_RSS = 456_u16,
-    I64And_RSI = 457_u16,
-    I64And_SRS = 458_u16,
-    I64And_SRI = 459_u16,
-    I64And_SSS = 460_u16,
-    I64And_SSI = 461_u16,
-    I32Or_RRS = 462_u16,
-    I32Or_RRI = 463_u16,
-    I32Or_RSS = 464_u16,
-    I32Or_RSI = 465_u16,
-    I32Or_SRS = 466_u16,
-    I32Or_SRI = 467_u16,
-    I32Or_SSS = 468_u16,
-    I32Or_SSI = 469_u16,
-    I64Or_RRS = 470_u16,
-    I64Or_RRI = 471_u16,
-    I64Or_RSS = 472_u16,
-    I64Or_RSI = 473_u16,
-    I64Or_SRS = 474_u16,
-    I64Or_SRI = 475_u16,
-    I64Or_SSS = 476_u16,
-    I64Or_SSI = 477_u16,
-    I32Xor_RRS = 478_u16,
-    I32Xor_RRI = 479_u16,
-    I32Xor_RSS = 480_u16,
-    I32Xor_RSI = 481_u16,
-    I32Xor_SRS = 482_u16,
-    I32Xor_SRI = 483_u16,
-    I32Xor_SSS = 484_u16,
-    I32Xor_SSI = 485_u16,
-    I64Xor_RRS = 486_u16,
-    I64Xor_RRI = 487_u16,
-    I64Xor_RSS = 488_u16,
-    I64Xor_RSI = 489_u16,
-    I64Xor_SRS = 490_u16,
-    I64Xor_SRI = 491_u16,
-    I64Xor_SSS = 492_u16,
-    I64Xor_SSI = 493_u16,
+    I32BitAnd_RRS = 446_u16,
+    I32BitAnd_RRI = 447_u16,
+    I32BitAnd_RSS = 448_u16,
+    I32BitAnd_RSI = 449_u16,
+    I32BitAnd_SRS = 450_u16,
+    I32BitAnd_SRI = 451_u16,
+    I32BitAnd_SSS = 452_u16,
+    I32BitAnd_SSI = 453_u16,
+    I64BitAnd_RRS = 454_u16,
+    I64BitAnd_RRI = 455_u16,
+    I64BitAnd_RSS = 456_u16,
+    I64BitAnd_RSI = 457_u16,
+    I64BitAnd_SRS = 458_u16,
+    I64BitAnd_SRI = 459_u16,
+    I64BitAnd_SSS = 460_u16,
+    I64BitAnd_SSI = 461_u16,
+    I32BitOr_RRS = 462_u16,
+    I32BitOr_RRI = 463_u16,
+    I32BitOr_RSS = 464_u16,
+    I32BitOr_RSI = 465_u16,
+    I32BitOr_SRS = 466_u16,
+    I32BitOr_SRI = 467_u16,
+    I32BitOr_SSS = 468_u16,
+    I32BitOr_SSI = 469_u16,
+    I64BitOr_RRS = 470_u16,
+    I64BitOr_RRI = 471_u16,
+    I64BitOr_RSS = 472_u16,
+    I64BitOr_RSI = 473_u16,
+    I64BitOr_SRS = 474_u16,
+    I64BitOr_SRI = 475_u16,
+    I64BitOr_SSS = 476_u16,
+    I64BitOr_SSI = 477_u16,
+    I32BitXor_RRS = 478_u16,
+    I32BitXor_RRI = 479_u16,
+    I32BitXor_RSS = 480_u16,
+    I32BitXor_RSI = 481_u16,
+    I32BitXor_SRS = 482_u16,
+    I32BitXor_SRI = 483_u16,
+    I32BitXor_SSS = 484_u16,
+    I32BitXor_SSI = 485_u16,
+    I64BitXor_RRS = 486_u16,
+    I64BitXor_RRI = 487_u16,
+    I64BitXor_RSS = 488_u16,
+    I64BitXor_RSI = 489_u16,
+    I64BitXor_SRS = 490_u16,
+    I64BitXor_SRI = 491_u16,
+    I64BitXor_SSS = 492_u16,
+    I64BitXor_SSI = 493_u16,
     I32Eq_RRS = 494_u16,
     I32Eq_RRI = 495_u16,
     I32Eq_RSS = 496_u16,
@@ -1653,54 +1653,54 @@ impl crate::OperatorCode for crate::Op {
             Self::I64Mul_SRI { .. } => crate::OpCode::I64Mul_SRI,
             Self::I64Mul_SSS { .. } => crate::OpCode::I64Mul_SSS,
             Self::I64Mul_SSI { .. } => crate::OpCode::I64Mul_SSI,
-            Self::I32And_RRS { .. } => crate::OpCode::I32And_RRS,
-            Self::I32And_RRI { .. } => crate::OpCode::I32And_RRI,
-            Self::I32And_RSS { .. } => crate::OpCode::I32And_RSS,
-            Self::I32And_RSI { .. } => crate::OpCode::I32And_RSI,
-            Self::I32And_SRS { .. } => crate::OpCode::I32And_SRS,
-            Self::I32And_SRI { .. } => crate::OpCode::I32And_SRI,
-            Self::I32And_SSS { .. } => crate::OpCode::I32And_SSS,
-            Self::I32And_SSI { .. } => crate::OpCode::I32And_SSI,
-            Self::I64And_RRS { .. } => crate::OpCode::I64And_RRS,
-            Self::I64And_RRI { .. } => crate::OpCode::I64And_RRI,
-            Self::I64And_RSS { .. } => crate::OpCode::I64And_RSS,
-            Self::I64And_RSI { .. } => crate::OpCode::I64And_RSI,
-            Self::I64And_SRS { .. } => crate::OpCode::I64And_SRS,
-            Self::I64And_SRI { .. } => crate::OpCode::I64And_SRI,
-            Self::I64And_SSS { .. } => crate::OpCode::I64And_SSS,
-            Self::I64And_SSI { .. } => crate::OpCode::I64And_SSI,
-            Self::I32Or_RRS { .. } => crate::OpCode::I32Or_RRS,
-            Self::I32Or_RRI { .. } => crate::OpCode::I32Or_RRI,
-            Self::I32Or_RSS { .. } => crate::OpCode::I32Or_RSS,
-            Self::I32Or_RSI { .. } => crate::OpCode::I32Or_RSI,
-            Self::I32Or_SRS { .. } => crate::OpCode::I32Or_SRS,
-            Self::I32Or_SRI { .. } => crate::OpCode::I32Or_SRI,
-            Self::I32Or_SSS { .. } => crate::OpCode::I32Or_SSS,
-            Self::I32Or_SSI { .. } => crate::OpCode::I32Or_SSI,
-            Self::I64Or_RRS { .. } => crate::OpCode::I64Or_RRS,
-            Self::I64Or_RRI { .. } => crate::OpCode::I64Or_RRI,
-            Self::I64Or_RSS { .. } => crate::OpCode::I64Or_RSS,
-            Self::I64Or_RSI { .. } => crate::OpCode::I64Or_RSI,
-            Self::I64Or_SRS { .. } => crate::OpCode::I64Or_SRS,
-            Self::I64Or_SRI { .. } => crate::OpCode::I64Or_SRI,
-            Self::I64Or_SSS { .. } => crate::OpCode::I64Or_SSS,
-            Self::I64Or_SSI { .. } => crate::OpCode::I64Or_SSI,
-            Self::I32Xor_RRS { .. } => crate::OpCode::I32Xor_RRS,
-            Self::I32Xor_RRI { .. } => crate::OpCode::I32Xor_RRI,
-            Self::I32Xor_RSS { .. } => crate::OpCode::I32Xor_RSS,
-            Self::I32Xor_RSI { .. } => crate::OpCode::I32Xor_RSI,
-            Self::I32Xor_SRS { .. } => crate::OpCode::I32Xor_SRS,
-            Self::I32Xor_SRI { .. } => crate::OpCode::I32Xor_SRI,
-            Self::I32Xor_SSS { .. } => crate::OpCode::I32Xor_SSS,
-            Self::I32Xor_SSI { .. } => crate::OpCode::I32Xor_SSI,
-            Self::I64Xor_RRS { .. } => crate::OpCode::I64Xor_RRS,
-            Self::I64Xor_RRI { .. } => crate::OpCode::I64Xor_RRI,
-            Self::I64Xor_RSS { .. } => crate::OpCode::I64Xor_RSS,
-            Self::I64Xor_RSI { .. } => crate::OpCode::I64Xor_RSI,
-            Self::I64Xor_SRS { .. } => crate::OpCode::I64Xor_SRS,
-            Self::I64Xor_SRI { .. } => crate::OpCode::I64Xor_SRI,
-            Self::I64Xor_SSS { .. } => crate::OpCode::I64Xor_SSS,
-            Self::I64Xor_SSI { .. } => crate::OpCode::I64Xor_SSI,
+            Self::I32BitAnd_RRS { .. } => crate::OpCode::I32BitAnd_RRS,
+            Self::I32BitAnd_RRI { .. } => crate::OpCode::I32BitAnd_RRI,
+            Self::I32BitAnd_RSS { .. } => crate::OpCode::I32BitAnd_RSS,
+            Self::I32BitAnd_RSI { .. } => crate::OpCode::I32BitAnd_RSI,
+            Self::I32BitAnd_SRS { .. } => crate::OpCode::I32BitAnd_SRS,
+            Self::I32BitAnd_SRI { .. } => crate::OpCode::I32BitAnd_SRI,
+            Self::I32BitAnd_SSS { .. } => crate::OpCode::I32BitAnd_SSS,
+            Self::I32BitAnd_SSI { .. } => crate::OpCode::I32BitAnd_SSI,
+            Self::I64BitAnd_RRS { .. } => crate::OpCode::I64BitAnd_RRS,
+            Self::I64BitAnd_RRI { .. } => crate::OpCode::I64BitAnd_RRI,
+            Self::I64BitAnd_RSS { .. } => crate::OpCode::I64BitAnd_RSS,
+            Self::I64BitAnd_RSI { .. } => crate::OpCode::I64BitAnd_RSI,
+            Self::I64BitAnd_SRS { .. } => crate::OpCode::I64BitAnd_SRS,
+            Self::I64BitAnd_SRI { .. } => crate::OpCode::I64BitAnd_SRI,
+            Self::I64BitAnd_SSS { .. } => crate::OpCode::I64BitAnd_SSS,
+            Self::I64BitAnd_SSI { .. } => crate::OpCode::I64BitAnd_SSI,
+            Self::I32BitOr_RRS { .. } => crate::OpCode::I32BitOr_RRS,
+            Self::I32BitOr_RRI { .. } => crate::OpCode::I32BitOr_RRI,
+            Self::I32BitOr_RSS { .. } => crate::OpCode::I32BitOr_RSS,
+            Self::I32BitOr_RSI { .. } => crate::OpCode::I32BitOr_RSI,
+            Self::I32BitOr_SRS { .. } => crate::OpCode::I32BitOr_SRS,
+            Self::I32BitOr_SRI { .. } => crate::OpCode::I32BitOr_SRI,
+            Self::I32BitOr_SSS { .. } => crate::OpCode::I32BitOr_SSS,
+            Self::I32BitOr_SSI { .. } => crate::OpCode::I32BitOr_SSI,
+            Self::I64BitOr_RRS { .. } => crate::OpCode::I64BitOr_RRS,
+            Self::I64BitOr_RRI { .. } => crate::OpCode::I64BitOr_RRI,
+            Self::I64BitOr_RSS { .. } => crate::OpCode::I64BitOr_RSS,
+            Self::I64BitOr_RSI { .. } => crate::OpCode::I64BitOr_RSI,
+            Self::I64BitOr_SRS { .. } => crate::OpCode::I64BitOr_SRS,
+            Self::I64BitOr_SRI { .. } => crate::OpCode::I64BitOr_SRI,
+            Self::I64BitOr_SSS { .. } => crate::OpCode::I64BitOr_SSS,
+            Self::I64BitOr_SSI { .. } => crate::OpCode::I64BitOr_SSI,
+            Self::I32BitXor_RRS { .. } => crate::OpCode::I32BitXor_RRS,
+            Self::I32BitXor_RRI { .. } => crate::OpCode::I32BitXor_RRI,
+            Self::I32BitXor_RSS { .. } => crate::OpCode::I32BitXor_RSS,
+            Self::I32BitXor_RSI { .. } => crate::OpCode::I32BitXor_RSI,
+            Self::I32BitXor_SRS { .. } => crate::OpCode::I32BitXor_SRS,
+            Self::I32BitXor_SRI { .. } => crate::OpCode::I32BitXor_SRI,
+            Self::I32BitXor_SSS { .. } => crate::OpCode::I32BitXor_SSS,
+            Self::I32BitXor_SSI { .. } => crate::OpCode::I32BitXor_SSI,
+            Self::I64BitXor_RRS { .. } => crate::OpCode::I64BitXor_RRS,
+            Self::I64BitXor_RRI { .. } => crate::OpCode::I64BitXor_RRI,
+            Self::I64BitXor_RSS { .. } => crate::OpCode::I64BitXor_RSS,
+            Self::I64BitXor_RSI { .. } => crate::OpCode::I64BitXor_RSI,
+            Self::I64BitXor_SRS { .. } => crate::OpCode::I64BitXor_SRS,
+            Self::I64BitXor_SRI { .. } => crate::OpCode::I64BitXor_SRI,
+            Self::I64BitXor_SSS { .. } => crate::OpCode::I64BitXor_SSS,
+            Self::I64BitXor_SSI { .. } => crate::OpCode::I64BitXor_SSI,
             Self::I32Eq_RRS { .. } => crate::OpCode::I32Eq_RRS,
             Self::I32Eq_RRI { .. } => crate::OpCode::I32Eq_RRI,
             Self::I32Eq_RSS { .. } => crate::OpCode::I32Eq_RSS,
@@ -4610,244 +4610,244 @@ impl crate::OperatorCode for crate::op::I64Mul_SSI {
         crate::OpCode::I64Mul_SSI
     }
 }
-impl crate::OperatorCode for crate::op::I32And_RRS {
+impl crate::OperatorCode for crate::op::I32BitAnd_RRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_RRS
+        crate::OpCode::I32BitAnd_RRS
     }
 }
-impl crate::OperatorCode for crate::op::I32And_RRI {
+impl crate::OperatorCode for crate::op::I32BitAnd_RRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_RRI
+        crate::OpCode::I32BitAnd_RRI
     }
 }
-impl crate::OperatorCode for crate::op::I32And_RSS {
+impl crate::OperatorCode for crate::op::I32BitAnd_RSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_RSS
+        crate::OpCode::I32BitAnd_RSS
     }
 }
-impl crate::OperatorCode for crate::op::I32And_RSI {
+impl crate::OperatorCode for crate::op::I32BitAnd_RSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_RSI
+        crate::OpCode::I32BitAnd_RSI
     }
 }
-impl crate::OperatorCode for crate::op::I32And_SRS {
+impl crate::OperatorCode for crate::op::I32BitAnd_SRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_SRS
+        crate::OpCode::I32BitAnd_SRS
     }
 }
-impl crate::OperatorCode for crate::op::I32And_SRI {
+impl crate::OperatorCode for crate::op::I32BitAnd_SRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_SRI
+        crate::OpCode::I32BitAnd_SRI
     }
 }
-impl crate::OperatorCode for crate::op::I32And_SSS {
+impl crate::OperatorCode for crate::op::I32BitAnd_SSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_SSS
+        crate::OpCode::I32BitAnd_SSS
     }
 }
-impl crate::OperatorCode for crate::op::I32And_SSI {
+impl crate::OperatorCode for crate::op::I32BitAnd_SSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32And_SSI
+        crate::OpCode::I32BitAnd_SSI
     }
 }
-impl crate::OperatorCode for crate::op::I64And_RRS {
+impl crate::OperatorCode for crate::op::I64BitAnd_RRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_RRS
+        crate::OpCode::I64BitAnd_RRS
     }
 }
-impl crate::OperatorCode for crate::op::I64And_RRI {
+impl crate::OperatorCode for crate::op::I64BitAnd_RRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_RRI
+        crate::OpCode::I64BitAnd_RRI
     }
 }
-impl crate::OperatorCode for crate::op::I64And_RSS {
+impl crate::OperatorCode for crate::op::I64BitAnd_RSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_RSS
+        crate::OpCode::I64BitAnd_RSS
     }
 }
-impl crate::OperatorCode for crate::op::I64And_RSI {
+impl crate::OperatorCode for crate::op::I64BitAnd_RSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_RSI
+        crate::OpCode::I64BitAnd_RSI
     }
 }
-impl crate::OperatorCode for crate::op::I64And_SRS {
+impl crate::OperatorCode for crate::op::I64BitAnd_SRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_SRS
+        crate::OpCode::I64BitAnd_SRS
     }
 }
-impl crate::OperatorCode for crate::op::I64And_SRI {
+impl crate::OperatorCode for crate::op::I64BitAnd_SRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_SRI
+        crate::OpCode::I64BitAnd_SRI
     }
 }
-impl crate::OperatorCode for crate::op::I64And_SSS {
+impl crate::OperatorCode for crate::op::I64BitAnd_SSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_SSS
+        crate::OpCode::I64BitAnd_SSS
     }
 }
-impl crate::OperatorCode for crate::op::I64And_SSI {
+impl crate::OperatorCode for crate::op::I64BitAnd_SSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64And_SSI
+        crate::OpCode::I64BitAnd_SSI
     }
 }
-impl crate::OperatorCode for crate::op::I32Or_RRS {
+impl crate::OperatorCode for crate::op::I32BitOr_RRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_RRS
+        crate::OpCode::I32BitOr_RRS
     }
 }
-impl crate::OperatorCode for crate::op::I32Or_RRI {
+impl crate::OperatorCode for crate::op::I32BitOr_RRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_RRI
+        crate::OpCode::I32BitOr_RRI
     }
 }
-impl crate::OperatorCode for crate::op::I32Or_RSS {
+impl crate::OperatorCode for crate::op::I32BitOr_RSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_RSS
+        crate::OpCode::I32BitOr_RSS
     }
 }
-impl crate::OperatorCode for crate::op::I32Or_RSI {
+impl crate::OperatorCode for crate::op::I32BitOr_RSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_RSI
+        crate::OpCode::I32BitOr_RSI
     }
 }
-impl crate::OperatorCode for crate::op::I32Or_SRS {
+impl crate::OperatorCode for crate::op::I32BitOr_SRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_SRS
+        crate::OpCode::I32BitOr_SRS
     }
 }
-impl crate::OperatorCode for crate::op::I32Or_SRI {
+impl crate::OperatorCode for crate::op::I32BitOr_SRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_SRI
+        crate::OpCode::I32BitOr_SRI
     }
 }
-impl crate::OperatorCode for crate::op::I32Or_SSS {
+impl crate::OperatorCode for crate::op::I32BitOr_SSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_SSS
+        crate::OpCode::I32BitOr_SSS
     }
 }
-impl crate::OperatorCode for crate::op::I32Or_SSI {
+impl crate::OperatorCode for crate::op::I32BitOr_SSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Or_SSI
+        crate::OpCode::I32BitOr_SSI
     }
 }
-impl crate::OperatorCode for crate::op::I64Or_RRS {
+impl crate::OperatorCode for crate::op::I64BitOr_RRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_RRS
+        crate::OpCode::I64BitOr_RRS
     }
 }
-impl crate::OperatorCode for crate::op::I64Or_RRI {
+impl crate::OperatorCode for crate::op::I64BitOr_RRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_RRI
+        crate::OpCode::I64BitOr_RRI
     }
 }
-impl crate::OperatorCode for crate::op::I64Or_RSS {
+impl crate::OperatorCode for crate::op::I64BitOr_RSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_RSS
+        crate::OpCode::I64BitOr_RSS
     }
 }
-impl crate::OperatorCode for crate::op::I64Or_RSI {
+impl crate::OperatorCode for crate::op::I64BitOr_RSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_RSI
+        crate::OpCode::I64BitOr_RSI
     }
 }
-impl crate::OperatorCode for crate::op::I64Or_SRS {
+impl crate::OperatorCode for crate::op::I64BitOr_SRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_SRS
+        crate::OpCode::I64BitOr_SRS
     }
 }
-impl crate::OperatorCode for crate::op::I64Or_SRI {
+impl crate::OperatorCode for crate::op::I64BitOr_SRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_SRI
+        crate::OpCode::I64BitOr_SRI
     }
 }
-impl crate::OperatorCode for crate::op::I64Or_SSS {
+impl crate::OperatorCode for crate::op::I64BitOr_SSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_SSS
+        crate::OpCode::I64BitOr_SSS
     }
 }
-impl crate::OperatorCode for crate::op::I64Or_SSI {
+impl crate::OperatorCode for crate::op::I64BitOr_SSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Or_SSI
+        crate::OpCode::I64BitOr_SSI
     }
 }
-impl crate::OperatorCode for crate::op::I32Xor_RRS {
+impl crate::OperatorCode for crate::op::I32BitXor_RRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_RRS
+        crate::OpCode::I32BitXor_RRS
     }
 }
-impl crate::OperatorCode for crate::op::I32Xor_RRI {
+impl crate::OperatorCode for crate::op::I32BitXor_RRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_RRI
+        crate::OpCode::I32BitXor_RRI
     }
 }
-impl crate::OperatorCode for crate::op::I32Xor_RSS {
+impl crate::OperatorCode for crate::op::I32BitXor_RSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_RSS
+        crate::OpCode::I32BitXor_RSS
     }
 }
-impl crate::OperatorCode for crate::op::I32Xor_RSI {
+impl crate::OperatorCode for crate::op::I32BitXor_RSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_RSI
+        crate::OpCode::I32BitXor_RSI
     }
 }
-impl crate::OperatorCode for crate::op::I32Xor_SRS {
+impl crate::OperatorCode for crate::op::I32BitXor_SRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_SRS
+        crate::OpCode::I32BitXor_SRS
     }
 }
-impl crate::OperatorCode for crate::op::I32Xor_SRI {
+impl crate::OperatorCode for crate::op::I32BitXor_SRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_SRI
+        crate::OpCode::I32BitXor_SRI
     }
 }
-impl crate::OperatorCode for crate::op::I32Xor_SSS {
+impl crate::OperatorCode for crate::op::I32BitXor_SSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_SSS
+        crate::OpCode::I32BitXor_SSS
     }
 }
-impl crate::OperatorCode for crate::op::I32Xor_SSI {
+impl crate::OperatorCode for crate::op::I32BitXor_SSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I32Xor_SSI
+        crate::OpCode::I32BitXor_SSI
     }
 }
-impl crate::OperatorCode for crate::op::I64Xor_RRS {
+impl crate::OperatorCode for crate::op::I64BitXor_RRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_RRS
+        crate::OpCode::I64BitXor_RRS
     }
 }
-impl crate::OperatorCode for crate::op::I64Xor_RRI {
+impl crate::OperatorCode for crate::op::I64BitXor_RRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_RRI
+        crate::OpCode::I64BitXor_RRI
     }
 }
-impl crate::OperatorCode for crate::op::I64Xor_RSS {
+impl crate::OperatorCode for crate::op::I64BitXor_RSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_RSS
+        crate::OpCode::I64BitXor_RSS
     }
 }
-impl crate::OperatorCode for crate::op::I64Xor_RSI {
+impl crate::OperatorCode for crate::op::I64BitXor_RSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_RSI
+        crate::OpCode::I64BitXor_RSI
     }
 }
-impl crate::OperatorCode for crate::op::I64Xor_SRS {
+impl crate::OperatorCode for crate::op::I64BitXor_SRS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_SRS
+        crate::OpCode::I64BitXor_SRS
     }
 }
-impl crate::OperatorCode for crate::op::I64Xor_SRI {
+impl crate::OperatorCode for crate::op::I64BitXor_SRI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_SRI
+        crate::OpCode::I64BitXor_SRI
     }
 }
-impl crate::OperatorCode for crate::op::I64Xor_SSS {
+impl crate::OperatorCode for crate::op::I64BitXor_SSS {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_SSS
+        crate::OpCode::I64BitXor_SSS
     }
 }
-impl crate::OperatorCode for crate::op::I64Xor_SSI {
+impl crate::OperatorCode for crate::op::I64BitXor_SSI {
     fn op_code(&self) -> crate::OpCode {
-        crate::OpCode::I64Xor_SSI
+        crate::OpCode::I64BitXor_SSI
     }
 }
 impl crate::OperatorCode for crate::op::I32Eq_RRS {

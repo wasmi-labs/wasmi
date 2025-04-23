@@ -1967,242 +1967,242 @@ pub enum Op {
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 445_u16,
-    I32And_RRS {
+    I32BitAnd_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 446_u16,
-    I32And_RRI {
+    I32BitAnd_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
     } = 447_u16,
-    I32And_RSS {
+    I32BitAnd_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 448_u16,
-    I32And_RSI {
+    I32BitAnd_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
     } = 449_u16,
-    I32And_SRS {
+    I32BitAnd_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 450_u16,
-    I32And_SRI {
+    I32BitAnd_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
     } = 451_u16,
-    I32And_SSS {
+    I32BitAnd_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 452_u16,
-    I32And_SSI {
+    I32BitAnd_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
     } = 453_u16,
-    I64And_RRS {
+    I64BitAnd_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 454_u16,
-    I64And_RRI {
+    I64BitAnd_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
     } = 455_u16,
-    I64And_RSS {
+    I64BitAnd_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 456_u16,
-    I64And_RSI {
+    I64BitAnd_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 457_u16,
-    I64And_SRS {
+    I64BitAnd_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 458_u16,
-    I64And_SRI {
+    I64BitAnd_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
     } = 459_u16,
-    I64And_SSS {
+    I64BitAnd_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 460_u16,
-    I64And_SSI {
+    I64BitAnd_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 461_u16,
-    I32Or_RRS {
+    I32BitOr_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 462_u16,
-    I32Or_RRI {
+    I32BitOr_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
     } = 463_u16,
-    I32Or_RSS {
+    I32BitOr_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 464_u16,
-    I32Or_RSI {
+    I32BitOr_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
     } = 465_u16,
-    I32Or_SRS {
+    I32BitOr_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 466_u16,
-    I32Or_SRI {
+    I32BitOr_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
     } = 467_u16,
-    I32Or_SSS {
+    I32BitOr_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 468_u16,
-    I32Or_SSI {
+    I32BitOr_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
     } = 469_u16,
-    I64Or_RRS {
+    I64BitOr_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 470_u16,
-    I64Or_RRI {
+    I64BitOr_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
     } = 471_u16,
-    I64Or_RSS {
+    I64BitOr_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 472_u16,
-    I64Or_RSI {
+    I64BitOr_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 473_u16,
-    I64Or_SRS {
+    I64BitOr_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 474_u16,
-    I64Or_SRI {
+    I64BitOr_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
     } = 475_u16,
-    I64Or_SSS {
+    I64BitOr_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 476_u16,
-    I64Or_SSI {
+    I64BitOr_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 477_u16,
-    I32Xor_RRS {
+    I32BitXor_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 478_u16,
-    I32Xor_RRI {
+    I32BitXor_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
     } = 479_u16,
-    I32Xor_RSS {
+    I32BitXor_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 480_u16,
-    I32Xor_RSI {
+    I32BitXor_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
     } = 481_u16,
-    I32Xor_SRS {
+    I32BitXor_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 482_u16,
-    I32Xor_SRI {
+    I32BitXor_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
     } = 483_u16,
-    I32Xor_SSS {
+    I32BitXor_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 484_u16,
-    I32Xor_SSI {
+    I32BitXor_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
     } = 485_u16,
-    I64Xor_RRS {
+    I64BitXor_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 486_u16,
-    I64Xor_RRI {
+    I64BitXor_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
     } = 487_u16,
-    I64Xor_RSS {
+    I64BitXor_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 488_u16,
-    I64Xor_RSI {
+    I64BitXor_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 489_u16,
-    I64Xor_SRS {
+    I64BitXor_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 490_u16,
-    I64Xor_SRI {
+    I64BitXor_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
     } = 491_u16,
-    I64Xor_SSS {
+    I64BitXor_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 492_u16,
-    I64Xor_SSI {
+    I64BitXor_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
@@ -6983,149 +6983,149 @@ impl Op {
             Self::I64Mul_SSI { result, lhs, rhs } => {
                 encoder.encode(crate::op::I64Mul_SSI { result, lhs, rhs })
             }
-            Self::I32And_RRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32And_RRS { result, lhs, rhs })
+            Self::I32BitAnd_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitAnd_RRS { result, lhs, rhs })
             }
-            Self::I32And_RRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32And_RRI { result, lhs, rhs })
+            Self::I32BitAnd_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitAnd_RRI { result, lhs, rhs })
             }
-            Self::I32And_RSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32And_RSS { result, lhs, rhs })
+            Self::I32BitAnd_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitAnd_RSS { result, lhs, rhs })
             }
-            Self::I32And_RSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32And_RSI { result, lhs, rhs })
+            Self::I32BitAnd_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitAnd_RSI { result, lhs, rhs })
             }
-            Self::I32And_SRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32And_SRS { result, lhs, rhs })
+            Self::I32BitAnd_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitAnd_SRS { result, lhs, rhs })
             }
-            Self::I32And_SRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32And_SRI { result, lhs, rhs })
+            Self::I32BitAnd_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitAnd_SRI { result, lhs, rhs })
             }
-            Self::I32And_SSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32And_SSS { result, lhs, rhs })
+            Self::I32BitAnd_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitAnd_SSS { result, lhs, rhs })
             }
-            Self::I32And_SSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32And_SSI { result, lhs, rhs })
+            Self::I32BitAnd_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitAnd_SSI { result, lhs, rhs })
             }
-            Self::I64And_RRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64And_RRS { result, lhs, rhs })
+            Self::I64BitAnd_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitAnd_RRS { result, lhs, rhs })
             }
-            Self::I64And_RRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64And_RRI { result, lhs, rhs })
+            Self::I64BitAnd_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitAnd_RRI { result, lhs, rhs })
             }
-            Self::I64And_RSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64And_RSS { result, lhs, rhs })
+            Self::I64BitAnd_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitAnd_RSS { result, lhs, rhs })
             }
-            Self::I64And_RSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64And_RSI { result, lhs, rhs })
+            Self::I64BitAnd_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitAnd_RSI { result, lhs, rhs })
             }
-            Self::I64And_SRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64And_SRS { result, lhs, rhs })
+            Self::I64BitAnd_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitAnd_SRS { result, lhs, rhs })
             }
-            Self::I64And_SRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64And_SRI { result, lhs, rhs })
+            Self::I64BitAnd_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitAnd_SRI { result, lhs, rhs })
             }
-            Self::I64And_SSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64And_SSS { result, lhs, rhs })
+            Self::I64BitAnd_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitAnd_SSS { result, lhs, rhs })
             }
-            Self::I64And_SSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64And_SSI { result, lhs, rhs })
+            Self::I64BitAnd_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitAnd_SSI { result, lhs, rhs })
             }
-            Self::I32Or_RRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Or_RRS { result, lhs, rhs })
+            Self::I32BitOr_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitOr_RRS { result, lhs, rhs })
             }
-            Self::I32Or_RRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Or_RRI { result, lhs, rhs })
+            Self::I32BitOr_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitOr_RRI { result, lhs, rhs })
             }
-            Self::I32Or_RSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Or_RSS { result, lhs, rhs })
+            Self::I32BitOr_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitOr_RSS { result, lhs, rhs })
             }
-            Self::I32Or_RSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Or_RSI { result, lhs, rhs })
+            Self::I32BitOr_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitOr_RSI { result, lhs, rhs })
             }
-            Self::I32Or_SRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Or_SRS { result, lhs, rhs })
+            Self::I32BitOr_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitOr_SRS { result, lhs, rhs })
             }
-            Self::I32Or_SRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Or_SRI { result, lhs, rhs })
+            Self::I32BitOr_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitOr_SRI { result, lhs, rhs })
             }
-            Self::I32Or_SSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Or_SSS { result, lhs, rhs })
+            Self::I32BitOr_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitOr_SSS { result, lhs, rhs })
             }
-            Self::I32Or_SSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Or_SSI { result, lhs, rhs })
+            Self::I32BitOr_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitOr_SSI { result, lhs, rhs })
             }
-            Self::I64Or_RRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Or_RRS { result, lhs, rhs })
+            Self::I64BitOr_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitOr_RRS { result, lhs, rhs })
             }
-            Self::I64Or_RRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Or_RRI { result, lhs, rhs })
+            Self::I64BitOr_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitOr_RRI { result, lhs, rhs })
             }
-            Self::I64Or_RSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Or_RSS { result, lhs, rhs })
+            Self::I64BitOr_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitOr_RSS { result, lhs, rhs })
             }
-            Self::I64Or_RSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Or_RSI { result, lhs, rhs })
+            Self::I64BitOr_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitOr_RSI { result, lhs, rhs })
             }
-            Self::I64Or_SRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Or_SRS { result, lhs, rhs })
+            Self::I64BitOr_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitOr_SRS { result, lhs, rhs })
             }
-            Self::I64Or_SRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Or_SRI { result, lhs, rhs })
+            Self::I64BitOr_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitOr_SRI { result, lhs, rhs })
             }
-            Self::I64Or_SSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Or_SSS { result, lhs, rhs })
+            Self::I64BitOr_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitOr_SSS { result, lhs, rhs })
             }
-            Self::I64Or_SSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Or_SSI { result, lhs, rhs })
+            Self::I64BitOr_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitOr_SSI { result, lhs, rhs })
             }
-            Self::I32Xor_RRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Xor_RRS { result, lhs, rhs })
+            Self::I32BitXor_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitXor_RRS { result, lhs, rhs })
             }
-            Self::I32Xor_RRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Xor_RRI { result, lhs, rhs })
+            Self::I32BitXor_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitXor_RRI { result, lhs, rhs })
             }
-            Self::I32Xor_RSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Xor_RSS { result, lhs, rhs })
+            Self::I32BitXor_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitXor_RSS { result, lhs, rhs })
             }
-            Self::I32Xor_RSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Xor_RSI { result, lhs, rhs })
+            Self::I32BitXor_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitXor_RSI { result, lhs, rhs })
             }
-            Self::I32Xor_SRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Xor_SRS { result, lhs, rhs })
+            Self::I32BitXor_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitXor_SRS { result, lhs, rhs })
             }
-            Self::I32Xor_SRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Xor_SRI { result, lhs, rhs })
+            Self::I32BitXor_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitXor_SRI { result, lhs, rhs })
             }
-            Self::I32Xor_SSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Xor_SSS { result, lhs, rhs })
+            Self::I32BitXor_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitXor_SSS { result, lhs, rhs })
             }
-            Self::I32Xor_SSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I32Xor_SSI { result, lhs, rhs })
+            Self::I32BitXor_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32BitXor_SSI { result, lhs, rhs })
             }
-            Self::I64Xor_RRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Xor_RRS { result, lhs, rhs })
+            Self::I64BitXor_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitXor_RRS { result, lhs, rhs })
             }
-            Self::I64Xor_RRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Xor_RRI { result, lhs, rhs })
+            Self::I64BitXor_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitXor_RRI { result, lhs, rhs })
             }
-            Self::I64Xor_RSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Xor_RSS { result, lhs, rhs })
+            Self::I64BitXor_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitXor_RSS { result, lhs, rhs })
             }
-            Self::I64Xor_RSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Xor_RSI { result, lhs, rhs })
+            Self::I64BitXor_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitXor_RSI { result, lhs, rhs })
             }
-            Self::I64Xor_SRS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Xor_SRS { result, lhs, rhs })
+            Self::I64BitXor_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitXor_SRS { result, lhs, rhs })
             }
-            Self::I64Xor_SRI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Xor_SRI { result, lhs, rhs })
+            Self::I64BitXor_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitXor_SRI { result, lhs, rhs })
             }
-            Self::I64Xor_SSS { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Xor_SSS { result, lhs, rhs })
+            Self::I64BitXor_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitXor_SSS { result, lhs, rhs })
             }
-            Self::I64Xor_SSI { result, lhs, rhs } => {
-                encoder.encode(crate::op::I64Xor_SSI { result, lhs, rhs })
+            Self::I64BitXor_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64BitXor_SSI { result, lhs, rhs })
             }
             Self::I32Eq_RRS { result, lhs, rhs } => {
                 encoder.encode(crate::op::I32Eq_RRS { result, lhs, rhs })

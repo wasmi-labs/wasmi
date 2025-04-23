@@ -150,18 +150,18 @@ impl crate::BinaryCommutativeOperator for I64Mul {
         Self::OpSss { result, lhs, rhs }
     }
 }
-pub enum I32And {}
-impl crate::BinaryCommutativeOperator for I32And {
-    const NAME: &'static ::core::primitive::str = "I32And";
+pub enum I32BitAnd {}
+impl crate::BinaryCommutativeOperator for I32BitAnd {
+    const NAME: &'static ::core::primitive::str = "I32BitAnd";
     type Imm = ::core::primitive::i32;
-    type OpRri = crate::op::I32And_RRI;
-    type OpRrs = crate::op::I32And_RRS;
-    type OpRsi = crate::op::I32And_RSI;
-    type OpRss = crate::op::I32And_RSS;
-    type OpSri = crate::op::I32And_SRI;
-    type OpSrs = crate::op::I32And_SRS;
-    type OpSsi = crate::op::I32And_SSI;
-    type OpSss = crate::op::I32And_SSS;
+    type OpRri = crate::op::I32BitAnd_RRI;
+    type OpRrs = crate::op::I32BitAnd_RRS;
+    type OpRsi = crate::op::I32BitAnd_RSI;
+    type OpRss = crate::op::I32BitAnd_RSS;
+    type OpSri = crate::op::I32BitAnd_SRI;
+    type OpSrs = crate::op::I32BitAnd_SRS;
+    type OpSsi = crate::op::I32BitAnd_SSI;
+    type OpSss = crate::op::I32BitAnd_SSS;
     fn make_rri(result: crate::Reg, lhs: crate::Reg, rhs: Self::Imm) -> Self::OpRri {
         Self::OpRri { result, lhs, rhs }
     }
@@ -187,18 +187,18 @@ impl crate::BinaryCommutativeOperator for I32And {
         Self::OpSss { result, lhs, rhs }
     }
 }
-pub enum I64And {}
-impl crate::BinaryCommutativeOperator for I64And {
-    const NAME: &'static ::core::primitive::str = "I64And";
+pub enum I64BitAnd {}
+impl crate::BinaryCommutativeOperator for I64BitAnd {
+    const NAME: &'static ::core::primitive::str = "I64BitAnd";
     type Imm = ::core::primitive::i64;
-    type OpRri = crate::op::I64And_RRI;
-    type OpRrs = crate::op::I64And_RRS;
-    type OpRsi = crate::op::I64And_RSI;
-    type OpRss = crate::op::I64And_RSS;
-    type OpSri = crate::op::I64And_SRI;
-    type OpSrs = crate::op::I64And_SRS;
-    type OpSsi = crate::op::I64And_SSI;
-    type OpSss = crate::op::I64And_SSS;
+    type OpRri = crate::op::I64BitAnd_RRI;
+    type OpRrs = crate::op::I64BitAnd_RRS;
+    type OpRsi = crate::op::I64BitAnd_RSI;
+    type OpRss = crate::op::I64BitAnd_RSS;
+    type OpSri = crate::op::I64BitAnd_SRI;
+    type OpSrs = crate::op::I64BitAnd_SRS;
+    type OpSsi = crate::op::I64BitAnd_SSI;
+    type OpSss = crate::op::I64BitAnd_SSS;
     fn make_rri(result: crate::Reg, lhs: crate::Reg, rhs: Self::Imm) -> Self::OpRri {
         Self::OpRri { result, lhs, rhs }
     }
@@ -224,18 +224,18 @@ impl crate::BinaryCommutativeOperator for I64And {
         Self::OpSss { result, lhs, rhs }
     }
 }
-pub enum I32Or {}
-impl crate::BinaryCommutativeOperator for I32Or {
-    const NAME: &'static ::core::primitive::str = "I32Or";
+pub enum I32BitOr {}
+impl crate::BinaryCommutativeOperator for I32BitOr {
+    const NAME: &'static ::core::primitive::str = "I32BitOr";
     type Imm = ::core::primitive::i32;
-    type OpRri = crate::op::I32Or_RRI;
-    type OpRrs = crate::op::I32Or_RRS;
-    type OpRsi = crate::op::I32Or_RSI;
-    type OpRss = crate::op::I32Or_RSS;
-    type OpSri = crate::op::I32Or_SRI;
-    type OpSrs = crate::op::I32Or_SRS;
-    type OpSsi = crate::op::I32Or_SSI;
-    type OpSss = crate::op::I32Or_SSS;
+    type OpRri = crate::op::I32BitOr_RRI;
+    type OpRrs = crate::op::I32BitOr_RRS;
+    type OpRsi = crate::op::I32BitOr_RSI;
+    type OpRss = crate::op::I32BitOr_RSS;
+    type OpSri = crate::op::I32BitOr_SRI;
+    type OpSrs = crate::op::I32BitOr_SRS;
+    type OpSsi = crate::op::I32BitOr_SSI;
+    type OpSss = crate::op::I32BitOr_SSS;
     fn make_rri(result: crate::Reg, lhs: crate::Reg, rhs: Self::Imm) -> Self::OpRri {
         Self::OpRri { result, lhs, rhs }
     }
@@ -261,18 +261,18 @@ impl crate::BinaryCommutativeOperator for I32Or {
         Self::OpSss { result, lhs, rhs }
     }
 }
-pub enum I64Or {}
-impl crate::BinaryCommutativeOperator for I64Or {
-    const NAME: &'static ::core::primitive::str = "I64Or";
+pub enum I64BitOr {}
+impl crate::BinaryCommutativeOperator for I64BitOr {
+    const NAME: &'static ::core::primitive::str = "I64BitOr";
     type Imm = ::core::primitive::i64;
-    type OpRri = crate::op::I64Or_RRI;
-    type OpRrs = crate::op::I64Or_RRS;
-    type OpRsi = crate::op::I64Or_RSI;
-    type OpRss = crate::op::I64Or_RSS;
-    type OpSri = crate::op::I64Or_SRI;
-    type OpSrs = crate::op::I64Or_SRS;
-    type OpSsi = crate::op::I64Or_SSI;
-    type OpSss = crate::op::I64Or_SSS;
+    type OpRri = crate::op::I64BitOr_RRI;
+    type OpRrs = crate::op::I64BitOr_RRS;
+    type OpRsi = crate::op::I64BitOr_RSI;
+    type OpRss = crate::op::I64BitOr_RSS;
+    type OpSri = crate::op::I64BitOr_SRI;
+    type OpSrs = crate::op::I64BitOr_SRS;
+    type OpSsi = crate::op::I64BitOr_SSI;
+    type OpSss = crate::op::I64BitOr_SSS;
     fn make_rri(result: crate::Reg, lhs: crate::Reg, rhs: Self::Imm) -> Self::OpRri {
         Self::OpRri { result, lhs, rhs }
     }
@@ -298,18 +298,18 @@ impl crate::BinaryCommutativeOperator for I64Or {
         Self::OpSss { result, lhs, rhs }
     }
 }
-pub enum I32Xor {}
-impl crate::BinaryCommutativeOperator for I32Xor {
-    const NAME: &'static ::core::primitive::str = "I32Xor";
+pub enum I32BitXor {}
+impl crate::BinaryCommutativeOperator for I32BitXor {
+    const NAME: &'static ::core::primitive::str = "I32BitXor";
     type Imm = ::core::primitive::i32;
-    type OpRri = crate::op::I32Xor_RRI;
-    type OpRrs = crate::op::I32Xor_RRS;
-    type OpRsi = crate::op::I32Xor_RSI;
-    type OpRss = crate::op::I32Xor_RSS;
-    type OpSri = crate::op::I32Xor_SRI;
-    type OpSrs = crate::op::I32Xor_SRS;
-    type OpSsi = crate::op::I32Xor_SSI;
-    type OpSss = crate::op::I32Xor_SSS;
+    type OpRri = crate::op::I32BitXor_RRI;
+    type OpRrs = crate::op::I32BitXor_RRS;
+    type OpRsi = crate::op::I32BitXor_RSI;
+    type OpRss = crate::op::I32BitXor_RSS;
+    type OpSri = crate::op::I32BitXor_SRI;
+    type OpSrs = crate::op::I32BitXor_SRS;
+    type OpSsi = crate::op::I32BitXor_SSI;
+    type OpSss = crate::op::I32BitXor_SSS;
     fn make_rri(result: crate::Reg, lhs: crate::Reg, rhs: Self::Imm) -> Self::OpRri {
         Self::OpRri { result, lhs, rhs }
     }
@@ -335,18 +335,18 @@ impl crate::BinaryCommutativeOperator for I32Xor {
         Self::OpSss { result, lhs, rhs }
     }
 }
-pub enum I64Xor {}
-impl crate::BinaryCommutativeOperator for I64Xor {
-    const NAME: &'static ::core::primitive::str = "I64Xor";
+pub enum I64BitXor {}
+impl crate::BinaryCommutativeOperator for I64BitXor {
+    const NAME: &'static ::core::primitive::str = "I64BitXor";
     type Imm = ::core::primitive::i64;
-    type OpRri = crate::op::I64Xor_RRI;
-    type OpRrs = crate::op::I64Xor_RRS;
-    type OpRsi = crate::op::I64Xor_RSI;
-    type OpRss = crate::op::I64Xor_RSS;
-    type OpSri = crate::op::I64Xor_SRI;
-    type OpSrs = crate::op::I64Xor_SRS;
-    type OpSsi = crate::op::I64Xor_SSI;
-    type OpSss = crate::op::I64Xor_SSS;
+    type OpRri = crate::op::I64BitXor_RRI;
+    type OpRrs = crate::op::I64BitXor_RRS;
+    type OpRsi = crate::op::I64BitXor_RSI;
+    type OpRss = crate::op::I64BitXor_RSS;
+    type OpSri = crate::op::I64BitXor_SRI;
+    type OpSrs = crate::op::I64BitXor_SRS;
+    type OpSsi = crate::op::I64BitXor_SSI;
+    type OpSss = crate::op::I64BitXor_SSS;
     fn make_rri(result: crate::Reg, lhs: crate::Reg, rhs: Self::Imm) -> Self::OpRri {
         Self::OpRri { result, lhs, rhs }
     }

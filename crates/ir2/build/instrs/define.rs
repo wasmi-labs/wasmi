@@ -470,7 +470,9 @@ fn define_ibinop_ops(ctx: &mut Context) {
     define_binop_ops(
         ctx,
         true,
-        ["Add", "Mul", "And", "Or", "Xor", "Eq", "Ne"],
+        [
+            "Add", "Mul", "BitAnd", "BitOr", "BitXor", "Eq", "Ne",
+        ],
         [ValTy::I32, ValTy::I64],
     );
     define_binop_ops(

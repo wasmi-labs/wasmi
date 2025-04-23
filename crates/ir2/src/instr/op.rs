@@ -8839,20 +8839,20 @@ impl ::core::convert::From<I64Mul_SSI> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32And_RRS {
+pub struct I32BitAnd_RRS {
     pub result: crate::Reg,
     pub lhs: crate::Reg,
     pub rhs: crate::Stack,
 }
-impl ::core::marker::Copy for I32And_RRS {}
-impl ::core::clone::Clone for I32And_RRS {
+impl ::core::marker::Copy for I32BitAnd_RRS {}
+impl ::core::clone::Clone for I32BitAnd_RRS {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I32And_RRS> for crate::Op {
-    fn from(op: I32And_RRS) -> Self {
-        Self::I32And_RRS {
+impl ::core::convert::From<I32BitAnd_RRS> for crate::Op {
+    fn from(op: I32BitAnd_RRS) -> Self {
+        Self::I32BitAnd_RRS {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -8860,356 +8860,20 @@ impl ::core::convert::From<I32And_RRS> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32And_RRI {
-    pub result: crate::Reg,
-    pub lhs: crate::Reg,
-    pub rhs: ::core::primitive::i32,
-}
-impl ::core::marker::Copy for I32And_RRI {}
-impl ::core::clone::Clone for I32And_RRI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32And_RRI> for crate::Op {
-    fn from(op: I32And_RRI) -> Self {
-        Self::I32And_RRI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32And_RSS {
-    pub result: crate::Reg,
-    pub lhs: crate::Stack,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I32And_RSS {}
-impl ::core::clone::Clone for I32And_RSS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32And_RSS> for crate::Op {
-    fn from(op: I32And_RSS) -> Self {
-        Self::I32And_RSS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32And_RSI {
-    pub result: crate::Reg,
-    pub lhs: crate::Stack,
-    pub rhs: ::core::primitive::i32,
-}
-impl ::core::marker::Copy for I32And_RSI {}
-impl ::core::clone::Clone for I32And_RSI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32And_RSI> for crate::Op {
-    fn from(op: I32And_RSI) -> Self {
-        Self::I32And_RSI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32And_SRS {
-    pub result: crate::Stack,
-    pub lhs: crate::Reg,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I32And_SRS {}
-impl ::core::clone::Clone for I32And_SRS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32And_SRS> for crate::Op {
-    fn from(op: I32And_SRS) -> Self {
-        Self::I32And_SRS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32And_SRI {
-    pub result: crate::Stack,
-    pub lhs: crate::Reg,
-    pub rhs: ::core::primitive::i32,
-}
-impl ::core::marker::Copy for I32And_SRI {}
-impl ::core::clone::Clone for I32And_SRI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32And_SRI> for crate::Op {
-    fn from(op: I32And_SRI) -> Self {
-        Self::I32And_SRI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32And_SSS {
-    pub result: crate::Stack,
-    pub lhs: crate::Stack,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I32And_SSS {}
-impl ::core::clone::Clone for I32And_SSS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32And_SSS> for crate::Op {
-    fn from(op: I32And_SSS) -> Self {
-        Self::I32And_SSS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32And_SSI {
-    pub result: crate::Stack,
-    pub lhs: crate::Stack,
-    pub rhs: ::core::primitive::i32,
-}
-impl ::core::marker::Copy for I32And_SSI {}
-impl ::core::clone::Clone for I32And_SSI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32And_SSI> for crate::Op {
-    fn from(op: I32And_SSI) -> Self {
-        Self::I32And_SSI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64And_RRS {
-    pub result: crate::Reg,
-    pub lhs: crate::Reg,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I64And_RRS {}
-impl ::core::clone::Clone for I64And_RRS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64And_RRS> for crate::Op {
-    fn from(op: I64And_RRS) -> Self {
-        Self::I64And_RRS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64And_RRI {
-    pub result: crate::Reg,
-    pub lhs: crate::Reg,
-    pub rhs: ::core::primitive::i64,
-}
-impl ::core::marker::Copy for I64And_RRI {}
-impl ::core::clone::Clone for I64And_RRI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64And_RRI> for crate::Op {
-    fn from(op: I64And_RRI) -> Self {
-        Self::I64And_RRI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64And_RSS {
-    pub result: crate::Reg,
-    pub lhs: crate::Stack,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I64And_RSS {}
-impl ::core::clone::Clone for I64And_RSS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64And_RSS> for crate::Op {
-    fn from(op: I64And_RSS) -> Self {
-        Self::I64And_RSS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64And_RSI {
-    pub result: crate::Reg,
-    pub lhs: crate::Stack,
-    pub rhs: ::core::primitive::i64,
-}
-impl ::core::marker::Copy for I64And_RSI {}
-impl ::core::clone::Clone for I64And_RSI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64And_RSI> for crate::Op {
-    fn from(op: I64And_RSI) -> Self {
-        Self::I64And_RSI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64And_SRS {
-    pub result: crate::Stack,
-    pub lhs: crate::Reg,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I64And_SRS {}
-impl ::core::clone::Clone for I64And_SRS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64And_SRS> for crate::Op {
-    fn from(op: I64And_SRS) -> Self {
-        Self::I64And_SRS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64And_SRI {
-    pub result: crate::Stack,
-    pub lhs: crate::Reg,
-    pub rhs: ::core::primitive::i64,
-}
-impl ::core::marker::Copy for I64And_SRI {}
-impl ::core::clone::Clone for I64And_SRI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64And_SRI> for crate::Op {
-    fn from(op: I64And_SRI) -> Self {
-        Self::I64And_SRI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64And_SSS {
-    pub result: crate::Stack,
-    pub lhs: crate::Stack,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I64And_SSS {}
-impl ::core::clone::Clone for I64And_SSS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64And_SSS> for crate::Op {
-    fn from(op: I64And_SSS) -> Self {
-        Self::I64And_SSS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64And_SSI {
-    pub result: crate::Stack,
-    pub lhs: crate::Stack,
-    pub rhs: ::core::primitive::i64,
-}
-impl ::core::marker::Copy for I64And_SSI {}
-impl ::core::clone::Clone for I64And_SSI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64And_SSI> for crate::Op {
-    fn from(op: I64And_SSI) -> Self {
-        Self::I64And_SSI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Or_RRS {
-    pub result: crate::Reg,
-    pub lhs: crate::Reg,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I32Or_RRS {}
-impl ::core::clone::Clone for I32Or_RRS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Or_RRS> for crate::Op {
-    fn from(op: I32Or_RRS) -> Self {
-        Self::I32Or_RRS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Or_RRI {
+pub struct I32BitAnd_RRI {
     pub result: crate::Reg,
     pub lhs: crate::Reg,
     pub rhs: ::core::primitive::i32,
 }
-impl ::core::marker::Copy for I32Or_RRI {}
-impl ::core::clone::Clone for I32Or_RRI {
+impl ::core::marker::Copy for I32BitAnd_RRI {}
+impl ::core::clone::Clone for I32BitAnd_RRI {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I32Or_RRI> for crate::Op {
-    fn from(op: I32Or_RRI) -> Self {
-        Self::I32Or_RRI {
+impl ::core::convert::From<I32BitAnd_RRI> for crate::Op {
+    fn from(op: I32BitAnd_RRI) -> Self {
+        Self::I32BitAnd_RRI {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9217,20 +8881,20 @@ impl ::core::convert::From<I32Or_RRI> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32Or_RSS {
+pub struct I32BitAnd_RSS {
     pub result: crate::Reg,
     pub lhs: crate::Stack,
     pub rhs: crate::Stack,
 }
-impl ::core::marker::Copy for I32Or_RSS {}
-impl ::core::clone::Clone for I32Or_RSS {
+impl ::core::marker::Copy for I32BitAnd_RSS {}
+impl ::core::clone::Clone for I32BitAnd_RSS {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I32Or_RSS> for crate::Op {
-    fn from(op: I32Or_RSS) -> Self {
-        Self::I32Or_RSS {
+impl ::core::convert::From<I32BitAnd_RSS> for crate::Op {
+    fn from(op: I32BitAnd_RSS) -> Self {
+        Self::I32BitAnd_RSS {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9238,356 +8902,20 @@ impl ::core::convert::From<I32Or_RSS> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32Or_RSI {
-    pub result: crate::Reg,
-    pub lhs: crate::Stack,
-    pub rhs: ::core::primitive::i32,
-}
-impl ::core::marker::Copy for I32Or_RSI {}
-impl ::core::clone::Clone for I32Or_RSI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Or_RSI> for crate::Op {
-    fn from(op: I32Or_RSI) -> Self {
-        Self::I32Or_RSI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Or_SRS {
-    pub result: crate::Stack,
-    pub lhs: crate::Reg,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I32Or_SRS {}
-impl ::core::clone::Clone for I32Or_SRS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Or_SRS> for crate::Op {
-    fn from(op: I32Or_SRS) -> Self {
-        Self::I32Or_SRS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Or_SRI {
-    pub result: crate::Stack,
-    pub lhs: crate::Reg,
-    pub rhs: ::core::primitive::i32,
-}
-impl ::core::marker::Copy for I32Or_SRI {}
-impl ::core::clone::Clone for I32Or_SRI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Or_SRI> for crate::Op {
-    fn from(op: I32Or_SRI) -> Self {
-        Self::I32Or_SRI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Or_SSS {
-    pub result: crate::Stack,
-    pub lhs: crate::Stack,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I32Or_SSS {}
-impl ::core::clone::Clone for I32Or_SSS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Or_SSS> for crate::Op {
-    fn from(op: I32Or_SSS) -> Self {
-        Self::I32Or_SSS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Or_SSI {
-    pub result: crate::Stack,
-    pub lhs: crate::Stack,
-    pub rhs: ::core::primitive::i32,
-}
-impl ::core::marker::Copy for I32Or_SSI {}
-impl ::core::clone::Clone for I32Or_SSI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Or_SSI> for crate::Op {
-    fn from(op: I32Or_SSI) -> Self {
-        Self::I32Or_SSI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Or_RRS {
-    pub result: crate::Reg,
-    pub lhs: crate::Reg,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I64Or_RRS {}
-impl ::core::clone::Clone for I64Or_RRS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Or_RRS> for crate::Op {
-    fn from(op: I64Or_RRS) -> Self {
-        Self::I64Or_RRS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Or_RRI {
-    pub result: crate::Reg,
-    pub lhs: crate::Reg,
-    pub rhs: ::core::primitive::i64,
-}
-impl ::core::marker::Copy for I64Or_RRI {}
-impl ::core::clone::Clone for I64Or_RRI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Or_RRI> for crate::Op {
-    fn from(op: I64Or_RRI) -> Self {
-        Self::I64Or_RRI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Or_RSS {
-    pub result: crate::Reg,
-    pub lhs: crate::Stack,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I64Or_RSS {}
-impl ::core::clone::Clone for I64Or_RSS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Or_RSS> for crate::Op {
-    fn from(op: I64Or_RSS) -> Self {
-        Self::I64Or_RSS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Or_RSI {
-    pub result: crate::Reg,
-    pub lhs: crate::Stack,
-    pub rhs: ::core::primitive::i64,
-}
-impl ::core::marker::Copy for I64Or_RSI {}
-impl ::core::clone::Clone for I64Or_RSI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Or_RSI> for crate::Op {
-    fn from(op: I64Or_RSI) -> Self {
-        Self::I64Or_RSI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Or_SRS {
-    pub result: crate::Stack,
-    pub lhs: crate::Reg,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I64Or_SRS {}
-impl ::core::clone::Clone for I64Or_SRS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Or_SRS> for crate::Op {
-    fn from(op: I64Or_SRS) -> Self {
-        Self::I64Or_SRS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Or_SRI {
-    pub result: crate::Stack,
-    pub lhs: crate::Reg,
-    pub rhs: ::core::primitive::i64,
-}
-impl ::core::marker::Copy for I64Or_SRI {}
-impl ::core::clone::Clone for I64Or_SRI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Or_SRI> for crate::Op {
-    fn from(op: I64Or_SRI) -> Self {
-        Self::I64Or_SRI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Or_SSS {
-    pub result: crate::Stack,
-    pub lhs: crate::Stack,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I64Or_SSS {}
-impl ::core::clone::Clone for I64Or_SSS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Or_SSS> for crate::Op {
-    fn from(op: I64Or_SSS) -> Self {
-        Self::I64Or_SSS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I64Or_SSI {
-    pub result: crate::Stack,
-    pub lhs: crate::Stack,
-    pub rhs: ::core::primitive::i64,
-}
-impl ::core::marker::Copy for I64Or_SSI {}
-impl ::core::clone::Clone for I64Or_SSI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I64Or_SSI> for crate::Op {
-    fn from(op: I64Or_SSI) -> Self {
-        Self::I64Or_SSI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Xor_RRS {
-    pub result: crate::Reg,
-    pub lhs: crate::Reg,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I32Xor_RRS {}
-impl ::core::clone::Clone for I32Xor_RRS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Xor_RRS> for crate::Op {
-    fn from(op: I32Xor_RRS) -> Self {
-        Self::I32Xor_RRS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Xor_RRI {
-    pub result: crate::Reg,
-    pub lhs: crate::Reg,
-    pub rhs: ::core::primitive::i32,
-}
-impl ::core::marker::Copy for I32Xor_RRI {}
-impl ::core::clone::Clone for I32Xor_RRI {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Xor_RRI> for crate::Op {
-    fn from(op: I32Xor_RRI) -> Self {
-        Self::I32Xor_RRI {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Xor_RSS {
-    pub result: crate::Reg,
-    pub lhs: crate::Stack,
-    pub rhs: crate::Stack,
-}
-impl ::core::marker::Copy for I32Xor_RSS {}
-impl ::core::clone::Clone for I32Xor_RSS {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl ::core::convert::From<I32Xor_RSS> for crate::Op {
-    fn from(op: I32Xor_RSS) -> Self {
-        Self::I32Xor_RSS {
-            result: op.result,
-            lhs: op.lhs,
-            rhs: op.rhs,
-        }
-    }
-}
-#[repr(C, packed)]
-pub struct I32Xor_RSI {
+pub struct I32BitAnd_RSI {
     pub result: crate::Reg,
     pub lhs: crate::Stack,
     pub rhs: ::core::primitive::i32,
 }
-impl ::core::marker::Copy for I32Xor_RSI {}
-impl ::core::clone::Clone for I32Xor_RSI {
+impl ::core::marker::Copy for I32BitAnd_RSI {}
+impl ::core::clone::Clone for I32BitAnd_RSI {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I32Xor_RSI> for crate::Op {
-    fn from(op: I32Xor_RSI) -> Self {
-        Self::I32Xor_RSI {
+impl ::core::convert::From<I32BitAnd_RSI> for crate::Op {
+    fn from(op: I32BitAnd_RSI) -> Self {
+        Self::I32BitAnd_RSI {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9595,20 +8923,20 @@ impl ::core::convert::From<I32Xor_RSI> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32Xor_SRS {
+pub struct I32BitAnd_SRS {
     pub result: crate::Stack,
     pub lhs: crate::Reg,
     pub rhs: crate::Stack,
 }
-impl ::core::marker::Copy for I32Xor_SRS {}
-impl ::core::clone::Clone for I32Xor_SRS {
+impl ::core::marker::Copy for I32BitAnd_SRS {}
+impl ::core::clone::Clone for I32BitAnd_SRS {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I32Xor_SRS> for crate::Op {
-    fn from(op: I32Xor_SRS) -> Self {
-        Self::I32Xor_SRS {
+impl ::core::convert::From<I32BitAnd_SRS> for crate::Op {
+    fn from(op: I32BitAnd_SRS) -> Self {
+        Self::I32BitAnd_SRS {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9616,20 +8944,20 @@ impl ::core::convert::From<I32Xor_SRS> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32Xor_SRI {
+pub struct I32BitAnd_SRI {
     pub result: crate::Stack,
     pub lhs: crate::Reg,
     pub rhs: ::core::primitive::i32,
 }
-impl ::core::marker::Copy for I32Xor_SRI {}
-impl ::core::clone::Clone for I32Xor_SRI {
+impl ::core::marker::Copy for I32BitAnd_SRI {}
+impl ::core::clone::Clone for I32BitAnd_SRI {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I32Xor_SRI> for crate::Op {
-    fn from(op: I32Xor_SRI) -> Self {
-        Self::I32Xor_SRI {
+impl ::core::convert::From<I32BitAnd_SRI> for crate::Op {
+    fn from(op: I32BitAnd_SRI) -> Self {
+        Self::I32BitAnd_SRI {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9637,20 +8965,20 @@ impl ::core::convert::From<I32Xor_SRI> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32Xor_SSS {
+pub struct I32BitAnd_SSS {
     pub result: crate::Stack,
     pub lhs: crate::Stack,
     pub rhs: crate::Stack,
 }
-impl ::core::marker::Copy for I32Xor_SSS {}
-impl ::core::clone::Clone for I32Xor_SSS {
+impl ::core::marker::Copy for I32BitAnd_SSS {}
+impl ::core::clone::Clone for I32BitAnd_SSS {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I32Xor_SSS> for crate::Op {
-    fn from(op: I32Xor_SSS) -> Self {
-        Self::I32Xor_SSS {
+impl ::core::convert::From<I32BitAnd_SSS> for crate::Op {
+    fn from(op: I32BitAnd_SSS) -> Self {
+        Self::I32BitAnd_SSS {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9658,20 +8986,20 @@ impl ::core::convert::From<I32Xor_SSS> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I32Xor_SSI {
+pub struct I32BitAnd_SSI {
     pub result: crate::Stack,
     pub lhs: crate::Stack,
     pub rhs: ::core::primitive::i32,
 }
-impl ::core::marker::Copy for I32Xor_SSI {}
-impl ::core::clone::Clone for I32Xor_SSI {
+impl ::core::marker::Copy for I32BitAnd_SSI {}
+impl ::core::clone::Clone for I32BitAnd_SSI {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I32Xor_SSI> for crate::Op {
-    fn from(op: I32Xor_SSI) -> Self {
-        Self::I32Xor_SSI {
+impl ::core::convert::From<I32BitAnd_SSI> for crate::Op {
+    fn from(op: I32BitAnd_SSI) -> Self {
+        Self::I32BitAnd_SSI {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9679,20 +9007,20 @@ impl ::core::convert::From<I32Xor_SSI> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Xor_RRS {
+pub struct I64BitAnd_RRS {
     pub result: crate::Reg,
     pub lhs: crate::Reg,
     pub rhs: crate::Stack,
 }
-impl ::core::marker::Copy for I64Xor_RRS {}
-impl ::core::clone::Clone for I64Xor_RRS {
+impl ::core::marker::Copy for I64BitAnd_RRS {}
+impl ::core::clone::Clone for I64BitAnd_RRS {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I64Xor_RRS> for crate::Op {
-    fn from(op: I64Xor_RRS) -> Self {
-        Self::I64Xor_RRS {
+impl ::core::convert::From<I64BitAnd_RRS> for crate::Op {
+    fn from(op: I64BitAnd_RRS) -> Self {
+        Self::I64BitAnd_RRS {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9700,20 +9028,20 @@ impl ::core::convert::From<I64Xor_RRS> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Xor_RRI {
+pub struct I64BitAnd_RRI {
     pub result: crate::Reg,
     pub lhs: crate::Reg,
     pub rhs: ::core::primitive::i64,
 }
-impl ::core::marker::Copy for I64Xor_RRI {}
-impl ::core::clone::Clone for I64Xor_RRI {
+impl ::core::marker::Copy for I64BitAnd_RRI {}
+impl ::core::clone::Clone for I64BitAnd_RRI {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I64Xor_RRI> for crate::Op {
-    fn from(op: I64Xor_RRI) -> Self {
-        Self::I64Xor_RRI {
+impl ::core::convert::From<I64BitAnd_RRI> for crate::Op {
+    fn from(op: I64BitAnd_RRI) -> Self {
+        Self::I64BitAnd_RRI {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9721,20 +9049,20 @@ impl ::core::convert::From<I64Xor_RRI> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Xor_RSS {
+pub struct I64BitAnd_RSS {
     pub result: crate::Reg,
     pub lhs: crate::Stack,
     pub rhs: crate::Stack,
 }
-impl ::core::marker::Copy for I64Xor_RSS {}
-impl ::core::clone::Clone for I64Xor_RSS {
+impl ::core::marker::Copy for I64BitAnd_RSS {}
+impl ::core::clone::Clone for I64BitAnd_RSS {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I64Xor_RSS> for crate::Op {
-    fn from(op: I64Xor_RSS) -> Self {
-        Self::I64Xor_RSS {
+impl ::core::convert::From<I64BitAnd_RSS> for crate::Op {
+    fn from(op: I64BitAnd_RSS) -> Self {
+        Self::I64BitAnd_RSS {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9742,20 +9070,20 @@ impl ::core::convert::From<I64Xor_RSS> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Xor_RSI {
+pub struct I64BitAnd_RSI {
     pub result: crate::Reg,
     pub lhs: crate::Stack,
     pub rhs: ::core::primitive::i64,
 }
-impl ::core::marker::Copy for I64Xor_RSI {}
-impl ::core::clone::Clone for I64Xor_RSI {
+impl ::core::marker::Copy for I64BitAnd_RSI {}
+impl ::core::clone::Clone for I64BitAnd_RSI {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I64Xor_RSI> for crate::Op {
-    fn from(op: I64Xor_RSI) -> Self {
-        Self::I64Xor_RSI {
+impl ::core::convert::From<I64BitAnd_RSI> for crate::Op {
+    fn from(op: I64BitAnd_RSI) -> Self {
+        Self::I64BitAnd_RSI {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9763,20 +9091,20 @@ impl ::core::convert::From<I64Xor_RSI> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Xor_SRS {
+pub struct I64BitAnd_SRS {
     pub result: crate::Stack,
     pub lhs: crate::Reg,
     pub rhs: crate::Stack,
 }
-impl ::core::marker::Copy for I64Xor_SRS {}
-impl ::core::clone::Clone for I64Xor_SRS {
+impl ::core::marker::Copy for I64BitAnd_SRS {}
+impl ::core::clone::Clone for I64BitAnd_SRS {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I64Xor_SRS> for crate::Op {
-    fn from(op: I64Xor_SRS) -> Self {
-        Self::I64Xor_SRS {
+impl ::core::convert::From<I64BitAnd_SRS> for crate::Op {
+    fn from(op: I64BitAnd_SRS) -> Self {
+        Self::I64BitAnd_SRS {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9784,20 +9112,20 @@ impl ::core::convert::From<I64Xor_SRS> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Xor_SRI {
+pub struct I64BitAnd_SRI {
     pub result: crate::Stack,
     pub lhs: crate::Reg,
     pub rhs: ::core::primitive::i64,
 }
-impl ::core::marker::Copy for I64Xor_SRI {}
-impl ::core::clone::Clone for I64Xor_SRI {
+impl ::core::marker::Copy for I64BitAnd_SRI {}
+impl ::core::clone::Clone for I64BitAnd_SRI {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I64Xor_SRI> for crate::Op {
-    fn from(op: I64Xor_SRI) -> Self {
-        Self::I64Xor_SRI {
+impl ::core::convert::From<I64BitAnd_SRI> for crate::Op {
+    fn from(op: I64BitAnd_SRI) -> Self {
+        Self::I64BitAnd_SRI {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9805,20 +9133,20 @@ impl ::core::convert::From<I64Xor_SRI> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Xor_SSS {
+pub struct I64BitAnd_SSS {
     pub result: crate::Stack,
     pub lhs: crate::Stack,
     pub rhs: crate::Stack,
 }
-impl ::core::marker::Copy for I64Xor_SSS {}
-impl ::core::clone::Clone for I64Xor_SSS {
+impl ::core::marker::Copy for I64BitAnd_SSS {}
+impl ::core::clone::Clone for I64BitAnd_SSS {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I64Xor_SSS> for crate::Op {
-    fn from(op: I64Xor_SSS) -> Self {
-        Self::I64Xor_SSS {
+impl ::core::convert::From<I64BitAnd_SSS> for crate::Op {
+    fn from(op: I64BitAnd_SSS) -> Self {
+        Self::I64BitAnd_SSS {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
@@ -9826,20 +9154,692 @@ impl ::core::convert::From<I64Xor_SSS> for crate::Op {
     }
 }
 #[repr(C, packed)]
-pub struct I64Xor_SSI {
+pub struct I64BitAnd_SSI {
     pub result: crate::Stack,
     pub lhs: crate::Stack,
     pub rhs: ::core::primitive::i64,
 }
-impl ::core::marker::Copy for I64Xor_SSI {}
-impl ::core::clone::Clone for I64Xor_SSI {
+impl ::core::marker::Copy for I64BitAnd_SSI {}
+impl ::core::clone::Clone for I64BitAnd_SSI {
     fn clone(&self) -> Self {
         *self
     }
 }
-impl ::core::convert::From<I64Xor_SSI> for crate::Op {
-    fn from(op: I64Xor_SSI) -> Self {
-        Self::I64Xor_SSI {
+impl ::core::convert::From<I64BitAnd_SSI> for crate::Op {
+    fn from(op: I64BitAnd_SSI) -> Self {
+        Self::I64BitAnd_SSI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitOr_RRS {
+    pub result: crate::Reg,
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I32BitOr_RRS {}
+impl ::core::clone::Clone for I32BitOr_RRS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitOr_RRS> for crate::Op {
+    fn from(op: I32BitOr_RRS) -> Self {
+        Self::I32BitOr_RRS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitOr_RRI {
+    pub result: crate::Reg,
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i32,
+}
+impl ::core::marker::Copy for I32BitOr_RRI {}
+impl ::core::clone::Clone for I32BitOr_RRI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitOr_RRI> for crate::Op {
+    fn from(op: I32BitOr_RRI) -> Self {
+        Self::I32BitOr_RRI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitOr_RSS {
+    pub result: crate::Reg,
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I32BitOr_RSS {}
+impl ::core::clone::Clone for I32BitOr_RSS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitOr_RSS> for crate::Op {
+    fn from(op: I32BitOr_RSS) -> Self {
+        Self::I32BitOr_RSS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitOr_RSI {
+    pub result: crate::Reg,
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i32,
+}
+impl ::core::marker::Copy for I32BitOr_RSI {}
+impl ::core::clone::Clone for I32BitOr_RSI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitOr_RSI> for crate::Op {
+    fn from(op: I32BitOr_RSI) -> Self {
+        Self::I32BitOr_RSI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitOr_SRS {
+    pub result: crate::Stack,
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I32BitOr_SRS {}
+impl ::core::clone::Clone for I32BitOr_SRS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitOr_SRS> for crate::Op {
+    fn from(op: I32BitOr_SRS) -> Self {
+        Self::I32BitOr_SRS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitOr_SRI {
+    pub result: crate::Stack,
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i32,
+}
+impl ::core::marker::Copy for I32BitOr_SRI {}
+impl ::core::clone::Clone for I32BitOr_SRI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitOr_SRI> for crate::Op {
+    fn from(op: I32BitOr_SRI) -> Self {
+        Self::I32BitOr_SRI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitOr_SSS {
+    pub result: crate::Stack,
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I32BitOr_SSS {}
+impl ::core::clone::Clone for I32BitOr_SSS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitOr_SSS> for crate::Op {
+    fn from(op: I32BitOr_SSS) -> Self {
+        Self::I32BitOr_SSS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitOr_SSI {
+    pub result: crate::Stack,
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i32,
+}
+impl ::core::marker::Copy for I32BitOr_SSI {}
+impl ::core::clone::Clone for I32BitOr_SSI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitOr_SSI> for crate::Op {
+    fn from(op: I32BitOr_SSI) -> Self {
+        Self::I32BitOr_SSI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitOr_RRS {
+    pub result: crate::Reg,
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I64BitOr_RRS {}
+impl ::core::clone::Clone for I64BitOr_RRS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitOr_RRS> for crate::Op {
+    fn from(op: I64BitOr_RRS) -> Self {
+        Self::I64BitOr_RRS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitOr_RRI {
+    pub result: crate::Reg,
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i64,
+}
+impl ::core::marker::Copy for I64BitOr_RRI {}
+impl ::core::clone::Clone for I64BitOr_RRI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitOr_RRI> for crate::Op {
+    fn from(op: I64BitOr_RRI) -> Self {
+        Self::I64BitOr_RRI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitOr_RSS {
+    pub result: crate::Reg,
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I64BitOr_RSS {}
+impl ::core::clone::Clone for I64BitOr_RSS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitOr_RSS> for crate::Op {
+    fn from(op: I64BitOr_RSS) -> Self {
+        Self::I64BitOr_RSS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitOr_RSI {
+    pub result: crate::Reg,
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i64,
+}
+impl ::core::marker::Copy for I64BitOr_RSI {}
+impl ::core::clone::Clone for I64BitOr_RSI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitOr_RSI> for crate::Op {
+    fn from(op: I64BitOr_RSI) -> Self {
+        Self::I64BitOr_RSI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitOr_SRS {
+    pub result: crate::Stack,
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I64BitOr_SRS {}
+impl ::core::clone::Clone for I64BitOr_SRS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitOr_SRS> for crate::Op {
+    fn from(op: I64BitOr_SRS) -> Self {
+        Self::I64BitOr_SRS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitOr_SRI {
+    pub result: crate::Stack,
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i64,
+}
+impl ::core::marker::Copy for I64BitOr_SRI {}
+impl ::core::clone::Clone for I64BitOr_SRI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitOr_SRI> for crate::Op {
+    fn from(op: I64BitOr_SRI) -> Self {
+        Self::I64BitOr_SRI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitOr_SSS {
+    pub result: crate::Stack,
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I64BitOr_SSS {}
+impl ::core::clone::Clone for I64BitOr_SSS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitOr_SSS> for crate::Op {
+    fn from(op: I64BitOr_SSS) -> Self {
+        Self::I64BitOr_SSS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitOr_SSI {
+    pub result: crate::Stack,
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i64,
+}
+impl ::core::marker::Copy for I64BitOr_SSI {}
+impl ::core::clone::Clone for I64BitOr_SSI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitOr_SSI> for crate::Op {
+    fn from(op: I64BitOr_SSI) -> Self {
+        Self::I64BitOr_SSI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitXor_RRS {
+    pub result: crate::Reg,
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I32BitXor_RRS {}
+impl ::core::clone::Clone for I32BitXor_RRS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitXor_RRS> for crate::Op {
+    fn from(op: I32BitXor_RRS) -> Self {
+        Self::I32BitXor_RRS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitXor_RRI {
+    pub result: crate::Reg,
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i32,
+}
+impl ::core::marker::Copy for I32BitXor_RRI {}
+impl ::core::clone::Clone for I32BitXor_RRI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitXor_RRI> for crate::Op {
+    fn from(op: I32BitXor_RRI) -> Self {
+        Self::I32BitXor_RRI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitXor_RSS {
+    pub result: crate::Reg,
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I32BitXor_RSS {}
+impl ::core::clone::Clone for I32BitXor_RSS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitXor_RSS> for crate::Op {
+    fn from(op: I32BitXor_RSS) -> Self {
+        Self::I32BitXor_RSS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitXor_RSI {
+    pub result: crate::Reg,
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i32,
+}
+impl ::core::marker::Copy for I32BitXor_RSI {}
+impl ::core::clone::Clone for I32BitXor_RSI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitXor_RSI> for crate::Op {
+    fn from(op: I32BitXor_RSI) -> Self {
+        Self::I32BitXor_RSI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitXor_SRS {
+    pub result: crate::Stack,
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I32BitXor_SRS {}
+impl ::core::clone::Clone for I32BitXor_SRS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitXor_SRS> for crate::Op {
+    fn from(op: I32BitXor_SRS) -> Self {
+        Self::I32BitXor_SRS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitXor_SRI {
+    pub result: crate::Stack,
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i32,
+}
+impl ::core::marker::Copy for I32BitXor_SRI {}
+impl ::core::clone::Clone for I32BitXor_SRI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitXor_SRI> for crate::Op {
+    fn from(op: I32BitXor_SRI) -> Self {
+        Self::I32BitXor_SRI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitXor_SSS {
+    pub result: crate::Stack,
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I32BitXor_SSS {}
+impl ::core::clone::Clone for I32BitXor_SSS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitXor_SSS> for crate::Op {
+    fn from(op: I32BitXor_SSS) -> Self {
+        Self::I32BitXor_SSS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I32BitXor_SSI {
+    pub result: crate::Stack,
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i32,
+}
+impl ::core::marker::Copy for I32BitXor_SSI {}
+impl ::core::clone::Clone for I32BitXor_SSI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I32BitXor_SSI> for crate::Op {
+    fn from(op: I32BitXor_SSI) -> Self {
+        Self::I32BitXor_SSI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitXor_RRS {
+    pub result: crate::Reg,
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I64BitXor_RRS {}
+impl ::core::clone::Clone for I64BitXor_RRS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitXor_RRS> for crate::Op {
+    fn from(op: I64BitXor_RRS) -> Self {
+        Self::I64BitXor_RRS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitXor_RRI {
+    pub result: crate::Reg,
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i64,
+}
+impl ::core::marker::Copy for I64BitXor_RRI {}
+impl ::core::clone::Clone for I64BitXor_RRI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitXor_RRI> for crate::Op {
+    fn from(op: I64BitXor_RRI) -> Self {
+        Self::I64BitXor_RRI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitXor_RSS {
+    pub result: crate::Reg,
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I64BitXor_RSS {}
+impl ::core::clone::Clone for I64BitXor_RSS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitXor_RSS> for crate::Op {
+    fn from(op: I64BitXor_RSS) -> Self {
+        Self::I64BitXor_RSS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitXor_RSI {
+    pub result: crate::Reg,
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i64,
+}
+impl ::core::marker::Copy for I64BitXor_RSI {}
+impl ::core::clone::Clone for I64BitXor_RSI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitXor_RSI> for crate::Op {
+    fn from(op: I64BitXor_RSI) -> Self {
+        Self::I64BitXor_RSI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitXor_SRS {
+    pub result: crate::Stack,
+    pub lhs: crate::Reg,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I64BitXor_SRS {}
+impl ::core::clone::Clone for I64BitXor_SRS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitXor_SRS> for crate::Op {
+    fn from(op: I64BitXor_SRS) -> Self {
+        Self::I64BitXor_SRS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitXor_SRI {
+    pub result: crate::Stack,
+    pub lhs: crate::Reg,
+    pub rhs: ::core::primitive::i64,
+}
+impl ::core::marker::Copy for I64BitXor_SRI {}
+impl ::core::clone::Clone for I64BitXor_SRI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitXor_SRI> for crate::Op {
+    fn from(op: I64BitXor_SRI) -> Self {
+        Self::I64BitXor_SRI {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitXor_SSS {
+    pub result: crate::Stack,
+    pub lhs: crate::Stack,
+    pub rhs: crate::Stack,
+}
+impl ::core::marker::Copy for I64BitXor_SSS {}
+impl ::core::clone::Clone for I64BitXor_SSS {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitXor_SSS> for crate::Op {
+    fn from(op: I64BitXor_SSS) -> Self {
+        Self::I64BitXor_SSS {
+            result: op.result,
+            lhs: op.lhs,
+            rhs: op.rhs,
+        }
+    }
+}
+#[repr(C, packed)]
+pub struct I64BitXor_SSI {
+    pub result: crate::Stack,
+    pub lhs: crate::Stack,
+    pub rhs: ::core::primitive::i64,
+}
+impl ::core::marker::Copy for I64BitXor_SSI {}
+impl ::core::clone::Clone for I64BitXor_SSI {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl ::core::convert::From<I64BitXor_SSI> for crate::Op {
+    fn from(op: I64BitXor_SSI) -> Self {
+        Self::I64BitXor_SSI {
             result: op.result,
             lhs: op.lhs,
             rhs: op.rhs,
