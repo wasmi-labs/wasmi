@@ -471,7 +471,7 @@ fn define_ibinop_ops(ctx: &mut Context) {
         ctx,
         true,
         [
-            "Add", "Mul", "BitAnd", "BitOr", "BitXor", "Eq", "Ne",
+            "Add", "Mul", "BitAnd", "BitOr", "BitXor", "And", "Or", "Xor", "Eq", "Ne",
         ],
         [ValTy::I32, ValTy::I64],
     );

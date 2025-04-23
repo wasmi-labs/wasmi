@@ -2207,3430 +2207,3670 @@ pub enum Op {
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 493_u16,
-    I32Eq_RRS {
+    I32And_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 494_u16,
-    I32Eq_RRI {
+    I32And_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
     } = 495_u16,
-    I32Eq_RSS {
+    I32And_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 496_u16,
-    I32Eq_RSI {
+    I32And_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
     } = 497_u16,
-    I32Eq_SRS {
+    I32And_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 498_u16,
-    I32Eq_SRI {
+    I32And_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
     } = 499_u16,
-    I32Eq_SSS {
+    I32And_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 500_u16,
-    I32Eq_SSI {
+    I32And_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
     } = 501_u16,
-    I64Eq_RRS {
+    I64And_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 502_u16,
-    I64Eq_RRI {
+    I64And_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
     } = 503_u16,
-    I64Eq_RSS {
+    I64And_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 504_u16,
-    I64Eq_RSI {
+    I64And_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 505_u16,
-    I64Eq_SRS {
+    I64And_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 506_u16,
-    I64Eq_SRI {
+    I64And_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
     } = 507_u16,
-    I64Eq_SSS {
+    I64And_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 508_u16,
-    I64Eq_SSI {
+    I64And_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 509_u16,
-    I32Ne_RRS {
+    I32Or_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 510_u16,
-    I32Ne_RRI {
+    I32Or_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
     } = 511_u16,
-    I32Ne_RSS {
+    I32Or_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 512_u16,
-    I32Ne_RSI {
+    I32Or_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
     } = 513_u16,
-    I32Ne_SRS {
+    I32Or_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 514_u16,
-    I32Ne_SRI {
+    I32Or_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
     } = 515_u16,
-    I32Ne_SSS {
+    I32Or_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 516_u16,
-    I32Ne_SSI {
+    I32Or_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
     } = 517_u16,
-    I64Ne_RRS {
+    I64Or_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 518_u16,
-    I64Ne_RRI {
+    I64Or_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
     } = 519_u16,
-    I64Ne_RSS {
+    I64Or_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 520_u16,
-    I64Ne_RSI {
+    I64Or_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 521_u16,
-    I64Ne_SRS {
+    I64Or_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 522_u16,
-    I64Ne_SRI {
+    I64Or_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
     } = 523_u16,
-    I64Ne_SSS {
+    I64Or_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 524_u16,
-    I64Ne_SSI {
+    I64Or_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
     } = 525_u16,
-    F32Add_RRS {
+    I32Xor_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 526_u16,
-    F32Add_RRI {
+    I32Xor_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 527_u16,
-    F32Add_RSS {
+    I32Xor_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 528_u16,
-    F32Add_RSI {
+    I32Xor_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 529_u16,
-    F32Add_SRS {
+    I32Xor_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 530_u16,
-    F32Add_SRI {
+    I32Xor_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 531_u16,
-    F32Add_SSS {
+    I32Xor_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 532_u16,
-    F32Add_SSI {
+    I32Xor_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 533_u16,
-    F64Add_RRS {
+    I64Xor_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 534_u16,
-    F64Add_RRI {
+    I64Xor_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 535_u16,
-    F64Add_RSS {
+    I64Xor_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 536_u16,
-    F64Add_RSI {
+    I64Xor_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 537_u16,
-    F64Add_SRS {
+    I64Xor_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 538_u16,
-    F64Add_SRI {
+    I64Xor_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 539_u16,
-    F64Add_SSS {
+    I64Xor_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 540_u16,
-    F64Add_SSI {
+    I64Xor_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 541_u16,
-    F32Mul_RRS {
+    I32Eq_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 542_u16,
-    F32Mul_RRI {
+    I32Eq_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 543_u16,
-    F32Mul_RSS {
+    I32Eq_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 544_u16,
-    F32Mul_RSI {
+    I32Eq_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 545_u16,
-    F32Mul_SRS {
+    I32Eq_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 546_u16,
-    F32Mul_SRI {
+    I32Eq_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 547_u16,
-    F32Mul_SSS {
+    I32Eq_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 548_u16,
-    F32Mul_SSI {
+    I32Eq_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 549_u16,
-    F64Mul_RRS {
+    I64Eq_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 550_u16,
-    F64Mul_RRI {
+    I64Eq_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 551_u16,
-    F64Mul_RSS {
+    I64Eq_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 552_u16,
-    F64Mul_RSI {
+    I64Eq_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 553_u16,
-    F64Mul_SRS {
+    I64Eq_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 554_u16,
-    F64Mul_SRI {
+    I64Eq_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 555_u16,
-    F64Mul_SSS {
+    I64Eq_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 556_u16,
-    F64Mul_SSI {
+    I64Eq_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 557_u16,
-    F32Eq_RRS {
+    I32Ne_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 558_u16,
-    F32Eq_RRI {
+    I32Ne_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 559_u16,
-    F32Eq_RSS {
+    I32Ne_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 560_u16,
-    F32Eq_RSI {
+    I32Ne_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 561_u16,
-    F32Eq_SRS {
+    I32Ne_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 562_u16,
-    F32Eq_SRI {
+    I32Ne_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 563_u16,
-    F32Eq_SSS {
+    I32Ne_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 564_u16,
-    F32Eq_SSI {
+    I32Ne_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f32,
+        rhs: ::core::primitive::i32,
     } = 565_u16,
-    F64Eq_RRS {
+    I64Ne_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 566_u16,
-    F64Eq_RRI {
+    I64Ne_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 567_u16,
-    F64Eq_RSS {
+    I64Ne_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 568_u16,
-    F64Eq_RSI {
+    I64Ne_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 569_u16,
-    F64Eq_SRS {
+    I64Ne_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 570_u16,
-    F64Eq_SRI {
+    I64Ne_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 571_u16,
-    F64Eq_SSS {
+    I64Ne_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 572_u16,
-    F64Eq_SSI {
+    I64Ne_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
-        rhs: ::core::primitive::f64,
+        rhs: ::core::primitive::i64,
     } = 573_u16,
-    F32Ne_RRS {
+    F32Add_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 574_u16,
-    F32Ne_RRI {
+    F32Add_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
     } = 575_u16,
-    F32Ne_RSS {
+    F32Add_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 576_u16,
-    F32Ne_RSI {
+    F32Add_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
     } = 577_u16,
-    F32Ne_SRS {
+    F32Add_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 578_u16,
-    F32Ne_SRI {
+    F32Add_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
     } = 579_u16,
-    F32Ne_SSS {
+    F32Add_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 580_u16,
-    F32Ne_SSI {
+    F32Add_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
     } = 581_u16,
-    F64Ne_RRS {
+    F64Add_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 582_u16,
-    F64Ne_RRI {
+    F64Add_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
     } = 583_u16,
-    F64Ne_RSS {
+    F64Add_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 584_u16,
-    F64Ne_RSI {
+    F64Add_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
     } = 585_u16,
-    F64Ne_SRS {
+    F64Add_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 586_u16,
-    F64Ne_SRI {
+    F64Add_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
     } = 587_u16,
-    F64Ne_SSS {
+    F64Add_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 588_u16,
-    F64Ne_SSI {
+    F64Add_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
     } = 589_u16,
-    F32Min_RRS {
+    F32Mul_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 590_u16,
-    F32Min_RRI {
+    F32Mul_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
     } = 591_u16,
-    F32Min_RSS {
+    F32Mul_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 592_u16,
-    F32Min_RSI {
+    F32Mul_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
     } = 593_u16,
-    F32Min_SRS {
+    F32Mul_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 594_u16,
-    F32Min_SRI {
+    F32Mul_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
     } = 595_u16,
-    F32Min_SSS {
+    F32Mul_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 596_u16,
-    F32Min_SSI {
+    F32Mul_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
     } = 597_u16,
-    F64Min_RRS {
+    F64Mul_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 598_u16,
-    F64Min_RRI {
+    F64Mul_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
     } = 599_u16,
-    F64Min_RSS {
+    F64Mul_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 600_u16,
-    F64Min_RSI {
+    F64Mul_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
     } = 601_u16,
-    F64Min_SRS {
+    F64Mul_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 602_u16,
-    F64Min_SRI {
+    F64Mul_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
     } = 603_u16,
-    F64Min_SSS {
+    F64Mul_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 604_u16,
-    F64Min_SSI {
+    F64Mul_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
     } = 605_u16,
-    F32Max_RRS {
+    F32Eq_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 606_u16,
-    F32Max_RRI {
+    F32Eq_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
     } = 607_u16,
-    F32Max_RSS {
+    F32Eq_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 608_u16,
-    F32Max_RSI {
+    F32Eq_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
     } = 609_u16,
-    F32Max_SRS {
+    F32Eq_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 610_u16,
-    F32Max_SRI {
+    F32Eq_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
     } = 611_u16,
-    F32Max_SSS {
+    F32Eq_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 612_u16,
-    F32Max_SSI {
+    F32Eq_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
     } = 613_u16,
-    F64Max_RRS {
+    F64Eq_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 614_u16,
-    F64Max_RRI {
+    F64Eq_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
     } = 615_u16,
-    F64Max_RSS {
+    F64Eq_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 616_u16,
-    F64Max_RSI {
+    F64Eq_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
     } = 617_u16,
-    F64Max_SRS {
+    F64Eq_SRS {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 618_u16,
-    F64Max_SRI {
+    F64Eq_SRI {
         result: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
     } = 619_u16,
-    F64Max_SSS {
+    F64Eq_SSS {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 620_u16,
-    F64Max_SSI {
+    F64Eq_SSI {
         result: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
     } = 621_u16,
-    I32Sub_RRS {
+    F32Ne_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
     } = 622_u16,
-    I32Sub_RRI {
+    F32Ne_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
-        rhs: ::core::primitive::i32,
+        rhs: ::core::primitive::f32,
     } = 623_u16,
-    I32Sub_RSR {
-        result: crate::Reg,
-        lhs: crate::Stack,
-        rhs: crate::Reg,
-    } = 624_u16,
-    I32Sub_RSS {
+    F32Ne_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 625_u16,
-    I32Sub_RSI {
+    } = 624_u16,
+    F32Ne_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
-        rhs: ::core::primitive::i32,
+        rhs: ::core::primitive::f32,
+    } = 625_u16,
+    F32Ne_SRS {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
     } = 626_u16,
-    I32Sub_RIR {
-        result: crate::Reg,
-        lhs: ::core::primitive::i32,
-        rhs: crate::Reg,
+    F32Ne_SRI {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
     } = 627_u16,
-    I32Sub_RIS {
-        result: crate::Reg,
-        lhs: ::core::primitive::i32,
+    F32Ne_SSS {
+        result: crate::Stack,
+        lhs: crate::Stack,
         rhs: crate::Stack,
     } = 628_u16,
-    I64Sub_RRS {
+    F32Ne_SSI {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
+    } = 629_u16,
+    F64Ne_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 629_u16,
-    I64Sub_RRI {
+    } = 630_u16,
+    F64Ne_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
-        rhs: ::core::primitive::i64,
-    } = 630_u16,
-    I64Sub_RSR {
-        result: crate::Reg,
-        lhs: crate::Stack,
-        rhs: crate::Reg,
+        rhs: ::core::primitive::f64,
     } = 631_u16,
-    I64Sub_RSS {
+    F64Ne_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
     } = 632_u16,
+    F64Ne_RSI {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
+    } = 633_u16,
+    F64Ne_SRS {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 634_u16,
+    F64Ne_SRI {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
+    } = 635_u16,
+    F64Ne_SSS {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 636_u16,
+    F64Ne_SSI {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
+    } = 637_u16,
+    F32Min_RRS {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 638_u16,
+    F32Min_RRI {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
+    } = 639_u16,
+    F32Min_RSS {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 640_u16,
+    F32Min_RSI {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
+    } = 641_u16,
+    F32Min_SRS {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 642_u16,
+    F32Min_SRI {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
+    } = 643_u16,
+    F32Min_SSS {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 644_u16,
+    F32Min_SSI {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
+    } = 645_u16,
+    F64Min_RRS {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 646_u16,
+    F64Min_RRI {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
+    } = 647_u16,
+    F64Min_RSS {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 648_u16,
+    F64Min_RSI {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
+    } = 649_u16,
+    F64Min_SRS {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 650_u16,
+    F64Min_SRI {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
+    } = 651_u16,
+    F64Min_SSS {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 652_u16,
+    F64Min_SSI {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
+    } = 653_u16,
+    F32Max_RRS {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 654_u16,
+    F32Max_RRI {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
+    } = 655_u16,
+    F32Max_RSS {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 656_u16,
+    F32Max_RSI {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
+    } = 657_u16,
+    F32Max_SRS {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 658_u16,
+    F32Max_SRI {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f32,
+    } = 659_u16,
+    F32Max_SSS {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 660_u16,
+    F32Max_SSI {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f32,
+    } = 661_u16,
+    F64Max_RRS {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 662_u16,
+    F64Max_RRI {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
+    } = 663_u16,
+    F64Max_RSS {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 664_u16,
+    F64Max_RSI {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
+    } = 665_u16,
+    F64Max_SRS {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 666_u16,
+    F64Max_SRI {
+        result: crate::Stack,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::f64,
+    } = 667_u16,
+    F64Max_SSS {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 668_u16,
+    F64Max_SSI {
+        result: crate::Stack,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::f64,
+    } = 669_u16,
+    I32Sub_RRS {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 670_u16,
+    I32Sub_RRI {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i32,
+    } = 671_u16,
+    I32Sub_RSR {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+    } = 672_u16,
+    I32Sub_RSS {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 673_u16,
+    I32Sub_RSI {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: ::core::primitive::i32,
+    } = 674_u16,
+    I32Sub_RIR {
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Reg,
+    } = 675_u16,
+    I32Sub_RIS {
+        result: crate::Reg,
+        lhs: ::core::primitive::i32,
+        rhs: crate::Stack,
+    } = 676_u16,
+    I64Sub_RRS {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: crate::Stack,
+    } = 677_u16,
+    I64Sub_RRI {
+        result: crate::Reg,
+        lhs: crate::Reg,
+        rhs: ::core::primitive::i64,
+    } = 678_u16,
+    I64Sub_RSR {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Reg,
+    } = 679_u16,
+    I64Sub_RSS {
+        result: crate::Reg,
+        lhs: crate::Stack,
+        rhs: crate::Stack,
+    } = 680_u16,
     I64Sub_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 633_u16,
+    } = 681_u16,
     I64Sub_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 634_u16,
+    } = 682_u16,
     I64Sub_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 635_u16,
+    } = 683_u16,
     I32LtS_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 636_u16,
+    } = 684_u16,
     I32LtS_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 637_u16,
+    } = 685_u16,
     I32LtS_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 638_u16,
+    } = 686_u16,
     I32LtS_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 639_u16,
+    } = 687_u16,
     I32LtS_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 640_u16,
+    } = 688_u16,
     I32LtS_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 641_u16,
+    } = 689_u16,
     I32LtS_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 642_u16,
+    } = 690_u16,
     I64LtS_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 643_u16,
+    } = 691_u16,
     I64LtS_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 644_u16,
+    } = 692_u16,
     I64LtS_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 645_u16,
+    } = 693_u16,
     I64LtS_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 646_u16,
+    } = 694_u16,
     I64LtS_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 647_u16,
+    } = 695_u16,
     I64LtS_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 648_u16,
+    } = 696_u16,
     I64LtS_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 649_u16,
+    } = 697_u16,
     I32LtU_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 650_u16,
+    } = 698_u16,
     I32LtU_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 651_u16,
+    } = 699_u16,
     I32LtU_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 652_u16,
+    } = 700_u16,
     I32LtU_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 653_u16,
+    } = 701_u16,
     I32LtU_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 654_u16,
+    } = 702_u16,
     I32LtU_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 655_u16,
+    } = 703_u16,
     I32LtU_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 656_u16,
+    } = 704_u16,
     I64LtU_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 657_u16,
+    } = 705_u16,
     I64LtU_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 658_u16,
+    } = 706_u16,
     I64LtU_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 659_u16,
+    } = 707_u16,
     I64LtU_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 660_u16,
+    } = 708_u16,
     I64LtU_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 661_u16,
+    } = 709_u16,
     I64LtU_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 662_u16,
+    } = 710_u16,
     I64LtU_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 663_u16,
+    } = 711_u16,
     I32LeS_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 664_u16,
+    } = 712_u16,
     I32LeS_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 665_u16,
+    } = 713_u16,
     I32LeS_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 666_u16,
+    } = 714_u16,
     I32LeS_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 667_u16,
+    } = 715_u16,
     I32LeS_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 668_u16,
+    } = 716_u16,
     I32LeS_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 669_u16,
+    } = 717_u16,
     I32LeS_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 670_u16,
+    } = 718_u16,
     I64LeS_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 671_u16,
+    } = 719_u16,
     I64LeS_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 672_u16,
+    } = 720_u16,
     I64LeS_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 673_u16,
+    } = 721_u16,
     I64LeS_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 674_u16,
+    } = 722_u16,
     I64LeS_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 675_u16,
+    } = 723_u16,
     I64LeS_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 676_u16,
+    } = 724_u16,
     I64LeS_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 677_u16,
+    } = 725_u16,
     I32LeU_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 678_u16,
+    } = 726_u16,
     I32LeU_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 679_u16,
+    } = 727_u16,
     I32LeU_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 680_u16,
+    } = 728_u16,
     I32LeU_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 681_u16,
+    } = 729_u16,
     I32LeU_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 682_u16,
+    } = 730_u16,
     I32LeU_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 683_u16,
+    } = 731_u16,
     I32LeU_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 684_u16,
+    } = 732_u16,
     I64LeU_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 685_u16,
+    } = 733_u16,
     I64LeU_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 686_u16,
+    } = 734_u16,
     I64LeU_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 687_u16,
+    } = 735_u16,
     I64LeU_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 688_u16,
+    } = 736_u16,
     I64LeU_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 689_u16,
+    } = 737_u16,
     I64LeU_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 690_u16,
+    } = 738_u16,
     I64LeU_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 691_u16,
+    } = 739_u16,
     I32DivS_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 692_u16,
+    } = 740_u16,
     I32DivS_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 693_u16,
+    } = 741_u16,
     I32DivS_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 694_u16,
+    } = 742_u16,
     I32DivS_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 695_u16,
+    } = 743_u16,
     I32DivS_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 696_u16,
+    } = 744_u16,
     I32DivS_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 697_u16,
+    } = 745_u16,
     I32DivS_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 698_u16,
+    } = 746_u16,
     I64DivS_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 699_u16,
+    } = 747_u16,
     I64DivS_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 700_u16,
+    } = 748_u16,
     I64DivS_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 701_u16,
+    } = 749_u16,
     I64DivS_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 702_u16,
+    } = 750_u16,
     I64DivS_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 703_u16,
+    } = 751_u16,
     I64DivS_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 704_u16,
+    } = 752_u16,
     I64DivS_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 705_u16,
+    } = 753_u16,
     I32DivU_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 706_u16,
+    } = 754_u16,
     I32DivU_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 707_u16,
+    } = 755_u16,
     I32DivU_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 708_u16,
+    } = 756_u16,
     I32DivU_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 709_u16,
+    } = 757_u16,
     I32DivU_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 710_u16,
+    } = 758_u16,
     I32DivU_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 711_u16,
+    } = 759_u16,
     I32DivU_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 712_u16,
+    } = 760_u16,
     I64DivU_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 713_u16,
+    } = 761_u16,
     I64DivU_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 714_u16,
+    } = 762_u16,
     I64DivU_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 715_u16,
+    } = 763_u16,
     I64DivU_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 716_u16,
+    } = 764_u16,
     I64DivU_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 717_u16,
+    } = 765_u16,
     I64DivU_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 718_u16,
+    } = 766_u16,
     I64DivU_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 719_u16,
+    } = 767_u16,
     I32RemS_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 720_u16,
+    } = 768_u16,
     I32RemS_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 721_u16,
+    } = 769_u16,
     I32RemS_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 722_u16,
+    } = 770_u16,
     I32RemS_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 723_u16,
+    } = 771_u16,
     I32RemS_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 724_u16,
+    } = 772_u16,
     I32RemS_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 725_u16,
+    } = 773_u16,
     I32RemS_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 726_u16,
+    } = 774_u16,
     I64RemS_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 727_u16,
+    } = 775_u16,
     I64RemS_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 728_u16,
+    } = 776_u16,
     I64RemS_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 729_u16,
+    } = 777_u16,
     I64RemS_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 730_u16,
+    } = 778_u16,
     I64RemS_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 731_u16,
+    } = 779_u16,
     I64RemS_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 732_u16,
+    } = 780_u16,
     I64RemS_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 733_u16,
+    } = 781_u16,
     I32RemU_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 734_u16,
+    } = 782_u16,
     I32RemU_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 735_u16,
+    } = 783_u16,
     I32RemU_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 736_u16,
+    } = 784_u16,
     I32RemU_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 737_u16,
+    } = 785_u16,
     I32RemU_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 738_u16,
+    } = 786_u16,
     I32RemU_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 739_u16,
+    } = 787_u16,
     I32RemU_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 740_u16,
+    } = 788_u16,
     I64RemU_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 741_u16,
+    } = 789_u16,
     I64RemU_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 742_u16,
+    } = 790_u16,
     I64RemU_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 743_u16,
+    } = 791_u16,
     I64RemU_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 744_u16,
+    } = 792_u16,
     I64RemU_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 745_u16,
+    } = 793_u16,
     I64RemU_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 746_u16,
+    } = 794_u16,
     I64RemU_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 747_u16,
+    } = 795_u16,
     I32Shl_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 748_u16,
+    } = 796_u16,
     I32Shl_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 749_u16,
+    } = 797_u16,
     I32Shl_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 750_u16,
+    } = 798_u16,
     I32Shl_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 751_u16,
+    } = 799_u16,
     I32Shl_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 752_u16,
+    } = 800_u16,
     I32Shl_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 753_u16,
+    } = 801_u16,
     I32Shl_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 754_u16,
+    } = 802_u16,
     I64Shl_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 755_u16,
+    } = 803_u16,
     I64Shl_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 756_u16,
+    } = 804_u16,
     I64Shl_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 757_u16,
+    } = 805_u16,
     I64Shl_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 758_u16,
+    } = 806_u16,
     I64Shl_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 759_u16,
+    } = 807_u16,
     I64Shl_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 760_u16,
+    } = 808_u16,
     I64Shl_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 761_u16,
+    } = 809_u16,
     I32ShrS_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 762_u16,
+    } = 810_u16,
     I32ShrS_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 763_u16,
+    } = 811_u16,
     I32ShrS_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 764_u16,
+    } = 812_u16,
     I32ShrS_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 765_u16,
+    } = 813_u16,
     I32ShrS_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 766_u16,
+    } = 814_u16,
     I32ShrS_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 767_u16,
+    } = 815_u16,
     I32ShrS_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 768_u16,
+    } = 816_u16,
     I64ShrS_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 769_u16,
+    } = 817_u16,
     I64ShrS_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 770_u16,
+    } = 818_u16,
     I64ShrS_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 771_u16,
+    } = 819_u16,
     I64ShrS_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 772_u16,
+    } = 820_u16,
     I64ShrS_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 773_u16,
+    } = 821_u16,
     I64ShrS_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 774_u16,
+    } = 822_u16,
     I64ShrS_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 775_u16,
+    } = 823_u16,
     I32ShrU_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 776_u16,
+    } = 824_u16,
     I32ShrU_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 777_u16,
+    } = 825_u16,
     I32ShrU_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 778_u16,
+    } = 826_u16,
     I32ShrU_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 779_u16,
+    } = 827_u16,
     I32ShrU_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 780_u16,
+    } = 828_u16,
     I32ShrU_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 781_u16,
+    } = 829_u16,
     I32ShrU_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 782_u16,
+    } = 830_u16,
     I64ShrU_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 783_u16,
+    } = 831_u16,
     I64ShrU_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 784_u16,
+    } = 832_u16,
     I64ShrU_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 785_u16,
+    } = 833_u16,
     I64ShrU_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 786_u16,
+    } = 834_u16,
     I64ShrU_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 787_u16,
+    } = 835_u16,
     I64ShrU_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 788_u16,
+    } = 836_u16,
     I64ShrU_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 789_u16,
+    } = 837_u16,
     I32Rotl_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 790_u16,
+    } = 838_u16,
     I32Rotl_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 791_u16,
+    } = 839_u16,
     I32Rotl_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 792_u16,
+    } = 840_u16,
     I32Rotl_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 793_u16,
+    } = 841_u16,
     I32Rotl_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 794_u16,
+    } = 842_u16,
     I32Rotl_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 795_u16,
+    } = 843_u16,
     I32Rotl_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 796_u16,
+    } = 844_u16,
     I64Rotl_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 797_u16,
+    } = 845_u16,
     I64Rotl_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 798_u16,
+    } = 846_u16,
     I64Rotl_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 799_u16,
+    } = 847_u16,
     I64Rotl_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 800_u16,
+    } = 848_u16,
     I64Rotl_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 801_u16,
+    } = 849_u16,
     I64Rotl_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 802_u16,
+    } = 850_u16,
     I64Rotl_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 803_u16,
+    } = 851_u16,
     I32Rotr_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 804_u16,
+    } = 852_u16,
     I32Rotr_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i32,
-    } = 805_u16,
+    } = 853_u16,
     I32Rotr_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 806_u16,
+    } = 854_u16,
     I32Rotr_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 807_u16,
+    } = 855_u16,
     I32Rotr_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 808_u16,
+    } = 856_u16,
     I32Rotr_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Reg,
-    } = 809_u16,
+    } = 857_u16,
     I32Rotr_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 810_u16,
+    } = 858_u16,
     I64Rotr_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 811_u16,
+    } = 859_u16,
     I64Rotr_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 812_u16,
+    } = 860_u16,
     I64Rotr_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 813_u16,
+    } = 861_u16,
     I64Rotr_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 814_u16,
+    } = 862_u16,
     I64Rotr_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 815_u16,
+    } = 863_u16,
     I64Rotr_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 816_u16,
+    } = 864_u16,
     I64Rotr_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 817_u16,
+    } = 865_u16,
     F32Sub_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 818_u16,
+    } = 866_u16,
     F32Sub_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
-    } = 819_u16,
+    } = 867_u16,
     F32Sub_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 820_u16,
+    } = 868_u16,
     F32Sub_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 821_u16,
+    } = 869_u16,
     F32Sub_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
-    } = 822_u16,
+    } = 870_u16,
     F32Sub_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::f32,
         rhs: crate::Reg,
-    } = 823_u16,
+    } = 871_u16,
     F32Sub_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::f32,
         rhs: crate::Stack,
-    } = 824_u16,
+    } = 872_u16,
     F64Sub_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 825_u16,
+    } = 873_u16,
     F64Sub_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
-    } = 826_u16,
+    } = 874_u16,
     F64Sub_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 827_u16,
+    } = 875_u16,
     F64Sub_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 828_u16,
+    } = 876_u16,
     F64Sub_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
-    } = 829_u16,
+    } = 877_u16,
     F64Sub_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::f64,
         rhs: crate::Reg,
-    } = 830_u16,
+    } = 878_u16,
     F64Sub_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::f64,
         rhs: crate::Stack,
-    } = 831_u16,
+    } = 879_u16,
     F32Div_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 832_u16,
+    } = 880_u16,
     F32Div_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
-    } = 833_u16,
+    } = 881_u16,
     F32Div_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 834_u16,
+    } = 882_u16,
     F32Div_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 835_u16,
+    } = 883_u16,
     F32Div_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
-    } = 836_u16,
+    } = 884_u16,
     F32Div_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::f32,
         rhs: crate::Reg,
-    } = 837_u16,
+    } = 885_u16,
     F32Div_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::f32,
         rhs: crate::Stack,
-    } = 838_u16,
+    } = 886_u16,
     F64Div_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 839_u16,
+    } = 887_u16,
     F64Div_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
-    } = 840_u16,
+    } = 888_u16,
     F64Div_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 841_u16,
+    } = 889_u16,
     F64Div_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 842_u16,
+    } = 890_u16,
     F64Div_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
-    } = 843_u16,
+    } = 891_u16,
     F64Div_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::f64,
         rhs: crate::Reg,
-    } = 844_u16,
+    } = 892_u16,
     F64Div_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::f64,
         rhs: crate::Stack,
-    } = 845_u16,
+    } = 893_u16,
     F32Copysign_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 846_u16,
+    } = 894_u16,
     F32Copysign_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
-    } = 847_u16,
+    } = 895_u16,
     F32Copysign_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 848_u16,
+    } = 896_u16,
     F32Copysign_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 849_u16,
+    } = 897_u16,
     F32Copysign_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
-    } = 850_u16,
+    } = 898_u16,
     F32Copysign_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::f32,
         rhs: crate::Reg,
-    } = 851_u16,
+    } = 899_u16,
     F32Copysign_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::f32,
         rhs: crate::Stack,
-    } = 852_u16,
+    } = 900_u16,
     F64Copysign_RRS {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 853_u16,
+    } = 901_u16,
     F64Copysign_RRI {
         result: crate::Reg,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
-    } = 854_u16,
+    } = 902_u16,
     F64Copysign_RSR {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 855_u16,
+    } = 903_u16,
     F64Copysign_RSS {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 856_u16,
+    } = 904_u16,
     F64Copysign_RSI {
         result: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
-    } = 857_u16,
+    } = 905_u16,
     F64Copysign_RIR {
         result: crate::Reg,
         lhs: ::core::primitive::f64,
         rhs: crate::Reg,
-    } = 858_u16,
+    } = 906_u16,
     F64Copysign_RIS {
         result: crate::Reg,
         lhs: ::core::primitive::f64,
         rhs: crate::Stack,
-    } = 859_u16,
+    } = 907_u16,
     I32Load_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 860_u16,
+    } = 908_u16,
     I32Load_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 861_u16,
+    } = 909_u16,
     I32Load_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 862_u16,
+    } = 910_u16,
     I32LoadMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 863_u16,
+    } = 911_u16,
     I32LoadMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 864_u16,
+    } = 912_u16,
     I32LoadMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 865_u16,
+    } = 913_u16,
     I32LoadMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 866_u16,
+    } = 914_u16,
     I32LoadMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 867_u16,
+    } = 915_u16,
     I32LoadMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 868_u16,
+    } = 916_u16,
     I64Load_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 869_u16,
+    } = 917_u16,
     I64Load_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 870_u16,
+    } = 918_u16,
     I64Load_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 871_u16,
+    } = 919_u16,
     I64LoadMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 872_u16,
+    } = 920_u16,
     I64LoadMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 873_u16,
+    } = 921_u16,
     I64LoadMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 874_u16,
+    } = 922_u16,
     I64LoadMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 875_u16,
+    } = 923_u16,
     I64LoadMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 876_u16,
+    } = 924_u16,
     I64LoadMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 877_u16,
+    } = 925_u16,
     F32Load_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 878_u16,
+    } = 926_u16,
     F32Load_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 879_u16,
+    } = 927_u16,
     F32Load_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 880_u16,
+    } = 928_u16,
     F32LoadMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 881_u16,
+    } = 929_u16,
     F32LoadMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 882_u16,
+    } = 930_u16,
     F32LoadMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 883_u16,
+    } = 931_u16,
     F32LoadMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 884_u16,
+    } = 932_u16,
     F32LoadMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 885_u16,
+    } = 933_u16,
     F32LoadMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 886_u16,
+    } = 934_u16,
     F64Load_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 887_u16,
+    } = 935_u16,
     F64Load_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 888_u16,
+    } = 936_u16,
     F64Load_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 889_u16,
+    } = 937_u16,
     F64LoadMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 890_u16,
+    } = 938_u16,
     F64LoadMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 891_u16,
+    } = 939_u16,
     F64LoadMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 892_u16,
+    } = 940_u16,
     F64LoadMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 893_u16,
+    } = 941_u16,
     F64LoadMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 894_u16,
+    } = 942_u16,
     F64LoadMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 895_u16,
+    } = 943_u16,
     I32Load8S_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 896_u16,
+    } = 944_u16,
     I32Load8S_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 897_u16,
+    } = 945_u16,
     I32Load8S_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 898_u16,
+    } = 946_u16,
     I32Load8SMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 899_u16,
+    } = 947_u16,
     I32Load8SMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 900_u16,
+    } = 948_u16,
     I32Load8SMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 901_u16,
+    } = 949_u16,
     I32Load8SMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 902_u16,
+    } = 950_u16,
     I32Load8SMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 903_u16,
+    } = 951_u16,
     I32Load8SMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 904_u16,
+    } = 952_u16,
     I64Load8S_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 905_u16,
+    } = 953_u16,
     I64Load8S_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 906_u16,
+    } = 954_u16,
     I64Load8S_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 907_u16,
+    } = 955_u16,
     I64Load8SMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 908_u16,
+    } = 956_u16,
     I64Load8SMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 909_u16,
+    } = 957_u16,
     I64Load8SMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 910_u16,
+    } = 958_u16,
     I64Load8SMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 911_u16,
+    } = 959_u16,
     I64Load8SMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 912_u16,
+    } = 960_u16,
     I64Load8SMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 913_u16,
+    } = 961_u16,
     I32Load8U_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 914_u16,
+    } = 962_u16,
     I32Load8U_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 915_u16,
+    } = 963_u16,
     I32Load8U_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 916_u16,
+    } = 964_u16,
     I32Load8UMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 917_u16,
+    } = 965_u16,
     I32Load8UMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 918_u16,
+    } = 966_u16,
     I32Load8UMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 919_u16,
+    } = 967_u16,
     I32Load8UMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 920_u16,
+    } = 968_u16,
     I32Load8UMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 921_u16,
+    } = 969_u16,
     I32Load8UMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 922_u16,
+    } = 970_u16,
     I64Load8U_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 923_u16,
+    } = 971_u16,
     I64Load8U_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 924_u16,
+    } = 972_u16,
     I64Load8U_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 925_u16,
+    } = 973_u16,
     I64Load8UMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 926_u16,
+    } = 974_u16,
     I64Load8UMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 927_u16,
+    } = 975_u16,
     I64Load8UMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 928_u16,
+    } = 976_u16,
     I64Load8UMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 929_u16,
+    } = 977_u16,
     I64Load8UMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 930_u16,
+    } = 978_u16,
     I64Load8UMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 931_u16,
+    } = 979_u16,
     I32Load16S_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 932_u16,
+    } = 980_u16,
     I32Load16S_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 933_u16,
+    } = 981_u16,
     I32Load16S_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 934_u16,
+    } = 982_u16,
     I32Load16SMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 935_u16,
+    } = 983_u16,
     I32Load16SMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 936_u16,
+    } = 984_u16,
     I32Load16SMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 937_u16,
+    } = 985_u16,
     I32Load16SMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 938_u16,
+    } = 986_u16,
     I32Load16SMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 939_u16,
+    } = 987_u16,
     I32Load16SMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 940_u16,
+    } = 988_u16,
     I64Load16S_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 941_u16,
+    } = 989_u16,
     I64Load16S_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 942_u16,
+    } = 990_u16,
     I64Load16S_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 943_u16,
+    } = 991_u16,
     I64Load16SMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 944_u16,
+    } = 992_u16,
     I64Load16SMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 945_u16,
+    } = 993_u16,
     I64Load16SMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 946_u16,
+    } = 994_u16,
     I64Load16SMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 947_u16,
+    } = 995_u16,
     I64Load16SMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 948_u16,
+    } = 996_u16,
     I64Load16SMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 949_u16,
+    } = 997_u16,
     I32Load16U_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 950_u16,
+    } = 998_u16,
     I32Load16U_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 951_u16,
+    } = 999_u16,
     I32Load16U_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 952_u16,
+    } = 1000_u16,
     I32Load16UMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 953_u16,
+    } = 1001_u16,
     I32Load16UMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 954_u16,
+    } = 1002_u16,
     I32Load16UMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 955_u16,
+    } = 1003_u16,
     I32Load16UMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 956_u16,
+    } = 1004_u16,
     I32Load16UMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 957_u16,
+    } = 1005_u16,
     I32Load16UMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 958_u16,
+    } = 1006_u16,
     I64Load16U_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 959_u16,
+    } = 1007_u16,
     I64Load16U_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 960_u16,
+    } = 1008_u16,
     I64Load16U_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 961_u16,
+    } = 1009_u16,
     I64Load16UMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 962_u16,
+    } = 1010_u16,
     I64Load16UMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 963_u16,
+    } = 1011_u16,
     I64Load16UMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 964_u16,
+    } = 1012_u16,
     I64Load16UMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 965_u16,
+    } = 1013_u16,
     I64Load16UMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 966_u16,
+    } = 1014_u16,
     I64Load16UMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 967_u16,
+    } = 1015_u16,
     I64Load32S_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 968_u16,
+    } = 1016_u16,
     I64Load32S_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 969_u16,
+    } = 1017_u16,
     I64Load32S_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 970_u16,
+    } = 1018_u16,
     I64Load32SMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 971_u16,
+    } = 1019_u16,
     I64Load32SMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 972_u16,
+    } = 1020_u16,
     I64Load32SMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 973_u16,
+    } = 1021_u16,
     I64Load32SMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 974_u16,
+    } = 1022_u16,
     I64Load32SMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 975_u16,
+    } = 1023_u16,
     I64Load32SMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 976_u16,
+    } = 1024_u16,
     I64Load32U_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 977_u16,
+    } = 1025_u16,
     I64Load32U_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 978_u16,
+    } = 1026_u16,
     I64Load32U_RI {
         result: crate::Reg,
         address: crate::Address,
         memory: crate::Memory,
-    } = 979_u16,
+    } = 1027_u16,
     I64Load32UMem0_RR {
         result: crate::Reg,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 980_u16,
+    } = 1028_u16,
     I64Load32UMem0_RS {
         result: crate::Reg,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 981_u16,
+    } = 1029_u16,
     I64Load32UMem0_RI {
         result: crate::Reg,
         address: crate::Address,
-    } = 982_u16,
+    } = 1030_u16,
     I64Load32UMem0_SR {
         result: crate::Stack,
         ptr: crate::Reg,
         offset: crate::Offset,
-    } = 983_u16,
+    } = 1031_u16,
     I64Load32UMem0_SS {
         result: crate::Stack,
         ptr: crate::Stack,
         offset: crate::Offset,
-    } = 984_u16,
+    } = 1032_u16,
     I64Load32UMem0_SI {
         result: crate::Stack,
         address: crate::Address,
-    } = 985_u16,
+    } = 1033_u16,
     I32Store_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 986_u16,
+    } = 1034_u16,
     I32Store_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 987_u16,
+    } = 1035_u16,
     I32Store_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 988_u16,
+    } = 1036_u16,
     I32Store_II {
         address: crate::Address,
         value: ::core::primitive::i32,
         memory: crate::Memory,
-    } = 989_u16,
+    } = 1037_u16,
     I32StoreMem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 990_u16,
+    } = 1038_u16,
     I32StoreMem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 991_u16,
+    } = 1039_u16,
     I32StoreMem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 992_u16,
+    } = 1040_u16,
     I32StoreMem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 993_u16,
+    } = 1041_u16,
     I32StoreMem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 994_u16,
+    } = 1042_u16,
     I32StoreMem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 995_u16,
+    } = 1043_u16,
     I32StoreMem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 996_u16,
+    } = 1044_u16,
     I32StoreMem0_II {
         address: crate::Address,
         value: ::core::primitive::i32,
-    } = 997_u16,
+    } = 1045_u16,
     I64Store_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 998_u16,
+    } = 1046_u16,
     I64Store_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 999_u16,
+    } = 1047_u16,
     I64Store_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1000_u16,
+    } = 1048_u16,
     I64Store_II {
         address: crate::Address,
         value: ::core::primitive::i64,
         memory: crate::Memory,
-    } = 1001_u16,
+    } = 1049_u16,
     I64StoreMem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1002_u16,
+    } = 1050_u16,
     I64StoreMem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1003_u16,
+    } = 1051_u16,
     I64StoreMem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1004_u16,
+    } = 1052_u16,
     I64StoreMem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1005_u16,
+    } = 1053_u16,
     I64StoreMem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1006_u16,
+    } = 1054_u16,
     I64StoreMem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1007_u16,
+    } = 1055_u16,
     I64StoreMem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1008_u16,
+    } = 1056_u16,
     I64StoreMem0_II {
         address: crate::Address,
         value: ::core::primitive::i64,
-    } = 1009_u16,
+    } = 1057_u16,
     F32Store_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1010_u16,
+    } = 1058_u16,
     F32Store_SI {
         ptr: crate::Stack,
         value: ::core::primitive::f32,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1011_u16,
+    } = 1059_u16,
     F32Store_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1012_u16,
+    } = 1060_u16,
     F32Store_II {
         address: crate::Address,
         value: ::core::primitive::f32,
         memory: crate::Memory,
-    } = 1013_u16,
+    } = 1061_u16,
     F32StoreMem0_RR {
         ptr: crate::Reg,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1014_u16,
+    } = 1062_u16,
     F32StoreMem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1015_u16,
+    } = 1063_u16,
     F32StoreMem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::f32,
         offset: crate::Offset,
-    } = 1016_u16,
+    } = 1064_u16,
     F32StoreMem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1017_u16,
+    } = 1065_u16,
     F32StoreMem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1018_u16,
+    } = 1066_u16,
     F32StoreMem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::f32,
         offset: crate::Offset,
-    } = 1019_u16,
+    } = 1067_u16,
     F32StoreMem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1020_u16,
+    } = 1068_u16,
     F32StoreMem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1021_u16,
+    } = 1069_u16,
     F32StoreMem0_II {
         address: crate::Address,
         value: ::core::primitive::f32,
-    } = 1022_u16,
+    } = 1070_u16,
     F64Store_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1023_u16,
+    } = 1071_u16,
     F64Store_SI {
         ptr: crate::Stack,
         value: ::core::primitive::f64,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1024_u16,
+    } = 1072_u16,
     F64Store_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1025_u16,
+    } = 1073_u16,
     F64Store_II {
         address: crate::Address,
         value: ::core::primitive::f64,
         memory: crate::Memory,
-    } = 1026_u16,
+    } = 1074_u16,
     F64StoreMem0_RR {
         ptr: crate::Reg,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1027_u16,
+    } = 1075_u16,
     F64StoreMem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1028_u16,
+    } = 1076_u16,
     F64StoreMem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::f64,
         offset: crate::Offset,
-    } = 1029_u16,
+    } = 1077_u16,
     F64StoreMem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1030_u16,
+    } = 1078_u16,
     F64StoreMem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1031_u16,
+    } = 1079_u16,
     F64StoreMem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::f64,
         offset: crate::Offset,
-    } = 1032_u16,
+    } = 1080_u16,
     F64StoreMem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1033_u16,
+    } = 1081_u16,
     F64StoreMem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1034_u16,
+    } = 1082_u16,
     F64StoreMem0_II {
         address: crate::Address,
         value: ::core::primitive::f64,
-    } = 1035_u16,
+    } = 1083_u16,
     I32Store8_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1036_u16,
+    } = 1084_u16,
     I32Store8_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1037_u16,
+    } = 1085_u16,
     I32Store8_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1038_u16,
+    } = 1086_u16,
     I32Store8_II {
         address: crate::Address,
         value: ::core::primitive::i32,
         memory: crate::Memory,
-    } = 1039_u16,
+    } = 1087_u16,
     I32Store8Mem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1040_u16,
+    } = 1088_u16,
     I32Store8Mem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 1041_u16,
+    } = 1089_u16,
     I32Store8Mem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1042_u16,
+    } = 1090_u16,
     I32Store8Mem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1043_u16,
+    } = 1091_u16,
     I32Store8Mem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 1044_u16,
+    } = 1092_u16,
     I32Store8Mem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1045_u16,
+    } = 1093_u16,
     I32Store8Mem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1046_u16,
+    } = 1094_u16,
     I32Store8Mem0_II {
         address: crate::Address,
         value: ::core::primitive::i32,
-    } = 1047_u16,
+    } = 1095_u16,
     I64Store8_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1048_u16,
+    } = 1096_u16,
     I64Store8_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1049_u16,
+    } = 1097_u16,
     I64Store8_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1050_u16,
+    } = 1098_u16,
     I64Store8_II {
         address: crate::Address,
         value: ::core::primitive::i64,
         memory: crate::Memory,
-    } = 1051_u16,
+    } = 1099_u16,
     I64Store8Mem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1052_u16,
+    } = 1100_u16,
     I64Store8Mem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1053_u16,
+    } = 1101_u16,
     I64Store8Mem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1054_u16,
+    } = 1102_u16,
     I64Store8Mem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1055_u16,
+    } = 1103_u16,
     I64Store8Mem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1056_u16,
+    } = 1104_u16,
     I64Store8Mem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1057_u16,
+    } = 1105_u16,
     I64Store8Mem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1058_u16,
+    } = 1106_u16,
     I64Store8Mem0_II {
         address: crate::Address,
         value: ::core::primitive::i64,
-    } = 1059_u16,
+    } = 1107_u16,
     I32Store16_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1060_u16,
+    } = 1108_u16,
     I32Store16_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1061_u16,
+    } = 1109_u16,
     I32Store16_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1062_u16,
+    } = 1110_u16,
     I32Store16_II {
         address: crate::Address,
         value: ::core::primitive::i32,
         memory: crate::Memory,
-    } = 1063_u16,
+    } = 1111_u16,
     I32Store16Mem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1064_u16,
+    } = 1112_u16,
     I32Store16Mem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 1065_u16,
+    } = 1113_u16,
     I32Store16Mem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1066_u16,
+    } = 1114_u16,
     I32Store16Mem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1067_u16,
+    } = 1115_u16,
     I32Store16Mem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i32,
         offset: crate::Offset,
-    } = 1068_u16,
+    } = 1116_u16,
     I32Store16Mem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1069_u16,
+    } = 1117_u16,
     I32Store16Mem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1070_u16,
+    } = 1118_u16,
     I32Store16Mem0_II {
         address: crate::Address,
         value: ::core::primitive::i32,
-    } = 1071_u16,
+    } = 1119_u16,
     I64Store16_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1072_u16,
+    } = 1120_u16,
     I64Store16_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1073_u16,
+    } = 1121_u16,
     I64Store16_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1074_u16,
+    } = 1122_u16,
     I64Store16_II {
         address: crate::Address,
         value: ::core::primitive::i64,
         memory: crate::Memory,
-    } = 1075_u16,
+    } = 1123_u16,
     I64Store16Mem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1076_u16,
+    } = 1124_u16,
     I64Store16Mem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1077_u16,
+    } = 1125_u16,
     I64Store16Mem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1078_u16,
+    } = 1126_u16,
     I64Store16Mem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1079_u16,
+    } = 1127_u16,
     I64Store16Mem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1080_u16,
+    } = 1128_u16,
     I64Store16Mem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1081_u16,
+    } = 1129_u16,
     I64Store16Mem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1082_u16,
+    } = 1130_u16,
     I64Store16Mem0_II {
         address: crate::Address,
         value: ::core::primitive::i64,
-    } = 1083_u16,
+    } = 1131_u16,
     I64Store32_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1084_u16,
+    } = 1132_u16,
     I64Store32_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
         memory: crate::Memory,
-    } = 1085_u16,
+    } = 1133_u16,
     I64Store32_IS {
         address: crate::Address,
         value: crate::Stack,
         memory: crate::Memory,
-    } = 1086_u16,
+    } = 1134_u16,
     I64Store32_II {
         address: crate::Address,
         value: ::core::primitive::i64,
         memory: crate::Memory,
-    } = 1087_u16,
+    } = 1135_u16,
     I64Store32Mem0_RS {
         ptr: crate::Reg,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1088_u16,
+    } = 1136_u16,
     I64Store32Mem0_RI {
         ptr: crate::Reg,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1089_u16,
+    } = 1137_u16,
     I64Store32Mem0_SR {
         ptr: crate::Stack,
         value: crate::Reg,
         offset: crate::Offset,
-    } = 1090_u16,
+    } = 1138_u16,
     I64Store32Mem0_SS {
         ptr: crate::Stack,
         value: crate::Stack,
         offset: crate::Offset,
-    } = 1091_u16,
+    } = 1139_u16,
     I64Store32Mem0_SI {
         ptr: crate::Stack,
         value: ::core::primitive::i64,
         offset: crate::Offset,
-    } = 1092_u16,
+    } = 1140_u16,
     I64Store32Mem0_IR {
         address: crate::Address,
         value: crate::Reg,
-    } = 1093_u16,
+    } = 1141_u16,
     I64Store32Mem0_IS {
         address: crate::Address,
         value: crate::Stack,
-    } = 1094_u16,
+    } = 1142_u16,
     I64Store32Mem0_II {
         address: crate::Address,
         value: ::core::primitive::i64,
-    } = 1095_u16,
+    } = 1143_u16,
     Select {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1096_u16,
+    } = 1144_u16,
     SelectI32_RSSS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1097_u16,
+    } = 1145_u16,
     SelectI32_RSSI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i32,
-    } = 1098_u16,
+    } = 1146_u16,
     SelectI32_RSIS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::i32,
         rhs: crate::Stack,
-    } = 1099_u16,
+    } = 1147_u16,
     SelectI32_RSII {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::i32,
         rhs: ::core::primitive::i32,
-    } = 1100_u16,
+    } = 1148_u16,
     SelectI64_RRSS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1101_u16,
+    } = 1149_u16,
     SelectI64_RRSI {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 1102_u16,
+    } = 1150_u16,
     SelectI64_RRIS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 1103_u16,
+    } = 1151_u16,
     SelectI64_RRII {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::i64,
         rhs: ::core::primitive::i64,
-    } = 1104_u16,
+    } = 1152_u16,
     SelectI64_RSRS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 1105_u16,
+    } = 1153_u16,
     SelectI64_RSRI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::i64,
-    } = 1106_u16,
+    } = 1154_u16,
     SelectI64_RSSR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 1107_u16,
+    } = 1155_u16,
     SelectI64_RSSS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1108_u16,
+    } = 1156_u16,
     SelectI64_RSSI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::i64,
-    } = 1109_u16,
+    } = 1157_u16,
     SelectI64_RSIR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::i64,
         rhs: crate::Reg,
-    } = 1110_u16,
+    } = 1158_u16,
     SelectI64_RSIS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::i64,
         rhs: crate::Stack,
-    } = 1111_u16,
+    } = 1159_u16,
     SelectI64_RSII {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::i64,
         rhs: ::core::primitive::i64,
-    } = 1112_u16,
+    } = 1160_u16,
     SelectF32_RRSS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1113_u16,
+    } = 1161_u16,
     SelectF32_RRSI {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
-    } = 1114_u16,
+    } = 1162_u16,
     SelectF32_RRIS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::f32,
         rhs: crate::Stack,
-    } = 1115_u16,
+    } = 1163_u16,
     SelectF32_RRII {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::f32,
         rhs: ::core::primitive::f32,
-    } = 1116_u16,
+    } = 1164_u16,
     SelectF32_RSRS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 1117_u16,
+    } = 1165_u16,
     SelectF32_RSRI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::f32,
-    } = 1118_u16,
+    } = 1166_u16,
     SelectF32_RSSR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 1119_u16,
+    } = 1167_u16,
     SelectF32_RSSS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1120_u16,
+    } = 1168_u16,
     SelectF32_RSSI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::f32,
-    } = 1121_u16,
+    } = 1169_u16,
     SelectF32_RSIR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f32,
         rhs: crate::Reg,
-    } = 1122_u16,
+    } = 1170_u16,
     SelectF32_RSIS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f32,
         rhs: crate::Stack,
-    } = 1123_u16,
+    } = 1171_u16,
     SelectF32_RSII {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f32,
         rhs: ::core::primitive::f32,
-    } = 1124_u16,
+    } = 1172_u16,
     SelectF64_RRSS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1125_u16,
+    } = 1173_u16,
     SelectF64_RRSI {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
-    } = 1126_u16,
+    } = 1174_u16,
     SelectF64_RRIS {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::f64,
         rhs: crate::Stack,
-    } = 1127_u16,
+    } = 1175_u16,
     SelectF64_RRII {
         result: crate::Reg,
         condition: crate::Reg,
         lhs: ::core::primitive::f64,
         rhs: ::core::primitive::f64,
-    } = 1128_u16,
+    } = 1176_u16,
     SelectF64_RSRS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: crate::Stack,
-    } = 1129_u16,
+    } = 1177_u16,
     SelectF64_RSRI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Reg,
         rhs: ::core::primitive::f64,
-    } = 1130_u16,
+    } = 1178_u16,
     SelectF64_RSSR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Reg,
-    } = 1131_u16,
+    } = 1179_u16,
     SelectF64_RSSS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: crate::Stack,
-    } = 1132_u16,
+    } = 1180_u16,
     SelectF64_RSSI {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: crate::Stack,
         rhs: ::core::primitive::f64,
-    } = 1133_u16,
+    } = 1181_u16,
     SelectF64_RSIR {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f64,
         rhs: crate::Reg,
-    } = 1134_u16,
+    } = 1182_u16,
     SelectF64_RSIS {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f64,
         rhs: crate::Stack,
-    } = 1135_u16,
+    } = 1183_u16,
     SelectF64_RSII {
         result: crate::Reg,
         condition: crate::Stack,
         lhs: ::core::primitive::f64,
         rhs: ::core::primitive::f64,
-    } = 1136_u16,
+    } = 1184_u16,
     TableSize_R {
         result: crate::Reg,
         table: crate::Table,
-    } = 1137_u16,
+    } = 1185_u16,
     TableSize_S {
         result: crate::Stack,
         table: crate::Table,
-    } = 1138_u16,
+    } = 1186_u16,
     TableGet_RR {
         result: crate::Reg,
         index: crate::Reg,
         table: crate::Table,
-    } = 1139_u16,
+    } = 1187_u16,
     TableGet_RS {
         result: crate::Reg,
         index: crate::Stack,
         table: crate::Table,
-    } = 1140_u16,
+    } = 1188_u16,
     TableGet_RI {
         result: crate::Reg,
         index: ::core::primitive::i64,
         table: crate::Table,
-    } = 1141_u16,
+    } = 1189_u16,
     TableSet_RS {
         index: crate::Reg,
         value: crate::Stack,
         table: crate::Table,
-    } = 1142_u16,
+    } = 1190_u16,
     TableSet_RI {
         index: crate::Reg,
         value: ::core::primitive::i32,
         table: crate::Table,
-    } = 1143_u16,
+    } = 1191_u16,
     TableSet_SR {
         index: crate::Stack,
         value: crate::Reg,
         table: crate::Table,
-    } = 1144_u16,
+    } = 1192_u16,
     TableSet_SS {
         index: crate::Stack,
         value: crate::Stack,
         table: crate::Table,
-    } = 1145_u16,
+    } = 1193_u16,
     TableSet_SI {
         index: crate::Stack,
         value: ::core::primitive::i32,
         table: crate::Table,
-    } = 1146_u16,
+    } = 1194_u16,
     TableSet_IR {
         index: ::core::primitive::i64,
         value: crate::Reg,
         table: crate::Table,
-    } = 1147_u16,
+    } = 1195_u16,
     TableSet_IS {
         index: ::core::primitive::i64,
         value: crate::Stack,
         table: crate::Table,
-    } = 1148_u16,
+    } = 1196_u16,
     TableSet_II {
         index: ::core::primitive::i64,
         value: ::core::primitive::i32,
         table: crate::Table,
-    } = 1149_u16,
+    } = 1197_u16,
     TableGrow {
         result: crate::Stack,
         delta: crate::Stack,
         table: crate::Table,
-    } = 1150_u16,
+    } = 1198_u16,
     TableCopy {
         dst_index: crate::Stack,
         src_index: crate::Stack,
         len: crate::Stack,
         dst_table: crate::Table,
         src_table: crate::Table,
-    } = 1151_u16,
+    } = 1199_u16,
     TableFill {
         dst_index: crate::Stack,
         value: crate::Stack,
         len: crate::Stack,
         table: crate::Table,
-    } = 1152_u16,
+    } = 1200_u16,
     TableInit {
         dst_index: crate::Stack,
         src_index: crate::Stack,
         len: crate::Stack,
         table: crate::Table,
         elem: crate::Elem,
-    } = 1153_u16,
+    } = 1201_u16,
     MemorySize_R {
         result: crate::Reg,
         memory: crate::Memory,
-    } = 1154_u16,
+    } = 1202_u16,
     MemorySize_S {
         result: crate::Stack,
         memory: crate::Memory,
-    } = 1155_u16,
+    } = 1203_u16,
     MemoryGrow {
         result: crate::Reg,
         delta: crate::Stack,
         memory: crate::Memory,
-    } = 1156_u16,
+    } = 1204_u16,
     MemoryCopy {
         dst_index: crate::Stack,
         src_index: crate::Stack,
         len: crate::Stack,
         dst_memory: crate::Memory,
         src_memory: crate::Memory,
-    } = 1157_u16,
+    } = 1205_u16,
     MemoryFill {
         dst_index: crate::Stack,
         value: crate::Stack,
         len: crate::Stack,
         memory: crate::Memory,
-    } = 1158_u16,
+    } = 1206_u16,
     MemoryInit {
         dst_index: crate::Stack,
         src_index: crate::Stack,
         len: crate::Stack,
         memory: crate::Memory,
         data: crate::Data,
-    } = 1159_u16,
+    } = 1207_u16,
     CallInternal {
         func: crate::WasmFunc,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1160_u16,
+    } = 1208_u16,
     ReturnCallInternal {
         func: crate::WasmFunc,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1161_u16,
+    } = 1209_u16,
     CallImported {
         func: crate::Func,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1162_u16,
+    } = 1210_u16,
     ReturnCallImported {
         func: crate::Func,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1163_u16,
+    } = 1211_u16,
     CallIndirect_R {
         table: crate::Table,
         index: crate::Reg,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1164_u16,
+    } = 1212_u16,
     CallIndirect_S {
         table: crate::Table,
         index: crate::Stack,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1165_u16,
+    } = 1213_u16,
     CallIndirect_I {
         table: crate::Table,
         index: ::core::primitive::i64,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1166_u16,
+    } = 1214_u16,
     ReturnCallIndirect_R {
         table: crate::Table,
         index: crate::Reg,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1167_u16,
+    } = 1215_u16,
     ReturnCallIndirect_S {
         table: crate::Table,
         index: crate::Stack,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1168_u16,
+    } = 1216_u16,
     ReturnCallIndirect_I {
         table: crate::Table,
         index: ::core::primitive::i64,
         len_params: ::core::primitive::usize,
         len_results: ::core::primitive::usize,
-    } = 1169_u16,
+    } = 1217_u16,
 }
 impl ::core::marker::Copy for Op {}
 impl ::core::clone::Clone for Op {
@@ -7126,6 +7366,150 @@ impl Op {
             }
             Self::I64BitXor_SSI { result, lhs, rhs } => {
                 encoder.encode(crate::op::I64BitXor_SSI { result, lhs, rhs })
+            }
+            Self::I32And_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32And_RRS { result, lhs, rhs })
+            }
+            Self::I32And_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32And_RRI { result, lhs, rhs })
+            }
+            Self::I32And_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32And_RSS { result, lhs, rhs })
+            }
+            Self::I32And_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32And_RSI { result, lhs, rhs })
+            }
+            Self::I32And_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32And_SRS { result, lhs, rhs })
+            }
+            Self::I32And_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32And_SRI { result, lhs, rhs })
+            }
+            Self::I32And_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32And_SSS { result, lhs, rhs })
+            }
+            Self::I32And_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32And_SSI { result, lhs, rhs })
+            }
+            Self::I64And_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64And_RRS { result, lhs, rhs })
+            }
+            Self::I64And_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64And_RRI { result, lhs, rhs })
+            }
+            Self::I64And_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64And_RSS { result, lhs, rhs })
+            }
+            Self::I64And_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64And_RSI { result, lhs, rhs })
+            }
+            Self::I64And_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64And_SRS { result, lhs, rhs })
+            }
+            Self::I64And_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64And_SRI { result, lhs, rhs })
+            }
+            Self::I64And_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64And_SSS { result, lhs, rhs })
+            }
+            Self::I64And_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64And_SSI { result, lhs, rhs })
+            }
+            Self::I32Or_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Or_RRS { result, lhs, rhs })
+            }
+            Self::I32Or_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Or_RRI { result, lhs, rhs })
+            }
+            Self::I32Or_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Or_RSS { result, lhs, rhs })
+            }
+            Self::I32Or_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Or_RSI { result, lhs, rhs })
+            }
+            Self::I32Or_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Or_SRS { result, lhs, rhs })
+            }
+            Self::I32Or_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Or_SRI { result, lhs, rhs })
+            }
+            Self::I32Or_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Or_SSS { result, lhs, rhs })
+            }
+            Self::I32Or_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Or_SSI { result, lhs, rhs })
+            }
+            Self::I64Or_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Or_RRS { result, lhs, rhs })
+            }
+            Self::I64Or_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Or_RRI { result, lhs, rhs })
+            }
+            Self::I64Or_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Or_RSS { result, lhs, rhs })
+            }
+            Self::I64Or_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Or_RSI { result, lhs, rhs })
+            }
+            Self::I64Or_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Or_SRS { result, lhs, rhs })
+            }
+            Self::I64Or_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Or_SRI { result, lhs, rhs })
+            }
+            Self::I64Or_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Or_SSS { result, lhs, rhs })
+            }
+            Self::I64Or_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Or_SSI { result, lhs, rhs })
+            }
+            Self::I32Xor_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Xor_RRS { result, lhs, rhs })
+            }
+            Self::I32Xor_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Xor_RRI { result, lhs, rhs })
+            }
+            Self::I32Xor_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Xor_RSS { result, lhs, rhs })
+            }
+            Self::I32Xor_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Xor_RSI { result, lhs, rhs })
+            }
+            Self::I32Xor_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Xor_SRS { result, lhs, rhs })
+            }
+            Self::I32Xor_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Xor_SRI { result, lhs, rhs })
+            }
+            Self::I32Xor_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Xor_SSS { result, lhs, rhs })
+            }
+            Self::I32Xor_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I32Xor_SSI { result, lhs, rhs })
+            }
+            Self::I64Xor_RRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Xor_RRS { result, lhs, rhs })
+            }
+            Self::I64Xor_RRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Xor_RRI { result, lhs, rhs })
+            }
+            Self::I64Xor_RSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Xor_RSS { result, lhs, rhs })
+            }
+            Self::I64Xor_RSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Xor_RSI { result, lhs, rhs })
+            }
+            Self::I64Xor_SRS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Xor_SRS { result, lhs, rhs })
+            }
+            Self::I64Xor_SRI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Xor_SRI { result, lhs, rhs })
+            }
+            Self::I64Xor_SSS { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Xor_SSS { result, lhs, rhs })
+            }
+            Self::I64Xor_SSI { result, lhs, rhs } => {
+                encoder.encode(crate::op::I64Xor_SSI { result, lhs, rhs })
             }
             Self::I32Eq_RRS { result, lhs, rhs } => {
                 encoder.encode(crate::op::I32Eq_RRS { result, lhs, rhs })
