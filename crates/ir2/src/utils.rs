@@ -32,10 +32,24 @@ pub enum OpResult {
     Stack(usize),
 }
 
+impl From<Reg> for OpResult {
+    fn from(_: Reg) -> Self {
+        Self::Reg
+    }
+}
+
+impl From<Stack> for OpResult {
+    fn from(value: Stack) -> Self {
+        Self::Stack(value.0)
+    }
+}
+
 /// Trait to query the result of an operator.
 pub trait OperatorResult {
     /// Returns the result of an operator if any.
-    fn op_result(&self) -> Option<OpResult>;
+    fn operator_result(&self) -> Option<OpResult> {
+        None
+    }
 }
 
 /// Trait to query the [`OpCode`][`crate::OpCode`] of operators.
@@ -47,8 +61,8 @@ pub trait OperatorCode {
 }
 
 /// Trait implemented by all operator types.
-pub trait Operator: Copy + OperatorCode + Into<Op> {}
-impl<T> Operator for T where T: Copy + OperatorCode + Into<Op> {}
+pub trait Operator: Copy + OperatorCode + Into<Op> + OperatorResult {}
+impl<T> Operator for T where T: Copy + OperatorCode + OperatorResult + Into<Op> {}
 
 /// Indicates that the operator type alias is vacant.
 #[derive(Copy, Clone)]
@@ -58,6 +72,7 @@ impl OperatorCode for NoOp {
         unreachable!("intentionally unimplemented: must never be used")
     }
 }
+impl OperatorResult for NoOp {}
 impl From<NoOp> for Op {
     fn from(_: NoOp) -> Self {
         unreachable!("intentionally unimplemented: must never be used")
