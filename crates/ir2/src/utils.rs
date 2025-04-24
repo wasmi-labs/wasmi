@@ -61,7 +61,8 @@ pub trait UpdateOperatorResult {
     type Output: Operator;
 
     /// Returns an operator copy of `self` with an update result.
-    fn update_operator_result(&self) -> Option<Self::Output> {
+    fn update_operator_result(&self, new_result: Stack) -> Option<Self::Output> {
+        _ = new_result;
         None
     }
 }
