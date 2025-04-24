@@ -15,24 +15,41 @@ pub struct Context {
     pub cmp_branch_ops: Vec<OpClass>,
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct DisplayOpName<'a> {
     name: &'a str,
-    suffix: &'a [OperandId],
+    suffix: DisplayOpNameSuffix,
+    ids: &'a [OperandId],
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum DisplayOpNameSuffix {
+    None,
+    Mem0,
+}
+
+impl Display for DisplayOpNameSuffix {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::None => Ok(()),
+            Self::Mem0 => write!(f, "Mem0"),
+        }
+    }
 }
 
 impl<'a> DisplayOpName<'a> {
-    pub fn new(name: &'a str, suffix: &'a [OperandId]) -> Self {
-        Self { name, suffix }
+    pub fn new(name: &'a str, suffix: DisplayOpNameSuffix, ids: &'a [OperandId]) -> Self {
+        Self { name, suffix, ids }
     }
 }
 
 impl<'a> Display for DisplayOpName<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.suffix.is_empty() {
+        if self.ids.is_empty() {
             return write!(f, "{}", self.name);
         }
-        write!(f, "{}_", self.name)?;
-        for id in self.suffix {
+        write!(f, "{}{}_", self.name, self.suffix)?;
+        for id in self.ids {
             write!(f, "{id}")?;
         }
         Ok(())
@@ -46,35 +63,62 @@ pub struct OpClass {
 
 macro_rules! impl_display_name_getter {
     (
-        $( fn $name:ident($ids:expr); )* $(;)?
+        $( fn $name:ident($suffix:expr, $ids:expr); )* $(;)?
     ) => {
         $(
             pub fn $name(&self) -> DisplayOpName {
-                DisplayOpName::new(&self.name, &$ids)
+                DisplayOpName::new(&self.name, $suffix, &$ids)
             }
         )*
     };
 }
 
+#[allow(dead_code)]
 impl OpClass {
     impl_display_name_getter! {
         // 1 ID
-        fn op_r([OperandId::Reg]);
-        fn op_s([OperandId::Stack]);
+        fn op_r(DisplayOpNameSuffix::None, [OperandId::Reg]);
+        fn op_s(DisplayOpNameSuffix::None, [OperandId::Stack]);
         // 2 IDs
-        fn op_rr([OperandId::Reg; 2]);
-        fn op_rs([OperandId::Reg, OperandId::Stack]);
-        fn op_sr([OperandId::Stack, OperandId::Reg]);
-        fn op_ss([OperandId::Stack, OperandId::Stack]);
+        fn op_rr(DisplayOpNameSuffix::None, [OperandId::Reg; 2]);
+        fn op_ri(DisplayOpNameSuffix::None, [OperandId::Reg, OperandId::Immediate]);
+        fn op_rs(DisplayOpNameSuffix::None, [OperandId::Reg, OperandId::Stack]);
+        fn op_sr(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Reg]);
+        fn op_si(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Immediate]);
+        fn op_ss(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Stack]);
+        fn op_ir(DisplayOpNameSuffix::None, [OperandId::Immediate, OperandId::Reg]);
+        fn op_ii(DisplayOpNameSuffix::None, [OperandId::Immediate, OperandId::Immediate]);
+        fn op_is(DisplayOpNameSuffix::None, [OperandId::Immediate, OperandId::Stack]);
+
+        fn op_mem0_rr(DisplayOpNameSuffix::Mem0, [OperandId::Reg, OperandId::Reg]);
+        fn op_mem0_ri(DisplayOpNameSuffix::Mem0, [OperandId::Reg, OperandId::Immediate]);
+        fn op_mem0_rs(DisplayOpNameSuffix::Mem0, [OperandId::Reg, OperandId::Stack]);
+        fn op_mem0_sr(DisplayOpNameSuffix::Mem0, [OperandId::Stack, OperandId::Reg]);
+        fn op_mem0_si(DisplayOpNameSuffix::Mem0, [OperandId::Stack, OperandId::Immediate]);
+        fn op_mem0_ss(DisplayOpNameSuffix::Mem0, [OperandId::Stack, OperandId::Stack]);
+        fn op_mem0_ir(DisplayOpNameSuffix::Mem0, [OperandId::Immediate, OperandId::Reg]);
+        fn op_mem0_ii(DisplayOpNameSuffix::Mem0, [OperandId::Immediate, OperandId::Immediate]);
+        fn op_mem0_is(DisplayOpNameSuffix::Mem0, [OperandId::Immediate, OperandId::Stack]);
+
         // 3 IDs
-        fn op_rrr([OperandId::Reg; 3]);
-        fn op_rrs([OperandId::Reg, OperandId::Reg, OperandId::Stack]);
-        fn op_rsr([OperandId::Reg, OperandId::Stack, OperandId::Reg]);
-        fn op_rss([OperandId::Reg, OperandId::Stack, OperandId::Stack]);
-        fn op_srr([OperandId::Stack, OperandId::Reg, OperandId::Reg]);
-        fn op_srs([OperandId::Stack, OperandId::Reg, OperandId::Stack]);
-        fn op_ssr([OperandId::Stack, OperandId::Stack, OperandId::Reg]);
-        fn op_sss([OperandId::Stack; 3]);
+        fn op_rrr(DisplayOpNameSuffix::None, [OperandId::Reg; 3]);
+        fn op_rrs(DisplayOpNameSuffix::None, [OperandId::Reg, OperandId::Reg, OperandId::Stack]);
+        fn op_rri(DisplayOpNameSuffix::None, [OperandId::Reg, OperandId::Reg, OperandId::Immediate]);
+        fn op_rsr(DisplayOpNameSuffix::None, [OperandId::Reg, OperandId::Stack, OperandId::Reg]);
+        fn op_rss(DisplayOpNameSuffix::None, [OperandId::Reg, OperandId::Stack, OperandId::Stack]);
+        fn op_rsi(DisplayOpNameSuffix::None, [OperandId::Reg, OperandId::Stack, OperandId::Immediate]);
+        fn op_rir(DisplayOpNameSuffix::None, [OperandId::Reg, OperandId::Immediate, OperandId::Reg]);
+        fn op_ris(DisplayOpNameSuffix::None, [OperandId::Reg, OperandId::Immediate, OperandId::Stack]);
+        fn op_rii(DisplayOpNameSuffix::None, [OperandId::Reg, OperandId::Immediate, OperandId::Immediate]);
+        fn op_srr(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Reg, OperandId::Reg]);
+        fn op_srs(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Reg, OperandId::Stack]);
+        fn op_sri(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Reg, OperandId::Immediate]);
+        fn op_ssr(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Stack, OperandId::Reg]);
+        fn op_sss(DisplayOpNameSuffix::None, [OperandId::Stack; 3]);
+        fn op_ssi(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Stack, OperandId::Immediate]);
+        fn op_sir(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Immediate, OperandId::Reg]);
+        fn op_sis(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Immediate, OperandId::Stack]);
+        fn op_sii(DisplayOpNameSuffix::None, [OperandId::Stack, OperandId::Immediate, OperandId::Immediate]);
     }
 }
 
