@@ -1,18 +1,18 @@
 use super::super::{DisplayIndent, Operand};
-use crate::instrs::LoadOp;
+use crate::instrs::OpClass;
 use core::{fmt, fmt::Display};
 
 pub struct DisplayLoadOperatorImpls<'a> {
-    ops: &'a [LoadOp],
+    ops: &'a [OpClass],
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayLoadOperatorImpls<'a> {
-    pub fn new(ops: &'a [LoadOp], indent: DisplayIndent) -> Self {
+    pub fn new(ops: &'a [OpClass], indent: DisplayIndent) -> Self {
         Self { ops, indent }
     }
 
-    fn emit(&self, f: &mut fmt::Formatter, op: &LoadOp) -> fmt::Result {
+    fn emit(&self, f: &mut fmt::Formatter, op: &OpClass) -> fmt::Result {
         let indent = self.indent;
         let name = &*op.name;
         let r_id = Operand::Reg.id();

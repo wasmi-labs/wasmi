@@ -1,39 +1,68 @@
 use super::{utils::ValTy, ImmediateTy};
+use crate::instrs::OperandId;
+use core::fmt::{self, Display};
 use std::{boxed::Box, vec::Vec};
 
 #[derive(Default)]
 pub struct Context {
     ops: Vec<Op>,
-    pub unary_ops: Vec<UnaryOp>,
-    pub binary_commutative_ops: Vec<BinaryOp>,
-    pub binary_ops: Vec<BinaryOp>,
-    pub load_ops: Vec<LoadOp>,
-    pub store_ops: Vec<StoreOp>,
-    pub cmp_branch_commutative_ops: Vec<CmpBranchOp>,
-    pub cmp_branch_ops: Vec<CmpBranchOp>,
+    pub unary_ops: Vec<OpClass>,
+    pub binary_commutative_ops: Vec<OpClass>,
+    pub binary_ops: Vec<OpClass>,
+    pub load_ops: Vec<OpClass>,
+    pub store_ops: Vec<OpClass>,
+    pub cmp_branch_commutative_ops: Vec<OpClass>,
+    pub cmp_branch_ops: Vec<OpClass>,
 }
 
-pub struct UnaryOp {
-    pub name: Box<str>,
+pub struct DisplayOpName<'a> {
+    name: &'a str,
+    suffix: &'a [OperandId],
 }
 
-pub struct BinaryOp {
-    pub name: Box<str>,
-    pub input_ty: ValTy,
+impl<'a> DisplayOpName<'a> {
+    pub fn new(name: &'a str, suffix: &'a [OperandId]) -> Self {
+        Self { name, suffix }
+    }
 }
 
-pub struct LoadOp {
-    pub name: Box<str>,
+impl<'a> Display for DisplayOpName<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.suffix.is_empty() {
+            return write!(f, "{}", self.name);
+        }
+        write!(f, "{}_", self.name)?;
+        for id in self.suffix {
+            write!(f, "{id}")?;
+        }
+        Ok(())
+    }
 }
 
-pub struct StoreOp {
+pub struct OpClass {
     pub name: Box<str>,
-    pub input_ty: ValTy,
+    pub ty: ValTy,
 }
 
-pub struct CmpBranchOp {
-    pub name: Box<str>,
-    pub input_ty: ValTy,
+macro_rules! impl_display_name_getter {
+    (
+        $( fn $name:ident($ids:expr); )* $(;)?
+    ) => {
+        $(
+            pub fn $name(&self) -> DisplayOpName {
+                DisplayOpName::new(&self.name, &$ids)
+            }
+        )*
+    };
+}
+
+impl OpClass {
+    impl_display_name_getter! {
+        fn op_rr([OperandId::Reg; 2]);
+        fn op_rs([OperandId::Reg, OperandId::Stack]);
+        fn op_sr([OperandId::Stack, OperandId::Reg]);
+        fn op_ss([OperandId::Stack, OperandId::Stack]);
+    }
 }
 
 impl Context {

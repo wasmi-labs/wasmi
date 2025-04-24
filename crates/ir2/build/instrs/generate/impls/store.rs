@@ -1,18 +1,18 @@
 use super::super::{DisplayIndent, Operand};
-use crate::instrs::{instrs::ImmediateTy, StoreOp};
+use crate::instrs::{instrs::ImmediateTy, OpClass};
 use core::{fmt, fmt::Display};
 
 pub struct DisplayStoreOperatorImpls<'a> {
-    ops: &'a [StoreOp],
+    ops: &'a [OpClass],
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayStoreOperatorImpls<'a> {
-    pub fn new(ops: &'a [StoreOp], indent: DisplayIndent) -> Self {
+    pub fn new(ops: &'a [OpClass], indent: DisplayIndent) -> Self {
         Self { ops, indent }
     }
 
-    fn emit(&self, f: &mut fmt::Formatter, op: &StoreOp) -> fmt::Result {
+    fn emit(&self, f: &mut fmt::Formatter, op: &OpClass) -> fmt::Result {
         let indent = self.indent;
         let name = &*op.name;
         let r_id = Operand::Reg.id();
@@ -31,7 +31,7 @@ impl<'a> DisplayStoreOperatorImpls<'a> {
         let op_si = format!("{name}_{s_id}{i_id}");
         let op_is = format!("{name}_{i_id}{s_id}");
         let op_ii = format!("{name}_{i_id}{i_id}");
-        let ty = ImmediateTy::from(op.input_ty);
+        let ty = ImmediateTy::from(op.ty);
         let (op_mem0_rr, op_mem0_rr_impl) = match ty {
             ImmediateTy::F32 | ImmediateTy::F64 => {
                 let alias = format!("crate::op::{op_mem0_rr}");

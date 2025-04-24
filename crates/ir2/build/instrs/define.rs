@@ -1,13 +1,4 @@
-use super::{
-    context::{BinaryOp, CmpBranchOp, LoadOp, StoreOp, UnaryOp},
-    Context,
-    FieldName,
-    FieldTy,
-    ImmediateTy,
-    Op,
-    Operand,
-    ValTy,
-};
+use super::{context::OpClass, Context, FieldName, FieldTy, ImmediateTy, Op, Operand, ValTy};
 use std::format;
 
 pub fn define_ops(ctx: &mut Context) {
@@ -122,9 +113,9 @@ fn define_fused_cmp_branch_ops_impl(
                 });
             }
         }
-        let op = CmpBranchOp {
+        let op = OpClass {
             name: name.into(),
-            input_ty: ty,
+            ty: ty,
         };
         match commutative {
             true => ctx.cmp_branch_commutative_ops.push(op),
@@ -203,7 +194,7 @@ fn define_unary_operator(ctx: &mut Context, name: &str, result_ty: ValTy, input_
             ],
         });
     }
-    ctx.unary_ops.push(UnaryOp { name })
+    ctx.unary_ops.push(OpClass { name, ty: input_ty })
 }
 
 fn define_iunop_ops(ctx: &mut Context) {
@@ -329,7 +320,10 @@ fn define_load_ops(ctx: &mut Context) {
                 }
             }
         }
-        ctx.load_ops.push(LoadOp { name: name.into() });
+        ctx.load_ops.push(OpClass {
+            name: name.into(),
+            ty,
+        });
     }
 }
 
@@ -406,9 +400,9 @@ fn define_store_ops(ctx: &mut Context) {
                 }
             }
         }
-        ctx.store_ops.push(StoreOp {
+        ctx.store_ops.push(OpClass {
             name: name.into(),
-            input_ty: ty,
+            ty: ty,
         });
     }
 }
@@ -454,9 +448,9 @@ fn define_binop_ops(
                     }
                 }
             }
-            let op_class = BinaryOp {
+            let op_class = OpClass {
                 name: name.into(),
-                input_ty: ty,
+                ty: ty,
             };
             match commutative {
                 true => ctx.binary_commutative_ops.push(op_class),

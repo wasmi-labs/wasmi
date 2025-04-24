@@ -6,21 +6,10 @@ mod define;
 mod generate;
 
 pub use self::{
-    context::{
-        BinaryOp,
-        CmpBranchOp,
-        Context,
-        Field,
-        FieldName,
-        FieldTy,
-        LoadOp,
-        Op,
-        StoreOp,
-        UnaryOp,
-    },
+    context::{Context, Field, FieldName, FieldTy, Op, OpClass},
     define::define_ops,
     generate::generate_ops,
-    utils::{ImmediateTy, Operand, ValTy},
+    utils::{ImmediateTy, Operand, OperandId, ValTy},
 };
 use std::io::Error as IoError;
 

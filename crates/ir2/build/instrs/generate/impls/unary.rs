@@ -1,18 +1,18 @@
 use super::super::{DisplayIndent, Operand};
-use crate::instrs::UnaryOp;
+use crate::instrs::OpClass;
 use core::{fmt, fmt::Display};
 
 pub struct DisplayUnaryOperatorImpls<'a> {
-    ops: &'a [UnaryOp],
+    ops: &'a [OpClass],
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayUnaryOperatorImpls<'a> {
-    pub fn new(ops: &'a [UnaryOp], indent: DisplayIndent) -> Self {
+    pub fn new(ops: &'a [OpClass], indent: DisplayIndent) -> Self {
         Self { ops, indent }
     }
 
-    fn emit(&self, f: &mut fmt::Formatter, op: &UnaryOp) -> fmt::Result {
+    fn emit(&self, f: &mut fmt::Formatter, op: &OpClass) -> fmt::Result {
         let indent = self.indent;
         let name = &*op.name;
         let r_id = Operand::Reg.id();

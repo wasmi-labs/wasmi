@@ -1,18 +1,18 @@
 use super::super::{DisplayIndent, ImmediateTy, Operand};
-use crate::instrs::BinaryOp;
+use crate::instrs::OpClass;
 use core::{fmt, fmt::Display};
 
 pub struct DisplayBinaryOperatorImpls<'a> {
-    ops: &'a [BinaryOp],
+    ops: &'a [OpClass],
     indent: DisplayIndent,
 }
 
 impl<'a> DisplayBinaryOperatorImpls<'a> {
-    pub fn new(ops: &'a [BinaryOp], indent: DisplayIndent) -> Self {
+    pub fn new(ops: &'a [OpClass], indent: DisplayIndent) -> Self {
         Self { ops, indent }
     }
 
-    fn emit(&self, f: &mut fmt::Formatter, op: &BinaryOp) -> fmt::Result {
+    fn emit(&self, f: &mut fmt::Formatter, op: &OpClass) -> fmt::Result {
         let indent = self.indent;
         let name = &*op.name;
         let r_id = Operand::Reg.id();
@@ -25,7 +25,7 @@ impl<'a> DisplayBinaryOperatorImpls<'a> {
         let op_rsi = format!("{}_{}{}{}", name, r_id, s_id, i_id);
         let op_rsr = format!("{}_{}{}{}", name, r_id, s_id, r_id);
         let op_rss = format!("{}_{}{}{}", name, r_id, s_id, s_id);
-        let imm = ImmediateTy::from(op.input_ty);
+        let imm = ImmediateTy::from(op.ty);
         write!(
             f,
             "\
