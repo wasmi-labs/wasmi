@@ -71,6 +71,13 @@ impl Op {
     pub fn push_field(&mut self, name: FieldName, ty: impl Into<FieldTy>) {
         self.fields.push(Field::new(name, ty.into()));
     }
+
+    pub fn result_ty(&self) -> Option<FieldTy> {
+        self.fields
+            .iter()
+            .find(|field| matches!(field.name, FieldName::Result))
+            .map(|field| field.ty)
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
