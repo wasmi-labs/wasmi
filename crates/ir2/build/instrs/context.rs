@@ -58,10 +58,23 @@ macro_rules! impl_display_name_getter {
 
 impl OpClass {
     impl_display_name_getter! {
+        // 1 ID
+        fn op_r([OperandId::Reg]);
+        fn op_s([OperandId::Stack]);
+        // 2 IDs
         fn op_rr([OperandId::Reg; 2]);
         fn op_rs([OperandId::Reg, OperandId::Stack]);
         fn op_sr([OperandId::Stack, OperandId::Reg]);
         fn op_ss([OperandId::Stack, OperandId::Stack]);
+        // 3 IDs
+        fn op_rrr([OperandId::Reg; 3]);
+        fn op_rrs([OperandId::Reg, OperandId::Reg, OperandId::Stack]);
+        fn op_rsr([OperandId::Reg, OperandId::Stack, OperandId::Reg]);
+        fn op_rss([OperandId::Reg, OperandId::Stack, OperandId::Stack]);
+        fn op_srr([OperandId::Stack, OperandId::Reg, OperandId::Reg]);
+        fn op_srs([OperandId::Stack, OperandId::Reg, OperandId::Stack]);
+        fn op_ssr([OperandId::Stack, OperandId::Stack, OperandId::Reg]);
+        fn op_sss([OperandId::Stack; 3]);
     }
 }
 
