@@ -1,4 +1,4 @@
-use super::super::{DisplayIndent, ImmediateTy, Operand};
+use super::super::{DisplayIndent, ImmediateTy};
 use crate::instrs::OpClass;
 use core::{fmt, fmt::Display};
 
@@ -15,13 +15,10 @@ impl<'a> DisplayCmpBranchCommutativeOperatorImpls<'a> {
     fn emit(&self, f: &mut fmt::Formatter, op: &OpClass) -> fmt::Result {
         let indent = self.indent;
         let name = &*op.name;
-        let r_id = Operand::Reg.id();
-        let s_id = Operand::Stack.id();
-        let i_id = Operand::Immediate.id();
-        let op_ri = format!("{}_{}{}", name, r_id, i_id);
-        let op_rs = format!("{}_{}{}", name, r_id, s_id);
-        let op_si = format!("{}_{}{}", name, s_id, i_id);
-        let op_ss = format!("{}_{}{}", name, s_id, s_id);
+        let op_ri = op.op_ri();
+        let op_rs = op.op_rs();
+        let op_si = op.op_si();
+        let op_ss = op.op_ss();
         let imm = ImmediateTy::from(op.ty);
         write!(
             f,

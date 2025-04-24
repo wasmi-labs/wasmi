@@ -1,4 +1,4 @@
-use super::super::{DisplayIndent, Operand};
+use super::super::DisplayIndent;
 use crate::instrs::OpClass;
 use core::{fmt, fmt::Display};
 
@@ -15,12 +15,10 @@ impl<'a> DisplayUnaryOperatorImpls<'a> {
     fn emit(&self, f: &mut fmt::Formatter, op: &OpClass) -> fmt::Result {
         let indent = self.indent;
         let name = &*op.name;
-        let r_id = Operand::Reg.id();
-        let s_id = Operand::Stack.id();
-        let op_rr = format!("{}_{}{}", name, r_id, r_id);
-        let op_rs = format!("{}_{}{}", name, r_id, s_id);
-        let op_sr = format!("{}_{}{}", name, s_id, r_id);
-        let op_ss = format!("{}_{}{}", name, s_id, s_id);
+        let op_rr = op.op_rr();
+        let op_rs = op.op_rs();
+        let op_sr = op.op_sr();
+        let op_ss = op.op_ss();
         write!(
             f,
             "\

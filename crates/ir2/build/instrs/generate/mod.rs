@@ -22,7 +22,7 @@ use self::{
     opty::DisplayOpEnum,
     utils::{DisplayFields, DisplayFieldsPattern, DisplayIndent, Visibility},
 };
-use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op, Operand};
+use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op};
 use std::{fmt::Display, fs, io};
 
 pub fn generate_ops(ctx: &Context) -> Result<(), io::Error> {

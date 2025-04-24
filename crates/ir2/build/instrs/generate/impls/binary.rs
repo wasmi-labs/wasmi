@@ -1,4 +1,4 @@
-use super::super::{DisplayIndent, ImmediateTy, Operand};
+use super::super::{DisplayIndent, ImmediateTy};
 use crate::instrs::OpClass;
 use core::{fmt, fmt::Display};
 
@@ -15,16 +15,13 @@ impl<'a> DisplayBinaryOperatorImpls<'a> {
     fn emit(&self, f: &mut fmt::Formatter, op: &OpClass) -> fmt::Result {
         let indent = self.indent;
         let name = &*op.name;
-        let r_id = Operand::Reg.id();
-        let s_id = Operand::Stack.id();
-        let i_id = Operand::Immediate.id();
-        let op_rir = format!("{}_{}{}{}", name, r_id, i_id, r_id);
-        let op_ris = format!("{}_{}{}{}", name, r_id, i_id, s_id);
-        let op_rri = format!("{}_{}{}{}", name, r_id, r_id, i_id);
-        let op_rrs = format!("{}_{}{}{}", name, r_id, r_id, s_id);
-        let op_rsi = format!("{}_{}{}{}", name, r_id, s_id, i_id);
-        let op_rsr = format!("{}_{}{}{}", name, r_id, s_id, r_id);
-        let op_rss = format!("{}_{}{}{}", name, r_id, s_id, s_id);
+        let op_rir = op.op_rir();
+        let op_ris = op.op_ris();
+        let op_rri = op.op_rri();
+        let op_rrs = op.op_rrs();
+        let op_rsi = op.op_rsi();
+        let op_rsr = op.op_rsr();
+        let op_rss = op.op_rss();
         let imm = ImmediateTy::from(op.ty);
         write!(
             f,

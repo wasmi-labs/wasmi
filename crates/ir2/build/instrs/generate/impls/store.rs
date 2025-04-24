@@ -1,4 +1,4 @@
-use super::super::{DisplayIndent, Operand};
+use super::super::DisplayIndent;
 use crate::instrs::{instrs::ImmediateTy, OpClass};
 use core::{fmt, fmt::Display};
 
@@ -15,22 +15,19 @@ impl<'a> DisplayStoreOperatorImpls<'a> {
     fn emit(&self, f: &mut fmt::Formatter, op: &OpClass) -> fmt::Result {
         let indent = self.indent;
         let name = &*op.name;
-        let r_id = Operand::Reg.id();
-        let s_id = Operand::Stack.id();
-        let i_id = Operand::Immediate.id();
-        let op_mem0_rr = format!("{name}Mem0_{r_id}{r_id}");
-        let op_mem0_ri = format!("{name}Mem0_{r_id}{i_id}");
-        let op_mem0_rs = format!("{name}Mem0_{r_id}{s_id}");
-        let op_mem0_sr = format!("{name}Mem0_{s_id}{r_id}");
-        let op_mem0_si = format!("{name}Mem0_{s_id}{i_id}");
-        let op_mem0_ss = format!("{name}Mem0_{s_id}{s_id}");
-        let op_mem0_ir = format!("{name}Mem0_{i_id}{r_id}");
-        let op_mem0_ii = format!("{name}Mem0_{i_id}{i_id}");
-        let op_mem0_is = format!("{name}Mem0_{i_id}{s_id}");
-        let op_ss = format!("{name}_{s_id}{s_id}");
-        let op_si = format!("{name}_{s_id}{i_id}");
-        let op_is = format!("{name}_{i_id}{s_id}");
-        let op_ii = format!("{name}_{i_id}{i_id}");
+        let op_mem0_rr = op.op_mem0_rr();
+        let op_mem0_ri = op.op_mem0_ri();
+        let op_mem0_rs = op.op_mem0_rs();
+        let op_mem0_sr = op.op_mem0_sr();
+        let op_mem0_si = op.op_mem0_si();
+        let op_mem0_ss = op.op_mem0_ss();
+        let op_mem0_ir = op.op_mem0_ir();
+        let op_mem0_ii = op.op_mem0_ii();
+        let op_mem0_is = op.op_mem0_is();
+        let op_ss = op.op_ss();
+        let op_si = op.op_si();
+        let op_is = op.op_is();
+        let op_ii = op.op_ii();
         let ty = ImmediateTy::from(op.ty);
         let (op_mem0_rr, op_mem0_rr_impl) = match ty {
             ImmediateTy::F32 | ImmediateTy::F64 => {
