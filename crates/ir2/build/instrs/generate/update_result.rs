@@ -61,7 +61,16 @@ impl<'a> DisplayUpdateOpResultImpl<'a> {
     fn emit(&self, f: &mut fmt::Formatter, op: &Op) -> fmt::Result {
         if op.result_ty().is_none() {
             return Ok(());
-        };
+        }
+        if matches!(
+            op.kind(),
+            OpClassKind::Select
+                | OpClassKind::Binary
+                | OpClassKind::TableGet
+                | OpClassKind::MemoryGrow
+        ) {
+            return Ok(());
+        }
         let indent = self.indent;
         let name = op.name();
         let fields_pattern = DisplayFieldsPattern::new(op.fields());
