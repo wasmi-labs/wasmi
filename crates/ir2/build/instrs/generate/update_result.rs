@@ -31,8 +31,7 @@ impl Display for DisplayUpdateOpResult<'_> {
             "// Do _not_ edit this file directly but change `build.rs` script logic instead."
             ""
             "impl crate::UpdateOperatorResult for crate::Op {"
-            "    type Output = Self;"
-            "    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {"
+            "    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self> {"
             "        match *self {"
                          display_impl
             "            _ => ::core::option::Option::None,"
@@ -59,7 +58,7 @@ impl<'a> DisplayUpdateOpResultImpl<'a> {
     }
 
     fn emit(&self, f: &mut fmt::Formatter, op: &Op) -> fmt::Result {
-        let Some(result_ty) = op.result_ty() else {
+        if op.result_ty().is_none() {
             return Ok(());
         };
         if matches!(
@@ -71,42 +70,17 @@ impl<'a> DisplayUpdateOpResultImpl<'a> {
         ) {
             return Ok(());
         }
-        let mut fields_without_result: Vec<Field> = Vec::new();
         let indent = self.indent;
         let name = op.name();
         let fields_pattern = DisplayFieldsPattern::new(op.fields());
-        match result_ty {
-            FieldTy::Reg => {
-                write!(
-                    f,
-                    "\
-                    {indent}Self::{name} {{ {fields_pattern} }} => \n\
-                    {indent}    <crate::op::{name} as crate::UpdateOperatorResult>::update_operator_result(\n\
-                    {indent}        &crate::op::{name} {{ {fields_pattern} }},\n\
-                    {indent}        new_result,\n\
-                    {indent}    ).map(<Self as ::core::convert::From<<crate::op::{name} as crate::UpdateOperatorResult>::Output>>::from),\n\
-                    "
-                )
-            }
-            FieldTy::Stack => {
-                fields_without_result.clear();
-                fields_without_result.extend(
-                    op.fields()
-                        .iter()
-                        .filter(|field| !matches!(field.name, FieldName::Result)),
-                );
-                let fields_without_result = DisplayFieldsPattern::new(&fields_without_result[..]);
-                write!(
-                    f,
-                    "\
-                    {indent}Self::{name} {{ {fields_without_result}, .. }} => ::core::option::Option::Some(Self::{name} {{\n\
-                    {indent}    result: new_result, {fields_without_result}\n\
-                    {indent}}}),\n\
-                    "
-                )
-            }
-            _ => unreachable!(),
-        }
+        write!(
+            f,
+            "\
+            {indent}Self::{name} {{ {fields_pattern} }} => {{\n\
+            {indent}    crate::op::{name} {{ {fields_pattern} }}.update_operator_result(new_result)\n\
+            {indent}}}\n\
+            "
+        )
     }
 }
 
@@ -146,9 +120,7 @@ impl<'a> DisplayUpdateOpResultImpls<'a> {
             write!(
                 f,
                 "\
-                {indent}impl crate::UpdateOperatorResult for crate::op::{name} {{\n\
-                {indent}    type Output = crate::NoOp;\n\
-                {indent}}}\n\
+                {indent}impl crate::UpdateOperatorResult for crate::op::{name} {{}}\n\
                 "
             )?;
             return Ok(());
@@ -157,9 +129,7 @@ impl<'a> DisplayUpdateOpResultImpls<'a> {
             write!(
                 f,
                 "\
-                {indent}impl crate::UpdateOperatorResult for crate::op::{name} {{\n\
-                {indent}    type Output = crate::NoOp;\n\
-                {indent}}}\n\
+                {indent}impl crate::UpdateOperatorResult for crate::op::{name} {{}}\n\
                 "
             )?;
             return Ok(());
@@ -179,15 +149,13 @@ impl<'a> DisplayUpdateOpResultImpls<'a> {
                 };
                 write!(f, "\
                     {indent}impl crate::UpdateOperatorResult for crate::op::{name} {{\n\
-                    {indent}    type Output = crate::op::{returned_op}_S;\n\
-                    {indent}    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {{\n\
-                    {indent}        ::core::option::Option::Some(Self::Output {{\n\
+                    {indent}    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {{\n\
+                    {indent}        ::core::option::Option::Some(crate::Op::{returned_op}_S {{\n\
                     {indent}            result: new_result,\n\
                     {indent}            index: self.index,\n\
                     {indent}        }})\n\
                     {indent}    }}\n\
                     {indent}}}\n\
-                    {indent}\
                     "
                 )?;
             }
@@ -196,15 +164,13 @@ impl<'a> DisplayUpdateOpResultImpls<'a> {
                     DisplayUpdateOpResultImplsFields::new(op.fields(), indent.inc_by(3));
                 write!(f, "\
                     {indent}impl crate::UpdateOperatorResult for crate::op::{name} {{\n\
-                    {indent}    type Output = Self;\n\
-                    {indent}    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {{\n\
-                    {indent}        ::core::option::Option::Some(Self::Output {{\n\
+                    {indent}    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {{\n\
+                    {indent}        ::core::option::Option::Some(crate::Op::{name} {{\n\
                     {indent}            result: new_result,\n\
                                         {other_fields}\
                     {indent}        }})\n\
                     {indent}    }}\n\
                     {indent}}}\n\
-                    {indent}\
                     "
                 )?;
             }
@@ -284,7 +250,7 @@ impl<'a> DisplayUpdateOpResultForUnaryOperators<'a> {
         let fields = &[FieldName::Input];
         write!(
             f,
-            "{}\n{}",
+            "{}{}",
             DisplayUpdateOpResultFor::new(op_rr, op_sr, fields, indent),
             DisplayUpdateOpResultFor::new(op_rs, op_ss, fields, indent),
         )?;
@@ -299,7 +265,6 @@ impl Display for DisplayUpdateOpResultForUnaryOperators<'_> {
         };
         self.emit(f, first)?;
         for op in rest {
-            writeln!(f)?;
             self.emit(f, op)?;
         }
         writeln!(f)?;
@@ -329,7 +294,7 @@ impl<'a> DisplayUpdateOpResultForBinaryCommutativeOperators<'a> {
         for (op_r, op_s) in ops {
             write!(
                 f,
-                "\n{}",
+                "{}",
                 DisplayUpdateOpResultFor::new(op_r, op_s, fields, indent)
             )?;
         }
@@ -381,12 +346,12 @@ impl<'a> DisplayUpdateOpResultForLoadOperators<'a> {
         for (op_r, op_s, fields) in mem0_ops {
             write!(
                 f,
-                "\n{}",
+                "{}",
                 DisplayUpdateOpResultFor::new(op_r, op_s, fields, indent)
             )?;
         }
         for op in ops {
-            write!(f, "\n{}", DisplayUpdateOpResultAsNoOp::new(op, indent))?;
+            write!(f, "{}", DisplayUpdateOpResultAsNoOp::new(op, indent))?;
         }
         Ok(())
     }
@@ -422,13 +387,9 @@ impl Display for DisplayUpdateOpResultAsNoOp<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let indent = self.indent;
         let self_op = self.self_ty;
-        write!(
+        writeln!(
             f,
-            "\
-            {indent}impl crate::UpdateOperatorResult for crate::op::{self_op} {{\n\
-            {indent}    type Output = crate::NoOp;\n\
-            {indent}}}\
-            "
+            "{indent}impl crate::UpdateOperatorResult for crate::op::{self_op} {{}}"
         )
     }
 }
@@ -466,14 +427,13 @@ impl Display for DisplayUpdateOpResultFor<'_> {
             f,
             "\
             {indent}impl crate::UpdateOperatorResult for crate::op::{self_op} {{\n\
-            {indent}    type Output = crate::op::{return_op};\n\
-            {indent}    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {{\n\
-            {indent}        ::core::option::Option::Some(Self::Output {{\n\
+            {indent}    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {{\n\
+            {indent}        ::core::option::Option::Some(crate::Op::{return_op} {{\n\
             {indent}            result: new_result,\n\
-                                {assign_fields}\
+                                {assign_fields}\n\
             {indent}        }})\n\
             {indent}    }}\n\
-            {indent}}}\
+            {indent}}}\n\
             "
         )
     }
@@ -505,7 +465,6 @@ impl Display for DisplayFieldsSelfAssignment<'_> {
             writeln!(f)?;
             self.emit(f, op)?;
         }
-        writeln!(f)?;
         Ok(())
     }
 }

@@ -3,4127 +3,2979 @@
 // Do _not_ edit this file directly but change `build.rs` script logic instead.
 
 impl crate::UpdateOperatorResult for crate::Op {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self> {
         match *self {
-            Self::Copy1_S { value, .. } => ::core::option::Option::Some(Self::Copy1_S {
-                result: new_result, value
-            }),
-            Self::Copy { len_values, .. } => ::core::option::Option::Some(Self::Copy {
-                result: new_result, len_values
-            }),
-            Self::Copy1I32_I { value, .. } => ::core::option::Option::Some(Self::Copy1I32_I {
-                result: new_result, value
-            }),
-            Self::Copy1I64_R { value, .. } => ::core::option::Option::Some(Self::Copy1I64_R {
-                result: new_result, value
-            }),
-            Self::Copy1I64_I { value, .. } => ::core::option::Option::Some(Self::Copy1I64_I {
-                result: new_result, value
-            }),
-            Self::Copy1F32_R { value, .. } => ::core::option::Option::Some(Self::Copy1F32_R {
-                result: new_result, value
-            }),
-            Self::Copy1F32_I { value, .. } => ::core::option::Option::Some(Self::Copy1F32_I {
-                result: new_result, value
-            }),
-            Self::Copy1F64_R { value, .. } => ::core::option::Option::Some(Self::Copy1F64_R {
-                result: new_result, value
-            }),
-            Self::Copy1F64_I { value, .. } => ::core::option::Option::Some(Self::Copy1F64_I {
-                result: new_result, value
-            }),
-            Self::GlobalGet_S { index, .. } => ::core::option::Option::Some(Self::GlobalGet_S {
-                result: new_result, index
-            }),
-            Self::GlobalGetI32_R { result, index } => 
-                <crate::op::GlobalGetI32_R as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::GlobalGetI32_R { result, index },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::GlobalGetI32_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::GlobalGetI64_R { result, index } => 
-                <crate::op::GlobalGetI64_R as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::GlobalGetI64_R { result, index },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::GlobalGetI64_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::GlobalGetF32_R { result, index } => 
-                <crate::op::GlobalGetF32_R as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::GlobalGetF32_R { result, index },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::GlobalGetF32_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::GlobalGetF64_R { result, index } => 
-                <crate::op::GlobalGetF64_R as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::GlobalGetF64_R { result, index },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::GlobalGetF64_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Popcnt_RR { result, input } => 
-                <crate::op::I32Popcnt_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Popcnt_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Popcnt_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Popcnt_RS { result, input } => 
-                <crate::op::I32Popcnt_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Popcnt_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Popcnt_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Popcnt_SR { input, .. } => ::core::option::Option::Some(Self::I32Popcnt_SR {
-                result: new_result, input
-            }),
-            Self::I32Popcnt_SS { input, .. } => ::core::option::Option::Some(Self::I32Popcnt_SS {
-                result: new_result, input
-            }),
-            Self::I64Popcnt_RR { result, input } => 
-                <crate::op::I64Popcnt_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Popcnt_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Popcnt_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Popcnt_RS { result, input } => 
-                <crate::op::I64Popcnt_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Popcnt_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Popcnt_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Popcnt_SR { input, .. } => ::core::option::Option::Some(Self::I64Popcnt_SR {
-                result: new_result, input
-            }),
-            Self::I64Popcnt_SS { input, .. } => ::core::option::Option::Some(Self::I64Popcnt_SS {
-                result: new_result, input
-            }),
-            Self::I32Clz_RR { result, input } => 
-                <crate::op::I32Clz_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Clz_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Clz_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Clz_RS { result, input } => 
-                <crate::op::I32Clz_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Clz_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Clz_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Clz_SR { input, .. } => ::core::option::Option::Some(Self::I32Clz_SR {
-                result: new_result, input
-            }),
-            Self::I32Clz_SS { input, .. } => ::core::option::Option::Some(Self::I32Clz_SS {
-                result: new_result, input
-            }),
-            Self::I64Clz_RR { result, input } => 
-                <crate::op::I64Clz_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Clz_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Clz_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Clz_RS { result, input } => 
-                <crate::op::I64Clz_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Clz_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Clz_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Clz_SR { input, .. } => ::core::option::Option::Some(Self::I64Clz_SR {
-                result: new_result, input
-            }),
-            Self::I64Clz_SS { input, .. } => ::core::option::Option::Some(Self::I64Clz_SS {
-                result: new_result, input
-            }),
-            Self::I32Ctz_RR { result, input } => 
-                <crate::op::I32Ctz_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ctz_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ctz_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ctz_RS { result, input } => 
-                <crate::op::I32Ctz_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ctz_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ctz_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ctz_SR { input, .. } => ::core::option::Option::Some(Self::I32Ctz_SR {
-                result: new_result, input
-            }),
-            Self::I32Ctz_SS { input, .. } => ::core::option::Option::Some(Self::I32Ctz_SS {
-                result: new_result, input
-            }),
-            Self::I64Ctz_RR { result, input } => 
-                <crate::op::I64Ctz_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ctz_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ctz_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ctz_RS { result, input } => 
-                <crate::op::I64Ctz_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ctz_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ctz_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ctz_SR { input, .. } => ::core::option::Option::Some(Self::I64Ctz_SR {
-                result: new_result, input
-            }),
-            Self::I64Ctz_SS { input, .. } => ::core::option::Option::Some(Self::I64Ctz_SS {
-                result: new_result, input
-            }),
-            Self::F32Abs_RR { result, input } => 
-                <crate::op::F32Abs_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Abs_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Abs_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Abs_RS { result, input } => 
-                <crate::op::F32Abs_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Abs_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Abs_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Abs_SR { input, .. } => ::core::option::Option::Some(Self::F32Abs_SR {
-                result: new_result, input
-            }),
-            Self::F32Abs_SS { input, .. } => ::core::option::Option::Some(Self::F32Abs_SS {
-                result: new_result, input
-            }),
-            Self::F64Abs_RR { result, input } => 
-                <crate::op::F64Abs_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Abs_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Abs_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Abs_RS { result, input } => 
-                <crate::op::F64Abs_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Abs_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Abs_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Abs_SR { input, .. } => ::core::option::Option::Some(Self::F64Abs_SR {
-                result: new_result, input
-            }),
-            Self::F64Abs_SS { input, .. } => ::core::option::Option::Some(Self::F64Abs_SS {
-                result: new_result, input
-            }),
-            Self::F32Neg_RR { result, input } => 
-                <crate::op::F32Neg_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Neg_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Neg_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Neg_RS { result, input } => 
-                <crate::op::F32Neg_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Neg_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Neg_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Neg_SR { input, .. } => ::core::option::Option::Some(Self::F32Neg_SR {
-                result: new_result, input
-            }),
-            Self::F32Neg_SS { input, .. } => ::core::option::Option::Some(Self::F32Neg_SS {
-                result: new_result, input
-            }),
-            Self::F64Neg_RR { result, input } => 
-                <crate::op::F64Neg_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Neg_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Neg_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Neg_RS { result, input } => 
-                <crate::op::F64Neg_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Neg_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Neg_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Neg_SR { input, .. } => ::core::option::Option::Some(Self::F64Neg_SR {
-                result: new_result, input
-            }),
-            Self::F64Neg_SS { input, .. } => ::core::option::Option::Some(Self::F64Neg_SS {
-                result: new_result, input
-            }),
-            Self::F32Ceil_RR { result, input } => 
-                <crate::op::F32Ceil_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ceil_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ceil_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ceil_RS { result, input } => 
-                <crate::op::F32Ceil_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ceil_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ceil_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ceil_SR { input, .. } => ::core::option::Option::Some(Self::F32Ceil_SR {
-                result: new_result, input
-            }),
-            Self::F32Ceil_SS { input, .. } => ::core::option::Option::Some(Self::F32Ceil_SS {
-                result: new_result, input
-            }),
-            Self::F64Ceil_RR { result, input } => 
-                <crate::op::F64Ceil_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ceil_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ceil_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ceil_RS { result, input } => 
-                <crate::op::F64Ceil_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ceil_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ceil_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ceil_SR { input, .. } => ::core::option::Option::Some(Self::F64Ceil_SR {
-                result: new_result, input
-            }),
-            Self::F64Ceil_SS { input, .. } => ::core::option::Option::Some(Self::F64Ceil_SS {
-                result: new_result, input
-            }),
-            Self::F32Floor_RR { result, input } => 
-                <crate::op::F32Floor_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Floor_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Floor_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Floor_RS { result, input } => 
-                <crate::op::F32Floor_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Floor_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Floor_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Floor_SR { input, .. } => ::core::option::Option::Some(Self::F32Floor_SR {
-                result: new_result, input
-            }),
-            Self::F32Floor_SS { input, .. } => ::core::option::Option::Some(Self::F32Floor_SS {
-                result: new_result, input
-            }),
-            Self::F64Floor_RR { result, input } => 
-                <crate::op::F64Floor_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Floor_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Floor_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Floor_RS { result, input } => 
-                <crate::op::F64Floor_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Floor_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Floor_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Floor_SR { input, .. } => ::core::option::Option::Some(Self::F64Floor_SR {
-                result: new_result, input
-            }),
-            Self::F64Floor_SS { input, .. } => ::core::option::Option::Some(Self::F64Floor_SS {
-                result: new_result, input
-            }),
-            Self::F32Trunc_RR { result, input } => 
-                <crate::op::F32Trunc_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Trunc_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Trunc_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Trunc_RS { result, input } => 
-                <crate::op::F32Trunc_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Trunc_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Trunc_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Trunc_SR { input, .. } => ::core::option::Option::Some(Self::F32Trunc_SR {
-                result: new_result, input
-            }),
-            Self::F32Trunc_SS { input, .. } => ::core::option::Option::Some(Self::F32Trunc_SS {
-                result: new_result, input
-            }),
-            Self::F64Trunc_RR { result, input } => 
-                <crate::op::F64Trunc_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Trunc_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Trunc_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Trunc_RS { result, input } => 
-                <crate::op::F64Trunc_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Trunc_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Trunc_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Trunc_SR { input, .. } => ::core::option::Option::Some(Self::F64Trunc_SR {
-                result: new_result, input
-            }),
-            Self::F64Trunc_SS { input, .. } => ::core::option::Option::Some(Self::F64Trunc_SS {
-                result: new_result, input
-            }),
-            Self::F32Nearest_RR { result, input } => 
-                <crate::op::F32Nearest_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Nearest_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Nearest_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Nearest_RS { result, input } => 
-                <crate::op::F32Nearest_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Nearest_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Nearest_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Nearest_SR { input, .. } => ::core::option::Option::Some(Self::F32Nearest_SR {
-                result: new_result, input
-            }),
-            Self::F32Nearest_SS { input, .. } => ::core::option::Option::Some(Self::F32Nearest_SS {
-                result: new_result, input
-            }),
-            Self::F64Nearest_RR { result, input } => 
-                <crate::op::F64Nearest_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Nearest_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Nearest_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Nearest_RS { result, input } => 
-                <crate::op::F64Nearest_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Nearest_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Nearest_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Nearest_SR { input, .. } => ::core::option::Option::Some(Self::F64Nearest_SR {
-                result: new_result, input
-            }),
-            Self::F64Nearest_SS { input, .. } => ::core::option::Option::Some(Self::F64Nearest_SS {
-                result: new_result, input
-            }),
-            Self::F32Sqrt_RR { result, input } => 
-                <crate::op::F32Sqrt_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Sqrt_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Sqrt_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Sqrt_RS { result, input } => 
-                <crate::op::F32Sqrt_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Sqrt_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Sqrt_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Sqrt_SR { input, .. } => ::core::option::Option::Some(Self::F32Sqrt_SR {
-                result: new_result, input
-            }),
-            Self::F32Sqrt_SS { input, .. } => ::core::option::Option::Some(Self::F32Sqrt_SS {
-                result: new_result, input
-            }),
-            Self::F64Sqrt_RR { result, input } => 
-                <crate::op::F64Sqrt_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Sqrt_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Sqrt_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Sqrt_RS { result, input } => 
-                <crate::op::F64Sqrt_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Sqrt_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Sqrt_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Sqrt_SR { input, .. } => ::core::option::Option::Some(Self::F64Sqrt_SR {
-                result: new_result, input
-            }),
-            Self::F64Sqrt_SS { input, .. } => ::core::option::Option::Some(Self::F64Sqrt_SS {
-                result: new_result, input
-            }),
-            Self::F32Demote_RR { result, input } => 
-                <crate::op::F32Demote_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Demote_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Demote_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Demote_RS { result, input } => 
-                <crate::op::F32Demote_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Demote_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Demote_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Demote_SR { input, .. } => ::core::option::Option::Some(Self::F32Demote_SR {
-                result: new_result, input
-            }),
-            Self::F32Demote_SS { input, .. } => ::core::option::Option::Some(Self::F32Demote_SS {
-                result: new_result, input
-            }),
-            Self::F64Promote_RR { result, input } => 
-                <crate::op::F64Promote_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Promote_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Promote_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Promote_RS { result, input } => 
-                <crate::op::F64Promote_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Promote_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Promote_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Promote_SR { input, .. } => ::core::option::Option::Some(Self::F64Promote_SR {
-                result: new_result, input
-            }),
-            Self::F64Promote_SS { input, .. } => ::core::option::Option::Some(Self::F64Promote_SS {
-                result: new_result, input
-            }),
-            Self::F32ConvertI32S_RR { result, input } => 
-                <crate::op::F32ConvertI32S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI32S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI32S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI32S_RS { result, input } => 
-                <crate::op::F32ConvertI32S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI32S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI32S_SR { input, .. } => ::core::option::Option::Some(Self::F32ConvertI32S_SR {
-                result: new_result, input
-            }),
-            Self::F32ConvertI32S_SS { input, .. } => ::core::option::Option::Some(Self::F32ConvertI32S_SS {
-                result: new_result, input
-            }),
-            Self::F32ConvertI32U_RR { result, input } => 
-                <crate::op::F32ConvertI32U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI32U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI32U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI32U_RS { result, input } => 
-                <crate::op::F32ConvertI32U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI32U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI32U_SR { input, .. } => ::core::option::Option::Some(Self::F32ConvertI32U_SR {
-                result: new_result, input
-            }),
-            Self::F32ConvertI32U_SS { input, .. } => ::core::option::Option::Some(Self::F32ConvertI32U_SS {
-                result: new_result, input
-            }),
-            Self::F32ConvertI64S_RR { result, input } => 
-                <crate::op::F32ConvertI64S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI64S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI64S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI64S_RS { result, input } => 
-                <crate::op::F32ConvertI64S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI64S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI64S_SR { input, .. } => ::core::option::Option::Some(Self::F32ConvertI64S_SR {
-                result: new_result, input
-            }),
-            Self::F32ConvertI64S_SS { input, .. } => ::core::option::Option::Some(Self::F32ConvertI64S_SS {
-                result: new_result, input
-            }),
-            Self::F32ConvertI64U_RR { result, input } => 
-                <crate::op::F32ConvertI64U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI64U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI64U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI64U_RS { result, input } => 
-                <crate::op::F32ConvertI64U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32ConvertI64U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32ConvertI64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32ConvertI64U_SR { input, .. } => ::core::option::Option::Some(Self::F32ConvertI64U_SR {
-                result: new_result, input
-            }),
-            Self::F32ConvertI64U_SS { input, .. } => ::core::option::Option::Some(Self::F32ConvertI64U_SS {
-                result: new_result, input
-            }),
-            Self::F64ConvertI32S_RR { result, input } => 
-                <crate::op::F64ConvertI32S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI32S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI32S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI32S_RS { result, input } => 
-                <crate::op::F64ConvertI32S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI32S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI32S_SR { input, .. } => ::core::option::Option::Some(Self::F64ConvertI32S_SR {
-                result: new_result, input
-            }),
-            Self::F64ConvertI32S_SS { input, .. } => ::core::option::Option::Some(Self::F64ConvertI32S_SS {
-                result: new_result, input
-            }),
-            Self::F64ConvertI32U_RR { result, input } => 
-                <crate::op::F64ConvertI32U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI32U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI32U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI32U_RS { result, input } => 
-                <crate::op::F64ConvertI32U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI32U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI32U_SR { input, .. } => ::core::option::Option::Some(Self::F64ConvertI32U_SR {
-                result: new_result, input
-            }),
-            Self::F64ConvertI32U_SS { input, .. } => ::core::option::Option::Some(Self::F64ConvertI32U_SS {
-                result: new_result, input
-            }),
-            Self::F64ConvertI64S_RR { result, input } => 
-                <crate::op::F64ConvertI64S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI64S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI64S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI64S_RS { result, input } => 
-                <crate::op::F64ConvertI64S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI64S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI64S_SR { input, .. } => ::core::option::Option::Some(Self::F64ConvertI64S_SR {
-                result: new_result, input
-            }),
-            Self::F64ConvertI64S_SS { input, .. } => ::core::option::Option::Some(Self::F64ConvertI64S_SS {
-                result: new_result, input
-            }),
-            Self::F64ConvertI64U_RR { result, input } => 
-                <crate::op::F64ConvertI64U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI64U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI64U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI64U_RS { result, input } => 
-                <crate::op::F64ConvertI64U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64ConvertI64U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64ConvertI64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64ConvertI64U_SR { input, .. } => ::core::option::Option::Some(Self::F64ConvertI64U_SR {
-                result: new_result, input
-            }),
-            Self::F64ConvertI64U_SS { input, .. } => ::core::option::Option::Some(Self::F64ConvertI64U_SS {
-                result: new_result, input
-            }),
-            Self::I32TruncF32S_RR { result, input } => 
-                <crate::op::I32TruncF32S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF32S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF32S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF32S_RS { result, input } => 
-                <crate::op::I32TruncF32S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF32S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF32S_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncF32S_SR {
-                result: new_result, input
-            }),
-            Self::I32TruncF32S_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncF32S_SS {
-                result: new_result, input
-            }),
-            Self::I32TruncF32U_RR { result, input } => 
-                <crate::op::I32TruncF32U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF32U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF32U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF32U_RS { result, input } => 
-                <crate::op::I32TruncF32U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF32U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF32U_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncF32U_SR {
-                result: new_result, input
-            }),
-            Self::I32TruncF32U_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncF32U_SS {
-                result: new_result, input
-            }),
-            Self::I32TruncF64S_RR { result, input } => 
-                <crate::op::I32TruncF64S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF64S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF64S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF64S_RS { result, input } => 
-                <crate::op::I32TruncF64S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF64S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF64S_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncF64S_SR {
-                result: new_result, input
-            }),
-            Self::I32TruncF64S_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncF64S_SS {
-                result: new_result, input
-            }),
-            Self::I32TruncF64U_RR { result, input } => 
-                <crate::op::I32TruncF64U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF64U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF64U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF64U_RS { result, input } => 
-                <crate::op::I32TruncF64U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncF64U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncF64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncF64U_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncF64U_SR {
-                result: new_result, input
-            }),
-            Self::I32TruncF64U_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncF64U_SS {
-                result: new_result, input
-            }),
-            Self::I64TruncF32S_RR { result, input } => 
-                <crate::op::I64TruncF32S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF32S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF32S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF32S_RS { result, input } => 
-                <crate::op::I64TruncF32S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF32S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF32S_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncF32S_SR {
-                result: new_result, input
-            }),
-            Self::I64TruncF32S_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncF32S_SS {
-                result: new_result, input
-            }),
-            Self::I64TruncF32U_RR { result, input } => 
-                <crate::op::I64TruncF32U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF32U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF32U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF32U_RS { result, input } => 
-                <crate::op::I64TruncF32U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF32U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF32U_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncF32U_SR {
-                result: new_result, input
-            }),
-            Self::I64TruncF32U_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncF32U_SS {
-                result: new_result, input
-            }),
-            Self::I64TruncF64S_RR { result, input } => 
-                <crate::op::I64TruncF64S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF64S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF64S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF64S_RS { result, input } => 
-                <crate::op::I64TruncF64S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF64S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF64S_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncF64S_SR {
-                result: new_result, input
-            }),
-            Self::I64TruncF64S_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncF64S_SS {
-                result: new_result, input
-            }),
-            Self::I64TruncF64U_RR { result, input } => 
-                <crate::op::I64TruncF64U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF64U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF64U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF64U_RS { result, input } => 
-                <crate::op::I64TruncF64U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncF64U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncF64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncF64U_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncF64U_SR {
-                result: new_result, input
-            }),
-            Self::I64TruncF64U_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncF64U_SS {
-                result: new_result, input
-            }),
-            Self::I32TruncSatF32S_RR { result, input } => 
-                <crate::op::I32TruncSatF32S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF32S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF32S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF32S_RS { result, input } => 
-                <crate::op::I32TruncSatF32S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF32S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF32S_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF32S_SR {
-                result: new_result, input
-            }),
-            Self::I32TruncSatF32S_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF32S_SS {
-                result: new_result, input
-            }),
-            Self::I32TruncSatF32U_RR { result, input } => 
-                <crate::op::I32TruncSatF32U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF32U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF32U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF32U_RS { result, input } => 
-                <crate::op::I32TruncSatF32U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF32U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF32U_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF32U_SR {
-                result: new_result, input
-            }),
-            Self::I32TruncSatF32U_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF32U_SS {
-                result: new_result, input
-            }),
-            Self::I32TruncSatF64S_RR { result, input } => 
-                <crate::op::I32TruncSatF64S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF64S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF64S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF64S_RS { result, input } => 
-                <crate::op::I32TruncSatF64S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF64S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF64S_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF64S_SR {
-                result: new_result, input
-            }),
-            Self::I32TruncSatF64S_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF64S_SS {
-                result: new_result, input
-            }),
-            Self::I32TruncSatF64U_RR { result, input } => 
-                <crate::op::I32TruncSatF64U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF64U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF64U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF64U_RS { result, input } => 
-                <crate::op::I32TruncSatF64U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32TruncSatF64U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32TruncSatF64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32TruncSatF64U_SR { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF64U_SR {
-                result: new_result, input
-            }),
-            Self::I32TruncSatF64U_SS { input, .. } => ::core::option::Option::Some(Self::I32TruncSatF64U_SS {
-                result: new_result, input
-            }),
-            Self::I64TruncSatF32S_RR { result, input } => 
-                <crate::op::I64TruncSatF32S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF32S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF32S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF32S_RS { result, input } => 
-                <crate::op::I64TruncSatF32S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF32S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF32S_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF32S_SR {
-                result: new_result, input
-            }),
-            Self::I64TruncSatF32S_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF32S_SS {
-                result: new_result, input
-            }),
-            Self::I64TruncSatF32U_RR { result, input } => 
-                <crate::op::I64TruncSatF32U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF32U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF32U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF32U_RS { result, input } => 
-                <crate::op::I64TruncSatF32U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF32U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF32U_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF32U_SR {
-                result: new_result, input
-            }),
-            Self::I64TruncSatF32U_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF32U_SS {
-                result: new_result, input
-            }),
-            Self::I64TruncSatF64S_RR { result, input } => 
-                <crate::op::I64TruncSatF64S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF64S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF64S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF64S_RS { result, input } => 
-                <crate::op::I64TruncSatF64S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF64S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF64S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF64S_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF64S_SR {
-                result: new_result, input
-            }),
-            Self::I64TruncSatF64S_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF64S_SS {
-                result: new_result, input
-            }),
-            Self::I64TruncSatF64U_RR { result, input } => 
-                <crate::op::I64TruncSatF64U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF64U_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF64U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF64U_RS { result, input } => 
-                <crate::op::I64TruncSatF64U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64TruncSatF64U_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64TruncSatF64U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64TruncSatF64U_SR { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF64U_SR {
-                result: new_result, input
-            }),
-            Self::I64TruncSatF64U_SS { input, .. } => ::core::option::Option::Some(Self::I64TruncSatF64U_SS {
-                result: new_result, input
-            }),
-            Self::I32Extend8S_RR { result, input } => 
-                <crate::op::I32Extend8S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Extend8S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Extend8S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Extend8S_RS { result, input } => 
-                <crate::op::I32Extend8S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Extend8S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Extend8S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Extend8S_SR { input, .. } => ::core::option::Option::Some(Self::I32Extend8S_SR {
-                result: new_result, input
-            }),
-            Self::I32Extend8S_SS { input, .. } => ::core::option::Option::Some(Self::I32Extend8S_SS {
-                result: new_result, input
-            }),
-            Self::I32Extend16S_RR { result, input } => 
-                <crate::op::I32Extend16S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Extend16S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Extend16S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Extend16S_RS { result, input } => 
-                <crate::op::I32Extend16S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Extend16S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Extend16S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Extend16S_SR { input, .. } => ::core::option::Option::Some(Self::I32Extend16S_SR {
-                result: new_result, input
-            }),
-            Self::I32Extend16S_SS { input, .. } => ::core::option::Option::Some(Self::I32Extend16S_SS {
-                result: new_result, input
-            }),
-            Self::I64Extend8S_RR { result, input } => 
-                <crate::op::I64Extend8S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend8S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend8S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend8S_RS { result, input } => 
-                <crate::op::I64Extend8S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend8S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend8S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend8S_SR { input, .. } => ::core::option::Option::Some(Self::I64Extend8S_SR {
-                result: new_result, input
-            }),
-            Self::I64Extend8S_SS { input, .. } => ::core::option::Option::Some(Self::I64Extend8S_SS {
-                result: new_result, input
-            }),
-            Self::I64Extend16S_RR { result, input } => 
-                <crate::op::I64Extend16S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend16S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend16S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend16S_RS { result, input } => 
-                <crate::op::I64Extend16S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend16S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend16S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend16S_SR { input, .. } => ::core::option::Option::Some(Self::I64Extend16S_SR {
-                result: new_result, input
-            }),
-            Self::I64Extend16S_SS { input, .. } => ::core::option::Option::Some(Self::I64Extend16S_SS {
-                result: new_result, input
-            }),
-            Self::I64Extend32S_RR { result, input } => 
-                <crate::op::I64Extend32S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend32S_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend32S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend32S_RS { result, input } => 
-                <crate::op::I64Extend32S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Extend32S_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Extend32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Extend32S_SR { input, .. } => ::core::option::Option::Some(Self::I64Extend32S_SR {
-                result: new_result, input
-            }),
-            Self::I64Extend32S_SS { input, .. } => ::core::option::Option::Some(Self::I64Extend32S_SS {
-                result: new_result, input
-            }),
-            Self::I32WrapI64_RR { result, input } => 
-                <crate::op::I32WrapI64_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32WrapI64_RR { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32WrapI64_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32WrapI64_RS { result, input } => 
-                <crate::op::I32WrapI64_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32WrapI64_RS { result, input },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32WrapI64_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32WrapI64_SR { input, .. } => ::core::option::Option::Some(Self::I32WrapI64_SR {
-                result: new_result, input
-            }),
-            Self::I32WrapI64_SS { input, .. } => ::core::option::Option::Some(Self::I32WrapI64_SS {
-                result: new_result, input
-            }),
-            Self::I32Add_RRS { result, lhs, rhs } => 
-                <crate::op::I32Add_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Add_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Add_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Add_RRI { result, lhs, rhs } => 
-                <crate::op::I32Add_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Add_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Add_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Add_RSS { result, lhs, rhs } => 
-                <crate::op::I32Add_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Add_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Add_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Add_RSI { result, lhs, rhs } => 
-                <crate::op::I32Add_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Add_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Add_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Add_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Add_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Add_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Add_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Add_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Add_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Add_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Add_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Add_RRS { result, lhs, rhs } => 
-                <crate::op::I64Add_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Add_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Add_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Add_RRI { result, lhs, rhs } => 
-                <crate::op::I64Add_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Add_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Add_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Add_RSS { result, lhs, rhs } => 
-                <crate::op::I64Add_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Add_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Add_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Add_RSI { result, lhs, rhs } => 
-                <crate::op::I64Add_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Add_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Add_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Add_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Add_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Add_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Add_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Add_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Add_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Add_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Add_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Mul_RRS { result, lhs, rhs } => 
-                <crate::op::I32Mul_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Mul_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Mul_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Mul_RRI { result, lhs, rhs } => 
-                <crate::op::I32Mul_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Mul_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Mul_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Mul_RSS { result, lhs, rhs } => 
-                <crate::op::I32Mul_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Mul_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Mul_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Mul_RSI { result, lhs, rhs } => 
-                <crate::op::I32Mul_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Mul_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Mul_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Mul_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Mul_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Mul_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Mul_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Mul_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Mul_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Mul_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Mul_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Mul_RRS { result, lhs, rhs } => 
-                <crate::op::I64Mul_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Mul_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Mul_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Mul_RRI { result, lhs, rhs } => 
-                <crate::op::I64Mul_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Mul_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Mul_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Mul_RSS { result, lhs, rhs } => 
-                <crate::op::I64Mul_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Mul_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Mul_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Mul_RSI { result, lhs, rhs } => 
-                <crate::op::I64Mul_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Mul_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Mul_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Mul_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Mul_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Mul_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Mul_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Mul_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Mul_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Mul_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Mul_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitAnd_RRS { result, lhs, rhs } => 
-                <crate::op::I32BitAnd_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitAnd_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitAnd_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitAnd_RRI { result, lhs, rhs } => 
-                <crate::op::I32BitAnd_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitAnd_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitAnd_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitAnd_RSS { result, lhs, rhs } => 
-                <crate::op::I32BitAnd_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitAnd_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitAnd_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitAnd_RSI { result, lhs, rhs } => 
-                <crate::op::I32BitAnd_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitAnd_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitAnd_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitAnd_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitAnd_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitAnd_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitAnd_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitAnd_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitAnd_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitAnd_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitAnd_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitAnd_RRS { result, lhs, rhs } => 
-                <crate::op::I64BitAnd_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitAnd_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitAnd_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitAnd_RRI { result, lhs, rhs } => 
-                <crate::op::I64BitAnd_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitAnd_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitAnd_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitAnd_RSS { result, lhs, rhs } => 
-                <crate::op::I64BitAnd_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitAnd_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitAnd_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitAnd_RSI { result, lhs, rhs } => 
-                <crate::op::I64BitAnd_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitAnd_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitAnd_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitAnd_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitAnd_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitAnd_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitAnd_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitAnd_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitAnd_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitAnd_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitAnd_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitOr_RRS { result, lhs, rhs } => 
-                <crate::op::I32BitOr_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitOr_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitOr_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitOr_RRI { result, lhs, rhs } => 
-                <crate::op::I32BitOr_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitOr_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitOr_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitOr_RSS { result, lhs, rhs } => 
-                <crate::op::I32BitOr_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitOr_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitOr_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitOr_RSI { result, lhs, rhs } => 
-                <crate::op::I32BitOr_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitOr_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitOr_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitOr_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitOr_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitOr_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitOr_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitOr_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitOr_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitOr_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitOr_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitOr_RRS { result, lhs, rhs } => 
-                <crate::op::I64BitOr_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitOr_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitOr_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitOr_RRI { result, lhs, rhs } => 
-                <crate::op::I64BitOr_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitOr_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitOr_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitOr_RSS { result, lhs, rhs } => 
-                <crate::op::I64BitOr_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitOr_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitOr_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitOr_RSI { result, lhs, rhs } => 
-                <crate::op::I64BitOr_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitOr_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitOr_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitOr_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitOr_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitOr_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitOr_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitOr_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitOr_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitOr_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitOr_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitXor_RRS { result, lhs, rhs } => 
-                <crate::op::I32BitXor_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitXor_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitXor_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitXor_RRI { result, lhs, rhs } => 
-                <crate::op::I32BitXor_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitXor_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitXor_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitXor_RSS { result, lhs, rhs } => 
-                <crate::op::I32BitXor_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitXor_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitXor_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitXor_RSI { result, lhs, rhs } => 
-                <crate::op::I32BitXor_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32BitXor_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32BitXor_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32BitXor_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitXor_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitXor_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitXor_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitXor_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitXor_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32BitXor_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32BitXor_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitXor_RRS { result, lhs, rhs } => 
-                <crate::op::I64BitXor_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitXor_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitXor_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitXor_RRI { result, lhs, rhs } => 
-                <crate::op::I64BitXor_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitXor_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitXor_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitXor_RSS { result, lhs, rhs } => 
-                <crate::op::I64BitXor_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitXor_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitXor_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitXor_RSI { result, lhs, rhs } => 
-                <crate::op::I64BitXor_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64BitXor_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64BitXor_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64BitXor_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitXor_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitXor_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitXor_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitXor_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitXor_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64BitXor_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64BitXor_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32And_RRS { result, lhs, rhs } => 
-                <crate::op::I32And_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32And_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32And_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32And_RRI { result, lhs, rhs } => 
-                <crate::op::I32And_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32And_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32And_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32And_RSS { result, lhs, rhs } => 
-                <crate::op::I32And_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32And_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32And_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32And_RSI { result, lhs, rhs } => 
-                <crate::op::I32And_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32And_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32And_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32And_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32And_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32And_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32And_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32And_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32And_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32And_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32And_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64And_RRS { result, lhs, rhs } => 
-                <crate::op::I64And_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64And_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64And_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64And_RRI { result, lhs, rhs } => 
-                <crate::op::I64And_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64And_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64And_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64And_RSS { result, lhs, rhs } => 
-                <crate::op::I64And_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64And_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64And_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64And_RSI { result, lhs, rhs } => 
-                <crate::op::I64And_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64And_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64And_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64And_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64And_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64And_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64And_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64And_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64And_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64And_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64And_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Or_RRS { result, lhs, rhs } => 
-                <crate::op::I32Or_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Or_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Or_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Or_RRI { result, lhs, rhs } => 
-                <crate::op::I32Or_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Or_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Or_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Or_RSS { result, lhs, rhs } => 
-                <crate::op::I32Or_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Or_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Or_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Or_RSI { result, lhs, rhs } => 
-                <crate::op::I32Or_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Or_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Or_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Or_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Or_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Or_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Or_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Or_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Or_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Or_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Or_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Or_RRS { result, lhs, rhs } => 
-                <crate::op::I64Or_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Or_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Or_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Or_RRI { result, lhs, rhs } => 
-                <crate::op::I64Or_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Or_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Or_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Or_RSS { result, lhs, rhs } => 
-                <crate::op::I64Or_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Or_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Or_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Or_RSI { result, lhs, rhs } => 
-                <crate::op::I64Or_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Or_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Or_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Or_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Or_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Or_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Or_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Or_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Or_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Or_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Or_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Xor_RRS { result, lhs, rhs } => 
-                <crate::op::I32Xor_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Xor_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Xor_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Xor_RRI { result, lhs, rhs } => 
-                <crate::op::I32Xor_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Xor_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Xor_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Xor_RSS { result, lhs, rhs } => 
-                <crate::op::I32Xor_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Xor_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Xor_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Xor_RSI { result, lhs, rhs } => 
-                <crate::op::I32Xor_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Xor_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Xor_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Xor_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Xor_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Xor_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Xor_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Xor_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Xor_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Xor_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Xor_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Xor_RRS { result, lhs, rhs } => 
-                <crate::op::I64Xor_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Xor_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Xor_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Xor_RRI { result, lhs, rhs } => 
-                <crate::op::I64Xor_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Xor_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Xor_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Xor_RSS { result, lhs, rhs } => 
-                <crate::op::I64Xor_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Xor_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Xor_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Xor_RSI { result, lhs, rhs } => 
-                <crate::op::I64Xor_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Xor_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Xor_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Xor_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Xor_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Xor_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Xor_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Xor_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Xor_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Xor_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Xor_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Eq_RRS { result, lhs, rhs } => 
-                <crate::op::I32Eq_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Eq_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Eq_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Eq_RRI { result, lhs, rhs } => 
-                <crate::op::I32Eq_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Eq_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Eq_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Eq_RSS { result, lhs, rhs } => 
-                <crate::op::I32Eq_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Eq_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Eq_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Eq_RSI { result, lhs, rhs } => 
-                <crate::op::I32Eq_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Eq_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Eq_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Eq_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Eq_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Eq_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Eq_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Eq_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Eq_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Eq_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Eq_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Eq_RRS { result, lhs, rhs } => 
-                <crate::op::I64Eq_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Eq_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Eq_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Eq_RRI { result, lhs, rhs } => 
-                <crate::op::I64Eq_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Eq_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Eq_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Eq_RSS { result, lhs, rhs } => 
-                <crate::op::I64Eq_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Eq_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Eq_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Eq_RSI { result, lhs, rhs } => 
-                <crate::op::I64Eq_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Eq_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Eq_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Eq_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Eq_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Eq_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Eq_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Eq_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Eq_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Eq_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Eq_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Ne_RRS { result, lhs, rhs } => 
-                <crate::op::I32Ne_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ne_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ne_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ne_RRI { result, lhs, rhs } => 
-                <crate::op::I32Ne_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ne_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ne_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ne_RSS { result, lhs, rhs } => 
-                <crate::op::I32Ne_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ne_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ne_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ne_RSI { result, lhs, rhs } => 
-                <crate::op::I32Ne_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Ne_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Ne_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Ne_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Ne_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Ne_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Ne_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Ne_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Ne_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Ne_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I32Ne_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Ne_RRS { result, lhs, rhs } => 
-                <crate::op::I64Ne_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ne_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ne_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ne_RRI { result, lhs, rhs } => 
-                <crate::op::I64Ne_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ne_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ne_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ne_RSS { result, lhs, rhs } => 
-                <crate::op::I64Ne_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ne_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ne_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ne_RSI { result, lhs, rhs } => 
-                <crate::op::I64Ne_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Ne_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Ne_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Ne_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Ne_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Ne_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Ne_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Ne_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Ne_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::I64Ne_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::I64Ne_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Add_RRS { result, lhs, rhs } => 
-                <crate::op::F32Add_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Add_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Add_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Add_RRI { result, lhs, rhs } => 
-                <crate::op::F32Add_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Add_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Add_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Add_RSS { result, lhs, rhs } => 
-                <crate::op::F32Add_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Add_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Add_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Add_RSI { result, lhs, rhs } => 
-                <crate::op::F32Add_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Add_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Add_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Add_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Add_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Add_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Add_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Add_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Add_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Add_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Add_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Add_RRS { result, lhs, rhs } => 
-                <crate::op::F64Add_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Add_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Add_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Add_RRI { result, lhs, rhs } => 
-                <crate::op::F64Add_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Add_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Add_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Add_RSS { result, lhs, rhs } => 
-                <crate::op::F64Add_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Add_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Add_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Add_RSI { result, lhs, rhs } => 
-                <crate::op::F64Add_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Add_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Add_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Add_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Add_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Add_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Add_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Add_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Add_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Add_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Add_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Mul_RRS { result, lhs, rhs } => 
-                <crate::op::F32Mul_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Mul_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Mul_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Mul_RRI { result, lhs, rhs } => 
-                <crate::op::F32Mul_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Mul_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Mul_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Mul_RSS { result, lhs, rhs } => 
-                <crate::op::F32Mul_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Mul_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Mul_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Mul_RSI { result, lhs, rhs } => 
-                <crate::op::F32Mul_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Mul_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Mul_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Mul_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Mul_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Mul_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Mul_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Mul_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Mul_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Mul_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Mul_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Mul_RRS { result, lhs, rhs } => 
-                <crate::op::F64Mul_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Mul_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Mul_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Mul_RRI { result, lhs, rhs } => 
-                <crate::op::F64Mul_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Mul_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Mul_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Mul_RSS { result, lhs, rhs } => 
-                <crate::op::F64Mul_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Mul_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Mul_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Mul_RSI { result, lhs, rhs } => 
-                <crate::op::F64Mul_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Mul_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Mul_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Mul_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Mul_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Mul_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Mul_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Mul_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Mul_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Mul_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Mul_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Eq_RRS { result, lhs, rhs } => 
-                <crate::op::F32Eq_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Eq_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Eq_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Eq_RRI { result, lhs, rhs } => 
-                <crate::op::F32Eq_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Eq_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Eq_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Eq_RSS { result, lhs, rhs } => 
-                <crate::op::F32Eq_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Eq_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Eq_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Eq_RSI { result, lhs, rhs } => 
-                <crate::op::F32Eq_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Eq_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Eq_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Eq_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Eq_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Eq_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Eq_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Eq_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Eq_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Eq_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Eq_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Eq_RRS { result, lhs, rhs } => 
-                <crate::op::F64Eq_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Eq_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Eq_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Eq_RRI { result, lhs, rhs } => 
-                <crate::op::F64Eq_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Eq_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Eq_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Eq_RSS { result, lhs, rhs } => 
-                <crate::op::F64Eq_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Eq_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Eq_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Eq_RSI { result, lhs, rhs } => 
-                <crate::op::F64Eq_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Eq_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Eq_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Eq_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Eq_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Eq_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Eq_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Eq_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Eq_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Eq_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Eq_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Ne_RRS { result, lhs, rhs } => 
-                <crate::op::F32Ne_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ne_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ne_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ne_RRI { result, lhs, rhs } => 
-                <crate::op::F32Ne_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ne_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ne_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ne_RSS { result, lhs, rhs } => 
-                <crate::op::F32Ne_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ne_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ne_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ne_RSI { result, lhs, rhs } => 
-                <crate::op::F32Ne_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Ne_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Ne_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Ne_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Ne_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Ne_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Ne_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Ne_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Ne_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Ne_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Ne_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Ne_RRS { result, lhs, rhs } => 
-                <crate::op::F64Ne_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ne_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ne_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ne_RRI { result, lhs, rhs } => 
-                <crate::op::F64Ne_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ne_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ne_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ne_RSS { result, lhs, rhs } => 
-                <crate::op::F64Ne_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ne_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ne_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ne_RSI { result, lhs, rhs } => 
-                <crate::op::F64Ne_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Ne_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Ne_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Ne_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Ne_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Ne_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Ne_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Ne_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Ne_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Ne_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Ne_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Min_RRS { result, lhs, rhs } => 
-                <crate::op::F32Min_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Min_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Min_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Min_RRI { result, lhs, rhs } => 
-                <crate::op::F32Min_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Min_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Min_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Min_RSS { result, lhs, rhs } => 
-                <crate::op::F32Min_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Min_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Min_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Min_RSI { result, lhs, rhs } => 
-                <crate::op::F32Min_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Min_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Min_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Min_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Min_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Min_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Min_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Min_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Min_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Min_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Min_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Min_RRS { result, lhs, rhs } => 
-                <crate::op::F64Min_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Min_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Min_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Min_RRI { result, lhs, rhs } => 
-                <crate::op::F64Min_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Min_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Min_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Min_RSS { result, lhs, rhs } => 
-                <crate::op::F64Min_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Min_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Min_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Min_RSI { result, lhs, rhs } => 
-                <crate::op::F64Min_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Min_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Min_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Min_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Min_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Min_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Min_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Min_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Min_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Min_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Min_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Max_RRS { result, lhs, rhs } => 
-                <crate::op::F32Max_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Max_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Max_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Max_RRI { result, lhs, rhs } => 
-                <crate::op::F32Max_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Max_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Max_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Max_RSS { result, lhs, rhs } => 
-                <crate::op::F32Max_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Max_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Max_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Max_RSI { result, lhs, rhs } => 
-                <crate::op::F32Max_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Max_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Max_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Max_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Max_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Max_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Max_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Max_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Max_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F32Max_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F32Max_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Max_RRS { result, lhs, rhs } => 
-                <crate::op::F64Max_RRS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Max_RRS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Max_RRS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Max_RRI { result, lhs, rhs } => 
-                <crate::op::F64Max_RRI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Max_RRI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Max_RRI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Max_RSS { result, lhs, rhs } => 
-                <crate::op::F64Max_RSS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Max_RSS { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Max_RSS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Max_RSI { result, lhs, rhs } => 
-                <crate::op::F64Max_RSI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Max_RSI { result, lhs, rhs },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Max_RSI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Max_SRS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Max_SRS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Max_SRI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Max_SRI {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Max_SSS { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Max_SSS {
-                result: new_result, lhs, rhs
-            }),
-            Self::F64Max_SSI { lhs, rhs, .. } => ::core::option::Option::Some(Self::F64Max_SSI {
-                result: new_result, lhs, rhs
-            }),
-            Self::I32Load_RR { result, ptr, offset, memory } => 
-                <crate::op::I32Load_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load_RS { result, ptr, offset, memory } => 
-                <crate::op::I32Load_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load_RI { result, address, memory } => 
-                <crate::op::I32Load_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32LoadMem0_RR { result, ptr, offset } => 
-                <crate::op::I32LoadMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32LoadMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32LoadMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32LoadMem0_RS { result, ptr, offset } => 
-                <crate::op::I32LoadMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32LoadMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32LoadMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32LoadMem0_RI { result, address } => 
-                <crate::op::I32LoadMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32LoadMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32LoadMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32LoadMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I32LoadMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I32LoadMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I32LoadMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I32LoadMem0_SI { address, .. } => ::core::option::Option::Some(Self::I32LoadMem0_SI {
-                result: new_result, address
-            }),
-            Self::I64Load_RR { result, ptr, offset, memory } => 
-                <crate::op::I64Load_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load_RS { result, ptr, offset, memory } => 
-                <crate::op::I64Load_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load_RI { result, address, memory } => 
-                <crate::op::I64Load_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64LoadMem0_RR { result, ptr, offset } => 
-                <crate::op::I64LoadMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64LoadMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64LoadMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64LoadMem0_RS { result, ptr, offset } => 
-                <crate::op::I64LoadMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64LoadMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64LoadMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64LoadMem0_RI { result, address } => 
-                <crate::op::I64LoadMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64LoadMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64LoadMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64LoadMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64LoadMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I64LoadMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64LoadMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I64LoadMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64LoadMem0_SI {
-                result: new_result, address
-            }),
-            Self::F32Load_RR { result, ptr, offset, memory } => 
-                <crate::op::F32Load_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Load_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Load_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Load_RS { result, ptr, offset, memory } => 
-                <crate::op::F32Load_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Load_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Load_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32Load_RI { result, address, memory } => 
-                <crate::op::F32Load_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32Load_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32Load_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32LoadMem0_RR { result, ptr, offset } => 
-                <crate::op::F32LoadMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32LoadMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32LoadMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32LoadMem0_RS { result, ptr, offset } => 
-                <crate::op::F32LoadMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32LoadMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32LoadMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32LoadMem0_RI { result, address } => 
-                <crate::op::F32LoadMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F32LoadMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F32LoadMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F32LoadMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::F32LoadMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::F32LoadMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::F32LoadMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::F32LoadMem0_SI { address, .. } => ::core::option::Option::Some(Self::F32LoadMem0_SI {
-                result: new_result, address
-            }),
-            Self::F64Load_RR { result, ptr, offset, memory } => 
-                <crate::op::F64Load_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Load_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Load_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Load_RS { result, ptr, offset, memory } => 
-                <crate::op::F64Load_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Load_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Load_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64Load_RI { result, address, memory } => 
-                <crate::op::F64Load_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64Load_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64Load_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64LoadMem0_RR { result, ptr, offset } => 
-                <crate::op::F64LoadMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64LoadMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64LoadMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64LoadMem0_RS { result, ptr, offset } => 
-                <crate::op::F64LoadMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64LoadMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64LoadMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64LoadMem0_RI { result, address } => 
-                <crate::op::F64LoadMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::F64LoadMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::F64LoadMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::F64LoadMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::F64LoadMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::F64LoadMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::F64LoadMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::F64LoadMem0_SI { address, .. } => ::core::option::Option::Some(Self::F64LoadMem0_SI {
-                result: new_result, address
-            }),
-            Self::I32Load8S_RR { result, ptr, offset, memory } => 
-                <crate::op::I32Load8S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8S_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8S_RS { result, ptr, offset, memory } => 
-                <crate::op::I32Load8S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8S_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8S_RI { result, address, memory } => 
-                <crate::op::I32Load8S_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8S_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8S_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8SMem0_RR { result, ptr, offset } => 
-                <crate::op::I32Load8SMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8SMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8SMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8SMem0_RS { result, ptr, offset } => 
-                <crate::op::I32Load8SMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8SMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8SMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8SMem0_RI { result, address } => 
-                <crate::op::I32Load8SMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8SMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8SMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8SMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load8SMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I32Load8SMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load8SMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I32Load8SMem0_SI { address, .. } => ::core::option::Option::Some(Self::I32Load8SMem0_SI {
-                result: new_result, address
-            }),
-            Self::I64Load8S_RR { result, ptr, offset, memory } => 
-                <crate::op::I64Load8S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8S_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8S_RS { result, ptr, offset, memory } => 
-                <crate::op::I64Load8S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8S_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8S_RI { result, address, memory } => 
-                <crate::op::I64Load8S_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8S_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8S_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8SMem0_RR { result, ptr, offset } => 
-                <crate::op::I64Load8SMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8SMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8SMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8SMem0_RS { result, ptr, offset } => 
-                <crate::op::I64Load8SMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8SMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8SMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8SMem0_RI { result, address } => 
-                <crate::op::I64Load8SMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8SMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8SMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8SMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load8SMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load8SMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load8SMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load8SMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load8SMem0_SI {
-                result: new_result, address
-            }),
-            Self::I32Load8U_RR { result, ptr, offset, memory } => 
-                <crate::op::I32Load8U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8U_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8U_RS { result, ptr, offset, memory } => 
-                <crate::op::I32Load8U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8U_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8U_RI { result, address, memory } => 
-                <crate::op::I32Load8U_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8U_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8U_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8UMem0_RR { result, ptr, offset } => 
-                <crate::op::I32Load8UMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8UMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8UMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8UMem0_RS { result, ptr, offset } => 
-                <crate::op::I32Load8UMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8UMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8UMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8UMem0_RI { result, address } => 
-                <crate::op::I32Load8UMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load8UMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load8UMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load8UMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load8UMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I32Load8UMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load8UMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I32Load8UMem0_SI { address, .. } => ::core::option::Option::Some(Self::I32Load8UMem0_SI {
-                result: new_result, address
-            }),
-            Self::I64Load8U_RR { result, ptr, offset, memory } => 
-                <crate::op::I64Load8U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8U_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8U_RS { result, ptr, offset, memory } => 
-                <crate::op::I64Load8U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8U_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8U_RI { result, address, memory } => 
-                <crate::op::I64Load8U_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8U_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8U_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8UMem0_RR { result, ptr, offset } => 
-                <crate::op::I64Load8UMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8UMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8UMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8UMem0_RS { result, ptr, offset } => 
-                <crate::op::I64Load8UMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8UMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8UMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8UMem0_RI { result, address } => 
-                <crate::op::I64Load8UMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load8UMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load8UMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load8UMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load8UMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load8UMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load8UMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load8UMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load8UMem0_SI {
-                result: new_result, address
-            }),
-            Self::I32Load16S_RR { result, ptr, offset, memory } => 
-                <crate::op::I32Load16S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16S_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16S_RS { result, ptr, offset, memory } => 
-                <crate::op::I32Load16S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16S_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16S_RI { result, address, memory } => 
-                <crate::op::I32Load16S_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16S_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16S_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16SMem0_RR { result, ptr, offset } => 
-                <crate::op::I32Load16SMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16SMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16SMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16SMem0_RS { result, ptr, offset } => 
-                <crate::op::I32Load16SMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16SMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16SMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16SMem0_RI { result, address } => 
-                <crate::op::I32Load16SMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16SMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16SMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16SMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load16SMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I32Load16SMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load16SMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I32Load16SMem0_SI { address, .. } => ::core::option::Option::Some(Self::I32Load16SMem0_SI {
-                result: new_result, address
-            }),
-            Self::I64Load16S_RR { result, ptr, offset, memory } => 
-                <crate::op::I64Load16S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16S_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16S_RS { result, ptr, offset, memory } => 
-                <crate::op::I64Load16S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16S_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16S_RI { result, address, memory } => 
-                <crate::op::I64Load16S_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16S_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16S_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16SMem0_RR { result, ptr, offset } => 
-                <crate::op::I64Load16SMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16SMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16SMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16SMem0_RS { result, ptr, offset } => 
-                <crate::op::I64Load16SMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16SMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16SMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16SMem0_RI { result, address } => 
-                <crate::op::I64Load16SMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16SMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16SMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16SMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load16SMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load16SMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load16SMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load16SMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load16SMem0_SI {
-                result: new_result, address
-            }),
-            Self::I32Load16U_RR { result, ptr, offset, memory } => 
-                <crate::op::I32Load16U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16U_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16U_RS { result, ptr, offset, memory } => 
-                <crate::op::I32Load16U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16U_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16U_RI { result, address, memory } => 
-                <crate::op::I32Load16U_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16U_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16U_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16UMem0_RR { result, ptr, offset } => 
-                <crate::op::I32Load16UMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16UMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16UMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16UMem0_RS { result, ptr, offset } => 
-                <crate::op::I32Load16UMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16UMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16UMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16UMem0_RI { result, address } => 
-                <crate::op::I32Load16UMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I32Load16UMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I32Load16UMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I32Load16UMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load16UMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I32Load16UMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I32Load16UMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I32Load16UMem0_SI { address, .. } => ::core::option::Option::Some(Self::I32Load16UMem0_SI {
-                result: new_result, address
-            }),
-            Self::I64Load16U_RR { result, ptr, offset, memory } => 
-                <crate::op::I64Load16U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16U_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16U_RS { result, ptr, offset, memory } => 
-                <crate::op::I64Load16U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16U_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16U_RI { result, address, memory } => 
-                <crate::op::I64Load16U_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16U_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16U_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16UMem0_RR { result, ptr, offset } => 
-                <crate::op::I64Load16UMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16UMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16UMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16UMem0_RS { result, ptr, offset } => 
-                <crate::op::I64Load16UMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16UMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16UMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16UMem0_RI { result, address } => 
-                <crate::op::I64Load16UMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load16UMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load16UMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load16UMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load16UMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load16UMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load16UMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load16UMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load16UMem0_SI {
-                result: new_result, address
-            }),
-            Self::I64Load32S_RR { result, ptr, offset, memory } => 
-                <crate::op::I64Load32S_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32S_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32S_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32S_RS { result, ptr, offset, memory } => 
-                <crate::op::I64Load32S_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32S_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32S_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32S_RI { result, address, memory } => 
-                <crate::op::I64Load32S_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32S_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32S_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32SMem0_RR { result, ptr, offset } => 
-                <crate::op::I64Load32SMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32SMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32SMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32SMem0_RS { result, ptr, offset } => 
-                <crate::op::I64Load32SMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32SMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32SMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32SMem0_RI { result, address } => 
-                <crate::op::I64Load32SMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32SMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32SMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32SMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load32SMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load32SMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load32SMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load32SMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load32SMem0_SI {
-                result: new_result, address
-            }),
-            Self::I64Load32U_RR { result, ptr, offset, memory } => 
-                <crate::op::I64Load32U_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32U_RR { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32U_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32U_RS { result, ptr, offset, memory } => 
-                <crate::op::I64Load32U_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32U_RS { result, ptr, offset, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32U_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32U_RI { result, address, memory } => 
-                <crate::op::I64Load32U_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32U_RI { result, address, memory },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32U_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32UMem0_RR { result, ptr, offset } => 
-                <crate::op::I64Load32UMem0_RR as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32UMem0_RR { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32UMem0_RR as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32UMem0_RS { result, ptr, offset } => 
-                <crate::op::I64Load32UMem0_RS as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32UMem0_RS { result, ptr, offset },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32UMem0_RS as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32UMem0_RI { result, address } => 
-                <crate::op::I64Load32UMem0_RI as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::I64Load32UMem0_RI { result, address },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::I64Load32UMem0_RI as crate::UpdateOperatorResult>::Output>>::from),
-            Self::I64Load32UMem0_SR { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load32UMem0_SR {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load32UMem0_SS { ptr, offset, .. } => ::core::option::Option::Some(Self::I64Load32UMem0_SS {
-                result: new_result, ptr, offset
-            }),
-            Self::I64Load32UMem0_SI { address, .. } => ::core::option::Option::Some(Self::I64Load32UMem0_SI {
-                result: new_result, address
-            }),
-            Self::TableSize_R { result, index } => 
-                <crate::op::TableSize_R as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::TableSize_R { result, index },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::TableSize_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::TableSize_S { index, .. } => ::core::option::Option::Some(Self::TableSize_S {
-                result: new_result, index
-            }),
-            Self::TableGrow { delta, table, .. } => ::core::option::Option::Some(Self::TableGrow {
-                result: new_result, delta, table
-            }),
-            Self::MemorySize_R { result, index } => 
-                <crate::op::MemorySize_R as crate::UpdateOperatorResult>::update_operator_result(
-                    &crate::op::MemorySize_R { result, index },
-                    new_result,
-                ).map(<Self as ::core::convert::From<<crate::op::MemorySize_R as crate::UpdateOperatorResult>::Output>>::from),
-            Self::MemorySize_S { index, .. } => ::core::option::Option::Some(Self::MemorySize_S {
-                result: new_result, index
-            }),
+            Self::Copy1_S { result, value } => {
+                crate::op::Copy1_S { result, value }.update_operator_result(new_result)
+            }
+            Self::Copy { result, len_values } => {
+                crate::op::Copy { result, len_values }.update_operator_result(new_result)
+            }
+            Self::Copy1I32_I { result, value } => {
+                crate::op::Copy1I32_I { result, value }.update_operator_result(new_result)
+            }
+            Self::Copy1I64_R { result, value } => {
+                crate::op::Copy1I64_R { result, value }.update_operator_result(new_result)
+            }
+            Self::Copy1I64_I { result, value } => {
+                crate::op::Copy1I64_I { result, value }.update_operator_result(new_result)
+            }
+            Self::Copy1F32_R { result, value } => {
+                crate::op::Copy1F32_R { result, value }.update_operator_result(new_result)
+            }
+            Self::Copy1F32_I { result, value } => {
+                crate::op::Copy1F32_I { result, value }.update_operator_result(new_result)
+            }
+            Self::Copy1F64_R { result, value } => {
+                crate::op::Copy1F64_R { result, value }.update_operator_result(new_result)
+            }
+            Self::Copy1F64_I { result, value } => {
+                crate::op::Copy1F64_I { result, value }.update_operator_result(new_result)
+            }
+            Self::GlobalGet_S { result, index } => {
+                crate::op::GlobalGet_S { result, index }.update_operator_result(new_result)
+            }
+            Self::GlobalGetI32_R { result, index } => {
+                crate::op::GlobalGetI32_R { result, index }.update_operator_result(new_result)
+            }
+            Self::GlobalGetI64_R { result, index } => {
+                crate::op::GlobalGetI64_R { result, index }.update_operator_result(new_result)
+            }
+            Self::GlobalGetF32_R { result, index } => {
+                crate::op::GlobalGetF32_R { result, index }.update_operator_result(new_result)
+            }
+            Self::GlobalGetF64_R { result, index } => {
+                crate::op::GlobalGetF64_R { result, index }.update_operator_result(new_result)
+            }
+            Self::I32Popcnt_RR { result, input } => {
+                crate::op::I32Popcnt_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Popcnt_RS { result, input } => {
+                crate::op::I32Popcnt_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Popcnt_SR { result, input } => {
+                crate::op::I32Popcnt_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Popcnt_SS { result, input } => {
+                crate::op::I32Popcnt_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Popcnt_RR { result, input } => {
+                crate::op::I64Popcnt_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Popcnt_RS { result, input } => {
+                crate::op::I64Popcnt_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Popcnt_SR { result, input } => {
+                crate::op::I64Popcnt_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Popcnt_SS { result, input } => {
+                crate::op::I64Popcnt_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Clz_RR { result, input } => {
+                crate::op::I32Clz_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Clz_RS { result, input } => {
+                crate::op::I32Clz_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Clz_SR { result, input } => {
+                crate::op::I32Clz_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Clz_SS { result, input } => {
+                crate::op::I32Clz_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Clz_RR { result, input } => {
+                crate::op::I64Clz_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Clz_RS { result, input } => {
+                crate::op::I64Clz_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Clz_SR { result, input } => {
+                crate::op::I64Clz_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Clz_SS { result, input } => {
+                crate::op::I64Clz_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Ctz_RR { result, input } => {
+                crate::op::I32Ctz_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Ctz_RS { result, input } => {
+                crate::op::I32Ctz_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Ctz_SR { result, input } => {
+                crate::op::I32Ctz_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Ctz_SS { result, input } => {
+                crate::op::I32Ctz_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Ctz_RR { result, input } => {
+                crate::op::I64Ctz_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Ctz_RS { result, input } => {
+                crate::op::I64Ctz_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Ctz_SR { result, input } => {
+                crate::op::I64Ctz_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Ctz_SS { result, input } => {
+                crate::op::I64Ctz_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Abs_RR { result, input } => {
+                crate::op::F32Abs_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Abs_RS { result, input } => {
+                crate::op::F32Abs_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Abs_SR { result, input } => {
+                crate::op::F32Abs_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Abs_SS { result, input } => {
+                crate::op::F32Abs_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Abs_RR { result, input } => {
+                crate::op::F64Abs_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Abs_RS { result, input } => {
+                crate::op::F64Abs_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Abs_SR { result, input } => {
+                crate::op::F64Abs_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Abs_SS { result, input } => {
+                crate::op::F64Abs_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Neg_RR { result, input } => {
+                crate::op::F32Neg_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Neg_RS { result, input } => {
+                crate::op::F32Neg_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Neg_SR { result, input } => {
+                crate::op::F32Neg_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Neg_SS { result, input } => {
+                crate::op::F32Neg_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Neg_RR { result, input } => {
+                crate::op::F64Neg_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Neg_RS { result, input } => {
+                crate::op::F64Neg_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Neg_SR { result, input } => {
+                crate::op::F64Neg_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Neg_SS { result, input } => {
+                crate::op::F64Neg_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Ceil_RR { result, input } => {
+                crate::op::F32Ceil_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Ceil_RS { result, input } => {
+                crate::op::F32Ceil_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Ceil_SR { result, input } => {
+                crate::op::F32Ceil_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Ceil_SS { result, input } => {
+                crate::op::F32Ceil_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Ceil_RR { result, input } => {
+                crate::op::F64Ceil_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Ceil_RS { result, input } => {
+                crate::op::F64Ceil_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Ceil_SR { result, input } => {
+                crate::op::F64Ceil_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Ceil_SS { result, input } => {
+                crate::op::F64Ceil_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Floor_RR { result, input } => {
+                crate::op::F32Floor_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Floor_RS { result, input } => {
+                crate::op::F32Floor_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Floor_SR { result, input } => {
+                crate::op::F32Floor_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Floor_SS { result, input } => {
+                crate::op::F32Floor_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Floor_RR { result, input } => {
+                crate::op::F64Floor_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Floor_RS { result, input } => {
+                crate::op::F64Floor_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Floor_SR { result, input } => {
+                crate::op::F64Floor_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Floor_SS { result, input } => {
+                crate::op::F64Floor_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Trunc_RR { result, input } => {
+                crate::op::F32Trunc_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Trunc_RS { result, input } => {
+                crate::op::F32Trunc_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Trunc_SR { result, input } => {
+                crate::op::F32Trunc_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Trunc_SS { result, input } => {
+                crate::op::F32Trunc_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Trunc_RR { result, input } => {
+                crate::op::F64Trunc_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Trunc_RS { result, input } => {
+                crate::op::F64Trunc_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Trunc_SR { result, input } => {
+                crate::op::F64Trunc_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Trunc_SS { result, input } => {
+                crate::op::F64Trunc_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Nearest_RR { result, input } => {
+                crate::op::F32Nearest_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Nearest_RS { result, input } => {
+                crate::op::F32Nearest_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Nearest_SR { result, input } => {
+                crate::op::F32Nearest_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Nearest_SS { result, input } => {
+                crate::op::F32Nearest_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Nearest_RR { result, input } => {
+                crate::op::F64Nearest_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Nearest_RS { result, input } => {
+                crate::op::F64Nearest_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Nearest_SR { result, input } => {
+                crate::op::F64Nearest_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Nearest_SS { result, input } => {
+                crate::op::F64Nearest_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Sqrt_RR { result, input } => {
+                crate::op::F32Sqrt_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Sqrt_RS { result, input } => {
+                crate::op::F32Sqrt_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Sqrt_SR { result, input } => {
+                crate::op::F32Sqrt_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Sqrt_SS { result, input } => {
+                crate::op::F32Sqrt_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Sqrt_RR { result, input } => {
+                crate::op::F64Sqrt_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Sqrt_RS { result, input } => {
+                crate::op::F64Sqrt_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Sqrt_SR { result, input } => {
+                crate::op::F64Sqrt_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Sqrt_SS { result, input } => {
+                crate::op::F64Sqrt_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Demote_RR { result, input } => {
+                crate::op::F32Demote_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Demote_RS { result, input } => {
+                crate::op::F32Demote_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Demote_SR { result, input } => {
+                crate::op::F32Demote_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32Demote_SS { result, input } => {
+                crate::op::F32Demote_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Promote_RR { result, input } => {
+                crate::op::F64Promote_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Promote_RS { result, input } => {
+                crate::op::F64Promote_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Promote_SR { result, input } => {
+                crate::op::F64Promote_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64Promote_SS { result, input } => {
+                crate::op::F64Promote_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI32S_RR { result, input } => {
+                crate::op::F32ConvertI32S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI32S_RS { result, input } => {
+                crate::op::F32ConvertI32S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI32S_SR { result, input } => {
+                crate::op::F32ConvertI32S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI32S_SS { result, input } => {
+                crate::op::F32ConvertI32S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI32U_RR { result, input } => {
+                crate::op::F32ConvertI32U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI32U_RS { result, input } => {
+                crate::op::F32ConvertI32U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI32U_SR { result, input } => {
+                crate::op::F32ConvertI32U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI32U_SS { result, input } => {
+                crate::op::F32ConvertI32U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI64S_RR { result, input } => {
+                crate::op::F32ConvertI64S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI64S_RS { result, input } => {
+                crate::op::F32ConvertI64S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI64S_SR { result, input } => {
+                crate::op::F32ConvertI64S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI64S_SS { result, input } => {
+                crate::op::F32ConvertI64S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI64U_RR { result, input } => {
+                crate::op::F32ConvertI64U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI64U_RS { result, input } => {
+                crate::op::F32ConvertI64U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI64U_SR { result, input } => {
+                crate::op::F32ConvertI64U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F32ConvertI64U_SS { result, input } => {
+                crate::op::F32ConvertI64U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI32S_RR { result, input } => {
+                crate::op::F64ConvertI32S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI32S_RS { result, input } => {
+                crate::op::F64ConvertI32S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI32S_SR { result, input } => {
+                crate::op::F64ConvertI32S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI32S_SS { result, input } => {
+                crate::op::F64ConvertI32S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI32U_RR { result, input } => {
+                crate::op::F64ConvertI32U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI32U_RS { result, input } => {
+                crate::op::F64ConvertI32U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI32U_SR { result, input } => {
+                crate::op::F64ConvertI32U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI32U_SS { result, input } => {
+                crate::op::F64ConvertI32U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI64S_RR { result, input } => {
+                crate::op::F64ConvertI64S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI64S_RS { result, input } => {
+                crate::op::F64ConvertI64S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI64S_SR { result, input } => {
+                crate::op::F64ConvertI64S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI64S_SS { result, input } => {
+                crate::op::F64ConvertI64S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI64U_RR { result, input } => {
+                crate::op::F64ConvertI64U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI64U_RS { result, input } => {
+                crate::op::F64ConvertI64U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI64U_SR { result, input } => {
+                crate::op::F64ConvertI64U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::F64ConvertI64U_SS { result, input } => {
+                crate::op::F64ConvertI64U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF32S_RR { result, input } => {
+                crate::op::I32TruncF32S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF32S_RS { result, input } => {
+                crate::op::I32TruncF32S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF32S_SR { result, input } => {
+                crate::op::I32TruncF32S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF32S_SS { result, input } => {
+                crate::op::I32TruncF32S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF32U_RR { result, input } => {
+                crate::op::I32TruncF32U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF32U_RS { result, input } => {
+                crate::op::I32TruncF32U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF32U_SR { result, input } => {
+                crate::op::I32TruncF32U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF32U_SS { result, input } => {
+                crate::op::I32TruncF32U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF64S_RR { result, input } => {
+                crate::op::I32TruncF64S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF64S_RS { result, input } => {
+                crate::op::I32TruncF64S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF64S_SR { result, input } => {
+                crate::op::I32TruncF64S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF64S_SS { result, input } => {
+                crate::op::I32TruncF64S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF64U_RR { result, input } => {
+                crate::op::I32TruncF64U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF64U_RS { result, input } => {
+                crate::op::I32TruncF64U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF64U_SR { result, input } => {
+                crate::op::I32TruncF64U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncF64U_SS { result, input } => {
+                crate::op::I32TruncF64U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF32S_RR { result, input } => {
+                crate::op::I64TruncF32S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF32S_RS { result, input } => {
+                crate::op::I64TruncF32S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF32S_SR { result, input } => {
+                crate::op::I64TruncF32S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF32S_SS { result, input } => {
+                crate::op::I64TruncF32S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF32U_RR { result, input } => {
+                crate::op::I64TruncF32U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF32U_RS { result, input } => {
+                crate::op::I64TruncF32U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF32U_SR { result, input } => {
+                crate::op::I64TruncF32U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF32U_SS { result, input } => {
+                crate::op::I64TruncF32U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF64S_RR { result, input } => {
+                crate::op::I64TruncF64S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF64S_RS { result, input } => {
+                crate::op::I64TruncF64S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF64S_SR { result, input } => {
+                crate::op::I64TruncF64S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF64S_SS { result, input } => {
+                crate::op::I64TruncF64S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF64U_RR { result, input } => {
+                crate::op::I64TruncF64U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF64U_RS { result, input } => {
+                crate::op::I64TruncF64U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF64U_SR { result, input } => {
+                crate::op::I64TruncF64U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncF64U_SS { result, input } => {
+                crate::op::I64TruncF64U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF32S_RR { result, input } => {
+                crate::op::I32TruncSatF32S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF32S_RS { result, input } => {
+                crate::op::I32TruncSatF32S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF32S_SR { result, input } => {
+                crate::op::I32TruncSatF32S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF32S_SS { result, input } => {
+                crate::op::I32TruncSatF32S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF32U_RR { result, input } => {
+                crate::op::I32TruncSatF32U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF32U_RS { result, input } => {
+                crate::op::I32TruncSatF32U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF32U_SR { result, input } => {
+                crate::op::I32TruncSatF32U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF32U_SS { result, input } => {
+                crate::op::I32TruncSatF32U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF64S_RR { result, input } => {
+                crate::op::I32TruncSatF64S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF64S_RS { result, input } => {
+                crate::op::I32TruncSatF64S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF64S_SR { result, input } => {
+                crate::op::I32TruncSatF64S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF64S_SS { result, input } => {
+                crate::op::I32TruncSatF64S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF64U_RR { result, input } => {
+                crate::op::I32TruncSatF64U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF64U_RS { result, input } => {
+                crate::op::I32TruncSatF64U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF64U_SR { result, input } => {
+                crate::op::I32TruncSatF64U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32TruncSatF64U_SS { result, input } => {
+                crate::op::I32TruncSatF64U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF32S_RR { result, input } => {
+                crate::op::I64TruncSatF32S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF32S_RS { result, input } => {
+                crate::op::I64TruncSatF32S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF32S_SR { result, input } => {
+                crate::op::I64TruncSatF32S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF32S_SS { result, input } => {
+                crate::op::I64TruncSatF32S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF32U_RR { result, input } => {
+                crate::op::I64TruncSatF32U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF32U_RS { result, input } => {
+                crate::op::I64TruncSatF32U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF32U_SR { result, input } => {
+                crate::op::I64TruncSatF32U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF32U_SS { result, input } => {
+                crate::op::I64TruncSatF32U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF64S_RR { result, input } => {
+                crate::op::I64TruncSatF64S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF64S_RS { result, input } => {
+                crate::op::I64TruncSatF64S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF64S_SR { result, input } => {
+                crate::op::I64TruncSatF64S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF64S_SS { result, input } => {
+                crate::op::I64TruncSatF64S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF64U_RR { result, input } => {
+                crate::op::I64TruncSatF64U_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF64U_RS { result, input } => {
+                crate::op::I64TruncSatF64U_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF64U_SR { result, input } => {
+                crate::op::I64TruncSatF64U_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64TruncSatF64U_SS { result, input } => {
+                crate::op::I64TruncSatF64U_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Extend8S_RR { result, input } => {
+                crate::op::I32Extend8S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Extend8S_RS { result, input } => {
+                crate::op::I32Extend8S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Extend8S_SR { result, input } => {
+                crate::op::I32Extend8S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Extend8S_SS { result, input } => {
+                crate::op::I32Extend8S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Extend16S_RR { result, input } => {
+                crate::op::I32Extend16S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Extend16S_RS { result, input } => {
+                crate::op::I32Extend16S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Extend16S_SR { result, input } => {
+                crate::op::I32Extend16S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Extend16S_SS { result, input } => {
+                crate::op::I32Extend16S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend8S_RR { result, input } => {
+                crate::op::I64Extend8S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend8S_RS { result, input } => {
+                crate::op::I64Extend8S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend8S_SR { result, input } => {
+                crate::op::I64Extend8S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend8S_SS { result, input } => {
+                crate::op::I64Extend8S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend16S_RR { result, input } => {
+                crate::op::I64Extend16S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend16S_RS { result, input } => {
+                crate::op::I64Extend16S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend16S_SR { result, input } => {
+                crate::op::I64Extend16S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend16S_SS { result, input } => {
+                crate::op::I64Extend16S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend32S_RR { result, input } => {
+                crate::op::I64Extend32S_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend32S_RS { result, input } => {
+                crate::op::I64Extend32S_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend32S_SR { result, input } => {
+                crate::op::I64Extend32S_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I64Extend32S_SS { result, input } => {
+                crate::op::I64Extend32S_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32WrapI64_RR { result, input } => {
+                crate::op::I32WrapI64_RR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32WrapI64_RS { result, input } => {
+                crate::op::I32WrapI64_RS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32WrapI64_SR { result, input } => {
+                crate::op::I32WrapI64_SR { result, input }.update_operator_result(new_result)
+            }
+            Self::I32WrapI64_SS { result, input } => {
+                crate::op::I32WrapI64_SS { result, input }.update_operator_result(new_result)
+            }
+            Self::I32Add_RRS { result, lhs, rhs } => {
+                crate::op::I32Add_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Add_RRI { result, lhs, rhs } => {
+                crate::op::I32Add_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Add_RSS { result, lhs, rhs } => {
+                crate::op::I32Add_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Add_RSI { result, lhs, rhs } => {
+                crate::op::I32Add_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Add_SRS { result, lhs, rhs } => {
+                crate::op::I32Add_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Add_SRI { result, lhs, rhs } => {
+                crate::op::I32Add_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Add_SSS { result, lhs, rhs } => {
+                crate::op::I32Add_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Add_SSI { result, lhs, rhs } => {
+                crate::op::I32Add_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Add_RRS { result, lhs, rhs } => {
+                crate::op::I64Add_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Add_RRI { result, lhs, rhs } => {
+                crate::op::I64Add_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Add_RSS { result, lhs, rhs } => {
+                crate::op::I64Add_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Add_RSI { result, lhs, rhs } => {
+                crate::op::I64Add_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Add_SRS { result, lhs, rhs } => {
+                crate::op::I64Add_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Add_SRI { result, lhs, rhs } => {
+                crate::op::I64Add_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Add_SSS { result, lhs, rhs } => {
+                crate::op::I64Add_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Add_SSI { result, lhs, rhs } => {
+                crate::op::I64Add_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Mul_RRS { result, lhs, rhs } => {
+                crate::op::I32Mul_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Mul_RRI { result, lhs, rhs } => {
+                crate::op::I32Mul_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Mul_RSS { result, lhs, rhs } => {
+                crate::op::I32Mul_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Mul_RSI { result, lhs, rhs } => {
+                crate::op::I32Mul_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Mul_SRS { result, lhs, rhs } => {
+                crate::op::I32Mul_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Mul_SRI { result, lhs, rhs } => {
+                crate::op::I32Mul_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Mul_SSS { result, lhs, rhs } => {
+                crate::op::I32Mul_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Mul_SSI { result, lhs, rhs } => {
+                crate::op::I32Mul_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Mul_RRS { result, lhs, rhs } => {
+                crate::op::I64Mul_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Mul_RRI { result, lhs, rhs } => {
+                crate::op::I64Mul_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Mul_RSS { result, lhs, rhs } => {
+                crate::op::I64Mul_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Mul_RSI { result, lhs, rhs } => {
+                crate::op::I64Mul_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Mul_SRS { result, lhs, rhs } => {
+                crate::op::I64Mul_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Mul_SRI { result, lhs, rhs } => {
+                crate::op::I64Mul_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Mul_SSS { result, lhs, rhs } => {
+                crate::op::I64Mul_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Mul_SSI { result, lhs, rhs } => {
+                crate::op::I64Mul_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitAnd_RRS { result, lhs, rhs } => {
+                crate::op::I32BitAnd_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitAnd_RRI { result, lhs, rhs } => {
+                crate::op::I32BitAnd_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitAnd_RSS { result, lhs, rhs } => {
+                crate::op::I32BitAnd_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitAnd_RSI { result, lhs, rhs } => {
+                crate::op::I32BitAnd_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitAnd_SRS { result, lhs, rhs } => {
+                crate::op::I32BitAnd_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitAnd_SRI { result, lhs, rhs } => {
+                crate::op::I32BitAnd_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitAnd_SSS { result, lhs, rhs } => {
+                crate::op::I32BitAnd_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitAnd_SSI { result, lhs, rhs } => {
+                crate::op::I32BitAnd_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitAnd_RRS { result, lhs, rhs } => {
+                crate::op::I64BitAnd_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitAnd_RRI { result, lhs, rhs } => {
+                crate::op::I64BitAnd_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitAnd_RSS { result, lhs, rhs } => {
+                crate::op::I64BitAnd_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitAnd_RSI { result, lhs, rhs } => {
+                crate::op::I64BitAnd_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitAnd_SRS { result, lhs, rhs } => {
+                crate::op::I64BitAnd_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitAnd_SRI { result, lhs, rhs } => {
+                crate::op::I64BitAnd_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitAnd_SSS { result, lhs, rhs } => {
+                crate::op::I64BitAnd_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitAnd_SSI { result, lhs, rhs } => {
+                crate::op::I64BitAnd_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitOr_RRS { result, lhs, rhs } => {
+                crate::op::I32BitOr_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitOr_RRI { result, lhs, rhs } => {
+                crate::op::I32BitOr_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitOr_RSS { result, lhs, rhs } => {
+                crate::op::I32BitOr_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitOr_RSI { result, lhs, rhs } => {
+                crate::op::I32BitOr_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitOr_SRS { result, lhs, rhs } => {
+                crate::op::I32BitOr_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitOr_SRI { result, lhs, rhs } => {
+                crate::op::I32BitOr_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitOr_SSS { result, lhs, rhs } => {
+                crate::op::I32BitOr_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitOr_SSI { result, lhs, rhs } => {
+                crate::op::I32BitOr_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitOr_RRS { result, lhs, rhs } => {
+                crate::op::I64BitOr_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitOr_RRI { result, lhs, rhs } => {
+                crate::op::I64BitOr_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitOr_RSS { result, lhs, rhs } => {
+                crate::op::I64BitOr_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitOr_RSI { result, lhs, rhs } => {
+                crate::op::I64BitOr_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitOr_SRS { result, lhs, rhs } => {
+                crate::op::I64BitOr_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitOr_SRI { result, lhs, rhs } => {
+                crate::op::I64BitOr_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitOr_SSS { result, lhs, rhs } => {
+                crate::op::I64BitOr_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitOr_SSI { result, lhs, rhs } => {
+                crate::op::I64BitOr_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitXor_RRS { result, lhs, rhs } => {
+                crate::op::I32BitXor_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitXor_RRI { result, lhs, rhs } => {
+                crate::op::I32BitXor_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitXor_RSS { result, lhs, rhs } => {
+                crate::op::I32BitXor_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitXor_RSI { result, lhs, rhs } => {
+                crate::op::I32BitXor_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitXor_SRS { result, lhs, rhs } => {
+                crate::op::I32BitXor_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitXor_SRI { result, lhs, rhs } => {
+                crate::op::I32BitXor_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitXor_SSS { result, lhs, rhs } => {
+                crate::op::I32BitXor_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32BitXor_SSI { result, lhs, rhs } => {
+                crate::op::I32BitXor_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitXor_RRS { result, lhs, rhs } => {
+                crate::op::I64BitXor_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitXor_RRI { result, lhs, rhs } => {
+                crate::op::I64BitXor_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitXor_RSS { result, lhs, rhs } => {
+                crate::op::I64BitXor_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitXor_RSI { result, lhs, rhs } => {
+                crate::op::I64BitXor_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitXor_SRS { result, lhs, rhs } => {
+                crate::op::I64BitXor_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitXor_SRI { result, lhs, rhs } => {
+                crate::op::I64BitXor_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitXor_SSS { result, lhs, rhs } => {
+                crate::op::I64BitXor_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64BitXor_SSI { result, lhs, rhs } => {
+                crate::op::I64BitXor_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32And_RRS { result, lhs, rhs } => {
+                crate::op::I32And_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32And_RRI { result, lhs, rhs } => {
+                crate::op::I32And_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32And_RSS { result, lhs, rhs } => {
+                crate::op::I32And_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32And_RSI { result, lhs, rhs } => {
+                crate::op::I32And_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32And_SRS { result, lhs, rhs } => {
+                crate::op::I32And_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32And_SRI { result, lhs, rhs } => {
+                crate::op::I32And_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32And_SSS { result, lhs, rhs } => {
+                crate::op::I32And_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32And_SSI { result, lhs, rhs } => {
+                crate::op::I32And_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64And_RRS { result, lhs, rhs } => {
+                crate::op::I64And_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64And_RRI { result, lhs, rhs } => {
+                crate::op::I64And_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64And_RSS { result, lhs, rhs } => {
+                crate::op::I64And_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64And_RSI { result, lhs, rhs } => {
+                crate::op::I64And_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64And_SRS { result, lhs, rhs } => {
+                crate::op::I64And_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64And_SRI { result, lhs, rhs } => {
+                crate::op::I64And_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64And_SSS { result, lhs, rhs } => {
+                crate::op::I64And_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64And_SSI { result, lhs, rhs } => {
+                crate::op::I64And_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Or_RRS { result, lhs, rhs } => {
+                crate::op::I32Or_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Or_RRI { result, lhs, rhs } => {
+                crate::op::I32Or_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Or_RSS { result, lhs, rhs } => {
+                crate::op::I32Or_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Or_RSI { result, lhs, rhs } => {
+                crate::op::I32Or_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Or_SRS { result, lhs, rhs } => {
+                crate::op::I32Or_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Or_SRI { result, lhs, rhs } => {
+                crate::op::I32Or_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Or_SSS { result, lhs, rhs } => {
+                crate::op::I32Or_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Or_SSI { result, lhs, rhs } => {
+                crate::op::I32Or_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Or_RRS { result, lhs, rhs } => {
+                crate::op::I64Or_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Or_RRI { result, lhs, rhs } => {
+                crate::op::I64Or_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Or_RSS { result, lhs, rhs } => {
+                crate::op::I64Or_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Or_RSI { result, lhs, rhs } => {
+                crate::op::I64Or_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Or_SRS { result, lhs, rhs } => {
+                crate::op::I64Or_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Or_SRI { result, lhs, rhs } => {
+                crate::op::I64Or_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Or_SSS { result, lhs, rhs } => {
+                crate::op::I64Or_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Or_SSI { result, lhs, rhs } => {
+                crate::op::I64Or_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Xor_RRS { result, lhs, rhs } => {
+                crate::op::I32Xor_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Xor_RRI { result, lhs, rhs } => {
+                crate::op::I32Xor_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Xor_RSS { result, lhs, rhs } => {
+                crate::op::I32Xor_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Xor_RSI { result, lhs, rhs } => {
+                crate::op::I32Xor_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Xor_SRS { result, lhs, rhs } => {
+                crate::op::I32Xor_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Xor_SRI { result, lhs, rhs } => {
+                crate::op::I32Xor_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Xor_SSS { result, lhs, rhs } => {
+                crate::op::I32Xor_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Xor_SSI { result, lhs, rhs } => {
+                crate::op::I32Xor_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Xor_RRS { result, lhs, rhs } => {
+                crate::op::I64Xor_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Xor_RRI { result, lhs, rhs } => {
+                crate::op::I64Xor_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Xor_RSS { result, lhs, rhs } => {
+                crate::op::I64Xor_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Xor_RSI { result, lhs, rhs } => {
+                crate::op::I64Xor_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Xor_SRS { result, lhs, rhs } => {
+                crate::op::I64Xor_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Xor_SRI { result, lhs, rhs } => {
+                crate::op::I64Xor_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Xor_SSS { result, lhs, rhs } => {
+                crate::op::I64Xor_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Xor_SSI { result, lhs, rhs } => {
+                crate::op::I64Xor_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Eq_RRS { result, lhs, rhs } => {
+                crate::op::I32Eq_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Eq_RRI { result, lhs, rhs } => {
+                crate::op::I32Eq_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Eq_RSS { result, lhs, rhs } => {
+                crate::op::I32Eq_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Eq_RSI { result, lhs, rhs } => {
+                crate::op::I32Eq_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Eq_SRS { result, lhs, rhs } => {
+                crate::op::I32Eq_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Eq_SRI { result, lhs, rhs } => {
+                crate::op::I32Eq_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Eq_SSS { result, lhs, rhs } => {
+                crate::op::I32Eq_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Eq_SSI { result, lhs, rhs } => {
+                crate::op::I32Eq_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Eq_RRS { result, lhs, rhs } => {
+                crate::op::I64Eq_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Eq_RRI { result, lhs, rhs } => {
+                crate::op::I64Eq_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Eq_RSS { result, lhs, rhs } => {
+                crate::op::I64Eq_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Eq_RSI { result, lhs, rhs } => {
+                crate::op::I64Eq_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Eq_SRS { result, lhs, rhs } => {
+                crate::op::I64Eq_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Eq_SRI { result, lhs, rhs } => {
+                crate::op::I64Eq_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Eq_SSS { result, lhs, rhs } => {
+                crate::op::I64Eq_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Eq_SSI { result, lhs, rhs } => {
+                crate::op::I64Eq_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Ne_RRS { result, lhs, rhs } => {
+                crate::op::I32Ne_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Ne_RRI { result, lhs, rhs } => {
+                crate::op::I32Ne_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Ne_RSS { result, lhs, rhs } => {
+                crate::op::I32Ne_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Ne_RSI { result, lhs, rhs } => {
+                crate::op::I32Ne_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Ne_SRS { result, lhs, rhs } => {
+                crate::op::I32Ne_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Ne_SRI { result, lhs, rhs } => {
+                crate::op::I32Ne_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Ne_SSS { result, lhs, rhs } => {
+                crate::op::I32Ne_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Ne_SSI { result, lhs, rhs } => {
+                crate::op::I32Ne_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Ne_RRS { result, lhs, rhs } => {
+                crate::op::I64Ne_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Ne_RRI { result, lhs, rhs } => {
+                crate::op::I64Ne_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Ne_RSS { result, lhs, rhs } => {
+                crate::op::I64Ne_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Ne_RSI { result, lhs, rhs } => {
+                crate::op::I64Ne_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Ne_SRS { result, lhs, rhs } => {
+                crate::op::I64Ne_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Ne_SRI { result, lhs, rhs } => {
+                crate::op::I64Ne_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Ne_SSS { result, lhs, rhs } => {
+                crate::op::I64Ne_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I64Ne_SSI { result, lhs, rhs } => {
+                crate::op::I64Ne_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Add_RRS { result, lhs, rhs } => {
+                crate::op::F32Add_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Add_RRI { result, lhs, rhs } => {
+                crate::op::F32Add_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Add_RSS { result, lhs, rhs } => {
+                crate::op::F32Add_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Add_RSI { result, lhs, rhs } => {
+                crate::op::F32Add_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Add_SRS { result, lhs, rhs } => {
+                crate::op::F32Add_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Add_SRI { result, lhs, rhs } => {
+                crate::op::F32Add_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Add_SSS { result, lhs, rhs } => {
+                crate::op::F32Add_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Add_SSI { result, lhs, rhs } => {
+                crate::op::F32Add_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Add_RRS { result, lhs, rhs } => {
+                crate::op::F64Add_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Add_RRI { result, lhs, rhs } => {
+                crate::op::F64Add_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Add_RSS { result, lhs, rhs } => {
+                crate::op::F64Add_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Add_RSI { result, lhs, rhs } => {
+                crate::op::F64Add_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Add_SRS { result, lhs, rhs } => {
+                crate::op::F64Add_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Add_SRI { result, lhs, rhs } => {
+                crate::op::F64Add_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Add_SSS { result, lhs, rhs } => {
+                crate::op::F64Add_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Add_SSI { result, lhs, rhs } => {
+                crate::op::F64Add_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Mul_RRS { result, lhs, rhs } => {
+                crate::op::F32Mul_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Mul_RRI { result, lhs, rhs } => {
+                crate::op::F32Mul_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Mul_RSS { result, lhs, rhs } => {
+                crate::op::F32Mul_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Mul_RSI { result, lhs, rhs } => {
+                crate::op::F32Mul_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Mul_SRS { result, lhs, rhs } => {
+                crate::op::F32Mul_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Mul_SRI { result, lhs, rhs } => {
+                crate::op::F32Mul_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Mul_SSS { result, lhs, rhs } => {
+                crate::op::F32Mul_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Mul_SSI { result, lhs, rhs } => {
+                crate::op::F32Mul_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Mul_RRS { result, lhs, rhs } => {
+                crate::op::F64Mul_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Mul_RRI { result, lhs, rhs } => {
+                crate::op::F64Mul_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Mul_RSS { result, lhs, rhs } => {
+                crate::op::F64Mul_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Mul_RSI { result, lhs, rhs } => {
+                crate::op::F64Mul_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Mul_SRS { result, lhs, rhs } => {
+                crate::op::F64Mul_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Mul_SRI { result, lhs, rhs } => {
+                crate::op::F64Mul_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Mul_SSS { result, lhs, rhs } => {
+                crate::op::F64Mul_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Mul_SSI { result, lhs, rhs } => {
+                crate::op::F64Mul_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Eq_RRS { result, lhs, rhs } => {
+                crate::op::F32Eq_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Eq_RRI { result, lhs, rhs } => {
+                crate::op::F32Eq_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Eq_RSS { result, lhs, rhs } => {
+                crate::op::F32Eq_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Eq_RSI { result, lhs, rhs } => {
+                crate::op::F32Eq_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Eq_SRS { result, lhs, rhs } => {
+                crate::op::F32Eq_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Eq_SRI { result, lhs, rhs } => {
+                crate::op::F32Eq_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Eq_SSS { result, lhs, rhs } => {
+                crate::op::F32Eq_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Eq_SSI { result, lhs, rhs } => {
+                crate::op::F32Eq_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Eq_RRS { result, lhs, rhs } => {
+                crate::op::F64Eq_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Eq_RRI { result, lhs, rhs } => {
+                crate::op::F64Eq_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Eq_RSS { result, lhs, rhs } => {
+                crate::op::F64Eq_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Eq_RSI { result, lhs, rhs } => {
+                crate::op::F64Eq_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Eq_SRS { result, lhs, rhs } => {
+                crate::op::F64Eq_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Eq_SRI { result, lhs, rhs } => {
+                crate::op::F64Eq_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Eq_SSS { result, lhs, rhs } => {
+                crate::op::F64Eq_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Eq_SSI { result, lhs, rhs } => {
+                crate::op::F64Eq_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Ne_RRS { result, lhs, rhs } => {
+                crate::op::F32Ne_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Ne_RRI { result, lhs, rhs } => {
+                crate::op::F32Ne_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Ne_RSS { result, lhs, rhs } => {
+                crate::op::F32Ne_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Ne_RSI { result, lhs, rhs } => {
+                crate::op::F32Ne_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Ne_SRS { result, lhs, rhs } => {
+                crate::op::F32Ne_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Ne_SRI { result, lhs, rhs } => {
+                crate::op::F32Ne_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Ne_SSS { result, lhs, rhs } => {
+                crate::op::F32Ne_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Ne_SSI { result, lhs, rhs } => {
+                crate::op::F32Ne_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Ne_RRS { result, lhs, rhs } => {
+                crate::op::F64Ne_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Ne_RRI { result, lhs, rhs } => {
+                crate::op::F64Ne_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Ne_RSS { result, lhs, rhs } => {
+                crate::op::F64Ne_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Ne_RSI { result, lhs, rhs } => {
+                crate::op::F64Ne_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Ne_SRS { result, lhs, rhs } => {
+                crate::op::F64Ne_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Ne_SRI { result, lhs, rhs } => {
+                crate::op::F64Ne_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Ne_SSS { result, lhs, rhs } => {
+                crate::op::F64Ne_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Ne_SSI { result, lhs, rhs } => {
+                crate::op::F64Ne_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Min_RRS { result, lhs, rhs } => {
+                crate::op::F32Min_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Min_RRI { result, lhs, rhs } => {
+                crate::op::F32Min_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Min_RSS { result, lhs, rhs } => {
+                crate::op::F32Min_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Min_RSI { result, lhs, rhs } => {
+                crate::op::F32Min_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Min_SRS { result, lhs, rhs } => {
+                crate::op::F32Min_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Min_SRI { result, lhs, rhs } => {
+                crate::op::F32Min_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Min_SSS { result, lhs, rhs } => {
+                crate::op::F32Min_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Min_SSI { result, lhs, rhs } => {
+                crate::op::F32Min_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Min_RRS { result, lhs, rhs } => {
+                crate::op::F64Min_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Min_RRI { result, lhs, rhs } => {
+                crate::op::F64Min_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Min_RSS { result, lhs, rhs } => {
+                crate::op::F64Min_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Min_RSI { result, lhs, rhs } => {
+                crate::op::F64Min_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Min_SRS { result, lhs, rhs } => {
+                crate::op::F64Min_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Min_SRI { result, lhs, rhs } => {
+                crate::op::F64Min_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Min_SSS { result, lhs, rhs } => {
+                crate::op::F64Min_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Min_SSI { result, lhs, rhs } => {
+                crate::op::F64Min_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Max_RRS { result, lhs, rhs } => {
+                crate::op::F32Max_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Max_RRI { result, lhs, rhs } => {
+                crate::op::F32Max_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Max_RSS { result, lhs, rhs } => {
+                crate::op::F32Max_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Max_RSI { result, lhs, rhs } => {
+                crate::op::F32Max_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Max_SRS { result, lhs, rhs } => {
+                crate::op::F32Max_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Max_SRI { result, lhs, rhs } => {
+                crate::op::F32Max_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Max_SSS { result, lhs, rhs } => {
+                crate::op::F32Max_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F32Max_SSI { result, lhs, rhs } => {
+                crate::op::F32Max_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Max_RRS { result, lhs, rhs } => {
+                crate::op::F64Max_RRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Max_RRI { result, lhs, rhs } => {
+                crate::op::F64Max_RRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Max_RSS { result, lhs, rhs } => {
+                crate::op::F64Max_RSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Max_RSI { result, lhs, rhs } => {
+                crate::op::F64Max_RSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Max_SRS { result, lhs, rhs } => {
+                crate::op::F64Max_SRS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Max_SRI { result, lhs, rhs } => {
+                crate::op::F64Max_SRI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Max_SSS { result, lhs, rhs } => {
+                crate::op::F64Max_SSS { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::F64Max_SSI { result, lhs, rhs } => {
+                crate::op::F64Max_SSI { result, lhs, rhs }.update_operator_result(new_result)
+            }
+            Self::I32Load_RR { result, ptr, offset, memory } => {
+                crate::op::I32Load_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load_RS { result, ptr, offset, memory } => {
+                crate::op::I32Load_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load_RI { result, address, memory } => {
+                crate::op::I32Load_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I32LoadMem0_RR { result, ptr, offset } => {
+                crate::op::I32LoadMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32LoadMem0_RS { result, ptr, offset } => {
+                crate::op::I32LoadMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32LoadMem0_RI { result, address } => {
+                crate::op::I32LoadMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I32LoadMem0_SR { result, ptr, offset } => {
+                crate::op::I32LoadMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32LoadMem0_SS { result, ptr, offset } => {
+                crate::op::I32LoadMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32LoadMem0_SI { result, address } => {
+                crate::op::I32LoadMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load_RR { result, ptr, offset, memory } => {
+                crate::op::I64Load_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load_RS { result, ptr, offset, memory } => {
+                crate::op::I64Load_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load_RI { result, address, memory } => {
+                crate::op::I64Load_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I64LoadMem0_RR { result, ptr, offset } => {
+                crate::op::I64LoadMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64LoadMem0_RS { result, ptr, offset } => {
+                crate::op::I64LoadMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64LoadMem0_RI { result, address } => {
+                crate::op::I64LoadMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64LoadMem0_SR { result, ptr, offset } => {
+                crate::op::I64LoadMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64LoadMem0_SS { result, ptr, offset } => {
+                crate::op::I64LoadMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64LoadMem0_SI { result, address } => {
+                crate::op::I64LoadMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::F32Load_RR { result, ptr, offset, memory } => {
+                crate::op::F32Load_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::F32Load_RS { result, ptr, offset, memory } => {
+                crate::op::F32Load_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::F32Load_RI { result, address, memory } => {
+                crate::op::F32Load_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::F32LoadMem0_RR { result, ptr, offset } => {
+                crate::op::F32LoadMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::F32LoadMem0_RS { result, ptr, offset } => {
+                crate::op::F32LoadMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::F32LoadMem0_RI { result, address } => {
+                crate::op::F32LoadMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::F32LoadMem0_SR { result, ptr, offset } => {
+                crate::op::F32LoadMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::F32LoadMem0_SS { result, ptr, offset } => {
+                crate::op::F32LoadMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::F32LoadMem0_SI { result, address } => {
+                crate::op::F32LoadMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::F64Load_RR { result, ptr, offset, memory } => {
+                crate::op::F64Load_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::F64Load_RS { result, ptr, offset, memory } => {
+                crate::op::F64Load_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::F64Load_RI { result, address, memory } => {
+                crate::op::F64Load_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::F64LoadMem0_RR { result, ptr, offset } => {
+                crate::op::F64LoadMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::F64LoadMem0_RS { result, ptr, offset } => {
+                crate::op::F64LoadMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::F64LoadMem0_RI { result, address } => {
+                crate::op::F64LoadMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::F64LoadMem0_SR { result, ptr, offset } => {
+                crate::op::F64LoadMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::F64LoadMem0_SS { result, ptr, offset } => {
+                crate::op::F64LoadMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::F64LoadMem0_SI { result, address } => {
+                crate::op::F64LoadMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I32Load8S_RR { result, ptr, offset, memory } => {
+                crate::op::I32Load8S_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load8S_RS { result, ptr, offset, memory } => {
+                crate::op::I32Load8S_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load8S_RI { result, address, memory } => {
+                crate::op::I32Load8S_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load8SMem0_RR { result, ptr, offset } => {
+                crate::op::I32Load8SMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load8SMem0_RS { result, ptr, offset } => {
+                crate::op::I32Load8SMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load8SMem0_RI { result, address } => {
+                crate::op::I32Load8SMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I32Load8SMem0_SR { result, ptr, offset } => {
+                crate::op::I32Load8SMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load8SMem0_SS { result, ptr, offset } => {
+                crate::op::I32Load8SMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load8SMem0_SI { result, address } => {
+                crate::op::I32Load8SMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load8S_RR { result, ptr, offset, memory } => {
+                crate::op::I64Load8S_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load8S_RS { result, ptr, offset, memory } => {
+                crate::op::I64Load8S_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load8S_RI { result, address, memory } => {
+                crate::op::I64Load8S_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load8SMem0_RR { result, ptr, offset } => {
+                crate::op::I64Load8SMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load8SMem0_RS { result, ptr, offset } => {
+                crate::op::I64Load8SMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load8SMem0_RI { result, address } => {
+                crate::op::I64Load8SMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load8SMem0_SR { result, ptr, offset } => {
+                crate::op::I64Load8SMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load8SMem0_SS { result, ptr, offset } => {
+                crate::op::I64Load8SMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load8SMem0_SI { result, address } => {
+                crate::op::I64Load8SMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I32Load8U_RR { result, ptr, offset, memory } => {
+                crate::op::I32Load8U_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load8U_RS { result, ptr, offset, memory } => {
+                crate::op::I32Load8U_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load8U_RI { result, address, memory } => {
+                crate::op::I32Load8U_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load8UMem0_RR { result, ptr, offset } => {
+                crate::op::I32Load8UMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load8UMem0_RS { result, ptr, offset } => {
+                crate::op::I32Load8UMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load8UMem0_RI { result, address } => {
+                crate::op::I32Load8UMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I32Load8UMem0_SR { result, ptr, offset } => {
+                crate::op::I32Load8UMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load8UMem0_SS { result, ptr, offset } => {
+                crate::op::I32Load8UMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load8UMem0_SI { result, address } => {
+                crate::op::I32Load8UMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load8U_RR { result, ptr, offset, memory } => {
+                crate::op::I64Load8U_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load8U_RS { result, ptr, offset, memory } => {
+                crate::op::I64Load8U_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load8U_RI { result, address, memory } => {
+                crate::op::I64Load8U_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load8UMem0_RR { result, ptr, offset } => {
+                crate::op::I64Load8UMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load8UMem0_RS { result, ptr, offset } => {
+                crate::op::I64Load8UMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load8UMem0_RI { result, address } => {
+                crate::op::I64Load8UMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load8UMem0_SR { result, ptr, offset } => {
+                crate::op::I64Load8UMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load8UMem0_SS { result, ptr, offset } => {
+                crate::op::I64Load8UMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load8UMem0_SI { result, address } => {
+                crate::op::I64Load8UMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I32Load16S_RR { result, ptr, offset, memory } => {
+                crate::op::I32Load16S_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load16S_RS { result, ptr, offset, memory } => {
+                crate::op::I32Load16S_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load16S_RI { result, address, memory } => {
+                crate::op::I32Load16S_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load16SMem0_RR { result, ptr, offset } => {
+                crate::op::I32Load16SMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load16SMem0_RS { result, ptr, offset } => {
+                crate::op::I32Load16SMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load16SMem0_RI { result, address } => {
+                crate::op::I32Load16SMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I32Load16SMem0_SR { result, ptr, offset } => {
+                crate::op::I32Load16SMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load16SMem0_SS { result, ptr, offset } => {
+                crate::op::I32Load16SMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load16SMem0_SI { result, address } => {
+                crate::op::I32Load16SMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load16S_RR { result, ptr, offset, memory } => {
+                crate::op::I64Load16S_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load16S_RS { result, ptr, offset, memory } => {
+                crate::op::I64Load16S_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load16S_RI { result, address, memory } => {
+                crate::op::I64Load16S_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load16SMem0_RR { result, ptr, offset } => {
+                crate::op::I64Load16SMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load16SMem0_RS { result, ptr, offset } => {
+                crate::op::I64Load16SMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load16SMem0_RI { result, address } => {
+                crate::op::I64Load16SMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load16SMem0_SR { result, ptr, offset } => {
+                crate::op::I64Load16SMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load16SMem0_SS { result, ptr, offset } => {
+                crate::op::I64Load16SMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load16SMem0_SI { result, address } => {
+                crate::op::I64Load16SMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I32Load16U_RR { result, ptr, offset, memory } => {
+                crate::op::I32Load16U_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load16U_RS { result, ptr, offset, memory } => {
+                crate::op::I32Load16U_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load16U_RI { result, address, memory } => {
+                crate::op::I32Load16U_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I32Load16UMem0_RR { result, ptr, offset } => {
+                crate::op::I32Load16UMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load16UMem0_RS { result, ptr, offset } => {
+                crate::op::I32Load16UMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load16UMem0_RI { result, address } => {
+                crate::op::I32Load16UMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I32Load16UMem0_SR { result, ptr, offset } => {
+                crate::op::I32Load16UMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load16UMem0_SS { result, ptr, offset } => {
+                crate::op::I32Load16UMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I32Load16UMem0_SI { result, address } => {
+                crate::op::I32Load16UMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load16U_RR { result, ptr, offset, memory } => {
+                crate::op::I64Load16U_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load16U_RS { result, ptr, offset, memory } => {
+                crate::op::I64Load16U_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load16U_RI { result, address, memory } => {
+                crate::op::I64Load16U_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load16UMem0_RR { result, ptr, offset } => {
+                crate::op::I64Load16UMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load16UMem0_RS { result, ptr, offset } => {
+                crate::op::I64Load16UMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load16UMem0_RI { result, address } => {
+                crate::op::I64Load16UMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load16UMem0_SR { result, ptr, offset } => {
+                crate::op::I64Load16UMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load16UMem0_SS { result, ptr, offset } => {
+                crate::op::I64Load16UMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load16UMem0_SI { result, address } => {
+                crate::op::I64Load16UMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load32S_RR { result, ptr, offset, memory } => {
+                crate::op::I64Load32S_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load32S_RS { result, ptr, offset, memory } => {
+                crate::op::I64Load32S_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load32S_RI { result, address, memory } => {
+                crate::op::I64Load32S_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load32SMem0_RR { result, ptr, offset } => {
+                crate::op::I64Load32SMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load32SMem0_RS { result, ptr, offset } => {
+                crate::op::I64Load32SMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load32SMem0_RI { result, address } => {
+                crate::op::I64Load32SMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load32SMem0_SR { result, ptr, offset } => {
+                crate::op::I64Load32SMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load32SMem0_SS { result, ptr, offset } => {
+                crate::op::I64Load32SMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load32SMem0_SI { result, address } => {
+                crate::op::I64Load32SMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load32U_RR { result, ptr, offset, memory } => {
+                crate::op::I64Load32U_RR { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load32U_RS { result, ptr, offset, memory } => {
+                crate::op::I64Load32U_RS { result, ptr, offset, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load32U_RI { result, address, memory } => {
+                crate::op::I64Load32U_RI { result, address, memory }.update_operator_result(new_result)
+            }
+            Self::I64Load32UMem0_RR { result, ptr, offset } => {
+                crate::op::I64Load32UMem0_RR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load32UMem0_RS { result, ptr, offset } => {
+                crate::op::I64Load32UMem0_RS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load32UMem0_RI { result, address } => {
+                crate::op::I64Load32UMem0_RI { result, address }.update_operator_result(new_result)
+            }
+            Self::I64Load32UMem0_SR { result, ptr, offset } => {
+                crate::op::I64Load32UMem0_SR { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load32UMem0_SS { result, ptr, offset } => {
+                crate::op::I64Load32UMem0_SS { result, ptr, offset }.update_operator_result(new_result)
+            }
+            Self::I64Load32UMem0_SI { result, address } => {
+                crate::op::I64Load32UMem0_SI { result, address }.update_operator_result(new_result)
+            }
+            Self::TableSize_R { result, index } => {
+                crate::op::TableSize_R { result, index }.update_operator_result(new_result)
+            }
+            Self::TableSize_S { result, index } => {
+                crate::op::TableSize_S { result, index }.update_operator_result(new_result)
+            }
+            Self::TableGrow { result, delta, table } => {
+                crate::op::TableGrow { result, delta, table }.update_operator_result(new_result)
+            }
+            Self::MemorySize_R { result, index } => {
+                crate::op::MemorySize_R { result, index }.update_operator_result(new_result)
+            }
+            Self::MemorySize_S { result, index } => {
+                crate::op::MemorySize_S { result, index }.update_operator_result(new_result)
+            }
 
             _ => ::core::option::Option::None,
         }
     }
 }
-impl crate::UpdateOperatorResult for crate::op::Trap {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::ConsumeFuel {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::RefFunc {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::Trap {}
+impl crate::UpdateOperatorResult for crate::op::ConsumeFuel {}
+impl crate::UpdateOperatorResult for crate::op::RefFunc {}
 impl crate::UpdateOperatorResult for crate::op::Copy1_S {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::Copy1_S {
             result: new_result,
             value: self.value,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::Copy {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::Copy {
             result: new_result,
             len_values: self.len_values,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::Copy1I32_I {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::Copy1I32_I {
             result: new_result,
             value: self.value,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::Copy1I64_R {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::Copy1I64_R {
             result: new_result,
             value: self.value,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::Copy1I64_I {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::Copy1I64_I {
             result: new_result,
             value: self.value,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::Copy1F32_R {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::Copy1F32_R {
             result: new_result,
             value: self.value,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::Copy1F32_I {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::Copy1F32_I {
             result: new_result,
             value: self.value,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::Copy1F64_R {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::Copy1F64_R {
             result: new_result,
             value: self.value,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::Copy1F64_I {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::Copy1F64_I {
             result: new_result,
             value: self.value,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::Return0 {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Return1_S {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Return {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Return1I32_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Return1I64_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Return1F32_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Return1F64_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Return1I32_I {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Return1I64_I {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Return1F32_I {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Return1F64_I {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::Return0 {}
+impl crate::UpdateOperatorResult for crate::op::Return1_S {}
+impl crate::UpdateOperatorResult for crate::op::Return {}
+impl crate::UpdateOperatorResult for crate::op::Return1I32_R {}
+impl crate::UpdateOperatorResult for crate::op::Return1I64_R {}
+impl crate::UpdateOperatorResult for crate::op::Return1F32_R {}
+impl crate::UpdateOperatorResult for crate::op::Return1F64_R {}
+impl crate::UpdateOperatorResult for crate::op::Return1I32_I {}
+impl crate::UpdateOperatorResult for crate::op::Return1I64_I {}
+impl crate::UpdateOperatorResult for crate::op::Return1F32_I {}
+impl crate::UpdateOperatorResult for crate::op::Return1F64_I {}
 impl crate::UpdateOperatorResult for crate::op::GlobalGet_S {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::GlobalGet_S {
             result: new_result,
             index: self.index,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::GlobalGetI32_R {
-    type Output = crate::op::GlobalGet_S;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::GlobalGet_S {
             result: new_result,
             index: self.index,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::GlobalGetI64_R {
-    type Output = crate::op::GlobalGet_S;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::GlobalGet_S {
             result: new_result,
             index: self.index,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::GlobalGetF32_R {
-    type Output = crate::op::GlobalGet_S;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::GlobalGet_S {
             result: new_result,
             index: self.index,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::GlobalGetF64_R {
-    type Output = crate::op::GlobalGet_S;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::GlobalGet_S {
             result: new_result,
             index: self.index,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::GlobalSet_S {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::GlobalSetI32_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::GlobalSetI64_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::GlobalSetF32_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::GlobalSetF64_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::GlobalSetI32_I {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::GlobalSetI64_I {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::GlobalSetF32_I {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::GlobalSetF64_I {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::BranchTable0_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::BranchTable_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::BranchTable0_S {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::BranchTable_S {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Branch {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32EqBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32EqBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32EqBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32EqBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64EqBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64EqBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64EqBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64EqBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32EqBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32EqBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32EqBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32EqBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64EqBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64EqBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64EqBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64EqBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NeBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NeBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NeBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NeBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NeBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NeBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NeBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NeBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32NeBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32NeBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32NeBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32NeBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64NeBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64NeBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64NeBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64NeBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32AndBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32AndBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32AndBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32AndBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64AndBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64AndBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64AndBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64AndBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32OrBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32OrBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32OrBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32OrBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64OrBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64OrBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64OrBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64OrBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32XorBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32XorBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32XorBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32XorBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64XorBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64XorBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64XorBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64XorBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotAndBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotAndBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotAndBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotAndBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotAndBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotAndBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotAndBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotAndBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotOrBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotOrBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotOrBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotOrBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotOrBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotOrBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotOrBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotOrBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotXorBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotXorBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotXorBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32NotXorBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotXorBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotXorBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotXorBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64NotXorBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LtBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LtBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LtBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LtBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LtBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LtBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LtBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LtBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LtBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LtBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LtBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LtBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LtBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LtBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LeBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LeBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LeBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LeBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LeBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LeBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32LeBranch_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LeBranch_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LeBranch_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LeBranch_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LeBranch_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LeBranch_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LeBranch_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64LeBranch_IS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::GlobalSet_S {}
+impl crate::UpdateOperatorResult for crate::op::GlobalSetI32_R {}
+impl crate::UpdateOperatorResult for crate::op::GlobalSetI64_R {}
+impl crate::UpdateOperatorResult for crate::op::GlobalSetF32_R {}
+impl crate::UpdateOperatorResult for crate::op::GlobalSetF64_R {}
+impl crate::UpdateOperatorResult for crate::op::GlobalSetI32_I {}
+impl crate::UpdateOperatorResult for crate::op::GlobalSetI64_I {}
+impl crate::UpdateOperatorResult for crate::op::GlobalSetF32_I {}
+impl crate::UpdateOperatorResult for crate::op::GlobalSetF64_I {}
+impl crate::UpdateOperatorResult for crate::op::BranchTable0_R {}
+impl crate::UpdateOperatorResult for crate::op::BranchTable_R {}
+impl crate::UpdateOperatorResult for crate::op::BranchTable0_S {}
+impl crate::UpdateOperatorResult for crate::op::BranchTable_S {}
+impl crate::UpdateOperatorResult for crate::op::Branch {}
+impl crate::UpdateOperatorResult for crate::op::I32EqBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32EqBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32EqBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32EqBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64EqBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64EqBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64EqBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64EqBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::F32EqBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::F32EqBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::F32EqBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::F32EqBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::F64EqBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::F64EqBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::F64EqBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::F64EqBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32NeBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32NeBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32NeBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32NeBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64NeBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64NeBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64NeBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64NeBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::F32NeBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::F32NeBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::F32NeBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::F32NeBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::F64NeBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::F64NeBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::F64NeBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::F64NeBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32AndBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32AndBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32AndBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32AndBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64AndBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64AndBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64AndBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64AndBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32OrBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32OrBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32OrBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32OrBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64OrBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64OrBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64OrBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64OrBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32XorBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32XorBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32XorBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32XorBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64XorBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64XorBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64XorBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64XorBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32NotAndBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32NotAndBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32NotAndBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32NotAndBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64NotAndBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64NotAndBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64NotAndBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64NotAndBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32NotOrBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32NotOrBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32NotOrBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32NotOrBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64NotOrBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64NotOrBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64NotOrBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64NotOrBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32NotXorBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32NotXorBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32NotXorBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32NotXorBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64NotXorBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64NotXorBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64NotXorBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64NotXorBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::I32LtSBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::I64LtSBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::I32LtUBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::I64LtUBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::I32LeSBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::I64LeSBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::I32LeUBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::I64LeUBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::F32LtBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::F32LtBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::F32LtBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::F32LtBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::F32LtBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::F32LtBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::F32LtBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::F64LtBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::F64LtBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::F64LtBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::F64LtBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::F64LtBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::F64LtBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::F64LtBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::F32LeBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::F32LeBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::F32LeBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::F32LeBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::F32LeBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::F32LeBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::F32LeBranch_IS {}
+impl crate::UpdateOperatorResult for crate::op::F64LeBranch_RS {}
+impl crate::UpdateOperatorResult for crate::op::F64LeBranch_RI {}
+impl crate::UpdateOperatorResult for crate::op::F64LeBranch_SR {}
+impl crate::UpdateOperatorResult for crate::op::F64LeBranch_SS {}
+impl crate::UpdateOperatorResult for crate::op::F64LeBranch_SI {}
+impl crate::UpdateOperatorResult for crate::op::F64LeBranch_IR {}
+impl crate::UpdateOperatorResult for crate::op::F64LeBranch_IS {}
 impl crate::UpdateOperatorResult for crate::op::I32Popcnt_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Popcnt_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Popcnt_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Popcnt_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Popcnt_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Popcnt_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Popcnt_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Popcnt_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Clz_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Clz_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Clz_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Clz_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Clz_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Clz_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Clz_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Clz_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ctz_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ctz_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ctz_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ctz_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ctz_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ctz_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ctz_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ctz_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Abs_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Abs_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Abs_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Abs_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Abs_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Abs_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Abs_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Abs_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Neg_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Neg_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Neg_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Neg_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Neg_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Neg_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Neg_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Neg_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ceil_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ceil_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ceil_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ceil_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ceil_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ceil_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ceil_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ceil_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Floor_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Floor_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Floor_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Floor_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Floor_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Floor_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Floor_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Floor_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Trunc_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Trunc_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Trunc_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Trunc_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Trunc_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Trunc_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Trunc_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Trunc_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Nearest_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Nearest_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Nearest_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Nearest_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Nearest_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Nearest_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Nearest_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Nearest_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Sqrt_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Sqrt_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Sqrt_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Sqrt_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Sqrt_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Sqrt_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Sqrt_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Sqrt_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Demote_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Demote_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Demote_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Demote_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Promote_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Promote_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Promote_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Promote_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI32S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI32S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI32U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI32U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI64S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI64S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI64U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI64U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI32S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI32S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI32U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI32U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI64S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI64S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI64U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI64U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF32S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF32S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF32U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF32U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF64S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF64S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF64U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF64U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF32S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF32S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF32U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF32U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF64S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF64S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF64U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF64U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF32S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF32S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF32U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF32U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF64S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF64S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF64U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF64U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF32S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF32S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF32U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF32U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF64S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF64S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF64U_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF64U_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Extend8S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Extend8S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Extend8S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Extend8S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Extend16S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Extend16S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Extend16S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Extend16S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend8S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend8S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend8S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend8S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend16S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend16S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend16S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend16S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend32S_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend32S_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32WrapI64_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32WrapI64_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32WrapI64_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32WrapI64_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Add_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Add_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4131,9 +2983,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Add_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Add_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Add_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4141,9 +2992,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Add_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Add_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Add_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4151,9 +3001,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Add_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Add_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Add_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4161,9 +3010,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Add_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Add_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Add_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4171,9 +3019,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Add_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Add_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Add_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4181,9 +3028,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Add_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Add_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Add_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4191,9 +3037,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Add_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Add_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Add_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4201,9 +3046,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Add_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Mul_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Mul_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4211,9 +3055,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Mul_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Mul_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Mul_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4221,9 +3064,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Mul_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Mul_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Mul_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4231,9 +3073,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Mul_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Mul_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Mul_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4241,9 +3082,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Mul_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Mul_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Mul_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4251,9 +3091,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Mul_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Mul_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Mul_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4261,9 +3100,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Mul_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Mul_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Mul_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4271,9 +3109,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Mul_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Mul_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Mul_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4281,9 +3118,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Mul_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitAnd_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitAnd_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4291,9 +3127,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitAnd_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitAnd_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitAnd_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4301,9 +3136,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitAnd_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitAnd_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitAnd_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4311,9 +3145,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitAnd_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitAnd_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitAnd_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4321,9 +3154,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitAnd_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitAnd_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitAnd_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4331,9 +3163,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitAnd_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitAnd_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitAnd_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4341,9 +3172,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitAnd_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitAnd_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitAnd_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4351,9 +3181,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitAnd_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitAnd_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitAnd_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4361,9 +3190,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitAnd_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitOr_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitOr_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4371,9 +3199,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitOr_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitOr_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitOr_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4381,9 +3208,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitOr_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitOr_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitOr_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4391,9 +3217,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitOr_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitOr_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitOr_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4401,9 +3226,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitOr_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitOr_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitOr_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4411,9 +3235,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitOr_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitOr_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitOr_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4421,9 +3244,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitOr_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitOr_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitOr_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4431,9 +3253,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitOr_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitOr_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitOr_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4441,9 +3262,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitOr_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitXor_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitXor_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4451,9 +3271,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitXor_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitXor_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitXor_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4461,9 +3280,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitXor_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitXor_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitXor_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4471,9 +3289,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitXor_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitXor_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitXor_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4481,9 +3298,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitXor_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitXor_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitXor_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4491,9 +3307,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitXor_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitXor_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitXor_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4501,9 +3316,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitXor_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitXor_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitXor_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4511,9 +3325,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitXor_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitXor_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitXor_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4521,9 +3334,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitXor_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32And_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32And_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4531,9 +3343,8 @@ impl crate::UpdateOperatorResult for crate::op::I32And_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32And_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32And_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4541,9 +3352,8 @@ impl crate::UpdateOperatorResult for crate::op::I32And_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32And_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32And_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4551,9 +3361,8 @@ impl crate::UpdateOperatorResult for crate::op::I32And_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32And_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32And_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4561,9 +3370,8 @@ impl crate::UpdateOperatorResult for crate::op::I32And_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64And_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64And_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4571,9 +3379,8 @@ impl crate::UpdateOperatorResult for crate::op::I64And_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64And_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64And_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4581,9 +3388,8 @@ impl crate::UpdateOperatorResult for crate::op::I64And_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64And_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64And_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4591,9 +3397,8 @@ impl crate::UpdateOperatorResult for crate::op::I64And_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64And_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64And_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4601,9 +3406,8 @@ impl crate::UpdateOperatorResult for crate::op::I64And_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Or_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Or_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4611,9 +3415,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Or_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Or_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Or_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4621,9 +3424,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Or_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Or_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Or_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4631,9 +3433,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Or_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Or_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Or_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4641,9 +3442,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Or_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Or_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Or_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4651,9 +3451,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Or_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Or_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Or_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4661,9 +3460,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Or_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Or_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Or_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4671,9 +3469,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Or_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Or_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Or_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4681,9 +3478,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Or_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Xor_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Xor_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4691,9 +3487,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Xor_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Xor_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Xor_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4701,9 +3496,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Xor_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Xor_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Xor_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4711,9 +3505,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Xor_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Xor_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Xor_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4721,9 +3514,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Xor_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Xor_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Xor_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4731,9 +3523,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Xor_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Xor_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Xor_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4741,9 +3532,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Xor_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Xor_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Xor_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4751,9 +3541,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Xor_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Xor_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Xor_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4761,9 +3550,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Xor_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Eq_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Eq_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4771,9 +3559,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Eq_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Eq_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Eq_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4781,9 +3568,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Eq_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Eq_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Eq_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4791,9 +3577,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Eq_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Eq_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Eq_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4801,9 +3586,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Eq_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Eq_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Eq_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4811,9 +3595,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Eq_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Eq_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Eq_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4821,9 +3604,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Eq_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Eq_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Eq_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4831,9 +3613,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Eq_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Eq_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Eq_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4841,9 +3622,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Eq_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ne_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ne_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4851,9 +3631,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Ne_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ne_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ne_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4861,9 +3640,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Ne_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ne_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ne_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4871,9 +3649,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Ne_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ne_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ne_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4881,9 +3658,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Ne_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ne_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ne_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4891,9 +3667,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Ne_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ne_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ne_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4901,9 +3676,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Ne_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ne_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ne_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4911,9 +3685,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Ne_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ne_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ne_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4921,9 +3694,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Ne_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Add_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Add_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4931,9 +3703,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Add_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Add_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Add_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4941,9 +3712,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Add_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Add_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Add_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4951,9 +3721,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Add_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Add_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Add_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4961,9 +3730,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Add_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Add_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Add_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4971,9 +3739,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Add_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Add_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Add_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4981,9 +3748,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Add_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Add_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Add_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -4991,9 +3757,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Add_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Add_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Add_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5001,9 +3766,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Add_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Mul_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Mul_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5011,9 +3775,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Mul_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Mul_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Mul_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5021,9 +3784,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Mul_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Mul_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Mul_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5031,9 +3793,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Mul_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Mul_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Mul_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5041,9 +3802,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Mul_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Mul_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Mul_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5051,9 +3811,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Mul_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Mul_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Mul_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5061,9 +3820,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Mul_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Mul_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Mul_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5071,9 +3829,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Mul_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Mul_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Mul_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5081,9 +3838,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Mul_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Eq_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Eq_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5091,9 +3847,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Eq_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Eq_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Eq_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5101,9 +3856,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Eq_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Eq_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Eq_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5111,9 +3865,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Eq_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Eq_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Eq_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5121,9 +3874,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Eq_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Eq_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Eq_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5131,9 +3883,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Eq_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Eq_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Eq_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5141,9 +3892,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Eq_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Eq_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Eq_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5151,9 +3901,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Eq_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Eq_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Eq_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5161,9 +3910,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Eq_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ne_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ne_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5171,9 +3919,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Ne_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ne_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ne_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5181,9 +3928,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Ne_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ne_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ne_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5191,9 +3937,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Ne_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ne_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ne_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5201,9 +3946,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Ne_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ne_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ne_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5211,9 +3955,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Ne_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ne_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ne_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5221,9 +3964,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Ne_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ne_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ne_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5231,9 +3973,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Ne_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ne_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ne_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5241,9 +3982,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Ne_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Min_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Min_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5251,9 +3991,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Min_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Min_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Min_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5261,9 +4000,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Min_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Min_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Min_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5271,9 +4009,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Min_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Min_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Min_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5281,9 +4018,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Min_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Min_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Min_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5291,9 +4027,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Min_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Min_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Min_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5301,9 +4036,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Min_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Min_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Min_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5311,9 +4045,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Min_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Min_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Min_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5321,9 +4054,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Min_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Max_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Max_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5331,9 +4063,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Max_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Max_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Max_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5341,9 +4072,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Max_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Max_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Max_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5351,9 +4081,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Max_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Max_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Max_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5361,9 +4090,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Max_SSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Max_SRS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Max_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5371,9 +4099,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Max_SRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Max_SRI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Max_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5381,9 +4108,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Max_SRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Max_SSS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Max_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -5391,733 +4117,255 @@ impl crate::UpdateOperatorResult for crate::op::F64Max_SSS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Max_SSI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Max_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I32Sub_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Sub_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Sub_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Sub_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Sub_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Sub_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Sub_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Sub_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Sub_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Sub_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Sub_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Sub_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Sub_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Sub_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtS_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtS_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtS_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtS_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtS_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtS_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtS_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtS_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtS_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtS_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtS_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtS_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtS_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtS_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtU_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtU_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtU_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtU_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtU_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtU_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LtU_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtU_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtU_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtU_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtU_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtU_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtU_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LtU_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeS_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeS_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeS_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeS_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeS_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeS_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeS_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeS_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeS_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeS_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeS_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeS_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeS_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeS_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeU_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeU_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeU_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeU_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeU_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeU_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32LeU_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeU_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeU_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeU_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeU_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeU_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeU_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64LeU_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivS_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivS_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivS_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivS_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivS_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivS_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivS_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivS_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivS_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivS_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivS_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivS_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivS_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivS_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivU_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivU_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivU_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivU_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivU_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivU_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32DivU_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivU_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivU_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivU_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivU_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivU_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivU_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64DivU_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemS_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemS_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemS_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemS_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemS_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemS_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemS_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemS_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemS_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemS_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemS_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemS_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemS_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemS_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemU_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemU_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemU_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemU_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemU_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemU_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32RemU_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemU_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemU_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemU_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemU_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemU_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemU_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64RemU_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Shl_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Shl_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Shl_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Shl_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Shl_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Shl_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Shl_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Shl_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Shl_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Shl_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Shl_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Shl_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Shl_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Shl_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrS_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrS_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrS_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrS_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrS_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrS_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrS_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrS_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrS_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrS_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrS_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrS_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrS_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrS_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrU_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrU_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrU_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrU_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrU_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrU_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32ShrU_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrU_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrU_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrU_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrU_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrU_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrU_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64ShrU_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotl_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotl_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotl_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotl_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotl_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotl_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotl_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotl_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotl_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotl_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotl_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotl_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotl_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotl_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotr_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotr_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotr_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotr_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotr_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotr_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Rotr_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotr_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotr_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotr_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotr_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotr_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotr_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Rotr_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Sub_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Sub_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Sub_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Sub_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Sub_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Sub_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Sub_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Sub_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Sub_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Sub_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Sub_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Sub_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Sub_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Sub_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Div_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Div_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Div_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Div_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Div_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Div_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Div_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Div_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Div_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Div_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Div_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Div_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Div_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Div_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Copysign_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Copysign_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Copysign_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Copysign_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Copysign_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Copysign_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Copysign_RIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Copysign_RRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Copysign_RRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Copysign_RSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Copysign_RSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Copysign_RSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Copysign_RIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Copysign_RIS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I32Sub_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32Sub_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32Sub_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32Sub_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32Sub_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32Sub_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32Sub_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64Sub_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64Sub_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64Sub_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64Sub_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64Sub_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64Sub_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64Sub_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtS_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtS_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32LtS_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32LtS_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtS_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32LtS_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32LtS_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtS_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtS_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64LtS_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64LtS_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtS_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64LtS_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64LtS_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtU_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtU_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32LtU_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32LtU_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32LtU_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32LtU_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32LtU_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtU_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtU_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64LtU_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64LtU_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64LtU_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64LtU_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64LtU_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeS_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeS_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32LeS_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32LeS_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeS_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32LeS_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32LeS_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeS_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeS_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64LeS_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64LeS_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeS_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64LeS_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64LeS_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeU_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeU_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32LeU_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32LeU_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32LeU_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32LeU_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32LeU_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeU_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeU_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64LeU_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64LeU_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64LeU_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64LeU_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64LeU_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32DivS_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32DivS_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32DivS_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32DivS_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32DivS_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32DivS_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32DivS_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64DivS_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64DivS_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64DivS_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64DivS_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64DivS_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64DivS_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64DivS_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32DivU_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32DivU_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32DivU_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32DivU_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32DivU_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32DivU_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32DivU_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64DivU_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64DivU_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64DivU_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64DivU_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64DivU_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64DivU_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64DivU_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32RemS_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32RemS_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32RemS_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32RemS_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32RemS_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32RemS_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32RemS_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64RemS_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64RemS_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64RemS_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64RemS_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64RemS_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64RemS_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64RemS_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32RemU_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32RemU_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32RemU_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32RemU_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32RemU_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32RemU_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32RemU_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64RemU_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64RemU_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64RemU_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64RemU_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64RemU_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64RemU_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64RemU_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32Shl_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32Shl_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32Shl_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32Shl_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32Shl_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32Shl_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32Shl_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64Shl_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64Shl_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64Shl_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64Shl_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64Shl_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64Shl_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64Shl_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrS_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrS_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrS_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrS_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrS_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrS_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrS_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrS_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrS_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrS_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrS_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrS_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrS_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrS_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrU_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrU_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrU_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrU_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrU_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrU_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32ShrU_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrU_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrU_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrU_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrU_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrU_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrU_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64ShrU_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotl_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotl_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotl_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotl_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotl_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotl_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotl_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotl_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotl_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotl_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotl_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotl_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotl_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotl_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotr_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotr_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotr_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotr_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotr_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotr_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I32Rotr_RIS {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotr_RRS {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotr_RRI {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotr_RSR {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotr_RSS {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotr_RSI {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotr_RIR {}
+impl crate::UpdateOperatorResult for crate::op::I64Rotr_RIS {}
+impl crate::UpdateOperatorResult for crate::op::F32Sub_RRS {}
+impl crate::UpdateOperatorResult for crate::op::F32Sub_RRI {}
+impl crate::UpdateOperatorResult for crate::op::F32Sub_RSR {}
+impl crate::UpdateOperatorResult for crate::op::F32Sub_RSS {}
+impl crate::UpdateOperatorResult for crate::op::F32Sub_RSI {}
+impl crate::UpdateOperatorResult for crate::op::F32Sub_RIR {}
+impl crate::UpdateOperatorResult for crate::op::F32Sub_RIS {}
+impl crate::UpdateOperatorResult for crate::op::F64Sub_RRS {}
+impl crate::UpdateOperatorResult for crate::op::F64Sub_RRI {}
+impl crate::UpdateOperatorResult for crate::op::F64Sub_RSR {}
+impl crate::UpdateOperatorResult for crate::op::F64Sub_RSS {}
+impl crate::UpdateOperatorResult for crate::op::F64Sub_RSI {}
+impl crate::UpdateOperatorResult for crate::op::F64Sub_RIR {}
+impl crate::UpdateOperatorResult for crate::op::F64Sub_RIS {}
+impl crate::UpdateOperatorResult for crate::op::F32Div_RRS {}
+impl crate::UpdateOperatorResult for crate::op::F32Div_RRI {}
+impl crate::UpdateOperatorResult for crate::op::F32Div_RSR {}
+impl crate::UpdateOperatorResult for crate::op::F32Div_RSS {}
+impl crate::UpdateOperatorResult for crate::op::F32Div_RSI {}
+impl crate::UpdateOperatorResult for crate::op::F32Div_RIR {}
+impl crate::UpdateOperatorResult for crate::op::F32Div_RIS {}
+impl crate::UpdateOperatorResult for crate::op::F64Div_RRS {}
+impl crate::UpdateOperatorResult for crate::op::F64Div_RRI {}
+impl crate::UpdateOperatorResult for crate::op::F64Div_RSR {}
+impl crate::UpdateOperatorResult for crate::op::F64Div_RSS {}
+impl crate::UpdateOperatorResult for crate::op::F64Div_RSI {}
+impl crate::UpdateOperatorResult for crate::op::F64Div_RIR {}
+impl crate::UpdateOperatorResult for crate::op::F64Div_RIS {}
+impl crate::UpdateOperatorResult for crate::op::F32Copysign_RRS {}
+impl crate::UpdateOperatorResult for crate::op::F32Copysign_RRI {}
+impl crate::UpdateOperatorResult for crate::op::F32Copysign_RSR {}
+impl crate::UpdateOperatorResult for crate::op::F32Copysign_RSS {}
+impl crate::UpdateOperatorResult for crate::op::F32Copysign_RSI {}
+impl crate::UpdateOperatorResult for crate::op::F32Copysign_RIR {}
+impl crate::UpdateOperatorResult for crate::op::F32Copysign_RIS {}
+impl crate::UpdateOperatorResult for crate::op::F64Copysign_RRS {}
+impl crate::UpdateOperatorResult for crate::op::F64Copysign_RRI {}
+impl crate::UpdateOperatorResult for crate::op::F64Copysign_RSR {}
+impl crate::UpdateOperatorResult for crate::op::F64Copysign_RSS {}
+impl crate::UpdateOperatorResult for crate::op::F64Copysign_RSI {}
+impl crate::UpdateOperatorResult for crate::op::F64Copysign_RIR {}
+impl crate::UpdateOperatorResult for crate::op::F64Copysign_RIS {}
 impl crate::UpdateOperatorResult for crate::op::I32LoadMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32LoadMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6125,9 +4373,8 @@ impl crate::UpdateOperatorResult for crate::op::I32LoadMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32LoadMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32LoadMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6135,18 +4382,16 @@ impl crate::UpdateOperatorResult for crate::op::I32LoadMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32LoadMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32LoadMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64LoadMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64LoadMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6154,9 +4399,8 @@ impl crate::UpdateOperatorResult for crate::op::I64LoadMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64LoadMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64LoadMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6164,18 +4408,16 @@ impl crate::UpdateOperatorResult for crate::op::I64LoadMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64LoadMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64LoadMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32LoadMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32LoadMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6183,9 +4425,8 @@ impl crate::UpdateOperatorResult for crate::op::F32LoadMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32LoadMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32LoadMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6193,18 +4434,16 @@ impl crate::UpdateOperatorResult for crate::op::F32LoadMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32LoadMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32LoadMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64LoadMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64LoadMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6212,9 +4451,8 @@ impl crate::UpdateOperatorResult for crate::op::F64LoadMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64LoadMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64LoadMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6222,18 +4460,16 @@ impl crate::UpdateOperatorResult for crate::op::F64LoadMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64LoadMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64LoadMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load8SMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8SMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6241,9 +4477,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Load8SMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load8SMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8SMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6251,18 +4486,16 @@ impl crate::UpdateOperatorResult for crate::op::I32Load8SMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load8SMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8SMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load8SMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8SMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6270,9 +4503,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Load8SMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load8SMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8SMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6280,18 +4512,16 @@ impl crate::UpdateOperatorResult for crate::op::I64Load8SMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load8SMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8SMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load8UMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8UMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6299,9 +4529,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Load8UMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load8UMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8UMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6309,18 +4538,16 @@ impl crate::UpdateOperatorResult for crate::op::I32Load8UMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load8UMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8UMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load8UMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8UMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6328,9 +4555,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Load8UMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load8UMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8UMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6338,18 +4564,16 @@ impl crate::UpdateOperatorResult for crate::op::I64Load8UMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load8UMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8UMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load16SMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16SMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6357,9 +4581,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Load16SMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load16SMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16SMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6367,18 +4590,16 @@ impl crate::UpdateOperatorResult for crate::op::I32Load16SMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load16SMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16SMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load16SMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16SMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6386,9 +4607,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Load16SMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load16SMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16SMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6396,18 +4616,16 @@ impl crate::UpdateOperatorResult for crate::op::I64Load16SMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load16SMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16SMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load16UMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16UMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6415,9 +4633,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Load16UMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load16UMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16UMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6425,18 +4642,16 @@ impl crate::UpdateOperatorResult for crate::op::I32Load16UMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load16UMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16UMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load16UMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16UMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6444,9 +4659,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Load16UMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load16UMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16UMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6454,18 +4668,16 @@ impl crate::UpdateOperatorResult for crate::op::I64Load16UMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load16UMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16UMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load32SMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32SMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6473,9 +4685,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Load32SMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load32SMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32SMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6483,18 +4694,16 @@ impl crate::UpdateOperatorResult for crate::op::I64Load32SMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load32SMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32SMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load32UMem0_SR {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32UMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6502,9 +4711,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Load32UMem0_SR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load32UMem0_SS {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32UMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -6512,1529 +4720,1061 @@ impl crate::UpdateOperatorResult for crate::op::I64Load32UMem0_SS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load32UMem0_SI {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32UMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I32Store_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Store_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Store_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Store_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Store_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Store_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Store_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Store_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Store_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_II {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::Select {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI32_RSSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI32_RSSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI32_RSIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI32_RSII {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RRSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RRSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RRIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RRII {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RSRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RSRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RSSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RSSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RSSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RSIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RSIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectI64_RSII {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RRSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RRSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RRIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RRII {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RSRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RSRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RSSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RSSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RSSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RSIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RSIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF32_RSII {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RRSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RRSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RRIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RRII {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RSRS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RSRI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RSSR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RSSS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RSSI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RSIR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RSIS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::SelectF64_RSII {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I32Store_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32Store_IS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store_II {}
+impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_SR {}
+impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_IR {}
+impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_IS {}
+impl crate::UpdateOperatorResult for crate::op::I32StoreMem0_II {}
+impl crate::UpdateOperatorResult for crate::op::I64Store_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64Store_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store_II {}
+impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_SR {}
+impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_IR {}
+impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64StoreMem0_II {}
+impl crate::UpdateOperatorResult for crate::op::F32Store_SS {}
+impl crate::UpdateOperatorResult for crate::op::F32Store_SI {}
+impl crate::UpdateOperatorResult for crate::op::F32Store_IS {}
+impl crate::UpdateOperatorResult for crate::op::F32Store_II {}
+impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_RR {}
+impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_RS {}
+impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_RI {}
+impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_SR {}
+impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_SS {}
+impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_SI {}
+impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_IR {}
+impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_IS {}
+impl crate::UpdateOperatorResult for crate::op::F32StoreMem0_II {}
+impl crate::UpdateOperatorResult for crate::op::F64Store_SS {}
+impl crate::UpdateOperatorResult for crate::op::F64Store_SI {}
+impl crate::UpdateOperatorResult for crate::op::F64Store_IS {}
+impl crate::UpdateOperatorResult for crate::op::F64Store_II {}
+impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_RR {}
+impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_RS {}
+impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_RI {}
+impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_SR {}
+impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_SS {}
+impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_SI {}
+impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_IR {}
+impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_IS {}
+impl crate::UpdateOperatorResult for crate::op::F64StoreMem0_II {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8_IS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8_II {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_SR {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_IR {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_IS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store8Mem0_II {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8_II {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_SR {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_IR {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store8Mem0_II {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16_IS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16_II {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_RS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_SR {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_SS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_SI {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_IR {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_IS {}
+impl crate::UpdateOperatorResult for crate::op::I32Store16Mem0_II {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16_II {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_SR {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_IR {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store16Mem0_II {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32_II {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_RS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_SR {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_SS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_SI {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_IR {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_IS {}
+impl crate::UpdateOperatorResult for crate::op::I64Store32Mem0_II {}
+impl crate::UpdateOperatorResult for crate::op::Select {}
+impl crate::UpdateOperatorResult for crate::op::SelectI32_RSSS {}
+impl crate::UpdateOperatorResult for crate::op::SelectI32_RSSI {}
+impl crate::UpdateOperatorResult for crate::op::SelectI32_RSIS {}
+impl crate::UpdateOperatorResult for crate::op::SelectI32_RSII {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RRSS {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RRSI {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RRIS {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RRII {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RSRS {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RSRI {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RSSR {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RSSS {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RSSI {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RSIR {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RSIS {}
+impl crate::UpdateOperatorResult for crate::op::SelectI64_RSII {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RRSS {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RRSI {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RRIS {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RRII {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RSRS {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RSRI {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RSSR {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RSSS {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RSSI {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RSIR {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RSIS {}
+impl crate::UpdateOperatorResult for crate::op::SelectF32_RSII {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RRSS {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RRSI {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RRIS {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RRII {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RSRS {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RSRI {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RSSR {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RSSS {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RSSI {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RSIR {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RSIS {}
+impl crate::UpdateOperatorResult for crate::op::SelectF64_RSII {}
 impl crate::UpdateOperatorResult for crate::op::TableSize_R {
-    type Output = crate::op::TableSize_S;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::TableSize_S {
             result: new_result,
             index: self.index,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::TableSize_S {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::TableSize_S {
             result: new_result,
             index: self.index,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::TableGet_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableGet_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableGet_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableSet_RS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableSet_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableSet_SR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableSet_SS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableSet_SI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableSet_IR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableSet_IS {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableSet_II {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::TableGet_RR {}
+impl crate::UpdateOperatorResult for crate::op::TableGet_RS {}
+impl crate::UpdateOperatorResult for crate::op::TableGet_RI {}
+impl crate::UpdateOperatorResult for crate::op::TableSet_RS {}
+impl crate::UpdateOperatorResult for crate::op::TableSet_RI {}
+impl crate::UpdateOperatorResult for crate::op::TableSet_SR {}
+impl crate::UpdateOperatorResult for crate::op::TableSet_SS {}
+impl crate::UpdateOperatorResult for crate::op::TableSet_SI {}
+impl crate::UpdateOperatorResult for crate::op::TableSet_IR {}
+impl crate::UpdateOperatorResult for crate::op::TableSet_IS {}
+impl crate::UpdateOperatorResult for crate::op::TableSet_II {}
 impl crate::UpdateOperatorResult for crate::op::TableGrow {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::TableGrow {
             result: new_result,
             delta: self.delta,
             table: self.table,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::TableCopy {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableFill {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::TableInit {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::TableCopy {}
+impl crate::UpdateOperatorResult for crate::op::TableFill {}
+impl crate::UpdateOperatorResult for crate::op::TableInit {}
 impl crate::UpdateOperatorResult for crate::op::MemorySize_R {
-    type Output = crate::op::MemorySize_S;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::MemorySize_S {
             result: new_result,
             index: self.index,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::MemorySize_S {
-    type Output = Self;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::MemorySize_S {
             result: new_result,
             index: self.index,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::MemoryGrow {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::MemoryCopy {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::MemoryFill {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::MemoryInit {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::CallInternal {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::ReturnCallInternal {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::CallImported {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::ReturnCallImported {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::CallIndirect_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::CallIndirect_S {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::CallIndirect_I {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::ReturnCallIndirect_R {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::ReturnCallIndirect_S {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::ReturnCallIndirect_I {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::MemoryGrow {}
+impl crate::UpdateOperatorResult for crate::op::MemoryCopy {}
+impl crate::UpdateOperatorResult for crate::op::MemoryFill {}
+impl crate::UpdateOperatorResult for crate::op::MemoryInit {}
+impl crate::UpdateOperatorResult for crate::op::CallInternal {}
+impl crate::UpdateOperatorResult for crate::op::ReturnCallInternal {}
+impl crate::UpdateOperatorResult for crate::op::CallImported {}
+impl crate::UpdateOperatorResult for crate::op::ReturnCallImported {}
+impl crate::UpdateOperatorResult for crate::op::CallIndirect_R {}
+impl crate::UpdateOperatorResult for crate::op::CallIndirect_S {}
+impl crate::UpdateOperatorResult for crate::op::CallIndirect_I {}
+impl crate::UpdateOperatorResult for crate::op::ReturnCallIndirect_R {}
+impl crate::UpdateOperatorResult for crate::op::ReturnCallIndirect_S {}
+impl crate::UpdateOperatorResult for crate::op::ReturnCallIndirect_I {}
 
 impl crate::UpdateOperatorResult for crate::op::I32Popcnt_RR {
-    type Output = crate::op::I32Popcnt_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Popcnt_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Popcnt_RS {
-    type Output = crate::op::I32Popcnt_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Popcnt_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Popcnt_RR {
-    type Output = crate::op::I64Popcnt_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Popcnt_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Popcnt_RS {
-    type Output = crate::op::I64Popcnt_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Popcnt_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Clz_RR {
-    type Output = crate::op::I32Clz_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Clz_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Clz_RS {
-    type Output = crate::op::I32Clz_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Clz_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Clz_RR {
-    type Output = crate::op::I64Clz_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Clz_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Clz_RS {
-    type Output = crate::op::I64Clz_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Clz_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ctz_RR {
-    type Output = crate::op::I32Ctz_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ctz_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ctz_RS {
-    type Output = crate::op::I32Ctz_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ctz_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ctz_RR {
-    type Output = crate::op::I64Ctz_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ctz_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ctz_RS {
-    type Output = crate::op::I64Ctz_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ctz_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Abs_RR {
-    type Output = crate::op::F32Abs_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Abs_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Abs_RS {
-    type Output = crate::op::F32Abs_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Abs_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Abs_RR {
-    type Output = crate::op::F64Abs_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Abs_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Abs_RS {
-    type Output = crate::op::F64Abs_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Abs_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Neg_RR {
-    type Output = crate::op::F32Neg_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Neg_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Neg_RS {
-    type Output = crate::op::F32Neg_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Neg_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Neg_RR {
-    type Output = crate::op::F64Neg_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Neg_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Neg_RS {
-    type Output = crate::op::F64Neg_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Neg_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ceil_RR {
-    type Output = crate::op::F32Ceil_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ceil_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ceil_RS {
-    type Output = crate::op::F32Ceil_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ceil_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ceil_RR {
-    type Output = crate::op::F64Ceil_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ceil_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ceil_RS {
-    type Output = crate::op::F64Ceil_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ceil_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Floor_RR {
-    type Output = crate::op::F32Floor_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Floor_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Floor_RS {
-    type Output = crate::op::F32Floor_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Floor_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Floor_RR {
-    type Output = crate::op::F64Floor_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Floor_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Floor_RS {
-    type Output = crate::op::F64Floor_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Floor_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Trunc_RR {
-    type Output = crate::op::F32Trunc_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Trunc_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Trunc_RS {
-    type Output = crate::op::F32Trunc_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Trunc_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Trunc_RR {
-    type Output = crate::op::F64Trunc_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Trunc_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Trunc_RS {
-    type Output = crate::op::F64Trunc_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Trunc_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Nearest_RR {
-    type Output = crate::op::F32Nearest_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Nearest_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Nearest_RS {
-    type Output = crate::op::F32Nearest_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Nearest_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Nearest_RR {
-    type Output = crate::op::F64Nearest_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Nearest_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Nearest_RS {
-    type Output = crate::op::F64Nearest_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Nearest_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Sqrt_RR {
-    type Output = crate::op::F32Sqrt_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Sqrt_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Sqrt_RS {
-    type Output = crate::op::F32Sqrt_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Sqrt_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Sqrt_RR {
-    type Output = crate::op::F64Sqrt_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Sqrt_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Sqrt_RS {
-    type Output = crate::op::F64Sqrt_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Sqrt_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Demote_RR {
-    type Output = crate::op::F32Demote_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Demote_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Demote_RS {
-    type Output = crate::op::F32Demote_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Demote_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Promote_RR {
-    type Output = crate::op::F64Promote_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Promote_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Promote_RS {
-    type Output = crate::op::F64Promote_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Promote_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI32S_RR {
-    type Output = crate::op::F32ConvertI32S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI32S_RS {
-    type Output = crate::op::F32ConvertI32S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI32U_RR {
-    type Output = crate::op::F32ConvertI32U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI32U_RS {
-    type Output = crate::op::F32ConvertI32U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI64S_RR {
-    type Output = crate::op::F32ConvertI64S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI64S_RS {
-    type Output = crate::op::F32ConvertI64S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI64U_RR {
-    type Output = crate::op::F32ConvertI64U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32ConvertI64U_RS {
-    type Output = crate::op::F32ConvertI64U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32ConvertI64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI32S_RR {
-    type Output = crate::op::F64ConvertI32S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI32S_RS {
-    type Output = crate::op::F64ConvertI32S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI32U_RR {
-    type Output = crate::op::F64ConvertI32U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI32U_RS {
-    type Output = crate::op::F64ConvertI32U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI64S_RR {
-    type Output = crate::op::F64ConvertI64S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI64S_RS {
-    type Output = crate::op::F64ConvertI64S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI64U_RR {
-    type Output = crate::op::F64ConvertI64U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64ConvertI64U_RS {
-    type Output = crate::op::F64ConvertI64U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64ConvertI64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF32S_RR {
-    type Output = crate::op::I32TruncF32S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF32S_RS {
-    type Output = crate::op::I32TruncF32S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF32U_RR {
-    type Output = crate::op::I32TruncF32U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF32U_RS {
-    type Output = crate::op::I32TruncF32U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF64S_RR {
-    type Output = crate::op::I32TruncF64S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF64S_RS {
-    type Output = crate::op::I32TruncF64S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF64U_RR {
-    type Output = crate::op::I32TruncF64U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncF64U_RS {
-    type Output = crate::op::I32TruncF64U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncF64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF32S_RR {
-    type Output = crate::op::I64TruncF32S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF32S_RS {
-    type Output = crate::op::I64TruncF32S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF32U_RR {
-    type Output = crate::op::I64TruncF32U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF32U_RS {
-    type Output = crate::op::I64TruncF32U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF64S_RR {
-    type Output = crate::op::I64TruncF64S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF64S_RS {
-    type Output = crate::op::I64TruncF64S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF64U_RR {
-    type Output = crate::op::I64TruncF64U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncF64U_RS {
-    type Output = crate::op::I64TruncF64U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncF64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF32S_RR {
-    type Output = crate::op::I32TruncSatF32S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF32S_RS {
-    type Output = crate::op::I32TruncSatF32S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF32U_RR {
-    type Output = crate::op::I32TruncSatF32U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF32U_RS {
-    type Output = crate::op::I32TruncSatF32U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF64S_RR {
-    type Output = crate::op::I32TruncSatF64S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF64S_RS {
-    type Output = crate::op::I32TruncSatF64S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF64U_RR {
-    type Output = crate::op::I32TruncSatF64U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32TruncSatF64U_RS {
-    type Output = crate::op::I32TruncSatF64U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32TruncSatF64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF32S_RR {
-    type Output = crate::op::I64TruncSatF32S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF32S_RS {
-    type Output = crate::op::I64TruncSatF32S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF32U_RR {
-    type Output = crate::op::I64TruncSatF32U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF32U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF32U_RS {
-    type Output = crate::op::I64TruncSatF32U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF32U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF64S_RR {
-    type Output = crate::op::I64TruncSatF64S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF64S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF64S_RS {
-    type Output = crate::op::I64TruncSatF64S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF64S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF64U_RR {
-    type Output = crate::op::I64TruncSatF64U_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF64U_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64TruncSatF64U_RS {
-    type Output = crate::op::I64TruncSatF64U_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64TruncSatF64U_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Extend8S_RR {
-    type Output = crate::op::I32Extend8S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Extend8S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Extend8S_RS {
-    type Output = crate::op::I32Extend8S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Extend8S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Extend16S_RR {
-    type Output = crate::op::I32Extend16S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Extend16S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Extend16S_RS {
-    type Output = crate::op::I32Extend16S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Extend16S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend8S_RR {
-    type Output = crate::op::I64Extend8S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend8S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend8S_RS {
-    type Output = crate::op::I64Extend8S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend8S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend16S_RR {
-    type Output = crate::op::I64Extend16S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend16S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend16S_RS {
-    type Output = crate::op::I64Extend16S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend16S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend32S_RR {
-    type Output = crate::op::I64Extend32S_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend32S_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Extend32S_RS {
-    type Output = crate::op::I64Extend32S_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Extend32S_SS {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32WrapI64_RR {
-    type Output = crate::op::I32WrapI64_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32WrapI64_SR {
             result: new_result,
             input: self.input,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32WrapI64_RS {
-    type Output = crate::op::I32WrapI64_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32WrapI64_SS {
             result: new_result,
             input: self.input,
         })
@@ -8043,9 +5783,8 @@ impl crate::UpdateOperatorResult for crate::op::I32WrapI64_RS {
 
 
 impl crate::UpdateOperatorResult for crate::op::I32Add_RRI {
-    type Output = crate::op::I32Add_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Add_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8053,9 +5792,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Add_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Add_RRS {
-    type Output = crate::op::I32Add_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Add_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8063,9 +5801,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Add_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Add_RSI {
-    type Output = crate::op::I32Add_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Add_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8073,9 +5810,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Add_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Add_RSS {
-    type Output = crate::op::I32Add_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Add_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8084,9 +5820,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Add_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I64Add_RRI {
-    type Output = crate::op::I64Add_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Add_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8094,9 +5829,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Add_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Add_RRS {
-    type Output = crate::op::I64Add_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Add_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8104,9 +5838,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Add_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Add_RSI {
-    type Output = crate::op::I64Add_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Add_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8114,9 +5847,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Add_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Add_RSS {
-    type Output = crate::op::I64Add_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Add_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8125,9 +5857,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Add_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I32Mul_RRI {
-    type Output = crate::op::I32Mul_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Mul_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8135,9 +5866,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Mul_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Mul_RRS {
-    type Output = crate::op::I32Mul_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Mul_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8145,9 +5875,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Mul_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Mul_RSI {
-    type Output = crate::op::I32Mul_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Mul_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8155,9 +5884,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Mul_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Mul_RSS {
-    type Output = crate::op::I32Mul_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Mul_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8166,9 +5894,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Mul_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I64Mul_RRI {
-    type Output = crate::op::I64Mul_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Mul_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8176,9 +5903,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Mul_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Mul_RRS {
-    type Output = crate::op::I64Mul_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Mul_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8186,9 +5912,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Mul_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Mul_RSI {
-    type Output = crate::op::I64Mul_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Mul_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8196,9 +5921,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Mul_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Mul_RSS {
-    type Output = crate::op::I64Mul_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Mul_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8207,9 +5931,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Mul_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I32BitAnd_RRI {
-    type Output = crate::op::I32BitAnd_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitAnd_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8217,9 +5940,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitAnd_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitAnd_RRS {
-    type Output = crate::op::I32BitAnd_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitAnd_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8227,9 +5949,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitAnd_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitAnd_RSI {
-    type Output = crate::op::I32BitAnd_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitAnd_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8237,9 +5958,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitAnd_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitAnd_RSS {
-    type Output = crate::op::I32BitAnd_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitAnd_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8248,9 +5968,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitAnd_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I64BitAnd_RRI {
-    type Output = crate::op::I64BitAnd_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitAnd_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8258,9 +5977,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitAnd_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitAnd_RRS {
-    type Output = crate::op::I64BitAnd_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitAnd_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8268,9 +5986,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitAnd_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitAnd_RSI {
-    type Output = crate::op::I64BitAnd_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitAnd_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8278,9 +5995,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitAnd_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitAnd_RSS {
-    type Output = crate::op::I64BitAnd_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitAnd_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8289,9 +6005,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitAnd_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I32BitOr_RRI {
-    type Output = crate::op::I32BitOr_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitOr_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8299,9 +6014,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitOr_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitOr_RRS {
-    type Output = crate::op::I32BitOr_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitOr_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8309,9 +6023,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitOr_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitOr_RSI {
-    type Output = crate::op::I32BitOr_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitOr_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8319,9 +6032,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitOr_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitOr_RSS {
-    type Output = crate::op::I32BitOr_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitOr_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8330,9 +6042,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitOr_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I64BitOr_RRI {
-    type Output = crate::op::I64BitOr_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitOr_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8340,9 +6051,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitOr_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitOr_RRS {
-    type Output = crate::op::I64BitOr_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitOr_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8350,9 +6060,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitOr_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitOr_RSI {
-    type Output = crate::op::I64BitOr_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitOr_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8360,9 +6069,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitOr_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitOr_RSS {
-    type Output = crate::op::I64BitOr_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitOr_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8371,9 +6079,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitOr_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I32BitXor_RRI {
-    type Output = crate::op::I32BitXor_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitXor_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8381,9 +6088,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitXor_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitXor_RRS {
-    type Output = crate::op::I32BitXor_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitXor_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8391,9 +6097,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitXor_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitXor_RSI {
-    type Output = crate::op::I32BitXor_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitXor_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8401,9 +6106,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitXor_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32BitXor_RSS {
-    type Output = crate::op::I32BitXor_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32BitXor_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8412,9 +6116,8 @@ impl crate::UpdateOperatorResult for crate::op::I32BitXor_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I64BitXor_RRI {
-    type Output = crate::op::I64BitXor_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitXor_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8422,9 +6125,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitXor_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitXor_RRS {
-    type Output = crate::op::I64BitXor_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitXor_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8432,9 +6134,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitXor_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitXor_RSI {
-    type Output = crate::op::I64BitXor_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitXor_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8442,9 +6143,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitXor_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64BitXor_RSS {
-    type Output = crate::op::I64BitXor_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64BitXor_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8453,9 +6153,8 @@ impl crate::UpdateOperatorResult for crate::op::I64BitXor_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I32And_RRI {
-    type Output = crate::op::I32And_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32And_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8463,9 +6162,8 @@ impl crate::UpdateOperatorResult for crate::op::I32And_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32And_RRS {
-    type Output = crate::op::I32And_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32And_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8473,9 +6171,8 @@ impl crate::UpdateOperatorResult for crate::op::I32And_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32And_RSI {
-    type Output = crate::op::I32And_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32And_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8483,9 +6180,8 @@ impl crate::UpdateOperatorResult for crate::op::I32And_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32And_RSS {
-    type Output = crate::op::I32And_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32And_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8494,9 +6190,8 @@ impl crate::UpdateOperatorResult for crate::op::I32And_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I64And_RRI {
-    type Output = crate::op::I64And_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64And_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8504,9 +6199,8 @@ impl crate::UpdateOperatorResult for crate::op::I64And_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64And_RRS {
-    type Output = crate::op::I64And_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64And_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8514,9 +6208,8 @@ impl crate::UpdateOperatorResult for crate::op::I64And_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64And_RSI {
-    type Output = crate::op::I64And_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64And_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8524,9 +6217,8 @@ impl crate::UpdateOperatorResult for crate::op::I64And_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64And_RSS {
-    type Output = crate::op::I64And_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64And_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8535,9 +6227,8 @@ impl crate::UpdateOperatorResult for crate::op::I64And_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I32Or_RRI {
-    type Output = crate::op::I32Or_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Or_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8545,9 +6236,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Or_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Or_RRS {
-    type Output = crate::op::I32Or_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Or_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8555,9 +6245,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Or_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Or_RSI {
-    type Output = crate::op::I32Or_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Or_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8565,9 +6254,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Or_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Or_RSS {
-    type Output = crate::op::I32Or_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Or_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8576,9 +6264,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Or_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I64Or_RRI {
-    type Output = crate::op::I64Or_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Or_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8586,9 +6273,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Or_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Or_RRS {
-    type Output = crate::op::I64Or_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Or_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8596,9 +6282,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Or_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Or_RSI {
-    type Output = crate::op::I64Or_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Or_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8606,9 +6291,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Or_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Or_RSS {
-    type Output = crate::op::I64Or_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Or_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8617,9 +6301,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Or_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I32Xor_RRI {
-    type Output = crate::op::I32Xor_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Xor_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8627,9 +6310,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Xor_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Xor_RRS {
-    type Output = crate::op::I32Xor_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Xor_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8637,9 +6319,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Xor_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Xor_RSI {
-    type Output = crate::op::I32Xor_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Xor_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8647,9 +6328,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Xor_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Xor_RSS {
-    type Output = crate::op::I32Xor_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Xor_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8658,9 +6338,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Xor_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I64Xor_RRI {
-    type Output = crate::op::I64Xor_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Xor_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8668,9 +6347,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Xor_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Xor_RRS {
-    type Output = crate::op::I64Xor_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Xor_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8678,9 +6356,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Xor_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Xor_RSI {
-    type Output = crate::op::I64Xor_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Xor_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8688,9 +6365,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Xor_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Xor_RSS {
-    type Output = crate::op::I64Xor_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Xor_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8699,9 +6375,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Xor_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I32Eq_RRI {
-    type Output = crate::op::I32Eq_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Eq_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8709,9 +6384,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Eq_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Eq_RRS {
-    type Output = crate::op::I32Eq_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Eq_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8719,9 +6393,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Eq_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Eq_RSI {
-    type Output = crate::op::I32Eq_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Eq_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8729,9 +6402,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Eq_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Eq_RSS {
-    type Output = crate::op::I32Eq_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Eq_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8740,9 +6412,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Eq_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I64Eq_RRI {
-    type Output = crate::op::I64Eq_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Eq_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8750,9 +6421,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Eq_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Eq_RRS {
-    type Output = crate::op::I64Eq_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Eq_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8760,9 +6430,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Eq_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Eq_RSI {
-    type Output = crate::op::I64Eq_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Eq_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8770,9 +6439,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Eq_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Eq_RSS {
-    type Output = crate::op::I64Eq_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Eq_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8781,9 +6449,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Eq_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I32Ne_RRI {
-    type Output = crate::op::I32Ne_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ne_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8791,9 +6458,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Ne_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ne_RRS {
-    type Output = crate::op::I32Ne_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ne_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8801,9 +6467,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Ne_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ne_RSI {
-    type Output = crate::op::I32Ne_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ne_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8811,9 +6476,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Ne_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Ne_RSS {
-    type Output = crate::op::I32Ne_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Ne_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8822,9 +6486,8 @@ impl crate::UpdateOperatorResult for crate::op::I32Ne_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::I64Ne_RRI {
-    type Output = crate::op::I64Ne_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ne_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8832,9 +6495,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Ne_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ne_RRS {
-    type Output = crate::op::I64Ne_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ne_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8842,9 +6504,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Ne_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ne_RSI {
-    type Output = crate::op::I64Ne_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ne_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8852,9 +6513,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Ne_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Ne_RSS {
-    type Output = crate::op::I64Ne_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Ne_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8863,9 +6523,8 @@ impl crate::UpdateOperatorResult for crate::op::I64Ne_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F32Add_RRI {
-    type Output = crate::op::F32Add_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Add_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8873,9 +6532,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Add_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Add_RRS {
-    type Output = crate::op::F32Add_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Add_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8883,9 +6541,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Add_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Add_RSI {
-    type Output = crate::op::F32Add_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Add_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8893,9 +6550,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Add_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Add_RSS {
-    type Output = crate::op::F32Add_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Add_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8904,9 +6560,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Add_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F64Add_RRI {
-    type Output = crate::op::F64Add_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Add_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8914,9 +6569,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Add_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Add_RRS {
-    type Output = crate::op::F64Add_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Add_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8924,9 +6578,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Add_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Add_RSI {
-    type Output = crate::op::F64Add_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Add_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8934,9 +6587,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Add_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Add_RSS {
-    type Output = crate::op::F64Add_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Add_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8945,9 +6597,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Add_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F32Mul_RRI {
-    type Output = crate::op::F32Mul_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Mul_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8955,9 +6606,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Mul_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Mul_RRS {
-    type Output = crate::op::F32Mul_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Mul_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8965,9 +6615,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Mul_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Mul_RSI {
-    type Output = crate::op::F32Mul_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Mul_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8975,9 +6624,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Mul_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Mul_RSS {
-    type Output = crate::op::F32Mul_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Mul_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8986,9 +6634,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Mul_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F64Mul_RRI {
-    type Output = crate::op::F64Mul_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Mul_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -8996,9 +6643,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Mul_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Mul_RRS {
-    type Output = crate::op::F64Mul_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Mul_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9006,9 +6652,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Mul_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Mul_RSI {
-    type Output = crate::op::F64Mul_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Mul_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9016,9 +6661,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Mul_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Mul_RSS {
-    type Output = crate::op::F64Mul_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Mul_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9027,9 +6671,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Mul_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F32Eq_RRI {
-    type Output = crate::op::F32Eq_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Eq_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9037,9 +6680,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Eq_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Eq_RRS {
-    type Output = crate::op::F32Eq_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Eq_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9047,9 +6689,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Eq_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Eq_RSI {
-    type Output = crate::op::F32Eq_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Eq_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9057,9 +6698,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Eq_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Eq_RSS {
-    type Output = crate::op::F32Eq_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Eq_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9068,9 +6708,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Eq_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F64Eq_RRI {
-    type Output = crate::op::F64Eq_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Eq_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9078,9 +6717,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Eq_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Eq_RRS {
-    type Output = crate::op::F64Eq_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Eq_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9088,9 +6726,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Eq_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Eq_RSI {
-    type Output = crate::op::F64Eq_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Eq_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9098,9 +6735,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Eq_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Eq_RSS {
-    type Output = crate::op::F64Eq_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Eq_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9109,9 +6745,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Eq_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F32Ne_RRI {
-    type Output = crate::op::F32Ne_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ne_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9119,9 +6754,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Ne_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ne_RRS {
-    type Output = crate::op::F32Ne_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ne_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9129,9 +6763,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Ne_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ne_RSI {
-    type Output = crate::op::F32Ne_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ne_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9139,9 +6772,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Ne_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Ne_RSS {
-    type Output = crate::op::F32Ne_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Ne_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9150,9 +6782,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Ne_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F64Ne_RRI {
-    type Output = crate::op::F64Ne_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ne_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9160,9 +6791,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Ne_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ne_RRS {
-    type Output = crate::op::F64Ne_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ne_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9170,9 +6800,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Ne_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ne_RSI {
-    type Output = crate::op::F64Ne_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ne_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9180,9 +6809,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Ne_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Ne_RSS {
-    type Output = crate::op::F64Ne_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Ne_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9191,9 +6819,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Ne_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F32Min_RRI {
-    type Output = crate::op::F32Min_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Min_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9201,9 +6828,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Min_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Min_RRS {
-    type Output = crate::op::F32Min_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Min_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9211,9 +6837,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Min_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Min_RSI {
-    type Output = crate::op::F32Min_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Min_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9221,9 +6846,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Min_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Min_RSS {
-    type Output = crate::op::F32Min_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Min_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9232,9 +6856,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Min_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F64Min_RRI {
-    type Output = crate::op::F64Min_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Min_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9242,9 +6865,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Min_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Min_RRS {
-    type Output = crate::op::F64Min_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Min_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9252,9 +6874,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Min_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Min_RSI {
-    type Output = crate::op::F64Min_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Min_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9262,9 +6883,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Min_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Min_RSS {
-    type Output = crate::op::F64Min_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Min_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9273,9 +6893,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Min_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F32Max_RRI {
-    type Output = crate::op::F32Max_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Max_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9283,9 +6902,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Max_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Max_RRS {
-    type Output = crate::op::F32Max_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Max_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9293,9 +6911,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Max_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Max_RSI {
-    type Output = crate::op::F32Max_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Max_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9303,9 +6920,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Max_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32Max_RSS {
-    type Output = crate::op::F32Max_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32Max_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9314,9 +6930,8 @@ impl crate::UpdateOperatorResult for crate::op::F32Max_RSS {
 }
 
 impl crate::UpdateOperatorResult for crate::op::F64Max_RRI {
-    type Output = crate::op::F64Max_SRI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Max_SRI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9324,9 +6939,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Max_RRI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Max_RRS {
-    type Output = crate::op::F64Max_SRS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Max_SRS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9334,9 +6948,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Max_RRS {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Max_RSI {
-    type Output = crate::op::F64Max_SSI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Max_SSI {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9344,9 +6957,8 @@ impl crate::UpdateOperatorResult for crate::op::F64Max_RSI {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64Max_RSS {
-    type Output = crate::op::F64Max_SSS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64Max_SSS {
             result: new_result,
             lhs: self.lhs,
             rhs: self.rhs,
@@ -9356,18 +6968,16 @@ impl crate::UpdateOperatorResult for crate::op::F64Max_RSS {
 
 
 impl crate::UpdateOperatorResult for crate::op::I32LoadMem0_RI {
-    type Output = crate::op::I32LoadMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32LoadMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32LoadMem0_RR {
-    type Output = crate::op::I32LoadMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32LoadMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9375,38 +6985,29 @@ impl crate::UpdateOperatorResult for crate::op::I32LoadMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32LoadMem0_RS {
-    type Output = crate::op::I32LoadMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32LoadMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I32Load_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Load_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Load_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I32Load_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32Load_RR {}
+impl crate::UpdateOperatorResult for crate::op::I32Load_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I64LoadMem0_RI {
-    type Output = crate::op::I64LoadMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64LoadMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64LoadMem0_RR {
-    type Output = crate::op::I64LoadMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64LoadMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9414,38 +7015,29 @@ impl crate::UpdateOperatorResult for crate::op::I64LoadMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64LoadMem0_RS {
-    type Output = crate::op::I64LoadMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64LoadMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I64Load_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I64Load_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64Load_RR {}
+impl crate::UpdateOperatorResult for crate::op::I64Load_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::F32LoadMem0_RI {
-    type Output = crate::op::F32LoadMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32LoadMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32LoadMem0_RR {
-    type Output = crate::op::F32LoadMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32LoadMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9453,38 +7045,29 @@ impl crate::UpdateOperatorResult for crate::op::F32LoadMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F32LoadMem0_RS {
-    type Output = crate::op::F32LoadMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F32LoadMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::F32Load_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Load_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F32Load_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::F32Load_RI {}
+impl crate::UpdateOperatorResult for crate::op::F32Load_RR {}
+impl crate::UpdateOperatorResult for crate::op::F32Load_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::F64LoadMem0_RI {
-    type Output = crate::op::F64LoadMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64LoadMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64LoadMem0_RR {
-    type Output = crate::op::F64LoadMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64LoadMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9492,38 +7075,29 @@ impl crate::UpdateOperatorResult for crate::op::F64LoadMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::F64LoadMem0_RS {
-    type Output = crate::op::F64LoadMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::F64LoadMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::F64Load_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Load_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::F64Load_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::F64Load_RI {}
+impl crate::UpdateOperatorResult for crate::op::F64Load_RR {}
+impl crate::UpdateOperatorResult for crate::op::F64Load_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I32Load8SMem0_RI {
-    type Output = crate::op::I32Load8SMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8SMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load8SMem0_RR {
-    type Output = crate::op::I32Load8SMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8SMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9531,38 +7105,29 @@ impl crate::UpdateOperatorResult for crate::op::I32Load8SMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load8SMem0_RS {
-    type Output = crate::op::I32Load8SMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8SMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I32Load8S_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Load8S_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Load8S_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I32Load8S_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32Load8S_RR {}
+impl crate::UpdateOperatorResult for crate::op::I32Load8S_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I64Load8SMem0_RI {
-    type Output = crate::op::I64Load8SMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8SMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load8SMem0_RR {
-    type Output = crate::op::I64Load8SMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8SMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9570,38 +7135,29 @@ impl crate::UpdateOperatorResult for crate::op::I64Load8SMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load8SMem0_RS {
-    type Output = crate::op::I64Load8SMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8SMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I64Load8S_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load8S_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load8S_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I64Load8S_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64Load8S_RR {}
+impl crate::UpdateOperatorResult for crate::op::I64Load8S_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I32Load8UMem0_RI {
-    type Output = crate::op::I32Load8UMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8UMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load8UMem0_RR {
-    type Output = crate::op::I32Load8UMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8UMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9609,38 +7165,29 @@ impl crate::UpdateOperatorResult for crate::op::I32Load8UMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load8UMem0_RS {
-    type Output = crate::op::I32Load8UMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load8UMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I32Load8U_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Load8U_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Load8U_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I32Load8U_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32Load8U_RR {}
+impl crate::UpdateOperatorResult for crate::op::I32Load8U_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I64Load8UMem0_RI {
-    type Output = crate::op::I64Load8UMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8UMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load8UMem0_RR {
-    type Output = crate::op::I64Load8UMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8UMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9648,38 +7195,29 @@ impl crate::UpdateOperatorResult for crate::op::I64Load8UMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load8UMem0_RS {
-    type Output = crate::op::I64Load8UMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load8UMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I64Load8U_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load8U_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load8U_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I64Load8U_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64Load8U_RR {}
+impl crate::UpdateOperatorResult for crate::op::I64Load8U_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I32Load16SMem0_RI {
-    type Output = crate::op::I32Load16SMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16SMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load16SMem0_RR {
-    type Output = crate::op::I32Load16SMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16SMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9687,38 +7225,29 @@ impl crate::UpdateOperatorResult for crate::op::I32Load16SMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load16SMem0_RS {
-    type Output = crate::op::I32Load16SMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16SMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I32Load16S_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Load16S_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Load16S_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I32Load16S_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32Load16S_RR {}
+impl crate::UpdateOperatorResult for crate::op::I32Load16S_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I64Load16SMem0_RI {
-    type Output = crate::op::I64Load16SMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16SMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load16SMem0_RR {
-    type Output = crate::op::I64Load16SMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16SMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9726,38 +7255,29 @@ impl crate::UpdateOperatorResult for crate::op::I64Load16SMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load16SMem0_RS {
-    type Output = crate::op::I64Load16SMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16SMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I64Load16S_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load16S_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load16S_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I64Load16S_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64Load16S_RR {}
+impl crate::UpdateOperatorResult for crate::op::I64Load16S_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I32Load16UMem0_RI {
-    type Output = crate::op::I32Load16UMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16UMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load16UMem0_RR {
-    type Output = crate::op::I32Load16UMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16UMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9765,38 +7285,29 @@ impl crate::UpdateOperatorResult for crate::op::I32Load16UMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I32Load16UMem0_RS {
-    type Output = crate::op::I32Load16UMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I32Load16UMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I32Load16U_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Load16U_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I32Load16U_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I32Load16U_RI {}
+impl crate::UpdateOperatorResult for crate::op::I32Load16U_RR {}
+impl crate::UpdateOperatorResult for crate::op::I32Load16U_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I64Load16UMem0_RI {
-    type Output = crate::op::I64Load16UMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16UMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load16UMem0_RR {
-    type Output = crate::op::I64Load16UMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16UMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9804,38 +7315,29 @@ impl crate::UpdateOperatorResult for crate::op::I64Load16UMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load16UMem0_RS {
-    type Output = crate::op::I64Load16UMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load16UMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I64Load16U_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load16U_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load16U_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I64Load16U_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64Load16U_RR {}
+impl crate::UpdateOperatorResult for crate::op::I64Load16U_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I64Load32SMem0_RI {
-    type Output = crate::op::I64Load32SMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32SMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load32SMem0_RR {
-    type Output = crate::op::I64Load32SMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32SMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9843,38 +7345,29 @@ impl crate::UpdateOperatorResult for crate::op::I64Load32SMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load32SMem0_RS {
-    type Output = crate::op::I64Load32SMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32SMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I64Load32S_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load32S_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load32S_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I64Load32S_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64Load32S_RR {}
+impl crate::UpdateOperatorResult for crate::op::I64Load32S_RS {}
 
 impl crate::UpdateOperatorResult for crate::op::I64Load32UMem0_RI {
-    type Output = crate::op::I64Load32UMem0_SI;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32UMem0_SI {
             result: new_result,
             address: self.address,
         })
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load32UMem0_RR {
-    type Output = crate::op::I64Load32UMem0_SR;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32UMem0_SR {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
@@ -9882,22 +7375,16 @@ impl crate::UpdateOperatorResult for crate::op::I64Load32UMem0_RR {
     }
 }
 impl crate::UpdateOperatorResult for crate::op::I64Load32UMem0_RS {
-    type Output = crate::op::I64Load32UMem0_SS;
-    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {
-        ::core::option::Option::Some(Self::Output {
+    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<crate::Op> {
+        ::core::option::Option::Some(crate::Op::I64Load32UMem0_SS {
             result: new_result,
             ptr: self.ptr,
             offset: self.offset,
         })
     }
 }
-impl crate::UpdateOperatorResult for crate::op::I64Load32U_RI {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load32U_RR {
-    type Output = crate::NoOp;
-}
-impl crate::UpdateOperatorResult for crate::op::I64Load32U_RS {
-    type Output = crate::NoOp;
-}
+impl crate::UpdateOperatorResult for crate::op::I64Load32U_RI {}
+impl crate::UpdateOperatorResult for crate::op::I64Load32U_RR {}
+impl crate::UpdateOperatorResult for crate::op::I64Load32U_RS {}
+
 

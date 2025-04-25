@@ -57,11 +57,8 @@ pub trait OperatorResult {
 /// This works by returning a new operator with the updated result.
 /// If updating the result is not possible, `None` is returned.
 pub trait UpdateOperatorResult {
-    /// The operator type with updated result.
-    type Output: Operator;
-
     /// Returns an operator copy of `self` with an update result.
-    fn update_operator_result(&self, new_result: Stack) -> Option<Self::Output> {
+    fn update_operator_result(&self, new_result: Stack) -> Option<Op> {
         _ = new_result;
         None
     }
@@ -77,7 +74,10 @@ pub trait OperatorCode {
 
 /// Trait implemented by all operator types.
 pub trait Operator: Copy + OperatorCode + Into<Op> + OperatorResult + UpdateOperatorResult {}
-impl<T> Operator for T where T: Copy + OperatorCode + OperatorResult + UpdateOperatorResult + Into<Op> {}
+impl<T> Operator for T where
+    T: Copy + OperatorCode + OperatorResult + UpdateOperatorResult + Into<Op>
+{
+}
 
 /// Indicates that the operator type alias is vacant.
 #[derive(Copy, Clone)]
@@ -88,9 +88,7 @@ impl OperatorCode for NoOp {
     }
 }
 impl OperatorResult for NoOp {}
-impl UpdateOperatorResult for NoOp {
-    type Output = Self;
-}
+impl UpdateOperatorResult for NoOp {}
 impl From<NoOp> for Op {
     fn from(_: NoOp) -> Self {
         unreachable!("intentionally unimplemented: must never be used")

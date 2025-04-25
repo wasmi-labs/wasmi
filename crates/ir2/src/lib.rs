@@ -9,7 +9,6 @@ mod encode;
 mod instr;
 mod utils;
 
-pub(crate) use self::utils::NoOp;
 use self::utils::RefAccess;
 pub use self::{
     decode::{Decode, Decoder},
