@@ -35,7 +35,7 @@ impl Display for DisplayUpdateOpResult<'_> {
             "    fn update_operator_result(&self, new_result: crate::Stack) -> ::core::option::Option<Self::Output> {"
             "        match *self {"
                          display_impl
-            "            //_ => ::core::option::Option::None,"
+            "            _ => ::core::option::Option::None,"
             "        }"
             "    }"
             "}"
@@ -59,9 +59,9 @@ impl<'a> DisplayUpdateOpResultImpl<'a> {
     }
 
     fn emit(&self, f: &mut fmt::Formatter, op: &Op) -> fmt::Result {
-        // let Some(result_ty) = op.result_ty() else {
-        //     return Ok(());
-        // };
+        if op.result_ty().is_none() {
+            return Ok(());
+        };
         let indent = self.indent;
         let name = op.name();
         let fields_pattern = DisplayFieldsPattern::new(op.fields());
