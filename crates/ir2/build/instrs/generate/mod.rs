@@ -5,6 +5,7 @@ mod opcode;
 mod opmod;
 mod opresult;
 mod opty;
+mod update_result;
 
 use self::{
     impls::{
@@ -20,6 +21,7 @@ use self::{
     opmod::DisplayOpMod,
     opresult::DisplayOpResult,
     opty::DisplayOpEnum,
+    update_result::DisplayUpdateOpResult,
     utils::{DisplayFields, DisplayFieldsPattern, DisplayIndent, Visibility},
 };
 use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op};
@@ -31,6 +33,7 @@ pub fn generate_ops(ctx: &Context) -> Result<(), io::Error> {
     generate_file("op_code.rs", DisplayOpCodeEnum::new(ctx, indent))?;
     generate_file("op.rs", DisplayOpMod::new(ctx, indent))?;
     generate_file("opresult.rs", DisplayOpResult::new(ctx, indent))?;
+    generate_file("update_result.rs", DisplayUpdateOpResult::new(ctx, indent))?;
     generate_file(
         "impls/unary.rs",
         DisplayUnaryOperatorImpls::new(&ctx.unary_ops, indent),
