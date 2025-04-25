@@ -22,7 +22,7 @@ use self::{
     opresult::DisplayOpResult,
     opty::DisplayOpEnum,
     update_result::DisplayUpdateOpResult,
-    utils::{DisplayFields, DisplayFieldsPattern, DisplayIndent, Visibility},
+    utils::{DisplayFields, DisplayFieldsPattern, DisplayFileHeader, DisplayIndent, Visibility},
 };
 use super::{Context, Field, FieldName, FieldTy, ImmediateTy, Op};
 use std::{fmt::Display, fs, io};
