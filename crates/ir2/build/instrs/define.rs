@@ -551,7 +551,7 @@ fn define_global_get_ops(ctx: &mut Context) {
         kind: OpClassKind::GlobalGet,
         fields: [
             result: FieldTy::Stack,
-            global: ImmediateTy::Global,
+            index: ImmediateTy::Global,
         ],
     });
     for ty in [ValTy::I32, ValTy::I64, ValTy::F32, ValTy::F64] {
@@ -561,7 +561,7 @@ fn define_global_get_ops(ctx: &mut Context) {
             kind: OpClassKind::GlobalGet,
             fields: [
                 result: Operand::Reg.ty(ty),
-                global: ImmediateTy::Global,
+                index: ImmediateTy::Global,
             ],
         });
     }
@@ -711,7 +711,7 @@ fn define_table_size_ops(ctx: &mut Context) {
             kind: OpClassKind::TableSize,
             fields: [
                 result: result.ty(ValTy::I64),
-                table: ImmediateTy::Table,
+                index: ImmediateTy::Table,
             ],
         });
     }
@@ -821,7 +821,7 @@ fn define_memory_size_ops(ctx: &mut Context) {
             kind: OpClassKind::MemorySize,
             fields: [
                 result: result.ty(ValTy::I64),
-                memory: ImmediateTy::Memory,
+                index: ImmediateTy::Memory,
             ],
         });
     }
